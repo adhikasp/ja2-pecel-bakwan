@@ -12,4 +12,5 @@ TAGS
 .clang-tidy
 .zed
 /compile_commands.json
+/build/
 /*/CMakeUserPresets.json
