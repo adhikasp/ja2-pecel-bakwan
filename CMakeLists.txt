@@ -261,6 +261,24 @@ add_custom_target(run-${JA2_BINARY}-unittests
     DEPENDS "${JA2_BINARY}"
 )
 
+# --- E2E screen-automation tests ---
+if (WITH_UNITTESTS)
+    file(GLOB E2E_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
+    foreach(f ${E2E_FILES})
+        get_filename_component(n ${f} NAME_WE)
+        add_test(
+            NAME e2e_${n}
+            COMMAND "$<TARGET_FILE:${JA2_BINARY}>" -uitest ${f}
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${JA2_BINARY}>"
+        )
+    endforeach()
+    add_custom_target(run-${JA2_BINARY}-e2e
+        COMMAND ctest -R e2e --output-on-failure
+        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+        DEPENDS "${JA2_BINARY}"
+    )
+endif()
+
 
 ## Installing and Packaging
 

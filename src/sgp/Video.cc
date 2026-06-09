@@ -2,9 +2,10 @@
 #include "Debug.h"
 #include "Fade_Screen.h"
 #include "FPS.h"
+#include "Logger.h"
+#include "UITestDriver.h"
 #include "HImage.h"
 #include "Local.h"
-#include "Logger.h"
 #include "RenderWorld.h"
 #include "Render_Dirty.h"
 #include "Types.h"
@@ -77,6 +78,12 @@ BOOLEAN IsDesktopLargeEnough()
 	return true;
 }
 
+SDL_Surface* GetScreenBufferForTest() {
+    if (!g_uitest_mode) return nullptr;
+    return ScreenBuffer;
+}
+
+
 void VideoSetFullScreen(const BOOLEAN enable)
 {
 	if (enable)
@@ -122,6 +129,13 @@ void InitializeVideoManager(const VideoScaleQuality quality,
 
 	ScaleQuality = quality;
 	g_window_flags |= SDL_WINDOW_RESIZABLE;
+
+	// In UITest mode, create the window hidden so launching a test never steals
+	// keyboard/window focus. The renderer still populates the CPU-side
+	// ScreenBuffer, so pixel reads and screenshots keep working headlessly.
+	if (g_uitest_mode) {
+		g_window_flags |= SDL_WINDOW_HIDDEN;
+	}
 
 	g_game_window = SDL_CreateWindow(APPLICATION_NAME,
 					SDL_WINDOWPOS_UNDEFINED,

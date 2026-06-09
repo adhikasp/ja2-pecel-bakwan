@@ -17,6 +17,7 @@
 
 #include "DefaultContentManager.h"
 #include "GameInstance.h"
+#include "UITestDriver.h"
 #include "ModPackContentManager.h"
 #include "policy/GamePolicy.h"
 #include "RustInterface.h"
@@ -43,6 +44,7 @@
 #include <string_theory/format>
 
 #include <chrono>
+#include <cstring>
 #include <exception>
 #include <locale>
 #include <new>
@@ -89,6 +91,14 @@ static void shutdownGame()
 	SDL_Quit();
 }
 
+/** Exit code used by uitest driver to signal failures. */
+static int g_uitest_exit_code = 0;
+
+/** Set the exit code for uitest mode (used by UITestDriver). */
+void uitestSetExitCode(int code) {
+	g_uitest_exit_code = code;
+}
+
 /** Deinitialize the game an exit. */
 static void deinitGameAndExit()
 {
@@ -99,7 +109,7 @@ static void deinitGameAndExit()
 
 	shutdownGame();
 
-	exit(0);
+	exit(g_uitest_exit_code);
 }
 
 
@@ -116,11 +126,26 @@ static void MainLoop()
 {
 	bool s_doGameCycles{true};
 
+	// UITest driver instance — only used when g_uitest_mode is true
+	static UITestDriver s_uitest;
+	if (g_uitest_mode && !s_uitest.finished()) {
+		if (!s_uitest.loadScript(g_uitest_script_path)) {
+			// Setup/parse error: exit code 2 (distinct from assertion failure = 1)
+			uitestSetExitCode(2);
+			requestGameExit();
+		}
+	}
+
 	while (true)
 	{
 		// cycle until SDL_Quit is received
 		extern void UpdateJA2Clock();
 		UpdateJA2Clock();
+
+		// UITest driver pump — injects events and checks pixels
+		if (g_uitest_mode) {
+			s_uitest.pump();
+		}
 
 		SDL_Event event;
 		if (SDL_PollEvent(&event))
@@ -299,6 +324,25 @@ int main(int argc, char* argv[])
 			return EXIT_FAILURE;
 		}
 
+				// Scan for -uitest flag before EngineOptions parses argv
+		// (the Rust CLI parser doesn't know about -uitest, so we strip it)
+		{
+			int src = 1;
+			int dst = 1;
+			while (src < argc) {
+				if (std::strcmp(argv[src], "-uitest") == 0 && src + 1 < argc) {
+					g_uitest_mode = true;
+					g_uitest_script_path = argv[src + 1];
+					src += 2;
+					SLOGI("UITest mode enabled \u2014 script: {}", g_uitest_script_path);
+				} else {
+					argv[dst++] = argv[src++];
+				}
+			}
+			argv[dst] = nullptr;
+			argc = dst;
+		}
+
 		RustPointer<EngineOptions> params(EngineOptions_create(configFolderPath.get(), argv, argc));
 		if (params == NULL) {
 			return EXIT_FAILURE;
@@ -336,7 +380,7 @@ int main(int argc, char* argv[])
 		uint16_t height = EngineOptions_getResolutionY(params.get());
 		g_ui.setScreenSize(width, height);
 
-		if (EngineOptions_shouldRunUnittests(params.get())) {
+	if (EngineOptions_shouldRunUnittests(params.get())) {
 	#ifdef WITH_UNITTESTS
 			Logger_setLevel(LogLevel::Error);
 			testing::InitGoogleTest(&argc, argv);
@@ -354,6 +398,14 @@ int main(int argc, char* argv[])
 		FLOAT brightness = EngineOptions_getBrightness(params.get());
 
 		////////////////////////////////////////////////////////////
+
+		// In UITest mode, run as a background app so launching the test does not
+		// steal keyboard/window focus from whatever the user is doing. The window
+		// still renders and the CPU-side ScreenBuffer is still populated, so pixel
+		// reads and screenshots keep working. Must be set before SDL_Init.
+		if (g_uitest_mode) {
+			SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "1");
+		}
 
 		SDL_Init(SDL_INIT_VIDEO);
 

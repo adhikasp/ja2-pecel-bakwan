@@ -12,6 +12,14 @@ Incremental — only rebuilds changed files. No need to re-run `cmake ..` unless
 ./build/ja2 -unittests
 ```
 
+## E2E screen tests
+In-process Playwright-style harness: drives the real rendered game with synthetic SDL input and asserts on pixels read from `ScreenBuffer`. Runs hidden/backgrounded so it never steals focus.
+```bash
+ctest -R e2e --test-dir build                 # run all e2e scripts
+./build/ja2 -uitest tests/e2e/<name>.txt      # run one script
+```
+Scripts live in `tests/e2e/*.txt` (`load_save_to_mapscreen.txt` is the calibrated canonical one). For the script vocabulary and reusable calibrated fragments, see [tests/e2e/COOKBOOK.md](tests/e2e/COOKBOOK.md).
+
 ## Run
 ```bash
 ./build/ja2 -res 1280x720

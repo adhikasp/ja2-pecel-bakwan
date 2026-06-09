@@ -3,7 +3,7 @@
 
 #include "Types.h"
 #include "RustInterface.h"
-#include "SDL.h"
+#include <SDL.h>
 
 
 #define VIDEO_DEFAULT_TO_NO_CURSOR 0xFFFE // VIDEO_DEFAULT_TO_NO_CURSOR is equal to VIDEO_NO_CURSOR unless always_show_cursor_in_tactical is true
@@ -32,6 +32,10 @@ void SetMouseCursorProperties(INT16 sOffsetX, INT16 sOffsetY, UINT16 usCursorHei
 void InvalidateRegionEx(INT32 iLeft, INT32 iTop, INT32 iRight, INT32 iBottom);
 
 void RefreshScreen(void);
+
+/** Accessor for E2E test driver to read pixels from the composited frame.
+ *  Only returns a surface when g_uitest_mode is set. */
+SDL_Surface* GetScreenBufferForTest();
 
 // Creates a list to contain video Surfaces
 void InitializeVideoSurfaceManager(void);

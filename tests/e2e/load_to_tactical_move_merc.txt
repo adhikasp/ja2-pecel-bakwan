@@ -1,0 +1,42 @@
+# E2E scenario: load save → tactical → move merc → assert pixel
+#
+# !! IMPORTANT: coordinates below were captured at 1280x720 and WILL
+#    need recalibration if the UI art, resolution, or game version
+#    changes. See tests/e2e/README.md for the calibration workflow.
+#
+# Calibration steps:
+#   1. Run: ./build/ja2 -res 1280x720
+#   2. Navigate to each screen manually
+#   3. Use: screenshot /tmp/calib_<step>.bmp
+#   4. Read pixel coordinates in an image editor
+#   5. Update values below
+
+# Wait for main menu to fully render
+waitpixel 640 360 #3a3a3a 12 8000
+
+# Click "Load Game" button (position depends on resolution)
+click 1090 250
+
+# Wait for save-slot list to appear
+waitpixel 200 150 #c8c8c8 12 5000
+
+# Click first save slot
+click 320 200
+
+# Click "Load" button
+click 1100 660
+
+# Wait for tactical sector to load (green HUD panel)
+waitpixel 50 50 #1f6f1f 16 20000
+
+# Move selected merc by clicking a destination tile
+click 700 380
+
+# Let walk animation finish
+waitstable 700 380 6000
+
+# Assert merc/selection ring rendered at destination
+assertpixel 700 380 #d8c090 24
+
+# Capture final frame for visual inspection
+screenshot /tmp/ja2_e2e_tactical_move.bmp
