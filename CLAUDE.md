@@ -1,30 +1,60 @@
 # ja2-stracciatella — Claude context
 
-## Daily build
+This repo is worked on from both macOS and Windows. Check which machine you're on before picking a command block below.
+
+## macOS
+
+### Daily build
 ```bash
 source "$HOME/.cargo/env"
 cmake --build build -- -j$(sysctl -n hw.logicalcpu)
 ```
 Incremental — only rebuilds changed files. No need to re-run `cmake ..` unless `CMakeLists.txt` changed.
 
-## Test
+### Test
 ```bash
 ./build/ja2 -unittests
 ```
 
-## E2E screen tests
-In-process Playwright-style harness: drives the real rendered game with synthetic SDL input and asserts on pixels read from `ScreenBuffer`. Runs hidden/backgrounded so it never steals focus.
-```bash
-ctest -R e2e --test-dir build                 # run all e2e scripts
-./build/ja2 -uitest tests/e2e/<name>.txt      # run one script
-```
-Scripts live in `tests/e2e/*.txt` (`load_save_to_mapscreen.txt` is the calibrated canonical one). For the script vocabulary and reusable calibrated fragments, see [tests/e2e/COOKBOOK.md](tests/e2e/COOKBOOK.md).
-
-## Run
+### Run
 ```bash
 ./build/ja2 -res 1280x720
 ```
 Game data is at `~/Workspace/ja2-gamedir/app`, configured in `~/.ja2/ja2.json`. No flags needed for data dir.
+
+## Windows (MSYS2 MinGW64)
+
+Toolchain lives in MSYS2 at `C:\msys64` (packages: `mingw-w64-x86_64-toolchain`, `-rust`, `-cmake`, `-SDL2`, `-fltk`, plus `base-devel` for the `make` the "MSYS Makefiles" generator needs). Build directory is **`_bin`** here, not `build`. Every command needs the MinGW64 environment, so run through a login shell with `MSYSTEM=MINGW64` set — plain PowerShell/cmd won't have `gcc`/`cmake`/`cargo` on PATH.
+
+### Daily build
+```bash
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && make -j\$(nproc)"
+```
+Reconfigure only if `CMakeLists.txt` changed:
+```bash
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && cmake .. -G 'MSYS Makefiles' -DCPACK_GENERATOR=ZIP"
+```
+
+### Test
+```bash
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && ./ja2.exe -unittests"
+```
+
+### Run
+```bash
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && ./ja2.exe -res 1280x720"
+```
+Game data comes from the Steam install: `C:\Program Files (x86)\Steam\steamapps\common\Jagged Alliance 2 Gold`, configured via `game_dir` in `%APPDATA%\JA2\ja2.json`.
+**Gotcha:** `game_dir` must point at the install root (the folder containing `Data\`), not at the `Data` folder itself — pointing it at `Data` directly makes the VFS look for a nonexistent `Data\data` and fail with "Error initializing VFS ... os error 3".
+Log file: `C:\msys64\tmp\ja2.log` (MSYS bash's own `/tmp`, not Windows `%TEMP%`).
+
+## E2E screen tests
+In-process Playwright-style harness: drives the real rendered game with synthetic SDL input and asserts on pixels read from `ScreenBuffer`. Runs hidden/backgrounded so it never steals focus.
+```bash
+ctest -R e2e --test-dir build                 # run all e2e scripts (adjust dir to _bin on Windows)
+./build/ja2 -uitest tests/e2e/<name>.txt      # run one script
+```
+Scripts live in `tests/e2e/*.txt` (`load_save_to_mapscreen.txt` is the calibrated canonical one). For the script vocabulary and reusable calibrated fragments, see [tests/e2e/COOKBOOK.md](tests/e2e/COOKBOOK.md).
 
 ## Codebase shape
 
