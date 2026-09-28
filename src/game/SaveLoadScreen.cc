@@ -165,6 +165,8 @@ BOOLEAN		gfCameDirectlyFromGame = FALSE;
 BOOLEAN		gfLoadedGame = FALSE;	//Used to know when a game has been loaded, the flag in gtacticalstatus might have been reset already
 
 BOOLEAN		gfLoadGameUponEntry = FALSE;
+// When set, "load upon entry" loads this save instead of the last saved slot.
+static ST::string gzLoadGameUponEntryName;
 
 static BOOLEAN gfHadToMakeBasementLevels = FALSE;
 
@@ -378,7 +380,16 @@ static void EnterSaveLoadScreen()
 	if (gfLoadGameUponEntry)
 	{
 		// Make sure the save is valid
-		INT8 const last_slot = gGameSettings.bLastSavedGameSlot;
+		INT8 last_slot = gGameSettings.bLastSavedGameSlot;
+		if (!gzLoadGameUponEntryName.empty())
+		{
+			last_slot = -1;
+			for (auto i = gSavedGamesList.begin(); i < gSavedGamesList.end(); i++)
+			{
+				if ((*i).name() == gzLoadGameUponEntryName) last_slot = std::distance(gSavedGamesList.begin(), i);
+			}
+			gzLoadGameUponEntryName.clear();
+		}
 		if (last_slot != -1 && gSavedGamesList.begin() + last_slot < gSavedGamesList.end())
 		{
 			gbSelectedSaveLocation = last_slot;
@@ -1402,6 +1413,45 @@ void DoDeadIsDeadSave()
 			DoMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
 		}
 	}
+}
+
+
+bool DoLoadSavedGameByName(const ST::string& saveName)
+{
+	bool found = false;
+	for (auto const& save : GetValidSaveGames())
+	{
+		if (save.name() == saveName) found = true;
+	}
+	if (!found) return false;
+
+	if (guiCurrentScreen != MAP_SCREEN && guiCurrentScreen != GAME_SCREEN)
+	{
+		gzLoadGameUponEntryName = saveName;
+		gfLoadGameUponEntry = TRUE;
+		return true;
+	}
+
+	gfSaveGame = FALSE;
+	InitSaveGameArray();
+	gbSelectedSaveLocation = -1;
+	for (auto i = gSavedGamesList.begin(); i < gSavedGamesList.end(); i++)
+	{
+		if ((*i).name() == saveName) gbSelectedSaveLocation = std::distance(gSavedGamesList.begin(), i);
+	}
+	if (gbSelectedSaveLocation == -1) return false;
+
+	StartFadeOutForSaveLoadScreen();
+	gfDoingQuickLoad = TRUE;
+	return true;
+}
+
+
+std::vector<ST::string> GetLoadableSaveNames()
+{
+	std::vector<ST::string> names;
+	for (auto const& save : GetValidSaveGames()) names.push_back(save.name());
+	return names;
 }
 
 

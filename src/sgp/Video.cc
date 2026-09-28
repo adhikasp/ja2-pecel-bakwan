@@ -1,8 +1,9 @@
+#include "Clock.h"
 #include "Cursor_Control.h"
+#include "Headless.h"
 #include "Debug.h"
 #include "FPS.h"
 #include "Logger.h"
-#include "UITestDriver.h"
 #include "HImage.h"
 #include "Local.h"
 #include "RenderWorld.h"
@@ -59,7 +60,7 @@ static SDL_Texture* ScreenTexture;
 static SDL_Texture* ScaledScreenTexture;
 static Uint32       g_window_flags = 0;
 static VideoScaleQuality ScaleQuality = VideoScaleQuality::LINEAR;
-static std::chrono::steady_clock::duration TimeBetweenRefreshScreens;
+static sgp::GameClock::duration TimeBetweenRefreshScreens;
 
 static void DeletePrimaryVideoSurfaces(void);
 
@@ -77,20 +78,27 @@ BOOLEAN IsDesktopLargeEnough()
 	return true;
 }
 
-SDL_Surface* GetScreenBufferForTest() {
-    if (!g_uitest_mode) return nullptr;
-    return ScreenBuffer;
+SDL_Surface* GetScreenBuffer()
+{
+	return ScreenBuffer;
+}
+
+SDL_Rect GetMouseCursorRect()
+{
+	return MouseBackground;
 }
 
 
 void VideoSetFullScreen(const BOOLEAN enable)
 {
+	if (!g_game_window) return;
 	SDL_SetWindowFullscreen(g_game_window, enable);
 	SDL_SetWindowMouseGrab(g_game_window, enable);
 }
 
 void VideoToggleFullScreen(void)
 {
+	if (!g_game_window) return;
 	VideoSetFullScreen(!(SDL_GetWindowFlags(g_game_window) & SDL_WINDOW_FULLSCREEN));
 }
 
@@ -106,17 +114,22 @@ void VideoSetBrightness(float brightness)
 static void GetRGBDistribution();
 
 
+static void CreateSoftwareSurfaces();
+
 void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targetFPS)
 {
+	TimeBetweenRefreshScreens = std::chrono::microseconds{1'000'000} / targetFPS;
+
+	if (sgp::IsHeadless())
+	{
+		// No window, renderer or textures: the game only ever draws into the
+		// CPU-side surfaces, which is all a headless session needs.
+		CreateSoftwareSurfaces();
+		return;
+	}
+
 	ScaleQuality = quality;
 	g_window_flags |= SDL_WINDOW_RESIZABLE;
-
-	// In UITest mode, create the window hidden so launching a test never steals
-	// keyboard/window focus. The renderer still populates the CPU-side
-	// ScreenBuffer, so pixel reads and screenshots keep working headlessly.
-	if (g_uitest_mode) {
-		g_window_flags |= SDL_WINDOW_HIDDEN;
-	}
 
 	g_game_window = SDL_CreateWindow(APPLICATION_NAME,
 					SCREEN_WIDTH, SCREEN_HEIGHT,
@@ -135,19 +148,9 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 	SDL_SetWindowIcon(g_game_window, windowIcon.get());
 
 
-	ClippingRect.set(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	CreateSoftwareSurfaces();
 
-	ScreenBuffer = SDL_CreateSurface(
-					SCREEN_WIDTH,
-					SCREEN_HEIGHT,
-					SDL_PIXELFORMAT_RGB565
-	);
-
-	if (ScreenBuffer == NULL) {
-		SLOGE("SDL_CreateRGBSurface for ScreenBuffer failed: {}\n", SDL_GetError());
-	}
-
-	ScreenTexture = SDL_CreateTexture(GameRenderer,
+	ScreenTexture =SDL_CreateTexture(GameRenderer,
 					SDL_PIXELFORMAT_RGB565,
 					SDL_TEXTUREACCESS_STREAMING,
 					SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -189,6 +192,24 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 		SDL_SetTextureScaleMode(ScreenTexture, SDL_SCALEMODE_LINEAR);
 	}
 
+	SDL_HideCursor();
+}
+
+
+static void CreateSoftwareSurfaces()
+{
+	ClippingRect.set(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	ScreenBuffer = SDL_CreateSurface(
+					SCREEN_WIDTH,
+					SCREEN_HEIGHT,
+					SDL_PIXELFORMAT_RGB565
+	);
+
+	if (ScreenBuffer == NULL) {
+		SLOGE("SDL_CreateRGBSurface for ScreenBuffer failed: {}\n", SDL_GetError());
+	}
+
 	FrameBuffer = SDL_CreateSurface(
 		SCREEN_WIDTH,
 		SCREEN_HEIGHT,
@@ -212,15 +233,11 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 		SLOGE("SDL_CreateRGBSurface for MouseCursor failed: {}\n", SDL_GetError());
 	}
 
-	SDL_HideCursor();
-
 	// Initialize state variables
 	gfForceFullScreenRefresh = TRUE;
 
 	// This function must be called to setup RGB information
 	GetRGBDistribution();
-
-	TimeBetweenRefreshScreens = std::chrono::microseconds{1'000'000} / targetFPS;
 }
 
 
@@ -455,7 +472,9 @@ static void ScrollJA2Background(INT16 sScrollXIncrement, INT16 sScrollYIncrement
 void RefreshScreen(void)
 {
 	// Not initialised yet or already shut down?
-	if (!ScreenTexture) return;
+	if (!ScreenBuffer) return;
+
+	sgp::Clock::OnPresent();
 
 	const BOOLEAN scrolling = (gsScrollXIncrement != 0 || gsScrollYIncrement != 0);
 
@@ -528,6 +547,13 @@ void RefreshScreen(void)
 	ScreenTextureUpdateRect += blitted;
 	MouseBackground = blitted;
 
+	gfForceFullScreenRefresh = FALSE;
+	guiDirtyRegionCount = 0;
+	guiDirtyRegionExCount = 0;
+
+	// Headless: the composited ScreenBuffer is the final output.
+	if (!ScreenTexture) return;
+
 	SDL_Rect const UpdateRect{ ClipToSurface(ScreenTextureUpdateRect, ScreenBuffer) };
 	if (UpdateRect.w > 0 && UpdateRect.h > 0)
 	{
@@ -554,10 +580,6 @@ void RefreshScreen(void)
 	Visualizer::Render(GameRenderer);
 
 	FPS::RenderPresentPtr(GameRenderer);
-
-	gfForceFullScreenRefresh = FALSE;
-	guiDirtyRegionCount = 0;
-	guiDirtyRegionExCount = 0;
 }
 
 
@@ -566,10 +588,12 @@ void RefreshScreen(void)
 // declared in Video.h.
 void RefreshScreenCapped()
 {
-	static std::chrono::steady_clock::time_point LastRefresh;
+	static sgp::GameClock::time_point LastRefresh;
 
-	auto const now{ std::chrono::steady_clock::now() };
-	if (gsScrollXIncrement != 0 || gsScrollYIncrement != 0 ||
+	auto const now{ sgp::GameClock::now() };
+	// Under virtual time every frame is presented so that what a driver sees
+	// (screenshots, pixel reads, on-screen text) is always the current frame.
+	if (sgp::Clock::IsVirtual() || gsScrollXIncrement != 0 || gsScrollYIncrement != 0 ||
 	    now - LastRefresh >= TimeBetweenRefreshScreens)
 	{
 		LastRefresh = now;

@@ -64,6 +64,8 @@ INT32 OutOfBounds(INT16 sGridno, INT16 sProposedGridno);
 
 BOOLEAN GetMouseXY( INT16 *psMouseX, INT16 *psMouseY );
 BOOLEAN GetMouseWorldCoords( INT16 *psMouseX, INT16 *psMouseY );
+// Like GetMouseWorldCoords(), for an arbitrary point in the tactical viewport.
+BOOLEAN GetWorldCoordsAtScreenPos(INT16 sScreenX, INT16 sScreenY, INT16 *psWorldX, INT16 *psWorldY);
 
 void   GetAbsoluteScreenXYFromMapPos(GridNo pos, INT16* psWorldScreenX, INT16* psWorldScreenY);
 GridNo GetMapPosFromAbsoluteScreenXY(INT16 sWorldScreenX, INT16 sWorldScreenY);

@@ -3,6 +3,7 @@
 #include "Shading.h"
 #include "VObject_Blitters.h"
 #include "VSurface.h"
+#include "TextRegistry.h"
 
 #include "SDL3/SDL.h"
 #include <string_theory/format>
@@ -81,6 +82,7 @@ SGPVSurface::SGPVSurface(SDL_Surface* const s) :
 
 SGPVSurface::~SGPVSurface()
 {
+	TextRegistry::OnSurfaceDeleted(this);
 	for (SGPVSurface** anchor = &gpVSurfaceHead;; anchor = &(*anchor)->next_)
 	{
 		if (*anchor != this) continue;
@@ -235,6 +237,12 @@ void BltVideoSurface(SGPVSurface* const dst, SGPVSurface* const src, INT32 const
 	dstrect.x = iDestX;
 	dstrect.y = iDestY;
 	SDL_BlitSurface(src->surface_.get(), src_rect, dst->surface_.get(), &dstrect);
+
+	if (TextRegistry::IsEnabled())
+	{
+		SDL_Rect const from = src_rect ? *src_rect : SDL_Rect{ 0, 0, src->surface_->w, src->surface_->h };
+		TextRegistry::OnBlit(dst, src, from, iDestX, iDestY);
+	}
 }
 
 

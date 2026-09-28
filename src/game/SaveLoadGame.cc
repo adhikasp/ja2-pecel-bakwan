@@ -149,6 +149,8 @@ UINT32	guiLastSaveGameNum;
 UINT32	guiJA2EncryptionSet = 0;
 
 
+UINT32 guiSavedGameLoadCount = 0;
+
 ScreenID guiScreenToGotoAfterLoadingSavedGame = ERROR_SCREEN; // XXX TODO001A was not properly initialised (0)
 
 extern		UINT32		guiCurrentUniqueSoldierId;
@@ -1193,6 +1195,8 @@ void LoadSavedGame(const ST::string &saveName)
 	CallAvailableTeamEnemiesToAmbush(gMapInformation.sCenterGridNo);
 
 	OnGameLoaded();
+
+	++guiSavedGameLoadCount;
 }
 
 

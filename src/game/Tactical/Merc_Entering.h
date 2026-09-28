@@ -14,4 +14,7 @@ void HandleHeliDrop(void);
 
 extern BOOLEAN gfIngagedInDrop;
 
+// True while the helicopter is bringing mercs in (or flying off again).
+bool HeliDropInProgress();
+
 #endif

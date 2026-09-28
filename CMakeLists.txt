@@ -213,6 +213,10 @@ target_link_libraries(${JA2_BINARY} PRIVATE
 if (MINGW)
     target_link_libraries(${JA2_BINARY} PRIVATE ntdll)
 endif()
+if (WIN32)
+    # automation server (-serve) sockets
+    target_link_libraries(${JA2_BINARY} PRIVATE ws2_32)
+endif()
 if (ANDROID)
     target_link_libraries(${JA2_BINARY} PRIVATE android log)
 endif()
@@ -270,22 +274,51 @@ add_custom_target(run-${JA2_BINARY}-unittests
     DEPENDS "${JA2_BINARY}"
 )
 
-# --- E2E screen-automation tests ---
+# --- E2E tests: the real game, headless, driven by Lua scripts ---
+# They need the original game data (game_dir in your ja2.json) and Python 3
+# (tools/ja2ctl.py gives every run a fresh, throwaway home directory).
 if (WITH_UNITTESTS)
-    file(GLOB E2E_FILES "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
-    foreach(f ${E2E_FILES})
-        get_filename_component(n ${f} NAME_WE)
-        add_test(
-            NAME e2e_${n}
-            COMMAND "$<TARGET_FILE:${JA2_BINARY}>" -uitest ${f}
-            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${JA2_BINARY}>"
-        )
-    endforeach()
-    add_custom_target(run-${JA2_BINARY}-e2e
-        COMMAND ctest -R e2e --output-on-failure
-        WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
-        DEPENDS "${JA2_BINARY}"
+    enable_testing()
+    add_test(
+        NAME unittests
+        COMMAND "$<TARGET_FILE:${JA2_BINARY}>" -unittests
+        WORKING_DIRECTORY "$<TARGET_FILE_DIR:${JA2_BINARY}>"
     )
+
+    find_package(Python3 COMPONENTS Interpreter)
+    if (Python3_Interpreter_FOUND)
+        set(JA2CTL "${CMAKE_CURRENT_SOURCE_DIR}/tools/ja2ctl.py")
+        file(GLOB E2E_SCRIPTS
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.lua"
+            "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
+        foreach(f ${E2E_SCRIPTS})
+            get_filename_component(n ${f} NAME_WE)
+            add_test(
+                NAME e2e_${n}
+                COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${f}" --isolated
+                    --res 640x480 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/${n}"
+            )
+        endforeach()
+        foreach(check determinism sessions)
+            add_test(
+                NAME e2e_${check}
+                COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/check_${check}.py"
+            )
+        endforeach()
+        get_property(E2E_TESTS DIRECTORY PROPERTY TESTS)
+        list(FILTER E2E_TESTS INCLUDE REGEX "^e2e_")
+        set_tests_properties(${E2E_TESTS} PROPERTIES
+            LABELS e2e
+            ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>"
+        )
+        add_custom_target(run-${JA2_BINARY}-e2e
+            COMMAND ctest -L e2e --output-on-failure
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            DEPENDS "${JA2_BINARY}"
+        )
+    else()
+        message(STATUS "Python 3 not found: e2e tests are not registered")
+    endif()
 endif()
 
 

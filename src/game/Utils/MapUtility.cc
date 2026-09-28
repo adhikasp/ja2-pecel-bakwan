@@ -2,6 +2,7 @@
 #include "Overhead_Types.h"
 #include "SDL3/SDL_keycode.h"
 #include "SDL3/SDL_timer.h"
+#include "Clock.h"
 #include "SGP.h"
 #include "Font.h"
 #include "HImage.h"
@@ -252,7 +253,7 @@ template<> ScreenID HandleScreen<MAPUTILITY_SCREEN>()
 	{
 		// Wait two seconds to get the chance to see what is happening
 		// for debugging purposes.
-		SDL_Delay(2000);
+		sgp::Clock::Sleep(std::chrono::milliseconds{2000});
 	}
 
 	// Set next

@@ -1,10 +1,11 @@
 #ifndef __TIMER_CONTROL_H
 #define __TIMER_CONTROL_H
 
+#include "Clock.h"
 #include <chrono>
 #include <cstdint>
 
-using ReferenceClock = std::chrono::steady_clock;
+using ReferenceClock = sgp::GameClock;
 using TIMECOUNTER = std::chrono::time_point<ReferenceClock>;
 using std::chrono::milliseconds;
 using namespace std::chrono_literals;

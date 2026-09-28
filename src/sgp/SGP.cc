@@ -18,7 +18,9 @@
 
 #include "DefaultContentManager.h"
 #include "GameInstance.h"
-#include "UITestDriver.h"
+#include "Automation.h"
+#include "Clock.h"
+#include "Headless.h"
 #include "ModPackContentManager.h"
 #include "policy/GamePolicy.h"
 #include "RustInterface.h"
@@ -94,16 +96,8 @@ static void shutdownGame()
 	SDL_Quit();
 }
 
-/** Exit code used by uitest driver to signal failures. */
-static int g_uitest_exit_code = 0;
-
-/** Set the exit code for uitest mode (used by UITestDriver). */
-void uitestSetExitCode(int code) {
-	g_uitest_exit_code = code;
-}
-
 /** Deinitialize the game an exit. */
-static void deinitGameAndExit()
+static void deinitGameAndExit(int const exitCode = EXIT_SUCCESS)
 {
 	SLOGD("Deinitializing Game");
 	// If we are in Dead is Dead mode, save before exit
@@ -112,7 +106,7 @@ static void deinitGameAndExit()
 
 	shutdownGame();
 
-	exit(g_uitest_exit_code);
+	exit(exitCode);
 }
 
 
@@ -125,30 +119,73 @@ void requestGameExit()
 	SDL_PushEvent(&event);
 }
 
+
+void UpdateJA2Clock();
+
+namespace sgp
+{
+
+void DispatchInputEvent(SDL_Event const& event)
+{
+	switch (event.type)
+	{
+		case SDL_EVENT_KEY_DOWN:   KeyDown(&event.key);   break;
+		case SDL_EVENT_KEY_UP:     KeyUp(  &event.key);   break;
+		case SDL_EVENT_TEXT_INPUT: TextInput(&event.text); break;
+
+		case SDL_EVENT_MOUSE_BUTTON_DOWN: MouseButtonDown(&event.button); break;
+		case SDL_EVENT_MOUSE_BUTTON_UP:   MouseButtonUp(&event.button);   break;
+		case SDL_EVENT_MOUSE_MOTION:      MouseMove(&event.motion);       break;
+		case SDL_EVENT_MOUSE_WHEEL:       MouseWheelScroll(&event.wheel); break;
+
+		case SDL_EVENT_FINGER_MOTION: FingerMove(&event.tfinger); break;
+		case SDL_EVENT_FINGER_UP:     FingerUp(&event.tfinger);   break;
+		case SDL_EVENT_FINGER_DOWN:   FingerDown(&event.tfinger); break;
+
+		default: break;
+	}
+}
+
+
+static bool g_quitRequested = false;
+
+bool QuitRequested() { return g_quitRequested; }
+
+bool StepFrame()
+{
+	sgp::Clock::BeginFrame();
+
+	// Only system events are taken from SDL: a driven session gets its input
+	// exclusively from the driver, so a stray real mouse or keyboard (when a
+	// window is shown) cannot make a run non-reproducible.
+	SDL_Event event;
+	while (SDL_PollEvent(&event))
+	{
+		if (event.type == SDL_EVENT_QUIT) g_quitRequested = true;
+	}
+
+	if (!g_quitRequested)
+	{
+		::UpdateJA2Clock();
+		FPS::GameLoopPtr();
+	}
+
+	sgp::Clock::EndFrame();
+	return !g_quitRequested;
+}
+
+}
+
+
 static void MainLoop()
 {
 	bool s_doGameCycles{true};
-
-	// UITest driver instance — only used when g_uitest_mode is true
-	static UITestDriver s_uitest;
-	if (g_uitest_mode && !s_uitest.finished()) {
-		if (!s_uitest.loadScript(g_uitest_script_path)) {
-			// Setup/parse error: exit code 2 (distinct from assertion failure = 1)
-			uitestSetExitCode(2);
-			requestGameExit();
-		}
-	}
 
 	while (true)
 	{
 		// cycle until SDL_Quit is received
 		extern void UpdateJA2Clock();
 		UpdateJA2Clock();
-
-		// UITest driver pump — injects events and checks pixels
-		if (g_uitest_mode) {
-			s_uitest.pump();
-		}
 
 		SDL_Event event;
 		if (SDL_PollEvent(&event))
@@ -194,19 +231,10 @@ static void MainLoop()
 						KeyDown(&event.key);
 					}
 					break;
-				case SDL_EVENT_KEY_UP:   KeyUp(  &event.key); break;
-				case SDL_EVENT_TEXT_INPUT: TextInput(&event.text); break;
-
-				case SDL_EVENT_MOUSE_BUTTON_DOWN: MouseButtonDown(&event.button); break;
-				case SDL_EVENT_MOUSE_BUTTON_UP:   MouseButtonUp(&event.button);   break;
-				case SDL_EVENT_MOUSE_MOTION: MouseMove(&event.motion); break;
-				case SDL_EVENT_MOUSE_WHEEL: MouseWheelScroll(&event.wheel); break;
-
-				case SDL_EVENT_FINGER_MOTION: FingerMove(&event.tfinger); break;
-				case SDL_EVENT_FINGER_UP:     FingerUp(&event.tfinger); break;
-				case SDL_EVENT_FINGER_DOWN:   FingerDown(&event.tfinger); break;
 
 				case SDL_EVENT_QUIT: deinitGameAndExit(); break;
+
+				default: sgp::DispatchInputEvent(event); break;
 			}
 		}
 		else
@@ -326,10 +354,31 @@ int main(int argc, char* argv[])
 		}
 		#endif
 
+		// Automation flags (-run, -serve, -headless, ...) are not known to the
+		// Rust CLI parser, so take them out of argv first. They also decide
+		// where the log goes and which home directory is used.
+		Automation::Options automation;
+		{
+			std::string error;
+			if (!Automation::ParseCommandLine(argc, argv, automation, error))
+			{
+				std::cerr << "ja2: " << error << "\n\n" << Automation::Usage();
+				return Automation::EXIT_SCRIPT_ERROR;
+			}
+			for (int i = 1; i < argc; ++i)
+			{
+				if (std::strcmp(argv[i], "-help") == 0 || std::strcmp(argv[i], "--help") == 0)
+				{
+					std::cout << Automation::Usage() << "\n";
+				}
+			}
+			Automation::PreInit(automation);
+		}
+
 		// init locale and logging
 		{
 			std::vector<ST::string> problems = InitGlobalLocale();
-			Logger_initialize("ja2.log");
+			Logger_initialize(automation.logFile.empty() ? "ja2.log" : automation.logFile.c_str());
 			for (const ST::string& msg : problems)
 			{
 				SLOGW("{}", msg);
@@ -343,25 +392,6 @@ int main(int argc, char* argv[])
 				SLOGE("Failed to find home directory: {}", rustError);
 			}
 			return EXIT_FAILURE;
-		}
-
-				// Scan for -uitest flag before EngineOptions parses argv
-		// (the Rust CLI parser doesn't know about -uitest, so we strip it)
-		{
-			int src = 1;
-			int dst = 1;
-			while (src < argc) {
-				if (std::strcmp(argv[src], "-uitest") == 0 && src + 1 < argc) {
-					g_uitest_mode = true;
-					g_uitest_script_path = argv[src + 1];
-					src += 2;
-					SLOGI("UITest mode enabled \u2014 script: {}", g_uitest_script_path);
-				} else {
-					argv[dst++] = argv[src++];
-				}
-			}
-			argv[dst] = nullptr;
-			argc = dst;
 		}
 
 		RustPointer<EngineOptions> params(EngineOptions_create(configFolderPath.get(), argv, argc));
@@ -416,20 +446,23 @@ int main(int argc, char* argv[])
 
 		////////////////////////////////////////////////////////////
 
-		// In UITest mode, run as a background app so launching the test does not
-		// steal keyboard/window focus from whatever the user is doing. The window
-		// still renders and the CPU-side ScreenBuffer is still populated, so pixel
-		// reads and screenshots keep working. Must be set before SDL_Init.
-		if (g_uitest_mode) {
+		if (automation.Active())
+		{
+			// A driven session must never steal focus from the user.
 			SDL_SetHint(SDL_HINT_MAC_BACKGROUND_APP, "1");
 		}
 
-		SDL_Init(SDL_INIT_VIDEO);
+		// Headless sessions need SDL only for its event queue (quit requests).
+		SDL_Init(sgp::IsHeadless() ? SDL_INIT_EVENTS : SDL_INIT_VIDEO);
 
 		// restore output to the console (on windows when built with MINGW)
+		// Not for automation: its output is usually piped to the controller.
 	#ifdef __MINGW32__
-		freopen("CON", "w", stdout);
-		freopen("CON", "w", stderr);
+		if (!automation.Active())
+		{
+			freopen("CON", "w", stdout);
+			freopen("CON", "w", stderr);
+		}
 	#endif
 
 		SLOGD("Initializing Game Resources");
@@ -481,8 +514,9 @@ int main(int argc, char* argv[])
 		InitializeSoundManager();
 
 		SLOGD("Initializing Random");
-		// Initialize random number generator
-		InitializeRandom(); // no Shutdown
+		// Initialize random number generator (seeded by -seed in automation)
+		if (automation.Active()) SetRandomSeed(automation.Seed());
+		else InitializeRandom(); // no Shutdown
 
 		SLOGD("Initializing Game Manager");
 		// Initialize the Game
@@ -490,12 +524,26 @@ int main(int argc, char* argv[])
 
 		gfGameInitialized = TRUE;
 
-		if(isEnglishVersion() || isChineseVersion())
+		if (automation.noIntro)
+		{
+			extern BOOLEAN gfDoneWithSplashScreen;
+			gfDoneWithSplashScreen = TRUE;
+			SetSkipIntroVideos(true);
+		}
+		else if(isEnglishVersion() || isChineseVersion())
 		{
 			SetIntroType(INTRO_SPLASH);
 		}
 
 		SLOGD("Running Game");
+
+		if (automation.Active())
+		{
+			// The driver owns the loop: it steps frames as the script or the
+			// remote controller asks.
+			int const exitCode = Automation::Run();
+			deinitGameAndExit(exitCode);
+		}
 
 		/* At this point the SGP is set up, which means all I/O, Memory, tools, etc.
 		* are available. All we need to do is attend to the gaming mechanics

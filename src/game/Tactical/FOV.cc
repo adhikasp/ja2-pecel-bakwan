@@ -373,7 +373,7 @@ void RevealRoofsAndItems(SOLDIERTYPE* const pSoldier, const BOOLEAN fShowLocator
 				MPrint(90, 20, ST::format("{}", pSoldier->sGridNo));
 				InvalidateScreen( );
 				RefreshScreen();
-				SDL_Delay(30);
+				sgp::Clock::Sleep(std::chrono::milliseconds{30});
 			}
 #endif
 

@@ -54,6 +54,10 @@ struct MOUSE_REGION
 
 	bool HasFastHelp() { return FastHelpRect != nullptr; }
 
+	// A stable, untranslated name for widgets whose caption is part of an
+	// image. Never displayed; automation uses it to find the widget.
+	void SetName(char const* name) { Name = name; }
+
 	INT16 X() const { return RegionTopLeftX; }
 	INT16 Y() const { return RegionTopLeftY; }
 	INT16 W() const { return RegionBottomRightX - RegionTopLeftX; }
@@ -83,6 +87,8 @@ struct MOUSE_REGION
 	INT16            FastHelpTimer; // Countdown timer for FastHelp text
 	ST::utf32_buffer FastHelpText;  // Text string for the FastHelp (describes buttons if left there a while)
 	BACKGROUND_SAVE* FastHelpRect;
+
+	char const* Name = nullptr; // see SetName()
 
 	MOUSE_REGION* next; // List maintenance, do NOT touch these entries
 	MOUSE_REGION* prev;
@@ -151,6 +157,13 @@ void MSYS_Shutdown(void);
 void MSYS_DefineRegion(MOUSE_REGION *region,UINT16 tlx,UINT16 tly,UINT16 brx,UINT16 bry,INT8 priority,
 					   UINT16 crsr,MOUSE_CALLBACK movecallback,MOUSE_CALLBACK buttoncallback);
 void MSYS_RemoveRegion(MOUSE_REGION *region);
+
+/* Introspection for automation: visit every registered region, highest
+ * priority first (the order hit-testing uses). */
+void MSYS_ForEachRegion(std::function<void(MOUSE_REGION const&)> const&);
+
+/* The region that would receive a click at (x, y), or nullptr. */
+MOUSE_REGION const* MSYS_RegionAt(INT16 x, INT16 y);
 void RemoveRegions(std::span<MOUSE_REGION>);
 
 /* Set one of the user data entries in a mouse region */
@@ -272,6 +285,9 @@ class MouseRegion : private MOUSE_REGION
 		using MOUSE_REGION::RelativeXPos;
 		using MOUSE_REGION::RelativeYPos;
 		using MOUSE_REGION::SetFastHelpText;
+		using MOUSE_REGION::SetName;
 		using MOUSE_REGION::SetUserPtr;
 		using MOUSE_REGION::uiFlags;
+
+		MOUSE_REGION const* Region() const { return this; }
 };

@@ -16,6 +16,7 @@
 #include "ContentManager.h"
 #include "GameInstance.h"
 #include "Cinematics.h"
+#include "Timer.h"
 #include "Debug.h"
 #include "HImage.h"
 #include "VObject.h"
@@ -175,7 +176,7 @@ SMKFLIC* SmkPlayFlic(const char* const filename, const UINT32 left, const UINT32
 	}
 
 	// We have started to play the flick, so set start time and frame number
-	sf->start_tick = SDL_GetTicks();
+	sf->start_tick = GetClock();
 	sf->frame_no = 0;
 	// We're now playing, flag the flic for the poller to update
 	sf->flags |= SMK_FLIC_PLAYING;
@@ -259,7 +260,7 @@ static SMKFLIC* SmkGetFreeFlic(void)
 static void SmkSkipFrames(SMKFLIC* sf)
 {
 	// get target frame
-	UINT32 milliseconds = SDL_GetTicks() - sf->start_tick;
+	UINT32 milliseconds = GetClock() - sf->start_tick;
 	UINT32 frame_no = static_cast<UINT32>(milliseconds / sf->milliseconds_per_frame);
 
 	// skip until the target frame (video repeats if there is a ring frame)

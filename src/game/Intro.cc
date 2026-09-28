@@ -81,6 +81,13 @@ static char const* const gpzSmackerFileNames[] =
 //enums used for when the intro screen can come up, either begining game intro, or end game cinematic
 static INT8 gbIntroScreenMode = -1;
 
+static bool gfSkipIntroVideos = false;
+
+void SetSkipIntroVideos(bool const skip)
+{
+	gfSkipIntroVideos = skip;
+}
+
 
 static void EnterIntroScreen(void);
 static void ExitIntroScreen(void);
@@ -136,7 +143,10 @@ static void EnterIntroScreen(void)
 	SmkInitialize();
 
 	//get the index opf the first video to watch
-	iFirstVideoID = GetNextIntroVideo( SMKINTRO_FIRST_VIDEO );
+	if (!gfSkipIntroVideos || gbIntroScreenMode == INTRO_ENDING)
+	{
+		iFirstVideoID = GetNextIntroVideo( SMKINTRO_FIRST_VIDEO );
+	}
 
 
 	if( iFirstVideoID != -1 )

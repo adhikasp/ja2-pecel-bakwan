@@ -10,6 +10,7 @@
 #include "Random.h"
 #include "SoundMan.h"
 #include "Timer.h"
+#include "Clock.h"
 
 #include "ContentManager.h"
 #include "GameInstance.h"
@@ -160,6 +161,13 @@ SDL_AudioDeviceID gAudioDeviceID = SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK;
 SDL_AudioSpec gTargetAudioSpec;
 ma_decoder_config gTargetDecoderConfig;
 static SDL_AudioStream* gAudioStream = NULL;
+
+// Virtual audio: under a virtual clock there is no audio device. Channels are
+// consumed synchronously as virtual time advances, so sounds still end (and
+// SoundIsPlaying() flips) at exactly the moment they would with a device.
+static bool   gfVirtualAudio = false;
+static UINT64 guiVirtualAudioFrameDebt = 0; // in 1/1'000'000'000 frames
+static void SoundAdvanceVirtual(std::chrono::nanoseconds elapsed);
 
 // These synchronization primitives are used to signal between the buffer servicing thread and the sound callback thread
 // When the callback thread notices that the buffer for a channel is less than half filled, it will notify the stream processing
@@ -339,7 +347,7 @@ void SoundStopAll(void)
 {
 	if (!fSoundSystemInit) return;
 
-	SDL_PauseAudioDevice(gAudioDeviceID);
+	if (!gfVirtualAudio) SDL_PauseAudioDevice(gAudioDeviceID);
 	FOR_EACH(SOUNDTAG, i, pSoundList)
 	{
 		if (SoundStopChannel(i))
@@ -351,7 +359,7 @@ void SoundStopAll(void)
 			i->State                 = CHANNEL_FREE;
 		}
 	}
-	SDL_ResumeAudioDevice(gAudioDeviceID);
+	if (!gfVirtualAudio) SDL_ResumeAudioDevice(gAudioDeviceID);
 }
 
 
@@ -995,8 +1003,98 @@ void SDLCALL SoundCallback(void* userdata, SDL_AudioStream* stream, int addition
 /*
  * Initializes SDL Audio Subsystem and the channel ring buffers
  */
+static BOOLEAN SoundInitVirtual(void)
+{
+	SDL_zero(gTargetAudioSpec);
+	gTargetAudioSpec.freq     = SOUND_FREQ;
+	gTargetAudioSpec.format   = SOUND_FORMAT;
+	gTargetAudioSpec.channels = SOUND_CHANNELS;
+	gTargetDecoderConfig = ma_decoder_config_init(SOUND_MA_SOUND_FORMAT, gTargetAudioSpec.channels, gTargetAudioSpec.freq);
+
+	std::fill(std::begin(pSoundList), std::end(pSoundList), SOUNDTAG{});
+	for (auto channel = std::begin(pSoundList); channel != std::end(pSoundList); ++channel)
+	{
+		channel->pRingBuffer = (ma_pcm_rb*)ma_malloc(sizeof(ma_pcm_rb), NULL);
+		if (ma_pcm_rb_init(SOUND_MA_SOUND_FORMAT, SOUND_CHANNELS, SOUND_RING_BUFFER_SIZE, NULL, NULL, channel->pRingBuffer) != MA_SUCCESS)
+		{
+			SLOGE("SoundInitVirtual: ma_pcm_rb_init failed for channel {}", channel - pSoundList);
+			return FALSE;
+		}
+	}
+
+	gfVirtualAudio = true;
+	guiVirtualAudioFrameDebt = 0;
+	sgp::Clock::SetAdvanceListener(SoundAdvanceVirtual);
+	SLOGI("Sound: virtual audio (no device), driven by the virtual clock");
+	return TRUE;
+}
+
+
+/* Consume @a frames of audio from every playing channel without producing any
+ * output. Mirrors SoundCallback's channel state machine, but services ring
+ * buffers synchronously instead of via the service thread. */
+static void SoundConsumeVirtual(UINT32 frames)
+{
+	for (SOUNDTAG& Sound : pSoundList)
+	{
+		switch (Sound.State)
+		{
+			case CHANNEL_STOP:
+				Sound.State = CHANNEL_DEAD;
+				continue;
+
+			case CHANNEL_PLAY:
+			{
+				UINT32 remaining = frames;
+				while (remaining > 0)
+				{
+					FillRingBuffer(&Sound);
+					UINT32 n = remaining;
+					const void* src;
+					ma_result const r = ma_pcm_rb_acquire_read(Sound.pRingBuffer, &n, (void**)&src);
+					if (r != MA_SUCCESS && r != MA_AT_END) break;
+					if (n == 0)
+					{
+						if (Sound.DoneServicing) Sound.State = CHANNEL_DEAD;
+						break;
+					}
+					ma_pcm_rb_commit_read(Sound.pRingBuffer, n);
+					remaining -= n;
+				}
+				break;
+			}
+
+			default:
+				continue;
+		}
+	}
+}
+
+
+static void SoundAdvanceVirtual(std::chrono::nanoseconds const elapsed)
+{
+	if (!fSoundSystemInit || !gfVirtualAudio) return;
+
+	// Carry fractional frames over so that long runs do not drift.
+	guiVirtualAudioFrameDebt += static_cast<UINT64>(elapsed.count()) * SOUND_FREQ;
+	UINT64 frames = guiVirtualAudioFrameDebt / 1'000'000'000;
+	guiVirtualAudioFrameDebt %= 1'000'000'000;
+
+	// Keep each step well inside the ring buffer so servicing keeps up.
+	constexpr UINT32 CHUNK = SOUND_RING_BUFFER_SIZE / 4;
+	while (frames > 0)
+	{
+		UINT32 const n = static_cast<UINT32>(std::min<UINT64>(frames, CHUNK));
+		SoundConsumeVirtual(n);
+		frames -= n;
+	}
+}
+
+
 static BOOLEAN SoundInitHardware(void)
 {
+	if (sgp::Clock::IsVirtual()) return SoundInitVirtual();
+
 	try {
 		if (!SDL_InitSubSystem(SDL_INIT_AUDIO)) {
 			throw std::runtime_error(ST::format("SDL_InitSubSystem returned error: {}", SDL_GetError()).c_str());
@@ -1050,6 +1148,11 @@ static BOOLEAN SoundInitHardware(void)
  */
 static void SoundShutdownHardware(void)
 {
+	if (gfVirtualAudio)
+	{
+		sgp::Clock::SetAdvanceListener(nullptr);
+		gfVirtualAudio = false;
+	}
 	if (bufferServiceThread != NULL) {
 		{
 			std::lock_guard<std::mutex> lk(mutexBuffersNeedService);

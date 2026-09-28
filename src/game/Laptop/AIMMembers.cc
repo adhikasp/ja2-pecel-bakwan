@@ -314,6 +314,20 @@ UINT8        gbCurrentIndex = 0;
 
 AIMVideoMode        gubVideoConferencingMode         = AIM_VIDEO_NOT_DISPLAYED_MODE;
 static AIMVideoMode gubVideoConferencingPreviousMode = AIM_VIDEO_NOT_DISPLAYED_MODE;
+
+
+bool AimVideoConferenceIsBusy()
+{
+	switch (gubVideoConferencingMode)
+	{
+		case AIM_VIDEO_POPUP_MODE:
+		case AIM_VIDEO_INIT_MODE:
+		case AIM_VIDEO_POPDOWN_MODE:
+			return true;
+		default:
+			return gubVideoConferencingMode != gubVideoConferencingPreviousMode;
+	}
+}
 static BOOLEAN      gfJustSwitchedVideoConferenceMode;
 
 static BOOLEAN gfMercIsTalking=FALSE;

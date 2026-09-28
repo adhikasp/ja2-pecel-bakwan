@@ -10,6 +10,7 @@
 #include "GameInstance.h"
 #include "ContentManager.h"
 #include "Logger.h"
+#include "TextRegistry.h"
 
 typedef UINT16 GlyphIdx;
 
@@ -233,18 +234,48 @@ void FindFontCenterCoordinates(INT16 sLeft, INT16 sTop, INT16 sWidth, INT16 sHei
 }
 
 
+// Tell the text registry (automation) what was just printed where.
+static void RecordPrint(INT32 const x, INT32 const y, INT32 const width, const ST::utf32_buffer& codepoints, std::optional<UINT16> const colour)
+{
+	if (!TextRegistry::IsEnabled()) return;
+	SDL_Rect const printed{ x, y, width, GetFontHeight(FontDefault) };
+	SDL_Rect const region{ FontDestRegion.iLeft, FontDestRegion.iTop,
+		FontDestRegion.iRight - FontDestRegion.iLeft, FontDestRegion.iBottom - FontDestRegion.iTop };
+	SDL_Rect visible;
+	if (!SDL_GetRectIntersection(&printed, &region, &visible)) return;
+	ST::string text;
+	try { text = ST::string::from_utf32(codepoints); } catch (...) { return; }
+	TextRegistry::OnPrint(FontDestBuffer, visible, text, colour);
+}
+
+
+void RegisterPrintedText(SGPVSurface* const dst, INT32 const x, INT32 const y, const ST::utf32_buffer& codepoints)
+{
+	if (!TextRegistry::IsEnabled() || !dst) return;
+	SDL_Rect const printed{ x, y, StringPixLength(codepoints, FontDefault), GetFontHeight(FontDefault) };
+	ST::string text;
+	try { text = ST::string::from_utf32(codepoints); } catch (...) { return; }
+	TextRegistry::OnPrint(dst, printed, text, FontForeground16);
+}
+
+
 void GPrint(INT32 x, INT32 y, const ST::utf32_buffer& codepoints)
 {
-	SGPVSurface::Lock l(FontDestBuffer);
-	UINT16* const buf   = l.Buffer<UINT16>();
-	UINT32  const pitch = l.Pitch();
-	SGPFont const font  = FontDefault;
-	for (char32_t c : codepoints)
+	INT32 const x0 = x;
 	{
-		GlyphIdx const glyph = GetGlyphIndex(c);
-		Blt8BPPDataTo16BPPBufferTransparentClip(buf, pitch, font, x, y, glyph, &FontDestRegion);
-		x += GetWidth(font, glyph);
+		SGPVSurface::Lock l(FontDestBuffer);
+		UINT16* const buf   = l.Buffer<UINT16>();
+		UINT32  const pitch = l.Pitch();
+		SGPFont const font  = FontDefault;
+		for (char32_t c : codepoints)
+		{
+			GlyphIdx const glyph = GetGlyphIndex(c);
+			Blt8BPPDataTo16BPPBufferTransparentClip(buf, pitch, font, x, y, glyph, &FontDestRegion);
+			x += GetWidth(font, glyph);
+		}
 	}
+	// GPrint uses the glyphs' own palette, so there is no single ink colour.
+	RecordPrint(x0, y, x - x0, codepoints, std::nullopt);
 }
 
 
@@ -255,7 +286,9 @@ UINT32 MPrintChar(INT32 x, INT32 y, char32_t c)
 	{ SGPVSurface::Lock l(FontDestBuffer);
 		Blt8BPPDataTo16BPPBufferMonoShadowClip(l.Buffer<UINT16>(), l.Pitch(), font, x, y, glyph, &FontDestRegion, FontForeground16, FontBackground16, FontShadow16);
 	}
-	return GetWidth(font, glyph);
+	UINT32 const width = GetWidth(font, glyph);
+	RecordPrint(x, y, width, ST::utf32_buffer(&c, 1), FontForeground16);
+	return width;
 }
 
 
@@ -273,8 +306,11 @@ void MPrintBuffer(UINT16* pDestBuf, UINT32 uiDestPitchBYTES, INT32 x, INT32 y, c
 
 void MPrint(INT32 x, INT32 y, const ST::utf32_buffer& codepoints)
 {
-	SGPVSurface::Lock l(FontDestBuffer);
-	MPrintBuffer(l.Buffer<UINT16>(), l.Pitch(), x, y, codepoints);
+	{
+		SGPVSurface::Lock l(FontDestBuffer);
+		MPrintBuffer(l.Buffer<UINT16>(), l.Pitch(), x, y, codepoints);
+	}
+	RecordPrint(x, y, StringPixLength(codepoints, FontDefault), codepoints, FontForeground16);
 }
 
 

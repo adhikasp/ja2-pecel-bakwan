@@ -2,11 +2,11 @@
 #define TIMER_H
 
 #include "Types.h"
-#include "SDL3/SDL.h"
+#include "Clock.h"
 
 static inline UINT32 GetClock(void)
 {
-	return SDL_GetTicks();
+	return sgp::Clock::TicksMs();
 }
 
 #endif

@@ -91,6 +91,9 @@ BOOLEAN IsErrorSaveName(const ST::string &saveName);
 
 BOOLEAN SaveGame(const ST::string &saveName, const ST::string& gameDesc);
 void    LoadSavedGame(const ST::string &saveName);
+/* Number of saves loaded successfully since startup (lets a driver notice
+ * that a load has finished). */
+extern UINT32 guiSavedGameLoadCount;
 void BackupSavedGame(const ST::string &saveName);
 
 void SaveFilesToSavedGame(ST::string const& SrcFileName, HWFILE);

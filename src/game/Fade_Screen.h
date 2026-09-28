@@ -12,6 +12,7 @@ extern FADE_HOOK gFadeOutDoneCallback;
 
 extern BOOLEAN       gfFadeInitialized;
 extern BOOLEAN       gfFadeIn;
+extern BOOLEAN       gfFadeOut;
 
 BOOLEAN HandleBeginFadeIn(ScreenID uiScreenExit);
 BOOLEAN HandleBeginFadeOut(ScreenID uiScreenExit);

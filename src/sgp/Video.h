@@ -34,9 +34,11 @@ void InvalidateRegionEx(INT32 iLeft, INT32 iTop, INT32 iRight, INT32 iBottom);
 
 void RefreshScreen(void);
 
-/** Accessor for E2E test driver to read pixels from the composited frame.
- *  Only returns a surface when g_uitest_mode is set. */
-SDL_Surface* GetScreenBufferForTest();
+/** The composited frame (logical resolution, RGB565) as last presented. */
+SDL_Surface* GetScreenBuffer();
+
+/** Where the mouse cursor was drawn into the last presented frame. */
+SDL_Rect GetMouseCursorRect();
 
 // Creates a list to contain video Surfaces
 void InitializeVideoSurfaceManager(void);
