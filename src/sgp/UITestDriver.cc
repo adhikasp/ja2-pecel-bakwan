@@ -4,12 +4,13 @@
 #include "Video.h"
 #include "UILayout.h"
 
-#include <SDL.h>
+#include "SDL3/SDL.h"
 
 #include <cinttypes>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <fstream>
 #include <memory>
 #include <sstream>
@@ -86,8 +87,8 @@ static SDL_Keycode nameToKeycode(const std::string& name) {
     if (name == "F12")        return SDLK_F12;
     if (name.size() == 1) {
         char c = name[0];
-        if (c >= 'a' && c <= 'z') return static_cast<SDL_Keycode>(SDLK_a + (c - 'a'));
-        if (c >= 'A' && c <= 'Z') return static_cast<SDL_Keycode>(SDLK_a + (c - 'A'));
+        if (c >= 'a' && c <= 'z') return static_cast<SDL_Keycode>(SDLK_A + (c - 'a'));
+        if (c >= 'A' && c <= 'Z') return static_cast<SDL_Keycode>(SDLK_A + (c - 'A'));
         if (c >= '0' && c <= '9') return static_cast<SDL_Keycode>(SDLK_0 + (c - '0'));
     }
     return SDLK_UNKNOWN;
@@ -262,10 +263,11 @@ void UITestDriver::pump() {
     // 1. Handle pending button release (one-pump gap after down)
     if (m_pendingRelease.active) {
         SDL_Event up{};
-        up.type = SDL_MOUSEBUTTONUP;
+        up.type = SDL_EVENT_MOUSE_BUTTON_UP;
         up.button.button = m_pendingRelease.button;
-        up.button.x = static_cast<Uint32>(m_pendingRelease.x);
-        up.button.y = static_cast<Uint32>(m_pendingRelease.y);
+        up.button.down = false;
+        up.button.x = static_cast<float>(m_pendingRelease.x);
+        up.button.y = static_cast<float>(m_pendingRelease.y);
         SDL_PushEvent(&up);
         m_pendingRelease.active = false;
         // The click/rclick command deferred advancing the program counter until
@@ -443,9 +445,9 @@ void UITestDriver::execute(const UITestCommand& cmd) {
 
 void UITestDriver::moveTo(int x, int y) {
     SDL_Event e{};
-    e.type = SDL_MOUSEMOTION;
-    e.motion.x = static_cast<Sint32>(x);
-    e.motion.y = static_cast<Sint32>(y);
+    e.type = SDL_EVENT_MOUSE_MOTION;
+    e.motion.x = static_cast<float>(x);
+    e.motion.y = static_cast<float>(y);
     e.motion.xrel = 0;
     e.motion.yrel = 0;
     SDL_PushEvent(&e);
@@ -463,10 +465,11 @@ void UITestDriver::clickAt(int x, int y, Uint8 button) {
 
     // Push button down
     SDL_Event down{};
-    down.type = SDL_MOUSEBUTTONDOWN;
+    down.type = SDL_EVENT_MOUSE_BUTTON_DOWN;
     down.button.button = button;
-    down.button.x = static_cast<Uint32>(x);
-    down.button.y = static_cast<Uint32>(y);
+    down.button.down = true;
+    down.button.x = static_cast<float>(x);
+    down.button.y = static_cast<float>(y);
     down.button.clicks = 1;
     SDL_PushEvent(&down);
 
@@ -476,22 +479,22 @@ void UITestDriver::clickAt(int x, int y, Uint8 button) {
 
 void UITestDriver::pressKey(SDL_Keycode kc) {
     SDL_Event down{};
-    down.type = SDL_KEYDOWN;
-    down.key.keysym.sym = kc;
-    down.key.keysym.scancode = SDL_GetScancodeFromKey(kc);
-    down.key.state = SDL_PRESSED;
+    down.type = SDL_EVENT_KEY_DOWN;
+    down.key.key = kc;
+    down.key.scancode = SDL_GetScancodeFromKey(kc, nullptr);
+    down.key.down = true;
     SDL_PushEvent(&down);
 
     SDL_Event up{};
-    up.type = SDL_KEYUP;
-    up.key.keysym.sym = kc;
-    up.key.keysym.scancode = SDL_GetScancodeFromKey(kc);
-    up.key.state = SDL_RELEASED;
+    up.type = SDL_EVENT_KEY_UP;
+    up.key.key = kc;
+    up.key.scancode = SDL_GetScancodeFromKey(kc, nullptr);
+    up.key.down = false;
     SDL_PushEvent(&up);
 }
 
 void UITestDriver::typeText(const std::string& t) {
-    // Push SDL_TEXTINPUT events, one per (multi-byte) character in the string.
+    // Push SDL_EVENT_TEXT_INPUT events, one per (multi-byte) character in the string.
     // For ASCII text this pushes one event per character.
     // SDL expects UTF-8 text. We chunk the string naively; for non-ASCII text
     // this may need to be smarter but is fine for IMP name entry etc.
@@ -503,11 +506,14 @@ void UITestDriver::typeText(const std::string& t) {
         else if ((c & 0xF0) == 0xE0) seqLen = 3; // 3-byte
         else if ((c & 0xE0) == 0xC0) seqLen = 2; // 2-byte
 
-        std::string ch = t.substr(i, seqLen);
+        // SDL3 text events carry a pointer, not an inline buffer, and SDL does
+        // not copy it on push. Keep each chunk alive for the driver's lifetime
+        // (deque never relocates existing elements on push_back).
+        static std::deque<std::string> s_textStorage;
+        s_textStorage.push_back(t.substr(i, seqLen));
         SDL_Event e{};
-        e.type = SDL_TEXTINPUT;
-        std::strncpy(e.text.text, ch.c_str(), sizeof(e.text.text) - 1);
-        e.text.text[sizeof(e.text.text) - 1] = '\0';
+        e.type = SDL_EVENT_TEXT_INPUT;
+        e.text.text = s_textStorage.back().c_str();
         SDL_PushEvent(&e);
         i += seqLen;
     }
@@ -530,30 +536,11 @@ bool UITestDriver::readPixel(int x, int y, Uint8& r, Uint8& g, Uint8& b) {
         return false;
     }
 
-    if (SDL_LockSurface(sb) != 0) {
-        SLOGE("[uitest] SDL_LockSurface failed: {}", SDL_GetError());
+    Uint8 a = 0;
+    if (!SDL_ReadSurfacePixel(sb, x, y, &r, &g, &b, &a)) {
+        SLOGE("[uitest] SDL_ReadSurfacePixel failed: {}", SDL_GetError());
         return false;
     }
-
-    Uint8* p = static_cast<Uint8*>(sb->pixels)
-               + y * sb->pitch
-               + x * sb->format->BytesPerPixel;
-    Uint32 raw = 0;
-    switch (sb->format->BytesPerPixel) {
-    case 1: raw = *p; break;
-    case 2: raw = *reinterpret_cast<Uint16*>(p); break;
-    case 3:
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-        raw = (p[0] << 16) | (p[1] << 8) | p[2];
-#else
-        raw = p[0] | (p[1] << 8) | (p[2] << 16);
-#endif
-        break;
-    case 4: raw = *reinterpret_cast<Uint32*>(p); break;
-    }
-
-    SDL_GetRGB(raw, sb->format, &r, &g, &b);
-    SDL_UnlockSurface(sb);
     return true;
 }
 
@@ -610,41 +597,22 @@ void UITestDriver::screenshot(const std::string& path) {
     SLOGI("[uitest] screenshot saved to {}", bmpPath);
 
     // 2. JPEG (optimized for quick visual review by AI agents)
-    if (SDL_LockSurface(sb) != 0) {
-        SLOGE("[uitest] screenshot: SDL_LockSurface failed: {}", SDL_GetError());
-        return;
-    }
-
     // Convert surface pixels to RGB24 for stb
     int w = sb->w, h = sb->h;
     std::vector<unsigned char> rgb(w * h * 3);
     for (int y = 0; y < h; ++y) {
-        Uint8* row = static_cast<Uint8*>(sb->pixels) + y * sb->pitch;
         for (int x = 0; x < w; ++x) {
-            Uint32 raw = 0;
-            switch (sb->format->BytesPerPixel) {
-            case 1: raw = row[x]; break;
-            case 2: raw = reinterpret_cast<Uint16*>(row)[x]; break;
-            case 4: raw = reinterpret_cast<Uint32*>(row)[x]; break;
-            default: {
-                Uint8* p = row + x * sb->format->BytesPerPixel;
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-                raw = (p[0] << 16) | (p[1] << 8) | p[2];
-#else
-                raw = p[0] | (p[1] << 8) | (p[2] << 16);
-#endif
-                break;
+            Uint8 r = 0, g = 0, b = 0, a = 0;
+            if (!SDL_ReadSurfacePixel(sb, x, y, &r, &g, &b, &a)) {
+                SLOGE("[uitest] screenshot: SDL_ReadSurfacePixel failed: {}", SDL_GetError());
+                return;
             }
-            }
-            Uint8 r, g, b;
-            SDL_GetRGB(raw, sb->format, &r, &g, &b);
             size_t idx = static_cast<size_t>(y) * w * 3 + static_cast<size_t>(x) * 3;
             rgb[idx + 0] = r;
             rgb[idx + 1] = g;
             rgb[idx + 2] = b;
         }
     }
-    SDL_UnlockSurface(sb);
 
     std::string jpgPath = base + ".jpg";
     stbi_write_jpg(jpgPath.c_str(), w, h, 3, rgb.data(), 85);
