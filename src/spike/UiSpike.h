@@ -93,6 +93,30 @@ void SetAssetOverrideDir(std::string dir);
 std::string LoadAssetText(std::string const& name);
 std::vector<unsigned char> LoadAssetBytes(std::string const& name);
 
+/** Phase 1 style directions (docs/ui/style-directions.md): mock screens in RmlUi, one RCSS per direction over
+ * shared RML. direction = "a" | "b" | "c", screen = "mainmenu" | "squadbar" | "mapscreen". The RML/RCSS and the
+ * fonts are read from the style directory (assets/ui-styles, copied next to the game binary), so they can be
+ * edited without a rebuild. Esc closes (model().closeRequested). */
+std::unique_ptr<Screen> CreateStyleDemoScreen(SDL_Renderer*, std::string const& direction, std::string const& screen);
+extern char const* const StyleDirections[3];
+extern char const* const StyleScreens[3];
+/** Where CreateStyleDemoScreen reads from. Default: <base path>/ui-styles, or $JA2_UI_STYLES. */
+void        SetStyleDir(std::string dir);
+std::string StyleDir();
+
+/** Supplies images the host owns (merc faces from the player's game data) for "face-<n>" sources. Returns a new
+ * ARGB/RGBA surface (the caller frees it), or nullptr to fall back to a placeholder. */
+using ImageProvider = std::function<SDL_Surface*(std::string const& name)>;
+void         SetImageProvider(ImageProvider);
+bool         HasImageProvider();
+SDL_Surface* ProvideImage(std::string const& name);
+
+/** RmlUi warnings and errors logged since the last reset (tests assert the style mocks load cleanly). */
+int  RmlWarnings();
+void ResetRmlWarnings();
+/** Procedural texture ("gen-<name>" in RCSS) as straight-alpha RGBA32. Unknown name → empty result. */
+std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, int& h, bool& repeat);
+
 /** Finds an element by id (after an update), or returns false. */
 bool FindElement(Screen&, std::string const& id, SDL_FRect& out);
 /** Clicks an element by id like a user would (move, press, release). Returns false if it isn't there. */

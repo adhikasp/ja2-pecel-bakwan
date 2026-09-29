@@ -2,6 +2,7 @@
 // to SaveListModel through an RmlUi data model. Rendering goes through a small SDL_Renderer render interface
 // (derived from RmlUi's Backends/RmlUi_Renderer_SDL.cpp, without SDL_image).
 #include "UiSpike.h"
+#include "RmlCommon.h"
 
 #include <RmlUi/Core.h>
 
@@ -10,112 +11,6 @@
 
 namespace spike {
 namespace {
-
-class SdlRenderInterface : public Rml::RenderInterface
-{
-public:
-	// SDL's software rasterizer leaves seams between triangles at fractional coordinates (visible as dark
-	// lines along rounded borders), so on that renderer vertices are snapped to whole pixels.
-	explicit SdlRenderInterface(SDL_Renderer* r) : m_r(r), m_snap(std::string(SDL_GetRendererName(r)) == SDL_SOFTWARE_RENDERER) {}
-
-	Rml::CompiledGeometryHandle CompileGeometry(Rml::Span<const Rml::Vertex> v, Rml::Span<const int> i) override
-	{
-		return reinterpret_cast<Rml::CompiledGeometryHandle>(new Geometry{ v, i });
-	}
-	void ReleaseGeometry(Rml::CompiledGeometryHandle g) override { delete reinterpret_cast<Geometry*>(g); }
-
-	void RenderGeometry(Rml::CompiledGeometryHandle handle, Rml::Vector2f t, Rml::TextureHandle texture) override
-	{
-		// RmlUi hands out premultiplied colours. SDL's software renderer does not honour premultiplied blending
-		// for geometry, so everything is converted to straight alpha and drawn with SDL_BLENDMODE_BLEND.
-		Geometry const& g = *reinterpret_cast<Geometry*>(handle);
-		m_vertices.resize(g.vertices.size());
-		for (size_t i = 0; i < g.vertices.size(); ++i)
-		{
-			Rml::Vertex const& v = g.vertices[i];
-			float const a = v.colour.alpha / 255.f;
-			float const k = a > 0 ? 1.f / (255.f * a) : 0.f;
-			m_vertices[i].position  = { v.position.x + t.x, v.position.y + t.y };
-			if (m_snap) m_vertices[i].position = { std::round(m_vertices[i].position.x), std::round(m_vertices[i].position.y) };
-			m_vertices[i].tex_coord = { v.tex_coord.x, v.tex_coord.y };
-			m_vertices[i].color     = { std::min(1.f, v.colour.red * k), std::min(1.f, v.colour.green * k), std::min(1.f, v.colour.blue * k), a };
-		}
-		SDL_SetRenderDrawBlendMode(m_r, SDL_BLENDMODE_BLEND);
-		SDL_RenderGeometry(m_r, reinterpret_cast<SDL_Texture*>(texture), m_vertices.data(), int(m_vertices.size()),
-			g.indices.data(), int(g.indices.size()));
-	}
-
-	Rml::TextureHandle LoadTexture(Rml::Vector2i&, const Rml::String&) override { return {}; } // no images in the spike
-
-	Rml::TextureHandle GenerateTexture(Rml::Span<const Rml::byte> src, Rml::Vector2i dim) override
-	{
-		std::vector<Rml::byte> straight(src.begin(), src.end());
-		for (size_t i = 0; i + 3 < straight.size(); i += 4)
-		{
-			unsigned const a = straight[i + 3];
-			for (int c = 0; c < 3; ++c) straight[i + c] = Rml::byte(a ? std::min(255u, straight[i + c] * 255u / a) : 0);
-		}
-		SDL_Surface* s = SDL_CreateSurfaceFrom(dim.x, dim.y, SDL_PIXELFORMAT_RGBA32, straight.data(), dim.x * 4);
-		SDL_Texture* tex = SDL_CreateTextureFromSurface(m_r, s);
-		SDL_DestroySurface(s);
-		if (tex) SDL_SetTextureBlendMode(tex, SDL_BLENDMODE_BLEND);
-		return reinterpret_cast<Rml::TextureHandle>(tex);
-	}
-	void ReleaseTexture(Rml::TextureHandle t) override { SDL_DestroyTexture(reinterpret_cast<SDL_Texture*>(t)); }
-
-	void EnableScissorRegion(bool enable) override
-	{
-		m_scissorOn = enable;
-		SDL_SetRenderClipRect(m_r, enable ? &m_scissor : nullptr);
-	}
-	void SetScissorRegion(Rml::Rectanglei r) override
-	{
-		m_scissor = { r.Left(), r.Top(), r.Width(), r.Height() };
-		if (m_scissorOn) SDL_SetRenderClipRect(m_r, &m_scissor);
-	}
-
-private:
-	struct Geometry { Rml::Span<const Rml::Vertex> vertices; Rml::Span<const int> indices; };
-	SDL_Renderer*           m_r;
-	bool                    m_snap;
-	SDL_Rect                m_scissor{};
-	bool                    m_scissorOn = false;
-	std::vector<SDL_Vertex> m_vertices;
-};
-
-/** Time comes from the host (the game's virtual clock), so animations are deterministic headless. */
-class VirtualClock : public Rml::SystemInterface
-{
-public:
-	double now = 0;
-	double GetElapsedTime() override { return now; }
-	bool LogMessage(Rml::Log::Type type, const Rml::String& message) override
-	{
-		if (type <= Rml::Log::LT_WARNING) SDL_Log("RmlUi: %s", message.c_str());
-		return true;
-	}
-};
-
-VirtualClock& Clock()
-{
-	static VirtualClock clock;
-	return clock;
-}
-
-void InitRmlOnce()
-{
-	static bool done = false;
-	if (done) return;
-	done = true;
-	Rml::SetSystemInterface(&Clock());
-	Rml::Initialise();
-	// Font data must outlive Rml::Shutdown, which we never call: static storage.
-	static std::vector<unsigned char> regular = LoadAssetBytes("LatoLatin-Regular.ttf");
-	static std::vector<unsigned char> bold    = LoadAssetBytes("LatoLatin-Bold.ttf");
-	Rml::LoadFontFace({ regular.data(), regular.size() }, "Lato", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Normal, true);
-	Rml::LoadFontFace({ bold.data(), bold.size() }, "Lato", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Bold);
-}
-
 
 class RmlScreen final : public Screen
 {
@@ -185,7 +80,7 @@ public:
 
 	void update(double seconds) override
 	{
-		Clock().now += seconds;
+		RmlClock().now += seconds;
 		// The tooltip follows the mouse; place it in dp so the RCSS stays resolution independent.
 		float const dp = m_ctx->GetDensityIndependentPixelRatio();
 		float const tipX = (m_mx + 18 * dp) / dp;

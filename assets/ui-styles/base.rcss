@@ -1,0 +1,98 @@
+/* Shared structure for the Phase 1 style-direction mocks (docs/ui/style-directions.md).
+ * RmlUi has no user-agent stylesheet: everything is inline until styled. Layout is in dp at a 1920x1080
+ * reference; the host sets dp = min(w / 1920, h / 1080), so the mocks scale with the resolution.
+ * Colours, fonts and decoration live in a.rcss / b.rcss / c.rcss only. */
+
+body, div, p, h1, h2, h3 { display: block; }
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	font-size: 18dp;
+	font-family: Lato;
+}
+#root { position: absolute; left: 0; top: 0; right: 0; bottom: 0; overflow: hidden; }
+img { display: inline-block; }
+.layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+/* ------------------------------------------------------------------ main menu */
+.screen-mainmenu .brand  { position: absolute; }
+.screen-mainmenu .menu   { position: absolute; }
+.screen-mainmenu .intel  { position: absolute; }
+.screen-mainmenu .art    { position: absolute; }
+.screen-mainmenu .footer { position: absolute; left: 0; right: 0; bottom: 0; height: 44dp; display: flex; align-items: center; justify-content: space-between; padding: 0 48dp; }
+.item { display: flex; align-items: center; }
+.item .label { display: block; }
+.item .meta  { display: block; }
+.art-strip { display: flex; flex-wrap: wrap; }
+.art-face  { display: block; overflow: hidden; }
+.art-face img { width: 100%; height: 100%; }
+.kbd { display: inline-block; }
+
+/* ------------------------------------------------------------------ tactical squad bar */
+.world { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.world-label { position: absolute; left: 0; right: 0; top: 380dp; text-align: center; }
+.hud-top { position: absolute; top: 20dp; left: 24dp; display: flex; }
+.chip { display: flex; align-items: center; }
+.squadbar { position: absolute; left: 0; right: 0; bottom: 0; }
+.squad-head { display: flex; align-items: center; }
+.squad-tabs { display: flex; }
+.tab { display: block; }
+.cards { display: flex; }
+.card { display: flex; flex: 1 1 0; position: relative; overflow: hidden; }
+.portrait { position: relative; flex: 0 0 auto; overflow: hidden; }
+.portrait img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.ap { position: absolute; display: block; text-align: center; }
+.ap-v, .ap-k { display: block; }
+.card .body { flex: 1 1 0; display: block; overflow: hidden; }
+.name-row { display: flex; align-items: baseline; justify-content: space-between; }
+.stat { display: flex; align-items: center; }
+.stat .k { display: block; flex: 0 0 auto; }
+.stat .v { display: block; flex: 0 0 auto; text-align: right; }
+.bar { display: block; position: relative; flex: 1 1 0; overflow: hidden; }
+.bar .fill { position: absolute; left: 0; top: 0; bottom: 0; }
+.bar .lost { position: absolute; right: 0; top: 0; bottom: 0; }
+.weapon { display: flex; justify-content: space-between; }
+.actions { display: flex; }
+.btn { display: flex; align-items: center; justify-content: center; }
+
+/* ------------------------------------------------------------------ strategic map screen */
+.topbar { position: absolute; left: 0; top: 0; right: 0; display: flex; align-items: center; }
+.tb-tabs { display: flex; height: 100%; }
+.tb-tab { display: block; height: 100%; }
+.tb-spacer { flex: 1 1 0; }
+.tb-money, .tb-clock { display: flex; flex-direction: column; justify-content: center; }
+.tb-compress { display: flex; }
+.tc-btn { display: block; text-align: center; }
+.sidebar { position: absolute; left: 0; bottom: 0; overflow: hidden; }
+.sb-title { display: flex; justify-content: space-between; align-items: baseline; }
+.row { display: flex; align-items: center; }
+.row span { display: block; overflow: hidden; white-space: nowrap; }
+.c-name   { width: 118dp; }
+.c-assign { width: 104dp; }
+.c-loc    { width: 50dp; }
+.c-dest   { width: 50dp; }
+.c-hp     { flex: 1 1 0; }
+.c-con    { width: 76dp; text-align: right; }
+.minibar { display: block; position: relative; overflow: hidden; }
+.minibar .fill { position: absolute; left: 0; top: 0; bottom: 0; }
+.detail { display: flex; }
+.d-portrait { flex: 0 0 auto; overflow: hidden; position: relative; }
+.d-portrait img { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
+.d-info { flex: 1 1 0; }
+.d-stats { display: flex; flex-wrap: wrap; }
+.d-stat { display: block; width: 50%; }
+.kv { display: flex; justify-content: space-between; }
+.mapview { position: absolute; right: 0; bottom: 0; }
+.map-frame { position: absolute; }
+.col-labels { display: flex; }
+.col-labels span, .row-labels span { display: block; text-align: center; }
+.map-body { display: flex; }
+.row-labels { display: block; }
+.grid { display: flex; flex-wrap: wrap; position: relative; }
+.cell { display: block; position: relative; text-align: center; box-sizing: border-box; }
+.map-legend { position: absolute; display: flex; }
+.legend-item { display: block; }
+.swatch { display: inline-block; vertical-align: middle; }
+.msglog { position: absolute; }
+.msg { display: block; }

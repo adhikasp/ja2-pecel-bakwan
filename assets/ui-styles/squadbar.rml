@@ -1,0 +1,58 @@
+<rml>
+<head>
+	<title>Tactical squad bar (style direction mock)</title>
+	<link type="text/rcss" href="base.rcss"/>
+	<link type="text/rcss" href="theme.rcss"/>
+</head>
+<body class="screen-squadbar">
+<div id="root" data-model="demo">
+	<div class="world" id="world">
+		<div class="layer world-bg"></div>
+		<div class="layer world-tex"></div>
+		<div class="world-label">Tactical world view (placeholder)</div>
+	</div>
+
+	<div class="hud-top" id="hud-top">
+		<div class="chip"><span class="k">Sector</span><span class="v">B13 Drassen</span></div>
+		<div class="chip"><span class="k">Day 12</span><span class="v">14:35</span></div>
+		<div class="chip alert"><span class="k">Combat</span><span class="v">Your turn &#183; 3</span></div>
+	</div>
+
+	<div class="squadbar" id="squadbar">
+		<div class="squad-head">
+			<div class="squad-tabs">
+				<span class="tab active" id="tab-squad1">Squad 1</span>
+				<span class="tab" id="tab-squad2">Squad 2</span>
+				<span class="tab" id="tab-all">All mercs</span>
+			</div>
+			<div class="squad-note">Stance: crouched &#183; Ivan selected</div>
+			<div class="actions">
+				<div class="btn primary" id="btn-endturn"><span class="kbd">D</span><span class="btn-label">End turn</span></div>
+				<div class="btn" id="btn-map"><span class="kbd">M</span><span class="btn-label">Map</span></div>
+				<div class="btn" id="btn-stance"><span class="kbd">S</span><span class="btn-label">Stance</span></div>
+				<div class="btn" id="btn-options"><span class="kbd">O</span><span class="btn-label">Options</span></div>
+			</div>
+		</div>
+		<div class="squad-main">
+			<div class="cards">
+				<div class="card" data-for="m, i : mercs" data-if="i &lt; 6" data-attr-id="'merc' + i"
+					data-class-selected="m.selected" data-class-wounded="m.state == 'wounded'"
+					data-class-critical="m.state == 'critical'" data-class-tired="m.state == 'tired'">
+					<div class="portrait">
+						<img data-attr-src="m.face"/>
+						<div class="ap"><span class="ap-v">{{m.ap}}</span><span class="ap-k">AP</span></div>
+					</div>
+					<div class="body">
+						<div class="name-row"><span class="name">{{m.name}}</span><span class="state" data-if="m.state != 'ok'">{{m.state}}</span></div>
+						<div class="stat hp"><span class="k">HP</span><div class="bar"><div class="fill" data-style-width="m.hpPct"></div><div class="lost" data-style-width="m.bleedPct"></div></div><span class="v">{{m.hp}}</span></div>
+						<div class="stat br"><span class="k">BR</span><div class="bar"><div class="fill" data-style-width="m.breathPct"></div></div><span class="v">{{m.breath}}</span></div>
+						<div class="stat mo"><span class="k">MO</span><div class="bar"><div class="fill" data-style-width="m.moralePct"></div></div><span class="v">{{m.moraleText}}</span></div>
+						<div class="weapon"><span class="w-name">{{m.weapon}}</span><span class="ammo">{{m.ammo}}</span></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</rml>

@@ -67,6 +67,59 @@ TEST(UiSpike, DeleteThroughModal)
 	}
 }
 
+TEST(UiSpike, StyleDirectionsLoadCleanly)
+{
+	// Phase 1 style mocks: every direction x screen loads from ui-styles/ (next to the binary) without RmlUi
+	// warnings, lays out its key elements and draws. No game data: portraits use the procedural placeholder.
+	std::string const dir = spike::StyleDir();
+	if (!SDL_GetPathInfo((dir + "/base.rcss").c_str(), nullptr)) GTEST_SKIP() << "no " << dir;
+	for (char const* d : spike::StyleDirections)
+	{
+		for (char const* screen : spike::StyleScreens)
+		{
+			SDL_Surface* surface = SDL_CreateSurface(960, 540, SDL_PIXELFORMAT_ARGB8888);
+			SDL_Renderer* r = SDL_CreateSoftwareRenderer(surface);
+			ASSERT_NE(r, nullptr);
+			spike::ResetRmlWarnings();
+			{
+				auto s = spike::CreateStyleDemoScreen(r, d, screen);
+				s->setSize(960, 540);
+				s->update(1.0 / 60);
+				s->render();
+				SDL_FlushRenderer(r);
+				int ids = 0;
+				for (auto const& e : s->elements())
+				{
+					++ids;
+					EXPECT_GE(e.rect.x, -1.f) << d << " " << screen << " #" << e.id;
+					EXPECT_LE(e.rect.x + e.rect.w, 961.f) << d << " " << screen << " #" << e.id;
+					EXPECT_LE(e.rect.y + e.rect.h, 541.f) << d << " " << screen << " #" << e.id;
+				}
+				EXPECT_GT(ids, 5) << d << " " << screen;
+			}
+			EXPECT_EQ(spike::RmlWarnings(), 0) << d << " " << screen;
+			EXPECT_GT(Coverage(surface), 0.5) << d << " " << screen;
+			SDL_DestroyRenderer(r);
+			SDL_DestroySurface(surface);
+		}
+	}
+}
+
+TEST(UiSpike, ProceduralTextures)
+{
+	for (char const* name : { "grain", "grain-light", "scan", "hatch", "grid", "topo", "topo-dark", "vignette", "rays", "dots", "silhouette" })
+	{
+		int w = 0, h = 0;
+		bool repeat = false;
+		auto const px = spike::GenerateProcedural(name, w, h, repeat);
+		EXPECT_GT(w, 0) << name;
+		EXPECT_EQ(px.size(), size_t(w) * h * 4) << name;
+	}
+	int w = 0, h = 0;
+	bool repeat = false;
+	EXPECT_TRUE(spike::GenerateProcedural("nope", w, h, repeat).empty());
+}
+
 using namespace spike::world;
 
 TEST(WorldSpike, EtrleDecode)

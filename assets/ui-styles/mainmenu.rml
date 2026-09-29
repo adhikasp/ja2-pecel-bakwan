@@ -1,0 +1,51 @@
+<rml>
+<head>
+	<title>Main menu (style direction mock)</title>
+	<link type="text/rcss" href="base.rcss"/>
+	<link type="text/rcss" href="theme.rcss"/>
+</head>
+<body class="screen-mainmenu">
+<div id="root" data-model="demo">
+	<div class="layer bg"></div>
+	<div class="layer bg-tex"></div>
+	<div class="layer bg-deco"></div>
+	<div class="layer bg-vignette"></div>
+
+	<div class="art" id="art">
+		<div class="art-head">Personnel on file</div>
+		<div class="art-strip">
+			<div class="art-face" data-for="m, i : mercs" data-if="i &lt; 6"><img data-attr-src="m.face"/><div class="art-name">{{m.name}}</div></div>
+		</div>
+		<div class="art-caption">Key-art placeholder: faces load from your game data at runtime</div>
+	</div>
+
+	<div class="brand" id="brand">
+		<div class="kicker">Operation Arulco &#183; 1999</div>
+		<div class="title">Jagged Alliance 2</div>
+		<div class="subtitle">Stracciatella</div>
+		<div class="stamp">Top secret</div>
+	</div>
+
+	<div class="menu" id="menu">
+		<div class="menu-head">Main menu</div>
+		<div class="item primary" id="menu-continue"><span class="idx">01</span><span class="label">Continue</span><span class="meta">Day 12 &#183; 14:35 &#183; Drassen B13</span></div>
+		<div class="item" id="menu-new"><span class="idx">02</span><span class="label">New Game</span><span class="meta">Difficulty, iron man, sci-fi</span></div>
+		<div class="item" id="menu-load"><span class="idx">03</span><span class="label">Load Game</span><span class="meta">14 saves</span></div>
+		<div class="item" id="menu-options"><span class="idx">04</span><span class="label">Options</span><span class="meta">Video, audio, controls</span></div>
+		<div class="item" id="menu-credits"><span class="idx">05</span><span class="label">Credits</span><span class="meta">Sir-Tech and the Stracciatella team</span></div>
+		<div class="item quit" id="menu-quit"><span class="idx">06</span><span class="label">Quit</span><span class="meta">Back to the desktop</span></div>
+	</div>
+
+	<div class="intel" id="intel">
+		<div class="intel-head"><span class="intel-title">Situation report</span><span class="intel-code">SR-0412</span></div>
+		<div class="intel-body">The Queen's army holds 17 of Arulco's 19 town sectors. The rebels are dug in around Omerta. Air support: none. Contact on the ground: Miguel Cordona.</div>
+		<div class="intel-foot"><span>Last save</span><span>Day 12 &#183; $48,250 &#183; 9 mercs</span></div>
+	</div>
+
+	<div class="footer" id="footer">
+		<span class="ver">v0.21 &#183; native UI preview</span>
+		<span class="hint"><span class="kbd">Up</span><span class="kbd">Down</span> choose &#160; <span class="kbd">Enter</span> confirm &#160; <span class="kbd">Esc</span> back</span>
+	</div>
+</div>
+</body>
+</rml>

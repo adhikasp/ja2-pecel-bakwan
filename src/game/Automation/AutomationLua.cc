@@ -566,7 +566,7 @@ namespace
 		// easily reach it through play. what = "exitmenu" (a = direction), "placement", "quote"
 		// (a = quote number, spoken by the selected merc), "message" (a = text), "msgbox" (a = text),
 		// "loadscreen" (a = id), "prebattle" and "autoresolve" (fake a fight in the current sector).
-		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a) {
+		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a, sol::optional<sol::object> b) {
 			Guarded([&] {
 				if (what == "exitmenu")
 				{
@@ -617,6 +617,13 @@ namespace
 				{
 					// Phase 0 UI toolkit spike: the save/load spike screen in RmlUi or the in-house layer
 					UiSpikeOpen(what.substr(8));
+				}
+				else if (what == "styledemo")
+				{
+					// Phase 1 style directions: ja2.debug("styledemo", "a" | "b" | "c", "mainmenu" | "squadbar" | "mapscreen")
+					std::string const dir = a && a->is<std::string>() ? a->as<std::string>() : "a";
+					std::string const screen = b && b->is<std::string>() ? b->as<std::string>() : "mainmenu";
+					UiSpikeOpen("style:" + dir + ":" + screen);
 				}
 				else
 				{
