@@ -15,6 +15,12 @@
 
 #ifdef WITH_NATIVE_SPIKES
 #include "UiSpike.h"
+#include "WorldSpikeRaster.h"
+#include "Directories.h"
+#include "Logger.h"
+#include "HImage.h"
+#include "VObject.h"
+#include <cstdlib>
 
 namespace {
 struct Active
@@ -40,6 +46,43 @@ std::unique_ptr<Active> g_spike;
 std::string             g_pendingKind;
 ScreenID                g_pendingReturn = MAINMENU_SCREEN;
 
+/** "face-<n>": the merc's big portrait (FACES/BIGFACES/<n>.sti) from the player's game data, as an RGBA surface.
+ * Loaded at runtime only; nothing derived from it is written anywhere. */
+SDL_Surface* LoadFaceSurface(std::string const& name)
+{
+	int const index = std::atoi(name.c_str() + 5);
+	try
+	{
+		ST::string const file = ST::format(FACESDIR "/bigfaces/{02d}.sti", index);
+		AutoSGPVObject vo(AddVideoObjectFromFile(file));
+		if (vo->BPP() != 8) return nullptr;
+		ETRLEObject const& e = vo->SubregionProperties(0);
+		spike::world::Sprite const sp = spike::world::DecodeEtrle(vo->PixData(e), e.uiDataLength, e.usWidth, e.usHeight, 0, 0);
+		SDL_Surface* s = SDL_CreateSurface(sp.w, sp.h, SDL_PIXELFORMAT_RGBA32);
+		if (!s) return nullptr;
+		SGPPaletteEntry const* pal = vo->Palette();
+		for (int y = 0; y < sp.h; ++y)
+		{
+			auto* row = static_cast<Uint8*>(s->pixels) + y * s->pitch;
+			for (int x = 0; x < sp.w; ++x)
+			{
+				size_t const i = size_t(y) * sp.w + x;
+				SGPPaletteEntry const& c = pal[sp.index[i]];
+				row[x * 4 + 0] = c.r;
+				row[x * 4 + 1] = c.g;
+				row[x * 4 + 2] = c.b;
+				row[x * 4 + 3] = sp.mask[i] ? 255 : 0;
+			}
+		}
+		return s;
+	}
+	catch (std::exception const& ex)
+	{
+		SLOGW("style demo: no face {}: {}", index, ex.what());
+		return nullptr;
+	}
+}
+
 void Create()
 {
 	auto a = std::make_unique<Active>();
@@ -48,7 +91,18 @@ void Create()
 	a->surface  = SDL_CreateSurface(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_PIXELFORMAT_ARGB8888);
 	a->renderer = a->surface ? SDL_CreateSoftwareRenderer(a->surface) : nullptr;
 	if (!a->renderer) throw std::runtime_error(std::string("ui spike: ") + SDL_GetError());
-	a->screen = spike::CreateScreen(a->kind, a->renderer, spike::SaveListModel::Fake());
+	if (a->kind.rfind("style:", 0) == 0)
+	{
+		// "style:<direction>:<screen>" (Phase 1 style directions)
+		std::string const rest = a->kind.substr(6);
+		size_t const colon = rest.find(':');
+		spike::SetImageProvider(LoadFaceSurface);
+		a->screen = spike::CreateStyleDemoScreen(a->renderer, rest.substr(0, colon), colon == std::string::npos ? "mainmenu" : rest.substr(colon + 1));
+	}
+	else
+	{
+		a->screen = spike::CreateScreen(a->kind, a->renderer, spike::SaveListModel::Fake());
+	}
 	a->screen->setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
 	a->screen->mouseMove(gusMouseXPos, gusMouseYPos);
 	spike::Screen* const screen = a->screen.get();
@@ -85,7 +139,7 @@ void Present(SDL_Surface* s)
 
 void UiSpikeOpen(std::string const& kind)
 {
-	if (kind != "rml" && kind != "inhouse") throw std::runtime_error("ui spike: unknown toolkit " + kind);
+	if (kind != "rml" && kind != "inhouse" && kind.rfind("style:", 0) != 0) throw std::runtime_error("ui spike: unknown toolkit " + kind);
 	g_pendingKind = kind;
 	if (guiCurrentScreen != UI_SPIKE_SCREEN) g_pendingReturn = guiCurrentScreen;
 	g_spike.reset();

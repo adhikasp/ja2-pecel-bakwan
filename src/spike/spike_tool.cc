@@ -4,6 +4,9 @@
 //                                             hover | scrolled | modal) headless through SDL's software renderer
 //   ja2-spike perf [--quick]                  software-path frame times of both toolkits at 1080p and 4K
 //   ja2-spike renderpath [--quick] [--no-gpu] SDL_Renderer drivers vs SDL_GPU, offscreen (markdown table)
+//   ja2-spike style DIR SCREEN WxH OUT.png [HOVER_ID]
+//                                             render a Phase 1 style-direction mock (DIR = a | b | c, SCREEN =
+//                                             mainmenu | squadbar | mapscreen) from assets/ui-styles, no game data
 //   ja2-spike selftest OUTDIR                 CI check: both toolkits x all states render, respond to input and
 //                                             differ from an empty frame; writes the PNGs to OUTDIR
 #include "RenderPathSpike.h"
@@ -17,7 +20,7 @@ using namespace spike;
 
 static int Usage()
 {
-	std::fprintf(stderr, "usage: ja2-spike ui KIND WxH OUT.png [STATE] | perf [--quick] | renderpath [--quick] [--no-gpu] | selftest OUTDIR\n");
+	std::fprintf(stderr, "usage: ja2-spike ui KIND WxH OUT.png [STATE] | style DIR SCREEN WxH OUT.png [HOVER_ID] | perf [--quick] | renderpath [--quick] [--no-gpu] | selftest OUTDIR\n");
 	return 2;
 }
 
@@ -59,6 +62,31 @@ static int Ui(int argc, char** argv)
 	bool const ok = SavePng(res.surface, argv[4]);
 	SDL_DestroySurface(res.surface);
 	std::printf("%s %dx%d %s: %.1f ms -> %s\n", argv[2], w, h, state.c_str(), res.msFirst, argv[4]);
+	return ok ? 0 : 1;
+}
+
+static int Style(int argc, char** argv)
+{
+	int w, h;
+	if (argc < 6 || !ParseSize(argv[4], w, h)) return Usage();
+	SDL_Surface* surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_ARGB8888);
+	SDL_Renderer* r = surface ? SDL_CreateSoftwareRenderer(surface) : nullptr;
+	if (!r) throw std::runtime_error(SDL_GetError());
+	{
+		auto screen = CreateStyleDemoScreen(r, argv[2], argv[3]);
+		screen->setSize(w, h);
+		screen->mouseMove(-1000, -1000);
+		screen->update(1.0 / 60);
+		SDL_FRect e;
+		if (argc > 6 && FindElement(*screen, argv[6], e)) screen->mouseMove(e.x + e.w / 2, e.y + e.h / 2);
+		screen->update(1.0 / 60);
+		screen->render();
+		SDL_FlushRenderer(r);
+	}
+	SDL_DestroyRenderer(r);
+	bool const ok = SavePng(surface, argv[5]);
+	SDL_DestroySurface(surface);
+	std::printf("style %s %s %dx%d -> %s\n", argv[2], argv[3], w, h, argv[5]);
 	return ok ? 0 : 1;
 }
 
@@ -139,6 +167,7 @@ int main(int argc, char** argv)
 	try
 	{
 		if (cmd == "ui") return Ui(argc, argv);
+		if (cmd == "style") return Style(argc, argv);
 		if (cmd == "perf") return Perf(quick);
 		if (cmd == "selftest") return argc > 2 ? SelfTest(argv[2]) : Usage();
 		if (cmd == "renderpath")

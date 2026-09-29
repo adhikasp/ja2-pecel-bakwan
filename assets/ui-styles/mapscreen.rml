@@ -1,0 +1,96 @@
+<rml>
+<head>
+	<title>Strategic map screen (style direction mock)</title>
+	<link type="text/rcss" href="base.rcss"/>
+	<link type="text/rcss" href="theme.rcss"/>
+</head>
+<body class="screen-mapscreen">
+<div id="root" data-model="demo">
+	<div class="layer bg"></div>
+	<div class="layer bg-tex"></div>
+
+	<div class="mapview" id="mapview">
+		<div class="map-frame">
+			<div class="col-labels"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span></div>
+			<div class="map-body">
+				<div class="row-labels"><span>A</span><span>B</span><span>C</span><span>D</span><span>E</span><span>F</span><span>G</span><span>H</span><span>I</span><span>J</span><span>K</span><span>L</span><span>M</span><span>N</span><span>O</span><span>P</span></div>
+				<div class="grid" id="map-grid">
+					<div class="layer grid-tex"></div>
+					<div data-for="s : sectors" data-attr-class="s.cls"><span class="lbl">{{s.label}}</span></div>
+				</div>
+			</div>
+		</div>
+		<div class="map-legend" id="map-legend">
+			<span class="legend-item"><span class="swatch player"></span>Yours</span>
+			<span class="legend-item"><span class="swatch enemy"></span>Enemy</span>
+			<span class="legend-item"><span class="swatch strong"></span>Enemy stronghold</span>
+			<span class="legend-item"><span class="swatch fog"></span>Unexplored</span>
+			<span class="legend-item"><span class="swatch town"></span>Town</span>
+		</div>
+		<div class="msglog" id="msglog">
+			<div class="msg">14:20 &#160;Ivan has finished repairing the M-60.</div>
+			<div class="msg">14:31 &#160;Militia training in Drassen is complete (6 green, 2 regular).</div>
+			<div class="msg warn">14:35 &#160;Enemy patrol spotted moving towards C13.</div>
+		</div>
+	</div>
+
+	<div class="topbar" id="topbar">
+		<div class="tb-brand">Arulco</div>
+		<div class="tb-tabs">
+			<span class="tb-tab active" id="tab-map">Map</span>
+			<span class="tb-tab" id="tab-laptop">Laptop<span class="badge">2</span></span>
+			<span class="tb-tab" id="tab-tactical">Tactical</span>
+			<span class="tb-tab" id="tab-save">Save</span>
+			<span class="tb-tab" id="tab-options">Options</span>
+		</div>
+		<div class="tb-spacer"></div>
+		<div class="tb-money" id="money"><span class="k">Balance</span><span class="v">$48,250</span></div>
+		<div class="tb-clock" id="clock"><span class="k">Day 12 &#183; Tue</span><span class="v">14:35</span></div>
+		<div class="tb-compress" id="time-compress">
+			<span class="tc-btn" id="tc-pause">II</span>
+			<span class="tc-btn active" id="tc-5m">5m</span>
+			<span class="tc-btn" id="tc-30m">30m</span>
+			<span class="tc-btn" id="tc-1h">1h</span>
+			<span class="tc-btn" id="tc-6h">6h</span>
+		</div>
+	</div>
+
+	<div class="sidebar" id="sidebar">
+		<div class="sb-section team-section">
+			<div class="sb-title"><span class="t">Team</span><span class="count">9 mercs &#183; 3 squads</span></div>
+			<div class="team" id="team">
+				<div class="row team-head"><span class="c-name">Name</span><span class="c-assign">Assignment</span><span class="c-loc">Loc</span><span class="c-dest">Dest</span><span class="c-hp">Health</span><span class="c-con">Contract</span></div>
+				<div class="row" data-for="m, i : mercs" data-attr-id="'team' + i" data-class-selected="m.selected"
+					data-class-critical="m.state == 'critical'" data-class-asleep="m.state == 'asleep'">
+					<span class="c-name">{{m.name}}</span><span class="c-assign">{{m.assignment}}</span><span class="c-loc">{{m.location}}</span><span class="c-dest">{{m.destination}}</span>
+					<span class="c-hp"><span class="minibar"><span class="fill" data-style-width="m.hpPct"></span></span></span><span class="c-con">{{m.contract}}</span>
+				</div>
+			</div>
+		</div>
+
+		<div class="sb-section detail" id="merc-detail">
+			<div class="d-portrait" data-for="m, i : mercs" data-if="i == 0"><img data-attr-src="m.face"/></div>
+			<div class="d-info">
+				<div class="d-name">Ivan Dolvich</div>
+				<div class="d-sub">Squad 1 &#183; B13 Drassen &#183; Contract 11 days</div>
+				<div class="d-stats">
+					<div class="d-stat kv"><span class="k">Health</span><span class="v">88 / 92</span></div>
+					<div class="d-stat kv"><span class="k">Morale</span><span class="v">Good</span></div>
+					<div class="d-stat kv"><span class="k">Breath</span><span class="v">84</span></div>
+					<div class="d-stat kv"><span class="k">Level</span><span class="v">4</span></div>
+				</div>
+				<div class="d-weapon kv"><span class="k">AK-74</span><span class="v">30/30 &#183; 5.45mm</span></div>
+			</div>
+		</div>
+
+		<div class="sb-section sector-info" id="sector-info">
+			<div class="sb-title"><span class="t">B13 &#183; Drassen</span><span class="count">Town &#183; Airport</span></div>
+			<div class="kv"><span class="k">Loyalty</span><span class="v">64%</span></div>
+			<div class="kv"><span class="k">Militia</span><span class="v">6 green &#183; 2 regular</span></div>
+			<div class="kv"><span class="k">Enemies</span><span class="v">None detected</span></div>
+			<div class="kv"><span class="k">Mine</span><span class="v">None</span></div>
+		</div>
+	</div>
+</div>
+</body>
+</rml>

@@ -63,7 +63,9 @@ add_custom_command(
 
 add_library(ja2-spike-lib STATIC
     UiSpikeCommon.cc
+    RmlCommon.cc
     RmlSpike.cc
+    StyleDemo.cc
     InhouseSpike.cc
     RenderPathSpike.cc
     WorldSpikeRaster.cc

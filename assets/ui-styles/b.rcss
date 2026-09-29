@@ -1,0 +1,181 @@
+/* Direction B: NIGHT OPS
+ * A modern tactical HUD: near-black olive panels, hairline rules, condensed uppercase labels and monospaced
+ * readouts, one phosphor-green accent (night-vision) and amber for the selection. Quiet chrome, loud data.
+ *
+ * Palette                                   Type
+ *   void    #0B0F0D  panel   #121815          display  Barlow Condensed (OFL)  titles, labels, buttons
+ *   panel-2 #1A221E  line    #2A3630          body     Barlow (OFL)            prose, lists
+ *   line-2  #3E4F46                           numbers  Share Tech Mono (OFL)   readouts, codes, keys
+ *   text    #D7E2D9  dim     #8FA096  faint #5E6E65
+ *   accent  #9BE564 (phosphor)   select #F2B33D (amber)
+ *   ok #9BE564  info #5CC8E0  warn #F2B33D  danger #FF5A4E
+ */
+
+body { font-family: Barlow; color: #D7E2D9; }
+.kbd { font-family: "Share Tech Mono"; font-size: 14dp; padding: 0 6dp; margin: 0 4dp; border: 1dp #3E4F46; color: #9BE564; }
+
+/* ================================================================ main menu */
+.screen-mainmenu .bg          { background-color: #0B0F0D; }
+.screen-mainmenu .bg-tex      { decorator: image(gen-grid repeat); }
+.screen-mainmenu .bg-deco     { decorator: image(gen-scan repeat); }
+.screen-mainmenu .bg-vignette { decorator: image(gen-vignette); }
+
+.brand { left: 120dp; top: 104dp; width: 900dp; }
+.kicker { font-family: "Share Tech Mono"; font-size: 20dp; color: #9BE564; text-transform: uppercase; }
+.title { font-family: "Barlow Condensed"; font-weight: bold; font-size: 104dp; line-height: 104dp; margin-top: 8dp; color: #EEF4EF; text-transform: uppercase; }
+.subtitle { font-family: "Barlow Condensed"; font-weight: 500; font-size: 30dp; color: #8FA096; text-transform: uppercase; margin-top: 2dp; }
+.stamp {
+	position: absolute; left: 560dp; top: 14dp;
+	font-family: "Share Tech Mono"; font-size: 16dp; color: #F2B33D;
+	border: 1dp #F2B33D; padding: 2dp 10dp; text-transform: uppercase;
+}
+
+.menu { left: 120dp; top: 412dp; width: 680dp; border-top: 1dp #3E4F46; }
+.menu-head { font-family: "Share Tech Mono"; font-size: 15dp; color: #5E6E65; text-transform: uppercase; padding: 12dp 0 10dp 0; }
+.item { height: 66dp; padding: 0 20dp 0 20dp; border-left: 3dp #0B0F0D00; border-bottom: 1dp #1A221E; }
+.item .idx { width: 52dp; font-family: "Share Tech Mono"; font-size: 17dp; color: #5E6E65; }
+.item .label { font-family: "Barlow Condensed"; font-weight: 600; font-size: 36dp; color: #D7E2D9; text-transform: uppercase; }
+.item .meta { margin-left: auto; font-family: "Share Tech Mono"; font-size: 15dp; color: #5E6E65; }
+.item:hover { background-color: #9BE5641C; border-left-color: #9BE564; }
+.item:hover .label { color: #9BE564; }
+.item:hover .meta, .item:hover .idx { color: #9BE564; }
+.item.primary .label { color: #F2B33D; }
+.item.primary .idx { color: #F2B33D; }
+.item.quit .label { color: #8FA096; }
+
+.art { left: 1080dp; top: 104dp; width: 720dp; }
+.art-head { font-family: "Share Tech Mono"; font-size: 15dp; color: #5E6E65; text-transform: uppercase; margin-bottom: 12dp; border-bottom: 1dp #2A3630; padding-bottom: 8dp; }
+.art-face { width: 218dp; height: 150dp; margin: 0 14dp 14dp 0; background-color: #121815; border: 1dp #2A3630; position: relative; }
+.art-face img { position: absolute; left: 60dp; top: 6dp; width: 104dp; height: 120dp; image-color: #B8F59A; }
+.art-name { position: absolute; left: 10dp; bottom: 6dp; font-family: "Share Tech Mono"; font-size: 14dp; color: #9BE564; text-transform: uppercase; }
+.art-caption { font-family: "Share Tech Mono"; font-size: 13dp; margin-top: 2dp; color: #5E6E65; }
+
+.intel { left: 1080dp; top: 560dp; width: 688dp; background-color: #121815E8; border: 1dp #2A3630; border-top: 2dp #9BE564; padding: 22dp 26dp; }
+.intel-head { display: flex; justify-content: space-between; margin-bottom: 14dp; }
+.intel-title { font-family: "Barlow Condensed"; font-weight: 600; font-size: 26dp; text-transform: uppercase; color: #EEF4EF; }
+.intel-code { font-family: "Share Tech Mono"; font-size: 16dp; color: #9BE564; }
+.intel-body { font-size: 20dp; line-height: 30dp; color: #B9C6BC; }
+.intel-foot { display: flex; justify-content: space-between; margin-top: 16dp; padding-top: 10dp; border-top: 1dp #2A3630; font-family: "Share Tech Mono"; font-size: 15dp; color: #8FA096; }
+
+.footer { border-top: 1dp #1A221E; font-family: "Share Tech Mono"; color: #5E6E65; font-size: 14dp; }
+.hint { color: #8FA096; }
+
+/* ================================================================ tactical squad bar */
+.world-bg { background-color: #1A221E; }
+.world-tex { decorator: image(gen-grid repeat); }
+.world-label { font-family: "Share Tech Mono"; font-size: 18dp; color: #5E6E65; text-transform: uppercase; }
+.hud-top { left: 24dp; top: 20dp; }
+.chip { height: 38dp; padding: 0 14dp; margin-right: 8dp; background-color: #0B0F0DD8; border: 1dp #2A3630; }
+.chip .k { font-family: "Barlow Condensed"; font-weight: 600; font-size: 15dp; color: #8FA096; text-transform: uppercase; margin-right: 10dp; }
+.chip .v { font-family: "Share Tech Mono"; font-size: 19dp; color: #D7E2D9; }
+.chip.alert { border-color: #FF5A4E; }
+.chip.alert .k, .chip.alert .v { color: #FF5A4E; }
+
+.squadbar { height: 236dp; background-color: #0B0F0DF0; border-top: 1dp #3E4F46; }
+.squad-head { position: absolute; left: 0; right: 0; top: -36dp; height: 36dp; padding: 0 24dp; background-color: #0B0F0DC8; }
+.tab { height: 36dp; line-height: 36dp; padding: 0 18dp; font-family: "Barlow Condensed"; font-weight: 600; font-size: 17dp; color: #8FA096; text-transform: uppercase; border-bottom: 2dp #0B0F0D00; }
+.tab.active { color: #EEF4EF; border-bottom-color: #9BE564; }
+.squad-note { margin-left: auto; font-family: "Share Tech Mono"; font-size: 14dp; color: #5E6E65; }
+.squad-main { display: flex; padding: 14dp 16dp; height: 100%; }
+.cards { flex: 1 1 0; }
+.card { height: 190dp; margin-right: 10dp; background-color: #121815; border: 1dp #2A3630; padding: 10dp; }
+.card.selected { border-color: #F2B33D; background-color: #1A1A12; }
+.card.critical { border-color: #FF5A4E80; }
+.portrait { width: 96dp; height: 112dp; background-color: #1A221E; margin-right: 12dp; border: 1dp #2A3630; }
+.ap { left: 0; right: 0; bottom: 0; height: 26dp; background-color: #0B0F0DD0; }
+.ap-v { display: inline; font-family: "Share Tech Mono"; font-size: 18dp; line-height: 26dp; color: #9BE564; }
+.ap-k { display: inline; font-family: "Barlow Condensed"; font-weight: 600; font-size: 13dp; color: #8FA096; margin-left: 4dp; }
+.card.selected .ap-v { color: #F2B33D; }
+.name-row { margin-bottom: 10dp; overflow: hidden; }
+.name { font-family: "Barlow Condensed"; font-weight: bold; font-size: 25dp; color: #EEF4EF; text-transform: uppercase; }
+.state { margin-left: 8dp; font-family: "Share Tech Mono"; font-size: 13dp; color: #F2B33D; text-transform: uppercase; }
+.card.critical .state { color: #FF5A4E; }
+.stat { height: 22dp; }
+.stat .k { width: 28dp; font-family: "Barlow Condensed"; font-weight: 600; font-size: 14dp; color: #5E6E65; }
+.stat .v { width: 58dp; font-family: "Share Tech Mono"; font-size: 15dp; color: #D7E2D9; }
+.bar { height: 6dp; background-color: #2A3630; margin-right: 8dp; }
+.bar .lost { background-color: #FF5A4E30; }
+.hp .fill { background-color: #9BE564; }
+.card.wounded .hp .fill { background-color: #F2B33D; }
+.card.critical .hp .fill { background-color: #FF5A4E; }
+.card.critical .hp .v { color: #FF5A4E; }
+.br .fill { background-color: #5CC8E0; }
+.mo .fill { background-color: #D7E2D9; }
+.weapon { position: absolute; left: 10dp; right: 10dp; bottom: 8dp; padding-top: 6dp; border-top: 1dp #2A3630; font-size: 15dp; color: #8FA096; }
+.ammo { font-family: "Share Tech Mono"; color: #D7E2D9; }
+.actions { margin-left: 18dp; }
+.btn { height: 32dp; margin-left: 8dp; padding-right: 16dp; border: 1dp #3E4F46; justify-content: flex-start; padding-left: 10dp; }
+.btn .kbd { margin-right: 10dp; }
+.btn-label { font-family: "Barlow Condensed"; font-weight: 600; font-size: 19dp; text-transform: uppercase; }
+.btn:hover { background-color: #9BE5641C; border-color: #9BE564; }
+.btn.primary { background-color: #9BE564; border-color: #9BE564; color: #0B0F0D; }
+.btn.primary .kbd { color: #0B0F0D; border-color: #0B0F0D60; }
+
+/* ================================================================ strategic map screen */
+.screen-mapscreen .bg { background-color: #0B0F0D; }
+.screen-mapscreen .bg-tex { decorator: image(gen-scan repeat); }
+.topbar { height: 64dp; background-color: #121815; border-bottom: 1dp #2A3630; padding-right: 20dp; }
+.tb-brand { width: 190dp; padding-left: 26dp; font-family: "Barlow Condensed"; font-weight: bold; font-size: 28dp; text-transform: uppercase; color: #9BE564; }
+.tb-tab { line-height: 64dp; padding: 0 20dp; font-family: "Barlow Condensed"; font-weight: 600; font-size: 19dp; text-transform: uppercase; color: #8FA096; border-bottom: 3dp #12181500; }
+.tb-tab.active { color: #EEF4EF; border-bottom-color: #9BE564; }
+.badge { margin-left: 8dp; padding: 0 6dp; background-color: #F2B33D; color: #0B0F0D; font-family: "Share Tech Mono"; font-size: 14dp; }
+.tb-money, .tb-clock { padding: 0 20dp; border-left: 1dp #2A3630; height: 100%; }
+.tb-money .k, .tb-clock .k { font-family: "Barlow Condensed"; font-weight: 600; font-size: 13dp; color: #5E6E65; text-transform: uppercase; }
+.tb-money .v, .tb-clock .v { font-family: "Share Tech Mono"; font-size: 24dp; color: #EEF4EF; }
+.tb-money .v { color: #9BE564; }
+.tb-compress { margin-left: 14dp; border: 1dp #2A3630; }
+.tc-btn { width: 48dp; height: 36dp; line-height: 36dp; font-family: "Share Tech Mono"; font-size: 15dp; color: #8FA096; border-left: 1dp #2A3630; }
+.tc-btn.active { background-color: #9BE564; color: #0B0F0D; }
+
+.sidebar { top: 65dp; width: 640dp; background-color: #0E1310; border-right: 1dp #2A3630; padding: 18dp; }
+.sb-section { background-color: #121815; border: 1dp #2A3630; padding: 14dp 16dp; margin-bottom: 12dp; }
+.sb-title { padding-bottom: 8dp; margin-bottom: 4dp; border-bottom: 1dp #2A3630; }
+.sb-title .t { font-family: "Barlow Condensed"; font-weight: bold; font-size: 24dp; text-transform: uppercase; color: #EEF4EF; }
+.sb-title .count { font-family: "Share Tech Mono"; font-size: 14dp; color: #5E6E65; }
+.row { height: 34dp; font-size: 17dp; border-bottom: 1dp #1A221E; padding: 0 6dp; }
+.team-head { height: 28dp; font-family: "Barlow Condensed"; font-weight: 600; font-size: 14dp; color: #5E6E65; text-transform: uppercase; }
+.row.selected { background-color: #F2B33D22; border-left: 2dp #F2B33D; }
+.row.selected .c-name { color: #F2B33D; }
+.row.critical .c-name { color: #FF5A4E; }
+.row.asleep { color: #5E6E65; }
+.c-name { font-weight: 600; }
+.c-loc, .c-dest, .c-con { font-family: "Share Tech Mono"; font-size: 15dp; }
+.minibar { height: 5dp; background-color: #2A3630; margin-right: 12dp; }
+.minibar .fill { background-color: #9BE564; }
+.row.critical .minibar .fill { background-color: #FF5A4E; }
+.d-portrait { width: 112dp; height: 130dp; border: 1dp #2A3630; background-color: #1A221E; margin-right: 18dp; }
+.d-name { font-family: "Barlow Condensed"; font-weight: bold; font-size: 28dp; text-transform: uppercase; color: #EEF4EF; }
+.d-sub { font-family: "Share Tech Mono"; font-size: 14dp; color: #8FA096; margin-bottom: 10dp; }
+.d-stat { font-size: 16dp; padding-right: 18dp; line-height: 26dp; }
+.kv .k { color: #8FA096; }
+.kv .v { font-family: "Share Tech Mono"; color: #D7E2D9; }
+.d-weapon { margin-top: 8dp; padding-top: 6dp; border-top: 1dp #2A3630; font-size: 16dp; }
+.sector-info .kv { font-size: 17dp; line-height: 29dp; }
+
+.mapview { left: 640dp; top: 65dp; }
+.map-frame { left: 40dp; top: 24dp; }
+.col-labels { margin-left: 28dp; height: 26dp; }
+.col-labels span { width: 56dp; font-family: "Share Tech Mono"; font-size: 14dp; color: #5E6E65; }
+.row-labels { width: 28dp; }
+.row-labels span { height: 56dp; line-height: 56dp; font-family: "Share Tech Mono"; font-size: 14dp; color: #5E6E65; }
+.grid { width: 896dp; height: 896dp; background-color: #16201B; border: 1dp #3E4F46; }
+.grid-tex { decorator: image(gen-topo repeat); }
+.cell { width: 56dp; height: 56dp; border-right: 1dp #2A363090; border-bottom: 1dp #2A363090; }
+.cell .lbl { display: block; font-family: "Share Tech Mono"; font-size: 16dp; line-height: 55dp; color: #EEF4EF; }
+.cell.sea { background-color: #0B1418; }
+.cell.player { background-color: #9BE56440; }
+.cell.enemy { background-color: #FF5A4E38; }
+.cell.enemy.strong { background-color: #FF5A4E70; decorator: image(gen-hatch repeat); }
+.cell.fog { decorator: image(gen-dots repeat); background-color: #00000040; }
+.cell.selected { border: 2dp #F2B33D; }
+.map-legend { left: 1000dp; top: 34dp; width: 250dp; flex-direction: column; }
+.legend-item { font-family: "Barlow Condensed"; font-weight: 500; font-size: 17dp; color: #8FA096; text-transform: uppercase; margin-bottom: 10dp; }
+.swatch { width: 24dp; height: 14dp; margin-right: 10dp; border: 1dp #3E4F46; }
+.swatch.player { background-color: #9BE56460; }
+.swatch.enemy { background-color: #FF5A4E50; }
+.swatch.strong { background-color: #FF5A4EA0; }
+.swatch.fog { background-color: #16201B; decorator: image(gen-dots repeat); }
+.swatch.town { background-color: #16201B; }
+.msglog { left: 1000dp; top: 250dp; width: 232dp; border-top: 2dp #9BE564; background-color: #121815; padding: 12dp 14dp; }
+.msg { font-family: "Share Tech Mono"; font-size: 14dp; line-height: 20dp; margin-bottom: 10dp; color: #B9C6BC; }
+.msg.warn { color: #F2B33D; }

@@ -1,0 +1,177 @@
+/* Direction C: ARULCO '99
+ * The island itself: a late-90s travel-poster / field-guide look. Deep jungle greens and warm sand, a sunset
+ * sky, hibiscus red and a gold sun for accents. Tall poster headlines, friendly rounded controls, a mono face for
+ * the numbers. The brightest and most "tropical" of the three.
+ *
+ * Palette                                   Type
+ *   jungle  #0F2E28  jungle-2 #174238        display  Bebas Neue (OFL)   headlines, tabs, big numbers
+ *   jungle-3 #21564A leaf     #6FA35A        UI/body  Fira Sans (OFL)    everything else (Latin, Greek, Cyrillic)
+ *   sand    #F3E3C3  sand-2   #E4CFA5        numbers  Space Mono (OFL)   readouts, times, money
+ *   teal    #1F8A7A  lagoon   #2BB3B1
+ *   hibiscus #E0443E  sunset #F28A2E  gold #F5C542  dusk #3A1F3D
+ *   ok #6FA35A  info #2BB3B1  warn #F5C542  danger #E0443E
+ */
+
+body { font-family: "Fira Sans"; color: #F3E3C3; }
+.kbd { font-family: "Space Mono"; font-weight: bold; font-size: 13dp; line-height: 22dp; padding: 0 7dp; margin: 0 4dp; border-radius: 4dp; background-color: #F3E3C3; color: #0F2E28; }
+
+/* ================================================================ main menu */
+/* sunset sky in two gradient halves (RmlUi's gradients take two stops), a sunburst, then the jungle below */
+.screen-mainmenu .bg          { decorator: vertical-gradient(#3A1F3D #B8434A); bottom: 50%; }
+.screen-mainmenu .bg-tex      { decorator: vertical-gradient(#B8434A #F28A2E); top: 50%; bottom: 28%; }
+.screen-mainmenu .bg-deco     { decorator: image(gen-rays); bottom: 28%; }
+.screen-mainmenu .bg-vignette { top: 72%; background-color: #0F2E28; border-top: 10dp #1F8A7A; decorator: image(gen-topo-dark repeat); }
+
+.brand { left: 110dp; top: 80dp; width: 900dp; }
+.kicker { font-family: "Space Mono"; font-weight: bold; font-size: 18dp; color: #F5C542; text-transform: uppercase; }
+.title { font-family: "Bebas Neue"; font-size: 150dp; line-height: 140dp; margin-top: 8dp; color: #F3E3C3; font-effect: shadow(5dp 5dp #3A1F3D); }
+.subtitle { font-family: "Bebas Neue"; font-size: 46dp; color: #F5C542; margin-top: 0; font-effect: shadow(3dp 3dp #3A1F3D); }
+.stamp {
+	position: absolute; left: 356dp; top: 184dp;
+	font-family: "Bebas Neue"; font-size: 26dp; color: #F3E3C3; background-color: #E0443E;
+	border-radius: 16dp; padding: 2dp 16dp;
+}
+
+.menu { left: 1290dp; top: 96dp; width: 520dp; }
+.menu-head { font-family: "Space Mono"; font-weight: bold; font-size: 15dp; color: #F5C542; text-transform: uppercase; margin-bottom: 12dp; padding-left: 8dp; }
+.item { height: 70dp; margin-bottom: 12dp; padding: 0 26dp 0 22dp; background-color: #F3E3C3; border-radius: 35dp; }
+.item .idx { width: 44dp; font-family: "Space Mono"; font-weight: bold; font-size: 16dp; color: #1F8A7A; }
+.item .label { font-family: "Bebas Neue"; font-size: 40dp; color: #0F2E28; }
+.item .meta { margin-left: auto; font-size: 15dp; color: #21564A; }
+.item:hover { background-color: #E0443E; }
+.item:hover .label, .item:hover .meta, .item:hover .idx { color: #F3E3C3; }
+.item.primary { background-color: #F5C542; }
+.item.quit { background-color: #F3E3C3A0; }
+
+.art { left: 110dp; top: 792dp; width: 1100dp; }
+.art-head { display: none; }
+.art-face { width: 152dp; height: 184dp; margin-right: 18dp; border: 6dp #F3E3C3; border-radius: 12dp; background-color: #174238; position: relative; top: -60dp; }
+.art-face img { position: absolute; left: 10dp; top: 4dp; width: 120dp; height: 138dp; }
+.art-name { position: absolute; left: 0; right: 0; bottom: 0; height: 32dp; line-height: 34dp; text-align: center; background-color: #F3E3C3; font-family: "Bebas Neue"; font-size: 24dp; color: #0F2E28; }
+.art-caption { position: absolute; top: 140dp; font-size: 14dp; color: #6FA35A; }
+
+.intel { left: 1290dp; top: 660dp; width: 466dp; background-color: #F3E3C3; border-radius: 14dp; padding: 20dp 24dp; color: #0F2E28; border-left: 10dp #E0443E; }
+.intel-head { display: flex; justify-content: space-between; margin-bottom: 8dp; }
+.intel-title { font-family: "Bebas Neue"; font-size: 32dp; color: #0F2E28; }
+.intel-code { font-family: "Space Mono"; font-weight: bold; font-size: 15dp; color: #E0443E; }
+.intel-body { font-size: 17dp; line-height: 25dp; color: #21564A; }
+.intel-foot { display: flex; justify-content: space-between; margin-top: 12dp; font-family: "Space Mono"; font-size: 13dp; color: #1F8A7A; }
+
+.footer { color: #6FA35A; font-size: 15dp; }
+.hint { color: #F3E3C3; }
+
+/* ================================================================ tactical squad bar */
+.world-bg { background-color: #2B4A3A; }
+.world-tex { decorator: image(gen-topo-dark repeat); }
+.world-label { font-family: "Bebas Neue"; font-size: 30dp; color: #6FA35A; }
+.hud-top { left: 24dp; top: 20dp; }
+.chip { height: 42dp; padding: 0 18dp; margin-right: 10dp; background-color: #0F2E28E8; border-radius: 21dp; }
+.chip .k { font-size: 15dp; color: #6FA35A; margin-right: 10dp; }
+.chip .v { font-family: "Bebas Neue"; font-size: 26dp; color: #F3E3C3; }
+.chip.alert { background-color: #E0443E; }
+.chip.alert .k { color: #F3E3C3; }
+
+.squadbar { height: 250dp; background-color: #0F2E28; border-top: 6dp #1F8A7A; }
+.squad-head { position: absolute; left: 24dp; right: 24dp; top: -52dp; height: 40dp; }
+.tab { height: 40dp; line-height: 42dp; padding: 0 20dp; margin-right: 8dp; border-radius: 20dp; background-color: #0F2E28C0; font-family: "Bebas Neue"; font-size: 24dp; color: #6FA35A; }
+.tab.active { background-color: #F5C542; color: #0F2E28; }
+.squad-note { margin-left: auto; font-size: 15dp; color: #F3E3C3; background-color: #0F2E28C0; padding: 6dp 14dp; border-radius: 16dp; }
+.squad-main { display: flex; padding: 16dp 18dp; height: 100%; }
+.cards { flex: 1 1 0; }
+.card { height: 198dp; margin-right: 12dp; background-color: #174238; border-radius: 14dp; padding: 12dp; border: 2dp #174238; }
+.card.selected { border-color: #F5C542; background-color: #1D4E42; }
+.card.critical { border-color: #E0443E; }
+.portrait { width: 104dp; height: 124dp; background-color: #21564A; border-radius: 10dp; margin-right: 12dp; }
+.ap { right: 4dp; top: 4dp; width: 38dp; height: 38dp; border-radius: 19dp; background-color: #F5C542; }
+.ap-v { font-family: "Bebas Neue"; font-size: 24dp; line-height: 30dp; color: #0F2E28; }
+.ap-k { display: none; }
+.name-row { margin-bottom: 8dp; overflow: hidden; }
+.name { font-family: "Bebas Neue"; font-size: 32dp; line-height: 30dp; color: #F3E3C3; }
+.state { margin-left: 8dp; font-size: 12dp; font-weight: bold; color: #0F2E28; background-color: #F5C542; padding: 1dp 8dp; border-radius: 8dp; text-transform: uppercase; }
+.card.critical .state { background-color: #E0443E; color: #F3E3C3; }
+.stat { height: 22dp; }
+.stat .k { width: 28dp; font-weight: bold; font-size: 13dp; color: #6FA35A; }
+.stat .v { width: 58dp; font-family: "Space Mono"; font-size: 14dp; color: #F3E3C3; }
+.bar { height: 10dp; background-color: #0F2E28; border-radius: 5dp; margin-right: 8dp; }
+.bar .fill { border-radius: 5dp; }
+.bar .lost { background-color: #E0443E40; border-radius: 5dp; }
+.hp .fill { background-color: #E0443E; }
+.br .fill { background-color: #2BB3B1; }
+.mo .fill { background-color: #F5C542; }
+.weapon { position: absolute; left: 12dp; right: 12dp; bottom: 10dp; padding: 4dp 10dp; border-radius: 8dp; background-color: #0F2E28; font-size: 14dp; color: #E4CFA5; }
+.ammo { font-family: "Space Mono"; color: #F5C542; }
+.actions { margin-left: 18dp; }
+.btn { height: 40dp; margin-left: 8dp; padding-right: 16dp; background-color: #174238; border-radius: 23dp; justify-content: flex-start; padding-left: 10dp; }
+.btn .kbd { margin-right: 10dp; }
+.btn-label { font-family: "Bebas Neue"; font-size: 24dp; color: #F3E3C3; }
+.btn:hover { background-color: #21564A; }
+.btn.primary { background-color: #E0443E; }
+
+/* ================================================================ strategic map screen */
+.screen-mapscreen .bg { background-color: #0F2E28; }
+.screen-mapscreen .bg-tex { decorator: image(gen-topo repeat); }
+.topbar { height: 72dp; background-color: #174238; border-bottom: 5dp #1F8A7A; padding-right: 20dp; }
+.tb-brand { width: 190dp; padding-left: 28dp; font-family: "Bebas Neue"; font-size: 44dp; color: #F5C542; }
+.tb-tab { margin: 0 4dp; padding: 0 18dp; height: 44dp; line-height: 48dp; margin-top: 14dp; border-radius: 22dp; font-family: "Bebas Neue"; font-size: 26dp; color: #E4CFA5; }
+.tb-tab.active { background-color: #F3E3C3; color: #0F2E28; }
+.badge { margin-left: 6dp; padding: 0 7dp; border-radius: 9dp; background-color: #E0443E; color: #F3E3C3; font-family: "Space Mono"; font-weight: bold; font-size: 13dp; }
+.tb-money, .tb-clock { padding: 0 20dp; height: 100%; }
+.tb-money .k, .tb-clock .k { font-size: 13dp; color: #6FA35A; }
+.tb-money .v, .tb-clock .v { font-family: "Space Mono"; font-weight: bold; font-size: 24dp; color: #F3E3C3; }
+.tb-money .v { color: #F5C542; }
+.tb-compress { margin-left: 10dp; background-color: #0F2E28; border-radius: 22dp; padding: 4dp; }
+.tc-btn { width: 48dp; height: 36dp; line-height: 36dp; border-radius: 18dp; font-family: "Space Mono"; font-weight: bold; font-size: 14dp; color: #E4CFA5; }
+.tc-btn.active { background-color: #F5C542; color: #0F2E28; }
+
+.sidebar { top: 77dp; width: 640dp; background-color: #0F2E28; padding: 18dp; }
+.sb-section { background-color: #174238; border-radius: 14dp; padding: 14dp 18dp; margin-bottom: 14dp; }
+.sb-title { padding-bottom: 6dp; margin-bottom: 4dp; }
+.sb-title .t { font-family: "Bebas Neue"; font-size: 32dp; color: #F5C542; }
+.sb-title .count { font-size: 15dp; color: #6FA35A; }
+.row { height: 34dp; font-size: 17dp; padding: 0 8dp; border-radius: 8dp; }
+.team-head { height: 26dp; font-size: 13dp; font-weight: 600; color: #6FA35A; text-transform: uppercase; }
+.row.selected { background-color: #F3E3C3; color: #0F2E28; }
+.row.critical .c-name { color: #FF7A6E; }
+.row.asleep { color: #6FA35A; }
+.c-name { font-weight: 600; }
+.c-loc, .c-dest, .c-con { font-family: "Space Mono"; font-size: 14dp; }
+.minibar { height: 8dp; border-radius: 4dp; background-color: #0F2E28; margin-right: 12dp; }
+.minibar .fill { background-color: #E0443E; border-radius: 4dp; }
+.d-portrait { width: 112dp; height: 130dp; border-radius: 10dp; background-color: #21564A; margin-right: 18dp; }
+.d-name { font-family: "Bebas Neue"; font-size: 38dp; line-height: 36dp; color: #F3E3C3; }
+.d-sub { font-size: 15dp; color: #6FA35A; margin-bottom: 10dp; }
+.d-stat { font-size: 16dp; padding-right: 18dp; line-height: 26dp; }
+.kv .k { color: #9CC08A; }
+.kv .v { font-family: "Space Mono"; font-size: 15dp; color: #F3E3C3; }
+.d-weapon { margin-top: 8dp; padding: 4dp 10dp; border-radius: 8dp; background-color: #0F2E28; font-size: 16dp; }
+.sector-info .kv { font-size: 17dp; line-height: 29dp; }
+
+.mapview { left: 640dp; top: 77dp; }
+.map-frame { left: 36dp; top: 18dp; background-color: #F3E3C3; border-radius: 16dp; padding: 10dp 16dp 16dp 10dp; }
+.col-labels { margin-left: 28dp; height: 26dp; }
+.col-labels span { width: 56dp; font-family: "Bebas Neue"; font-size: 20dp; color: #21564A; }
+.row-labels { width: 28dp; }
+.row-labels span { height: 56dp; line-height: 58dp; font-family: "Bebas Neue"; font-size: 20dp; color: #21564A; }
+.grid { width: 896dp; height: 896dp; background-color: #A9CB8C; }
+.grid-tex { decorator: image(gen-topo-dark repeat); }
+.cell { width: 56dp; height: 56dp; border-right: 1dp #8FB47440; border-bottom: 1dp #8FB47440; }
+.cell .lbl { display: block; font-family: "Bebas Neue"; font-size: 24dp; line-height: 58dp; color: #0F2E28; }
+.cell.sea { background-color: #2BB3B1; border-color: #2BB3B1; }
+.cell.player { background-color: #1F8A7AB8; }
+.cell.player .lbl { color: #F3E3C3; }
+.cell.enemy { background-color: #E0443E80; }
+.cell.enemy.strong { background-color: #B02E2AD0; decorator: image(gen-hatch repeat); }
+.cell.enemy .lbl { color: #F3E3C3; }
+.cell.fog { background-color: #7F9A6A; decorator: image(gen-dots repeat); }
+.cell.selected { border: 3dp #F5C542; }
+.map-legend { left: 1000dp; top: 30dp; width: 250dp; flex-direction: column; }
+.legend-item { font-size: 17dp; color: #F3E3C3; margin-bottom: 10dp; }
+.swatch { width: 26dp; height: 18dp; margin-right: 10dp; border-radius: 5dp; }
+.swatch.player { background-color: #1F8A7A; }
+.swatch.enemy { background-color: #E07A6E; }
+.swatch.strong { background-color: #B02E2A; }
+.swatch.fog { background-color: #7F9A6A; }
+.swatch.town { background-color: #A9CB8C; }
+.msglog { left: 1000dp; top: 250dp; width: 232dp; background-color: #174238; border-radius: 14dp; padding: 14dp 16dp; }
+.msg { font-size: 15dp; line-height: 21dp; margin-bottom: 10dp; color: #E4CFA5; }
+.msg.warn { color: #F5C542; font-weight: bold; }

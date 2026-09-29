@@ -1,0 +1,191 @@
+/* Direction A: FIELD DOSSIER
+ * The 1999 game's AIM files, merc contracts and intel memos, redrawn clean: manila folders and typed paper on a
+ * dark olive desk, stencil headings, red rubber stamps. Warm, tactile, the most "JA2" of the three.
+ *
+ * Palette                                   Type
+ *   desk      #23241C  desk-2  #2E2F24        display  Stardos Stencil (OFL)  titles, tabs, big numbers
+ *   manila    #D8C391  manila-2 #BFA56E       typed    Courier Prime (OFL)    body copy, data, memos
+ *   paper     #EEE5CC  rule    #CBBC98        UI       Barlow Condensed (OFL) small labels, keys
+ *   ink       #221E17  ink-2   #5C5242
+ *   stamp red #A3302A  olive   #56602C  khaki #8C8158  steel #3F5A6B
+ *   ok #4E7A34  warn #B9801A  danger #A3302A
+ */
+
+body { font-family: "Courier Prime"; color: #221E17; }
+.kbd { font-family: "Barlow Condensed"; font-weight: 600; font-size: 14dp; padding: 1dp 6dp; margin: 0 4dp; border: 1dp #8C8158; color: #D8C391; }
+
+/* ================================================================ main menu */
+.screen-mainmenu .bg          { background-color: #23241C; }
+.screen-mainmenu .bg-tex      { decorator: image(gen-topo repeat); }
+.screen-mainmenu .bg-deco     { decorator: image(gen-grain-light repeat); opacity: 0.5; }
+.screen-mainmenu .bg-vignette { decorator: image(gen-vignette); }
+
+.brand { left: 120dp; top: 96dp; width: 800dp; color: #EEE5CC; }
+.kicker { font-size: 20dp; color: #BFA56E; text-transform: uppercase; }
+.title { font-family: "Stardos Stencil"; font-weight: bold; font-size: 84dp; line-height: 92dp; margin-top: 6dp; color: #EEE5CC; }
+.subtitle { font-size: 30dp; color: #D8C391; margin-top: 2dp; text-transform: uppercase; }
+.stamp {
+	position: absolute; left: 420dp; top: 150dp;
+	font-family: "Stardos Stencil"; font-weight: bold; font-size: 28dp; color: #C9443A;
+	border: 4dp #C9443A; border-radius: 6dp; padding: 2dp 14dp; text-transform: uppercase; opacity: 0.85;
+}
+
+/* the menu is a manila folder: a tab on top, typed index lines inside */
+.menu { left: 120dp; top: 378dp; width: 740dp; background-color: #D8C391; border-radius: 0 8dp 8dp 8dp; padding: 22dp 0 18dp 0; }
+.menu-head {
+	position: absolute; left: 0; top: -48dp; height: 48dp; width: 250dp; line-height: 52dp; padding-left: 24dp;
+	background-color: #D8C391;
+	font-family: "Stardos Stencil"; font-weight: bold; font-size: 24dp; text-transform: uppercase; color: #5C5242;
+}
+.item { height: 72dp; margin: 0 22dp; padding: 0 18dp; border-bottom: 1dp #BFA56E; }
+.item .idx { width: 56dp; font-weight: bold; font-size: 20dp; color: #8C8158; }
+.item .label { font-family: "Stardos Stencil"; font-weight: bold; font-size: 36dp; color: #221E17; }
+.item .meta { margin-left: auto; font-size: 17dp; color: #5C5242; }
+.item:hover { background-color: #EEE5CC; border-left: 6dp #A3302A; padding-left: 12dp; }
+.item.primary .idx { color: #A3302A; }
+.item.primary .label { color: #A3302A; }
+.item.quit { border-bottom-width: 0; }
+.item.quit .label { color: #5C5242; }
+
+/* personnel photos clipped to the file */
+.art { left: 960dp; top: 96dp; width: 860dp; }
+.art-head { font-family: "Stardos Stencil"; font-weight: bold; font-size: 22dp; color: #BFA56E; text-transform: uppercase; margin-bottom: 14dp; }
+.art-face {
+	width: 108dp; height: 124dp; margin-right: 12dp; padding: 8dp 8dp 34dp 8dp;
+	background-color: #EEE5CC; border: 1dp #CBBC98;
+	position: relative;
+}
+.art-face img { width: 108dp; height: 124dp; background-color: #CBBC98; }
+.art-name { position: absolute; left: 0; right: 0; bottom: 7dp; text-align: center; font-size: 17dp; font-weight: bold; color: #221E17; }
+.art-caption { margin-top: 12dp; font-size: 15dp; color: #8C8158; }
+
+/* the situation report is a typed memo */
+.intel { left: 960dp; top: 392dp; width: 740dp; background-color: #EEE5CC; padding: 30dp 36dp 26dp 36dp; decorator: image(gen-grain repeat); }
+.intel-head { display: flex; justify-content: space-between; border-bottom: 2dp #221E17; padding-bottom: 8dp; margin-bottom: 16dp; }
+.intel-title { font-family: "Stardos Stencil"; font-weight: bold; font-size: 30dp; text-transform: uppercase; }
+.intel-code { font-weight: bold; font-size: 20dp; color: #A3302A; }
+.intel-body { font-size: 21dp; line-height: 32dp; color: #221E17; }
+.intel-foot { display: flex; justify-content: space-between; margin-top: 20dp; padding-top: 10dp; border-top: 1dp #CBBC98; font-size: 17dp; color: #5C5242; }
+
+.footer { background-color: #1A1B15; color: #8C8158; font-size: 16dp; }
+.hint { color: #BFA56E; }
+
+/* ================================================================ tactical squad bar */
+.world-bg { background-color: #3A3D2F; }
+.world-tex { decorator: image(gen-grid repeat); }
+.world-label { font-size: 22dp; color: #8C8158; text-transform: uppercase; }
+.hud-top { left: 24dp; top: 20dp; }
+.chip { height: 40dp; padding: 0 16dp; margin-right: 10dp; background-color: #EEE5CC; }
+.chip .k { font-size: 15dp; font-weight: bold; color: #5C5242; text-transform: uppercase; margin-right: 10dp; }
+.chip .v { font-family: "Stardos Stencil"; font-weight: bold; font-size: 22dp; color: #221E17; }
+.chip.alert { background-color: #A3302A; }
+.chip.alert .k { color: #EEC9B5; }
+.chip.alert .v { color: #EEE5CC; }
+
+.squadbar { height: 268dp; background-color: #D8C391; border-top: 4dp #56602C; decorator: image(gen-grain repeat); }
+.squad-head { position: absolute; left: 24dp; right: 24dp; top: -46dp; height: 42dp; }
+.tab { height: 42dp; line-height: 44dp; padding: 0 22dp; margin-right: 6dp; background-color: #BFA56E;
+	font-family: "Stardos Stencil"; font-weight: bold; font-size: 20dp; color: #5C5242; text-transform: uppercase; }
+.tab.active { background-color: #D8C391; color: #221E17; }
+.squad-note { margin-left: auto; font-size: 16dp; color: #EEE5CC; }
+.squad-main { display: flex; padding: 14dp 18dp 16dp 18dp; height: 100%; }
+.cards { flex: 1 1 0; }
+.card { height: 204dp; margin-right: 12dp; background-color: #EEE5CC; border: 1dp #BFA56E; padding: 10dp; }
+.card.selected { border: 3dp #A3302A; padding: 8dp; }
+.portrait { width: 108dp; height: 132dp; background-color: #CBBC98; border: 4dp #FFFFFF; margin-right: 12dp; }
+.ap { right: 2dp; bottom: 2dp; width: 42dp; height: 42dp; border: 3dp #A3302A; background-color: #EEE5CCE0; padding-top: 3dp; }
+.ap-v { font-family: "Stardos Stencil"; font-weight: bold; font-size: 20dp; line-height: 20dp; color: #A3302A; }
+.ap-k { font-size: 11dp; font-weight: bold; color: #A3302A; }
+.name-row { margin-bottom: 8dp; overflow: hidden; }
+.name { font-family: "Stardos Stencil"; font-weight: bold; font-size: 26dp; color: #221E17; }
+.state { margin-left: 8dp; font-weight: bold; font-size: 14dp; color: #B9801A; text-transform: uppercase; }
+.card.critical .state { color: #A3302A; }
+.stat { height: 24dp; }
+.stat .k { width: 28dp; font-weight: bold; font-size: 14dp; color: #5C5242; }
+.stat .v { width: 58dp; font-weight: bold; font-size: 16dp; color: #221E17; }
+.bar { height: 10dp; background-color: #D9CCAA; margin-right: 8dp; }
+.bar .lost { decorator: image(gen-hatch repeat); background-color: #BFA56E; }
+.hp .fill { background-color: #A3302A; }
+.br .fill { background-color: #3F5A6B; }
+.mo .fill { background-color: #56602C; }
+.card.critical .hp .v { color: #A3302A; }
+.weapon { position: absolute; left: 10dp; right: 10dp; bottom: 8dp; padding-top: 6dp; border-top: 1dp #CBBC98; font-size: 16dp; color: #5C5242; }
+.ammo { font-weight: bold; color: #221E17; }
+.actions { margin-left: 18dp; }
+.btn { height: 42dp; margin-left: 8dp; padding-right: 16dp; background-color: #EEE5CC; border: 1dp #BFA56E; justify-content: flex-start; padding-left: 12dp; }
+.btn .kbd { color: #5C5242; border-color: #BFA56E; margin-right: 10dp; }
+.btn-label { font-family: "Stardos Stencil"; font-weight: bold; font-size: 20dp; text-transform: uppercase; }
+.btn:hover { background-color: #FFFFFF; }
+.btn.primary { background-color: #A3302A; border-color: #A3302A; color: #EEE5CC; }
+.btn.primary .kbd { color: #EEE5CC; border-color: #EEC9B5; }
+
+/* ================================================================ strategic map screen */
+.screen-mapscreen .bg { background-color: #23241C; }
+.screen-mapscreen .bg-tex { decorator: image(gen-topo repeat); }
+.topbar { height: 72dp; background-color: #3B4220; border-bottom: 3dp #1A1B15; padding-right: 20dp; color: #EEE5CC; }
+.tb-brand { width: 200dp; padding-left: 28dp; font-family: "Stardos Stencil"; font-weight: bold; font-size: 34dp; text-transform: uppercase; color: #D8C391; }
+.tb-tab { line-height: 74dp; padding: 0 22dp; font-family: "Stardos Stencil"; font-weight: bold; font-size: 22dp; text-transform: uppercase; color: #BFA56E; }
+.tb-tab.active { background-color: #D8C391; color: #221E17; }
+.badge { margin-left: 8dp; padding: 0 7dp; border-radius: 10dp; background-color: #A3302A; color: #EEE5CC; font-family: "Courier Prime"; font-size: 15dp; font-weight: bold; }
+.tb-money, .tb-clock { padding: 0 22dp; border-left: 1dp #56602C; height: 100%; }
+.tb-money .k, .tb-clock .k { font-size: 14dp; color: #BFA56E; text-transform: uppercase; }
+.tb-money .v, .tb-clock .v { font-family: "Stardos Stencil"; font-weight: bold; font-size: 28dp; color: #EEE5CC; }
+.tb-compress { margin-left: 16dp; }
+.tc-btn { width: 50dp; height: 38dp; line-height: 38dp; margin-left: 4dp; background-color: #EEE5CC; font-weight: bold; font-size: 16dp; color: #221E17; }
+.tc-btn.active { background-color: #A3302A; color: #EEE5CC; }
+
+.sidebar { top: 75dp; width: 640dp; background-color: #D8C391; padding: 18dp; decorator: image(gen-grain repeat); }
+.sb-section { background-color: #EEE5CC; padding: 16dp 18dp; margin-bottom: 14dp; }
+.sb-title { border-bottom: 2dp #221E17; padding-bottom: 6dp; margin-bottom: 6dp; }
+.sb-title .t { font-family: "Stardos Stencil"; font-weight: bold; font-size: 26dp; text-transform: uppercase; }
+.sb-title .count { font-size: 16dp; color: #5C5242; }
+.row { height: 34dp; font-size: 17dp; border-bottom: 1dp #D9CCAA; padding: 0 6dp; }
+.team-head { height: 28dp; font-family: "Barlow Condensed"; font-weight: 600; font-size: 15dp; color: #8C8158; text-transform: uppercase; }
+.row.selected { background-color: #221E17; color: #EEE5CC; }
+.row.critical .c-name { color: #A3302A; font-weight: bold; }
+.row.asleep { color: #8C8158; }
+.c-name { font-weight: bold; }
+.minibar { height: 9dp; background-color: #D9CCAA; margin-right: 12dp; }
+.minibar .fill { background-color: #A3302A; }
+.row.selected .minibar { background-color: #5C5242; }
+.row.selected .minibar .fill { background-color: #E0584C; }
+.d-portrait { width: 118dp; height: 136dp; border: 4dp #FFFFFF; background-color: #CBBC98; margin-right: 18dp; }
+.d-name { font-family: "Stardos Stencil"; font-weight: bold; font-size: 30dp; }
+.d-sub { font-size: 16dp; color: #5C5242; margin-bottom: 10dp; }
+.d-stat { font-size: 17dp; padding-right: 18dp; line-height: 26dp; }
+.kv .k { color: #5C5242; }
+.kv .v { font-weight: bold; }
+.d-weapon { margin-top: 8dp; padding-top: 6dp; border-top: 1dp #CBBC98; font-size: 17dp; }
+.sector-info .kv { font-size: 18dp; line-height: 30dp; }
+
+.mapview { left: 640dp; top: 75dp; }
+.map-frame { left: 36dp; top: 20dp; background-color: #EEE5CC; padding: 10dp 14dp 14dp 10dp; }
+.col-labels { margin-left: 28dp; height: 26dp; }
+.col-labels span { width: 56dp; font-weight: bold; font-size: 15dp; color: #5C5242; }
+.row-labels { width: 28dp; }
+.row-labels span { height: 56dp; line-height: 56dp; font-weight: bold; font-size: 15dp; color: #5C5242; }
+.grid { width: 896dp; height: 896dp; background-color: #C9BB8E; }
+.grid-tex { decorator: image(gen-grid repeat); }
+.cell { width: 56dp; height: 56dp; border-right: 1dp #B3A67C; border-bottom: 1dp #B3A67C; }
+.cell .lbl { display: block; font-family: "Stardos Stencil"; font-weight: bold; font-size: 20dp; line-height: 55dp; color: #221E17; }
+.cell.sea { background-color: #7E9A98; border-color: #7E9A98; }
+.cell.land { }
+.cell.player { background-color: #6E7C3AB0; }
+.cell.enemy { background-color: #A3302A70; }
+.cell.enemy.strong { background-color: #A3302AC0; decorator: image(gen-hatch repeat); }
+.cell.fog { decorator: image(gen-dots repeat); }
+.cell.town .lbl { color: #221E17; }
+.cell.player .lbl { color: #EEE5CC; }
+.cell.sam .lbl { font-size: 15dp; }
+.cell.selected { border: 3dp #221E17; }
+.map-legend { left: 1000dp; top: 30dp; width: 250dp; flex-direction: column; }
+.legend-item { font-size: 17dp; color: #D8C391; margin-bottom: 10dp; }
+.swatch { width: 26dp; height: 18dp; margin-right: 10dp; border: 1dp #CBBC98; }
+.swatch.player { background-color: #6E7C3A; }
+.swatch.enemy { background-color: #C47A6F; }
+.swatch.strong { background-color: #A3302A; }
+.swatch.fog { background-color: #C9BB8E; decorator: image(gen-dots repeat); }
+.swatch.town { background-color: #C9BB8E; }
+.msglog { left: 1000dp; top: 250dp; width: 232dp; background-color: #EEE5CC; padding: 14dp 16dp; }
+.msg { font-size: 16dp; line-height: 22dp; margin-bottom: 10dp; color: #221E17; }
+.msg.warn { color: #A3302A; font-weight: bold; }
