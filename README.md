@@ -1,0 +1,1 @@
+Screenshots for pull requests (images only, see AGENTS.md).
