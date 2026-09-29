@@ -42,6 +42,7 @@ if (WITH_UNITTESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/SGPStrings_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/string_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/TextRegistry_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/Video_unittest.cc
     )
 endif()
 

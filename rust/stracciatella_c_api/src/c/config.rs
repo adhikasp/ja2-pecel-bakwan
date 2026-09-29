@@ -5,8 +5,8 @@
 use std::ptr;
 
 use stracciatella::config::{
-    Cli, EngineOptions, EngineOptionsError, Ja2Json, Resolution, ScalingQuality, VanillaVersion,
-    find_stracciatella_home,
+    Cli, EngineOptions, EngineOptionsError, Ja2Json, Resolution, ScalingQuality, UiScale,
+    VanillaVersion, WindowMode, find_stracciatella_home,
 };
 
 use crate::c::common::*;
@@ -182,7 +182,7 @@ pub extern "C" fn EngineOptions_pushMod(ptr: *mut EngineOptions, name: *const c_
     engine_options.mods.push(name);
 }
 
-/// Gets the width of `EngineOptions.resolution`.
+/// Gets the width of `EngineOptions.resolution`. 0 (with height 0) means auto: the desktop size.
 #[unsafe(no_mangle)]
 pub extern "C" fn EngineOptions_getResolutionX(ptr: *const EngineOptions) -> u16 {
     let engine_options = unsafe_ref(ptr);
@@ -252,18 +252,32 @@ pub extern "C" fn EngineOptions_shouldRunEditor(ptr: *const EngineOptions) -> bo
     engine_options.run_editor
 }
 
-/// Gets `EngineOptions.start_in_fullscreen`.
+/// Gets `EngineOptions.window_mode`.
 #[unsafe(no_mangle)]
-pub extern "C" fn EngineOptions_shouldStartInFullscreen(ptr: *const EngineOptions) -> bool {
+pub extern "C" fn EngineOptions_getWindowMode(ptr: *const EngineOptions) -> WindowMode {
     let engine_options = unsafe_ref(ptr);
-    engine_options.start_in_fullscreen
+    engine_options.window_mode
 }
 
-/// Sets `EngineOptions.start_in_fullscreen`.
+/// Sets `EngineOptions.window_mode`.
 #[unsafe(no_mangle)]
-pub extern "C" fn EngineOptions_setStartInFullscreen(ptr: *mut EngineOptions, val: bool) {
+pub extern "C" fn EngineOptions_setWindowMode(ptr: *mut EngineOptions, mode: WindowMode) {
     let engine_options = unsafe_mut(ptr);
-    engine_options.start_in_fullscreen = val
+    engine_options.window_mode = mode
+}
+
+/// Gets `EngineOptions.ui_scale`: 0 means auto, otherwise 1 to 4.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_getUiScale(ptr: *const EngineOptions) -> u8 {
+    let engine_options = unsafe_ref(ptr);
+    engine_options.ui_scale.0
+}
+
+/// Sets `EngineOptions.ui_scale`: 0 means auto, otherwise 1 to 4 (larger values are clamped).
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_setUiScale(ptr: *mut EngineOptions, scale: u8) {
+    let engine_options = unsafe_mut(ptr);
+    engine_options.ui_scale = UiScale(scale.min(stracciatella::config::MAX_UI_SCALE));
 }
 
 /// Gets `EngineOptions.scaling_quality`.
@@ -281,13 +295,6 @@ pub extern "C" fn EngineOptions_setScalingQuality(
 ) {
     let engine_options = unsafe_mut(ptr);
     engine_options.scaling_quality = scaling_quality
-}
-
-/// Gets `EngineOptions.start_in_window`.
-#[unsafe(no_mangle)]
-pub extern "C" fn EngineOptions_shouldStartInWindow(ptr: *const EngineOptions) -> bool {
-    let engine_options = unsafe_ref(ptr);
-    engine_options.start_in_window
 }
 
 /// Gets `EngineOptions.start_in_debug_mode`.
@@ -398,7 +405,8 @@ mod tests {
   "res": "100x100",
   "brightness": -1.0,
   "resversion": "ENGLISH",
-  "fullscreen": false,
+  "ui_scale": "auto",
+  "window_mode": "BorderlessDesktop",
   "scaling": "PERFECT",
   "debug": false,
   "nosound": false

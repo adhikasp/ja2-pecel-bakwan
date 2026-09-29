@@ -14,6 +14,7 @@
 #include <string_theory/string>
 
 #include <algorithm>
+#include <set>
 #include <vector>
 #include <limits>
 
@@ -48,6 +49,8 @@ const std::vector< std::pair<int, int> > predefinedResolutions = {
 	std::make_pair(1600, 900),
 	std::make_pair(1920, 1080)
 };
+const std::vector<int> uiScaleValues = { 0, 1, 2, 3, 4 }; // 0 = auto
+
 const std::vector<VideoScaleQuality> scalingModes = {
 	VideoScaleQuality::LINEAR,
 	VideoScaleQuality::NEAR_PERFECT,
@@ -128,6 +131,8 @@ void Launcher::show() {
 	gameVersionInput->callback( (Fl_Callback*)selectGameVersion, (void*)(this) );
 	guessVersionButton->callback( (Fl_Callback*)guessVersion, (void*)(this) );
 	scalingModeChoice->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
+	uiScaleChoice->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
+	autoResolutionCheckbox->callback( (Fl_Callback*)autoResolutionChanged, (void*)(this) );
 	resolutionXInput->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
 	resolutionYInput->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
 	RustPointer<char> game_json_path(findPathFromAssetsDir("externalized/game.json", true, true));
@@ -136,7 +141,9 @@ void Launcher::show() {
 	} else {
 		gameSettingsOutput->value("failed to find path to game.json");
 	}
-	fullscreenCheckbox->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
+	windowedRadio->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
+	borderlessRadio->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
+	fullscreenRadio->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
 	playSoundsCheckbox->callback( (Fl_Callback*)widgetChanged, (void*)(this) );
 	RustPointer<char> ja2_json_path(findPathFromStracciatellaHome(this->engineOptions.get(), "ja2.json", false, true));
 	if (ja2_json_path) {
@@ -221,8 +228,15 @@ void Launcher::initializeInputsFromDefaults() {
 	int x = EngineOptions_getResolutionX(this->engineOptions.get());
 	int y = EngineOptions_getResolutionY(this->engineOptions.get());
 
-	resolutionXInput->value(x);
-	resolutionYInput->value(y);
+	// 0x0 means "auto": the desktop size
+	bool autoResolution = (x == 0 || y == 0);
+	autoResolutionCheckbox->value(autoResolution ? 1 : 0);
+	resolutionXInput->value(autoResolution ? 640 : x);
+	resolutionYInput->value(autoResolution ? 480 : y);
+	setResolutionInputsActive(!autoResolution);
+
+	int uiScale = EngineOptions_getUiScale(this->engineOptions.get());
+	uiScaleChoice->value(std::clamp(uiScale, 0, (int)uiScaleValues.size() - 1));
 
 	VideoScaleQuality quality = EngineOptions_getScalingQuality(this->engineOptions.get());
 	int scalingModeIndex = 0;
@@ -234,13 +248,23 @@ void Launcher::initializeInputsFromDefaults() {
 	}
 	this->scalingModeChoice->value(scalingModeIndex);
 
-	fullscreenCheckbox->value(EngineOptions_shouldStartInFullscreen(this->engineOptions.get()) ? 1 : 0);
+	WindowMode windowMode = EngineOptions_getWindowMode(this->engineOptions.get());
+	windowedRadio->value(windowMode == WindowMode::Windowed ? 1 : 0);
+	borderlessRadio->value(windowMode == WindowMode::BorderlessDesktop ? 1 : 0);
+	fullscreenRadio->value(windowMode == WindowMode::Fullscreen ? 1 : 0);
 	playSoundsCheckbox->value(EngineOptions_shouldStartWithoutSound(this->engineOptions.get()) ? 0 : 1);
 	update(false);
 }
 
 int Launcher::writeJsonFile() {
-	EngineOptions_setStartInFullscreen(this->engineOptions.get(), fullscreenCheckbox->value());
+	WindowMode windowMode = WindowMode::BorderlessDesktop;
+	if (windowedRadio->value()) {
+		windowMode = WindowMode::Windowed;
+	} else if (fullscreenRadio->value()) {
+		windowMode = WindowMode::Fullscreen;
+	}
+	EngineOptions_setWindowMode(this->engineOptions.get(), windowMode);
+	EngineOptions_setUiScale(this->engineOptions.get(), (uint8_t)uiScaleValues.at(uiScaleChoice->value()));
 	EngineOptions_setStartWithoutSound(this->engineOptions.get(), !playSoundsCheckbox->value());
 
 	EngineOptions_setVanillaGameDir(this->engineOptions.get(), gameDirectoryInput->value());
@@ -253,8 +277,8 @@ int Launcher::writeJsonFile() {
 		EngineOptions_pushMod(this->engineOptions.get(), modId);
 	}
 
-	int x = (int)resolutionXInput->value();
-	int y = (int)resolutionYInput->value();
+	int x = autoResolutionCheckbox->value() ? 0 : (int)resolutionXInput->value();
+	int y = autoResolutionCheckbox->value() ? 0 : (int)resolutionYInput->value();
 	EngineOptions_setResolution(this->engineOptions.get(), x, y);
 	EngineOptions_setBrightness(this->engineOptions.get(), -1.0f);
 
@@ -281,9 +305,31 @@ void Launcher::populateChoices() {
 		RustPointer<char> resourceVersionString(VanillaVersion_toString(version));
 		gameVersionInput->add(resourceVersionString.get());
 	}
-	for (std::pair<int,int> res : predefinedResolutions) {
+	// The classic list plus the display modes the desktop offers (physical pixels)
+	std::set<std::pair<int, int>> resolutions(predefinedResolutions.begin(), predefinedResolutions.end());
+	if (SDL_InitSubSystem(SDL_INIT_VIDEO)) {
+		SDL_DisplayID display = SDL_GetPrimaryDisplay();
+		int count = 0;
+		SDL_DisplayMode** modes = display ? SDL_GetFullscreenDisplayModes(display, &count) : nullptr;
+		for (int i = 0; modes && i < count; ++i) {
+			float density = modes[i]->pixel_density > 0 ? modes[i]->pixel_density : 1.0f;
+			int w = (int)(modes[i]->w * density + 0.5f);
+			int h = (int)(modes[i]->h * density + 0.5f);
+			if (w >= VideoLayout::MIN_LOGICAL_WIDTH && h >= VideoLayout::MIN_LOGICAL_HEIGHT) {
+				resolutions.insert(std::make_pair(w, h));
+			}
+		}
+		SDL_free(modes);
+		SDL_QuitSubSystem(SDL_INIT_VIDEO);
+	}
+	for (std::pair<int,int> res : resolutions) {
 		ST::string resolutionString = ST::format("{d}x{d}", res.first, res.second);
 		predefinedResolutionMenuButton->insert(-1, resolutionString.c_str(), 0, setPredefinedResolution, this, 0);
+	}
+
+	uiScaleChoice->add("Auto");
+	for (size_t i = 1; i < uiScaleValues.size(); ++i) {
+		uiScaleChoice->add(ST::format("{d}x", uiScaleValues[i]).c_str());
 	}
 
 	for (VideoScaleQuality scalingMode : scalingModes) {
@@ -492,7 +538,28 @@ void Launcher::maintainSubProcessState(void* userdata) {
 }
 
 bool Launcher::resolutionIsInvalid() {
+	if (autoResolutionCheckbox->value()) {
+		return false;
+	}
 	return resolutionXInput->value() < 640 || resolutionYInput->value() < 480;
+}
+
+void Launcher::setResolutionInputsActive(bool active) {
+	if (active) {
+		resolutionXInput->activate();
+		resolutionYInput->activate();
+		predefinedResolutionMenuButton->activate();
+	} else {
+		resolutionXInput->deactivate();
+		resolutionYInput->deactivate();
+		predefinedResolutionMenuButton->deactivate();
+	}
+}
+
+void Launcher::autoResolutionChanged(Fl_Widget* widget, void* userdata) {
+	Launcher* window = static_cast< Launcher* >( userdata );
+	window->setResolutionInputsActive(!window->autoResolutionCheckbox->value());
+	window->update(true);
 }
 
 bool Launcher::gameIsRunning() {

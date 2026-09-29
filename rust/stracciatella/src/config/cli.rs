@@ -6,7 +6,7 @@ use std::str::FromStr;
 use getopts::Options;
 use log::warn;
 
-use crate::config::{EngineOptions, Resolution, VanillaVersion};
+use crate::config::{EngineOptions, Resolution, UiScale, VanillaVersion, WindowMode};
 use crate::fs::canonicalize;
 
 #[cfg(not(windows))]
@@ -79,8 +79,20 @@ impl Cli {
         opts.optopt(
             "",
             "res",
-            "Screen resolution, e.g. 800x600. Default value is 640x480",
-            "WIDTHxHEIGHT",
+            "Window size in pixels, e.g. 1920x1080, or `auto` for the desktop size. Default value is auto",
+            "WIDTHxHEIGHT|auto",
+        );
+        opts.optopt(
+            "",
+            "uiscale",
+            "Integer scale of the whole game: `auto` or 1 to 4. Default value is auto",
+            "auto|1|2|3|4",
+        );
+        opts.optopt(
+            "",
+            "window-mode",
+            "How the window is shown: windowed, fullscreen (exclusive) or borderless (desktop-sized window). Default value is borderless",
+            "windowed|fullscreen|borderless",
         );
         opts.optopt(
             "",
@@ -103,9 +115,9 @@ impl Cli {
             "editor",
             "Start the map editor (Editor.slf is required)",
         );
-        opts.optflag("", "fullscreen", "Start the game in the fullscreen mode");
+        opts.optflag("", "fullscreen", "Start the game in a borderless desktop window (same as -window-mode borderless)");
         opts.optflag("", "nosound", "Turn the sound and music off");
-        opts.optflag("", "window", "Start the game in a window");
+        opts.optflag("", "window", "Start the game in a window (same as -window-mode windowed)");
         opts.optflag("", "debug", "Enable Debug Mode");
         opts.optflag("", "enumgen", "Generate enums for Lua and exit");
         opts.optflag("h", "help", "print this help menu");
@@ -163,6 +175,22 @@ impl Cli {
                     }
                 }
 
+                if let Some(s) = m.opt_str("uiscale") {
+                    match UiScale::from_str(&s) {
+                        Ok(scale) => engine_options.ui_scale = scale,
+                        Err(s) => return Err(CliError::InvalidValue("uiscale".to_string(), s)),
+                    }
+                }
+
+                if let Some(s) = m.opt_str("window-mode") {
+                    match WindowMode::from_str(&s) {
+                        Ok(mode) => engine_options.window_mode = mode,
+                        Err(s) => {
+                            return Err(CliError::InvalidValue("window-mode".to_string(), s));
+                        }
+                    }
+                }
+
                 if let Some(s) = m.opt_str("brightness") {
                     match s.parse::<f32>() {
                         Ok(val) => {
@@ -197,8 +225,7 @@ impl Cli {
                 }
 
                 if m.opt_present("fullscreen") {
-                    engine_options.start_in_fullscreen = true;
-                    engine_options.start_in_window = false;
+                    engine_options.window_mode = WindowMode::BorderlessDesktop;
                 }
 
                 if m.opt_present("nosound") {
@@ -206,8 +233,7 @@ impl Cli {
                 }
 
                 if m.opt_present("window") {
-                    engine_options.start_in_fullscreen = false;
-                    engine_options.start_in_window = true;
+                    engine_options.window_mode = WindowMode::Windowed;
                 }
 
                 if m.opt_present("debug") {
@@ -273,7 +299,7 @@ mod tests {
             input.apply_to_engine_options(&mut engine_options).err(),
             None
         );
-        assert!(!engine_options.start_in_fullscreen);
+        assert_eq!(engine_options.window_mode, WindowMode::BorderlessDesktop);
     }
 
     #[test]
@@ -284,7 +310,55 @@ mod tests {
             input.apply_to_engine_options(&mut engine_options).err(),
             None
         );
-        assert!(engine_options.start_in_fullscreen);
+        assert_eq!(engine_options.window_mode, WindowMode::BorderlessDesktop);
+    }
+
+    #[test]
+    fn apply_to_engine_options_should_parse_uiscale_and_window_mode() {
+        let mut engine_options = EngineOptions::default();
+        let input = Cli::from_args(&[
+            String::from("ja2"),
+            String::from("-uiscale"),
+            String::from("2"),
+            String::from("-window-mode"),
+            String::from("windowed"),
+            String::from("-res"),
+            String::from("auto"),
+        ]);
+        assert_eq!(
+            input.apply_to_engine_options(&mut engine_options).err(),
+            None
+        );
+        assert_eq!(engine_options.ui_scale, UiScale(2));
+        assert_eq!(engine_options.window_mode, WindowMode::Windowed);
+        assert!(engine_options.resolution.is_auto());
+    }
+
+    #[test]
+    fn apply_to_engine_options_should_reject_invalid_uiscale_and_window_mode() {
+        for args in [["-uiscale", "9"], ["-window-mode", "maximised"]] {
+            let mut engine_options = EngineOptions::default();
+            let input = Cli::from_args(&[
+                String::from("ja2"),
+                String::from(args[0]),
+                String::from(args[1]),
+            ]);
+            assert!(matches!(
+                input.apply_to_engine_options(&mut engine_options),
+                Err(CliError::InvalidValue(_, _))
+            ));
+        }
+    }
+
+    #[test]
+    fn apply_to_engine_options_window_flag_selects_windowed() {
+        let mut engine_options = EngineOptions::default();
+        let input = Cli::from_args(&[String::from("ja2"), String::from("-window")]);
+        assert_eq!(
+            input.apply_to_engine_options(&mut engine_options).err(),
+            None
+        );
+        assert_eq!(engine_options.window_mode, WindowMode::Windowed);
     }
 
     #[test]

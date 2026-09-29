@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 pub enum ScalingQuality {
     /// Use linear interpolation
     LINEAR,
-    /// Use nearest neighbor interpolation
+    /// Sharp bilinear: nearest neighbor up to the largest integer multiple, then linear to the final size
     NEAR_PERFECT,
     /// Scale up to the nearest multiple of 640x480 and use nearest neighbor interpolation
     #[default]
@@ -40,7 +40,7 @@ impl Display for ScalingQuality {
             "{}",
             match self {
                 ScalingQuality::LINEAR => "Linear Interpolation",
-                ScalingQuality::NEAR_PERFECT => "Near perfect with oversampling",
+                ScalingQuality::NEAR_PERFECT => "Sharp bilinear",
                 ScalingQuality::PERFECT => "Pixel perfect centered",
             }
         )

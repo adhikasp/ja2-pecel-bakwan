@@ -28,7 +28,8 @@
 
 #define MAX_DIRTY_REGIONS 128
 
-#define OVERSAMPLING_SCALE 4
+// Border colour around the canvas when the window is not an exact multiple of it
+static constexpr Uint8 LETTERBOX_COLOR = 16;
 
 
 // Globals for mouse cursor
@@ -60,22 +61,62 @@ static SDL_Texture* ScreenTexture;
 static SDL_Texture* ScaledScreenTexture;
 static Uint32       g_window_flags = 0;
 static VideoScaleQuality ScaleQuality = VideoScaleQuality::LINEAR;
+// Sharp-bilinear: nearest-neighbour multiple of the canvas (0 = not needed)
+static int          SharpBilinearScale = 0;
+static VideoLayout::Size PresentedWindowSize{ 0, 0 };
 static sgp::GameClock::duration TimeBetweenRefreshScreens;
 
 static void DeletePrimaryVideoSurfaces(void);
 
-// returns if desktop resolution larger game resolution
-BOOLEAN IsDesktopLargeEnough()
+namespace
 {
-	const SDL_DisplayMode* dm = SDL_GetDesktopDisplayMode(0);
+struct DesktopInfo
+{
+	SDL_DisplayID      display;
+	VideoLayout::Size  pixels;  // physical pixels
+	float              density; // pixels per window coordinate unit (HiDPI)
+};
+
+DesktopInfo QueryDesktop()
+{
+	DesktopInfo info{ SDL_GetPrimaryDisplay(), { 1280, 720 }, 1.0f };
+	SDL_DisplayMode const* dm = info.display ? SDL_GetDesktopDisplayMode(info.display) : nullptr;
 	if (dm)
 	{
-		if (dm->w < SCREEN_WIDTH || dm->h < SCREEN_HEIGHT)
-		{
-			return false;
-		}
+		info.density = dm->pixel_density > 0 ? dm->pixel_density : 1.0f;
+		info.pixels  = { static_cast<int>(dm->w * info.density + 0.5f), static_cast<int>(dm->h * info.density + 0.5f) };
 	}
-	return true;
+	return info;
+}
+
+/** Size in physical pixels the canvas is derived from (before the scale is applied). */
+VideoLayout::Size WindowBasis(VideoDisplaySettings const& settings, VideoLayout::Size const desktop)
+{
+	bool const isAuto = settings.resX <= 0 || settings.resY <= 0;
+	if (isAuto && settings.windowMode == WindowMode::Windowed)
+	{
+		return VideoLayout::DefaultWindowedSize(desktop);
+	}
+	return VideoLayout::ResolveWindowSize(settings.resX, settings.resY, desktop);
+}
+}
+
+// returns if desktop resolution is at least the game resolution
+BOOLEAN IsDesktopLargeEnough()
+{
+	auto const desktop{ QueryDesktop().pixels };
+	return desktop.w >= SCREEN_WIDTH && desktop.h >= SCREEN_HEIGHT;
+}
+
+VideoLayout::DisplayLayout VideoComputeLayout(VideoDisplaySettings const& settings)
+{
+	auto const desktop{ QueryDesktop().pixels };
+	auto const basis{ WindowBasis(settings, desktop) };
+	auto const layout{ VideoLayout::ComputeDisplayLayout(basis, settings.uiScale) };
+	SLOGI("Desktop {}x{}, window basis {}x{}, UI scale {} -> logical canvas {}x{}",
+		desktop.w, desktop.h, basis.w, basis.h,
+		layout.scale, layout.logical.w, layout.logical.h);
+	return layout;
 }
 
 SDL_Surface* GetScreenBuffer()
@@ -107,7 +148,6 @@ void VideoSetBrightness(float brightness)
 	if (brightness < 0) return;
 
 	if (ScreenTexture)        SDL_SetTextureColorModFloat(ScreenTexture, brightness, brightness, brightness);
-	if (ScaledScreenTexture)  SDL_SetTextureColorModFloat(ScaledScreenTexture, brightness, brightness, brightness);
 }
 
 
@@ -116,7 +156,9 @@ static void GetRGBDistribution();
 
 static void CreateSoftwareSurfaces();
 
-void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targetFPS)
+static void UpdatePresentation(bool force);
+
+void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targetFPS, VideoDisplaySettings const& settings)
 {
 	TimeBetweenRefreshScreens = std::chrono::microseconds{1'000'000} / targetFPS;
 
@@ -129,11 +171,37 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 	}
 
 	ScaleQuality = quality;
-	g_window_flags |= SDL_WINDOW_RESIZABLE;
+	g_window_flags |= SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY;
+
+	auto const desktop{ QueryDesktop() };
+
+	// The window is created at its windowed size; the fullscreen modes then switch
+	// away from it (and back to it, e.g. with Alt+Enter).
+	bool const windowed{ settings.windowMode == WindowMode::Windowed };
+	auto const windowPx{ windowed ? WindowBasis(settings, desktop.pixels)
+	                              : VideoLayout::DefaultWindowedSize(desktop.pixels) };
+	auto const toPoints = [&](int px) { return static_cast<int>(px / desktop.density + 0.5f); };
 
 	g_game_window = SDL_CreateWindow(APPLICATION_NAME,
-					SCREEN_WIDTH, SCREEN_HEIGHT,
+					toPoints(windowPx.w), toPoints(windowPx.h),
 					g_window_flags);
+	if (!g_game_window)
+	{
+		throw std::runtime_error(std::string("Failed to create the game window: ") + SDL_GetError());
+	}
+	SDL_SetWindowMinimumSize(g_game_window,
+		toPoints(VideoLayout::MIN_LOGICAL_WIDTH), toPoints(VideoLayout::MIN_LOGICAL_HEIGHT));
+
+	if (settings.windowMode == WindowMode::Fullscreen && settings.resX > 0 && settings.resY > 0)
+	{
+		// Exclusive fullscreen: switch the display to the closest mode to the request.
+		SDL_DisplayMode mode;
+		if (SDL_GetClosestFullscreenDisplayMode(desktop.display,
+			toPoints(settings.resX), toPoints(settings.resY), 0.0f, true, &mode))
+		{
+			SDL_SetWindowFullscreenMode(g_game_window, &mode);
+		}
+	}
 
 	GameRenderer = SDL_CreateRenderer(g_game_window, nullptr);
 	SDL_SetRenderLogicalPresentation(GameRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
@@ -160,39 +228,92 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 	}
 
 
-	if (ScaleQuality == VideoScaleQuality::PERFECT)
-	{
-		if (!IsDesktopLargeEnough())
-		{
-			// Pixel-perfect mode cannot handle scaling down, and will
-			// result in a empty black screen if the window size is
-			// smaller than logical render resolution.
-			throw std::runtime_error("Game resolution must not be larger than desktop size. "
-				"Please reduce game resolution or choose another scaling mode.");
-		}
-		SDL_SetWindowMinimumSize(g_game_window, SCREEN_WIDTH, SCREEN_HEIGHT);
-		SDL_SetTextureScaleMode(ScreenTexture, SDL_SCALEMODE_NEAREST);
-		SDL_SetRenderLogicalPresentation(GameRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
-	}
-	else if (ScaleQuality == VideoScaleQuality::NEAR_PERFECT)
-	{
-		SDL_SetTextureScaleMode(ScreenTexture, SDL_SCALEMODE_NEAREST);
-		ScaledScreenTexture = SDL_CreateTexture(GameRenderer,
-			SDL_PIXELFORMAT_RGB565,
-			SDL_TEXTUREACCESS_TARGET,
-			SCREEN_WIDTH * OVERSAMPLING_SCALE, SCREEN_HEIGHT * OVERSAMPLING_SCALE);
+	// Filtering and the presentation rectangle depend on the window size
+	// (see UpdatePresentation), which changes when the window is resized or toggled.
+	UpdatePresentation(true);
 
-		if (ScaledScreenTexture == NULL)
-		{
-			SLOGE("SDL_CreateTexture for ScaledScreenTexture failed: {}\n", SDL_GetError());
-		}
-	}
-	else
+	if (settings.windowMode != WindowMode::Windowed)
 	{
-		SDL_SetTextureScaleMode(ScreenTexture, SDL_SCALEMODE_LINEAR);
+		VideoSetFullScreen(TRUE);
+		SDL_SyncWindow(g_game_window);
+		UpdatePresentation(true);
 	}
 
 	SDL_HideCursor();
+}
+
+
+/** Chooses how the canvas is put on the window, whenever the window's pixel size changes.
+ *  - PERFECT: integer scale, letterbox around it.
+ *  - LINEAR: fractional scale with linear filtering.
+ *  - NEAR_PERFECT ("sharp bilinear"): when the window is an exact multiple of the canvas
+ *    (what the UI scale logic produces) that is an integer scale; otherwise nearest-neighbour
+ *    up to the largest integer multiple that fits, then linear to the final size. */
+static void UpdatePresentation(bool const force)
+{
+	if (!g_game_window || !GameRenderer || !ScreenTexture) return;
+
+	int pw = 0;
+	int ph = 0;
+	SDL_GetWindowSizeInPixels(g_game_window, &pw, &ph);
+	VideoLayout::Size const window{ pw, ph };
+	if (!force && window == PresentedWindowSize) return;
+	PresentedWindowSize = window;
+
+	auto const p = VideoLayout::ComputePresentation(window, { SCREEN_WIDTH, SCREEN_HEIGHT });
+
+	SDL_RendererLogicalPresentation mode = SDL_LOGICAL_PRESENTATION_LETTERBOX;
+	SDL_ScaleMode filter = SDL_SCALEMODE_LINEAR;
+	SharpBilinearScale = 0;
+
+	switch (ScaleQuality)
+	{
+		case VideoScaleQuality::PERFECT:
+			filter = SDL_SCALEMODE_NEAREST;
+			if (p.k >= 1) mode = SDL_LOGICAL_PRESENTATION_INTEGER_SCALE;
+			break;
+
+		case VideoScaleQuality::NEAR_PERFECT:
+			if (p.integerFit)
+			{
+				filter = SDL_SCALEMODE_NEAREST;
+				mode = SDL_LOGICAL_PRESENTATION_INTEGER_SCALE;
+			}
+			else if (p.k >= 2)
+			{
+				filter = SDL_SCALEMODE_NEAREST; // into the intermediate texture
+				SharpBilinearScale = p.k;
+			}
+			break;
+
+		default:
+			break;
+	}
+
+	SDL_SetRenderLogicalPresentation(GameRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, mode);
+	SDL_SetTextureScaleMode(ScreenTexture, filter);
+
+	if (SharpBilinearScale > 0)
+	{
+		int const w = SCREEN_WIDTH * SharpBilinearScale;
+		int const h = SCREEN_HEIGHT * SharpBilinearScale;
+		if (!ScaledScreenTexture || ScaledScreenTexture->w != w || ScaledScreenTexture->h != h)
+		{
+			if (ScaledScreenTexture) SDL_DestroyTexture(ScaledScreenTexture);
+			ScaledScreenTexture = SDL_CreateTexture(GameRenderer,
+				SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_TARGET, w, h);
+			if (ScaledScreenTexture)
+			{
+				SDL_SetTextureScaleMode(ScaledScreenTexture, SDL_SCALEMODE_LINEAR);
+			}
+			else
+			{
+				SLOGE("SDL_CreateTexture for ScaledScreenTexture failed: {}", SDL_GetError());
+				SharpBilinearScale = 0;
+				SDL_SetTextureScaleMode(ScreenTexture, SDL_SCALEMODE_LINEAR);
+			}
+		}
+	}
 }
 
 
@@ -564,16 +685,21 @@ void RefreshScreen(void)
 		                  SrcPixels, ScreenBuffer->pitch);
 	}
 
+	UpdatePresentation(false);
+
+	SDL_SetRenderDrawColor(GameRenderer, LETTERBOX_COLOR, LETTERBOX_COLOR, LETTERBOX_COLOR, SDL_ALPHA_OPAQUE);
 	SDL_RenderClear(GameRenderer);
 
-	if (ScaleQuality == VideoScaleQuality::NEAR_PERFECT) {
+	if (SharpBilinearScale > 0 && ScaledScreenTexture)
+	{
 		SDL_SetRenderTarget(GameRenderer, ScaledScreenTexture);
 		SDL_RenderTexture(GameRenderer, ScreenTexture, nullptr, nullptr);
 
 		SDL_SetRenderTarget(GameRenderer, nullptr);
 		SDL_RenderTexture(GameRenderer, ScaledScreenTexture, nullptr, nullptr);
 	}
-	else {
+	else
+	{
 		SDL_RenderTexture(GameRenderer, ScreenTexture, NULL, NULL);
 	}
 

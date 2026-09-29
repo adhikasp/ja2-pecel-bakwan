@@ -16,6 +16,7 @@
 #include <FL/Fl_Value_Input.H>
 #include <FL/Fl_Menu_Button.H>
 #include <FL/Fl_Check_Button.H>
+#include <FL/Fl_Round_Button.H>
 
 class StracciatellaLauncher {
 public:
@@ -41,9 +42,13 @@ public:
   Fl_Value_Input *resolutionXInput;
   Fl_Value_Input *resolutionYInput;
   Fl_Menu_Button *predefinedResolutionMenuButton;
+  Fl_Check_Button *autoResolutionCheckbox;
   Fl_Box *invalidResolutionLabel;
   Fl_Choice *scalingModeChoice;
-  Fl_Check_Button *fullscreenCheckbox;
+  Fl_Choice *uiScaleChoice;
+  Fl_Round_Button *windowedRadio;
+  Fl_Round_Button *borderlessRadio;
+  Fl_Round_Button *fullscreenRadio;
   Fl_Check_Button *playSoundsCheckbox;
   Fl_Group *logsTab;
   Fl_Text_Display *logsDisplay;
