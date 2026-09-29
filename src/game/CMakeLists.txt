@@ -31,6 +31,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/MercPortrait.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/MessageBoxScreen.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Options_Screen.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/VideoOptionsScreen.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/SaveLoadGame.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/SaveLoadGameStates.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/SaveLoadScreen.cc

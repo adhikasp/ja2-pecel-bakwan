@@ -1097,6 +1097,20 @@ const IMPPolicy* DefaultContentManager::getIMPPolicy() const
 	return m_impPolicy.get();
 }
 
+bool DefaultContentManager::saveVideoSettings(int const resX, int const resY, int const uiScale, int const worldZoom,
+						int const windowMode, int const scalingQuality)
+{
+	EngineOptions* const options = m_engineOptions.get();
+	if (!options) return false;
+	EngineOptions_setResolution(options, static_cast<uint16_t>(resX), static_cast<uint16_t>(resY));
+	EngineOptions_setUiScale(options, static_cast<uint8_t>(uiScale));
+	EngineOptions_setWorldZoom(options, static_cast<uint8_t>(worldZoom));
+	EngineOptions_setWindowMode(options, static_cast<WindowMode>(windowMode));
+	EngineOptions_setScalingQuality(options, static_cast<ScalingQuality>(scalingQuality));
+	return EngineOptions_write(options);
+}
+
+
 const GamePolicy* DefaultContentManager::getGamePolicy() const
 {
 	return m_gamePolicy.get();

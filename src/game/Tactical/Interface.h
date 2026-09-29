@@ -177,6 +177,8 @@ void InitPlayerUIBar( BOOLEAN fInterrupt );
 void ToggleTacticalPanels(void);
 
 void DirtyTopMessage(void);
+/** The screen has another width: the pre-rendered top message bar has to follow. */
+void ResizeTopMessage(void);
 
 void BeginMultiPurposeLocator(INT16 sGridNo, INT8 bLevel);
 void HandleMultiPurposeLocator(void);

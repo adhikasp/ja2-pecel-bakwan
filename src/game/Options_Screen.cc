@@ -141,6 +141,7 @@ static GUIButtonRef guiOptGotoSaveGameBtn;
 static GUIButtonRef guiOptGotoLoadGameBtn;
 static GUIButtonRef guiQuitButton;
 static GUIButtonRef guiDoneButton;
+static GUIButtonRef guiVideoButton;
 
 
 //checkbox to toggle tracking mode on or off
@@ -228,6 +229,7 @@ static void BtnOptGotoSaveGameCallback(GUI_BUTTON* btn, UINT32 reason);
 static void BtnOptGotoLoadGameCallback(GUI_BUTTON* btn, UINT32 reason);
 static void BtnOptQuitCallback(GUI_BUTTON* btn, UINT32 reason);
 static void BtnDoneCallback(GUI_BUTTON* btn, UINT32 reason);
+static void BtnVideoCallback(GUI_BUTTON* btn, UINT32 reason);
 static void MusicSliderChangeCallBack(INT32 iNewValue);
 static void SelectedOptionTextRegionCallBack(MOUSE_REGION* pRegion, UINT32 iReason);
 static void SelectedOptionTextRegionMovementCallBack(MOUSE_REGION* pRegion, UINT32 reason);
@@ -272,6 +274,10 @@ static void EnterOptionsScreen(void)
 	guiOptGotoLoadGameBtn = MakeButton(OPT_LOAD_BTN_X, BtnOptGotoLoadGameCallback, zOptionsText[OPT_LOAD_GAME]);
 	guiQuitButton         = MakeButton(OPT_QUIT_BTN_X, BtnOptQuitCallback,         zOptionsText[OPT_MAIN_MENU]);
 	guiDoneButton         = MakeButton(OPT_DONE_BTN_X, BtnDoneCallback,            zOptionsText[OPT_DONE]);
+
+	// The title bar has room for one more button: the video settings sub-screen
+	if (g_ui.isBigScreen()) // (the classic 640x480 look stays as it was: there it is the V key)
+	guiVideoButton = CreateTextButton("Video", FONT12ARIAL, OPT_BUTTON_ON_COLOR, FONT_MCOLOR_BLACK, STD_SCREEN_X + 540, STD_SCREEN_Y + 10, 84, 24, MSYS_PRIORITY_HIGH, BtnVideoCallback);
 
 	// Toggle Boxes
 	UINT16 usTextHeight = GetFontHeight(OPT_MAIN_FONT);
@@ -389,6 +395,8 @@ static void ExitOptionsScreen(void)
 	RemoveButton( guiOptGotoLoadGameBtn );
 	RemoveButton( guiQuitButton );
 	RemoveButton( guiDoneButton );
+	if (guiVideoButton.ID() != 0) RemoveButton( guiVideoButton );
+	guiVideoButton.Reset();
 
 	UnloadButtonImage(giOptionsButtonImages);
 
@@ -518,6 +526,8 @@ static void GetOptionsScreenUserInput(void)
 			{
 				case SDLK_ESCAPE: SetOptionsExitScreen(guiPreviousOptionScreen); break;
 
+				case SDLK_V: SetOptionsExitScreen(VIDEO_OPTIONS_SCREEN); break;
+
 				//Enter the save game screen
 				case SDLK_S:
 					//if the save game button isnt disabled
@@ -585,6 +595,15 @@ static void BtnDoneCallback(GUI_BUTTON* btn, UINT32 reason)
 	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
 	{
 		SetOptionsExitScreen(guiPreviousOptionScreen);
+	}
+}
+
+
+static void BtnVideoCallback(GUI_BUTTON* btn, UINT32 reason)
+{
+	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
+	{
+		SetOptionsExitScreen(VIDEO_OPTIONS_SCREEN);
 	}
 }
 

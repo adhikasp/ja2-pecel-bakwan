@@ -394,3 +394,10 @@ void RenderGameVersion() {
 void RenderCopyright() {
 	DrawTextToScreen(gzCopyrightText, 0, SCREEN_HEIGHT - 15, SCREEN_WIDTH, FONT10ARIAL, FONT_MCOLOR_WHITE, FONT_MCOLOR_BLACK, CENTER_JUSTIFIED);
 }
+
+void RelayoutMainMenu()
+{
+	if (!MainMenuIsReady()) return; // not built yet: it will be, in the new layout
+	ExitMainMenu();
+	gfMainMenuScreenEntry = TRUE;
+}

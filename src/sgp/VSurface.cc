@@ -82,6 +82,19 @@ SGPVSurface::SGPVSurface(SDL_Surface* const s) :
 }
 
 
+SDL_Surface* SGPVSurface::Resize(UINT16 const w, UINT16 const h)
+{
+	Assert(w > 0 && h > 0);
+	TextRegistry::OnSurfaceDeleted(this); // what was printed here is gone
+	SDL_Surface* const s = SDL_CreateSurface(w, h, surface_->format);
+	if (!s) throw std::runtime_error("Failed to create SDL surface");
+	if (SDL_Palette* const pal = SDL_GetSurfacePalette(surface_.get())) SDL_SetSurfacePalette(s, pal);
+	SDL_SetSurfaceClipRect(s, nullptr);
+	surface_.reset(s);
+	return s;
+}
+
+
 SGPVSurface::~SGPVSurface()
 {
 	TextRegistry::OnSurfaceDeleted(this);

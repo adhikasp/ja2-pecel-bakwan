@@ -76,6 +76,30 @@ constexpr UINT8 UiLayerShadowAlpha(UINT16 const p)
 	return static_cast<UINT8>(UiLayerShadowLevel(p) * 17);
 }
 
+/* ---- Changing the video settings while the game runs ---------------------------------------------
+ * See VideoOptionsScreen.h (ChangeVideoSettings), which drives these in order:
+ * VideoApplyWindow -> g_ui.setLayers + recalculatePositions -> VideoRebuildBuffers -> the game's own buffers. */
+
+/** What is currently applied (as last requested; the window may have been resized since). */
+VideoDisplaySettings const& VideoGetDisplaySettings();
+VideoScaleQuality           VideoGetScaleQuality();
+
+/** Puts the window in the requested mode and size (unless resizeWindow is false: it has changed already, e.g. dragged
+ * by the user) and returns the layers for it. Headless sessions have no window: -res is the canvas. Does not touch g_ui. */
+VideoLayout::LayerLayout VideoApplyWindow(VideoDisplaySettings const& want, VideoScaleQuality quality, bool resizeWindow);
+
+/** Recreates the video manager's surfaces and textures for the size and layers in g_ui, keeping the FRAME_BUFFER,
+ * BACKBUFFER and WORLD_BUFFER objects the game points at. Contents are lost: the whole screen is redrawn. */
+void VideoRebuildBuffers();
+
+/** With an automatic UI scale: whether the window's pixel size (resized by the user or moved to another display)
+ * now calls for another canvas size or scale than the current one. */
+bool VideoWindowSizeChanged();
+
+/** Frame rate limit for presenting. 0 = unlimited. */
+void    VideoSetTargetFPS(int32_t fps);
+int32_t VideoGetTargetFPS();
+
 /** Whether the world is a layer of its own (window sized) under the UI. Set by InitializeVideoManager(). */
 bool VideoIsLayered();
 

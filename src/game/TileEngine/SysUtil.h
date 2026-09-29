@@ -11,5 +11,7 @@ extern SGPVSurface* guiWORLDSAVEBUFFER;
 extern SGPVSurface* guiEXTRABUFFER;
 
 void InitializeGameVideoObjects(void);
+/** The screen or the world buffer has another size: the buffers follow (their contents are lost). */
+void ResizeGameVideoObjects(void);
 
 #endif

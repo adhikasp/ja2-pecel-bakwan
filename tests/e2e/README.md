@@ -11,6 +11,8 @@ for the full API.
 | `new_game_to_tactical.lua` | Hire a merc on A.I.M., land in Omerta, save/load round trip |
 | `tactical_move_merc.lua` | Select a merc and walk to a clicked tile and back |
 | `map_screen_tour.lua` | Map screen: pause, inventory, options, laptop |
+| `video_switch.lua` | Runtime video changes (`ja2.setVideo`) through four modes on tactical, map and laptop |
+| `video_options.lua` | The Video options screen: change and apply resolution without a restart |
 | `legacy_script.txt` | The old line-based `-uitest` format still works |
 | `check_determinism.py` | Same script and seed, twice: identical screenshots |
 | `check_sessions.py` | Two `ja2ctl` sessions side by side stay independent |

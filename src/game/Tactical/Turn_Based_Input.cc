@@ -4,6 +4,7 @@
 #include "Structure.h"
 #include "TileDat.h"
 #include "Turn_Based_Input.h"
+#include "VideoOptionsScreen.h"
 #include "JAScreens.h"
 #include "PathAI.h"
 #include "Soldier_Control.h"
@@ -1378,6 +1379,10 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			gTacticalStatus.uiFlags ^= RED_ITEM_GLOW_ON;
 			break;
 
+		// World zoom (Ctrl+= and Ctrl+- work too)
+		case SDLK_KP_PLUS:  StepWorldZoom(+1); break;
+		case SDLK_KP_MINUS: StepWorldZoom(-1); break;
+
 		case '-':
 			// If the display cover or line of sight is being displayed
 			if (_KeyDown(SDLK_END) || _KeyDown(SDLK_DELETE))
@@ -1774,6 +1779,13 @@ static void HandleModCtrl(UINT32 const key, UIEventKind* const new_event)
 {
 	switch (key)
 	{
+		// World zoom, independent of the UI scale
+		case '=':
+		case '+':
+		case SDLK_KP_PLUS:  StepWorldZoom(+1); break;
+		case '-':
+		case SDLK_KP_MINUS: StepWorldZoom(-1); break;
+
 		case 'c': if (CHEATER_CHEAT_LEVEL()) ToggleCliffDebug(); break;
 
 	case 'e':

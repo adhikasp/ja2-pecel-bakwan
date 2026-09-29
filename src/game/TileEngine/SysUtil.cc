@@ -17,3 +17,21 @@ void InitializeGameVideoObjects()
 	guiWORLDSAVEBUFFER = VideoIsLayered() ?
 		AddVideoSurface(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT, PIXEL_DEPTH) : guiSAVEBUFFER;
 }
+
+
+void ResizeGameVideoObjects()
+{
+	guiSAVEBUFFER->Resize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	guiEXTRABUFFER->Resize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	bool const separate = guiWORLDSAVEBUFFER != guiSAVEBUFFER;
+	if (VideoIsLayered())
+	{
+		if (separate) guiWORLDSAVEBUFFER->Resize(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT);
+		else          guiWORLDSAVEBUFFER = AddVideoSurface(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT, PIXEL_DEPTH);
+	}
+	else if (separate)
+	{
+		DeleteVideoSurface(guiWORLDSAVEBUFFER);
+		guiWORLDSAVEBUFFER = guiSAVEBUFFER;
+	}
+}

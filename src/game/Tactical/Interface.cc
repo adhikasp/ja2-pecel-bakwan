@@ -2111,6 +2111,15 @@ void ResetPhysicsTrajectoryUI( )
 
 }
 
+void ResizeTopMessage()
+{
+	if (!gTopMessage.uiSurface) return;
+	gTopMessage.uiSurface->Resize(SCREEN_WIDTH, 20);
+	gTopMessage.sWorldRenderX = -1; // draw it again
+	if (gTacticalStatus.fInTopMessage) CreateTopMessage();
+}
+
+
 void DirtyTopMessage( )
 {
 	gTopMessage.fCreated = FALSE;

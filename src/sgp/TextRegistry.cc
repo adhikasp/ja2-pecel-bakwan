@@ -79,6 +79,7 @@ namespace
 	 * cursor) are ignored. */
 	bool StillShown(Item const& item, SDL_Surface const& frame, SDL_Rect const& exclude)
 	{
+		if (item.rect.x < 0 || item.rect.y < 0 || item.rect.x + item.rect.w > frame.w || item.rect.y + item.rect.h > frame.h) return false;
 		unsigned total = 0, same = 0, ink = 0, inkSame = 0;
 		size_t i = 0;
 		for (int y = item.rect.y; y < item.rect.y + item.rect.h; ++y)

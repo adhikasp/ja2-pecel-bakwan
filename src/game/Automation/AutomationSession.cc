@@ -6,6 +6,7 @@
 #include "Dialogue_Control.h"
 #include "Fade_Screen.h"
 #include "GameLoop.h"
+#include "VideoOptionsScreen.h"
 #include "Input.h"
 #include "JAScreens.h"
 #include "Laptop.h"
@@ -182,6 +183,7 @@ namespace
 			case INTRO_SCREEN:             return "INTRO_SCREEN";
 			case CREDIT_SCREEN:            return "CREDIT_SCREEN";
 			case QUEST_DEBUG_SCREEN:       return "QUEST_DEBUG_SCREEN";
+			case VIDEO_OPTIONS_SCREEN:     return "VIDEO_OPTIONS_SCREEN";
 			default:                       return "UNKNOWN_SCREEN";
 		}
 	}
@@ -190,6 +192,7 @@ namespace
 	bool NothingInFlight()
 	{
 		if (guiPendingScreen != NO_PENDING_SCREEN) return false;
+		if (VideoChangePending()) return false;
 		switch (guiCurrentScreen)
 		{
 			case INIT_SCREEN:
