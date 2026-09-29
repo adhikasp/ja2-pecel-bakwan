@@ -26,8 +26,17 @@ INT16  gusBlueShift = 0;
 INT16  gusGreenShift = 0;
 
 
+static ImageLoadHook g_imageLoadHook = nullptr;
+
+void SetImageLoadHook(ImageLoadHook const hook)
+{
+	g_imageLoadHook = hook;
+}
+
 SGPImage* CreateImage(const ST::string& filename, const UINT16 fContents)
 {
+	if (g_imageLoadHook) g_imageLoadHook(filename);
+
 	// depending on extension of filename, use different image readers
 	ST::string ext = filename.after_last(".");
 	if (ext == filename)

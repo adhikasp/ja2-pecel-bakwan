@@ -93,6 +93,12 @@ option(LOCAL_SMACKER_LIB "Build with local smacker lib" ON)
 option(WITH_UNITTESTS "Build with unittests" ON)
 option(WITH_EDITOR_SLF "Include the latest free editor.slf" OFF)
 option(WITH_RUST_BINARIES "Include rust binaries in build" ON)
+# Phase 0 spikes of docs/plan/native-modern-game.md (RmlUi + FreeType are fetched at configure time)
+if(ANDROID)
+    option(WITH_NATIVE_SPIKES "Build the native-UI / render spikes (ja2-spike, ja2.debug(\"uispike_*\"))" OFF)
+else()
+    option(WITH_NATIVE_SPIKES "Build the native-UI / render spikes (ja2-spike, ja2.debug(\"uispike_*\"))" ON)
+endif()
 # @see LOCAL_LUA_LIB in dependencies/lib-lua/CMakeLists.txt
 # @see LOCAL_SOL_LIB in dependencies/lib-sol2/CMakeLists.txt
 # @see LOCAL_MINIAUDIO_LIB in dependencies/lib-miniaudio/CMakeLists.txt
@@ -186,6 +192,16 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lib-miniaudio")
 
 # Prepare compilation of our own C++ source files.
 add_subdirectory(src)
+
+if(WITH_NATIVE_SPIKES)
+    message(STATUS "Building the Phase 0 native spikes")
+    add_subdirectory(src/spike)
+    target_link_libraries(${JA2_BINARY} PRIVATE ja2-spike-lib)
+    target_compile_definitions(${JA2_BINARY} PRIVATE WITH_NATIVE_SPIKES)
+    if(WITH_UNITTESTS)
+        target_sources(${JA2_BINARY} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/spike/Spike_unittest.cc")
+    endif()
+endif()
 
 if (WITH_UNITTESTS)
     message(STATUS "Compiling with unittests" )
@@ -286,6 +302,34 @@ if (WITH_UNITTESTS)
     )
 
     find_package(Python3 COMPONENTS Interpreter)
+
+    # Phase 0 spikes. "spike" tests need no game data and run in CI; "spike-gamedata" ones drive the real game.
+    if (WITH_NATIVE_SPIKES)
+        add_test(NAME spike_unittests
+            COMMAND "$<TARGET_FILE:${JA2_BINARY}>" -unittests
+            WORKING_DIRECTORY "$<TARGET_FILE_DIR:${JA2_BINARY}>")
+        # the game's CLI parser does not take gtest flags; gtest reads the filter from the environment too
+        set_tests_properties(spike_unittests PROPERTIES ENVIRONMENT "GTEST_FILTER=UiSpike.*:WorldSpike.*")
+        add_test(NAME spike_ui_selftest
+            COMMAND "$<TARGET_FILE:ja2-spike>" selftest "${CMAKE_CURRENT_BINARY_DIR}/spike-out")
+        add_test(NAME spike_renderpath
+            COMMAND "$<TARGET_FILE:ja2-spike>" renderpath --quick --no-gpu)
+        set_tests_properties(spike_unittests spike_ui_selftest spike_renderpath PROPERTIES LABELS spike)
+        file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/spike-out")
+        if (Python3_Interpreter_FOUND)
+            add_test(NAME spike_asset_tools
+                COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/tools/assets/tests")
+            set_tests_properties(spike_asset_tools PROPERTIES LABELS spike)
+            foreach(n ui_spike world_spike asset_usage_tour)
+                add_test(NAME spike_${n}
+                    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/ja2ctl.py" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/spike/${n}.lua" --isolated
+                        --res 1920x1080 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/spike-out/${n}")
+                set_tests_properties(spike_${n} PROPERTIES LABELS spike-gamedata
+                    ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>")
+            endforeach()
+        endif()
+    endif()
+
     if (Python3_Interpreter_FOUND)
         set(JA2CTL "${CMAKE_CURRENT_SOURCE_DIR}/tools/ja2ctl.py")
         file(GLOB E2E_SCRIPTS

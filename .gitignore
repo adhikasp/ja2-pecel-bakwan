@@ -16,3 +16,4 @@ TAGS
 /build/
 /*/CMakeUserPresets.json
 docs-generated/
+__pycache__/

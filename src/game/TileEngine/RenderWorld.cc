@@ -3651,3 +3651,6 @@ void RenderCoverDebug(void)
 }
 
 #endif
+
+
+#include "WorldSpike.inl"

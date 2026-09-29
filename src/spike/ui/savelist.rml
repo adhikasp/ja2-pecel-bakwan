@@ -1,0 +1,45 @@
+<rml>
+<head>
+	<title>Load game (RmlUi spike)</title>
+	<link type="text/rcss" href="savelist.rcss"/>
+</head>
+<body>
+<!-- data-model on <body> does not work in RmlUi 6.1 (structural views like data-for never bind): use a wrapper -->
+<div id="root" data-model="saves">
+	<div id="panel">
+		<div id="header">
+			<h1>Load game</h1>
+			<span class="count">{{ slots.size }} saves</span>
+		</div>
+		<div id="columns">
+			<span class="c-name">Name</span><span class="c-where">Sector</span><span class="c-when">Game time</span><span class="c-money">Money</span>
+		</div>
+		<div id="list">
+			<div class="row" data-for="slot : slots" data-attr-id="'slot' + it_index" data-class-selected="it_index == selected" data-event-click="select(it_index)" data-event-dblclick="open(it_index)" data-event-mouseover="hover(it_index)" data-event-mouseout="unhover()">
+				<span class="c-name">{{ slot.name }}</span>
+				<span class="c-where">{{ slot.sector }}</span>
+				<span class="c-when">{{ slot.when }}</span>
+				<span class="c-money">${{ slot.money }}</span>
+			</div>
+		</div>
+		<div id="footer">
+			<span id="status">{{ status }}</span>
+			<div id="load" class="btn primary" data-class-disabled="selected < 0" data-event-click="load()">Load <kbd>Enter</kbd></div>
+			<div id="delete" class="btn danger" data-class-disabled="selected < 0" data-event-click="ask_delete()">Delete <kbd>Del</kbd></div>
+			<div id="close" class="btn" data-event-click="cancel()">Close <kbd>Esc</kbd></div>
+		</div>
+	</div>
+	<div id="tooltip" data-if="hovered >= 0 &amp;&amp; !modal" data-style-left="tip_x + 'dp'" data-style-top="tip_y + 'dp'">{{ tip }}</div>
+	<div id="backdrop" data-if="modal">
+		<div id="modal">
+			<h2>Delete this save?</h2>
+			<p>"{{ selected_name }}" will be removed. This cannot be undone.</p>
+			<div class="actions">
+				<div id="cancel" class="btn" data-event-click="cancel()">Cancel</div>
+				<div id="confirm" class="btn danger" data-event-click="confirm()">Delete</div>
+			</div>
+		</div>
+	</div>
+</div>
+</body>
+</rml>
