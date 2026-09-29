@@ -94,3 +94,6 @@ Image-only widgets need `SetName(...)` in C++ to be clickable by label; new anim
 - **Unit tests are fast** — run `-unittests` before and after changes to catch regressions early.
 - **Log output is your debugger** — the game logs to `/var/folders/.../ja2.log`; tail it while the game runs.
 - **Don't touch `dependencies/`** — these are managed by cmake; changes get overwritten on reconfigure.
+
+## PR rules
+Every PR that changes visuals needs screenshot proof in its description. See [AGENTS.md](AGENTS.md).
