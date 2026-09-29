@@ -359,9 +359,10 @@ if it is still needed as a fallback (decide then).
 The original art belongs to the JA2 rights holders. Stracciatella ships no game data.
 - **In the repo:** engine code, tools, the design system, open-licence fonts, and **newly created**
   UI art and icons (our own work).
-- **Derived content** (upscaled or repainted originals) is **not committed**. The default is to
-  generate it on the player's machine from their own game files with a deterministic pipeline.
-  The alternative is a separately distributed pack. This needs deciding before Phase 9.
+- **Decided: derived content (upscaled or repainted originals) is never committed to this repo.**
+  The default is to generate it on the player's machine from their own game files with a
+  deterministic pipeline. A separately distributed pack remains possible later, outside this repo.
+  Test fixtures use only our own art.
 
 ## Cross-cutting concerns
 
