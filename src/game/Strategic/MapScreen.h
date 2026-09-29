@@ -129,14 +129,18 @@ void SetMapCursorItem();
 #define DEST_ETA_WIDTH        (MAPLEFT_X + 217 - DEST_ETA_X)
 #define TIME_REMAINING_X      (MAPLEFT_X + 222)
 #define TIME_REMAINING_WIDTH  (MAPLEFT_X + 250 - TIME_REMAINING_X)
-#define CLOCK_Y_START         (STD_SCREEN_Y + 298)
-#define CLOCK_ETA_X           (STD_SCREEN_X + 463 - 15 + 6 + 30)
-#define CLOCK_HOUR_X_START    (STD_SCREEN_X + 463 + 25 + 30)
-#define CLOCK_MIN_X_START     (STD_SCREEN_X + 463 + 45 + 30)
+// The ETA pop up at the bottom of the map, while plotting a path (screen pixels). In 640x480 at (476, 291).
+#define MAP_ETA_POPUP_X       (MapCanvasToScreenX(MAP_VIEW_START_X + 206))
+#define MAP_ETA_POPUP_Y       (MapCanvasToScreenY(MAP_VIEW_START_Y + 281))
+#define CLOCK_Y_START         (MAP_ETA_POPUP_Y + 7)
+#define CLOCK_ETA_X           (MAP_ETA_POPUP_X + 8)
+#define CLOCK_HOUR_X_START    (MAP_ETA_POPUP_X + 42)
+#define CLOCK_MIN_X_START     (MAP_ETA_POPUP_X + 62)
 
 // contract
 #define CONTRACT_X            (MAPLEFT_X + 185)
-#define CONTRACT_Y            (STD_SCREEN_Y + 50)
+#define CONTRACT_Y            (MAPTOP_Y + 50)
+
 
 // trash can
 #define TRASH_CAN_X           (MAPLEFT_X + 176)

@@ -469,6 +469,16 @@ namespace
 			return t;
 		});
 
+		// Where the strategic map shows sector (x, y), 1..16 (A..P = 1..16): {x, y, w, h, cx, cy} in screen
+		// pixels, for the current layout (the map is scaled on big screens, see MapScreenGeometry).
+		ja2.set_function("mapSector", [](int x, int y) {
+			SGPBox const b = g_ui.m_map.sectorBox(x, y);
+			sol::table t = g_lua.create_table();
+			t["x"] = b.x; t["y"] = b.y; t["w"] = b.w; t["h"] = b.h;
+			t["cx"] = b.x + b.w / 2; t["cy"] = b.y + b.h / 2;
+			return t;
+		});
+
 		// Changes the video settings while the game runs, like the Video options do; the current screen is built again
 		// for the new layout. Fields (all optional, the rest stays): res = "1280x720" (the window, "auto" = the desktop),
 		// uiscale = 0 (auto) .. 4, worldzoom = 0 (same as the UI) .. 4, window = "windowed" | "borderless" | "fullscreen",

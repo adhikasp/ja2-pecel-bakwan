@@ -21,6 +21,7 @@
 #include "Keys.h"
 #include "Line.h"
 #include "LoadSaveObjectType.h"
+#include "Map_Screen_Canvas.h"
 #include "Map_Screen_Helicopter.h"
 #include "Map_Screen_Interface_Border.h"
 #include "Map_Screen_Interface_Bottom.h"
@@ -577,7 +578,7 @@ void RestoreBackgroundForAssignmentGlowRegionList( void )
 	if( iOldAssignmentLine != giAssignHighLine )
 	{
 		// restore background
-		RestoreExternBackgroundRect( ASSIGN_X, Y_START - 1, ASSIGN_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 ) );
+		RestoreExternBackgroundRect( ASSIGN_X, Y_START - 1, ASSIGN_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 + MAP_LIST_EXTRA_Y ) );
 
 		// ARM: not good enough! must reblit the whole panel to erase glow chunk restored by help text disappearing!!!
 		fTeamPanelDirty = TRUE;
@@ -602,7 +603,7 @@ void RestoreBackgroundForDestinationGlowRegionList( void )
 	if( iOldDestinationLine != giDestHighLine )
 	{
 		// restore background
-		RestoreExternBackgroundRect( DEST_ETA_X, Y_START - 1, DEST_ETA_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 ) );
+		RestoreExternBackgroundRect( DEST_ETA_X, Y_START - 1, DEST_ETA_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 + MAP_LIST_EXTRA_Y ) );
 
 		// ARM: not good enough! must reblit the whole panel to erase glow chunk restored by help text disappearing!!!
 		fTeamPanelDirty = TRUE;
@@ -627,7 +628,7 @@ void RestoreBackgroundForContractGlowRegionList( void )
 	if( iOldContractLine != giContractHighLine )
 	{
 		// restore background
-		RestoreExternBackgroundRect( TIME_REMAINING_X, Y_START - 1, TIME_REMAINING_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 ) ) ;
+		RestoreExternBackgroundRect( TIME_REMAINING_X, Y_START - 1, TIME_REMAINING_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 + MAP_LIST_EXTRA_Y ) ) ;
 
 		// ARM: not good enough! must reblit the whole panel to erase glow chunk restored by help text disappearing!!!
 		fTeamPanelDirty = TRUE;
@@ -653,7 +654,7 @@ void RestoreBackgroundForSleepGlowRegionList( void )
 	if( iOldSleepHighLine != giSleepHighLine )
 	{
 		// restore background
-		RestoreExternBackgroundRect( SLEEP_X, Y_START - 1, SLEEP_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 ) ) ;
+		RestoreExternBackgroundRect( SLEEP_X, Y_START - 1, SLEEP_WIDTH, ( INT16 )( ( ( MAX_CHARACTER_COUNT + 1 ) * ( Y_SIZE + 2 ) ) + 1 + MAP_LIST_EXTRA_Y ) ) ;
 
 		// ARM: not good enough! must reblit the whole panel to erase glow chunk restored by help text disappearing!!!
 		fTeamPanelDirty = TRUE;
@@ -936,7 +937,7 @@ void HandleDisplayOfSelectedMercArrows()
 
 	{ // Blit one by the selected merc
 		INT16 y = Y_START + bSelectedInfoChar * (Y_SIZE + 2) - 1;
-		if (bSelectedInfoChar >= FIRST_VEHICLE) y += 6;
+		if (bSelectedInfoChar >= FIRST_VEHICLE) y += 6 + MAP_LIST_EXTRA_Y;
 		BltVideoObject(guiSAVEBUFFER, guiSelectedCharArrow, 0,SELECTED_CHAR_ARROW_X, y);
 	}
 
@@ -951,7 +952,7 @@ void HandleDisplayOfSelectedMercArrows()
 		if (!IsEntryInSelectedListSet(i) && (s->ubGroupID == 0 || s->ubGroupID != dest_group)) continue;
 
 		INT16 y = Y_START + i * (Y_SIZE + 2) - 1;
-		if (i >= FIRST_VEHICLE) y += 6;
+		if (i >= FIRST_VEHICLE) y += 6 + MAP_LIST_EXTRA_Y;
 		BltVideoObject(guiSAVEBUFFER, guiSelectedCharArrow, 0, SELECTED_CHAR_ARROW_X, y);
 	}
 }
@@ -2241,7 +2242,8 @@ static void AddStringsToMoveBox(PopUpBox*);
 
 static void CreatePopUpBoxForMovementBox(void)
 {
-	SGPPoint const MovePosition = { (UINT16)(STD_SCREEN_X + 450), (UINT16)(STD_SCREEN_Y + 100) };
+	// over the map, right of the middle (screen pixels)
+	SGPPoint const MovePosition = { (UINT16)MapCanvasToScreenX(MAP_VIEW_START_X + 180), (UINT16)MapCanvasToScreenY(MAP_VIEW_START_Y + 90) };
 
 	// create the pop up box and mouse regions for movement list
 	PopUpBox* const box = CreatePopUpBox(MovePosition, POPUP_BOX_FLAG_RESIZE, FRAME_BUFFER, guiPOPUPBORDERS, guiPOPUPTEX, 6, 6, 4, 4, 2);
@@ -2267,13 +2269,17 @@ static void CreatePopUpBoxForMovementBox(void)
 
 	// adjust position to try to keep it in the map area as good as possible
 	SGPBox const& area = GetBoxArea(box);
-	if (area.x + area.w >= MAP_VIEW_START_X + MAP_VIEW_WIDTH)
+	INT32 const viewL = MapCanvasToScreenX(MAP_VIEW_START_X);
+	INT32 const viewT = MapCanvasToScreenY(MAP_VIEW_START_Y);
+	INT32 const viewR = MapCanvasToScreenX(MAP_VIEW_START_X + MAP_VIEW_WIDTH);
+	INT32 const viewB = MapCanvasToScreenY(MAP_VIEW_START_Y + MAP_VIEW_HEIGHT);
+	if (area.x + area.w >= viewR)
 	{
-		SetBoxX(box, std::max(MAP_VIEW_START_X, MAP_VIEW_START_X + MAP_VIEW_WIDTH - area.w));
+		SetBoxX(box, std::max(viewL, viewR - area.w));
 	}
-	if (area.y + area.h >= MAP_VIEW_START_Y + MAP_VIEW_HEIGHT)
+	if (area.y + area.h >= viewB)
 	{
-		SetBoxY(box, std::max(MAP_VIEW_START_Y, MAP_VIEW_START_Y + MAP_VIEW_HEIGHT - area.h));
+		SetBoxY(box, std::max(viewT, viewB - area.h));
 	}
 }
 
@@ -3272,12 +3278,13 @@ void DisplaySoldierUpdateBox( )
 	iUpdatePanelHeight = ( iNumberHigh + 1 ) * TACT_HEIGHT_OF_UPDATE_PANEL_BLOCKS;
 
 	// get the x,y offsets on the screen of the panel
-	iX = STD_SCREEN_X + 290 + ( 336 - iUpdatePanelWidth ) / 2;
+	iX = MapCanvasToScreenX(MAP_VIEW_START_X + 20) + ( g_ui.m_map.canvasToScreen(336) - iUpdatePanelWidth ) / 2;
 
 //	iY = 28 + ( 288 - iUpdatePanelHeight ) / 2;
 
 	// Have the bottom of the box ALWAYS a set distance from the bottom of the map ( so user doesnt have to move mouse far )
-	iY = STD_SCREEN_Y + 280 - iUpdatePanelHeight;
+	iY = MapCanvasToScreenY(MAP_VIEW_START_Y + 270) - iUpdatePanelHeight;
+
 
 	const SGPVObject* const hBackGroundHandle = guiUpdatePanelTactical;
 

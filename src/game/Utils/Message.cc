@@ -47,7 +47,7 @@ struct ScrollStringSt
 #define Y_START (SCREEN_HEIGHT - 150)
 #define MAX_AGE 10000
 #define LINE_WIDTH 320
-#define MAP_LINE_WIDTH 300
+#define MAP_LINE_WIDTH (300 + MAP_MESSAGE_EXTRA_X)
 #define WIDTH_BETWEEN_NEW_STRINGS 5
 
 #define DEBUG_COLOR FONT_RED
@@ -395,7 +395,7 @@ static void AddStringToMapScreenMessageList(const ST::string& pString, UINT16 us
 
 void DisplayStringsInMapScreenMessageList(void)
 {
-	SetFontDestBuffer(FRAME_BUFFER, STD_SCREEN_X + 17, MAPBOT_Y + 360 + 6 - MAP_MESSAGE_EXTRA_Y, STD_SCREEN_X + 407, MAPBOT_Y + 360 + 101);
+	SetFontDestBuffer(FRAME_BUFFER, 17, MAPBOT_Y + 360 + 6 - MAP_MESSAGE_EXTRA_Y, 407 + MAP_MESSAGE_EXTRA_X, MAPBOT_Y + 360 + 101);
 
 	SetFont(MAP_SCREEN_MESSAGE_FONT);
 	SetFontBackground(FONT_BLACK);
@@ -418,7 +418,7 @@ void DisplayStringsInMapScreenMessageList(void)
 		if (s == NULL) break;
 
 		SetFontForeground(s->usColor);
-		MPrint(STD_SCREEN_X + 20, sY, s->pString);
+		MPrint(20, sY, s->pString);
 
 		sY += usSpacing;
 

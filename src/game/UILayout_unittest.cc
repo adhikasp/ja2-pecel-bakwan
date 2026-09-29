@@ -2,6 +2,9 @@
 
 #include "UILayout.h"
 
+#include <cstdlib>
+#include <utility>
+
 namespace
 {
 struct Res { UINT16 w, h; };
@@ -123,4 +126,129 @@ TEST(UILayout, WorldViewportIsTheWholeWorldWhenLayered)
 	EXPECT_EQ(ui.worldViewEndX(), 2560);
 	EXPECT_EQ(ui.worldWindowStartY(), 0);
 	EXPECT_EQ(ui.worldWindowEndY(), 1440);
+}
+
+TEST(MapScreenGeometry, ClassicAt640x480)
+{
+	auto const g = MapScreenGeometry::compute(640, 480);
+	EXPECT_EQ(g.scale2, 2);
+	EXPECT_FALSE(g.scaled());
+	// the classic positions: border at (261, 0), map view at (270, 10), bar art at y 359
+	EXPECT_EQ(g.frame.x, 261);
+	EXPECT_EQ(g.frame.y, 0);
+	EXPECT_EQ(g.frame.w, 379);
+	EXPECT_EQ(g.frame.h, 359);
+	EXPECT_EQ(g.canvas.x - MapScreenGeometry::VIEW_TO_CANVAS_X, 270);
+	EXPECT_EQ(g.canvas.y - MapScreenGeometry::VIEW_TO_CANVAS_Y, 10);
+	EXPECT_EQ(g.grid.x, g.canvas.x);
+	EXPECT_EQ(g.grid.w, g.canvas.w);
+	EXPECT_EQ(g.barTop, 359);
+	EXPECT_EQ(g.logExtraH, 0);
+	EXPECT_EQ(g.logExtraW, 0);
+	EXPECT_EQ(g.barRightX, 0);
+	EXPECT_EQ(g.listExtra, 0);
+	EXPECT_EQ(g.column.x, 0);
+	EXPECT_EQ(g.column.y, 0);
+	// sector A1 is at (291, 28), 21 x 18
+	SGPBox const a1 = g.sectorBox(1, 1);
+	EXPECT_EQ(a1.x, 291);
+	EXPECT_EQ(a1.y, 28);
+	EXPECT_EQ(a1.w, 21);
+	EXPECT_EQ(a1.h, 18);
+}
+
+TEST(MapScreenGeometry, ScalesTheMapToFill)
+{
+	struct Case { UINT16 w, h; INT32 scale2; };
+	for (auto c : { Case{ 1280, 720, 3 }, Case{ 1920, 1080, 6 }, Case{ 2560, 1080, 6 }, Case{ 3440, 1440, 8 }, Case{ 800, 600, 2 } })
+	{
+		auto const g = MapScreenGeometry::compute(c.w, c.h);
+		EXPECT_EQ(g.scale2, c.scale2) << c.w << "x" << c.h;
+		// everything on screen, nothing overlapping
+		EXPECT_LE(g.frame.x + g.frame.w, c.w);
+		EXPECT_LE(g.frame.y + g.frame.h, g.barTop);
+		EXPECT_GE(g.frame.x, g.column.x + g.column.w);
+		EXPECT_EQ(g.column.h, g.barTop);
+		EXPECT_EQ(g.barTop + MapScreenGeometry::BAR_H + g.logExtraH, c.h);
+		EXPECT_EQ(g.listExtra, g.barTop - 359);
+		EXPECT_EQ(g.logExtraH % MapScreenGeometry::LOG_LINE_H, 0);
+		EXPECT_EQ(g.logExtraW, c.w - 640);
+		EXPECT_EQ(g.barRightX + 640, c.w);
+		// the grid is the canvas scaled, inside the frame
+		EXPECT_EQ(g.grid.w, MapScreenGeometry::CANVAS_W * g.scale2 / 2);
+		EXPECT_EQ(g.grid.h, MapScreenGeometry::CANVAS_H * g.scale2 / 2);
+		EXPECT_EQ(g.grid.x, g.frame.x + MapScreenGeometry::FRAME_L);
+		EXPECT_EQ(g.grid.x + g.grid.w + MapScreenGeometry::FRAME_R, g.frame.x + g.frame.w);
+		EXPECT_GE(g.grid.y, g.frame.y + MapScreenGeometry::FRAME_T);
+		EXPECT_LE(g.grid.y + g.grid.h + MapScreenGeometry::FRAME_B, g.frame.y + g.frame.h);
+		if (g.scaled())
+		{
+			// a scaled map's frame reaches from the top of the screen to the bar
+			EXPECT_EQ(g.frame.y, 0);
+			EXPECT_EQ(g.frame.h, g.barTop);
+		}
+		EXPECT_EQ(g.canvas.x, g.grid.x);
+		EXPECT_EQ(g.canvas.y, g.grid.y);
+		// the frame is centred in the map area
+		INT32 const left  = g.frame.x - g.mapArea.x;
+		INT32 const right = g.mapArea.x + g.mapArea.w - (g.frame.x + g.frame.w);
+		EXPECT_LE(std::abs(left - right), 1);
+	}
+}
+
+TEST(MapScreenGeometry, CanvasAndScreenRoundTrip)
+{
+	for (auto res : { Res{ 640, 480 }, Res{ 1280, 720 }, Res{ 1920, 1080 }, Res{ 3440, 1440 } })
+	{
+		auto const g = MapScreenGeometry::compute(res.w, res.h);
+		for (INT32 y = g.canvas.y; y < g.canvas.y + g.canvas.h; y += 7)
+		{
+			for (INT32 x = g.canvas.x; x < g.canvas.x + g.canvas.w; x += 5)
+			{
+				LayerPoint const s = g.canvasToScreen(x, y);
+				LayerPoint const c = g.screenToCanvas(s.x, s.y);
+				EXPECT_EQ(c.x, x);
+				EXPECT_EQ(c.y, y);
+				// the last screen pixel of the scaled copy maps back to the same canvas pixel
+				LayerPoint const s2 = g.canvasToScreen(x + 1, y + 1);
+				LayerPoint const c2 = g.screenToCanvas(s2.x - 1, s2.y - 1);
+				EXPECT_EQ(c2.x, x);
+				EXPECT_EQ(c2.y, y);
+			}
+		}
+		// left of / above the grid is outside the canvas
+		EXPECT_LT(g.screenToCanvas(g.grid.x - 1, g.grid.y).x, g.canvas.x);
+		EXPECT_LT(g.screenToCanvas(g.grid.x, g.grid.y - 1).y, g.canvas.y);
+	}
+}
+
+TEST(MapScreenGeometry, SectorsUnderTheMouse)
+{
+	for (auto res : { Res{ 640, 480 }, Res{ 1280, 720 }, Res{ 1920, 1080 }, Res{ 2560, 1080 }, Res{ 3440, 1440 } })
+	{
+		auto const g = MapScreenGeometry::compute(res.w, res.h);
+		for (INT32 sy = 1; sy <= 16; ++sy)
+		{
+			for (INT32 sx = 1; sx <= 16; ++sx)
+			{
+				SGPBox const b = g.sectorBox(sx, sy);
+				// the sectors tile the grid: 21 x 18 scaled, give or take the rounding of 1.5x
+				EXPECT_LE(std::abs(b.w - 21 * g.scale2 / 2), 1);
+				EXPECT_LE(std::abs(b.h - 18 * g.scale2 / 2), 1);
+				for (auto [x, y] : { std::pair<INT32, INT32>{ b.x, b.y }, { b.x + b.w - 1, b.y + b.h - 1 }, { b.x + b.w / 2, b.y + b.h / 2 } })
+				{
+					LayerPoint const s = g.sectorAt(x, y);
+					EXPECT_EQ(s.x, sx) << res.w << "x" << res.h << " at " << x << "," << y;
+					EXPECT_EQ(s.y, sy);
+				}
+			}
+		}
+		// off the grid
+		SGPBox const a1 = g.sectorBox(1, 1);
+		EXPECT_EQ(g.sectorAt(a1.x - 1, a1.y).x, 0);
+		EXPECT_EQ(g.sectorAt(a1.x, a1.y - 1).x, 0);
+		SGPBox const p16 = g.sectorBox(16, 16);
+		EXPECT_EQ(g.sectorAt(p16.x + p16.w, p16.y).x, 0);
+		EXPECT_EQ(g.sectorAt(p16.x, p16.y + p16.h).x, 0);
+	}
 }

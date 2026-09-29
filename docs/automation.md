@@ -181,6 +181,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.assertInsideScreen()` | Fails (exit 1) if any mouse region or button lies outside the screen. |
 | `ja2.setVideo{res="1280x720", uiscale=1, worldzoom=0, window=, filter=}` | Changes the video settings at runtime like the Video options do (the current screen is built again); returns the new `screenSize()` plus `uiScale`, `worldZoom`, `layered`. Headless: `res` is the canvas, and the UI scale only applies with a `worldzoom` other than the UI scale. Nothing is written to ja2.json. |
 | `ja2.screenSize()` | `{w, h, stdX, stdY}`: screen size and where the classic 640x480 area starts. |
+| `ja2.mapSector(x, y)` | `{x, y, w, h, cx, cy}`: where the strategic map shows sector (x, y) (1..16, A = 1), in screen pixels. The map is scaled on big screens, so use this rather than fixed coordinates. |
 | `ja2.expect(value, message)` | Fails the script (exit 1) unless value is truthy. |
 | `ja2.check(value, message)` | Records a failure and carries on; the script exits 1 at the end. |
 | `ja2.log(...)` | To stderr and the log. |

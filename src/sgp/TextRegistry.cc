@@ -150,6 +150,35 @@ void OnBlit(SGPVSurface* const dst, SGPVSurface const* const src, SDL_Rect const
 	for (Item& c : copies) Add(std::move(c));
 }
 
+void OnStretch(SGPVSurface* const dst, SGPVSurface const* const src, SDL_Rect const srcRect, SDL_Rect const dstRect)
+{
+	if (!g_enabled || !dst || !src || dst == src || srcRect.w <= 0 || srcRect.h <= 0) return;
+	SDL_Surface const& d = dst->GetSDLSurface();
+	if (!Is16Bpp(d)) return;
+
+	std::erase_if(g_items, [&](Item const& old) {
+		return old.surface == dst && OverlapArea(old.rect, dstRect) == Area(old.rect);
+	});
+
+	// Source pixel s lands on destination pixels [ceil(s * D / S), ceil((s + 1) * D / S)).
+	auto map = [](int s, int S, int D) { return (s * D + S - 1) / S; };
+	std::vector<Item> copies;
+	for (Item const& it : g_items)
+	{
+		if (it.surface != src) continue;
+		if (OverlapArea(it.rect, srcRect) != Area(it.rect)) continue;
+		int const x0 = dstRect.x + map(it.rect.x - srcRect.x, srcRect.w, dstRect.w);
+		int const y0 = dstRect.y + map(it.rect.y - srcRect.y, srcRect.h, dstRect.h);
+		int const x1 = dstRect.x + map(it.rect.x + it.rect.w - srcRect.x, srcRect.w, dstRect.w);
+		int const y1 = dstRect.y + map(it.rect.y + it.rect.h - srcRect.y, srcRect.h, dstRect.h);
+		SDL_Rect const moved{ x0, y0, x1 - x0, y1 - y0 };
+		SDL_Rect const r = Clip(moved, d);
+		if (r.w != moved.w || r.h != moved.h || r.w <= 0 || r.h <= 0) continue;
+		copies.push_back(Item{ dst, r, it.text, it.color, Snapshot(d, r) });
+	}
+	for (Item& c : copies) Add(std::move(c));
+}
+
 void OnSurfaceDeleted(SGPVSurface const* const s)
 {
 	if (g_items.empty()) return;

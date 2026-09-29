@@ -4,6 +4,8 @@
 #include "Debug.h"
 #include "Directories.h"
 #include "Interface.h"
+#include "HImage.h"
+#include "Map_Screen_Canvas.h"
 #include "Map_Screen_Helicopter.h"
 #include "Map_Screen_Interface.h"
 #include "Map_Screen_Interface_Map.h"
@@ -21,21 +23,23 @@
 struct BUTTON_PICS;
 
 #define MAP_BORDER_FILE INTERFACEDIR "/mbs.sti"
-#define BTN_TOWN_X      (STD_SCREEN_X + 299)
-#define BTN_MINE_X      (STD_SCREEN_X + 342)
-#define BTN_TEAMS_X     (STD_SCREEN_X + 385)
-#define BTN_MILITIA_X   (STD_SCREEN_X + 428)
-#define BTN_AIR_X       (STD_SCREEN_X + 471)
-#define BTN_ITEM_X      (STD_SCREEN_X + 514)
+// The border frame around the map (in 640x480 at (261, 0), 379 x 359). The buttons are along its bottom
+// edge, from the left; the level markers are at its bottom-right corner.
+#define MAP_BORDER_X    (g_ui.m_map.frame.x)
+#define MAP_BORDER_Y    (g_ui.m_map.frame.y)
+#define MAP_BORDER_BTN_Y (MAP_BORDER_Y + g_ui.m_map.frame.h - 36)
 
-#define MAP_LEVEL_MARKER_X    (STD_SCREEN_X + 565)
-#define MAP_LEVEL_MARKER_Y     (STD_SCREEN_Y + 323)
+#define BTN_TOWN_X      (MAP_BORDER_X +  38)
+#define BTN_MINE_X      (MAP_BORDER_X +  81)
+#define BTN_TEAMS_X     (MAP_BORDER_X + 124)
+#define BTN_MILITIA_X   (MAP_BORDER_X + 167)
+#define BTN_AIR_X       (MAP_BORDER_X + 210)
+#define BTN_ITEM_X      (MAP_BORDER_X + 253)
+
+#define MAP_LEVEL_MARKER_X    (MAP_BORDER_X + g_ui.m_map.frame.w - 75)
+#define MAP_LEVEL_MARKER_Y    (MAP_BORDER_BTN_Y)
 #define MAP_LEVEL_MARKER_DELTA   8
 #define MAP_LEVEL_MARKER_WIDTH  55
-
-
-#define MAP_BORDER_X (STD_SCREEN_X + 261)
-#define MAP_BORDER_Y (STD_SCREEN_Y + 0)
 
 
 // mouse levels
@@ -81,6 +85,66 @@ void DeleteMapBorderGraphics( void )
 static void DisplayCurrentLevelMarker(void);
 
 
+/* The border art (mbs.sti) fits a map of 340 x 292 (the canvas). Around a scaled map it is put together
+ * from pieces: the corners as they are, the long straight parts repeated. Measures are in the art. */
+void RenderComposedMapBorder(SGPVSurface* const dst)
+{
+	MapScreenGeometry const& g = g_ui.m_map;
+	SGPVSurface* const art = MapArtSurface(guiMapBorder, 0);
+	INT32 const L = MapScreenGeometry::FRAME_L, T = MapScreenGeometry::FRAME_T;
+	INT32 const R = MapScreenGeometry::FRAME_R, B = MapScreenGeometry::FRAME_B;
+	INT32 const AW = 379, AH = 359; // the art
+	INT32 const fx = g.frame.x, fy = g.frame.y, fw = g.frame.w, fh = g.frame.h;
+	auto box = [](INT32 x, INT32 y, INT32 w, INT32 h) { return SGPBox{ (UINT16)x, (UINT16)y, (UINT16)w, (UINT16)h }; };
+
+	// the dark gaps above and below the map, when the frame is taller than the map
+	UINT16 const gapColour = Get16BPPColor(8, 4, 4);
+	INT32 const gapTop    = g.grid.y - (fy + T);
+	INT32 const gapBottom = fy + fh - B - (g.grid.y + g.grid.h);
+	if (gapTop > 0)    ColorFillVideoSurfaceArea(dst, fx + L, fy + T, fx + fw - R, g.grid.y, gapColour);
+	if (gapBottom > 0) ColorFillVideoSurfaceArea(dst, fx + L, g.grid.y + g.grid.h, fx + fw - R, fy + fh - B, gapColour);
+
+	// top: the column numbers' slot; left: the row letters' slot; right: plain. 40 px ends, the middles repeated.
+	MapArtNineSlice(dst, art, box(0, 0, AW, T), box(fx, fy, fw, T), 40, T, 40, 0, false);
+	MapArtNineSlice(dst, art, box(0, T, L, AH - T - B), box(fx, fy + T, L, fh - T - B), L, 20, 0, 20, false);
+	MapArtNineSlice(dst, art, box(AW - R, T, R, AH - T - B), box(fx + fw - R, fy + T, R, fh - T - B), R, 20, 0, 20, false);
+
+	// bottom: the buttons from the left, the level markers at the right, plain beam in between
+	INT32 const leftEnd = 287, rightStart = 301;
+	MapArtBlit(dst, art, box(0, AH - B, leftEnd, B), fx, fy + fh - B);
+	MapArtTile(dst, art, box(leftEnd, AH - B, rightStart - leftEnd, B), box(fx + leftEnd, fy + fh - B, fw - leftEnd - (AW - rightStart), B));
+	MapArtBlit(dst, art, box(rightStart, AH - B, AW - rightStart, B), fx + fw - (AW - rightStart), fy + fh - B);
+}
+
+
+void RenderMapFrameMargins(SGPVSurface* const dst)
+{
+	MapScreenGeometry const& g = g_ui.m_map;
+	SGPVSurface* const beamArt = MapArtSurface(guiMapBorder, 0);
+	SGPBox const& a = g.mapArea;
+	SGPBox const& f = g.frame;
+	/* Panels in the style of the character list next to them. Thin strips (less than a panel) get the
+	 * plain beam of the map border. */
+	SGPBox const beam{ 367, 60, 12, 200 };
+	auto fill = [&](INT32 x, INT32 y, INT32 w, INT32 h)
+	{
+		if (w <= 0 || h <= 0) return;
+		SGPBox const box{ (UINT16)x, (UINT16)y, (UINT16)w, (UINT16)h };
+		if (w < 40 || h < 40)
+		{
+			MapArtTile(dst, beamArt, beam, box);
+			return;
+		}
+		MapArtPanel(dst, box);
+	};
+	fill(a.x,             a.y,             f.x - a.x,                 a.h);
+	fill(f.x + f.w,       a.y,             a.x + a.w - (f.x + f.w),   a.h);
+	fill(f.x,             a.y,             f.w,                       f.y - a.y);
+	fill(f.x,             f.y + f.h,       f.w,                       a.y + a.h - (f.y + f.h));
+}
+
+
+
 void RenderMapBorder( void )
 {
 	if( fShowMapInventoryPool )
@@ -90,7 +154,14 @@ void RenderMapBorder( void )
 		return;
 	}
 
-	BltVideoObject(guiSAVEBUFFER, guiMapBorder, 0, MAP_BORDER_X, MAP_BORDER_Y);
+	if (g_ui.m_map.composedFrame())
+	{
+		RenderComposedMapBorder(guiSAVEBUFFER);
+	}
+	else
+	{
+		BltVideoObject(guiSAVEBUFFER, guiMapBorder, 0, MAP_BORDER_X, MAP_BORDER_Y);
+	}
 
 	// show the level marker
 	DisplayCurrentLevelMarker( );
@@ -109,9 +180,9 @@ void RenderMapBorderEtaPopUp( void )
 		return;
 	}
 
-	BltVideoObject(FRAME_BUFFER, guiMapBorderEtaPopUp, 0, MAP_BORDER_X + 215, STD_SCREEN_Y + 291);
+	BltVideoObject(FRAME_BUFFER, guiMapBorderEtaPopUp, 0, MAP_ETA_POPUP_X, MAP_ETA_POPUP_Y);
 
-	InvalidateRegion( MAP_BORDER_X + 215, (STD_SCREEN_Y + 291), MAP_BORDER_X + 215 + 100 , (STD_SCREEN_Y + 310));
+	InvalidateRegion(MAP_ETA_POPUP_X, MAP_ETA_POPUP_Y, MAP_ETA_POPUP_X + 100, MAP_ETA_POPUP_Y + 19);
 }
 
 
@@ -119,7 +190,7 @@ static void MakeButton(UINT idx, UINT gfx, INT16 x, GUI_CALLBACK click, const ST
 {
 	BUTTON_PICS* const img = LoadButtonImage(INTERFACEDIR "/map_border_buttons.sti", gfx, gfx + 9);
 	giMapBorderButtonsImage[idx] = img;
-	GUIButtonRef const btn = QuickCreateButtonNoMove(img, x, (STD_SCREEN_Y + 323), MSYS_PRIORITY_HIGH, click);
+	GUIButtonRef const btn = QuickCreateButtonNoMove(img, x, MAP_BORDER_BTN_Y, MSYS_PRIORITY_HIGH, click);
 	giMapBorderButtons[idx] = btn;
 	btn->SetFastHelpText(help);
 	btn->SetCursor(MSYS_NO_CURSOR);

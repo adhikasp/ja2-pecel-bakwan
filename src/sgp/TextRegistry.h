@@ -40,6 +40,9 @@ namespace TextRegistry
 	/** @a srcRect of @a src was copied to (@a dx, @a dy) in @a dst. */
 	void OnBlit(SGPVSurface* dst, SGPVSurface const* src, SDL_Rect srcRect, int dx, int dy);
 
+	/** @a srcRect of @a src was stretched over @a dstRect of @a dst (nearest neighbour). */
+	void OnStretch(SGPVSurface* dst, SGPVSurface const* src, SDL_Rect srcRect, SDL_Rect dstRect);
+
 	void OnSurfaceDeleted(SGPVSurface const*);
 
 	/** Forget everything, e.g. after a screen change. */
