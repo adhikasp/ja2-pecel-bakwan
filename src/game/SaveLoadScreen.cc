@@ -37,6 +37,7 @@
 #include "FileMan.h"
 #include "Campaign_Init.h"
 #include "UILayout.h"
+#include "ScreenBackdrop.h"
 #include "Handle_UI.h"
 #include "Interface_Dialogue.h"
 #include "Meanwhile.h"
@@ -211,7 +212,7 @@ ScreenID SaveLoadScreenHandle()
 		PauseGame();
 
 		//save the new rect
-		BlitBufferToBuffer(FRAME_BUFFER, guiSAVEBUFFER, 0, 0, SCREEN_WIDTH, 439);
+		BlitBufferToBuffer(FRAME_BUFFER, guiSAVEBUFFER, 0, 0, SCREEN_WIDTH, g_ui.isBigScreen() ? SCREEN_HEIGHT : 439);
 	}
 
 	RestoreBackgroundRects();
@@ -554,6 +555,11 @@ static void RenderSaveLoadScreen(void)
 	// If we are going to be instantly leaving the screen, don't draw the numbers
 	if (gfLoadGameUponEntry) return;
 
+	if (SGPVSurface* const backdrop = BeginScreenBackdrop())
+	{
+		BltVideoObject(backdrop, guiSlgBackGroundImage, 0, 0, 0);
+		EndScreenBackdrop(backdrop);
+	}
 	BltVideoObject(FRAME_BUFFER, guiSlgBackGroundImage, 0, STD_SCREEN_X, STD_SCREEN_Y);
 
 	// Display the Title

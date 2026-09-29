@@ -35,6 +35,7 @@
 #include "VSurface.h"
 #include "WorldMan.h"
 #include "UILayout.h"
+#include "ScreenBackdrop.h"
 
 #include <string_theory/string>
 
@@ -447,6 +448,13 @@ static void HandleOptionsScreen(void)
 
 static void RenderOptionsScreen(void)
 {
+	if (SGPVSurface* const backdrop = BeginScreenBackdrop())
+	{
+		BltVideoObject(backdrop, guiOptionBackGroundImage, 0, 0, 0);
+		BltVideoObject(backdrop, guiOptionsAddOnImages, 0, 0, 0);
+		BltVideoObject(backdrop, guiOptionsAddOnImages, 1, 0, 434);
+		EndScreenBackdrop(backdrop);
+	}
 	BltVideoObject(FRAME_BUFFER, guiOptionBackGroundImage, 0, STD_SCREEN_X, STD_SCREEN_Y);
 
 	//Get and display the titla image

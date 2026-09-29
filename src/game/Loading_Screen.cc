@@ -15,6 +15,9 @@
 #include "VSurface.h"
 #include "Video.h"
 #include "UILayout.h"
+#include "ScreenBackdrop.h"
+
+#include <memory>
 
 #include <string_theory/format>
 
@@ -104,7 +107,13 @@ void DisplayLoadScreenWithID(UINT8 const id)
 
 	try
 	{ // Blit the background image.
-		BltVideoSurfaceOnce(FRAME_BUFFER, filename.c_str(), STD_SCREEN_X, STD_SCREEN_Y);
+		std::unique_ptr<SGPVSurface> const art(AddVideoSurfaceFromFile(filename.c_str()));
+		if (SGPVSurface* const backdrop = BeginScreenBackdrop())
+		{
+			BltVideoSurface(backdrop, art.get(), 0, 0, nullptr);
+			EndScreenBackdrop(backdrop);
+		}
+		BltVideoSurface(FRAME_BUFFER, art.get(), STD_SCREEN_X, STD_SCREEN_Y, nullptr);
 	}
 	catch (...)
 	{ // Failed to load the file, so use a black screen and print out message.

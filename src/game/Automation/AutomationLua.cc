@@ -23,6 +23,11 @@
 #include "Strategic_Exit_GUI.h"
 #include "Strategic_Movement.h"
 #include "PreBattle_Interface.h"
+#include "Auto_Resolve.h"
+#include "Animated_ProgressBar.h"
+#include "Loading_Screen.h"
+#include "Campaign_Types.h"
+#include "Strategic_Movement.h"
 #include "Tactical_Placement_GUI.h"
 #include "Overhead_Types.h"
 #include "StrategicMap.h"
@@ -279,6 +284,23 @@ namespace
 		return s;
 	}
 
+	// Turn the enemies standing in the loaded sector into a strategic encounter, as if we had walked into them.
+	void FakeEncounter()
+	{
+		if (!gWorldSector.IsValid()) throw std::runtime_error("no sector is loaded");
+		SECTORINFO& si = SectorInfo[gWorldSector.AsByte()];
+		si.ubNumAdmins = si.ubNumTroops = si.ubNumElites = 0;
+		FOR_EACH_IN_TEAM(e, ENEMY_TEAM)
+		{
+			if (!e->bInSector || e->bLife == 0) continue;
+			if      (e->ubSoldierClass == SOLDIER_CLASS_ADMINISTRATOR) ++si.ubNumAdmins;
+			else if (e->ubSoldierClass == SOLDIER_CLASS_ELITE)         ++si.ubNumElites;
+			else                                                       ++si.ubNumTroops;
+		}
+		gubPBSector = gWorldSector;
+		gubEnemyEncounterCode = ENEMY_ENCOUNTER_CODE;
+	}
+
 	void RegisterApi(sol::table ja2)
 	{
 		sol::state& L = g_lua;
@@ -455,7 +477,8 @@ namespace
 
 		// ja2.debug(what, [a]): open a piece of tactical UI directly, for layout tests that cannot
 		// easily reach it through play. what = "exitmenu" (a = direction), "placement", "quote"
-		// (a = quote number, spoken by the selected merc), "message" (a = text).
+		// (a = quote number, spoken by the selected merc), "message" (a = text), "msgbox" (a = text),
+		// "loadscreen" (a = id), "prebattle" and "autoresolve" (fake a fight in the current sector).
 		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a) {
 			Guarded([&] {
 				if (what == "exitmenu")
@@ -479,6 +502,29 @@ namespace
 				else if (what == "message")
 				{
 					ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, ST::string(a && a->is<std::string>() ? a->as<std::string>() : "debug message"));
+				}
+				else if (what == "msgbox")
+				{
+					DoMessageBox(MSG_BOX_BASIC_STYLE, ST::string(a && a->is<std::string>() ? a->as<std::string>() : "Debug message box"), guiCurrentScreen, MSG_BOX_FLAG_OK);
+				}
+				else if (what == "loadscreen")
+				{
+					// A loading screen with its progress bar half full (a = loading screen id).
+					DisplayLoadScreenWithID(a && a->is<int>() ? a->as<int>() : LOADINGSCREEN_DAYGENERIC);
+					CreateLoadingScreenProgressBar();
+					RenderProgressBar(0, 60);
+				}
+				else if (what == "prebattle")
+				{
+					// Fake an enemy encounter in the current sector on the map screen and open the pre-battle panel.
+					FakeEncounter();
+					InitPreBattleInterface(nullptr, false);
+				}
+				else if (what == "autoresolve")
+				{
+					// Fake an enemy encounter in the current sector and go straight into auto resolve.
+					FakeEncounter();
+					EnterAutoResolveMode(gubPBSector);
 				}
 				else
 				{
