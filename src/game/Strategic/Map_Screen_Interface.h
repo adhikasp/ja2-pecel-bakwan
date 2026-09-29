@@ -11,12 +11,12 @@
 
 
 // char breath and life position
-#define BAR_INFO_X (STD_SCREEN_X + 66)
+#define BAR_INFO_X (MAPLEFT_X + 66)
 #define BAR_INFO_Y (STD_SCREEN_Y + 61)
 
 // merc icon position
 #define CHAR_ICON_CONTRACT_Y (STD_SCREEN_Y + 64)
-#define CHAR_ICON_X (STD_SCREEN_X + 187)
+#define CHAR_ICON_X (MAPLEFT_X + 187)
 #define CHAR_ICON_WIDTH 10
 #define CHAR_ICON_HEIGHT 10
 #define CHAR_ICON_SPACING 13

@@ -176,7 +176,7 @@ constexpr grams EXCEPTIONAL_WEIGHT = 2000;
 
 #define KEYRING_X      (INTERFACE_START_X + 496)
 #define KEYRING_Y      (INV_INTERFACE_START_Y + 106)
-#define MAP_KEYRING_X (STD_SCREEN_X + 217)
+#define MAP_KEYRING_X (MAPLEFT_X + 217)
 #define MAP_KEYRING_Y (STD_SCREEN_Y + 271)
 #define KEYRING_WIDTH   29
 #define KEYRING_HEIGHT  23
@@ -681,8 +681,8 @@ static void INVRenderINVPanelItem(SOLDIERTYPE const& s, INT16 const pocket, Dirt
 		{
 			if (in_map)
 			{
-				BltVideoObject(guiSAVEBUFFER, guiMapInvSecondHandBlockout, 0, STD_SCREEN_X + 14, STD_SCREEN_Y + 218);
-				RestoreExternBackgroundRect(STD_SCREEN_X + 14, STD_SCREEN_Y + 218, 102, 24);
+				BltVideoObject(guiSAVEBUFFER, guiMapInvSecondHandBlockout, 0, MAPLEFT_X + 14, STD_SCREEN_Y + 218);
+				RestoreExternBackgroundRect(MAPLEFT_X + 14, STD_SCREEN_Y + 218, 102, 24);
 			}
 			else
 			{
@@ -3800,7 +3800,7 @@ void InitKeyRingPopup(SOLDIERTYPE* const pSoldier, INT16 const sInvX, INT16 cons
 
 	if( guiCurrentScreen == MAP_SCREEN )
 	{
-		gsKeyRingPopupInvX = STD_SCREEN_X + 0;
+		gsKeyRingPopupInvX = MAPLEFT_X + 0;
 		sKeyRingItemWidth = MAP_KEY_RING_ROW_WIDTH;
 		sOffSetX = 40;
 		sOffSetY = 15;

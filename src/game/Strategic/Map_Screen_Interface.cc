@@ -67,7 +67,7 @@
 // number of LINKED LISTS for sets of leave items (each slot holds an unlimited # of items)
 #define NUM_LEAVE_LIST_SLOTS 20
 
-#define SELECTED_CHAR_ARROW_X (STD_SCREEN_X + 8)
+#define SELECTED_CHAR_ARROW_X (MAPLEFT_X + 8)
 
 #define SIZE_OF_UPDATE_BOX 20
 

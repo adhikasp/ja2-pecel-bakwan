@@ -395,7 +395,7 @@ static void AddStringToMapScreenMessageList(const ST::string& pString, UINT16 us
 
 void DisplayStringsInMapScreenMessageList(void)
 {
-	SetFontDestBuffer(FRAME_BUFFER, STD_SCREEN_X + 17, STD_SCREEN_Y + 360 + 6, STD_SCREEN_X + 407, STD_SCREEN_Y + 360 + 101);
+	SetFontDestBuffer(FRAME_BUFFER, STD_SCREEN_X + 17, MAPBOT_Y + 360 + 6 - MAP_MESSAGE_EXTRA_Y, STD_SCREEN_X + 407, MAPBOT_Y + 360 + 101);
 
 	SetFont(MAP_SCREEN_MESSAGE_FONT);
 	SetFontBackground(FONT_BLACK);
@@ -403,7 +403,7 @@ void DisplayStringsInMapScreenMessageList(void)
 
 	UINT8 ubCurrentStringIndex = gubCurrentMapMessageString;
 
-	INT16 sY = STD_SCREEN_Y + 377;
+	INT16 sY = MAPBOT_Y + 377 - MAP_MESSAGE_EXTRA_Y;
 	UINT16 usSpacing = GetFontHeight(MAP_SCREEN_MESSAGE_FONT);
 
 	for (UINT8 ubLinesPrinted = 0; ubLinesPrinted < MAX_MESSAGES_ON_MAP_BOTTOM; ubLinesPrinted++)

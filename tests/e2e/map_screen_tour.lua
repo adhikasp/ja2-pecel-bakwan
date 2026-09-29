@@ -28,6 +28,28 @@ shots.take("inventory.png")
 ja2.key("ESC")
 ja2.waitIdle()
 
+-- Popups of the character list: assignment and contract. They open next to the list, not in the middle of the screen.
+local col = {x = 0, y = ja2.screenSize().stdY + 107, w = 261, h = 252}
+ja2.click{text = "Squad 1", exact = true, within = col}
+ja2.waitIdle()
+ja2.expect(ja2.exists("Doctor"), "the assignment menu opens")
+shots.take("assignment.png", true)
+ja2.key("ESC")
+ja2.waitIdle()
+ja2.click{text = "Contract", exact = true}
+ja2.waitIdle()
+ja2.expect(ja2.exists("Dismiss"), "the contract menu opens")
+shots.take("contract.png", true)
+ja2.key("ESC")
+ja2.waitIdle()
+
+-- The sector inventory covers the map.
+ja2.key("ctrl+i")
+ja2.waitIdle()
+shots.take("sector_inventory.png", true)
+ja2.key("ctrl+i")
+ja2.waitIdle()
+
 -- Options and back.
 ja2.click{text = "Options", exact = true}
 ja2.waitScreen("OPTIONS_SCREEN")
