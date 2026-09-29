@@ -3,6 +3,7 @@
 #include "AutomationSession.h"
 
 #include "Assignments.h"
+#include "Font_Control.h"
 #include "Game_Clock.h"
 #include "Input.h"
 #include "Isometric_Utils.h"
@@ -17,6 +18,13 @@
 #include "Overhead.h"
 #include "Soldier_Control.h"
 #include "Soldier_Profile.h"
+#include "Dialogue_Control.h"
+#include "Message.h"
+#include "Strategic_Exit_GUI.h"
+#include "Strategic_Movement.h"
+#include "PreBattle_Interface.h"
+#include "Tactical_Placement_GUI.h"
+#include "Overhead_Types.h"
 #include "StrategicMap.h"
 #include "Text.h"
 
@@ -442,6 +450,40 @@ namespace
 		ja2.set_function("gridAt", [](int x, int y) {
 			return Guarded([&] {
 				return GridUnder(x, y);
+			});
+		});
+
+		// ja2.debug(what, [a]): open a piece of tactical UI directly, for layout tests that cannot
+		// easily reach it through play. what = "exitmenu" (a = direction), "placement", "quote"
+		// (a = quote number, spoken by the selected merc), "message" (a = text).
+		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a) {
+			Guarded([&] {
+				if (what == "exitmenu")
+				{
+					InitSectorExitMenu(a && a->is<int>() ? a->as<int>() : NORTH, 0);
+				}
+				else if (what == "placement")
+				{
+					// The GUI reads the battle group's sector: fake one in the current sector.
+					static GROUP dummy;
+					dummy.ubSector = gWorldSector;
+					gpBattleGroup = &dummy;
+					InitTacticalPlacementGUI();
+				}
+				else if (what == "quote")
+				{
+					SOLDIERTYPE const* const s = GetSelectedMan();
+					if (!s) throw std::runtime_error("no selected merc");
+					TacticalCharacterDialogue(s, a && a->is<int>() ? a->as<int>() : 0);
+				}
+				else if (what == "message")
+				{
+					ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, ST::string(a && a->is<std::string>() ? a->as<std::string>() : "debug message"));
+				}
+				else
+				{
+					throw std::runtime_error(("ja2.debug: unknown target " + what).c_str());
+				}
 			});
 		});
 

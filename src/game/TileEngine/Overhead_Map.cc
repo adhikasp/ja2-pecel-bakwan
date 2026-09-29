@@ -49,6 +49,9 @@
 #include "WorldDef.h"
 #include <string_theory/string>
 
+/** Top of the overhead map area: centred in the standard box, except for the tactical placement GUI, which sits at the bottom of the screen. */
+#define OVERHEAD_Y (gfTacticalPlacementGUIActive ? (INT32)(SCREEN_HEIGHT - 480) : (INT32)STD_SCREEN_Y)
+
 extern SOLDIERINITNODE *gpSelected;
 
 // OK, these are values that are calculated in InitRenderParams( ) with normal view settings.
@@ -249,7 +252,7 @@ static void DisplayMercNameInOverhead(SOLDIERTYPE const& s)
 	GetOverheadScreenXYFromGridNo(s.sGridNo, &x, &y);
 
 	x += STD_SCREEN_X;
-	y += STD_SCREEN_Y;
+	y += OVERHEAD_Y;
 
 	y -= s.sHeightAdjustment / 5 + 13;
 
@@ -282,7 +285,7 @@ void HandleOverheadMap(void)
 		DecayLightEffects(GetWorldTotalSeconds(), false);
 	}
 
-	RenderOverheadMap(0, WORLD_COLS / 2, STD_SCREEN_X, STD_SCREEN_Y, STD_SCREEN_X + 640, STD_SCREEN_Y + 320, FALSE);
+	RenderOverheadMap(0, WORLD_COLS / 2, STD_SCREEN_X, OVERHEAD_Y, STD_SCREEN_X + 640, OVERHEAD_Y + 320, FALSE);
 
 	HandleTalkingAutoFaces();
 
@@ -383,9 +386,9 @@ void GoIntoOverheadMap( )
 {
 	gfInOverheadMap = TRUE;
 
-	MSYS_DefineRegion(&OverheadBackgroundRegion, STD_SCREEN_X, STD_SCREEN_Y, STD_SCREEN_X + 640, STD_SCREEN_Y + 360, MSYS_PRIORITY_HIGH, CURSOR_NORMAL, MSYS_NO_CALLBACK, MSYS_NO_CALLBACK);
+	MSYS_DefineRegion(&OverheadBackgroundRegion, STD_SCREEN_X, OVERHEAD_Y, STD_SCREEN_X + 640, OVERHEAD_Y + 360, MSYS_PRIORITY_HIGH, CURSOR_NORMAL, MSYS_NO_CALLBACK, MSYS_NO_CALLBACK);
 
-	MSYS_DefineRegion(&OverheadRegion, STD_SCREEN_X, STD_SCREEN_Y, STD_SCREEN_X + 640, STD_SCREEN_Y + 320, MSYS_PRIORITY_HIGH, CURSOR_NORMAL, MSYS_NO_CALLBACK, MouseCallbackPrimarySecondary(ClickOverheadRegionCallbackPrimary, ClickOverheadRegionCallbackSecondary));
+	MSYS_DefineRegion(&OverheadRegion, STD_SCREEN_X, OVERHEAD_Y, STD_SCREEN_X + 640, OVERHEAD_Y + 320, MSYS_PRIORITY_HIGH, CURSOR_NORMAL, MSYS_NO_CALLBACK, MouseCallbackPrimarySecondary(ClickOverheadRegionCallbackPrimary, ClickOverheadRegionCallbackSecondary));
 
 	// Add shades to persons....
 	SGPVObject*            const vo  = GetVObject(uiPERSONS);
@@ -710,23 +713,35 @@ void RenderOverheadMap(INT16 const sStartPointX_M, INT16 const sStartPointY_M, I
 		INT16 sY1;
 		INT16 sY2;
 
-		CalculateRestrictedMapCoords(NORTH, &sX1, &sY1, &sX2, &sY2, sEndXS, sEndYS);
-		ColorFillVideoSurfaceArea(FRAME_BUFFER, sX1, sY1, sX2, sY2, black);
-
-		CalculateRestrictedMapCoords(WEST, &sX1, &sY1, &sX2, &sY2, sEndXS, sEndYS);
-		ColorFillVideoSurfaceArea(FRAME_BUFFER, sX1, sY1, sX2, sY2, black);
-
-		CalculateRestrictedMapCoords(SOUTH, &sX1, &sY1, &sX2, &sY2, sEndXS, sEndYS);
-		ColorFillVideoSurfaceArea(FRAME_BUFFER, sX1, sY1, sX2, sY2, black);
-
-		CalculateRestrictedMapCoords(EAST, &sX1, &sY1, &sX2, &sY2, sEndXS, sEndYS);
-		ColorFillVideoSurfaceArea(FRAME_BUFFER, sX1, sY1, sX2, sY2, black);
-
+		// The coordinates are relative to the top-left of the map area; the map is not at 0,0 on wide screens.
+		INT16 const w = sEndXS - sStartPointX_S;
+		INT16 const h = sEndYS - sStartPointY_S;
+		for (UINT8 const dir : { NORTH, WEST, SOUTH, EAST })
+		{
+			CalculateRestrictedMapCoords(dir, &sX1, &sY1, &sX2, &sY2, w, h);
+			ColorFillVideoSurfaceArea(FRAME_BUFFER, sX1 + sStartPointX_S, sY1 + sStartPointY_S, sX2 + sStartPointX_S, sY2 + sStartPointY_S, black);
+		}
 	}
 
 	if (!fFromMapUtility)
 	{ // Render border!
-		BltVideoObject(FRAME_BUFFER, uiOVERMAP, 0, STD_SCREEN_X + 0, STD_SCREEN_Y + 0);
+		BltVideoObject(FRAME_BUFFER, uiOVERMAP, 0, STD_SCREEN_X + 0, OVERHEAD_Y + 0);
+
+		// On screens bigger than 640x480 the map sits in the middle: fill the rest of the tactical
+		// area around it instead of leaving the world showing through.
+		if (g_ui.isBigScreen() && !gfEditMode)
+		{
+			UINT16 const c      = Get16BPPColor(FROMRGB(20, 15, 10));
+			INT32  const left   = STD_SCREEN_X;
+			INT32  const top    = OVERHEAD_Y;
+			INT32  const right  = STD_SCREEN_X + 640;
+			INT32  const bottom = OVERHEAD_Y + (gfTacticalPlacementGUIActive ? 480 : 360);
+			INT32  const areaB  = gfTacticalPlacementGUIActive ? SCREEN_HEIGHT : INTERFACE_START_Y;
+			if (top > 0)                  ColorFillVideoSurfaceArea(FRAME_BUFFER, 0,     0,      SCREEN_WIDTH, top,    c);
+			if (bottom < areaB)           ColorFillVideoSurfaceArea(FRAME_BUFFER, 0,     bottom, SCREEN_WIDTH, areaB,  c);
+			if (left > 0)                 ColorFillVideoSurfaceArea(FRAME_BUFFER, 0,     top,    left,         std::min<INT32>(bottom, areaB), c);
+			if (right < (INT32)SCREEN_WIDTH) ColorFillVideoSurfaceArea(FRAME_BUFFER, right, top,   SCREEN_WIDTH, std::min<INT32>(bottom, areaB), c);
+		}
 	}
 
 	// Update the save buffer
@@ -763,7 +778,7 @@ static void RenderOverheadOverlays(void)
 		//Now, draw his "doll"
 
 		sX += STD_SCREEN_X;
-		sY += STD_SCREEN_Y;
+		sY += OVERHEAD_Y;
 
 		//adjust for position.
 		sX += 2;
@@ -810,7 +825,7 @@ static void RenderOverheadOverlays(void)
 			GetOverheadScreenXYFromGridNo(wi.sGridNo, &sX, &sY);
 
 			sX += STD_SCREEN_X;
-			sY += STD_SCREEN_Y;
+			sY += OVERHEAD_Y;
 
 			//adjust for position.
 			sY += 6;
@@ -877,7 +892,7 @@ static GridNo InternalGetOverheadMouseGridNo(const INT dy)
 
 	// ATE: Adjust alogrithm values a tad to reflect map positioning
 	INT16 const sWorldScreenX = (gusMouseXPos - STD_SCREEN_X - gsStartRestrictedX -  5) * 5;
-	INT16       sWorldScreenY = (gusMouseYPos - STD_SCREEN_Y - gsStartRestrictedY + dy) * 5;
+	INT16       sWorldScreenY = (gusMouseYPos - OVERHEAD_Y - gsStartRestrictedY + dy) * 5;
 
 	// Get new proposed center location.
 	const GridNo grid_no = GetMapPosFromAbsoluteScreenXY(sWorldScreenX, sWorldScreenY);

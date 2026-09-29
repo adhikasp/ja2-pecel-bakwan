@@ -849,15 +849,78 @@ static void SelectedMercPopupMoveCallback(MOUSE_REGION* pRegion, uint32_t iReaso
 static void SelectedMercEnemyIndicatorCallback(MOUSE_REGION* pRegion, UINT32 iReason);
 
 
-/** Fill empty space at the bottom of the screen. */
+/** Tile a plain area of the panel art over dest (clipped to it) on the given surface. */
+static void TileFillerOnSurface(SGPVSurface* dst, SGPVSurface* src, SGPBox const& tile, SGPBox const& dest)
+{
+	for (int y = 0; y < dest.h; y += tile.h)
+	{
+		for (int x = 0; x < dest.w; x += tile.w)
+		{
+			SGPBox r = tile;
+			r.w = std::min<int>(tile.w, dest.w - x);
+			r.h = std::min<int>(tile.h, dest.h - y);
+			BltVideoSurface(dst, src, dest.x + x, dest.y + y, &r);
+		}
+	}
+}
+
+// Pre-rendered side fillers of the bottom bar (screen wide, INV_INTERFACE_HEIGHT tall; only the areas
+// left and right of the panel are meaningful). Built once, released with the panels.
+// A raw pointer on purpose: a static owner would be destroyed after the video system is gone.
+static SGPVSurface* gBottomFillerStrip = nullptr;
+
+static void BuildBottomFillerStrip(UINT16 const height)
+{
+	delete gBottomFillerStrip;
+	gBottomFillerStrip = new SGPVSurface(g_ui.m_screenWidth, height, PIXEL_DEPTH);
+	auto vsFiller = CreateVideoSurfaceFromObjectFile(INTERFACEDIR "/overheadinterface.sti", 0);
+	// a plain stretch of leather from the overhead panel; 70 rows so that two tiles make up the 140-row bar
+	SGPBox const tile = {96, 50, 64, 70};
+
+	INT32 const leftW  = INTERFACE_START_X;
+	INT32 const rightX = INTERFACE_START_X + g_ui.m_teamPanelWidth;
+	INT32 const rightW = g_ui.m_screenWidth - rightX;
+
+	SGPVSurface* const dst = gBottomFillerStrip;
+	UINT16 const dark  = Get16BPPColor(FROMRGB(16, 12, 8));
+	UINT16 const light = Get16BPPColor(FROMRGB(120, 96, 64));
+	if (leftW > 0)
+	{
+		SGPBox const dest = {0, 0, static_cast<UINT16>(leftW), height};
+		TileFillerOnSurface(dst, vsFiller.get(), tile, dest);
+		ColorFillVideoSurfaceArea(dst, 0, 0, leftW, 1, light);
+		ColorFillVideoSurfaceArea(dst, leftW - 2, 0, leftW, height, dark);
+	}
+	if (rightW > 0)
+	{
+		SGPBox const dest = {static_cast<UINT16>(rightX), 0, static_cast<UINT16>(rightW), height};
+		TileFillerOnSurface(dst, vsFiller.get(), tile, dest);
+		ColorFillVideoSurfaceArea(dst, rightX, 0, g_ui.m_screenWidth, 1, light);
+		ColorFillVideoSurfaceArea(dst, rightX, 0, rightX + 2, height, dark);
+	}
+}
+
+/** Fill the bottom bar area left and right of the panel (wide screens) with tiled panel art and a bevel
+ * against the panel, instead of leaving it black. Does nothing at classic 640x480. */
 static void FillEmptySpaceAtBottom()
 {
-	if(g_ui.isBigScreen())
+	if (!g_ui.isBigScreen()) return;
+
+	UINT16 const top    = g_ui.get_INV_INTERFACE_START_Y();
+	UINT16 const height = g_ui.m_screenHeight - top;
+	if (!gBottomFillerStrip) BuildBottomFillerStrip(height);
+
+	INT32 const leftW  = INTERFACE_START_X;
+	INT32 const rightX = INTERFACE_START_X + g_ui.m_teamPanelWidth;
+	if (leftW > 0)
 	{
-		ColorFillVideoSurfaceArea(guiSAVEBUFFER, 0, g_ui.get_INV_INTERFACE_START_Y(),
-						INTERFACE_START_X, g_ui.m_screenHeight, 0);
-		ColorFillVideoSurfaceArea(guiSAVEBUFFER, INTERFACE_START_X + g_ui.m_teamPanelWidth, g_ui.get_INV_INTERFACE_START_Y(),
-						g_ui.m_screenWidth, g_ui.m_screenHeight, 0);
+		SGPBox const r = {0, 0, static_cast<UINT16>(leftW), height};
+		BltVideoSurface(guiSAVEBUFFER, gBottomFillerStrip, 0, top, &r);
+	}
+	if (rightX < g_ui.m_screenWidth)
+	{
+		SGPBox const r = {static_cast<UINT16>(rightX), 0, static_cast<UINT16>(g_ui.m_screenWidth - rightX), height};
+		BltVideoSurface(guiSAVEBUFFER, gBottomFillerStrip, rightX, top, &r);
 	}
 }
 
@@ -1116,6 +1179,8 @@ void ShutdownSMPanel()
 	// All buttons and regions and video objects and video surfaces will be deleted at shutddown of SGM
 	// We may want to delete them at the interm as well, to free up room for other panels
 	delete guiSMPanel;
+	delete gBottomFillerStrip;
+	gBottomFillerStrip = nullptr;
 	DeleteVideoObject(guiSMObjects);
 	DeleteVideoObject(guiSMObjects2);
 
@@ -2347,6 +2412,8 @@ void ShutdownTEAMPanel()
 	// All buttons and regions and video objects and video surfaces will be deleted at shutddown of SGM
 	// We may want to delete them at the interm as well, to free up room for other panels
 	delete guiTEAMPanel;
+	delete gBottomFillerStrip;
+	gBottomFillerStrip = nullptr;
 	DeleteVideoObject(guiTEAMObjects);
 	DeleteVideoObject(guiVEHINV);
 
@@ -2476,8 +2543,8 @@ void RenderTEAMPanel(DirtyLevel const dirty_level)
 			dx += TM_INV_HAND_SEP;
 		}
 
-		RestoreExternBackgroundRect(INTERFACE_START_X, INTERFACE_START_Y, SCREEN_WIDTH - INTERFACE_START_X,
-						SCREEN_HEIGHT - INTERFACE_START_Y);
+		// from the left screen edge: the side fillers of wide screens are part of the bar
+		RestoreExternBackgroundRect(0, INTERFACE_START_Y, SCREEN_WIDTH, SCREEN_HEIGHT - INTERFACE_START_Y);
 
 		RenderTownIDString();
 	}

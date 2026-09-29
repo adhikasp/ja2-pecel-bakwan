@@ -75,6 +75,15 @@ struct MoneyLoc
 };
 
 
+/** Anchor point on the screen used by UILayout::anchor. */
+enum class Anchor
+{
+	TopLeft,    Top,     TopRight,
+	Left,       Center,  Right,
+	BottomLeft, Bottom,  BottomRight
+};
+
+
 /** User Interface layout definition. */
 struct UILayout
 {
@@ -124,6 +133,11 @@ public:
 	UINT16                m_teamPanelSlotsTotalWidth;       // total width of all team slots in the bottom team panel
 	UINT16                m_teamPanelWidth;                 // width of the entire team panel including slots and buttons
 
+	/** Tactical only: anchor the radar and the clock to the bottom-right corner of the screen instead of the
+	 * right edge of the bottom panel. Off by default (classic look); the panel art is not moved, so this is
+	 * meant for skins that provide their own backdrop. */
+	bool                  m_anchorRadarClockToScreen = false;
+
 	UINT16                m_stdScreenOffsetX;             /** Offset of the standard (640x480) window */
 	UINT16                m_stdScreenOffsetY;             /** Offset of the standard (640x480) window */
 
@@ -135,8 +149,24 @@ public:
 	/** Set new screen size. Element positions should be recalculated after setting this. @see UILayout::recalculatePositions */
 	void setScreenSize(UINT16 width, UINT16 height);
 
+	/** Position of a w x h rectangle attached to the given anchor of a screen_w x screen_h screen, shifted by (dx, dy).
+	 * Pure function, no dependency on game state. */
+	static SGPPoint anchorIn(UINT16 screen_w, UINT16 screen_h, Anchor a, UINT16 w, UINT16 h, INT16 dx = 0, INT16 dy = 0);
+
+	/** Top-left position of a w x h rectangle attached to the given anchor of the current screen. */
+	SGPPoint anchor(Anchor a, UINT16 w, UINT16 h, INT16 dx = 0, INT16 dy = 0) const;
+
+	/** The standard (640x480) box centred on the current screen. Replaces ad-hoc STD_SCREEN_X + n arithmetic in new code. */
+	SGPBox stdBox() const;
+
+	/** The rectangle of the whole screen. */
+	SGPBox screenBox() const;
+
 	/** Check if the screen is bigger than original 640x480. */
 	bool isBigScreen() const;
+
+	/** Left edge of the box with the radar and clock in tactical (right end of the panel, or of the screen). */
+	UINT16 tacticalButtonsBoxX() const;
 
 	UINT16 currentHeight() const;
 	UINT16 get_CLOCK_X() const;

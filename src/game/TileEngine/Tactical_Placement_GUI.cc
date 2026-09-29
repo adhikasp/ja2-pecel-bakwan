@@ -70,6 +70,9 @@ enum
 GUIButtonRef iTPButtons[NUM_TP_BUTTONS];
 
 UINT8	gubDefaultButton = CLEAR_BUTTON;
+/** The placement GUI is a 640x480 block centred horizontally and anchored to the bottom of the screen. */
+#define PLACEMENT_Y (SCREEN_HEIGHT - 480)
+
 BOOLEAN gfTacticalPlacementGUIActive = FALSE;
 BOOLEAN gfTacticalPlacementFirstTime = FALSE;
 BOOLEAN gfEnterTacticalPlacementGUI = FALSE;
@@ -99,7 +102,7 @@ static bool gfWest;
 
 static void MakeButton(UINT idx, INT16 y, GUI_CALLBACK click, const ST::string& text, const ST::string& help)
 {
-	GUIButtonRef const btn = QuickCreateButton(giOverheadButtonImages[idx], STD_SCREEN_X + 11, STD_SCREEN_Y + y, MSYS_PRIORITY_HIGH, click);
+	GUIButtonRef const btn = QuickCreateButton(giOverheadButtonImages[idx], STD_SCREEN_X + 11, PLACEMENT_Y + y, MSYS_PRIORITY_HIGH, click);
 	iTPButtons[idx] = btn;
 	btn->SpecifyGeneralTextAttributes(text, BLOCKFONT, FONT_BEIGE, 141);
 	btn->SetFastHelpText(help);
@@ -188,7 +191,7 @@ void InitTacticalPlacementGUI()
 		m.fPlaced                  = FALSE;
 		m.uiVObjectID              = Load65Portrait(GetProfile(m.pSoldier->ubProfile));
 		INT32 const x = STD_SCREEN_X +  91 + i / 2 * 54;
-		INT32 const y = STD_SCREEN_Y + 361 + i % 2 * 51;
+		INT32 const y = PLACEMENT_Y + 361 + i % 2 * 51;
 		MSYS_DefineRegion(&m.region, x, y, x + 54, y + 62, MSYS_PRIORITY_HIGH, 0, MercMoveCallback, MercClickCallback);
 
 		switch (s->ubStrategicInsertionCode)
@@ -241,7 +244,7 @@ static void RenderTacticalPlacementGUI()
 	if (!gfTacticalPlacementGUIDirty && gbHilightedMercID != -1)
 	{
 		INT32 const x = STD_SCREEN_X +  91 + gbHilightedMercID / 2 * 54;
-		INT32 const y = STD_SCREEN_Y + 361 + gbHilightedMercID % 2 * 51;
+		INT32 const y = PLACEMENT_Y + 361 + gbHilightedMercID % 2 * 51;
 		if (gusMouseXPos < x || x + 54 < gusMouseXPos ||
 				gusMouseYPos < y || y + 62 < gusMouseYPos)
 		{
@@ -256,15 +259,15 @@ static void RenderTacticalPlacementGUI()
 	// If the display is dirty render the entire panel.
 	if (gfTacticalPlacementGUIDirty)
 	{
-		BltVideoObject(buf, giOverheadPanelImage, 0, STD_SCREEN_X + 0, STD_SCREEN_Y + 320);
-		InvalidateRegion(STD_SCREEN_X + 0, STD_SCREEN_Y + 0, STD_SCREEN_X + 320, STD_SCREEN_Y + 480);
+		BltVideoObject(buf, giOverheadPanelImage, 0, STD_SCREEN_X + 0, PLACEMENT_Y + 320);
+		InvalidateRegion(STD_SCREEN_X + 0, PLACEMENT_Y + 0, STD_SCREEN_X + 320, PLACEMENT_Y + 480);
 		gfTacticalPlacementGUIDirty = FALSE;
 		MarkButtonsDirty();
 		for (INT32 i = 0; i != giPlacements; ++i)
 		{ // Render the mercs
 			MERCPLACEMENT const& m = gMercPlacement[i];
 			INT32         const  x = STD_SCREEN_X +  95 + i / 2 * 54;
-			INT32         const  y = STD_SCREEN_Y + 371 + i % 2 * 51;
+			INT32         const  y = PLACEMENT_Y + 371 + i % 2 * 51;
 			ColorFillVideoSurfaceArea(buf, x + 36, y + 2, x + 44, y + 30, 0);
 			BltVideoObject(buf, giMercPanelImage, 0, x,     y);
 			BltVideoObject(buf, m.uiVObjectID,    0, x + 2, y + 2);
@@ -281,36 +284,36 @@ static void RenderTacticalPlacementGUI()
 
 		SetFontAttributes(BLOCKFONT, FONT_BEIGE);
 		ST::string str = GetSectorIDString(gubPBSector, TRUE);
-		MPrint(STD_SCREEN_X + 120, STD_SCREEN_Y + 335, ST::format("{} {} -- {}...", gpStrategicString[STR_TP_SECTOR], str, gpStrategicString[STR_TP_CHOOSEENTRYPOSITIONS]));
+		MPrint(STD_SCREEN_X + 120, PLACEMENT_Y + 335, ST::format("{} {} -- {}...", gpStrategicString[STR_TP_SECTOR], str, gpStrategicString[STR_TP_CHOOSEENTRYPOSITIONS]));
 
 		// Shade out the part of the tactical map that isn't considered placable.
-		BlitBufferToBuffer(buf, guiSAVEBUFFER, STD_SCREEN_X + 0, STD_SCREEN_Y + 320, 640, 160);
+		BlitBufferToBuffer(buf, guiSAVEBUFFER, STD_SCREEN_X + 0, PLACEMENT_Y + 320, 640, 160);
 	}
 
 	if (gfValidLocationsChanged)
 	{
 		gfValidLocationsChanged = FALSE;
-		BlitBufferToBuffer(guiSAVEBUFFER, buf, STD_SCREEN_X + 4, STD_SCREEN_Y + 4, 636, 320);
-		InvalidateRegion(STD_SCREEN_X + 4, STD_SCREEN_Y + 4, STD_SCREEN_X + 636, STD_SCREEN_Y + 320);
+		BlitBufferToBuffer(guiSAVEBUFFER, buf, STD_SCREEN_X + 4, PLACEMENT_Y + 4, 636, 320);
+		InvalidateRegion(STD_SCREEN_X + 4, PLACEMENT_Y + 4, STD_SCREEN_X + 636, PLACEMENT_Y + 320);
 
 		UINT16 const hatch_colour =
 			DayTime() ? 0 :                     // 6AM to 9PM is black
 			Get16BPPColor(FROMRGB(63, 31, 31)); // 9PM to 6AM is gray (black is too dark to distinguish)
-		SGPRect clip = { (UINT16)(STD_SCREEN_X + 4), (UINT16)(STD_SCREEN_Y + 4), (UINT16)(STD_SCREEN_X + 636), (UINT16)(STD_SCREEN_Y + 320) };
+		SGPRect clip = { (UINT16)(STD_SCREEN_X + 4), (UINT16)(PLACEMENT_Y + 4), (UINT16)(STD_SCREEN_X + 636), (UINT16)(PLACEMENT_Y + 320) };
 		if (gbCursorMercID == -1)
 		{
-			if (gfNorth) clip.iTop    = STD_SCREEN_Y +  30;
+			if (gfNorth) clip.iTop    = PLACEMENT_Y +  30;
 			if (gfEast)  clip.iRight  = STD_SCREEN_X + 610;
-			if (gfSouth) clip.iBottom = STD_SCREEN_Y + 290;
+			if (gfSouth) clip.iBottom = PLACEMENT_Y + 290;
 			if (gfWest)  clip.iLeft   = STD_SCREEN_X +  30;
 		}
 		else
 		{
 			switch (gMercPlacement[gbCursorMercID].ubStrategicInsertionCode)
 			{
-				case INSERTION_CODE_NORTH: clip.iTop    = STD_SCREEN_Y +  30; break;
+				case INSERTION_CODE_NORTH: clip.iTop    = PLACEMENT_Y +  30; break;
 				case INSERTION_CODE_EAST:  clip.iRight  = STD_SCREEN_X + 610; break;
-				case INSERTION_CODE_SOUTH: clip.iBottom = STD_SCREEN_Y + 290; break;
+				case INSERTION_CODE_SOUTH: clip.iBottom = PLACEMENT_Y + 290; break;
 				case INSERTION_CODE_WEST:  clip.iLeft   = STD_SCREEN_X +  30; break;
 			}
 		}
@@ -318,7 +321,7 @@ static void RenderTacticalPlacementGUI()
 		UINT16* const pDestBuf         = l.Buffer<UINT16>();
 		UINT32  const uiDestPitchBYTES = l.Pitch();
 		Blt16BPPBufferLooseHatchRectWithColor(pDestBuf, uiDestPitchBYTES, &clip, hatch_colour);
-		SetClippingRegionAndImageWidth(uiDestPitchBYTES, STD_SCREEN_X + 0, STD_SCREEN_Y + 0, 640, 480);
+		SetClippingRegionAndImageWidth(uiDestPitchBYTES, STD_SCREEN_X + 0, PLACEMENT_Y + 0, 640, 480);
 		RectangleDraw(TRUE, clip.iLeft, clip.iTop, clip.iRight, clip.iBottom, hatch_colour, pDestBuf);
 	}
 
@@ -326,7 +329,7 @@ static void RenderTacticalPlacementGUI()
 	for (INT32 i = 0; i != giPlacements; ++i)
 	{ // Render the merc's names
 		INT32 const x = STD_SCREEN_X +  95 + i / 2 * 54;
-		INT32 const y = STD_SCREEN_Y + 371 + i % 2 * 51;
+		INT32 const y = PLACEMENT_Y + 371 + i % 2 * 51;
 
 		MERCPLACEMENT const& m     = gMercPlacement[i];
 		SOLDIERTYPE   const& s     = *m.pSoldier;
@@ -425,13 +428,13 @@ void TacticalPlacementHandle()
 	}
 	gfValidCursor = FALSE;
 	if( gbSelectedMercID != -1
-		&& (gusMouseYPos >= STD_SCREEN_Y) && (gusMouseYPos < STD_SCREEN_Y + 320)
+		&& (gusMouseYPos >= PLACEMENT_Y) && (gusMouseYPos < PLACEMENT_Y + 320)
 		&& (gusMouseXPos >= STD_SCREEN_X) && (gusMouseXPos < STD_SCREEN_X + 640) )
 	{
 		switch( gMercPlacement[ gbCursorMercID ].ubStrategicInsertionCode )
 		{
 			case INSERTION_CODE_NORTH:
-				if( gusMouseYPos <= (STD_SCREEN_Y + 40) )
+				if( gusMouseYPos <= (PLACEMENT_Y + 40) )
 					gfValidCursor = TRUE;
 				break;
 			case INSERTION_CODE_EAST:
@@ -439,7 +442,7 @@ void TacticalPlacementHandle()
 					gfValidCursor = TRUE;
 				break;
 			case INSERTION_CODE_SOUTH:
-				if( gusMouseYPos >= (STD_SCREEN_Y + 280) )
+				if( gusMouseYPos >= (PLACEMENT_Y + 280) )
 					gfValidCursor = TRUE;
 				break;
 			case INSERTION_CODE_WEST:
@@ -818,7 +821,7 @@ void HandleTacticalPlacementClicksInOverheadMap(INT32 reason)
 
 					if( fInvalidArea )
 					{ //Report error due to invalid placement.
-						SGPBox const CenterRect = { (UINT16) (STD_SCREEN_X + 220), (UINT16) (STD_SCREEN_Y + 120), 200, 80 };
+						SGPBox const CenterRect = { (UINT16) (STD_SCREEN_X + 220), (UINT16) (PLACEMENT_Y + 120), 200, 80 };
 						DoMessageBox(MSG_BOX_BASIC_STYLE, gpStrategicString[STR_TP_INACCESSIBLE_MESSAGE], guiCurrentScreen, MSG_BOX_FLAG_OK, DialogRemoved, &CenterRect);
 					}
 					else
@@ -832,7 +835,7 @@ void HandleTacticalPlacementClicksInOverheadMap(INT32 reason)
 		{ //not a valid cursor location...
 			if( gbCursorMercID != - 1 )
 			{
-				SGPBox const CenterRect = { (UINT16) (STD_SCREEN_X + 220), (UINT16) (STD_SCREEN_Y + 120), 200, 80 };
+				SGPBox const CenterRect = { (UINT16) (STD_SCREEN_X + 220), (UINT16) (PLACEMENT_Y + 120), 200, 80 };
 				DoMessageBox(MSG_BOX_BASIC_STYLE, gpStrategicString[STR_TP_INVALID_MESSAGE], guiCurrentScreen, MSG_BOX_FLAG_OK, DialogRemoved, &CenterRect);
 			}
 		}

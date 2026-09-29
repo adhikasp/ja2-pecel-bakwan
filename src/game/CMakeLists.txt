@@ -43,6 +43,7 @@ if (WITH_UNITTESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveTacticalStatusType_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/SaveLoadGame_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/SaveLoadGameStates_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/UILayout_unittest.cc
     )
 endif()
 

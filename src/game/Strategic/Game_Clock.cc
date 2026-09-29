@@ -884,7 +884,7 @@ void RenderPausedGameBox( void )
 	if (gfPauseDueToPlayerGamePause && gfGamePaused && g_paused_popup_box)
 	{
 		const INT32 x = (SCREEN_WIDTH - usPausedActualWidth)  / 2;
-		const INT32 y = 200 - usPausedActualHeight / 2;
+		const INT32 y = gsVIEWPORT_END_Y / 2 + 20 - usPausedActualHeight / 2; // 200 at 640x480
 		RenderMercPopUpBox(g_paused_popup_box, x, y, FRAME_BUFFER);
 		InvalidateRegion(x, y, x + usPausedActualWidth, y + usPausedActualHeight);
 	}
