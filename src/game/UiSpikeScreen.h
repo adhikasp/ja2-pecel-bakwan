@@ -24,6 +24,7 @@ struct UiSpikeInfo
 	bool        modal = false;
 	std::string status;
 	std::vector<UiSpikeElement> elements;
+	std::vector<std::string>    problems; // layout audit (gallery): clipped, off screen, overflowing
 };
 
 /** kind = "rml" or "inhouse". Throws if the spikes are not built in. */

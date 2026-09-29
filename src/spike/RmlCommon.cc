@@ -5,10 +5,12 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
+#include <cstring>
 #include <deque>
 #include <fstream>
 #include <iterator>
 #include <map>
+#include <stdexcept>
 
 namespace spike {
 
@@ -102,6 +104,20 @@ void SdlRenderInterface::Rasterize(Geometry const& g, Rml::Vector2f t, SDL_Textu
 		if (area == 0) continue;
 		if (area < 0) std::swap(tri[1], tri[2]); // counter-clockwise in y-down: positive edge functions inside
 		float const inv = 1.f / std::abs(area);
+		// texture footprint of one pixel (in uv), for minification
+		int taps = 1;
+		float du = 0, dv = 0;
+		if (tex)
+		{
+			float const uvArea = std::abs((tri[1].u - tri[0].u) * (tri[2].v - tri[0].v) - (tri[2].u - tri[0].u) * (tri[1].v - tri[0].v));
+			float const texelsPerPixel = std::sqrt(uvArea * tex->w * tex->h / std::abs(area));
+			if (texelsPerPixel > 1.25f)
+			{
+				taps = std::min(4, int(std::ceil(texelsPerPixel)));
+				du = texelsPerPixel / tex->w;
+				dv = texelsPerPixel / tex->h;
+			}
+		}
 		int const minX = std::max(clipL, int(std::floor(std::min({ tri[0].x, tri[1].x, tri[2].x }))));
 		int const maxX = std::min(clipR - 1, int(std::ceil(std::max({ tri[0].x, tri[1].x, tri[2].x }))));
 		int const minY = std::max(clipT, int(std::floor(std::min({ tri[0].y, tri[1].y, tri[2].y }))));
@@ -129,8 +145,20 @@ void SdlRenderInterface::Rasterize(Geometry const& g, Rml::Vector2f t, SDL_Textu
 				float a = tri[0].a * b0 + tri[1].a * b1 + tri[2].a * b2;
 				if (tex)
 				{
-					float s[4];
-					sample(tri[0].u * b0 + tri[1].u * b1 + tri[2].u * b2, tri[0].v * b0 + tri[1].v * b1 + tri[2].v * b2, s);
+					float s[4] = { 0, 0, 0, 0 };
+					float const u = tri[0].u * b0 + tri[1].u * b1 + tri[2].u * b2, v = tri[0].v * b0 + tri[1].v * b1 + tri[2].v * b2;
+					if (taps == 1) sample(u, v, s);
+					else
+					{
+						// box filter over the pixel's footprint in the texture (icons and faces drawn smaller than their size)
+						for (int j = 0; j < taps; ++j)
+							for (int i = 0; i < taps; ++i)
+							{
+								float t[4];
+								sample(u + ((i + 0.5f) / taps - 0.5f) * du, v + ((j + 0.5f) / taps - 0.5f) * dv, t);
+								for (int c = 0; c < 4; ++c) s[c] += t[c] / float(taps * taps);
+							}
+					}
 					// premultiplied vertex colour x premultiplied texel
 					r *= s[0]; gg *= s[1]; b *= s[2]; a *= s[3];
 				}
@@ -189,6 +217,30 @@ SDL_Texture* SdlRenderInterface::MakeTexture(unsigned char const* rgba, int w, i
 	return tex;
 }
 
+/** Rasterized icons are cached for the process: the SVG files do not change while it runs. */
+static std::string IconPixels(std::string const& icon, int size)
+{
+	static std::map<std::string, std::string> cache;
+	std::string const key = StyleDir() + "|" + icon + "@" + std::to_string(size);
+	if (auto it = cache.find(key); it != cache.end()) return it->second;
+	std::ifstream in(StyleDir() + "/icons/" + icon + ".svg", std::ios::binary);
+	std::string out;
+	if (in)
+	{
+		std::string const svg{ std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>() };
+		std::string error;
+		auto const px = RasterizeSvg(svg, size, &error);
+		if (px.empty()) SDL_Log("RmlUi: icon %s: %s", icon.c_str(), error.c_str());
+		out.assign(px.begin(), px.end());
+	}
+	if (out.empty())
+	{
+		SDL_Log("RmlUi: no icon %s", icon.c_str());
+		++RmlClock().warnings;
+	}
+	return cache[key] = out;
+}
+
 Rml::TextureHandle SdlRenderInterface::LoadTexture(Rml::Vector2i& dimensions, const Rml::String& source)
 {
 	// RmlUi joins the source with the document's path: our name is the last path component.
@@ -202,6 +254,17 @@ Rml::TextureHandle SdlRenderInterface::LoadTexture(Rml::Vector2i& dimensions, co
 		if (pixels.empty()) return {};
 		tex = MakeTexture(pixels.data(), w, h, repeat);
 		dimensions = { w, h };
+	}
+	else if (name.rfind("icon-", 0) == 0)
+	{
+		// icon-<name> or icon-<name>@<px>: the design system's SVG icons, rasterized at load (default 96 px)
+		std::string icon = name.substr(5);
+		int size = 96;
+		if (size_t const at = icon.find('@'); at != std::string::npos) { size = std::clamp(std::atoi(icon.c_str() + at + 1), 8, 512); icon.resize(at); }
+		std::string const pixels = IconPixels(icon, size);
+		if (pixels.empty()) return {};
+		tex = MakeTexture(reinterpret_cast<unsigned char const*>(pixels.data()), size, size, false);
+		dimensions = { size, size };
 	}
 	else if (name.rfind("face-", 0) == 0)
 	{
@@ -263,22 +326,106 @@ bool VirtualClock::LogMessage(Rml::Log::Type type, const Rml::String& message)
 }
 
 namespace {
-/** Relative paths (documents, style sheets) resolve against the style directory; RmlUi's URL parsing does not
- * accept Windows drive letters, so documents are loaded by relative name. */
+/** Relative paths (documents, style sheets) resolve against the UI directory; RmlUi's URL parsing does not accept
+ * Windows drive letters, so documents are loaded by relative name. Style sheets go through the token
+ * preprocessor (ExpandTokens): RCSS has no custom properties, so var(--name) is substituted from tokens.rcss. */
 class StyleFileInterface : public Rml::FileInterface
 {
+	struct File { std::string data; size_t pos = 0; };
+
 public:
 	Rml::FileHandle Open(const Rml::String& path) override
 	{
 		bool const absolute = !path.empty() && (path[0] == '/' || (path.size() > 1 && path[1] == ':'));
 		std::string const full = absolute ? path : StyleDir() + "/" + path;
-		return reinterpret_cast<Rml::FileHandle>(std::fopen(full.c_str(), "rb"));
+		std::ifstream in(full, std::ios::binary);
+		if (!in) return {};
+		auto* f = new File{ { std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>() } };
+		if (full.size() > 5 && full.compare(full.size() - 5, 5, ".rcss") == 0) f->data = ExpandTokens(f->data);
+		return reinterpret_cast<Rml::FileHandle>(f);
 	}
-	void Close(Rml::FileHandle f) override { std::fclose(reinterpret_cast<FILE*>(f)); }
-	size_t Read(void* buffer, size_t size, Rml::FileHandle f) override { return std::fread(buffer, 1, size, reinterpret_cast<FILE*>(f)); }
-	bool Seek(Rml::FileHandle f, long offset, int origin) override { return std::fseek(reinterpret_cast<FILE*>(f), offset, origin) == 0; }
-	size_t Tell(Rml::FileHandle f) override { return size_t(std::ftell(reinterpret_cast<FILE*>(f))); }
+	void Close(Rml::FileHandle h) override { delete reinterpret_cast<File*>(h); }
+	size_t Read(void* buffer, size_t size, Rml::FileHandle h) override
+	{
+		File& f = *reinterpret_cast<File*>(h);
+		size_t const n = std::min(size, f.data.size() - f.pos);
+		std::memcpy(buffer, f.data.data() + f.pos, n);
+		f.pos += n;
+		return n;
+	}
+	bool Seek(Rml::FileHandle h, long offset, int origin) override
+	{
+		File& f = *reinterpret_cast<File*>(h);
+		long const base = origin == SEEK_SET ? 0 : origin == SEEK_CUR ? long(f.pos) : long(f.data.size());
+		long const to = base + offset;
+		if (to < 0 || to > long(f.data.size())) return false;
+		f.pos = size_t(to);
+		return true;
+	}
+	size_t Tell(Rml::FileHandle h) override { return reinterpret_cast<File*>(h)->pos; }
 };
+}
+
+std::map<std::string, std::string> const& Tokens()
+{
+	// read once per style directory; "--name: value;" declarations, comments allowed
+	static std::string dir;
+	static std::map<std::string, std::string> tokens;
+	if (dir == StyleDir() && !tokens.empty()) return tokens;
+	dir = StyleDir();
+	tokens.clear();
+	std::ifstream in(dir + "/tokens.rcss", std::ios::binary);
+	std::string text{ std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>() };
+	for (size_t c; (c = text.find("/*")) != std::string::npos;)
+	{
+		size_t const e = text.find("*/", c);
+		text.erase(c, e == std::string::npos ? std::string::npos : e + 2 - c);
+	}
+	size_t p = 0;
+	while ((p = text.find("--", p)) != std::string::npos)
+	{
+		size_t const colon = text.find(':', p), semi = text.find(';', p);
+		if (colon == std::string::npos || semi == std::string::npos || colon > semi) break;
+		auto trim = [](std::string s) {
+			s.erase(0, s.find_first_not_of(" \t\r\n"));
+			s.erase(s.find_last_not_of(" \t\r\n") + 1);
+			return s;
+		};
+		tokens[trim(text.substr(p + 2, colon - p - 2))] = trim(text.substr(colon + 1, semi - colon - 1));
+		p = semi + 1;
+	}
+	return tokens;
+}
+
+std::string ExpandTokens(std::string text)
+{
+	auto const& tokens = Tokens();
+	for (int pass = 0; pass < 8; ++pass) // tokens may refer to tokens
+	{
+		bool changed = false;
+		size_t p = 0;
+		while ((p = text.find("var(--", p)) != std::string::npos)
+		{
+			size_t const e = text.find(')', p);
+			if (e == std::string::npos) break;
+			std::string const name = text.substr(p + 6, e - p - 6);
+			auto it = tokens.find(name);
+			if (it == tokens.end())
+			{
+				SDL_Log("RmlUi: unknown design token --%s", name.c_str());
+				++RmlClock().warnings;
+				p = e;
+				continue;
+			}
+			text.replace(p, e + 1 - p, it->second);
+			changed = true;
+		}
+		if (!changed) break;
+	}
+	return text;
+}
+
+namespace {
 }
 
 VirtualClock& RmlClock()
@@ -304,6 +451,34 @@ void InitRmlOnce()
 	static std::vector<unsigned char> bold    = LoadAssetBytes("LatoLatin-Bold.ttf");
 	Rml::LoadFontFace({ regular.data(), regular.size() }, "Lato", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Normal, true);
 	Rml::LoadFontFace({ bold.data(), bold.size() }, "Lato", Rml::Style::FontStyle::Normal, Rml::Style::FontWeight::Bold);
+}
+
+void LoadUiFonts()
+{
+	using S = Rml::Style::FontStyle;
+	using W = Rml::Style::FontWeight;
+	struct F { char const* file; char const* family; W weight; bool fallback; bool required; };
+	static F const fonts[] = {
+		{ "barlow/Barlow-Regular.ttf",                    "Barlow",           W::Normal, false, true },
+		{ "barlow/Barlow-Medium.ttf",                     "Barlow",           W(500),    false, true },
+		{ "barlow/Barlow-SemiBold.ttf",                   "Barlow",           W(600),    false, true },
+		{ "barlow/Barlow-Bold.ttf",                       "Barlow",           W::Bold,   false, true },
+		{ "barlowcondensed/BarlowCondensed-Medium.ttf",   "Barlow Condensed", W(500),    false, true },
+		{ "barlowcondensed/BarlowCondensed-SemiBold.ttf", "Barlow Condensed", W(600),    false, true },
+		{ "barlowcondensed/BarlowCondensed-Bold.ttf",     "Barlow Condensed", W::Bold,   false, true },
+		{ "sharetechmono/ShareTechMono-Regular.ttf",      "Share Tech Mono",  W::Normal, false, true },
+		// fallbacks, in order: glyphs the faces above lack (Polish, Russian, ...) and Chinese
+		{ "firasans/FiraSans-Regular.ttf",                "Fira Sans",        W::Normal, true,  true },
+		{ "firasans/FiraSans-SemiBold.ttf",               "Fira Sans",        W(600),    false, true },
+		{ "firasans/FiraSans-Bold.ttf",                   "Fira Sans",        W::Bold,   false, true },
+		{ "notosanssc/NotoSansSC[wght].ttf",              "Noto Sans SC",     W::Normal, true,  false },
+	};
+	std::string const dir = StyleDir() + "/fonts/";
+	for (F const& f : fonts)
+	{
+		if (!LoadFontFileOnce(dir + f.file, f.family, S::Normal, f.weight, f.fallback) && f.required)
+			throw std::runtime_error("ui: cannot load font " + dir + f.file);
+	}
 }
 
 bool LoadFontFileOnce(std::string const& path, std::string const& family, Rml::Style::FontStyle style,

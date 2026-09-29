@@ -91,6 +91,7 @@ void Create()
 	a->surface  = SDL_CreateSurface(SCREEN_WIDTH, SCREEN_HEIGHT, SDL_PIXELFORMAT_ARGB8888);
 	a->renderer = a->surface ? SDL_CreateSoftwareRenderer(a->surface) : nullptr;
 	if (!a->renderer) throw std::runtime_error(std::string("ui spike: ") + SDL_GetError());
+	float uiScale = 1;
 	if (a->kind.rfind("style:", 0) == 0)
 	{
 		// "style:<direction>:<screen>" (Phase 1 style directions)
@@ -99,11 +100,20 @@ void Create()
 		spike::SetImageProvider(LoadFaceSurface);
 		a->screen = spike::CreateStyleDemoScreen(a->renderer, rest.substr(0, colon), colon == std::string::npos ? "mainmenu" : rest.substr(colon + 1));
 	}
+	else if (a->kind.rfind("gallery:", 0) == 0)
+	{
+		// "gallery:<page>:<ui scale>" (Phase 1 design-system gallery)
+		std::string const rest = a->kind.substr(8);
+		size_t const colon = rest.find(':');
+		if (colon != std::string::npos) uiScale = std::strtof(rest.c_str() + colon + 1, nullptr);
+		spike::SetImageProvider(LoadFaceSurface);
+		a->screen = spike::CreateGalleryScreen(a->renderer, rest.substr(0, colon));
+	}
 	else
 	{
 		a->screen = spike::CreateScreen(a->kind, a->renderer, spike::SaveListModel::Fake());
 	}
-	a->screen->setSize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	a->screen->setSize(SCREEN_WIDTH, SCREEN_HEIGHT, uiScale > 0 ? uiScale : 1.f);
 	a->screen->mouseMove(gusMouseXPos, gusMouseYPos);
 	spike::Screen* const screen = a->screen.get();
 	MSYS_DefineRegion(&a->region, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK,
@@ -139,7 +149,7 @@ void Present(SDL_Surface* s)
 
 void UiSpikeOpen(std::string const& kind)
 {
-	if (kind != "rml" && kind != "inhouse" && kind.rfind("style:", 0) != 0) throw std::runtime_error("ui spike: unknown toolkit " + kind);
+	if (kind != "rml" && kind != "inhouse" && kind.rfind("style:", 0) != 0 && kind.rfind("gallery:", 0) != 0) throw std::runtime_error("ui spike: unknown toolkit " + kind);
 	g_pendingKind = kind;
 	if (guiCurrentScreen != UI_SPIKE_SCREEN) g_pendingReturn = guiCurrentScreen;
 	g_spike.reset();
@@ -159,6 +169,7 @@ UiSpikeInfo UiSpikeGetInfo()
 	info.hovered  = m.hovered;
 	info.modal    = m.modal;
 	info.status   = m.status;
+	info.problems = g_spike->screen->layoutProblems();
 	for (auto const& e : g_spike->screen->elements())
 	{
 		info.elements.push_back({ e.id, e.rect.x, e.rect.y, e.rect.w, e.rect.h });

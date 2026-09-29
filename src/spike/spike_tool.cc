@@ -6,7 +6,9 @@
 //   ja2-spike renderpath [--quick] [--no-gpu] SDL_Renderer drivers vs SDL_GPU, offscreen (markdown table)
 //   ja2-spike style DIR SCREEN WxH OUT.png [HOVER_ID]
 //                                             render a Phase 1 style-direction mock (DIR = a | b | c, SCREEN =
-//                                             mainmenu | squadbar | mapscreen) from assets/ui-styles, no game data
+//                                             mainmenu | squadbar | mapscreen) from assets/ui/mocks, no game data
+//   ja2-spike gallery PAGE WxH SCALE OUT.png  render a page of the Phase 1 design-system gallery at a UI scale
+//                                             (1, 1.25, 1.5, 2) and print its layout audit
 //   ja2-spike selftest OUTDIR                 CI check: both toolkits x all states render, respond to input and
 //                                             differ from an empty frame; writes the PNGs to OUTDIR
 #include "RenderPathSpike.h"
@@ -20,7 +22,7 @@ using namespace spike;
 
 static int Usage()
 {
-	std::fprintf(stderr, "usage: ja2-spike ui KIND WxH OUT.png [STATE] | style DIR SCREEN WxH OUT.png [HOVER_ID] | perf [--quick] | renderpath [--quick] [--no-gpu] | selftest OUTDIR\n");
+	std::fprintf(stderr, "usage: ja2-spike ui KIND WxH OUT.png [STATE] | style DIR SCREEN WxH OUT.png [HOVER_ID] | gallery PAGE WxH SCALE OUT.png | perf [--quick] | renderpath [--quick] [--no-gpu] | selftest OUTDIR\n");
 	return 2;
 }
 
@@ -87,6 +89,31 @@ static int Style(int argc, char** argv)
 	bool const ok = SavePng(surface, argv[5]);
 	SDL_DestroySurface(surface);
 	std::printf("style %s %s %dx%d -> %s\n", argv[2], argv[3], w, h, argv[5]);
+	return ok ? 0 : 1;
+}
+
+static int Gallery(int argc, char** argv)
+{
+	// ja2-spike gallery PAGE WxH SCALE OUT.png
+	int w, h;
+	if (argc < 6 || !ParseSize(argv[3], w, h)) return Usage();
+	SDL_Surface* surface = SDL_CreateSurface(w, h, SDL_PIXELFORMAT_ARGB8888);
+	SDL_Renderer* r = surface ? SDL_CreateSoftwareRenderer(surface) : nullptr;
+	if (!r) throw std::runtime_error(SDL_GetError());
+	int problems = 0;
+	{
+		auto screen = CreateGalleryScreen(r, argv[2]);
+		screen->setSize(w, h, std::strtof(argv[4], nullptr));
+		screen->mouseMove(-1000, -1000);
+		screen->update(1.0 / 60);
+		for (auto const& p : screen->layoutProblems()) { std::printf("layout: %s\n", p.c_str()); ++problems; }
+		screen->render();
+		SDL_FlushRenderer(r);
+	}
+	SDL_DestroyRenderer(r);
+	bool const ok = SavePng(surface, argv[5]);
+	SDL_DestroySurface(surface);
+	std::printf("gallery %s %dx%d %s%% -> %s (%d layout problems)\n", argv[2], w, h, argv[4], argv[5], problems);
 	return ok ? 0 : 1;
 }
 
@@ -168,6 +195,7 @@ int main(int argc, char** argv)
 	{
 		if (cmd == "ui") return Ui(argc, argv);
 		if (cmd == "style") return Style(argc, argv);
+		if (cmd == "gallery") return Gallery(argc, argv);
 		if (cmd == "perf") return Perf(quick);
 		if (cmd == "selftest") return argc > 2 ? SelfTest(argv[2]) : Usage();
 		if (cmd == "renderpath")

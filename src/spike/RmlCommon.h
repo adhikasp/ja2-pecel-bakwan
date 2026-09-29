@@ -60,6 +60,14 @@ void InitRmlOnce();
 bool LoadFontFileOnce(std::string const& path, std::string const& family, Rml::Style::FontStyle style,
 	Rml::Style::FontWeight weight, bool fallback = false);
 
+/** Design tokens from <StyleDir>/tokens.rcss ("--name: value;"), and var(--name) substitution in RCSS text. */
+std::map<std::string, std::string> const& Tokens();
+std::string ExpandTokens(std::string text);
+
+/** Registers the design system's faces: Barlow, Barlow Condensed, Share Tech Mono, and the fallback faces for
+ * glyphs they lack (Fira Sans: Latin Extended, Cyrillic, Greek; Noto Sans SC: Chinese, when downloaded). */
+void LoadUiFonts();
+
 /** Procedural texture as straight-alpha RGBA32 (exposed for tests). Unknown name → empty result. */
 std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, int& h, bool& repeat);
 

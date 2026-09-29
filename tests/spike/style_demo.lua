@@ -18,7 +18,7 @@ local function element(id)
 	return nil
 end
 
-for _, dir in ipairs({ "a", "b", "c" }) do
+for _, dir in ipairs({ "b" }) do -- the chosen direction (docs/ui/style-directions.md)
 	for _, screen in ipairs({ "mainmenu", "squadbar", "mapscreen" }) do
 		ja2.debug("styledemo", dir, screen)
 		ja2.waitScreen("UI_SPIKE_SCREEN")
