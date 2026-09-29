@@ -776,6 +776,8 @@ static void GetArrowsBackground(void)
 
 	// Get screen position of our guy
 	GetSoldierTRUEScreenPos(sel, &sMercScreenX, &sMercScreenY);
+	sMercScreenX = g_ui.worldToUi(sMercScreenX);
+	sMercScreenY = g_ui.worldToUi(sMercScreenY);
 
 	if (guiShowUPDownArrows & ARROWS_SHOW_UP_BESIDE)
 	{
@@ -892,8 +894,10 @@ void GetSoldierAboveGuyPositions(SOLDIERTYPE const* const s, INT16* const psX, I
 	INT16 sMercScreenY;
 	GetSoldierTRUEScreenPos(s, &sMercScreenX, &sMercScreenY);
 
-	*psX = sMercScreenX - 80 / 2;
-	*psY = sMercScreenY - sTextBodyTypeYOffset + sStanceOffset;
+	// The soldier is in world pixels; what is printed at these positions is UI, so the anchor is converted
+	// (the offsets are relative to the sprite, hence applied before). The 80 wide text box is UI pixels.
+	*psX = g_ui.worldToUi(sMercScreenX) - 80 / 2;
+	*psY = g_ui.worldToUi(sMercScreenY - sTextBodyTypeYOffset + sStanceOffset);
 
 	// OK, Check if we need to go below....
 	// Can do this if 1) displaying damge or 2) above screen
@@ -901,7 +905,7 @@ void GetSoldierAboveGuyPositions(SOLDIERTYPE const* const s, INT16* const psX, I
 		!fRadio &&
 		(s->fDisplayDamage || *psY < gsVIEWPORT_WINDOW_START_Y))
 	{
-		*psY = sMercScreenY;
+		*psY = g_ui.worldToUi(sMercScreenY);
 	}
 }
 
@@ -1284,6 +1288,8 @@ void InitDoorOpenMenu(SOLDIERTYPE* const pSoldier, DOOR* const d, BOOLEAN const 
 	// Locate to guy first.....
 	LocateSoldier(pSoldier, FALSE);
 	GetSoldierScreenPos( pSoldier, &sScreenX, &sScreenY );
+	sScreenX = g_ui.worldToUi(sScreenX);
+	sScreenY = g_ui.worldToUi(sScreenY);
 	gOpenDoorMenu.sX = sScreenX - (BUTTON_PANEL_WIDTH  - pSoldier->sBoundingBoxWidth)  / 2;
 	gOpenDoorMenu.sY = sScreenY - (BUTTON_PANEL_HEIGHT - pSoldier->sBoundingBoxHeight) / 2;
 
@@ -2208,6 +2214,10 @@ void RenderTopmostMultiPurposeLocator( )
 	{
 		sYPos -= ROOF_LEVEL_HEIGHT;
 	}
+
+	// The locator is UI: at the UI position of the tile
+	sXPos = g_ui.worldToUi(sXPos);
+	sYPos = g_ui.worldToUi(sYPos);
 
 	// Center circle!
 	sXPos -= 20;

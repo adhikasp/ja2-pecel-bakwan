@@ -182,6 +182,8 @@ void RenderAccumulatedBurstLocations( )
 			//sXPos -= 10;
 			//sYPos -= 10;
 
+			sXPos = g_ui.worldToUi(sXPos);
+			sYPos = g_ui.worldToUi(sYPos);
 			RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
 
 			BltVideoObject(FRAME_BUFFER, guiBURSTACCUM, 1, sXPos, sYPos);

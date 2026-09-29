@@ -40,6 +40,41 @@ void UILayout::setScreenSize(UINT16 width, UINT16 height)
 }
 
 
+void UILayout::setLayers(VideoLayout::LayerLayout const& layers)
+{
+	setScreenSize(layers.ui.w, layers.ui.h);
+	m_layered     = layers.layered;
+	m_uiScale     = static_cast<UINT8>(layers.uiScale);
+	m_worldZoom   = static_cast<UINT8>(layers.worldZoom);
+	m_worldWidth  = static_cast<UINT16>(layers.world.w);
+	m_worldHeight = static_cast<UINT16>(layers.world.h);
+}
+
+
+LayerPoint UILayout::uiToWorld(INT32 const x, INT32 const y) const
+{
+	return { uiToWorld(x), uiToWorld(y) };
+}
+
+
+LayerPoint UILayout::worldToUi(INT32 const x, INT32 const y) const
+{
+	return { worldToUi(x), worldToUi(y) };
+}
+
+
+INT32 UILayout::uiToWorld(INT32 const v) const
+{
+	return m_layered ? VideoLayout::UiToWorld(v, m_uiScale, m_worldZoom) : v;
+}
+
+
+INT32 UILayout::worldToUi(INT32 const v) const
+{
+	return m_layered ? VideoLayout::WorldToUi(v, m_uiScale, m_worldZoom) : v;
+}
+
+
 SGPPoint UILayout::anchorIn(UINT16 screen_w, UINT16 screen_h, Anchor a, UINT16 w, UINT16 h, INT16 dx, INT16 dy)
 {
 	int x = 0;
@@ -175,10 +210,20 @@ void UILayout::recalculatePositions()
 	m_VIEWPORT_END_X              = m_screenWidth;
 	m_VIEWPORT_END_Y              = m_screenHeight - 120;
 	m_VIEWPORT_WINDOW_END_Y       = m_screenHeight - 120;
-	m_tacticalMapCenterX          = (m_VIEWPORT_END_X - m_VIEWPORT_START_X) / 2;
-	m_tacticalMapCenterY          = (m_VIEWPORT_END_Y - m_VIEWPORT_START_Y) / 2;
-
-	m_worldClippingRect.set(0, 0, m_screenWidth, m_screenHeight - 120);
+	if (m_layered)
+	{
+		// The world fills its whole buffer, under the HUD. "Centre" is the centre of the part the HUD does
+		// not cover, so that locating a merc puts him in the middle of what the player can see.
+		m_tacticalMapCenterX      = m_worldWidth / 2;
+		m_tacticalMapCenterY      = uiToWorld(m_VIEWPORT_END_Y - m_VIEWPORT_START_Y) / 2;
+		m_worldClippingRect.set(0, 0, m_worldWidth, m_worldHeight);
+	}
+	else
+	{
+		m_tacticalMapCenterX      = (m_VIEWPORT_END_X - m_VIEWPORT_START_X) / 2;
+		m_tacticalMapCenterY      = (m_VIEWPORT_END_Y - m_VIEWPORT_START_Y) / 2;
+		m_worldClippingRect.set(0, 0, m_screenWidth, m_screenHeight - 120);
+	}
 
 	m_contractPosition.set(       m_stdScreenOffsetX + 120, m_stdScreenOffsetY +  50);
 	m_attributePosition.set(      m_stdScreenOffsetX + 220, m_stdScreenOffsetY + 150);

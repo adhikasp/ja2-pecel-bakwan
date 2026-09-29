@@ -73,6 +73,55 @@ constexpr DisplayLayout ComputeDisplayLayout(Size const window, int const uiScal
 	return { logical, scale };
 }
 
+/** World zoom value meaning "same layer and scale as the UI" (the classic single layer). */
+constexpr int WORLD_ZOOM_MATCH_UI = 0;
+
+/** Integer division rounding towards negative infinity (world positions can be negative). */
+constexpr int FloorDiv(int const a, int const b)
+{
+	int const q = a / b;
+	return (a % b != 0 && (a < 0) != (b < 0)) ? q - 1 : q;
+}
+
+/**
+ * The layers of the picture: the UI canvas (logical size, drawn at the UI scale Su) and, when the
+ * world has its own scale Zw, a world layer of `window / Zw` pixels underneath it. Both cover the
+ * same physical area (the canvas: UI size * Su). When the world follows the UI there is just one
+ * layer: world == ui, Zw == Su.
+ */
+struct LayerLayout
+{
+	Size ui;         // UI canvas in UI pixels (SCREEN_WIDTH x SCREEN_HEIGHT)
+	Size world;      // world buffer in world pixels; == ui when not layered
+	Size canvas;     // ui * uiScale: the physical area both layers fill
+	int  uiScale;    // Su
+	int  worldZoom;  // Zw; == uiScale when not layered
+	bool layered;    // world and UI are separate layers
+	constexpr bool operator==(LayerLayout const&) const = default;
+};
+
+/** `worldZoom` is WORLD_ZOOM_MATCH_UI or 1..MAX_UI_SCALE. A zoom equal to the UI scale is not layered. */
+constexpr LayerLayout ComputeLayerLayout(DisplayLayout const ui, int const worldZoom)
+{
+	Size const canvas{ ui.logical.w * ui.scale, ui.logical.h * ui.scale };
+	int const zw = worldZoom == WORLD_ZOOM_MATCH_UI ? ui.scale : std::clamp(worldZoom, 1, MAX_UI_SCALE);
+	if (zw == ui.scale) return { ui.logical, ui.logical, canvas, ui.scale, ui.scale, false };
+	// Rounded up so that the world covers the whole canvas.
+	Size const world{ (canvas.w + zw - 1) / zw, (canvas.h + zw - 1) / zw };
+	return { ui.logical, world, canvas, ui.scale, zw, true };
+}
+
+/** A position in UI pixels expressed in world pixels (and back): both cover the same area. */
+constexpr int UiToWorld(int const v, int const uiScale, int const worldZoom)
+{
+	return FloorDiv(v * uiScale, worldZoom);
+}
+
+constexpr int WorldToUi(int const v, int const uiScale, int const worldZoom)
+{
+	return FloorDiv(v * worldZoom, uiScale);
+}
+
 /** How the logical canvas is put on a window of some (physical) size. */
 struct Presentation
 {

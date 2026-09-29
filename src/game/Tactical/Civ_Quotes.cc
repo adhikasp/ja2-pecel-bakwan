@@ -739,8 +739,8 @@ void StartCivQuote( SOLDIERTYPE *pCiv )
 	// Determine location...
 	// Get location of civ on screen.....
 	GetSoldierScreenPos( pCiv, &sScreenX, &sScreenY );
-	sX = sScreenX;
-	sY = sScreenY;
+	sX = g_ui.worldToUi(sScreenX);
+	sY = g_ui.worldToUi(sScreenY);
 
 	// begin quote
 	BeginCivQuote( pCiv, ubCivQuoteID, ubEntryID, sX, sY );

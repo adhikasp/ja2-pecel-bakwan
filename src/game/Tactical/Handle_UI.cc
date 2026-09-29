@@ -4135,8 +4135,9 @@ static void GetGridNoScreenXY(INT16 sGridNo, INT16* pScreenX, INT16* pScreenY)
 	// Adjust y offset!
 	sScreenY += ( WORLD_TILE_Y/2);
 
-	(*pScreenX) = sScreenX;
-	(*pScreenY) = sScreenY;
+	// The rubber band this is compared with is in UI pixels
+	(*pScreenX) = g_ui.worldToUi(sScreenX);
+	(*pScreenY) = g_ui.worldToUi(sScreenY);
 }
 
 

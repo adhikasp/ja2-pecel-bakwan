@@ -2,6 +2,7 @@
 #define _UI_LAYOUT_H_
 
 #include "Types.h"
+#include "VideoLayout.h"
 
 /////////////////////////////////////////////////////////////
 // defines
@@ -28,6 +29,20 @@
 #define STD_SCREEN_Y                    (g_ui.m_stdScreenOffsetY)
 #define MAP_SCREEN_WIDTH                (g_ui.m_mapScreenWidth)
 #define MAP_SCREEN_HEIGHT               (g_ui.m_mapScreenHeight)
+
+/* The tactical world can be a layer of its own, with its own scale (see "world_zoom"). World
+ * pixels are then not UI pixels: the world is rendered into a WORLD_BUFFER of
+ * WORLD_SCREEN_WIDTH x WORLD_SCREEN_HEIGHT pixels, under the UI layer. Without layers all of these
+ * are the same as the UI values above. Code that renders, clips or hit-tests the world uses these;
+ * code that places UI (menus, text, regions) keeps using the gsVIEWPORT_* values. */
+#define WORLD_SCREEN_WIDTH              (g_ui.worldWidth())
+#define WORLD_SCREEN_HEIGHT             (g_ui.worldHeight())
+#define gsWORLD_VIEWPORT_START_X        (g_ui.worldViewStartX())
+#define gsWORLD_VIEWPORT_START_Y        (g_ui.worldViewStartY())
+#define gsWORLD_VIEWPORT_WINDOW_START_Y (g_ui.worldWindowStartY())
+#define gsWORLD_VIEWPORT_END_X          (g_ui.worldViewEndX())
+#define gsWORLD_VIEWPORT_END_Y          (g_ui.worldViewEndY())
+#define gsWORLD_VIEWPORT_WINDOW_END_Y   (g_ui.worldWindowEndY())
 
 #define SM_BODYINV_X                    (INTERFACE_START_X + 244)
 #define SM_BODYINV_Y                    (INV_INTERFACE_START_Y + 6)
@@ -84,6 +99,14 @@ enum class Anchor
 };
 
 
+/** A point that may be negative, unlike SGPPoint (world positions can be off the screen). */
+struct LayerPoint
+{
+	INT32 x;
+	INT32 y;
+};
+
+
 /** User Interface layout definition. */
 struct UILayout
 {
@@ -109,12 +132,20 @@ public:
 
 	UINT16                m_VIEWPORT_END_X;
 	UINT16                m_VIEWPORT_END_Y;
-	UINT16                m_tacticalMapCenterX;                           /**< Center of the tactical map (for 640x480 it is (320, 180)). */
-	UINT16                m_tacticalMapCenterY;                           /**< Center of the tactical map (for 640x480 it is (320, 180)). */
+	UINT16                m_tacticalMapCenterX;                           /**< Center of the tactical map in WORLD pixels (for 640x480 it is (320, 180)). */
+	UINT16                m_tacticalMapCenterY;                           /**< Center of the tactical map in WORLD pixels (for 640x480 it is (320, 180)). */
 
 	UINT16                m_VIEWPORT_WINDOW_END_Y;
 
-	SGPRect               m_worldClippingRect;
+	SGPRect               m_worldClippingRect;                            /**< In WORLD pixels. */
+
+	// Layers (see VideoLayout::LayerLayout). Not layered: the world is drawn into the same
+	// surface as the UI, both at m_uiScale, and world pixels are UI pixels.
+	bool                  m_layered = false;
+	UINT16                m_worldWidth = 0;                               /**< World buffer size in world pixels (0: same as the screen). */
+	UINT16                m_worldHeight = 0;
+	UINT8                 m_uiScale = 1;                                  /**< Su: physical pixels per UI pixel */
+	UINT8                 m_worldZoom = 1;                                /**< Zw: physical pixels per world pixel */
 
 	// Map screen interface
 	SGPPoint              m_versionPosition;
@@ -148,6 +179,30 @@ public:
 
 	/** Set new screen size. Element positions should be recalculated after setting this. @see UILayout::recalculatePositions */
 	void setScreenSize(UINT16 width, UINT16 height);
+
+	/** Set the UI canvas size and the layers from the layout computed by VideoLayout. Element positions should
+	 * be recalculated afterwards. */
+	void setLayers(VideoLayout::LayerLayout const& layers);
+
+	bool   isLayered() const  { return m_layered; }
+	UINT16 worldWidth() const  { return m_layered ? m_worldWidth  : m_screenWidth;  }
+	UINT16 worldHeight() const { return m_layered ? m_worldHeight : m_screenHeight; }
+
+	/** World rendering viewport, in world pixels. Without layers the same as the gsVIEWPORT_* values (which
+	 * change with the interface panel); with layers the world fills its whole buffer, under the HUD. */
+	UINT16 worldViewStartX() const     { return m_layered ? 0              : m_VIEWPORT_START_X;        }
+	UINT16 worldViewStartY() const     { return m_layered ? 0              : m_VIEWPORT_START_Y;        }
+	UINT16 worldWindowStartY() const   { return m_layered ? 0              : m_VIEWPORT_WINDOW_START_Y; }
+	UINT16 worldViewEndX() const       { return m_layered ? m_worldWidth   : m_VIEWPORT_END_X;          }
+	UINT16 worldViewEndY() const       { return m_layered ? m_worldHeight  : m_VIEWPORT_END_Y;          }
+	UINT16 worldWindowEndY() const     { return m_layered ? m_worldHeight  : m_VIEWPORT_WINDOW_END_Y;   }
+
+	/** Convert a position in UI pixels (the mouse, regions, everything UI code deals in) to world pixels (tile
+	 * rendering and picking), and back. Identity without layers. */
+	LayerPoint uiToWorld(INT32 x, INT32 y) const;
+	LayerPoint worldToUi(INT32 x, INT32 y) const;
+	INT32      uiToWorld(INT32 v) const;
+	INT32      worldToUi(INT32 v) const;
 
 	/** Position of a w x h rectangle attached to the given anchor of a screen_w x screen_h screen, shifted by (dx, dy).
 	 * Pure function, no dependency on game state. */

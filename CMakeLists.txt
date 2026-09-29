@@ -293,12 +293,34 @@ if (WITH_UNITTESTS)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
+            if(n MATCHES "^tactical_layers")
+                continue() # run below, with layers
+            endif()
             add_test(
                 NAME e2e_${n}
                 COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${f}" --isolated
                     --res 640x480 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/${n}"
             )
         endforeach()
+        # Tactical with the world as a layer of its own: (window, UI scale, world zoom)
+        foreach(layers 2560x1440:2:1 3840x2160:3:2 1920x1080:2:1)
+            string(REPLACE ":" ";" L ${layers})
+            list(GET L 0 lres)
+            list(GET L 1 lsu)
+            list(GET L 2 lzw)
+            add_test(
+                NAME e2e_tactical_layers_${lres}_su${lsu}_zw${lzw}
+                COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/tactical_layers.lua" --isolated
+                    --res ${lres} --uiscale ${lsu} --worldzoom ${lzw} --timeout 600
+                    --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/tactical_layers_${lres}_su${lsu}_zw${lzw}"
+            )
+        endforeach()
+        add_test(
+            NAME e2e_tactical_layers_ui
+            COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/tactical_layers_ui.lua" --isolated
+                --res 2560x1440 --uiscale 2 --worldzoom 1 --timeout 600
+                --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/tactical_layers_ui"
+        )
         foreach(check determinism sessions)
             add_test(
                 NAME e2e_${check}
@@ -318,7 +340,7 @@ if (WITH_UNITTESTS)
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             get_filename_component(ext ${f} EXT)
-            if(NOT ext STREQUAL ".lua")
+            if(NOT ext STREQUAL ".lua" OR n MATCHES "^tactical_layers")
                 continue()
             endif()
             foreach(res ${RESOLUTION_MATRIX})

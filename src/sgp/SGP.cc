@@ -428,11 +428,23 @@ int main(int argc, char* argv[])
 			EngineOptions_getResolutionX(params.get()),
 			EngineOptions_getResolutionY(params.get()),
 			EngineOptions_getUiScale(params.get()),
-			EngineOptions_getWindowMode(params.get()) };
+			EngineOptions_getWindowMode(params.get()),
+			EngineOptions_getWorldZoom(params.get()) };
+		// The map editor draws its taskbar over the world at one scale: no layers.
+		if (GameMode::getInstance()->isEditorMode()) displaySettings.worldZoom = VideoLayout::WORLD_ZOOM_MATCH_UI;
 		bool const autoResolution = displaySettings.resX == 0 || displaySettings.resY == 0;
 		uint16_t width = autoResolution ? 640 : displaySettings.resX;
 		uint16_t height = autoResolution ? 480 : displaySettings.resY;
 		g_ui.setScreenSize(width, height);
+		if (sgp::IsHeadless() && displaySettings.worldZoom != VideoLayout::WORLD_ZOOM_MATCH_UI && !autoResolution)
+		{
+			// A headless session normally renders a single layer at scale 1 (its screenshots are the reference
+			// images). Asking for a world zoom explicitly makes it run the layers, so they can be tested:
+			// -res is the window, the UI scale defaults to 1.
+			int const uiScale = displaySettings.uiScale == VideoLayout::UI_SCALE_AUTO ? 1 : displaySettings.uiScale;
+			auto const display = VideoLayout::ComputeDisplayLayout({ displaySettings.resX, displaySettings.resY }, uiScale);
+			g_ui.setLayers(VideoLayout::ComputeLayerLayout(display, displaySettings.worldZoom));
+		}
 
 	if (EngineOptions_shouldRunUnittests(params.get())) {
 	#ifdef WITH_UNITTESTS
@@ -466,7 +478,10 @@ int main(int argc, char* argv[])
 		{
 			// logical canvas = window / UI scale, see VideoLayout.h
 			auto const layout = VideoComputeLayout(displaySettings);
-			g_ui.setScreenSize(layout.logical.w, layout.logical.h);
+			auto const layers = VideoLayout::ComputeLayerLayout(layout, displaySettings.worldZoom);
+			g_ui.setLayers(layers);
+			SLOGI("Layers: UI {}x{} at {}x, world {}x{} at {}x{}", layers.ui.w, layers.ui.h, layers.uiScale,
+				layers.world.w, layers.world.h, layers.worldZoom, layers.layered ? " (separate layer)" : " (same layer)");
 		}
 
 		// restore output to the console (on windows when built with MINGW)

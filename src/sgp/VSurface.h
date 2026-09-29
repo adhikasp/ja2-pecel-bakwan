@@ -10,11 +10,15 @@
 #define BACKBUFFER   g_back_buffer
 #define FRAME_BUFFER g_frame_buffer
 #define MOUSE_BUFFER g_mouse_buffer
+/* Where the tactical world is rendered. The same surface as FRAME_BUFFER unless the world is a layer of its own
+ * (see VideoIsLayered() in Video.h), in which case it has its own size and scale. */
+#define WORLD_BUFFER g_world_buffer
 
 class SGPVSurface;
 
 inline SGPVSurface* g_back_buffer;
 inline SGPVSurface* g_frame_buffer;
+inline SGPVSurface* g_world_buffer;
 inline SGPVSurface* g_mouse_buffer;
 
 using SurfaceUniquePtr = std::unique_ptr<SDL_Surface, SDLDeleter>;

@@ -81,3 +81,46 @@ TEST(UILayout, RadarClockAnchor)
 	ui.m_anchorRadarClockToScreen = true;
 	EXPECT_EQ(ui.tacticalButtonsBoxX(), 1280 - TEAMPANEL_BUTTONSBOX_WIDTH);
 }
+
+TEST(UILayout, SingleLayerWorldEqualsScreen)
+{
+	UILayout ui(1280, 720);
+	EXPECT_FALSE(ui.isLayered());
+	EXPECT_EQ(ui.worldWidth(), 1280);
+	EXPECT_EQ(ui.worldHeight(), 720);
+	auto const p = ui.uiToWorld(37, 91);
+	EXPECT_EQ(p.x, 37);
+	EXPECT_EQ(p.y, 91);
+	auto const q = ui.worldToUi(37, 91);
+	EXPECT_EQ(q.x, 37);
+	EXPECT_EQ(q.y, 91);
+}
+
+TEST(UILayout, LayersConvertBetweenUiAndWorld)
+{
+	UILayout ui(1280, 720);
+	ui.setLayers(VideoLayout::ComputeLayerLayout(VideoLayout::ComputeDisplayLayout({ 2560, 1440 }, 2), 1));
+	EXPECT_TRUE(ui.isLayered());
+	EXPECT_EQ(ui.m_screenWidth, 1280);
+	EXPECT_EQ(ui.m_screenHeight, 720);
+	EXPECT_EQ(ui.worldWidth(), 2560);
+	EXPECT_EQ(ui.worldHeight(), 1440);
+	auto const w = ui.uiToWorld(640, 360);
+	EXPECT_EQ(w.x, 1280);
+	EXPECT_EQ(w.y, 720);
+	auto const u = ui.worldToUi(1281, 721);
+	EXPECT_EQ(u.x, 640);
+	EXPECT_EQ(u.y, 360);
+	// off-screen positions keep their sign
+	EXPECT_EQ(ui.worldToUi(-1, -1).x, -1);
+}
+
+TEST(UILayout, WorldViewportIsTheWholeWorldWhenLayered)
+{
+	UILayout ui(1280, 720);
+	ui.setLayers(VideoLayout::ComputeLayerLayout(VideoLayout::ComputeDisplayLayout({ 2560, 1440 }, 2), 1));
+	EXPECT_EQ(ui.worldViewStartX(), 0);
+	EXPECT_EQ(ui.worldViewEndX(), 2560);
+	EXPECT_EQ(ui.worldWindowStartY(), 0);
+	EXPECT_EQ(ui.worldWindowEndY(), 1440);
+}

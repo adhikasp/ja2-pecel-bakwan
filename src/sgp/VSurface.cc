@@ -3,12 +3,14 @@
 #include "Shading.h"
 #include "VObject_Blitters.h"
 #include "VSurface.h"
+#include "Video.h"
 #include "TextRegistry.h"
 
 #include "SDL3/SDL.h"
 #include <string_theory/format>
 #include <string_theory/string>
 
+#include <algorithm>
 #include <stdexcept>
 
 extern SGPVSurface* gpVSurfaceHead;
@@ -130,8 +132,51 @@ void SGPVSurface::Fill(const UINT16 colour)
 }
 
 
+/** Shading with layers: the UI surfaces have "transparent" pixels (where the world shows through), and
+ * darkening those has to darken the world at composition time. The transparent colour has neighbours that
+ * stand for black with an alpha, see UiLayerShadow*() in Video.h. Everything else is darkened as usual. */
+static void LayeredShadowVideoSurfaceRect(SDL_Surface * dst, INT32 x1, INT32 y1, INT32 x2, INT32 y2, float shadeFactor)
+{
+	SGPRect const clip = GetClippingRect();
+	x1 = std::max<INT32>(x1, clip.iLeft);
+	y1 = std::max<INT32>(y1, clip.iTop);
+	x2 = std::min<INT32>({ x2, INT32(clip.iRight), INT32(dst->w - 1) });
+	y2 = std::min<INT32>({ y2, INT32(clip.iBottom), INT32(dst->h - 1) });
+	x1 = std::max<INT32>(x1, 0);
+	y1 = std::max<INT32>(y1, 0);
+	if (x1 > x2 || y1 > y2) return;
+
+	int const mod = static_cast<int>(255 * shadeFactor);
+	float const darkening = 1.0f - shadeFactor;
+	for (INT32 y = y1; y <= y2; ++y)
+	{
+		auto* row = reinterpret_cast<UINT16*>(static_cast<UINT8*>(dst->pixels) + y * dst->pitch);
+		for (INT32 x = x1; x <= x2; ++x)
+		{
+			UINT16 const p = row[x];
+			if (UiLayerIsTransparentFamily(p))
+			{
+				row[x] = UiLayerDarken(p, darkening);
+				continue;
+			}
+			int r = (p >> 11) & 0x1f, g = (p >> 5) & 0x3f, b = p & 0x1f;
+			r = ((r << 3 | r >> 2) * mod / 255) >> 3;
+			g = ((g << 2 | g >> 4) * mod / 255) >> 2;
+			b = ((b << 3 | b >> 2) * mod / 255) >> 3;
+			row[x] = static_cast<UINT16>(r << 11 | g << 5 | b);
+		}
+	}
+}
+
+
 static void InternalShadowVideoSurfaceRect(SDL_Surface * dst, INT32 x1, INT32 y1, INT32 x2, INT32 y2, float shadeFactor)
 {
+	if (VideoIsLayered() && dst->format == SDL_PIXELFORMAT_RGB565)
+	{
+		LayeredShadowVideoSurfaceRect(dst, x1, y1, x2, y2, shadeFactor);
+		return;
+	}
+
 	ApplyClippingRect acr{ dst };
 
 	Uint8 modF = static_cast<Uint8>(255 * shadeFactor);

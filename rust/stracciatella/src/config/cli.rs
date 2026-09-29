@@ -6,7 +6,7 @@ use std::str::FromStr;
 use getopts::Options;
 use log::warn;
 
-use crate::config::{EngineOptions, Resolution, UiScale, VanillaVersion, WindowMode};
+use crate::config::{EngineOptions, Resolution, UiScale, VanillaVersion, WindowMode, WorldZoom};
 use crate::fs::canonicalize;
 
 #[cfg(not(windows))]
@@ -87,6 +87,12 @@ impl Cli {
             "uiscale",
             "Integer scale of the whole game: `auto` or 1 to 4. Default value is auto",
             "auto|1|2|3|4",
+        );
+        opts.optopt(
+            "",
+            "worldzoom",
+            "Integer scale of the tactical world layer: `match_ui` (same layer and scale as the UI, the default) or 1 to 4",
+            "match_ui|1|2|3|4",
         );
         opts.optopt(
             "",
@@ -179,6 +185,13 @@ impl Cli {
                     match UiScale::from_str(&s) {
                         Ok(scale) => engine_options.ui_scale = scale,
                         Err(s) => return Err(CliError::InvalidValue("uiscale".to_string(), s)),
+                    }
+                }
+
+                if let Some(s) = m.opt_str("worldzoom") {
+                    match WorldZoom::from_str(&s) {
+                        Ok(zoom) => engine_options.world_zoom = zoom,
+                        Err(s) => return Err(CliError::InvalidValue("worldzoom".to_string(), s)),
                     }
                 }
 

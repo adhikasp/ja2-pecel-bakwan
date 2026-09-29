@@ -346,8 +346,9 @@ static void InitTalkingMenu(UINT8 const ubCharacterNum, INT16 const sGridNo)
 
 
 		// First get mouse xy screen location
-		sX = sScreenX;
-		sY = sScreenY;
+		// (world pixels to UI pixels: the panel is UI)
+		sX = g_ui.worldToUi(sScreenX);
+		sY = g_ui.worldToUi(sScreenY);
 
 		InternalInitTalkingMenu(ubCharacterNum, sX, sY);
 	}
