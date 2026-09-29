@@ -311,6 +311,35 @@ if (WITH_UNITTESTS)
             LABELS e2e
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>"
         )
+        # Resolution matrix: every tour at every supported resolution, with a
+        # layout check (ja2.assertInsideScreen) and golden-screenshot compare.
+        set(RESOLUTION_MATRIX 640x480 1280x720 1920x1080 2560x1080 3440x1440)
+        set(RESOLUTION_TESTS "")
+        foreach(f ${E2E_SCRIPTS})
+            get_filename_component(n ${f} NAME_WE)
+            get_filename_component(ext ${f} EXT)
+            if(NOT ext STREQUAL ".lua")
+                continue()
+            endif()
+            foreach(res ${RESOLUTION_MATRIX})
+                add_test(
+                    NAME resolution_${n}_${res}
+                    COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/check_resolution.py"
+                        "${f}" ${res} --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/resolution/${n}_${res}"
+                )
+                list(APPEND RESOLUTION_TESTS resolution_${n}_${res})
+            endforeach()
+        endforeach()
+        set_tests_properties(${RESOLUTION_TESTS} PROPERTIES
+            LABELS resolution
+            TIMEOUT 900
+            ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>"
+        )
+        add_custom_target(run-${JA2_BINARY}-resolution
+            COMMAND ctest -L resolution --output-on-failure
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            DEPENDS "${JA2_BINARY}"
+        )
         add_custom_target(run-${JA2_BINARY}-e2e
             COMMAND ctest -L e2e --output-on-failure
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"

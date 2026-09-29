@@ -1,10 +1,11 @@
 -- Every laptop program of a new campaign opens and shows its content.
+local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
 campaign.newGame()
 
 local function open(program, expected)
-	ja2.click{text = program, exact = true, within = {x = 0, y = 0, w = 110, h = 480}}
+	ja2.click{text = program, exact = true, within = campaign.std{x = 0, y = 0, w = 110, h = 480}}
 	ja2.waitIdle()
 	ja2.expect(ja2.exists(expected), program .. " shows \"" .. expected .. "\"")
 end
@@ -44,7 +45,7 @@ ja2.waitIdle()
 ja2.expect(ja2.exists("Members"), "declining returns to the A.I.M. home page")
 ja2.click("Close program")
 ja2.waitIdle()
-ja2.screenshot("laptop.png")
+shots.take("laptop.png", true)
 
 -- Shutting down leads to the strategic map, with nothing spent yet.
 ja2.click("Shut Down")

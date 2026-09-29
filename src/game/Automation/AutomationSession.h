@@ -93,6 +93,8 @@ namespace Automation
 		/** Text of the open message box (empty if none). */
 		std::string MessageBoxText();
 		std::vector<Element> Elements();
+		/** Active regions/buttons (non-empty, enabled or not) not fully inside the screen. */
+		std::vector<Element> OffscreenElements();
 		std::vector<TextRegistry::VisibleText> Texts();
 		std::optional<Target> Find(Locator const&);
 		/** Wait until the locator resolves (and is enabled), then return it. */

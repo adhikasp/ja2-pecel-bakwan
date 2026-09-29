@@ -3,6 +3,13 @@
 
 local campaign = {}
 
+-- A rect given in classic 640x480 coordinates, moved to where that area sits
+-- on the current screen (the classic screens are centred at wider resolutions).
+function campaign.std(r)
+	local s = ja2.screenSize()
+	return {x = r.x + s.stdX, y = r.y + s.stdY, w = r.w, h = r.h}
+end
+
 -- Close the first-visit help overlay (ticking "don't show again") if it is up.
 function campaign.dismissHelp()
 	ja2.waitIdle()
@@ -46,7 +53,7 @@ function campaign.hireFromAim(name, contract)
 	ja2.waitIdle()
 	ja2.click("A.I.M.")
 	ja2.waitIdle()
-	ja2.click{text = "Members", exact = true, within = {x = 200, y = 200, w = 350, h = 150}}
+	ja2.click{text = "Members", exact = true, within = campaign.std{x = 200, y = 200, w = 350, h = 150}}
 	ja2.waitIdle()
 	ja2.click("mug shot index")
 	ja2.waitIdle()

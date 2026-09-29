@@ -75,3 +75,13 @@ Things worth knowing:
   `ja2.wait()`.
 - **Pixels** (`ja2.pixelIs`, `ja2.waitPixel`) still work, but depend on the
   resolution; the tests run at 640x480.
+
+## Resolution matrix
+
+`ctest -L resolution` runs every tour at 640x480, 1280x720, 1920x1080,
+2560x1080 and 3440x1440. Scripts take screenshots with
+`shots.take(name[, golden])` (`lib/shots.lua`), which first calls
+`ja2.assertInsideScreen()` (fails if any mouse region or button lies outside the
+screen) and can register the shot for comparison with `golden/<res>/`. See
+`golden/README.md`. Use `campaign.std{...}` to convert classic 640x480
+coordinates (e.g. in `within=`) to the current screen.
