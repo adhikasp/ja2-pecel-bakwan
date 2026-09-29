@@ -23,4 +23,7 @@ extern	UINT32	guiSmackerSurface;
 
 void SetIntroType( INT8 bIntroType );
 
+// Skip the splash and new-game intro videos (the end-game one still plays).
+void SetSkipIntroVideos(bool skip);
+
 #endif

@@ -159,10 +159,6 @@ BOOLEAN GetMouseXY( INT16 *psMouseX, INT16 *psMouseY )
 
 BOOLEAN GetMouseWorldCoords( INT16 *psMouseX, INT16 *psMouseY )
 {
-	INT16 sOffsetX, sOffsetY;
-	INT16 sTempPosX_W, sTempPosY_W;
-	INT16 sStartPointX_W, sStartPointY_W;
-
 	// Convert mouse screen coords into offset from center
 	if ( ! ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA ) )
 	{
@@ -172,8 +168,20 @@ BOOLEAN GetMouseWorldCoords( INT16 *psMouseX, INT16 *psMouseY )
 	}
 
 	auto const cursorPosition{ GetCursorPos() };
-	sOffsetX = cursorPosition.iX - ( g_ui.m_tacticalMapCenterX ); // + gsRenderWorldOffsetX;
-	sOffsetY = cursorPosition.iY - ( g_ui.m_tacticalMapCenterY ) + 10;// + gsRenderWorldOffsetY;
+	return GetWorldCoordsAtScreenPos(cursorPosition.iX, cursorPosition.iY, psMouseX, psMouseY);
+}
+
+
+BOOLEAN GetWorldCoordsAtScreenPos(INT16 const sScreenX, INT16 const sScreenY, INT16 *psWorldX, INT16 *psWorldY)
+{
+	INT16 * const psMouseX = psWorldX;
+	INT16 * const psMouseY = psWorldY;
+	INT16 sOffsetX, sOffsetY;
+	INT16 sTempPosX_W, sTempPosY_W;
+	INT16 sStartPointX_W, sStartPointY_W;
+
+	sOffsetX = sScreenX - ( g_ui.m_tacticalMapCenterX ); // + gsRenderWorldOffsetX;
+	sOffsetY = sScreenY - ( g_ui.m_tacticalMapCenterY ) + 10;// + gsRenderWorldOffsetY;
 
 	// OK, Let's offset by a value if our interfac level is changed!
 	if ( gsInterfaceLevel != 0 )

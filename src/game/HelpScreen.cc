@@ -490,6 +490,7 @@ static void EnterHelpScreen(void)
 	giExitBtnImage = LoadButtonImage(INTERFACEDIR "/helpscreen.sti", -1, 0, 4, 2, 6);
 
 	guiHelpScreenExitBtn = QuickCreateButton(giExitBtnImage, usPosX, usPosY, MSYS_PRIORITY_HIGHEST, BtnHelpScreenExitCallback);
+	guiHelpScreenExitBtn->SetName("Close help");
 	guiHelpScreenExitBtn->SetFastHelpText(gzHelpScreenText);
 	guiHelpScreenExitBtn->SetCursor(gHelpScreen.usCursor);
 
@@ -1963,6 +1964,7 @@ static void CreateScrollAreaButtons(void)
 
 	//Create the scroll arrows
 	giHelpScreenScrollArrows[0] = QuickCreateButton(guiHelpScreenScrollArrowImage[0], usPosX, usPosY, MSYS_PRIORITY_HIGHEST, BtnHelpScreenScrollArrowsCallback);
+	giHelpScreenScrollArrows[0]->SetName("Scroll help up");
 	giHelpScreenScrollArrows[0]->SetUserData(0);
 	giHelpScreenScrollArrows[0]->SetCursor(gHelpScreen.usCursor);
 
@@ -1970,6 +1972,7 @@ static void CreateScrollAreaButtons(void)
 
 	//Create the scroll arrows
 	giHelpScreenScrollArrows[1] = QuickCreateButton(guiHelpScreenScrollArrowImage[1], usPosX, usPosY, MSYS_PRIORITY_HIGHEST, BtnHelpScreenScrollArrowsCallback);
+	giHelpScreenScrollArrows[1]->SetName("Scroll help down");
 	giHelpScreenScrollArrows[1]->SetUserData(1);
 	giHelpScreenScrollArrows[1]->SetCursor(gHelpScreen.usCursor);
 }

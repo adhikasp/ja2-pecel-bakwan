@@ -48,13 +48,22 @@ Game data comes from the Steam install: `C:\Program Files (x86)\Steam\steamapps\
 **Gotcha:** `game_dir` must point at the install root (the folder containing `Data\`), not at the `Data` folder itself — pointing it at `Data` directly makes the VFS look for a nonexistent `Data\data` and fail with "Error initializing VFS ... os error 3".
 Log file: `C:\msys64\tmp\ja2.log` (MSYS bash's own `/tmp`, not Windows `%TEMP%`).
 
-## E2E screen tests
-In-process Playwright-style harness: drives the real rendered game with synthetic SDL input and asserts on pixels read from `ScreenBuffer`. Runs hidden/backgrounded so it never steals focus.
+## Driving the game (headless automation + E2E tests)
+The game runs headless on a virtual clock and can be driven from the shell or by Lua scripts. Full guide: [docs/automation.md](docs/automation.md).
 ```bash
-ctest -R e2e --test-dir build                 # run all e2e scripts (adjust dir to _bin on Windows)
-./build/ja2 -uitest tests/e2e/<name>.txt      # run one script
+python tools/ja2ctl.py start                  # headless session at the main menu (-s NAME for more sessions)
+python tools/ja2ctl.py ui                     # clickable elements with labels
+python tools/ja2ctl.py text                   # visible text with positions
+python tools/ja2ctl.py click "New Game"       # click by label, or: click X Y
+python tools/ja2ctl.py shot                   # screenshot, prints the PNG path (Read it to look)
+python tools/ja2ctl.py state                  # screen, time, money, mercs
+python tools/ja2ctl.py eval 'return require("lib.campaign").startWithMerc("Barry").sector'
+python tools/ja2ctl.py stop
+python tools/ja2ctl.py run tests/e2e/<name>.lua --isolated   # one-shot script run
+ctest -L e2e -j8 --output-on-failure          # all e2e tests, from the build dir (_bin on Windows)
 ```
-Scripts live in `tests/e2e/*.txt` (`load_save_to_mapscreen.txt` is the calibrated canonical one). For the script vocabulary and reusable calibrated fragments, see [tests/e2e/COOKBOOK.md](tests/e2e/COOKBOOK.md).
+Tests and their shared helpers (`lib/campaign.lua`) live in `tests/e2e/`; see its README.
+Image-only widgets need `SetName(...)` in C++ to be clickable by label; new animations/loading states belong in `NothingInFlight()` in `src/game/Automation/AutomationSession.cc`.
 
 ## Codebase shape
 

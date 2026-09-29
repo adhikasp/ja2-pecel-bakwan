@@ -350,6 +350,28 @@ static void MSYS_AddRegionToList(MOUSE_REGION* const r)
 }
 
 
+void MSYS_ForEachRegion(std::function<void(MOUSE_REGION const&)> const& visit)
+{
+	for (MOUSE_REGION const* r = MSYS_RegList; r; r = r->next) visit(*r);
+}
+
+
+MOUSE_REGION const* MSYS_RegionAt(INT16 const x, INT16 const y)
+{
+	// Same test as MSYS_UpdateMouseRegion(); the list is sorted by priority.
+	for (MOUSE_REGION const* r = MSYS_RegList; r; r = r->next)
+	{
+		if (r->uiFlags & (MSYS_REGION_ENABLED | MSYS_ALLOW_DISABLED_FASTHELP) &&
+			r->RegionTopLeftX <= x && x <= r->RegionBottomRightX &&
+			r->RegionTopLeftY <= y && y <= r->RegionBottomRightY)
+		{
+			return r;
+		}
+	}
+	return nullptr;
+}
+
+
 // Removes a region from the current list.
 static void MSYS_DeleteRegionFromList(MOUSE_REGION* const r)
 {

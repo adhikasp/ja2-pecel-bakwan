@@ -283,6 +283,14 @@ static INT32 gLaptopProgramQueueList[6];
 
 BOOLEAN fExitingLaptopFlag = FALSE;
 
+
+bool LaptopIsBusy()
+{
+	return guiCurrentLaptopMode != guiPreviousLaptopMode || fLoadPendingFlag ||
+		fConnectingToSubPage || fMaximizingProgram || fMinizingProgram || fExitingLaptopFlag ||
+		(guiCurrentLaptopMode == LAPTOP_MODE_AIM_MEMBERS && AimVideoConferenceIsBusy());
+}
+
 // HD and power lights on
 static BOOLEAN fPowerLightOn = TRUE;
 static BOOLEAN fHardDriveLightOn = FALSE;
@@ -2498,6 +2506,7 @@ static void CreateMinimizeButtonForCurrentMode(void)
 	// create minimize button
 	gLaptopMinButton = QuickCreateButtonImg(LAPTOPDIR "/x.sti", 0, 1, STD_SCREEN_X + 590, STD_SCREEN_Y + 30, MSYS_PRIORITY_HIGH, LaptopMinimizeProgramButtonCallback);
 	gLaptopMinButton->SetCursor(CURSOR_LAPTOP_SCREEN);
+	gLaptopMinButton->SetName("Close program");
 }
 
 

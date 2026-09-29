@@ -60,6 +60,9 @@ struct GUI_BUTTON
 	// Set the text that will be displayed as the FastHelp
 	void SetFastHelpText(const ST::string& str);
 
+	// Name for automation, for buttons whose caption is part of the image.
+	void SetName(char const* name) { Area.SetName(name); }
+
 	void Hide();
 	void Show();
 

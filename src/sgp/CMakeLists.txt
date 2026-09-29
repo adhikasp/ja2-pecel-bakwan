@@ -2,11 +2,13 @@ file(GLOB LOCAL_JA2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Button_Sound_Control.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Button_System.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Clock.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Cursor_Control.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/DirFs.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/FileMan.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Font.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/FPS.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Headless.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/HImage.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/ImpTGA.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Input.cc
@@ -22,8 +24,8 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/STCI.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Shading.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/SoundMan.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/TextRegistry.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Types.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/UITestDriver.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/VObject.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/VObject_Blitters.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/VSurface.cc
@@ -39,6 +41,7 @@ if (WITH_UNITTESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/Logger_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/SGPStrings_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/string_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/TextRegistry_unittest.cc
     )
 endif()
 

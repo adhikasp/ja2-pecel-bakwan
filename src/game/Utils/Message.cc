@@ -95,8 +95,11 @@ static void BlitString(VIDEO_OVERLAY* pBlitter)
 	if (fScrollMessagesHidden) return;
 
 	SetFontAttributes(pBlitter->uiFontID, pBlitter->ubFontFore, DEFAULT_SHADOW, pBlitter->ubFontBack);
-	SGPVSurface::Lock l(pBlitter->uiDestBuff);
-	MPrintBuffer(l.Buffer<UINT16>(), l.Pitch(), pBlitter->sX, pBlitter->sY, pBlitter->codepoints);
+	{
+		SGPVSurface::Lock l(pBlitter->uiDestBuff);
+		MPrintBuffer(l.Buffer<UINT16>(), l.Pitch(), pBlitter->sX, pBlitter->sY, pBlitter->codepoints);
+	}
+	RegisterPrintedText(pBlitter->uiDestBuff, pBlitter->sX, pBlitter->sY, pBlitter->codepoints);
 }
 
 

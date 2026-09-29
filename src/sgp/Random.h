@@ -6,6 +6,9 @@
 
 
 extern void InitializeRandom(void);
+/// Seed the engine with a fixed value so a run is reproducible.
+/// Takes effect on the next InitializeRandom() and also reseeds immediately.
+extern void SetRandomSeed(UINT32 seed);
 extern UINT32 Random( UINT32 uiRange );
 
 // Returns true 50% of the time, false 50% of the time.

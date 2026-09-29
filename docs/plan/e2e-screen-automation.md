@@ -1,12 +1,9 @@
 # E2E Screen Automation — Playwright-style Black-box Game Testing
 
-> **Status: implemented.** The in-process driver (Phases 1–6) is built and in the tree:
-> `src/sgp/UITestDriver.{h,cc}`, hooked into `MainLoop()` ([SGP.cc](../../src/sgp/SGP.cc)) and
-> backed by `GetScreenBufferForTest()` ([Video.cc](../../src/sgp/Video.cc)). This document has been
-> reconciled with the shipped code; where the implementation diverged from the original design the
-> phase notes call it out. Phase 0 (external OS automation) was skipped — the in-process path
-> superseded it. For ready-to-use, calibrated script fragments see
-> [tests/e2e/COOKBOOK.md](../../tests/e2e/COOKBOOK.md).
+> **Status: superseded** by [headless-automation.md](headless-automation.md) and the user guide
+> [docs/automation.md](../automation.md). The `UITestDriver` described here has been replaced by the
+> automation layer in `src/game/Automation/`; `-uitest script.txt` still runs old scripts by
+> translating them to Lua. Kept for the reasoning about in-process input injection.
 
 ## Goal
 

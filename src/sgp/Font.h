@@ -85,6 +85,9 @@ inline void GPrint(INT32 x, INT32 y, const ST::string& str)
 
 UINT32 MPrintChar(INT32 x, INT32 y, char32_t c);
 void MPrintBuffer(UINT16* pDestBuf, UINT32 uiDestPitchBYTES, INT32 x, INT32 y, const ST::utf32_buffer& codepoints);
+/* MPrintBuffer() does not know which surface it draws into; callers that print
+ * into a surface through it can report the text with this (automation). */
+void RegisterPrintedText(SGPVSurface* dst, INT32 x, INT32 y, const ST::utf32_buffer& codepoints);
 inline void MPrintBuffer(UINT16* pDestBuf, UINT32 uiDestPitchBYTES, INT32 x, INT32 y, const ST::string& str)
 {
 	MPrintBuffer(pDestBuf, uiDestPitchBYTES, x, y, str.to_utf32());

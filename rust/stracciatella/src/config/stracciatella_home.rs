@@ -6,9 +6,29 @@ const STRACCIATELLA_HOME_DIR_NAME: &str = ".ja2";
 #[cfg(windows)]
 const STRACCIATELLA_HOME_DIR_NAME: &str = "JA2";
 
+/// Environment variable that overrides the configuration directory.
+///
+/// Used to run isolated game sessions side by side (automation, tests): each
+/// session gets its own ja2.json, settings file and default save directory.
+pub const STRACCIATELLA_HOME_ENV: &str = "JA2_HOME";
+
+/// Find ja2 stracciatella configuration directory
+///
+/// `JA2_HOME` takes precedence over the platform default when set and non-empty.
+pub fn find_stracciatella_home() -> Result<PathBuf, String> {
+    match home_override(std::env::var_os(STRACCIATELLA_HOME_ENV)) {
+        Some(dir) => Ok(dir),
+        None => find_default_stracciatella_home(),
+    }
+}
+
+fn home_override(value: Option<std::ffi::OsString>) -> Option<PathBuf> {
+    value.filter(|v| !v.is_empty()).map(PathBuf::from)
+}
+
 #[cfg(not(windows))]
 /// Find ja2 stracciatella configuration directory inside the user's home directory or the android app dir
-pub fn find_stracciatella_home() -> Result<PathBuf, String> {
+fn find_default_stracciatella_home() -> Result<PathBuf, String> {
     #[cfg(not(target_os = "android"))]
     let base = dirs::home_dir();
     #[cfg(target_os = "android")]
@@ -32,7 +52,7 @@ pub fn find_stracciatella_home() -> Result<PathBuf, String> {
 #[cfg(windows)]
 /// Find ja2 stracciatella configuration directory
 /// First try the new one inside the appdata directory. If that does not exist and the old one does, return the old one. Otherwise return the new one.
-pub fn find_stracciatella_home() -> Result<PathBuf, String> {
+fn find_default_stracciatella_home() -> Result<PathBuf, String> {
     use std::borrow::Cow;
 
     let get_dir_info = |p: PathBuf| {
@@ -67,6 +87,20 @@ pub fn find_stracciatella_home() -> Result<PathBuf, String> {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn home_override_should_use_non_empty_values_only() {
+        use super::home_override;
+        use std::ffi::OsString;
+        use std::path::Path;
+
+        assert_eq!(
+            home_override(Some(OsString::from("some/session/home"))).as_deref(),
+            Some(Path::new("some/session/home"))
+        );
+        assert_eq!(home_override(Some(OsString::new())), None);
+        assert_eq!(home_override(None), None);
+    }
+
     #[test]
     #[cfg(all(not(windows), not(target_os = "android")))]
     fn find_stracciatella_home_should_find_the_correct_stracciatella_home_path_on_unixlike() {

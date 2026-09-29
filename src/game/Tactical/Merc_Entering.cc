@@ -372,6 +372,11 @@ static BOOLEAN fFadingHeliOut = FALSE;
 
 BOOLEAN gfIngagedInDrop = FALSE;
 
+bool HeliDropInProgress()
+{
+	return gfHandleHeli || gfIngagedInDrop;
+}
+
 static ANITILE* gpHeli;
 BOOLEAN gfFirstHeliRun;
 

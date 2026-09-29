@@ -36,19 +36,37 @@ struct PreRandomEngine {
 };
 static PreRandomEngine gPreRandomEngine;
 
+static bool   gfFixedSeed = false;
+static UINT32 guiFixedSeed = 0;
+
+void SetRandomSeed(UINT32 const seed)
+{
+	gfFixedSeed  = true;
+	guiFixedSeed = seed;
+	InitializeRandom();
+}
+
 void InitializeRandom(void)
 {
-	// Seed the pseudo-random number engine with the current time
-	// so that the numbers will be different every time we run.
-	UINT32 uiSeed1 = std::chrono::system_clock::now().time_since_epoch().count();
+	if (gfFixedSeed)
+	{
+		std::seed_seq seed = { guiFixedSeed };
+		gRandomEngine.seed(seed);
+	}
+	else
+	{
+		// Seed the pseudo-random number engine with the current time
+		// so that the numbers will be different every time we run.
+		UINT32 uiSeed1 = std::chrono::system_clock::now().time_since_epoch().count();
 
-	// Also try to seed the pseudo-random number engine with a non-deterministic
-	// random number (entropy is 0 when not available).
-	std::random_device randomDevice;
-	UINT32 uiSeed2 = guiDistribution(randomDevice);
+		// Also try to seed the pseudo-random number engine with a non-deterministic
+		// random number (entropy is 0 when not available).
+		std::random_device randomDevice;
+		UINT32 uiSeed2 = guiDistribution(randomDevice);
 
-	std::seed_seq seed = { uiSeed1, uiSeed2 };
-	gRandomEngine.seed(seed);
+		std::seed_seq seed = { uiSeed1, uiSeed2 };
+		gRandomEngine.seed(seed);
+	}
 
 	// Pregenerate random numbers.
 	for (guiPreRandomIndex = 0; guiPreRandomIndex < MAX_PREGENERATED_NUMS; ++guiPreRandomIndex)

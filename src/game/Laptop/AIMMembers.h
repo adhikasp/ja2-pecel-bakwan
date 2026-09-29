@@ -40,4 +40,7 @@ enum AIMVideoMode
 // which mode are we in during video conferencing?..0 means no video conference
 extern AIMVideoMode gubVideoConferencingMode;
 
+// True while the video conference window is animating or switching modes.
+bool AimVideoConferenceIsBusy();
+
 #endif

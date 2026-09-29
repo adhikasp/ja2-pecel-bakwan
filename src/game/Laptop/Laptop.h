@@ -98,6 +98,10 @@ extern SGPVObject* guiTITLEBARICONS;
 extern BOOLEAN     fDoneLoadPending;
 extern BOOLEAN     fConnectingToSubPage;
 extern BOOLEAN     fFastLoadFlag;
+
+// True while the laptop is switching programs/pages, "loading" a web page or
+// animating a window, i.e. input would not be handled as expected yet.
+bool LaptopIsBusy();
 extern BOOLEAN     gfShowBookmarks;
 extern BOOLEAN     fShowBookmarkInfo;
 extern BOOLEAN     fReDrawBookMarkInfo;

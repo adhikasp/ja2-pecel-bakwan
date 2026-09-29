@@ -113,6 +113,13 @@ static void RedrawActiveButtonBackgrounds() {
 }
 
 
+bool MainMenuIsReady()
+{
+	return guiSplashStartTime + INTRO_SPLASH_DURATION <= GetJA2Clock() &&
+		!guiSplashFrameFade && !gfMainMenuScreenEntry && !fInitialRender;
+}
+
+
 ScreenID MainMenuScreenHandle(void)
 {
 	if (guiSplashStartTime + INTRO_SPLASH_DURATION > GetJA2Clock())
@@ -346,6 +353,8 @@ static void CreateDestroyMainMenuButtons(BOOLEAN fCreate)
 			GUIButtonRef const b = QuickCreateButton(img, x, y, MSYS_PRIORITY_HIGHEST, MenuButtonCallback);
 			iMenuButtons[cnt] = b;
 			b->SetUserData(cnt);
+			static char const* const names[NUM_MENU_ITEMS] = { "New Game", "Load Game", "Preferences", "Credits", "Quit" };
+			b->SetName(names[cnt]);
 		}
 
 		fButtonsCreated = TRUE;

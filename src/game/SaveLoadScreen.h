@@ -6,6 +6,7 @@
 #include "ScreenIDs.h"
 
 #include <string_theory/string>
+#include <vector>
 
 
 //This flag is used to diferentiate between loading a game and saveing a game.
@@ -23,6 +24,16 @@ void DoQuickSave(void);
 void DoAutoSave(void);
 void DoDeadIsDeadSave(void);
 void DoQuickLoad(void);
+
+/* Load the save called @a saveName (file name without extension). From the
+ * map screen or tactical this starts loading right away, like a quick load.
+ * Elsewhere it arms the "load upon entry" path, which runs the next time the
+ * save/load screen is entered (e.g. via ALT+C in the main menu).
+ * Returns false if no such save exists. */
+bool DoLoadSavedGameByName(const ST::string& saveName);
+
+/* All loadable saves, newest first. */
+std::vector<ST::string> GetLoadableSaveNames();
 
 bool AreThereAnySavedGameFiles();
 

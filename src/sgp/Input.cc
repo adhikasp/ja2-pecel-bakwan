@@ -585,6 +585,14 @@ void SimulateMouseMovement( UINT32 uiNewXPos, UINT32 uiNewYPos )
 		return;
 	}
 
+	// Without a window there is no OS cursor to warp (and hence no motion
+	// event coming back), so move the game's idea of the mouse directly.
+	if (!GAME_WINDOW)
+	{
+		SetSafeMousePosition(uiNewXPos, uiNewYPos);
+		return;
+	}
+
 	float wx, wy;
 	if (SDL_RenderCoordinatesToWindow(GameRenderer, (float)uiNewXPos, (float)uiNewYPos, &wx, &wy)) {
 		SDL_WarpMouseInWindow(GAME_WINDOW, (int)wx, (int)wy);

@@ -1065,6 +1065,8 @@ static GUIButtonRef MakeButtonNewMail(INT32 image, INT16 x, INT16 y, GUI_CALLBAC
 {
 	GUIButtonRef const btn = QuickCreateButtonImg(LAPTOPDIR "/newmailbuttons.sti", image, image + 3, x, y, MSYS_PRIORITY_HIGHEST - 1, click);
 	btn->SetCursor(CURSOR_LAPTOP_SCREEN);
+	static char const* const names[] = { "Previous page", "Next page", "Delete" };
+	if (image >= 0 && image < 3) btn->SetName(names[image]);
 	return btn;
 }
 
@@ -1117,6 +1119,7 @@ static void AddDeleteRegionsToMessageRegion(INT32 iViewerY)
 
 		// add X button
 		giMessageButton = QuickCreateButtonImg(LAPTOPDIR "/x.sti", 0, 1, BUTTON_X + 2, BUTTON_Y + iViewerY + 1, MSYS_PRIORITY_HIGHEST - 1, BtnMessageXCallback);
+		giMessageButton->SetName("Close message");
 		giMessageButton->SetCursor(CURSOR_LAPTOP_SCREEN);
 
 		if( giNumberOfPagesToCurrentEmail > 2 )
@@ -1167,6 +1170,7 @@ static GUIButtonRef MakeButtonYesNo(INT32 image, INT16 x, GUI_CALLBACK click)
 {
 	GUIButtonRef const btn = QuickCreateButtonImg(LAPTOPDIR "/yesnobuttons.sti", image, image + 1, x, NEW_BTN_Y, MSYS_PRIORITY_HIGHEST - 2, click);
 	btn->SetCursor(CURSOR_LAPTOP_SCREEN);
+	btn->SetName(image == 0 ? "Yes" : "No"); // check mark / cross
 	return btn;
 }
 

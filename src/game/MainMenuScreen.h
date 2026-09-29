@@ -9,4 +9,7 @@ void ClearMainMenu(void);
 
 ScreenID MainMenuScreenHandle(void);
 
+// True once the splash has faded and the menu is drawn and accepting input.
+bool MainMenuIsReady();
+
 #endif

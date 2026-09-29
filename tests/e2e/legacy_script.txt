@@ -1,0 +1,19 @@
+# Legacy line-based script: `ja2 -run` translates .txt scripts to Lua, so
+# scripts written for the old -uitest driver keep working. Pixel coordinates
+# here are for the default 640x480 resolution (ctest passes -res 640x480).
+#
+# Commands: move X Y | click X Y | rclick X Y | key NAME | type TEXT | wait MS
+#           waitpixel X Y #RRGGBB [tol] [timeoutMs] | waitstable X Y [timeoutMs]
+#           assertpixel X Y #RRGGBB [tol] | screenshot PATH
+
+# The driver starts at the main menu; below the menu art (bottom centre,
+# between the version and copyright lines) the screen is black.
+waitstable 320 475 5000
+assertpixel 320 475 #000000 8
+move 10 10
+wait 500
+key o          # "Preferences" hotkey
+wait 1000
+key ESC
+wait 1000
+screenshot legacy.png
