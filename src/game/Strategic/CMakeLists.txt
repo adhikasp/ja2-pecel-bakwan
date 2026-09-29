@@ -16,6 +16,7 @@ set(JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveStrategicMapElement.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveUndergroundSectorInfo.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/MapScreen.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Map_Screen_Canvas.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Map_Screen_Helicopter.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Map_Screen_Interface.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Map_Screen_Interface_Border.cc

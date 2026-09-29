@@ -177,7 +177,7 @@ constexpr grams EXCEPTIONAL_WEIGHT = 2000;
 #define KEYRING_X      (INTERFACE_START_X + 496)
 #define KEYRING_Y      (INV_INTERFACE_START_Y + 106)
 #define MAP_KEYRING_X (MAPLEFT_X + 217)
-#define MAP_KEYRING_Y (STD_SCREEN_Y + 271)
+#define MAP_KEYRING_Y (MAPTOP_Y + 271)
 #define KEYRING_WIDTH   29
 #define KEYRING_HEIGHT  23
 #define TACTICAL_INVENTORY_KEYRING_GRAPHIC_OFFSET_X 215
@@ -681,8 +681,8 @@ static void INVRenderINVPanelItem(SOLDIERTYPE const& s, INT16 const pocket, Dirt
 		{
 			if (in_map)
 			{
-				BltVideoObject(guiSAVEBUFFER, guiMapInvSecondHandBlockout, 0, MAPLEFT_X + 14, STD_SCREEN_Y + 218);
-				RestoreExternBackgroundRect(MAPLEFT_X + 14, STD_SCREEN_Y + 218, 102, 24);
+				BltVideoObject(guiSAVEBUFFER, guiMapInvSecondHandBlockout, 0, MAPLEFT_X + 14, MAPTOP_Y + 218);
+				RestoreExternBackgroundRect(MAPLEFT_X + 14, MAPTOP_Y + 218, 102, 24);
 			}
 			else
 			{

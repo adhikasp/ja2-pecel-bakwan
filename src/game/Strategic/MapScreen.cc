@@ -35,6 +35,7 @@
 #include "JAScreens.h"
 #include "LaptopSave.h"
 #include "Line.h"
+#include "Map_Screen_Canvas.h"
 #include "Map_Screen_Helicopter.h"
 #include "Map_Screen_Interface.h"
 #include "Map_Screen_Interface_Border.h"
@@ -109,10 +110,10 @@
 // Coordinate defines
 
 #define TOWN_INFO_X           (MAPLEFT_X + 0)
-#define TOWN_INFO_Y           (STD_SCREEN_Y + 1)
+#define TOWN_INFO_Y           (MAPTOP_Y + 1)
 
 #define PLAYER_INFO_X         (MAPLEFT_X + 0)
-#define PLAYER_INFO_Y         (STD_SCREEN_Y + 107)
+#define PLAYER_INFO_Y         (MAPTOP_Y + 107)
 
 // item description
 #define MAP_ITEMDESC_START_X PLAYER_INFO_X
@@ -128,40 +129,40 @@
 #define MAP_BG_WIDTH      (640 - 261)
 
 #define MAP_ARMOR_LABEL_X (MAPLEFT_X + 208)
-#define MAP_ARMOR_LABEL_Y (STD_SCREEN_Y + 179)
+#define MAP_ARMOR_LABEL_Y (MAPTOP_Y + 179)
 #define MAP_ARMOR_X       (MAPLEFT_X + 209)
-#define MAP_ARMOR_Y       (STD_SCREEN_Y + 188)
+#define MAP_ARMOR_Y       (MAPTOP_Y + 188)
 #define MAP_ARMOR_W        28
 #define MAP_ARMOR_H        10
 
 #define MAP_WEIGHT_LABEL_X (MAPLEFT_X + 173)
-#define MAP_WEIGHT_LABEL_Y (STD_SCREEN_Y + 256)
+#define MAP_WEIGHT_LABEL_Y (MAPTOP_Y + 256)
 #define MAP_WEIGHT_X       (MAPLEFT_X + 176)
-#define MAP_WEIGHT_Y       (STD_SCREEN_Y + 265)
+#define MAP_WEIGHT_Y       (MAPTOP_Y + 265)
 #define MAP_WEIGHT_W        28
 #define MAP_WEIGHT_H        10
 
 #define MAP_CAMO_LABEL_X (MAPLEFT_X + 178)
-#define MAP_CAMO_LABEL_Y (STD_SCREEN_Y + 283)
+#define MAP_CAMO_LABEL_Y (MAPTOP_Y + 283)
 #define MAP_CAMO_X       (MAPLEFT_X + 176)
-#define MAP_CAMO_Y       (STD_SCREEN_Y + 292)
+#define MAP_CAMO_Y       (MAPTOP_Y + 292)
 #define MAP_CAMO_W        28
 #define MAP_CAMO_H        10
 
 #define MAP_INV_STATS_TITLE_FONT_COLOR 6
 
 #define PLAYER_INFO_FACE_START_X    (MAPLEFT_X + 9)
-#define PLAYER_INFO_FACE_START_Y    (STD_SCREEN_Y + 17)
+#define PLAYER_INFO_FACE_START_Y    (MAPTOP_Y + 17)
 #define PLAYER_INFO_FACE_END_X			(MAPLEFT_X + 60)
-#define PLAYER_INFO_FACE_END_Y			(STD_SCREEN_Y + 76)
+#define PLAYER_INFO_FACE_END_Y			(MAPTOP_Y + 76)
 
 #define PLAYER_INFO_HAND_START_X    (MAPLEFT_X + 4)
-#define PLAYER_INFO_HAND_START_Y    (STD_SCREEN_Y + 81)
+#define PLAYER_INFO_HAND_START_Y    (MAPTOP_Y + 81)
 #define PLAYER_INFO_HAND_END_X      (MAPLEFT_X + 62)
-#define PLAYER_INFO_HAND_END_Y      (STD_SCREEN_Y + 103)
+#define PLAYER_INFO_HAND_END_Y      (MAPTOP_Y + 103)
 
 #define INV_BODY_X (UINT16)(MAPLEFT_X + 71)
-#define INV_BODY_Y (UINT16)(STD_SCREEN_Y + 116)
+#define INV_BODY_Y (UINT16)(MAPTOP_Y + 116)
 
 //Text offsets
 #define Y_OFFSET 2
@@ -169,15 +170,15 @@
 
 // char stat positions
 #define STR_X (MAPLEFT_X + 112)
-#define STR_Y (STD_SCREEN_Y + 42)
+#define STR_Y (MAPTOP_Y + 42)
 #define DEX_X STR_X
-#define DEX_Y (STD_SCREEN_Y + 32)
+#define DEX_Y (MAPTOP_Y + 32)
 #define AGL_X STR_X
-#define AGL_Y (STD_SCREEN_Y + 22)
+#define AGL_Y (MAPTOP_Y + 22)
 #define LDR_X STR_X
-#define LDR_Y (STD_SCREEN_Y + 52)
+#define LDR_Y (MAPTOP_Y + 52)
 #define WIS_X STR_X
-#define WIS_Y (STD_SCREEN_Y + 62)
+#define WIS_Y (MAPTOP_Y + 62)
 #define LVL_X (MAPLEFT_X + 159)
 #define LVL_Y AGL_Y
 #define MRK_X LVL_X
@@ -193,43 +194,43 @@
 #define STAT_HEI GetFontHeight(CHAR_FONT)
 
 #define PIC_NAME_X (MAPLEFT_X + 8)
-#define PIC_NAME_Y (STD_SCREEN_Y + 66 + 3)
+#define PIC_NAME_Y (MAPTOP_Y + 66 + 3)
 #define PIC_NAME_WID (MAPLEFT_X + 60 - PIC_NAME_X)
-#define PIC_NAME_HEI (STD_SCREEN_Y + 75 - PIC_NAME_Y)
+#define PIC_NAME_HEI (MAPTOP_Y + 75 - PIC_NAME_Y)
 #define CHAR_NAME_X (MAPLEFT_X + 14)
-#define CHAR_NAME_Y (STD_SCREEN_Y + 2 + 3)
+#define CHAR_NAME_Y (MAPTOP_Y + 2 + 3)
 #define CHAR_NAME_WID (MAPLEFT_X + 164 - CHAR_NAME_X)
-#define CHAR_NAME_HEI (STD_SCREEN_Y + 11 - CHAR_NAME_Y)
+#define CHAR_NAME_HEI (MAPTOP_Y + 11 - CHAR_NAME_Y)
 #define CHAR_TIME_REMAINING_X (MAPLEFT_X + 207)
-#define CHAR_TIME_REMAINING_Y (STD_SCREEN_Y + 65)
+#define CHAR_TIME_REMAINING_Y (MAPTOP_Y + 65)
 #define CHAR_TIME_REMAINING_WID (MAPLEFT_X + 258 - CHAR_TIME_REMAINING_X)
 #define CHAR_TIME_REMAINING_HEI GetFontHeight(CHAR_FONT)
 #define CHAR_SALARY_X					CHAR_TIME_REMAINING_X
-#define CHAR_SALARY_Y					(STD_SCREEN_Y + 79)
+#define CHAR_SALARY_Y					(MAPTOP_Y + 79)
 #define CHAR_SALARY_WID					CHAR_TIME_REMAINING_WID - 8		// for right justify
 #define CHAR_SALARY_HEI					CHAR_TIME_REMAINING_HEI
 #define CHAR_MEDICAL_X					CHAR_TIME_REMAINING_X
-#define CHAR_MEDICAL_Y					(STD_SCREEN_Y + 93)
+#define CHAR_MEDICAL_Y					(MAPTOP_Y + 93)
 #define CHAR_MEDICAL_WID				CHAR_TIME_REMAINING_WID - 8		// for right justify
 #define CHAR_MEDICAL_HEI				CHAR_TIME_REMAINING_HEI
 #define CHAR_ASSIGN_X (MAPLEFT_X + 182)
-#define CHAR_ASSIGN1_Y (STD_SCREEN_Y + 18)
-#define CHAR_ASSIGN2_Y (STD_SCREEN_Y + 31)
+#define CHAR_ASSIGN1_Y (MAPTOP_Y + 18)
+#define CHAR_ASSIGN2_Y (MAPTOP_Y + 31)
 #define CHAR_ASSIGN_WID 257 - 178
 #define CHAR_ASSIGN_HEI 39 - 29
 #define CHAR_HP_X (MAPLEFT_X + 133)
-#define CHAR_HP_Y (STD_SCREEN_Y + 77 + 3)
+#define CHAR_HP_Y (MAPTOP_Y + 77 + 3)
 #define CHAR_HP_WID  (MAPLEFT_X + 175 - CHAR_HP_X)
-#define CHAR_HP_HEI  (STD_SCREEN_Y + 90 - CHAR_HP_Y)
+#define CHAR_HP_HEI  (MAPTOP_Y + 90 - CHAR_HP_Y)
 #define CHAR_MORALE_X (MAPLEFT_X + 133)
-#define CHAR_MORALE_Y (STD_SCREEN_Y + 91 + 3)
+#define CHAR_MORALE_Y (MAPTOP_Y + 91 + 3)
 #define CHAR_MORALE_WID (MAPLEFT_X + 175 - CHAR_MORALE_X)
-#define CHAR_MORALE_HEI (STD_SCREEN_Y + 101 - CHAR_MORALE_Y)
+#define CHAR_MORALE_HEI (MAPTOP_Y + 101 - CHAR_MORALE_Y)
 
 #define SOLDIER_PIC_X (MAPLEFT_X + 9)
-#define SOLDIER_PIC_Y (STD_SCREEN_Y + 20)
+#define SOLDIER_PIC_Y (MAPTOP_Y + 20)
 #define SOLDIER_HAND_X (MAPLEFT_X + 6)
-#define SOLDIER_HAND_Y (STD_SCREEN_Y + 81)
+#define SOLDIER_HAND_Y (MAPTOP_Y + 81)
 
 #define RGB_WHITE	( FROMRGB( 255, 255, 255 ) )
 #define RGB_YELLOW	( FROMRGB( 255, 255,   0 ) )
@@ -449,7 +450,7 @@ static void ContractListRegionBoxGlow(UINT16 usCount)
 
 	if( usCount >= FIRST_VEHICLE )
 	{
-		sYAdd = 6;
+		sYAdd = 6 + MAP_LIST_EXTRA_Y;
 	}
 	else
 	{
@@ -485,7 +486,7 @@ static void GlowItem(void)
 
 		if (fOldItemGlow)
 		{
-			RestoreExternBackgroundRect( MAPLEFT_X + 3, STD_SCREEN_Y + 80, ( UINT16 )( 65 - 3 ), ( UINT16 )( 105 - 80 ) );
+			RestoreExternBackgroundRect( MAPLEFT_X + 3, MAPTOP_Y + 80, ( UINT16 )( 65 - 3 ), ( UINT16 )( 105 - 80 ) );
 		}
 
 		fOldItemGlow = FALSE;
@@ -514,7 +515,7 @@ static void GlowItem(void)
 	// restore background
 	if((iColorNum==0)||(iColorNum==1))
 	{
-		RestoreExternBackgroundRect( MAPLEFT_X + 3, STD_SCREEN_Y + 80, ( UINT16 )( 65 - 3 ), ( UINT16 )( 105 - 80 ) );
+		RestoreExternBackgroundRect( MAPLEFT_X + 3, MAPTOP_Y + 80, ( UINT16 )( 65 - 3 ), ( UINT16 )( 105 - 80 ) );
 		RenderHandPosItem();
 	}
 
@@ -522,8 +523,8 @@ static void GlowItem(void)
 	UINT16 usColor = GlowColor(iColorNum);
 	SGPVSurface::Lock l(FRAME_BUFFER);
 	SetClippingRegionAndImageWidth(l.Pitch(), 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-	RectangleDraw(TRUE, MAPLEFT_X + 3, STD_SCREEN_Y + 80, MAPLEFT_X + 64, STD_SCREEN_Y + 104, usColor, l.Buffer<UINT16>());
-	InvalidateRegion( MAPLEFT_X + 3, STD_SCREEN_Y + 80, MAPLEFT_X + 65, STD_SCREEN_Y + 105 );
+	RectangleDraw(TRUE, MAPLEFT_X + 3, MAPTOP_Y + 80, MAPLEFT_X + 64, MAPTOP_Y + 104, usColor, l.Buffer<UINT16>());
+	InvalidateRegion( MAPLEFT_X + 3, MAPTOP_Y + 80, MAPLEFT_X + 65, MAPTOP_Y + 105 );
 }
 
 
@@ -1128,7 +1129,7 @@ static void HighLightSelection(HighLightState& state, INT32 const line, UINT16 c
 		if (!predicate(i)) continue;
 
 		UINT16 y = Y_START - 1 + i * h;
-		if (i >= FIRST_VEHICLE) y += 6;
+		if (i >= FIRST_VEHICLE) y += 6 + MAP_LIST_EXTRA_Y;
 
 		if (i == 0 || !predicate(i - 1) || i == FIRST_VEHICLE)
 		{
@@ -1254,7 +1255,7 @@ static void DisplayCharacterList(void)
 		SetFontForeground(foreground);
 
 		UINT16 y = Y_START + i * (Y_SIZE + Y_OFFSET) + 1;
-		if (i >= FIRST_VEHICLE) y += 6;
+		if (i >= FIRST_VEHICLE) y += 6 + MAP_LIST_EXTRA_Y;
 
 		// Name
 		DrawStringCentered(s.name, NAME_X + 1, y, NAME_WIDTH, Y_SIZE, MAP_SCREEN_FONT);
@@ -1376,6 +1377,8 @@ static void MapViewRegionPrimaryCallback(MOUSE_REGION* pRegion, UINT32 iReason);
 static void MapViewRegionSecondaryCallback(MOUSE_REGION* pRegion, UINT32 iReason);
 static void MapViewRegionMovementCallback(MOUSE_REGION* pRegion, UINT32 iReason);
 
+
+static void RenderMapAreaBackdrop(SGPVSurface* dst);
 
 ScreenID MapScreenHandle(void)
 {
@@ -1518,8 +1521,13 @@ ScreenID MapScreenHandle(void)
 
 		MOUSE_CALLBACK mapViewRegionCallback = MouseCallbackPrimarySecondary(MapViewRegionPrimaryCallback, MapViewRegionSecondaryCallback);
 		// set up regions
-		MSYS_DefineRegion( &gMapViewRegion, MAP_VIEW_START_X + MAP_GRID_X, MAP_VIEW_START_Y + MAP_GRID_Y,MAP_VIEW_START_X + MAP_VIEW_WIDTH+MAP_GRID_X-1, MAP_VIEW_START_Y + MAP_VIEW_HEIGHT-1 + 8, MSYS_PRIORITY_HIGH - 3,
-					MSYS_NO_CURSOR, MapViewRegionMovementCallback, mapViewRegionCallback );
+		{
+			// the sectors of the (scaled) map, in screen pixels
+			SGPBox const a1  = g_ui.m_map.sectorBox(1, 1);
+			SGPBox const p16 = g_ui.m_map.sectorBox(MAP_WORLD_X - 2, MAP_WORLD_Y - 2);
+			MSYS_DefineRegion(&gMapViewRegion, a1.x, a1.y, p16.x + p16.w - 1, p16.y + p16.h - 1, MSYS_PRIORITY_HIGH - 3,
+						MSYS_NO_CURSOR, MapViewRegionMovementCallback, mapViewRegionCallback);
+		}
 
 		MSYS_DefineRegion( &gCharInfoHandRegion,
 					PLAYER_INFO_HAND_START_X, PLAYER_INFO_HAND_START_Y,
@@ -1578,9 +1586,9 @@ ScreenID MapScreenHandle(void)
 		FRAME_BUFFER->Fill( Get16BPPColor(RGB_NEAR_BLACK));
 		if (g_ui.isBigScreen())
 		{
-			// the panels only cover part of a big screen: dress the rest with the map frame's art
-			FillMarginArt(guiSAVEBUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, MarginStyle::Bronze);
-			FillMarginArt(FRAME_BUFFER,  0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, MarginStyle::Bronze);
+			// the space around the map frame, if the map does not fill it
+			RenderMapAreaBackdrop(guiSAVEBUFFER);
+			RenderMapAreaBackdrop(FRAME_BUFFER);
 		}
 
 		if( gpCurrentTalkingFace != NULL )
@@ -1762,6 +1770,9 @@ ScreenID MapScreenHandle(void)
 	// restore background rects
 	RestoreBackgroundRects( );
 
+	// the native map, before the map is drawn on (the scaled copy overwrote it)
+	MapCanvasBeginFrame();
+
 	InterruptTimeForMenus( );
 
 	// place down background
@@ -1897,10 +1908,6 @@ ScreenID MapScreenHandle(void)
 		// plot out paths
 		PlotPermanentPaths( );
 		PlotTemporaryPaths( );
-
-		// show ETA
-		RenderMapBorderEtaPopUp( );
-		DisplayGroundEta();
 	}
 
 	HandleContractRenewalSequence( );
@@ -1966,6 +1973,16 @@ ScreenID MapScreenHandle(void)
 			MarkAButtonDirty( giCharInfoButton[ 1 ] );
 			MarkAButtonDirty( giCharInfoButton[ 0 ] );
 		}
+	}
+
+	// The map is complete: show it scaled. Everything from here on is drawn over it, in screen pixels.
+	MapCanvasPresent();
+
+	if (bSelectedDestChar != -1 || fPlotForHelicopter)
+	{
+		// show ETA
+		RenderMapBorderEtaPopUp( );
+		DisplayGroundEta();
 	}
 
 	DrawMilitiaPopUpBox( );
@@ -3075,7 +3092,10 @@ void EndMapScreen( BOOLEAN fDuringFade )
 	// The mapscreen inventory cleanup only removes the keyring button region.
 	// Close the popup itself before tearing down mapscreen regions.
 	DeleteKeyRingPopup();
-	
+
+	// the scaled map copy and the art pieces (the next screen may have another size)
+	MapCanvasShutdown();
+
 	fLeavingMapScreen = FALSE;
 
 	SetRenderFlags( RENDER_FLAG_FULL );
@@ -3251,8 +3271,8 @@ void EndMapScreen( BOOLEAN fDuringFade )
 	{
 		//Load a tiny graphic of the on screen and draw it to the buffer.
 		PlayJA2SampleFromFile(SOUNDSDIR "/initial power up (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
-		BltVideoObjectOnce(FRAME_BUFFER, INTERFACEDIR "/laptopon.sti", 0, STD_SCREEN_X + 465, MAPBOT_Y + 417);
-		InvalidateRegion(STD_SCREEN_X + 465, MAPBOT_Y + 417, STD_SCREEN_X + 480, MAPBOT_Y + 427);
+		BltVideoObjectOnce(FRAME_BUFFER, INTERFACEDIR "/laptopon.sti", 0, MAPBOTR_X + 465, MAPBOT_Y + 417);
+		InvalidateRegion(MAPBOTR_X + 465, MAPBOT_Y + 417, MAPBOTR_X + 480, MAPBOT_Y + 427);
 		RefreshScreen();
 	}
 
@@ -3264,13 +3284,10 @@ void EndMapScreen( BOOLEAN fDuringFade )
 	gfRequestGiveSkyriderNewDestination = FALSE;
 }
 
-static SGPSector GetSectorAtXY(INT16 relX, INT16 relY)
+static SGPSector GetSectorAtXY(INT16 x, INT16 y)
 {
-	// Subtract start of map view
-	INT16 sMapX = relX + MAP_GRID_X;
-	INT16 sMapY = relY + MAP_GRID_Y;
-
-	return SGPSector(sMapX / MAP_GRID_X, sMapY / MAP_GRID_Y, iCurrentMapSectorZ);
+	LayerPoint const s = g_ui.m_map.sectorAt(x, y);
+	return SGPSector(s.x, s.y, iCurrentMapSectorZ);
 }
 
 
@@ -3451,7 +3468,7 @@ static void MapViewRegionMovementCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 
 		gsHighlightSector = SGPSector();
 	} else if (iReason & MSYS_CALLBACK_REASON_MOVE) {
-		gsHighlightSector = GetSectorAtXY(pRegion->RelativeXPos, pRegion->RelativeYPos);
+		gsHighlightSector = GetSectorAtXY(pRegion->RegionTopLeftX + pRegion->RelativeXPos, pRegion->RegionTopLeftY + pRegion->RelativeYPos);
 	}
 }
 
@@ -3952,28 +3969,28 @@ static void RenderAttributeStringsForUpperLeftHandCorner(SGPVSurface* const uiBu
 	SetFontDestBuffer(uiBufferToRenderTo);
 
 	// assignment strings
-	DrawString(pUpperLeftMapScreenStrings[0], MAPLEFT_X + 220 - StringPixLength(pUpperLeftMapScreenStrings[0], CHAR_FONT) / 2, STD_SCREEN_Y + 6, CHAR_FONT);
+	DrawString(pUpperLeftMapScreenStrings[0], MAPLEFT_X + 220 - StringPixLength(pUpperLeftMapScreenStrings[0], CHAR_FONT) / 2, MAPTOP_Y + 6, CHAR_FONT);
 
 	// vehicles and robot don't have attributes, contracts, or morale
 	const SOLDIERTYPE* const pSoldier = GetSelectedInfoChar();
 	if (!pSoldier || !IsMechanical(*pSoldier))
 	{
 		// health
-		DrawString(pUpperLeftMapScreenStrings[1], MAPLEFT_X + 87, STD_SCREEN_Y + 80, CHAR_FONT);
+		DrawString(pUpperLeftMapScreenStrings[1], MAPLEFT_X + 87, MAPTOP_Y + 80, CHAR_FONT);
 
 		for( iCounter = 0; iCounter < 5; iCounter++ )
 		{
-			DrawString(pShortAttributeStrings[iCounter],     MAPLEFT_X +  88, STD_SCREEN_Y + 22 + iCounter * 10, CHAR_FONT);
-			DrawString(pShortAttributeStrings[iCounter + 5], MAPLEFT_X + 133, STD_SCREEN_Y + 22 + iCounter * 10, CHAR_FONT);
+			DrawString(pShortAttributeStrings[iCounter],     MAPLEFT_X +  88, MAPTOP_Y + 22 + iCounter * 10, CHAR_FONT);
+			DrawString(pShortAttributeStrings[iCounter + 5], MAPLEFT_X + 133, MAPTOP_Y + 22 + iCounter * 10, CHAR_FONT);
 		}
 
 		// morale
-		DrawString(pUpperLeftMapScreenStrings[2], MAPLEFT_X + 87, STD_SCREEN_Y + 94,  CHAR_FONT);
+		DrawString(pUpperLeftMapScreenStrings[2], MAPLEFT_X + 87, MAPTOP_Y + 94,  CHAR_FONT);
 	}
 	else
 	{
 		// condition
-		DrawString(pUpperLeftMapScreenStrings[3], MAPLEFT_X + 87, STD_SCREEN_Y + 80, CHAR_FONT);
+		DrawString(pUpperLeftMapScreenStrings[3], MAPLEFT_X + 87, MAPTOP_Y + 80, CHAR_FONT);
 	}
 
 
@@ -4185,7 +4202,7 @@ static void CreateMouseRegionsForTeamList(void)
 	// the info region...is the background for the list itself
 	for (UINT i = 0; i < MAX_CHARACTER_COUNT; ++i)
 	{
-		const UINT16 y = Y_START + i * (Y_SIZE + 2) + (i >= FIRST_VEHICLE ? 6 : 0);
+		const UINT16 y = Y_START + i * (Y_SIZE + 2) + (i >= FIRST_VEHICLE ? 6 + MAP_LIST_EXTRA_Y : 0);
 
 		const UINT16 w = NAME_WIDTH;
 		CharacterRegions& r = g_character_regions[i];
@@ -4945,11 +4962,22 @@ void RenderMapRegionBackground( void )
 		return;
 	}
 
+	MapScreenGeometry const& g = g_ui.m_map;
+
 	// don't bother if showing sector inventory instead of the map!!!
 	if( !fShowMapInventoryPool )
 	{
 		// draw map
 		DrawMap( );
+	}
+	else if (g.composedFrame())
+	{
+		/* The sector inventory is smaller than the map frame: it is shown in the middle, over the
+		 * darkened map. */
+		DrawMap();
+		MapCanvasStretchSaveBuffer();
+		RenderComposedMapBorder(guiSAVEBUFFER);
+		guiSAVEBUFFER->ShadowRect(g.frame.x, g.frame.y, g.frame.x + g.frame.w, g.frame.y + g.frame.h);
 	}
 
 
@@ -4961,7 +4989,7 @@ void RenderMapRegionBackground( void )
 
 	MapscreenMarkButtonsDirty();
 
-	RestoreExternBackgroundRect(STD_SCREEN_X + 261, STD_SCREEN_Y + 0, MAP_BG_WIDTH, 359);
+	RestoreExternBackgroundRect(g.frame.x, g.frame.y, g.frame.w, g.frame.h);
 
 	// don't bother if showing sector inventory instead of the map!!!
 	if( !fShowMapInventoryPool )
@@ -4988,7 +5016,40 @@ static void DisplayIconsForMercsAsleep(void);
  * that strip; when the column is apart from the map the strip must be restored with the rest of the column. */
 static int LeftColumnSpill()
 {
-	return MAPLEFT_X < STD_SCREEN_X ? 16 : 0;
+	return g_ui.m_map.frame.x > MAPLEFT_X + 261 ? std::min(16, g_ui.m_map.frame.x - (MAPLEFT_X + 261)) : 0;
+}
+
+
+/** The character list art, stretched down to the bottom bar: the rows above the vehicles are repeated. */
+static void BltCharacterListArt(SGPVSurface* const dst)
+{
+	INT32 const extra = MAP_LIST_EXTRA_Y;
+	if (extra <= 0)
+	{
+		BltVideoObject(dst, guiCHARLIST, 0, PLAYER_INFO_X, PLAYER_INFO_Y);
+		return;
+	}
+	SGPVSurface* const art = MapArtSurface(guiCHARLIST, 0);
+	UINT16 const w = art->Width();
+	UINT16 const h = art->Height();
+	// the part down to the last merc row, the empty rows repeated, then the vehicles' part
+	UINT16 const top = 210, band = 60, bandY = 140;
+	SGPBox const upper{ 0, 0, w, top };
+	SGPBox const rows { 0, bandY, w, band };
+	SGPBox const lower{ 0, top, w, (UINT16)(h - top) };
+	MapArtBlit(dst, art, upper, PLAYER_INFO_X, PLAYER_INFO_Y);
+	MapArtTile(dst, art, rows, SGPBox{ (UINT16)PLAYER_INFO_X, (UINT16)(PLAYER_INFO_Y + top), w, (UINT16)extra });
+	MapArtBlit(dst, art, lower, PLAYER_INFO_X, PLAYER_INFO_Y + top + extra);
+}
+
+
+static void RenderMapAreaBackdrop(SGPVSurface* const dst)
+{
+	MapScreenGeometry const& g = g_ui.m_map;
+	SGPBox const& a = g.mapArea;
+	SGPBox const& f = g.frame;
+	if (f.x == a.x && f.y == a.y && f.w == a.w && f.h == a.h) return;
+	RenderMapFrameMargins(dst);
 }
 
 
@@ -5000,13 +5061,15 @@ static void RenderTeamRegionBackground()
 	// Show inventory or the team list?
 	if (!fShowInventoryFlag)
 	{
-		BltVideoObject(guiSAVEBUFFER, guiCHARLIST, 0, PLAYER_INFO_X, PLAYER_INFO_Y);
+		BltCharacterListArt(guiSAVEBUFFER);
 		HandleHighLightingOfLinesInTeamPanel();
 		DisplayCharacterList();
 		DisplayIconsForMercsAsleep();
 	}
 	else
 	{
+		// under the inventory: the stretched part of the list
+		if (MAP_LIST_EXTRA_Y > 0) BltCharacterListArt(guiSAVEBUFFER);
 		BltCharInvPanel();
 	}
 
@@ -5015,7 +5078,7 @@ static void RenderTeamRegionBackground()
 	gfRenderPBInterface = TRUE;
 
 	MarkAllBoxesAsAltered();
-	RestoreExternBackgroundRect(MAPLEFT_X + 0, STD_SCREEN_Y + 107, 261 - 0 + LeftColumnSpill(), 359 - 107);
+	RestoreExternBackgroundRect(MAPLEFT_X + 0, MAPTOP_Y + 107, 261 - 0 + LeftColumnSpill(), 359 - 107 + MAP_LIST_EXTRA_Y);
 	MapscreenMarkButtonsDirty();
 }
 
@@ -5053,7 +5116,8 @@ static void RenderCharacterInfoBackground(void)
 	MarkAllBoxesAsAltered( );
 
 	// restore background for area
-	RestoreExternBackgroundRect( MAPLEFT_X + 0, STD_SCREEN_Y + 0, 261 + LeftColumnSpill(), 107 );
+	RestoreExternBackgroundRect( MAPLEFT_X + 0, MAPTOP_Y + 0, 261 + LeftColumnSpill(), 107 );
+
 
 }
 
@@ -6227,8 +6291,8 @@ static void CreateDestroyMapCharacterScrollButtons(void)
 	{
 		const INT16 prio = MSYS_PRIORITY_HIGHEST - 5;
 
-		giCharInfoButton[0] = QuickCreateButtonImg(INTERFACEDIR "/map_screen_bottom_arrows.sti", 11, 4, -1, 6, -1, MAPLEFT_X + 67, STD_SCREEN_Y + 69, prio, PrevInventoryMapBtnCallback);
-		giCharInfoButton[1] = QuickCreateButtonImg(INTERFACEDIR "/map_screen_bottom_arrows.sti", 12, 5, -1, 7, -1, MAPLEFT_X + 67, STD_SCREEN_Y + 87, prio, NextInventoryMapBtnCallback);
+		giCharInfoButton[0] = QuickCreateButtonImg(INTERFACEDIR "/map_screen_bottom_arrows.sti", 11, 4, -1, 6, -1, MAPLEFT_X + 67, MAPTOP_Y + 69, prio, PrevInventoryMapBtnCallback);
+		giCharInfoButton[1] = QuickCreateButtonImg(INTERFACEDIR "/map_screen_bottom_arrows.sti", 12, 5, -1, 7, -1, MAPLEFT_X + 67, MAPTOP_Y + 87, prio, NextInventoryMapBtnCallback);
 
 		giCharInfoButton[0]->SetFastHelpText(pMapScreenPrevNextCharButtonHelpText[0]);
 		giCharInfoButton[1]->SetFastHelpText(pMapScreenPrevNextCharButtonHelpText[1]);
@@ -6347,7 +6411,7 @@ static void AddTeamPanelSortButtonsForMapScreen(void)
 
 	for (INT32 i = 0; i < MAX_SORT_METHODS; ++i)
 	{
-		giMapSortButton[i] = QuickCreateButtonImg(filename, iImageIndex[i], iImageIndex[i] + 6, MAPLEFT_X + gMapSortButtons[i].iX, STD_SCREEN_Y + gMapSortButtons[i].iY, MSYS_PRIORITY_HIGHEST - 5, MapSortBtnCallback);
+		giMapSortButton[i] = QuickCreateButtonImg(filename, iImageIndex[i], iImageIndex[i] + 6, MAPLEFT_X + gMapSortButtons[i].iX, MAPTOP_Y + gMapSortButtons[i].iY, MSYS_PRIORITY_HIGHEST - 5, MapSortBtnCallback);
 		giMapSortButton[i]->SetUserData(i);
 		giMapSortButton[i]->SetFastHelpText(wMapScreenSortButtonHelpText[i]);
 	}
@@ -6632,20 +6696,20 @@ static void CheckForAndRenderNewMailOverlay(void)
 		{
 			if (guiMapBottomExitButtons[MAP_EXIT_TO_LAPTOP]->Clicked())
 			{ //button is down, so offset the icon
-				BltVideoObject(FRAME_BUFFER, guiNewMailIcons, 1, STD_SCREEN_X + 465, MAPBOT_Y + 418);
-				InvalidateRegion( STD_SCREEN_X + 465, MAPBOT_Y + 418, STD_SCREEN_X + 480, MAPBOT_Y + 428 );
+				BltVideoObject(FRAME_BUFFER, guiNewMailIcons, 1, MAPBOTR_X + 465, MAPBOT_Y + 418);
+				InvalidateRegion( MAPBOTR_X + 465, MAPBOT_Y + 418, MAPBOTR_X + 480, MAPBOT_Y + 428 );
 			}
 			else
 			{ //button is up, so draw the icon normally
-				BltVideoObject(FRAME_BUFFER, guiNewMailIcons, 0, STD_SCREEN_X + 464, MAPBOT_Y + 417);
+				BltVideoObject(FRAME_BUFFER, guiNewMailIcons, 0, MAPBOTR_X + 464, MAPBOT_Y + 417);
 				if (!guiMapBottomExitButtons[MAP_EXIT_TO_LAPTOP]->Enabled())
 				{
-					SGPRect area = { (UINT16)(STD_SCREEN_X + 463), (UINT16)(MAPBOT_Y + 417), (UINT16)(STD_SCREEN_X + 477), (UINT16)(MAPBOT_Y + 425) };
+					SGPRect area = { (UINT16)(MAPBOTR_X + 463), (UINT16)(MAPBOT_Y + 417), (UINT16)(MAPBOTR_X + 477), (UINT16)(MAPBOT_Y + 425) };
 
 					SGPVSurface::Lock l(FRAME_BUFFER);
 					Blt16BPPBufferHatchRect(l.Buffer<UINT16>(), l.Pitch(), &area);
 				}
-				InvalidateRegion( STD_SCREEN_X + 463, MAPBOT_Y + 417, STD_SCREEN_X + 481, MAPBOT_Y + 430 );
+				InvalidateRegion( MAPBOTR_X + 463, MAPBOT_Y + 417, MAPBOTR_X + 481, MAPBOT_Y + 430 );
 
 			}
 		}

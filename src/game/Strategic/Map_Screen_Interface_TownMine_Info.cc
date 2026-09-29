@@ -1,6 +1,7 @@
 #include "Directories.h"
 #include "HImage.h"
 #include "MapScreen.h"
+#include "Map_Screen_Canvas.h"
 #include "Map_Screen_Interface_Bottom.h"
 #include "Map_Screen_Interface_TownMine_Info.h"
 #include "SAM_Sites.h"
@@ -459,15 +460,22 @@ static void PositionTownMineInfoBox(PopUpBox* const box)
 	GetScreenXYFromMapXY(bCurrentTownMineSector, &sX, &sY);
 	SGPBox const& area = GetBoxArea(box);
 
+	// the box is drawn over the scaled map, in screen pixels
+	INT16 const left   = MapCanvasToScreenX(MapScreenRect.iLeft);
+	INT16 const right  = MapCanvasToScreenX(MapScreenRect.iRight);
+	INT16 const top    = MapCanvasToScreenY(MapScreenRect.iTop);
+	INT16 const bottom = MapCanvasToScreenY(MapScreenRect.iBottom);
+
 	// now position box - the x axis
-	INT16 x = sX;
-	if (x          < MapScreenRect.iLeft)  x = MapScreenRect.iLeft + 5;
-	if (x + area.w > MapScreenRect.iRight) x = MapScreenRect.iRight - area.w - 5;
+	INT16 x = MapCanvasToScreenX(sX);
+	if (x          < left)  x = left + 5;
+	if (x + area.w > right) x = right - area.w - 5;
 
 	// position - the y axis
-	INT16 y = sY;
-	if (y          < MapScreenRect.iTop)    y = MapScreenRect.iTop + 5;
-	if (y + area.h > MapScreenRect.iBottom) y = MapScreenRect.iBottom - area.h - 8;
+	INT16 y = MapCanvasToScreenY(sY);
+	if (y          < top)    y = top + 5;
+	if (y + area.h > bottom) y = bottom - area.h - 8;
+
 
 	SetBoxXY(box, x, y);
 }

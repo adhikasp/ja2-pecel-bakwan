@@ -125,8 +125,8 @@ enum {
 
 
 // map view region
-#define MAP_VIEW_START_X	(STD_SCREEN_X + 270)
-#define MAP_VIEW_START_Y	(STD_SCREEN_Y + 10)
+#define MAP_VIEW_START_X	(g_ui.m_mapViewX)
+#define MAP_VIEW_START_Y	(g_ui.m_mapViewY)
 #define MAP_VIEW_WIDTH		336
 #define MAP_VIEW_HEIGHT		298
 

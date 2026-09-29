@@ -29,7 +29,7 @@ ja2.key("ESC")
 ja2.waitIdle()
 
 -- Popups of the character list: assignment and contract. They open next to the list, not in the middle of the screen.
-local col = {x = 0, y = ja2.screenSize().stdY + 107, w = 261, h = 252}
+local col = {x = 0, y = 107, w = 261, h = 252} -- the column is in the top-left corner
 ja2.click{text = "Squad 1", exact = true, within = col}
 ja2.waitIdle()
 ja2.expect(ja2.exists("Doctor"), "the assignment menu opens")

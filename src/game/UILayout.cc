@@ -136,11 +136,109 @@ UINT16 UILayout::tacticalButtonsBoxX() const
 }
 
 
+namespace {
+// Rounding division towards -inf / +inf (a / b for b > 0).
+INT32 FloorDiv(INT32 a, INT32 b) { return a >= 0 ? a / b : -((-a + b - 1) / b); }
+INT32 CeilDiv(INT32 a, INT32 b)  { return -FloorDiv(-a, b); }
+}
+
+/* These match the stretch (BltStretchVideoSurface, nearest neighbour): screen pixel s of the grid shows
+ * canvas pixel floor(s * 2 / scale2), so canvas pixel c starts at screen pixel ceil(c * scale2 / 2). */
+LayerPoint MapScreenGeometry::canvasToScreen(INT32 const x, INT32 const y) const
+{
+	return { grid.x + CeilDiv((x - canvas.x) * scale2, 2), grid.y + CeilDiv((y - canvas.y) * scale2, 2) };
+}
+
+
+LayerPoint MapScreenGeometry::screenToCanvas(INT32 const x, INT32 const y) const
+{
+	return { canvas.x + FloorDiv((x - grid.x) * 2, scale2), canvas.y + FloorDiv((y - grid.y) * 2, scale2) };
+}
+
+
+SGPBox MapScreenGeometry::sectorBox(INT32 const sx, INT32 const sy) const
+{
+	// In canvas pixels, sector (x, y) starts at MAP_VIEW_START + (x * 21, y * 18)
+	INT32 const cx = canvas.x - VIEW_TO_CANVAS_X + sx * 21;
+	INT32 const cy = canvas.y - VIEW_TO_CANVAS_Y + sy * 18;
+	LayerPoint const a = canvasToScreen(cx, cy);
+	LayerPoint const b = canvasToScreen(cx + 21, cy + 18);
+	SGPBox r;
+	r.set(a.x, a.y, b.x - a.x, b.y - a.y);
+	return r;
+}
+
+
+LayerPoint MapScreenGeometry::sectorAt(INT32 const x, INT32 const y) const
+{
+	LayerPoint const c = screenToCanvas(x, y);
+	INT32 const rx = c.x - (canvas.x - VIEW_TO_CANVAS_X);
+	INT32 const ry = c.y - (canvas.y - VIEW_TO_CANVAS_Y);
+	if (rx < 0 || ry < 0) return { 0, 0 };
+	INT32 const sx = rx / 21;
+	INT32 const sy = ry / 18;
+	if (sx < 1 || sx > 16 || sy < 1 || sy > 16) return { 0, 0 };
+	return { sx, sy };
+}
+
+
+MapScreenGeometry MapScreenGeometry::compute(UINT16 const w, UINT16 const h)
+{
+	MapScreenGeometry g;
+
+	// Room for the framed map: right of the column, above the (classic height) bar.
+	INT32 const availW = w - COLUMN_W;
+	INT32 const availH = h - BAR_H;
+	auto frameW = [](INT32 s2) { return FRAME_L + CANVAS_W * s2 / 2 + FRAME_R; };
+	auto frameH = [](INT32 s2) { return FRAME_T + CANVAS_H * s2 / 2 + FRAME_B; };
+
+	// The largest whole scale that fits; 1.5x as the only fractional step, between 1x and 2x.
+	g.scale2 = 2;
+	for (INT32 s2 = 2 * 16; s2 >= 3; s2 -= (s2 > 4 ? 2 : 1))
+	{
+		if (frameW(s2) <= availW && frameH(s2) <= availH)
+		{
+			g.scale2 = s2;
+			break;
+		}
+	}
+	INT32 const fw = frameW(g.scale2);
+	INT32 const fh = frameH(g.scale2);
+
+	// Height left over goes to the message log, in whole lines.
+	INT32 const spareH = std::max(0, availH - fh);
+	g.logExtraH = std::min(LOG_MAX_EXTRA_LINES, spareH / LOG_LINE_H) * LOG_LINE_H;
+	g.logExtraW = w - BAR_W;
+	g.barTop    = h - BAR_H - g.logExtraH;
+	g.barRightX = w - BAR_W;
+
+	g.column.set(0, 0, COLUMN_W, g.barTop);
+	g.listExtra = g.barTop - (INFO_H + LIST_H);
+
+	g.mapArea.set(COLUMN_W, 0, w - COLUMN_W, g.barTop);
+	INT32 const fx = g.mapArea.x + (g.mapArea.w - fw) / 2;
+	if (g.scaled())
+	{
+		// The frame is put together from pieces anyway: it takes the whole height, the map in its middle.
+		g.frame.set(fx, g.mapArea.y, fw, g.mapArea.h);
+		g.grid.set(fx + FRAME_L, g.mapArea.y + FRAME_T + (g.mapArea.h - fh) / 2, CANVAS_W * g.scale2 / 2, CANVAS_H * g.scale2 / 2);
+	}
+	else
+	{
+		INT32 const fy = g.mapArea.y + (g.mapArea.h - fh) / 2;
+		g.frame.set(fx, fy, fw, fh);
+		g.grid.set(fx + FRAME_L, fy + FRAME_T, CANVAS_W, CANVAS_H);
+	}
+	g.canvas.set(g.grid.x, g.grid.y, CANVAS_W, CANVAS_H);
+	return g;
+}
+
+
 int UILayout::getMapMessageLines() const           { return 9 + m_mapMessageExtraPx / 9;                              }
 UINT16 UILayout::currentHeight() const             { return fInMapMode ? (m_mapBottomY + m_mapScreenHeight) : m_screenHeight; }
-UINT16 UILayout::get_CLOCK_X() const               { return fInMapMode ? (STD_SCREEN_X + 554) : tacticalButtonsBoxX() + 56; }
+UINT16 UILayout::get_CLOCK_X() const               { return fInMapMode ? (m_map.barRightX + 554) : tacticalButtonsBoxX() + 56; }
 UINT16 UILayout::get_CLOCK_Y() const               { return currentHeight() - 23;                                  }
-UINT16 UILayout::get_RADAR_WINDOW_X() const        { return fInMapMode ? (STD_SCREEN_X + 543) : tacticalButtonsBoxX() + 45; }
+UINT16 UILayout::get_RADAR_WINDOW_X() const        { return fInMapMode ? (m_map.barRightX + 543) : tacticalButtonsBoxX() + 45; }
 UINT16 UILayout::get_RADAR_WINDOW_TM_Y() const     { return currentHeight() - 107;                                 }
 UINT16 UILayout::get_INV_INTERFACE_START_Y() const { return m_screenHeight - INV_INTERFACE_HEIGHT;                                  }
 
@@ -158,14 +256,13 @@ void UILayout::recalculatePositions()
 
 	m_stdScreenOffsetX            = (m_screenWidth - MIN_INTERFACE_WIDTH) / 2;
 	m_stdScreenOffsetY            = (m_screenHeight - MIN_INTERFACE_HEIGHT) / 2;
-	m_mapLeftX                    = 0;
+	m_map                         = MapScreenGeometry::compute(m_screenWidth, m_screenHeight);
+	m_mapLeftX                    = m_map.column.x;
+	m_mapTopY                     = m_map.column.y;
 	m_mapBottomY                  = m_screenHeight - MIN_INTERFACE_HEIGHT;
-	{
-		// The message log grows into the gap between the map panels and the bottom bar, in whole lines.
-		constexpr int lineH = 9, maxExtraRows = 20, margin = 20;
-		int const gap = m_stdScreenOffsetY - margin;
-		m_mapMessageExtraPx = (UINT16)(gap > 0 ? std::min(maxExtraRows, gap / lineH) * lineH : 0);
-	}
+	m_mapMessageExtraPx           = m_map.logExtraH;
+	m_mapViewX                    = m_map.canvas.x - MapScreenGeometry::VIEW_TO_CANVAS_X;
+	m_mapViewY                    = m_map.canvas.y - MapScreenGeometry::VIEW_TO_CANVAS_Y;
 
 	// tactical screen inventory position
 	m_invSlotPositionTac[HELMETPOS           ].set(startX + 344, startInvY +   6);
@@ -189,31 +286,31 @@ void UILayout::recalculatePositions()
 	m_invSlotPositionTac[SMALLPOCK8POS       ].set(startX + 432, startInvY +  77);
 
 	// map screen inventory position
-	m_invSlotPositionMap[HELMETPOS].set(m_mapLeftX + 204, m_stdScreenOffsetY + 116);
-	m_invSlotPositionMap[VESTPOS].set(m_mapLeftX + 204, m_stdScreenOffsetY + 145);
-	m_invSlotPositionMap[LEGPOS].set(m_mapLeftX + 204, m_stdScreenOffsetY + 205);
-	m_invSlotPositionMap[HEAD1POS].set(m_mapLeftX +  21, m_stdScreenOffsetY + 116);
-	m_invSlotPositionMap[HEAD2POS].set(m_mapLeftX +  21, m_stdScreenOffsetY + 140);
-	m_invSlotPositionMap[HANDPOS].set(m_mapLeftX +  21, m_stdScreenOffsetY + 194);
-	m_invSlotPositionMap[SECONDHANDPOS].set(m_mapLeftX +  21, m_stdScreenOffsetY + 218);
-	m_invSlotPositionMap[BIGPOCK1POS].set(m_mapLeftX +  98, m_stdScreenOffsetY + 251);
-	m_invSlotPositionMap[BIGPOCK2POS].set(m_mapLeftX +  98, m_stdScreenOffsetY + 275);
-	m_invSlotPositionMap[BIGPOCK3POS].set(m_mapLeftX +  98, m_stdScreenOffsetY + 299);
-	m_invSlotPositionMap[BIGPOCK4POS].set(m_mapLeftX +  98, m_stdScreenOffsetY + 323);
-	m_invSlotPositionMap[SMALLPOCK1POS].set(m_mapLeftX +  22, m_stdScreenOffsetY + 251);
-	m_invSlotPositionMap[SMALLPOCK2POS].set(m_mapLeftX +  22, m_stdScreenOffsetY + 275);
-	m_invSlotPositionMap[SMALLPOCK3POS].set(m_mapLeftX +  22, m_stdScreenOffsetY + 299);
-	m_invSlotPositionMap[SMALLPOCK4POS].set(m_mapLeftX +  22, m_stdScreenOffsetY + 323);
-	m_invSlotPositionMap[SMALLPOCK5POS].set(m_mapLeftX +  60, m_stdScreenOffsetY + 251);
-	m_invSlotPositionMap[SMALLPOCK6POS].set(m_mapLeftX +  60, m_stdScreenOffsetY + 275);
-	m_invSlotPositionMap[SMALLPOCK7POS].set(m_mapLeftX +  60, m_stdScreenOffsetY + 299);
-	m_invSlotPositionMap[SMALLPOCK8POS].set(m_mapLeftX +  60, m_stdScreenOffsetY + 323);
+	m_invSlotPositionMap[HELMETPOS].set(m_mapLeftX + 204, m_mapTopY + 116);
+	m_invSlotPositionMap[VESTPOS].set(m_mapLeftX + 204, m_mapTopY + 145);
+	m_invSlotPositionMap[LEGPOS].set(m_mapLeftX + 204, m_mapTopY + 205);
+	m_invSlotPositionMap[HEAD1POS].set(m_mapLeftX +  21, m_mapTopY + 116);
+	m_invSlotPositionMap[HEAD2POS].set(m_mapLeftX +  21, m_mapTopY + 140);
+	m_invSlotPositionMap[HANDPOS].set(m_mapLeftX +  21, m_mapTopY + 194);
+	m_invSlotPositionMap[SECONDHANDPOS].set(m_mapLeftX +  21, m_mapTopY + 218);
+	m_invSlotPositionMap[BIGPOCK1POS].set(m_mapLeftX +  98, m_mapTopY + 251);
+	m_invSlotPositionMap[BIGPOCK2POS].set(m_mapLeftX +  98, m_mapTopY + 275);
+	m_invSlotPositionMap[BIGPOCK3POS].set(m_mapLeftX +  98, m_mapTopY + 299);
+	m_invSlotPositionMap[BIGPOCK4POS].set(m_mapLeftX +  98, m_mapTopY + 323);
+	m_invSlotPositionMap[SMALLPOCK1POS].set(m_mapLeftX +  22, m_mapTopY + 251);
+	m_invSlotPositionMap[SMALLPOCK2POS].set(m_mapLeftX +  22, m_mapTopY + 275);
+	m_invSlotPositionMap[SMALLPOCK3POS].set(m_mapLeftX +  22, m_mapTopY + 299);
+	m_invSlotPositionMap[SMALLPOCK4POS].set(m_mapLeftX +  22, m_mapTopY + 323);
+	m_invSlotPositionMap[SMALLPOCK5POS].set(m_mapLeftX +  60, m_mapTopY + 251);
+	m_invSlotPositionMap[SMALLPOCK6POS].set(m_mapLeftX +  60, m_mapTopY + 275);
+	m_invSlotPositionMap[SMALLPOCK7POS].set(m_mapLeftX +  60, m_mapTopY + 299);
+	m_invSlotPositionMap[SMALLPOCK8POS].set(m_mapLeftX +  60, m_mapTopY + 323);
 
 	m_invCamoRegion.set(SM_BODYINV_X, SM_BODYINV_Y);
 
 	m_progress_bar_box.set(STD_SCREEN_X + 5, 2, MIN_INTERFACE_WIDTH - 10, 12);
 	m_moneyButtonLoc.set(startX + 343, startInvY + 11);
-	m_MoneyButtonLocMap.set(m_mapLeftX + 174, m_stdScreenOffsetY + 115);
+	m_MoneyButtonLocMap.set(m_mapLeftX + 174, m_mapTopY + 115);
 
 	m_VIEWPORT_START_X            = 0;
 	m_VIEWPORT_START_Y            = 0;
@@ -236,13 +333,13 @@ void UILayout::recalculatePositions()
 		m_worldClippingRect.set(0, 0, m_screenWidth, m_screenHeight - 120);
 	}
 
-	m_contractPosition.set(       m_mapLeftX + 120, m_stdScreenOffsetY +  50);
-	m_attributePosition.set(      m_mapLeftX + 220, m_stdScreenOffsetY + 150);
-	m_trainPosition.set(          m_mapLeftX + 160, m_stdScreenOffsetY + 150);
-	m_vehiclePosition.set(        m_mapLeftX + 160, m_stdScreenOffsetY + 150);
-	m_repairPosition.set(         m_mapLeftX + 160, m_stdScreenOffsetY + 150);
-	m_assignmentPosition.set(     m_mapLeftX + 120, m_stdScreenOffsetY + 150);
-	m_squadPosition.set(          m_mapLeftX + 160, m_stdScreenOffsetY + 150);
+	m_contractPosition.set(       m_mapLeftX + 120, m_mapTopY +  50);
+	m_attributePosition.set(      m_mapLeftX + 220, m_mapTopY + 150);
+	m_trainPosition.set(          m_mapLeftX + 160, m_mapTopY + 150);
+	m_vehiclePosition.set(        m_mapLeftX + 160, m_mapTopY + 150);
+	m_repairPosition.set(         m_mapLeftX + 160, m_mapTopY + 150);
+	m_assignmentPosition.set(     m_mapLeftX + 120, m_mapTopY + 150);
+	m_squadPosition.set(          m_mapLeftX + 160, m_mapTopY + 150);
 	m_versionPosition.set(        10, m_screenHeight - 15);
 }
 
@@ -252,7 +349,7 @@ UINT16 UILayout::getTacticalTextBoxX() const
 
 	if ( guiCurrentScreen == MAP_SCREEN )
 	{
-		return STD_SCREEN_X + 110;
+		return m_mapLeftX + 110;
 	}
 	else
 	{

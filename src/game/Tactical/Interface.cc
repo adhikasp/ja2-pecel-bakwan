@@ -27,6 +27,7 @@
 #include "Keys.h"
 #include "Line.h"
 #include "Local.h"
+#include "Map_Screen_Canvas.h"
 #include "Map_Screen_Interface_Map.h"
 #include "MapScreen.h"
 #include "MercProfile.h"
@@ -1656,8 +1657,10 @@ void BeginMapUIMessage(INT16 delta_y, const ST::string& text)
 
 	if (g_ui_message_overlay == NULL)
 	{
-		INT16 const x = MAP_VIEW_START_X + (MAP_VIEW_WIDTH  - gusUIMessageWidth)  / 2 + 20;
-		INT16 const y = MAP_VIEW_START_Y + (MAP_VIEW_HEIGHT - gusUIMessageHeight) / 2 + delta_y;
+		// centred on the (scaled) map, in screen pixels
+		INT16 const x = MapCanvasToScreenX(MAP_VIEW_START_X + 20) + (g_ui.m_map.canvasToScreen(MAP_VIEW_WIDTH)  - gusUIMessageWidth)  / 2;
+		INT16 const y = MapCanvasToScreenY(MAP_VIEW_START_Y)      + (g_ui.m_map.canvasToScreen(MAP_VIEW_HEIGHT) - gusUIMessageHeight) / 2 + delta_y;
+
 		g_ui_message_overlay = RegisterVideoOverlay(RenderUIMessage, x, y, gusUIMessageWidth, gusUIMessageHeight);
 	}
 }

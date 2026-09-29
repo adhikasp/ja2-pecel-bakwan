@@ -15,6 +15,7 @@
 #include "Interface.h"
 #include "Line.h"
 #include "Map_Information.h"
+#include "Map_Screen_Canvas.h"
 #include "Map_Screen_Helicopter.h"
 #include "Map_Screen_Interface.h"
 #include "Map_Screen_Interface_Border.h"
@@ -85,14 +86,14 @@
 // #define VERT_SCROLL 10
 
 // the pop up for helicopter stuff
-#define MAP_HELICOPTER_ETA_POPUP_X (STD_SCREEN_X + 400)
-#define MAP_HELICOPTER_ETA_POPUP_Y (STD_SCREEN_Y + 250)
-#define MAP_HELICOPTER_UPPER_ETA_POPUP_Y (STD_SCREEN_Y + 50)
+#define MAP_HELICOPTER_ETA_POPUP_X (MapCanvasToScreenX(MAP_VIEW_START_X + 130))
+#define MAP_HELICOPTER_ETA_POPUP_Y (MapCanvasToScreenY(MAP_VIEW_START_Y + 240))
+#define MAP_HELICOPTER_UPPER_ETA_POPUP_Y (MapCanvasToScreenY(MAP_VIEW_START_Y + 40))
 #define MAP_HELICOPTER_ETA_POPUP_WIDTH 120
 #define MAP_HELICOPTER_ETA_POPUP_HEIGHT 68
 
-#define MAP_LEVEL_STRING_X (STD_SCREEN_X + 432)
-#define MAP_LEVEL_STRING_Y (STD_SCREEN_Y + 305)
+#define MAP_LEVEL_STRING_X (MAP_VIEW_START_X + 162)
+#define MAP_LEVEL_STRING_Y (MAP_VIEW_START_Y + 295)
 
 // font
 #define MAP_FONT BLOCKFONT2
@@ -229,8 +230,8 @@ static SGPVSurface* guiBIGMAP;
 #define MILITIA_BOX_ROWS 3
 #define MILITIA_BOX_BOX_HEIGHT 36
 #define MILITIA_BOX_BOX_WIDTH 42
-#define MAP_MILITIA_BOX_POS_X (STD_SCREEN_X + 400)
-#define MAP_MILITIA_BOX_POS_Y (STD_SCREEN_Y + 125)
+#define MAP_MILITIA_BOX_POS_X (MapCanvasToScreenX(MAP_VIEW_START_X + 130))
+#define MAP_MILITIA_BOX_POS_Y (MapCanvasToScreenY(MAP_VIEW_START_Y + 115))
 
 #define POPUP_MILITIA_ICONS_PER_ROW 5 // max 6 rows gives the limit of 30 militia
 #define MEDIUM_MILITIA_ICON_SPACING 5
@@ -409,20 +410,23 @@ void UpdateMapScreenRect()
 
 void DrawMapIndexBigMap(BOOLEAN fSelectedCursorIsYellow)
 {
-	// x start of hort index
-	int const MAP_HORT_INDEX_X = (STD_SCREEN_X + 292);
+	// The indexes are on the map border, outside the (scaled) map: in screen pixels.
+	MapScreenGeometry const& g = g_ui.m_map;
+
+	// x start of hort index: over the columns
+	int const MAP_HORT_INDEX_X = g.sectorBox(1, 1).x + 1;
 
 	// y position of hort index
-	int const MAP_HORT_INDEX_Y = (STD_SCREEN_Y + 10);
+	int const MAP_HORT_INDEX_Y = g.frame.y + 10;
 
 	// height of hort index
 	int const MAP_HORT_HEIGHT = GetFontHeight(MAP_FONT);
 
 	// vert index start x
-	int const MAP_VERT_INDEX_X = (STD_SCREEN_X + 273);
+	int const MAP_VERT_INDEX_X = g.frame.x + 12;
 
-	// vert index start y
-	int const MAP_VERT_INDEX_Y = (STD_SCREEN_Y + 31);
+	// vert index start y: along the rows
+	int const MAP_VERT_INDEX_Y = g.sectorBox(1, 1).y + 3;
 
 	// this procedure will draw the coord indexes on the zoomed out map
 	SetFontDestBuffer(FRAME_BUFFER);
@@ -432,8 +436,10 @@ void DrawMapIndexBigMap(BOOLEAN fSelectedCursorIsYellow)
 	bool  const draw_cursors  = CanDrawSectorCursor();
 	bool  const sel_candidate = bSelectedDestChar == -1 && !fPlotForHelicopter;
 	UINT8 const sel_colour    = fSelectedCursorIsYellow ? FONT_YELLOW : FONT_WHITE;
-	HCenterVCenterAlign const hortIndexAlign{ MAP_GRID_X, MAP_HORT_HEIGHT };
-	HCenterVCenterAlign const vertIndexAlign{ MAP_HORT_HEIGHT, MAP_GRID_Y };
+	INT32 const gridW = g.canvasToScreen(MAP_GRID_X);
+	INT32 const gridH = g.canvasToScreen(MAP_GRID_Y);
+	HCenterVCenterAlign const hortIndexAlign{ UINT16(gridW), UINT16(MAP_HORT_HEIGHT) };
+	HCenterVCenterAlign const vertIndexAlign{ UINT16(MAP_HORT_HEIGHT), UINT16(gridH) };
 
 	for (INT32 i = 1; i <= MAX_VIEW_SECTORS; ++i)
 	{
@@ -443,7 +449,7 @@ void DrawMapIndexBigMap(BOOLEAN fSelectedCursorIsYellow)
 			i == gsHighlightSector.x       ? FONT_WHITE      :
 			MAP_INDEX_COLOR;
 		SetFontForeground(colour_x);
-		MPrint(MAP_HORT_INDEX_X + (i - 1) * MAP_GRID_X, MAP_HORT_INDEX_Y, pMapHortIndex[i], hortIndexAlign);
+		MPrint(g.sectorBox(i, 1).x + 1, MAP_HORT_INDEX_Y, pMapHortIndex[i], hortIndexAlign);
 
 		UINT8 const colour_y =
 			!draw_cursors                  ? MAP_INDEX_COLOR :
@@ -451,11 +457,13 @@ void DrawMapIndexBigMap(BOOLEAN fSelectedCursorIsYellow)
 			i == gsHighlightSector.y       ? FONT_WHITE      :
 			MAP_INDEX_COLOR;
 		SetFontForeground(colour_y);
-		MPrint(MAP_VERT_INDEX_X, MAP_VERT_INDEX_Y + (i - 1) * MAP_GRID_Y, pMapVertIndex[i], vertIndexAlign);
+		MPrint(MAP_VERT_INDEX_X, g.sectorBox(1, i).y + 3, pMapVertIndex[i], vertIndexAlign);
+
 	}
 
-	InvalidateRegion(MAP_VERT_INDEX_X, MAP_VERT_INDEX_Y, MAP_VERT_INDEX_X + MAP_HORT_HEIGHT,               MAP_VERT_INDEX_Y + MAX_VIEW_SECTORS * MAP_GRID_Y);
-	InvalidateRegion(MAP_HORT_INDEX_X, MAP_HORT_INDEX_Y, MAP_HORT_INDEX_X + MAX_VIEW_SECTORS * MAP_GRID_X, MAP_HORT_INDEX_Y + MAP_HORT_HEIGHT);
+	InvalidateRegion(MAP_VERT_INDEX_X, MAP_VERT_INDEX_Y, MAP_VERT_INDEX_X + MAP_HORT_HEIGHT,               MAP_VERT_INDEX_Y + MAX_VIEW_SECTORS * gridH);
+	InvalidateRegion(MAP_HORT_INDEX_X, MAP_HORT_INDEX_Y, MAP_HORT_INDEX_X + MAX_VIEW_SECTORS * gridW, MAP_HORT_INDEX_Y + MAP_HORT_HEIGHT);
+
 }
 
 static void HandleShowingOfEnemyForcesInSector(const SGPSector& sSector, UINT8 ubIconPosition);
@@ -1403,7 +1411,7 @@ static void TracePathRoute(PathSt* const pPath)
 
 		if (iDirection == -1) continue;
 
-		if (MAP_VIEW_START_X < iSector.x && iSector.x < SCREEN_WIDTH     - MAP_GRID_X * 2 &&
+		if (MAP_VIEW_START_X < iSector.x && iSector.x < MAP_VIEW_START_X + 328 &&
 			MAP_VIEW_START_Y < iSector.y && iSector.y < MAP_VIEW_START_Y + MAP_VIEW_HEIGHT
 			)
 		{
@@ -1872,7 +1880,7 @@ static BOOLEAN TraceCharAnimatedRoute(PathSt* const pPath, const BOOLEAN fForceU
 
 		if(!fUTurnFlag)
 		{
-			if ((MAP_VIEW_START_X < iSector.x && iSector.x < SCREEN_WIDTH - MAP_GRID_X * 2 && MAP_VIEW_START_Y < iSector.y && iSector.y < MAP_VIEW_START_Y + MAP_VIEW_HEIGHT))
+			if ((MAP_VIEW_START_X < iSector.x && iSector.x < MAP_VIEW_START_X + 328 && MAP_VIEW_START_Y < iSector.y && iSector.y < MAP_VIEW_START_Y + MAP_VIEW_HEIGHT))
 			{
 				if( pNode != pPath )
 				{

@@ -5,6 +5,8 @@
 #include "Types.h"
 
 
+class SGPVSurface;
+
 #define     MAP_BORDER_START_X   261
 #define     MAP_BORDER_START_Y    0
 
@@ -55,6 +57,12 @@ extern INT32 giScrollButtonState;
 
 void DeleteMapBorderGraphics( void );
 void RenderMapBorder( void );
+
+// The map border frame for a scaled map, put together from pieces of the art (see MapScreenGeometry)
+void RenderComposedMapBorder(SGPVSurface* dst);
+
+// Fill the map area around the map border frame (when the map does not fill it) with pieces of the frame art
+void RenderMapFrameMargins(SGPVSurface* dst);
 
 void ToggleShowTownsMode( void );
 void ToggleShowMinesMode( void );

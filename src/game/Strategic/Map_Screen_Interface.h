@@ -12,10 +12,10 @@
 
 // char breath and life position
 #define BAR_INFO_X (MAPLEFT_X + 66)
-#define BAR_INFO_Y (STD_SCREEN_Y + 61)
+#define BAR_INFO_Y (MAPTOP_Y + 61)
 
 // merc icon position
-#define CHAR_ICON_CONTRACT_Y (STD_SCREEN_Y + 64)
+#define CHAR_ICON_CONTRACT_Y (MAPTOP_Y + 64)
 #define CHAR_ICON_X (MAPLEFT_X + 187)
 #define CHAR_ICON_WIDTH 10
 #define CHAR_ICON_HEIGHT 10
@@ -29,8 +29,8 @@
 #define MAP_SCREEN_FONT BLOCKFONT2
 
 // characterlist regions
-#define Y_START               (STD_SCREEN_Y + 146)
-#define MAP_START_KEYRING_Y   (STD_SCREEN_Y + 107)
+#define Y_START               (MAPTOP_Y + 146)
+#define MAP_START_KEYRING_Y   (MAPTOP_Y + 107)
 #define Y_SIZE                GetFontHeight(MAP_SCREEN_FONT)
 
 

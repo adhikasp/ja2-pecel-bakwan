@@ -30,8 +30,15 @@
 #define MAP_SCREEN_WIDTH                (g_ui.m_mapScreenWidth)
 #define MAP_SCREEN_HEIGHT               (g_ui.m_mapScreenHeight)
 #define MAPLEFT_X                       (g_ui.m_mapLeftX)              // left edge of the map screen left column (character list and info panel)
+#define MAPTOP_Y                        (g_ui.m_mapTopY)               // top edge of the map screen left column
 #define MAP_MESSAGE_EXTRA_Y             (g_ui.m_mapMessageExtraPx)
+#define MAP_MESSAGE_EXTRA_X             (g_ui.m_map.logExtraW)         // extra width of the map screen message log
 #define MAPBOT_Y                        (g_ui.m_mapBottomY)            // top edge of the map screen bottom bar art minus 359, i.e. the bar is at MAPBOT_Y + 359
+#define MAPBOTR_X                       (g_ui.m_map.barRightX)         // right part of the bottom bar (money, clock, radar): art x = n is at MAPBOTR_X + n
+#define MAP_LIST_EXTRA_Y                (g_ui.m_map.listExtra)         // extra height of the character list (the vehicle rows move down by this)
+// The sector inventory (379 x 359, in place of the map border in 640x480) is centred on the map frame: art x = n is at MAPINV_X + n.
+#define MAPINV_X                        (g_ui.m_map.frame.x + (g_ui.m_map.frame.w - 379) / 2 - 261)
+#define MAPINV_Y                        (g_ui.m_map.frame.y + (g_ui.m_map.frame.h - 359) / 2)
 
 /* The tactical world can be a layer of its own, with its own scale (see "world_zoom"). World
  * pixels are then not UI pixels: the world is rendered into a WORLD_BUFFER of
@@ -122,6 +129,75 @@ struct LayerPoint
 };
 
 
+/** Layout of the strategic map screen (the "expanded" layout).
+ *
+ * - The left column (character info panel, then the character list or the merc inventory) is at native
+ *   size in the top-left corner and reaches down to the bottom bar.
+ * - The sector map in its border frame takes the rest above the bottom bar, scaled by scale2 / 2.
+ * - The bottom bar spans the whole width: the message log on the left, money, clock and radar on the right.
+ *
+ * The sector map keeps being drawn at native size, exactly as in 640x480, into the "canvas": a rectangle
+ * of the frame buffer at the top-left corner of the scaled map. Once per frame the canvas is copied aside
+ * and stretched (nearest neighbour) over the whole scaled rectangle. So everything the map code draws
+ * (terrain, shading, icons, paths, town names, the helicopter, the cursor highlight) ends up in the right
+ * place untouched; what reads the mouse or puts UI next to the map (clicks, popups, grid labels, the
+ * frame) goes through canvasToScreen / screenToCanvas.
+ *
+ * All values are screen pixels. At 640x480 this is the classic layout, pixel for pixel. */
+struct MapScreenGeometry
+{
+	// Classic (640x480) sizes of the pieces
+	static constexpr INT32 COLUMN_W    = 261; // left column
+	static constexpr INT32 INFO_H      = 107; // character info panel
+	static constexpr INT32 LIST_H      = 252; // character list art
+	static constexpr INT32 BAR_H       = 121; // bottom bar art
+	static constexpr INT32 BAR_W       = 640;
+	static constexpr INT32 BAR_RIGHT_W = 285; // right part of the bottom bar (money, buttons, radar)
+	static constexpr INT32 CANVAS_W    = 340; // the 16 x 16 sector grid (21 x 18 px each) and a little margin
+	static constexpr INT32 CANVAS_H    = 292;
+	static constexpr INT32 FRAME_L     = 27;  // map border around the canvas: row letters
+	static constexpr INT32 FRAME_T     = 26;  // column numbers
+	static constexpr INT32 FRAME_R     = 12;
+	static constexpr INT32 FRAME_B     = 41;  // map border buttons
+	static constexpr INT32 VIEW_TO_CANVAS_X = 18; // the canvas is at MAP_VIEW_START_X + 18, MAP_VIEW_START_Y + 16
+	static constexpr INT32 VIEW_TO_CANVAS_Y = 16;
+	static constexpr INT32 LOG_LINE_H  = 9;   // message log line height
+	static constexpr INT32 LOG_MAX_EXTRA_LINES = 10;
+
+	INT32  scale2    = 2; // map scale times two: 2 = 1x, 3 = 1.5x, 4 = 2x, 6 = 3x, ...
+	SGPBox column{};      // the left column, from the top of the screen down to the bottom bar
+	INT32  listExtra = 0; // extra height of the character list
+	SGPBox mapArea{};     // right of the column, above the bottom bar
+	SGPBox frame{};       // the map border frame
+	SGPBox grid{};        // where the canvas is shown, scaled
+	SGPBox canvas{};      // where the map is drawn at native size: the top-left corner of grid
+	INT32  barTop    = 0; // top of the bottom bar (including a taller message log)
+	INT32  logExtraH = 0; // extra height of the message log, whole lines
+	INT32  logExtraW = 0; // extra width of the message log
+	INT32  barRightX = 0; // the right part of the bar: its art x = n (355..639) is at barRightX + n
+
+	/** Is the map scaled, i.e. is the canvas stretched every frame? */
+	bool scaled() const { return scale2 != 2; }
+
+	/** Is the frame bigger than the border art, so that it has to be put together from pieces? */
+	bool composedFrame() const { return scaled(); }
+
+	/** Canvas pixel -> top-left screen pixel of its scaled copy. */
+	LayerPoint canvasToScreen(INT32 x, INT32 y) const;
+	/** Screen pixel -> the canvas pixel shown there. */
+	LayerPoint screenToCanvas(INT32 x, INT32 y) const;
+	/** Canvas length -> screen length. */
+	INT32      canvasToScreen(INT32 len) const { return len * scale2 / 2; }
+	/** Screen rectangle of the sector (1..16, 1..16) of the map grid. */
+	SGPBox     sectorBox(INT32 sx, INT32 sy) const;
+	/** Sector (1..16, 1..16) under a screen pixel, or {0, 0} outside the grid. */
+	LayerPoint sectorAt(INT32 x, INT32 y) const;
+
+	/** The layout for a w x h screen. Pure function. */
+	static MapScreenGeometry compute(UINT16 w, UINT16 h);
+};
+
+
 /** User Interface layout definition. */
 struct UILayout
 {
@@ -187,12 +263,19 @@ public:
 	UINT16                m_stdScreenOffsetX;             /** Offset of the standard (640x480) window */
 	UINT16                m_stdScreenOffsetY;             /** Offset of the standard (640x480) window */
 
-	/** Map screen: the left column (character list, info panel, inventory) is anchored to the left screen edge.
-	 * The sector map and the bottom bar stay centred on the standard 640x480 box; the space in between is dressed with art. */
+	/** Map screen layout, see MapScreenGeometry. */
+	MapScreenGeometry     m_map;
+
+	/** Map screen: the left column (character list, info panel, inventory) is anchored to the top-left corner. */
 	UINT16                m_mapLeftX;
+	UINT16                m_mapTopY;
+
+	/** Map screen: MAP_VIEW_START_X/Y, the origin of the (native size) sector map drawing. */
+	UINT16                m_mapViewX;
+	UINT16                m_mapViewY;
 
 	/** Map screen: y origin of the bottom bar (message log, clock, buttons). The bar is anchored to the bottom screen edge:
-	 * its art (121 px high) starts at m_mapBottomY + 359. Equal to m_stdScreenOffsetY * 2 on even heights, 0 at 640x480. */
+	 * its art (121 px high) starts at m_mapBottomY + 359. 0 at 640x480. */
 	UINT16                m_mapBottomY;
 
 	/** Map screen: extra height (px) of the message log above the standard bar, a multiple of the line height. 0 at 640x480. */
