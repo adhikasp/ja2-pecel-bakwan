@@ -251,8 +251,11 @@ copy_assets_dir_to_ja2_binary_after_build("externalized")
 copy_assets_dir_to_ja2_binary_after_build("unittests")
 copy_assets_dir_to_ja2_binary_after_build("mods")
 if(WITH_NATIVE_SPIKES)
-    # Phase 1 style directions (RML/RCSS + OFL fonts), read at runtime so they can be edited without a rebuild
-    copy_assets_dir_to_ja2_binary_after_build("ui-styles")
+    # Phase 1 design system: tokens, components, icons, fonts, gallery and mocks (read at runtime, editable without a rebuild)
+    # copied on every build (not only when the binary relinks), so RML/RCSS/SVG edits reach the build dir
+    add_custom_target(ja2-ui-assets ALL
+        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets/ui" "${CMAKE_CURRENT_BINARY_DIR}/ui")
+    add_dependencies(${JA2_BINARY} ja2-ui-assets)
 endif()
 
 if(WITH_EDITOR_SLF)
@@ -324,7 +327,7 @@ if (WITH_UNITTESTS)
             add_test(NAME spike_asset_tools
                 COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/tools/assets/tests")
             set_tests_properties(spike_asset_tools PROPERTIES LABELS spike)
-            foreach(n ui_spike world_spike asset_usage_tour style_demo)
+            foreach(n ui_spike world_spike asset_usage_tour style_demo gallery)
                 add_test(NAME spike_${n}
                     COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/ja2ctl.py" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/spike/${n}.lua" --isolated
                         --res 1920x1080 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/spike-out/${n}")

@@ -1,9 +1,8 @@
 # Style directions (Phase 1, step 1)
 
-> **Status: for the owner to choose.** Phase 1 of [native-modern-game.md](../plan/native-modern-game.md) starts
-> with 2–3 visual directions. This page proposes three. Each one is rendered **in the game, with RmlUi** (the Phase 0
-> choice), on the same three mock screens. Tokens, components and the gallery come after a direction is picked.
-> Pick one, or mix them (for example "A's type on B's layout").
+> **Status: decided. The owner chose B · Night Ops** (after PR #15). The design system is built on it: see
+> [design-system.md](design-system.md). A and C are kept below as a record of the choice. Their style sheets and
+> fonts were removed from the repository; their screenshots stay in PR #15 and in git history.
 
 All three keep JA2's identity: military, 1999, Arulco's tropics, and the typewriter/dossier look of AIM files and
 merc contracts. They differ in how much of that they carry and where they put it.
@@ -18,21 +17,14 @@ merc contracts. They differ in how much of that they carry and where they put it
 
 ## How to see them
 
-- In the game: `ja2.debug("styledemo", "a" | "b" | "c", "mainmenu" | "squadbar" | "mapscreen")`, for example
+- In the game: `ja2.debug("styledemo", "b", "mainmenu" | "squadbar" | "mapscreen")`, for example
   `python tools/ja2ctl.py eval 'ja2.debug("styledemo", "b", "squadbar")'`. Esc returns. Merc faces are loaded from
   your own game data at runtime.
-- Without the game or its data: `ja2-spike style b squadbar 1920x1080 out.png [hover-id]` (placeholder
-  silhouettes instead of faces).
-- The files: [`assets/ui-styles/`](../../assets/ui-styles/). The three RML documents (`mainmenu.rml`,
-  `squadbar.rml`, `mapscreen.rml`) are shared. Each direction is one style sheet (`a.rcss`, `b.rcss`, `c.rcss`)
-  over `base.rcss`. They are read from `ui-styles/` next to the binary at runtime, so edits need no rebuild (set
-  `JA2_UI_STYLES` to point at the source folder while iterating).
-- Screenshots: `tests/spike/style_demo.lua` (ctest `spike_style_demo`, label `spike-gamedata`) opens every
-  direction × screen, checks the key elements are on screen, and saves `style_<dir>_<screen>_<W>x<H>.png`.
-
-The same markup under three style sheets is deliberate. It shows the direction is a *skin* over one component
-structure, which is how the design system will work. Placeholder data only; nothing on these screens is wired to
-game state.
+- Without the game or its data: `ja2-spike style b squadbar 1920x1080 out.png [hover-id]`.
+- The files: [`assets/ui/mocks/`](../../assets/ui/mocks/) (`mainmenu.rml`, `squadbar.rml`, `mapscreen.rml`,
+  `nightops.rcss` over `base.rcss`). These mocks came before the tokens and still use literal values. New screens
+  use the tokens and components instead (design-system.md).
+- Screenshots: `tests/spike/style_demo.lua` (ctest `spike_style_demo`, label `spike-gamedata`).
 
 ---
 
@@ -134,12 +126,9 @@ colours, so the status colours must stay unambiguous.
   buffer shows some banding in C's sky gradient; a GPU path would not.
 - **Scale.** Layout is in `dp` at a 1920×1080 reference; `dp = min(w/1920, h/1080)`. Screens were checked at
   1280×720, 1920×1080 and 3840×2160.
-- **Fonts.** `assets/ui-styles/fonts/<family>/`, each with its `OFL.txt`. Taken from the Google Fonts repository
-  (static TTFs). Language coverage is a known gap for A and B (Latin-only display faces). The font set is final
-  only once tokens are defined; Fira Sans / Noto would be the fallback for Cyrillic and Polish diacritics are covered
-  by all but Stardos Stencil.
-- **Not in scope yet.** Tokens, components, icons and the gallery screen (Phase 1, after the choice). The mocks
-  use hand-picked values per direction, not a token system.
+- **Fonts.** The chosen fonts live in `assets/ui/fonts/<family>/`, each with its `OFL.txt`. Taken from the Google Fonts repository
+  (static TTFs). Language coverage is solved with fallback faces; see design-system.md.
+- **Next.** Tokens, components, icons and the gallery are in [design-system.md](design-system.md).
 
 | Font | Licence | Used by | Files |
 |---|---|---|---|

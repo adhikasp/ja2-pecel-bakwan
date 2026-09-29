@@ -620,10 +620,18 @@ namespace
 				}
 				else if (what == "styledemo")
 				{
-					// Phase 1 style directions: ja2.debug("styledemo", "a" | "b" | "c", "mainmenu" | "squadbar" | "mapscreen")
-					std::string const dir = a && a->is<std::string>() ? a->as<std::string>() : "a";
+					// Phase 1 style direction (B, Night Ops, chosen): ja2.debug("styledemo", "b", "mainmenu" | "squadbar" | "mapscreen")
+					std::string const dir = a && a->is<std::string>() ? a->as<std::string>() : "b";
 					std::string const screen = b && b->is<std::string>() ? b->as<std::string>() : "mainmenu";
 					UiSpikeOpen("style:" + dir + ":" + screen);
+				}
+				else if (what == "gallery")
+				{
+					// Phase 1 design-system gallery: ja2.debug("gallery", [page = "controls"], [ui scale = 1])
+					// pages: controls, data, overlays, game, icons, tokens; scale: 1, 1.25, 1.5, 2
+					std::string const page = a && a->is<std::string>() ? a->as<std::string>() : "controls";
+					double const scale = b && b->is<double>() ? b->as<double>() : 1.0;
+					UiSpikeOpen("gallery:" + page + ":" + std::to_string(scale));
 				}
 				else
 				{
@@ -713,6 +721,9 @@ namespace
 					els[i++] = g_lua.create_table_with("id", e.id, "x", e.x, "y", e.y, "w", e.w, "h", e.h);
 				}
 				t["elements"] = els;
+				sol::table problems = g_lua.create_table();
+				for (size_t k = 0; k < info.problems.size(); ++k) problems[k + 1] = info.problems[k];
+				t["problems"] = problems;
 				return t;
 			});
 		});

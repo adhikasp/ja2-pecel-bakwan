@@ -73,6 +73,8 @@ public:
 	virtual void update(double seconds) = 0; // advance animations/time (virtual clock)
 	virtual void render() = 0;               // draws into the renderer given at creation
 	virtual std::vector<Element> elements() = 0;
+	/** Layout audit: elements clipped, off screen or overflowing their container (empty when fine). */
+	virtual std::vector<std::string> layoutProblems() { return {}; }
 	SaveListModel& model() { return m_model; }
 
 protected:
@@ -95,12 +97,12 @@ std::vector<unsigned char> LoadAssetBytes(std::string const& name);
 
 /** Phase 1 style directions (docs/ui/style-directions.md): mock screens in RmlUi, one RCSS per direction over
  * shared RML. direction = "a" | "b" | "c", screen = "mainmenu" | "squadbar" | "mapscreen". The RML/RCSS and the
- * fonts are read from the style directory (assets/ui-styles, copied next to the game binary), so they can be
+ * fonts are read from the style directory (assets/ui, copied next to the game binary), so they can be
  * edited without a rebuild. Esc closes (model().closeRequested). */
 std::unique_ptr<Screen> CreateStyleDemoScreen(SDL_Renderer*, std::string const& direction, std::string const& screen);
-extern char const* const StyleDirections[3];
+extern char const* const StyleDirections[1];
 extern char const* const StyleScreens[3];
-/** Where CreateStyleDemoScreen reads from. Default: <base path>/ui-styles, or $JA2_UI_STYLES. */
+/** Where the UI (design system, gallery, mocks) is read from. Default: <base path>/ui, or $JA2_UI_DIR. */
 void        SetStyleDir(std::string dir);
 std::string StyleDir();
 
@@ -116,6 +118,19 @@ int  RmlWarnings();
 void ResetRmlWarnings();
 /** Procedural texture ("gen-<name>" in RCSS) as straight-alpha RGBA32. Unknown name → empty result. */
 std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, int& h, bool& repeat);
+
+/** Phase 1 design-system gallery (docs/ui/design-system.md): every component in every state, one page at a time.
+ * page = one of GalleryPages. Use setSize(w, h, uiScale) for the UI scale (1, 1.25, 1.5, 2). */
+std::unique_ptr<Screen> CreateGalleryScreen(SDL_Renderer*, std::string const& page);
+extern char const* const GalleryPages[6];
+
+/** Rasterizes an icon SVG (the subset the icon set uses) to size x size straight-alpha RGBA, white with
+ * coverage in alpha. Empty on error (reason in *error). */
+std::vector<unsigned char> RasterizeSvg(std::string const& svg, int size, std::string* error = nullptr);
+/** Icon names (file names without .svg) in <StyleDir>/icons, sorted. */
+std::vector<std::string> IconNames();
+/** Replaces var(--name) with the design token from <StyleDir>/tokens.rcss (unknown names count as RmlUi warnings). */
+std::string ExpandTokens(std::string text);
 
 /** Finds an element by id (after an update), or returns false. */
 bool FindElement(Screen&, std::string const& id, SDL_FRect& out);

@@ -1,0 +1,375 @@
+<rml>
+<head>
+	<title>Design system gallery</title>
+	<link type="text/rcss" href="components.rcss"/>
+	<link type="text/rcss" href="gallery.rcss"/>
+</head>
+<body>
+<div id="root" data-model="gallery">
+
+<!-- ============================================================ header: the page tabs are the tabs component -->
+<div class="g-head" id="g-head">
+	<div class="g-title"><span class="g-brand">Arulco</span> Design system <span class="dim">&#183; Night Ops</span></div>
+	<div class="g-readout mono" id="g-readout">{{readout}}</div>
+	<div class="tabs g-tabs" id="g-tabs">
+		<span class="tab" data-for="p : pages" data-attr-id="'tab-' + p" data-class-active="p == page" data-event-click="go(p)">{{p}}</span>
+	</div>
+</div>
+
+<div class="g-page scroll" id="page">
+
+<!-- ============================================================ controls -->
+<div data-if="page == 'controls'" id="page-controls">
+	<div class="g-matrix">
+		<div class="g-section">Button</div>
+		<div class="g-row"><span class="g-label">Primary</span>
+			<span class="g-cell"><span class="g-state">Default</span><button class="btn btn-primary" id="btn-primary"><img class="icon" src="icon-end-turn"/><span class="label">End turn</span><span class="kbd">D</span></button></span>
+			<span class="g-cell"><span class="g-state">Hover</span><button class="btn btn-primary is-hover"><img class="icon" src="icon-end-turn"/><span class="label">End turn</span><span class="kbd">D</span></button></span>
+			<span class="g-cell"><span class="g-state">Active</span><button class="btn btn-primary is-active"><img class="icon" src="icon-end-turn"/><span class="label">End turn</span><span class="kbd">D</span></button></span>
+			<span class="g-cell"><span class="g-state">Focus</span><button class="btn btn-primary is-focus"><img class="icon" src="icon-end-turn"/><span class="label">End turn</span><span class="kbd">D</span></button></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><button class="btn btn-primary is-disabled" disabled><img class="icon" src="icon-end-turn"/><span class="label">End turn</span><span class="kbd">D</span></button></span>
+			<span class="g-cell"><span class="g-state">Error</span><button class="btn btn-primary is-error"><img class="icon" src="icon-warning"/><span class="label">Retry</span></button></span>
+		</div>
+		<div class="g-row"><span class="g-label">Secondary</span>
+			<span class="g-cell"><span class="g-state">Default</span><button class="btn" id="btn-secondary"><img class="icon" src="icon-map"/><span class="label">Map</span><span class="kbd">M</span></button></span>
+			<span class="g-cell"><span class="g-state">Hover</span><button class="btn is-hover"><img class="icon" src="icon-map"/><span class="label">Map</span><span class="kbd">M</span></button></span>
+			<span class="g-cell"><span class="g-state">Active</span><button class="btn is-active"><img class="icon" src="icon-map"/><span class="label">Map</span><span class="kbd">M</span></button></span>
+			<span class="g-cell"><span class="g-state">Focus</span><button class="btn is-focus"><img class="icon" src="icon-map"/><span class="label">Map</span><span class="kbd">M</span></button></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><button class="btn is-disabled" disabled><img class="icon" src="icon-map"/><span class="label">Map</span><span class="kbd">M</span></button></span>
+			<span class="g-cell"><span class="g-state">Error</span><button class="btn is-error"><img class="icon" src="icon-error"/><span class="label">Map</span><span class="kbd">M</span></button></span>
+		</div>
+		<div class="g-row"><span class="g-label">Ghost</span>
+			<span class="g-cell"><span class="g-state">Default</span><button class="btn btn-ghost" id="btn-ghost"><img class="icon" src="icon-options"/><span class="label">Options</span></button></span>
+			<span class="g-cell"><span class="g-state">Hover</span><button class="btn btn-ghost is-hover"><img class="icon" src="icon-options"/><span class="label">Options</span></button></span>
+			<span class="g-cell"><span class="g-state">Active</span><button class="btn btn-ghost is-active"><img class="icon" src="icon-options"/><span class="label">Options</span></button></span>
+			<span class="g-cell"><span class="g-state">Focus</span><button class="btn btn-ghost is-focus"><img class="icon" src="icon-options"/><span class="label">Options</span></button></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><button class="btn btn-ghost is-disabled" disabled><img class="icon" src="icon-options"/><span class="label">Options</span></button></span>
+			<span class="g-cell"><span class="g-state">Error</span><button class="btn btn-ghost is-error"><img class="icon" src="icon-error"/><span class="label">Options</span></button></span>
+		</div>
+		<div class="g-row"><span class="g-label">Danger</span>
+			<span class="g-cell"><span class="g-state">Default</span><button class="btn btn-danger" id="btn-danger"><img class="icon" src="icon-close"/><span class="label">Dismiss</span></button></span>
+			<span class="g-cell"><span class="g-state">Hover</span><button class="btn btn-danger is-hover"><img class="icon" src="icon-close"/><span class="label">Dismiss</span></button></span>
+			<span class="g-cell"><span class="g-state">Active</span><button class="btn btn-danger is-active"><img class="icon" src="icon-close"/><span class="label">Dismiss</span></button></span>
+			<span class="g-cell"><span class="g-state">Focus</span><button class="btn btn-danger is-focus"><img class="icon" src="icon-close"/><span class="label">Dismiss</span></button></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><button class="btn btn-danger is-disabled" disabled><img class="icon" src="icon-close"/><span class="label">Dismiss</span></button></span>
+			<span class="g-cell"><span class="g-state">Error</span><button class="btn btn-danger is-error"><img class="icon" src="icon-warning"/><span class="label">Dismiss</span></button></span>
+		</div>
+
+		<div class="g-section">Icon button</div>
+		<div class="g-row">
+			<span class="g-label">Icon</span>
+			<span class="g-cell"><span class="g-state">Default</span><button class="icon-btn" id="iconbtn"><img class="icon" src="icon-reload"/></button> <button class="icon-btn on"><img class="icon" src="icon-stance-crouch"/></button></span>
+			<span class="g-cell"><span class="g-state">Hover</span><button class="icon-btn is-hover"><img class="icon" src="icon-reload"/></button></span>
+			<span class="g-cell"><span class="g-state">Active</span><button class="icon-btn is-active"><img class="icon" src="icon-reload"/></button></span>
+			<span class="g-cell"><span class="g-state">Focus</span><button class="icon-btn is-focus"><img class="icon" src="icon-reload"/></button></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><button class="icon-btn is-disabled" disabled><img class="icon" src="icon-reload"/></button></span>
+			<span class="g-cell"><span class="g-state">Error</span><button class="icon-btn is-error"><img class="icon" src="icon-reload"/></button></span>
+		</div>
+
+		<div class="g-section">Toggle</div>
+		<div class="g-row"><span class="g-label">Off / live</span>
+			<span class="g-cell"><span class="g-state">Default</span><div class="toggle" id="toggle" data-class-on="toggle_on" data-event-click="toggle()"><span class="switch"><span class="knob"></span></span><span class="label">Ironman</span></div></span>
+			<span class="g-cell"><span class="g-state">Hover</span><div class="toggle is-hover"><span class="switch"><span class="knob"></span></span><span class="label">Ironman</span></div></span>
+			<span class="g-cell"><span class="g-state">Active</span><div class="toggle is-active"><span class="switch"><span class="knob"></span></span><span class="label">Ironman</span></div></span>
+			<span class="g-cell"><span class="g-state">Focus</span><div class="toggle is-focus"><span class="switch"><span class="knob"></span></span><span class="label">Ironman</span></div></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><div class="toggle is-disabled"><span class="switch"><span class="knob"></span></span><span class="label">Ironman</span></div></span>
+			<span class="g-cell"><span class="g-state">Error</span><div class="toggle is-error"><span class="switch"><span class="knob"></span></span><span class="label">Ironman</span></div></span>
+		</div>
+		<div class="g-row"><span class="g-label">On</span>
+			<span class="g-cell"><span class="g-state">Default</span><div class="toggle on"><span class="switch"><span class="knob"></span></span><span class="label">Subtitles</span></div></span>
+			<span class="g-cell"><span class="g-state">Hover</span><div class="toggle on is-hover"><span class="switch"><span class="knob"></span></span><span class="label">Subtitles</span></div></span>
+			<span class="g-cell"><span class="g-state">Active</span><div class="toggle on is-active"><span class="switch"><span class="knob"></span></span><span class="label">Subtitles</span></div></span>
+			<span class="g-cell"><span class="g-state">Focus</span><div class="toggle on is-focus"><span class="switch"><span class="knob"></span></span><span class="label">Subtitles</span></div></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><div class="toggle on is-disabled"><span class="switch"><span class="knob"></span></span><span class="label">Subtitles</span></div></span>
+			<span class="g-cell"><span class="g-state">Error</span><div class="toggle on is-error"><span class="switch"><span class="knob"></span></span><span class="label">Subtitles</span></div></span>
+		</div>
+
+		<div class="g-section">Slider</div>
+		<div class="g-row g-tall"><span class="g-label">Volume</span>
+			<span class="g-cell"><span class="g-state">Default</span><div class="slider" id="slider" data-event-mousedown="slide()"><div class="track"><div class="fill" data-style-width="slider + '%'"></div></div><div class="thumb" data-style-left="slider + '%'"></div><span class="value">{{slider}}%</span></div></span>
+			<span class="g-cell"><span class="g-state">Hover</span><div class="slider is-hover"><div class="track"><div class="fill" style="width: 40%"></div></div><div class="thumb" style="left: 40%"></div><span class="value">40%</span></div></span>
+			<span class="g-cell"><span class="g-state">Active</span><div class="slider is-active"><div class="track"><div class="fill" style="width: 55%"></div></div><div class="thumb" style="left: 55%"></div><span class="value">55%</span></div></span>
+			<span class="g-cell"><span class="g-state">Focus</span><div class="slider is-focus"><div class="track"><div class="fill" style="width: 70%"></div></div><div class="thumb" style="left: 70%"></div><span class="value">70%</span></div></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><div class="slider is-disabled"><div class="track"><div class="fill" style="width: 30%"></div></div><div class="thumb" style="left: 30%"></div><span class="value">30%</span></div></span>
+			<span class="g-cell"><span class="g-state">Error</span><div class="slider is-error"><div class="track"><div class="fill" style="width: 100%"></div></div><div class="thumb" style="left: 100%"></div><span class="value">100%</span></div></span>
+		</div>
+
+		<div class="g-section">Tabs</div>
+		<div class="g-row"><span class="g-label">Tab</span>
+			<span class="g-cell"><span class="g-state">Default</span><div class="tabs"><span class="tab active">Gameplay</span><span class="tab">Video</span></div></span>
+			<span class="g-cell"><span class="g-state">Hover</span><div class="tabs"><span class="tab is-hover">Audio</span></div></span>
+			<span class="g-cell"><span class="g-state">Active</span><div class="tabs"><span class="tab is-active">Audio</span></div></span>
+			<span class="g-cell"><span class="g-state">Focus</span><div class="tabs"><span class="tab is-focus">Controls</span></div></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><div class="tabs"><span class="tab is-disabled">Mods</span></div></span>
+			<span class="g-cell"><span class="g-state">Error</span><div class="tabs"><span class="tab is-error">Keys<span class="badge danger">2</span></span></div></span>
+		</div>
+
+		<div class="g-section">Dropdown</div>
+		<div class="g-row"><span class="g-label">Select</span>
+			<span class="g-cell"><span class="g-state">Default</span><div class="dropdown" id="dropdown" data-class-open="dropdown_open">
+				<div class="field" data-event-click="dropdown_toggle()"><span class="text">{{dropdown_value}}</span><img class="icon sm" src="icon-chevron-down"/></div>
+				<div class="options"><div class="option" data-for="o : options" data-class-selected="o == dropdown_value" data-event-click="dropdown_pick(o)">{{o}}</div></div>
+			</div></span>
+			<span class="g-cell"><span class="g-state">Hover</span><div class="dropdown is-hover"><div class="field"><span class="text">Experienced</span><img class="icon sm" src="icon-chevron-down"/></div></div></span>
+			<span class="g-cell"><span class="g-state">Active</span><div class="dropdown is-active open"><div class="field"><span class="text">Expert</span><img class="icon sm" src="icon-chevron-up"/></div>
+				<div class="options"><div class="option">Novice</div><div class="option">Experienced</div><div class="option selected is-hover">Expert</div><div class="option">Insane</div></div></div></span>
+			<span class="g-cell"><span class="g-state">Focus</span><div class="dropdown is-focus"><div class="field"><span class="text">Insane</span><img class="icon sm" src="icon-chevron-down"/></div></div></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><div class="dropdown is-disabled"><div class="field"><span class="text">Novice</span><img class="icon sm" src="icon-chevron-down"/></div></div></span>
+			<span class="g-cell"><span class="g-state">Error</span><div class="dropdown is-error"><div class="field"><span class="text">Pick one</span><img class="icon sm" src="icon-chevron-down"/></div><div class="error-text">Choose a difficulty</div></div></span>
+		</div>
+	</div>
+</div>
+
+<!-- ============================================================ data -->
+<div data-if="page == 'data'" id="page-data" class="g-split">
+	<div class="g-col-main">
+		<div class="g-section">Sortable table <span class="dim">&#183; click a header</span></div>
+		<div class="table" id="table">
+			<div class="thead">
+				<span class="th sortable c-name" id="th-name" data-class-sorted="sort_key == 'name'" data-event-click="sort('name')"><span class="label">Name</span><img class="icon" data-if="sort_key == 'name'" data-attr-src="sort_icon"/></span>
+				<span class="th sortable c-assign" id="th-assign" data-class-sorted="sort_key == 'assign'" data-event-click="sort('assign')"><span class="label">Assignment</span><img class="icon" data-if="sort_key == 'assign'" data-attr-src="sort_icon"/></span>
+				<span class="th c-loc"><span class="label">Loc</span></span>
+				<span class="th sortable c-hp" id="th-hp" data-class-sorted="sort_key == 'hp'" data-event-click="sort('hp')"><span class="label">Health</span><img class="icon" data-if="sort_key == 'hp'" data-attr-src="sort_icon"/></span>
+				<span class="th c-mor"><span class="label">Morale</span></span>
+				<span class="th sortable c-num" id="th-contract" data-class-sorted="sort_key == 'contract'" data-event-click="sort('contract')"><span class="label">Contract</span><img class="icon" data-if="sort_key == 'contract'" data-attr-src="sort_icon"/></span>
+				<span class="th sortable c-num" id="th-salary" data-class-sorted="sort_key == 'salary'" data-event-click="sort('salary')"><span class="label">Salary</span><img class="icon" data-if="sort_key == 'salary'" data-attr-src="sort_icon"/></span>
+			</div>
+			<div class="tr" data-for="m, i : mercs" data-attr-id="'row' + i" data-class-selected="m.name == selected_name" data-class-is-hover="m.state == 'hover'"
+				data-class-is-focus="m.state == 'focus'" data-class-is-disabled="m.state == 'disabled'" data-class-is-error="m.state == 'error'" data-event-click="select(m.name)">
+				<span class="c-name strong">{{m.name}}</span><span class="c-assign">{{m.assign}}</span><span class="c-loc num">{{m.loc}}</span>
+				<span class="c-hp"><span class="bar hp" data-class-critical="m.hp &lt; 25"><span class="fill" data-style-width="m.hp + '%'"></span></span></span>
+				<span class="c-mor">{{m.morale}}</span><span class="c-num num">{{m.contract}}d</span><span class="c-num num">${{m.salary}}</span>
+			</div>
+		</div>
+		<div class="g-note dim">Rows show: selected (Ivan), hover (Lynx), focus (Shadow), error (Grizzly: contract ends), disabled (Barry: asleep).</div>
+
+		<div class="g-section">Stat and progress bars</div>
+		<div class="g-bars">
+			<div class="stat"><span class="k">HP</span><span class="bar hp thick"><span class="fill" style="width: 72%"></span><span class="lost" style="width: 12%"></span></span><span class="v">72/88</span></div>
+			<div class="stat"><span class="k">HP</span><span class="bar hp thick critical"><span class="fill" style="width: 14%"></span><span class="lost" style="width: 30%"></span></span><span class="v">14/70</span></div>
+			<div class="stat"><span class="k">BR</span><span class="bar breath thick"><span class="fill" style="width: 64%"></span></span><span class="v">64</span></div>
+			<div class="stat"><span class="k">MO</span><span class="bar morale thick"><span class="fill" style="width: 81%"></span></span><span class="v">Great</span></div>
+			<div class="stat"><span class="k">XP</span><span class="bar xp thick"><span class="fill" style="width: 38%"></span></span><span class="v">Lv 4</span></div>
+			<div class="stat"><span class="k">OK</span><span class="bar ok thick"><span class="fill" style="width: 100%"></span></span><span class="v">Done</span></div>
+			<div class="stat"><span class="k">...</span><span class="bar thick" id="progress"><span class="fill" style="width: 46%"></span></span><span class="v">46%</span></div>
+			<div class="stat"><span class="k">OFF</span><span class="bar thick disabled"><span class="fill" style="width: 50%"></span></span><span class="v dim">n/a</span></div>
+		</div>
+	</div>
+	<div class="g-col-side">
+		<div class="g-section">List</div>
+		<div class="list g-box" id="list">
+			<div class="list-item selected"><img class="icon" src="icon-save"/><span class="label">Omerta landing</span><span class="meta">Day 1</span></div>
+			<div class="list-item is-hover"><img class="icon" src="icon-save"/><span class="label">Drassen airport</span><span class="meta">Day 6</span></div>
+			<div class="list-item"><img class="icon" src="icon-save"/><span class="label">Before the SAM site</span><span class="meta">Day 9</span></div>
+			<div class="list-item is-focus"><img class="icon" src="icon-save"/><span class="label">Cambria hospital</span><span class="meta">Day 12</span></div>
+			<div class="list-item is-error"><img class="icon" src="icon-error"/><span class="label">Corrupt save</span><span class="meta">?</span></div>
+			<div class="list-item is-disabled"><img class="icon" src="icon-lock"/><span class="label">Iron man slot</span><span class="meta">locked</span></div>
+		</div>
+		<div class="g-section">Scroll area</div>
+		<div class="scroll g-box g-scroll" id="scroll">
+			<div class="g-log" data-for="l : log">{{l}}</div>
+		</div>
+	</div>
+</div>
+
+<!-- ============================================================ overlays -->
+<div data-if="page == 'overlays'" id="page-overlays" class="g-stages">
+	<div class="g-stage" id="stage-tooltip">
+		<div class="g-stage-title">Tooltip</div>
+		<div class="has-tip g-tip-anchor"><button class="btn is-hover"><img class="icon" src="icon-reload"/><span class="label">Reload</span><span class="kbd">R</span></button>
+			<div class="tooltip show g-tip-pos" id="tooltip"><div class="tip-title">Reload</div>Loads a full magazine from your inventory.<div class="tip-keys"><span class="kbd">R</span> 5 AP</div></div>
+		</div>
+		<div class="has-tip g-tip-anchor2"><button class="icon-btn" id="tip-live"><img class="icon" src="icon-info"/></button>
+			<div class="tooltip g-tip-pos2">Hover me: tooltips appear on hover.</div>
+		</div>
+	</div>
+	<div class="g-stage" id="stage-modal">
+		<div class="g-stage-title">Modal</div>
+		<div class="g-stage-fake"><div class="g-fake-line"></div><div class="g-fake-line short"></div><div class="g-fake-line"></div></div>
+		<div class="scrim"></div>
+		<div class="modal danger g-modal-pos" id="modal">
+			<div class="modal-head"><img class="icon status" src="icon-warning" style="image-color: var(--c-danger)"/><span class="title">Abandon sector?</span><button class="icon-btn btn-ghost"><img class="icon sm" src="icon-close"/></button></div>
+			<div class="modal-body">Ivan and Lynx are still in combat in B13. Retreating leaves the militia to fight alone.</div>
+			<div class="modal-foot"><button class="btn btn-ghost"><span class="label">Stay</span><span class="kbd">Esc</span></button><button class="btn btn-primary is-error"><span class="label">Retreat</span><span class="kbd">Enter</span></button></div>
+		</div>
+	</div>
+	<div class="g-stage" id="stage-toast">
+		<div class="g-stage-title">Toasts</div>
+		<div class="g-toasts">
+			<div class="toast ok" id="toast-ok"><img class="icon" src="icon-ok"/><div class="body"><div class="title">Militia trained</div><div class="text">Drassen: 6 green, 2 regular.</div></div><img class="close" src="icon-close"/></div>
+			<div class="toast"><img class="icon" src="icon-info"/><div class="body"><div class="title">Email from Enrico</div><div class="text">New orders are in your laptop.</div></div><img class="close" src="icon-close"/></div>
+			<div class="toast warn"><img class="icon" src="icon-contract"/><div class="body"><div class="title">Contract ending</div><div class="text">Fidel leaves in 1 day unless you extend.</div></div><img class="close" src="icon-close"/></div>
+			<div class="toast danger"><img class="icon" src="icon-enemy-group"/><div class="body"><div class="title">Enemy patrol</div><div class="text">12 soldiers moving towards C13.</div></div><img class="close" src="icon-close"/></div>
+		</div>
+	</div>
+	<div class="g-stage" id="stage-menu">
+		<div class="g-stage-title">Context menu</div>
+		<div class="menu g-menu-pos" id="context-menu">
+			<div class="menu-head">Ivan &#183; B13</div>
+			<div class="menu-item"><img class="icon" src="icon-squad"/><span class="label">Assign to squad</span><img class="chev" src="icon-chevron-right"/></div>
+			<div class="menu-item is-hover"><img class="icon" src="icon-doctor"/><span class="label">Doctor</span><span class="kbd">D</span></div>
+			<div class="menu-item"><img class="icon" src="icon-repair"/><span class="label">Repair</span><span class="kbd">R</span></div>
+			<div class="menu-item is-disabled"><img class="icon" src="icon-train-town"/><span class="label">Train militia</span><span class="kbd">T</span></div>
+			<div class="menu-sep"></div>
+			<div class="menu-item"><img class="icon" src="icon-contract"/><span class="label">Extend contract</span></div>
+			<div class="menu-item danger"><img class="icon" src="icon-close"/><span class="label">Dismiss</span></div>
+		</div>
+	</div>
+</div>
+
+<!-- ============================================================ game -->
+<div data-if="page == 'game'" id="page-game">
+	<div class="g-section">Merc portrait card</div>
+	<div class="g-cards">
+		<div class="g-card-cell" data-for="c, i : cards"><div class="g-caption">{{c.caption}}</div>
+			<div class="merc-card" data-attr-id="'card' + i" data-class-selected="c.cls == 'selected'" data-class-is-hover="c.cls == 'hover'" data-class-is-focus="c.cls == 'focus'"
+				data-class-critical="c.cls == 'critical'" data-class-asleep="c.cls == 'asleep'" data-class-dead="c.cls == 'dead'">
+				<div class="portrait"><img data-attr-src="c.face"/><div class="ap">{{c.ap}} AP</div></div>
+				<div class="info">
+					<div class="name-row"><span class="name">{{c.name}}</span><img class="state-icon" data-if="c.icon != ''" data-attr-src="c.icon"/></div>
+					<div class="stat hp"><span class="k">HP</span><span class="bar hp" data-class-critical="c.hp &lt; 25"><span class="fill" data-style-width="c.hp + '%'"></span></span><span class="v">{{c.hp}}</span></div>
+					<div class="stat"><span class="k">BR</span><span class="bar breath"><span class="fill" data-style-width="c.breath + '%'"></span></span><span class="v">{{c.breath}}</span></div>
+					<div class="stat"><span class="k">MO</span><span class="bar morale"><span class="fill" data-style-width="c.morale + '%'"></span></span><span class="v">{{c.morale}}</span></div>
+				</div>
+				<div class="footer"><span>{{c.weapon}}</span><span class="mono">{{c.ammo}}</span></div>
+			</div>
+		</div>
+	</div>
+
+	<div class="g-split2">
+		<div>
+			<div class="g-section">Item slot</div>
+			<div class="g-slots">
+				<div class="g-slot-cell"><div class="slot" id="slot-empty"><img class="ghost" src="icon-armour"/></div><div class="g-caption">Empty</div></div>
+				<div class="g-slot-cell"><div class="slot"><div class="item"><img src="icon-gun"/></div><span class="cond"><span class="fill" style="width: 90%"></span></span></div><div class="g-caption">Filled</div></div>
+				<div class="g-slot-cell"><div class="slot is-hover"><div class="item"><img src="icon-ammo"/></div><span class="count">x3</span></div><div class="g-caption">Hover</div></div>
+				<div class="g-slot-cell"><div class="slot selected"><div class="item"><img src="icon-medkit"/></div><span class="cond worn"><span class="fill" style="width: 40%"></span></span></div><div class="g-caption">Selected</div></div>
+				<div class="g-slot-cell"><div class="slot is-focus"><div class="item"><img src="icon-grenade"/></div><span class="count">x2</span></div><div class="g-caption">Focus</div></div>
+				<div class="g-slot-cell"><div class="slot drop-ok"><img class="ghost" src="icon-face-gear"/></div><div class="g-caption">Drop: ok</div></div>
+				<div class="g-slot-cell"><div class="slot drop-bad is-error"><div class="item"><img src="icon-armour"/></div></div><div class="g-caption">Drop: no</div></div>
+				<div class="g-slot-cell"><div class="slot is-disabled"><img class="ghost" src="icon-lock"/></div><div class="g-caption">Disabled</div></div>
+				<div class="g-slot-cell"><div class="slot dragging"><div class="item"><img src="icon-blade"/></div></div><div class="g-caption">Dragging</div></div>
+			</div>
+
+			<div class="g-section">Time compression</div>
+			<div class="g-times">
+				<div class="g-time-cell"><div class="timectl paused" id="timectl-paused"><span class="clock"><span class="day">Day 12</span>14:35</span><span class="tc-btn active"><img class="icon" src="icon-pause"/></span><span class="tc-btn"><span class="label">5m</span></span><span class="tc-btn"><span class="label">30m</span></span><span class="tc-btn"><span class="label">1h</span></span><span class="tc-btn"><span class="label">6h</span></span></div><div class="g-caption">Paused</div></div>
+				<div class="g-time-cell"><div class="timectl" id="timectl"><span class="clock"><span class="day">Day 12</span>14:35</span><span class="tc-btn"><img class="icon" src="icon-pause"/></span><span class="tc-btn active"><span class="label">5m</span></span><span class="tc-btn is-hover"><span class="label">30m</span></span><span class="tc-btn"><span class="label">1h</span></span><span class="tc-btn"><span class="label">6h</span></span></div><div class="g-caption">Running 5m, hover 30m</div></div>
+				<div class="g-time-cell"><div class="timectl is-focus"><span class="clock"><span class="day">Day 12</span>14:35</span><span class="tc-btn"><img class="icon" src="icon-pause"/></span><span class="tc-btn"><span class="label">5m</span></span><span class="tc-btn"><span class="label">30m</span></span><span class="tc-btn active"><span class="label">1h</span></span><span class="tc-btn"><span class="label">6h</span></span></div><div class="g-caption">Focus, 1h</div></div>
+				<div class="g-time-cell"><div class="timectl is-disabled"><span class="clock"><span class="day">Day 12</span>14:35</span><span class="tc-btn active"><img class="icon" src="icon-pause"/></span><span class="tc-btn"><span class="label">5m</span></span><span class="tc-btn"><span class="label">30m</span></span><span class="tc-btn"><span class="label">1h</span></span><span class="tc-btn"><span class="label">6h</span></span></div><div class="g-caption">Disabled (combat)</div></div>
+			</div>
+		</div>
+		<div>
+			<div class="g-section">Inventory grid <span class="dim">&#183; drag items between slots</span></div>
+			<div class="g-inv-row">
+				<div><div class="g-caption">Ivan</div>
+					<div class="inv g-inv4" id="inv">
+						<div class="slot" data-for="s, i : inv" data-attr-id="'inv' + i" data-class-dragging="drag_grid == 'inv' &amp;&amp; drag_index == i"
+							data-event-dragdrop="drop('inv', i)">
+							<img class="ghost" data-if="s.icon == ''" src="icon-misc-item"/>
+							<div class="item" data-if="s.icon != ''" data-event-dragstart="drag_start('inv', i)" data-event-dragend="drag_end()"><img data-attr-src="s.icon"/></div>
+							<span class="count" data-if="s.count > 1">x{{s.count}}</span>
+							<span class="cond" data-if="s.icon != ''" data-class-worn="s.cond &lt; 50"><span class="fill" data-style-width="s.cond + '%'"></span></span>
+						</div>
+					</div>
+				</div>
+				<div><div class="g-caption">Sector B13</div>
+					<div class="inv g-inv6" id="ground">
+						<div class="slot" data-for="s, i : ground" data-attr-id="'ground' + i" data-class-dragging="drag_grid == 'ground' &amp;&amp; drag_index == i"
+							data-event-dragdrop="drop('ground', i)">
+							<img class="ghost" data-if="s.icon == ''" src="icon-misc-item"/>
+							<div class="item" data-if="s.icon != ''" data-event-dragstart="drag_start('ground', i)" data-event-dragend="drag_end()"><img data-attr-src="s.icon"/></div>
+							<span class="count" data-if="s.count > 1">x{{s.count}}</span>
+							<span class="cond" data-if="s.icon != ''" data-class-worn="s.cond &lt; 50"><span class="fill" data-style-width="s.cond + '%'"></span></span>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="g-note dim">{{inv_status}}</div>
+		</div>
+	</div>
+</div>
+
+<!-- ============================================================ icons -->
+<div data-if="page == 'icons'" id="page-icons">
+	<div data-for="g : icon_groups">
+		<div class="g-section">{{g.title}} <span class="dim">&#183; {{g.names.size}}</span></div>
+		<div class="g-icons">
+			<div class="g-icon" data-for="n : g.names"><img class="icon lg" data-attr-src="'icon-' + n"/><div class="g-icon-name">{{n}}</div></div>
+		</div>
+	</div>
+	<div class="g-section">Sizes and tints</div>
+	<div class="g-icons">
+		<div class="g-icon"><img class="icon sm" src="icon-target"/><div class="g-icon-name">16dp</div></div>
+		<div class="g-icon"><img class="icon" src="icon-target"/><div class="g-icon-name">20dp</div></div>
+		<div class="g-icon"><img class="icon lg" src="icon-target"/><div class="g-icon-name">28dp</div></div>
+		<div class="g-icon"><img class="icon" style="width: 48dp; height: 48dp;" src="icon-target"/><div class="g-icon-name">48dp</div></div>
+		<div class="g-icon"><img class="icon lg" style="image-color: var(--c-accent)" src="icon-ok"/><div class="g-icon-name">accent</div></div>
+		<div class="g-icon"><img class="icon lg" style="image-color: var(--c-ok)" src="icon-ok"/><div class="g-icon-name">ok</div></div>
+		<div class="g-icon"><img class="icon lg" style="image-color: var(--c-info)" src="icon-info"/><div class="g-icon-name">info</div></div>
+		<div class="g-icon"><img class="icon lg" style="image-color: var(--c-warn)" src="icon-warning"/><div class="g-icon-name">warn</div></div>
+		<div class="g-icon"><img class="icon lg" style="image-color: var(--c-danger)" src="icon-error"/><div class="g-icon-name">danger</div></div>
+		<div class="g-icon"><img class="icon lg" style="image-color: var(--c-select)" src="icon-player-group"/><div class="g-icon-name">select</div></div>
+	</div>
+</div>
+
+<!-- ============================================================ tokens -->
+<div data-if="page == 'tokens'" id="page-tokens" class="g-split">
+	<div class="g-col-main">
+		<div class="g-section">Colour</div>
+		<div class="g-swatches">
+			<div class="g-swatch" data-for="s : swatches"><div class="g-chip" data-style-background-color="s.value"></div><div class="g-sw-name">{{s.name}}</div><div class="g-sw-value mono">{{s.value}}</div></div>
+		</div>
+		<div class="g-section">Status (colour-blind safe: always colour + icon, critical adds a pattern)</div>
+		<div class="g-status">
+			<div class="toast ok"><img class="icon" src="icon-ok"/><div class="body"><div class="title">OK</div><div class="text">#2BD4A0 bluish green</div></div></div>
+			<div class="toast"><img class="icon" src="icon-info"/><div class="body"><div class="title">Info</div><div class="text">#56B4E9 sky blue</div></div></div>
+			<div class="toast warn"><img class="icon" src="icon-warning"/><div class="body"><div class="title">Warning</div><div class="text">#F0E442 yellow</div></div></div>
+			<div class="toast danger"><img class="icon" src="icon-error"/><div class="body"><div class="title">Danger</div><div class="text">#FF6B3D vermilion, hatched when critical</div></div></div>
+		</div>
+		<div class="g-section">Spacing, radii, elevation</div>
+		<div class="g-spacing">
+			<div class="g-sp" data-for="s : spacing"><div class="g-sp-bar" data-style-width="s.value"></div><span class="mono dim">{{s.name}} {{s.value}}</span></div>
+		</div>
+		<div class="g-elev">
+			<div class="g-e0">Background</div><div class="g-e1">Elevation 1 &#183; panel</div><div class="g-e2">Elevation 2 &#183; control</div><div class="g-e3">Elevation 3 &#183; menu, modal</div>
+			<div class="g-r g-r0">r-0</div><div class="g-r g-r1">r-1</div><div class="g-r g-r2">r-2</div><div class="g-r g-rr">round</div>
+		</div>
+	</div>
+	<div class="g-col-side">
+		<div class="g-section">Type</div>
+		<div class="g-type">
+			<div class="g-t g-t-2xl">Screen title 34</div>
+			<div class="g-t g-t-xl">Panel title 26</div>
+			<div class="g-t g-t-lg">Button label 20</div>
+			<div class="g-t g-t-md">Body text 17: Ivan finished repairing the M-60.</div>
+			<div class="g-t g-t-sm">Secondary 15: Squad 1 &#183; B13 Drassen</div>
+			<div class="g-t g-t-xs">Header 13 &#183; assignment &#183; contract</div>
+			<div class="g-t g-t-mono">Numbers <span class="mono">$48,250 &#183; 14:35 &#183; 30/30</span></div>
+		</div>
+		<div class="g-section">Languages the game ships</div>
+		<div class="g-langs" id="langs">
+			<div><span class="g-lang">EN</span>Enemy patrol spotted near Drassen.</div>
+			<div><span class="g-lang">DE</span>Feindpatrouille bei Drassen gesichtet. &#196;&#214;&#220;&#223;</div>
+			<div><span class="g-lang">FR</span>Patrouille ennemie rep&#233;r&#233;e pr&#232;s de Drassen.</div>
+			<div><span class="g-lang">IT</span>Pattuglia nemica avvistata vicino a Drassen.</div>
+			<div><span class="g-lang">NL</span>Vijandelijke patrouille gezien bij Drassen.</div>
+			<div><span class="g-lang">PL</span>Wrogi patrol zauwa&#380;ony w pobli&#380;u Drassen. &#260;&#262;&#280;&#321;&#323;&#211;&#346;&#377;&#379;</div>
+			<div><span class="g-lang">RU</span>&#1042;&#1088;&#1072;&#1078;&#1077;&#1089;&#1082;&#1080;&#1081; &#1087;&#1072;&#1090;&#1088;&#1091;&#1083;&#1100; &#1091; &#1044;&#1088;&#1072;&#1089;&#1089;&#1077;&#1085;&#1072;.</div>
+			<div><span class="g-lang">ZH</span>&#22312;&#24503;&#25289;&#26862;&#38468;&#36817;&#21457;&#29616;&#25932;&#20891;&#24033;&#36923;&#38431;&#12290;</div>
+			<div class="g-t-display-row"><span class="g-lang">RU</span><span class="g-cond">&#1053;&#1054;&#1042;&#1040;&#1071; &#1048;&#1043;&#1056;&#1040; &#183; NOWA GRA</span></div>
+		</div>
+		<div class="g-section">Motion</div>
+		<div class="g-motion mono dim">
+			<div>t-fast 0.08s &#183; hover, press</div>
+			<div>t-base 0.15s &#183; toggle, tab, focus</div>
+			<div>t-slow 0.30s &#183; modal, toast, panel</div>
+			<div>ease: cubic-out (in: cubic-in)</div>
+		</div>
+	</div>
+</div>
+
+</div>
+</div>
+</body>
+</rml>

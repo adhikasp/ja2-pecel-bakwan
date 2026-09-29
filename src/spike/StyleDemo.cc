@@ -1,6 +1,6 @@
 // Phase 1 style directions (docs/ui/style-directions.md): three visual directions for the native UI, each shown on
 // the same three mock screens (main menu, tactical squad bar, strategic map sidebar + top bar). The markup is
-// shared (assets/ui-styles/<screen>.rml); each direction is one RCSS file (<direction>.rcss) over base.rcss. The
+// shared (assets/ui/mocks/<screen>.rml); the chosen direction B (Night Ops) is mocks/nightops.rcss. The
 // data is placeholder, bound through an RmlUi data model like a Phase 2 view model would be.
 #include "UiSpike.h"
 #include "RmlCommon.h"
@@ -15,7 +15,7 @@
 
 namespace spike {
 
-char const* const StyleDirections[3] = { "a", "b", "c" };
+char const* const StyleDirections[1] = { "b" }; // Night Ops, chosen (docs/ui/style-directions.md)
 char const* const StyleScreens[3]    = { "mainmenu", "squadbar", "mapscreen" };
 
 static std::string g_styleDir;
@@ -28,12 +28,12 @@ std::string StyleDir()
 	std::string d = g_styleDir;
 	if (d.empty())
 	{
-		if (char const* env = std::getenv("JA2_UI_STYLES")) d = env;
+		if (char const* env = std::getenv("JA2_UI_DIR")) d = env;
 	}
 	if (d.empty())
 	{
 		char const* base = SDL_GetBasePath();
-		d = std::string(base ? base : "./") + "ui-styles";
+		d = std::string(base ? base : "./") + "ui";
 	}
 	std::replace(d.begin(), d.end(), '\\', '/');
 	while (!d.empty() && d.back() == '/') d.pop_back();
@@ -129,38 +129,6 @@ std::vector<DemoSector> FakeSectors()
 	return out;
 }
 
-void LoadDirectionFonts(std::string const& dir)
-{
-	using S = Rml::Style::FontStyle;
-	using W = Rml::Style::FontWeight;
-	struct F { char const* file; char const* family; W weight; };
-	static F const fonts[] = {
-		{ "stardosstencil/StardosStencil-Regular.ttf", "Stardos Stencil", W::Normal },
-		{ "stardosstencil/StardosStencil-Bold.ttf",    "Stardos Stencil", W::Bold },
-		{ "courierprime/CourierPrime-Regular.ttf",     "Courier Prime",   W::Normal },
-		{ "courierprime/CourierPrime-Bold.ttf",        "Courier Prime",   W::Bold },
-		{ "barlow/Barlow-Regular.ttf",                 "Barlow",          W::Normal },
-		{ "barlow/Barlow-Medium.ttf",                  "Barlow",          W(500) },
-		{ "barlow/Barlow-SemiBold.ttf",                "Barlow",          W(600) },
-		{ "barlow/Barlow-Bold.ttf",                    "Barlow",          W::Bold },
-		{ "barlowcondensed/BarlowCondensed-Medium.ttf",   "Barlow Condensed", W(500) },
-		{ "barlowcondensed/BarlowCondensed-SemiBold.ttf", "Barlow Condensed", W(600) },
-		{ "barlowcondensed/BarlowCondensed-Bold.ttf",     "Barlow Condensed", W::Bold },
-		{ "sharetechmono/ShareTechMono-Regular.ttf",   "Share Tech Mono", W::Normal },
-		{ "bebasneue/BebasNeue-Regular.ttf",           "Bebas Neue",      W::Normal },
-		{ "spacemono/SpaceMono-Regular.ttf",           "Space Mono",      W::Normal },
-		{ "spacemono/SpaceMono-Bold.ttf",              "Space Mono",      W::Bold },
-		{ "firasans/FiraSans-Regular.ttf",             "Fira Sans",       W::Normal },
-		{ "firasans/FiraSans-SemiBold.ttf",            "Fira Sans",       W(600) },
-		{ "firasans/FiraSans-Bold.ttf",                "Fira Sans",       W::Bold },
-	};
-	for (F const& f : fonts)
-	{
-		if (!LoadFontFileOnce(dir + "/fonts/" + f.file, f.family, S::Normal, f.weight))
-			throw std::runtime_error("style demo: cannot load font " + dir + "/fonts/" + f.file);
-	}
-}
-
 std::string ReadText(std::string const& path)
 {
 	std::ifstream f(path, std::ios::binary);
@@ -181,7 +149,7 @@ public:
 			throw std::runtime_error("style demo: unknown screen " + m_screen);
 		InitRmlOnce();
 		std::string const dir = StyleDir();
-		LoadDirectionFonts(dir);
+		LoadUiFonts();
 
 		static int counter = 0;
 		m_name = "styledemo" + std::to_string(counter++);
@@ -193,10 +161,10 @@ public:
 		bindModel();
 
 		// The theme link is a placeholder in the shared markup; each direction is one RCSS file.
-		std::string rml = ReadText(dir + "/" + m_screen + ".rml");
+		std::string rml = ReadText(dir + "/mocks/" + m_screen + ".rml");
 		std::string const placeholder = "theme.rcss";
-		if (auto at = rml.find(placeholder); at != std::string::npos) rml.replace(at, placeholder.size(), m_direction + ".rcss");
-		m_doc = m_ctx->LoadDocumentFromMemory(rml, m_screen + ".rml"); // relative: see StyleFileInterface
+		if (auto at = rml.find(placeholder); at != std::string::npos) rml.replace(at, placeholder.size(), "nightops.rcss");
+		m_doc = m_ctx->LoadDocumentFromMemory(rml, "mocks/" + m_screen + ".rml"); // relative: see StyleFileInterface
 		if (!m_doc) throw std::runtime_error("RmlUi: cannot load " + m_screen + ".rml");
 		m_doc->SetClass("dir-" + m_direction, true);
 		m_doc->Show();

@@ -1,0 +1,112 @@
+/* Design tokens: direction B, Night Ops (docs/ui/design-system.md).
+ * RCSS has no custom properties, so this file is not a style sheet: every .rcss the UI loads is run through a
+ * preprocessor that replaces var(--name) with the value below (src/spike/RmlCommon.cc, ExpandTokens). Tokens may
+ * refer to other tokens. Units are dp: 1dp = 1px at 1920x1080 and 100% UI scale.
+ * Change a value here and every component follows; never hard-code a colour or size in components.rcss. */
+
+/* ---------------------------------------------------------------- colour: surfaces (darkest to lightest) */
+--c-void:        #0B0F0D;   /* screen background, behind everything */
+--c-bg:          #0E1310;   /* page background */
+--c-panel:       #121815;   /* elevation 1: panels, cards */
+--c-panel-2:     #1A221E;   /* elevation 2: raised controls, table header, popovers */
+--c-panel-3:     #232D28;   /* elevation 3: menus, modals, tooltips */
+--c-line:        #2A3630;   /* hairlines, dividers, control borders */
+--c-line-2:      #3E4F46;   /* stronger borders, hover borders */
+--c-scrim:       #05080699; /* behind modals */
+
+/* ---------------------------------------------------------------- colour: text */
+--c-text-strong: #EEF4EF;   /* headings, values, selected */
+--c-text:        #D7E2D9;   /* body */
+--c-text-dim:    #8FA096;   /* labels, secondary */
+--c-text-faint:  #5E6E65;   /* hints, disabled, captions (large text only) */
+--c-on-accent:   #0B0F0D;   /* text on accent / status fills */
+
+/* ---------------------------------------------------------------- colour: brand and interaction */
+--c-accent:      #9BE564;   /* phosphor green: primary action, active tab, on */
+--c-accent-2:    #B8F08E;   /* primary hover */
+--c-accent-3:    #7FC94C;   /* primary pressed */
+--c-accent-soft: #9BE5641F; /* hover wash, selected row */
+--c-select:      #F2B33D;   /* amber: the selected merc / sector / item */
+--c-select-soft: #F2B33D22;
+--c-focus:       #56B4E9;   /* keyboard focus ring (never used for state) */
+
+/* ---------------------------------------------------------------- colour: status (colour-blind safe)
+ * Okabe-Ito based: distinguishable with deuteranopia, protanopia and tritanopia, and always paired with an
+ * icon or a pattern, never colour alone. Danger is vermilion (not pure red) and ok is bluish green. */
+--c-ok:          #2BD4A0;   /* icon: ok      pattern: solid */
+--c-info:        #56B4E9;   /* icon: info    pattern: solid */
+--c-warn:        #F0E442;   /* icon: warning pattern: solid */
+--c-danger:      #FF6B3D;   /* icon: error   pattern: hatched (gen-hatch) when critical */
+--c-ok-soft:     #2BD4A026;
+--c-info-soft:   #56B4E926;
+--c-warn-soft:   #F0E44226;
+--c-danger-soft: #FF6B3D2E;
+
+/* ---------------------------------------------------------------- colour: game stats (bars) */
+--c-stat-hp:     #FF6B3D;   /* health: the game's red, vermilion for colour-blind safety */
+--c-stat-hp-lost:#FF6B3D40; /* max health lost (bandaged / to heal) */
+--c-stat-breath: #56B4E9;
+--c-stat-morale: #D7E2D9;
+--c-stat-xp:     #F2B33D;
+--c-stat-track:  #2A3630;
+
+/* ---------------------------------------------------------------- type */
+--font-display:  "Barlow Condensed";  /* titles, labels, buttons; uppercase */
+--font-body:     Barlow;              /* prose, lists, values */
+--font-mono:     "Share Tech Mono";   /* numbers, codes, keys, time, money */
+/* fallbacks (any family): Fira Sans (Latin Extended, Cyrillic, Greek), Noto Sans SC (Chinese) */
+
+--fs-2xs:        12dp;  /* captions under icons */
+--fs-xs:         13dp;  /* key caps, table headers */
+--fs-sm:         15dp;  /* secondary text, meta */
+--fs-md:         17dp;  /* body, controls */
+--fs-lg:         20dp;  /* button labels, emphasised values */
+--fs-xl:         26dp;  /* panel titles */
+--fs-2xl:        34dp;  /* screen titles */
+--fs-3xl:        48dp;  /* hero numbers */
+--fs-display:    104dp; /* main menu title */
+--lh-tight:      1.1;
+--lh-body:       1.45;
+
+/* ---------------------------------------------------------------- spacing (4dp grid) */
+--sp-1:  4dp;
+--sp-2:  8dp;
+--sp-3:  12dp;
+--sp-4:  16dp;
+--sp-5:  24dp;
+--sp-6:  32dp;
+--sp-7:  48dp;
+--sp-8:  64dp;
+
+/* ---------------------------------------------------------------- sizes */
+--h-control:     36dp;  /* buttons, inputs, dropdowns, tabs */
+--h-control-sm:  28dp;
+--h-row:         34dp;  /* list and table rows */
+--icon-sm:       16dp;
+--icon-md:       20dp;
+--icon-lg:       28dp;
+--slot:          64dp;  /* inventory slot */
+--border:        1dp;
+--focus-ring:    2dp;
+
+/* ---------------------------------------------------------------- radii: squared, military */
+--r-0:     0dp;
+--r-1:     2dp;   /* controls, slots */
+--r-2:     4dp;   /* panels, popovers */
+--r-round: 999dp; /* toggles, badges, slider thumb */
+
+/* ---------------------------------------------------------------- elevation
+ * No drop shadows (flat HUD): elevation = a lighter surface + a stronger border, plus the scrim for modals. */
+--e1-bg:   var(--c-panel);
+--e1-line: var(--c-line);
+--e2-bg:   var(--c-panel-2);
+--e2-line: var(--c-line-2);
+--e3-bg:   var(--c-panel-3);
+--e3-line: var(--c-line-2);
+
+/* ---------------------------------------------------------------- motion */
+--t-fast:  0.08s;   /* hover, press */
+--t-base:  0.15s;   /* toggles, tabs, focus */
+--t-slow:  0.30s;   /* modals, toasts, panels */
+--ease:    cubic-out;
+--ease-in: cubic-in;
