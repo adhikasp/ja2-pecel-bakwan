@@ -70,8 +70,8 @@ body { width: 100%; height: 100%; background-color: var(--c-void); }
 .g-time-cell { display: block; margin: 0 var(--sp-4) var(--sp-2) 0; }
 .g-inv-row { display: flex; flex-wrap: wrap; }
 .g-inv-row > div { display: block; margin-right: var(--sp-5); }
-.g-inv4 { width: 272dp; }
-.g-inv6 { width: 408dp; }
+.g-inv4 { width: 280dp; }
+.g-inv6 { width: 418dp; }
 /* the game page fits one screen at 100%: seven cards in a row */
 .g-card-cell { margin-right: var(--sp-3); }
 .g-card-cell .merc-card { width: 244dp; height: 140dp; }
