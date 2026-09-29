@@ -1397,6 +1397,8 @@ ScreenID MapScreenHandle(void)
 	{
 		gfFirstMapscreenFrame = TRUE;
 
+		UpdateMapScreenRect(); // the layout can have changed since the game was started
+
 		InitPreviousPaths();
 
 		gfInConfirmMapMoveMode = FALSE;

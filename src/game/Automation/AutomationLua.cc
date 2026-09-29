@@ -8,6 +8,8 @@
 #include "Input.h"
 #include "Isometric_Utils.h"
 #include "UILayout.h"
+#include "VideoOptionsScreen.h"
+#include "GameLoop.h"
 #include "JAScreens.h"
 #include "Soldier_Find.h"
 #include "WorldDef.h"
@@ -36,6 +38,7 @@
 #include <string_theory/format>
 
 #include <cstdio>
+#include <cstring>
 #include <sstream>
 
 namespace Automation
@@ -464,6 +467,55 @@ namespace
 			t["w"] = SCREEN_WIDTH; t["h"] = SCREEN_HEIGHT;
 			t["stdX"] = STD_SCREEN_X; t["stdY"] = STD_SCREEN_Y;
 			return t;
+		});
+
+		// Changes the video settings while the game runs, like the Video options do; the current screen is built again
+		// for the new layout. Fields (all optional, the rest stays): res = "1280x720" (the window, "auto" = the desktop),
+		// uiscale = 0 (auto) .. 4, worldzoom = 0 (same as the UI) .. 4, window = "windowed" | "borderless" | "fullscreen",
+		// filter = "linear" | "sharp" | "pixel". Headless sessions have no window: res is the canvas, and the UI scale only
+		// applies when the world is a layer of its own (worldzoom differs from uiscale). Returns the screenSize() table
+		// plus uiScale, worldZoom and layered. Nothing is written to ja2.json.
+		ja2.set_function("setVideo", [](sol::table t) {
+			return Guarded([&] {
+				auto want = VideoGetDisplaySettings();
+				auto quality = VideoGetScaleQuality();
+				if (sol::optional<std::string> res = t["res"])
+				{
+					int w = 0, h = 0;
+					if (*res == "auto") want.resX = want.resY = 0;
+					else if (std::sscanf(res->c_str(), "%dx%d", &w, &h) == 2 && w > 0 && h > 0) { want.resX = w; want.resY = h; }
+					else throw std::runtime_error("ja2.setVideo: res must be \"WIDTHxHEIGHT\" or \"auto\"");
+				}
+				if (sol::optional<int> v = t["uiscale"]) want.uiScale = *v;
+				if (sol::optional<int> v = t["worldzoom"]) want.worldZoom = *v;
+				if (sol::optional<std::string> m = t["window"])
+				{
+					if      (*m == "windowed")   want.windowMode = WindowMode::Windowed;
+					else if (*m == "borderless") want.windowMode = WindowMode::BorderlessDesktop;
+					else if (*m == "fullscreen") want.windowMode = WindowMode::Fullscreen;
+					else throw std::runtime_error("ja2.setVideo: window must be windowed, borderless or fullscreen");
+				}
+				if (sol::optional<std::string> f = t["filter"])
+				{
+					if      (*f == "linear") quality = VideoScaleQuality::LINEAR;
+					else if (*f == "sharp")  quality = VideoScaleQuality::NEAR_PERFECT;
+					else if (*f == "pixel")  quality = VideoScaleQuality::PERFECT;
+					else throw std::runtime_error("ja2.setVideo: filter must be linear, sharp or pixel");
+				}
+				while (guiPendingScreen != NO_PENDING_SCREEN) Session::Step(1); // let a screen change finish
+				ST::string error;
+				if (!ChangeVideoSettings(want, quality, false, &error))
+				{
+					throw std::runtime_error(("ja2.setVideo: " + error).to_std_string());
+				}
+				Session::Step(3); // the screen builds itself again
+				sol::table r = g_lua.create_table();
+				r["w"] = SCREEN_WIDTH; r["h"] = SCREEN_HEIGHT;
+				r["stdX"] = STD_SCREEN_X; r["stdY"] = STD_SCREEN_Y;
+				r["uiScale"] = int(g_ui.m_uiScale); r["worldZoom"] = int(g_ui.m_worldZoom);
+				r["layered"] = VideoIsLayered();
+				return r;
+			});
 		});
 
 		// --- tactical map ---

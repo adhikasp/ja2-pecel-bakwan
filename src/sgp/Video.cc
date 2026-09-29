@@ -77,6 +77,8 @@ static VideoScaleQuality ScaleQuality = VideoScaleQuality::LINEAR;
 static int          SharpBilinearScale = 0;
 static VideoLayout::Size PresentedWindowSize{ 0, 0 };
 static sgp::GameClock::duration TimeBetweenRefreshScreens;
+static int32_t TargetFPS = 40;
+static VideoDisplaySettings CurrentSettings{ 0, 0, 0, WindowMode::BorderlessDesktop };
 
 static void DeletePrimaryVideoSurfaces(void);
 static SDL_Rect ClipToSurface(SDL_Rect const& rect, SDL_Surface const* surface);
@@ -184,10 +186,12 @@ static void CreateSoftwareSurfaces();
 
 static void UpdatePresentation(bool force);
 static void CreateLayerTextures();
+static void CreateTextures();
 
 void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targetFPS, VideoDisplaySettings const& settings)
 {
-	TimeBetweenRefreshScreens = std::chrono::microseconds{1'000'000} / targetFPS;
+	VideoSetTargetFPS(targetFPS);
+	CurrentSettings = settings;
 	Layered = g_ui.isLayered();
 
 	if (sgp::IsHeadless())
@@ -246,21 +250,7 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 
 	CreateSoftwareSurfaces();
 
-	if (Layered)
-	{
-		CreateLayerTextures();
-	}
-	else
-	{
-		ScreenTexture =SDL_CreateTexture(GameRenderer,
-						SDL_PIXELFORMAT_RGB565,
-						SDL_TEXTUREACCESS_STREAMING,
-						SCREEN_WIDTH, SCREEN_HEIGHT);
-
-		if (ScreenTexture == NULL) {
-			SLOGE("SDL_CreateTexture for ScreenTexture failed: {}\n", SDL_GetError());
-		}
-	}
+	CreateTextures();
 
 
 	// Filtering and the presentation rectangle depend on the window size
@@ -275,6 +265,199 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 	}
 
 	SDL_HideCursor();
+}
+
+
+static void CreateTextures()
+{
+	if (Layered)
+	{
+		CreateLayerTextures();
+		return;
+	}
+	ScreenTexture = SDL_CreateTexture(GameRenderer,
+					SDL_PIXELFORMAT_RGB565,
+					SDL_TEXTUREACCESS_STREAMING,
+					SCREEN_WIDTH, SCREEN_HEIGHT);
+	if (ScreenTexture == NULL) {
+		SLOGE("SDL_CreateTexture for ScreenTexture failed: {}\n", SDL_GetError());
+	}
+}
+
+
+static void DestroyTextures()
+{
+	for (SDL_Texture** t : { &ScreenTexture, &ScaledScreenTexture, &WorldTexture, &UiTexture, &CanvasTexture })
+	{
+		if (*t != NULL)
+		{
+			SDL_DestroyTexture(*t);
+			*t = NULL;
+		}
+	}
+}
+
+
+void VideoSetTargetFPS(int32_t const fps)
+{
+	// 0 (or less): no cap
+	TargetFPS = fps > 0 ? fps : 0;
+	TimeBetweenRefreshScreens = fps > 0 ? std::chrono::microseconds{1'000'000} / fps : std::chrono::microseconds{0};
+}
+
+
+int32_t VideoGetTargetFPS()
+{
+	return TargetFPS;
+}
+
+
+VideoDisplaySettings const& VideoGetDisplaySettings()
+{
+	return CurrentSettings;
+}
+
+
+VideoScaleQuality VideoGetScaleQuality()
+{
+	return ScaleQuality;
+}
+
+
+static VideoLayout::Size WindowPixelSize()
+{
+	int pw = 0;
+	int ph = 0;
+	if (g_game_window) SDL_GetWindowSizeInPixels(g_game_window, &pw, &ph);
+	return { pw, ph };
+}
+
+
+VideoLayout::LayerLayout VideoApplyWindow(VideoDisplaySettings const& want, VideoScaleQuality const quality, bool const resizeWindow)
+{
+	ScaleQuality = quality;
+	CurrentSettings = want;
+
+	VideoLayout::DisplayLayout display;
+	if (sgp::IsHeadless())
+	{
+		// No window: -res is the canvas, and the UI scale only means something when the world is a layer of its own.
+		bool const layered = want.worldZoom != VideoLayout::WORLD_ZOOM_MATCH_UI;
+		int const su = layered && want.uiScale != VideoLayout::UI_SCALE_AUTO ? want.uiScale : 1;
+		VideoLayout::Size const window{ want.resX > 0 ? want.resX : SCREEN_WIDTH, want.resY > 0 ? want.resY : SCREEN_HEIGHT };
+		display = VideoLayout::ComputeDisplayLayout(window, su);
+		return VideoLayout::ComputeLayerLayout(display, want.worldZoom);
+	}
+
+	if (g_game_window && resizeWindow)
+	{
+		auto const desktop{ QueryDesktop() };
+		auto const toPoints = [&](int px) { return static_cast<int>(px / desktop.density + 0.5f); };
+		auto const flags = SDL_GetWindowFlags(g_game_window);
+		switch (want.windowMode)
+		{
+			case WindowMode::Windowed:
+			{
+				if (flags & SDL_WINDOW_FULLSCREEN)
+				{
+					VideoSetFullScreen(FALSE);
+					SDL_SyncWindow(g_game_window);
+				}
+				auto const size{ WindowBasis(want, desktop.pixels) };
+				SDL_SetWindowSize(g_game_window, toPoints(size.w), toPoints(size.h));
+				SDL_SyncWindow(g_game_window);
+				SDL_SetWindowPosition(g_game_window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
+				SDL_SyncWindow(g_game_window);
+				break;
+			}
+
+			case WindowMode::Fullscreen:
+			case WindowMode::BorderlessDesktop:
+			{
+				SDL_DisplayMode mode;
+				if (want.windowMode == WindowMode::Fullscreen && want.resX > 0 && want.resY > 0 &&
+				    SDL_GetClosestFullscreenDisplayMode(desktop.display, toPoints(want.resX), toPoints(want.resY), 0.0f, true, &mode))
+				{
+					SDL_SetWindowFullscreenMode(g_game_window, &mode);
+				}
+				else
+				{
+					SDL_SetWindowFullscreenMode(g_game_window, nullptr); // the desktop mode
+				}
+				VideoSetFullScreen(TRUE);
+				SDL_SyncWindow(g_game_window);
+				break;
+			}
+		}
+	}
+
+	// What the window really is now (the desktop can limit a request)
+	auto const actual{ WindowPixelSize() };
+	SLOGI("Video change: window {}x{} px, UI scale {}, world zoom {}", actual.w, actual.h, want.uiScale, want.worldZoom);
+	display = VideoLayout::ComputeDisplayLayout(actual, want.uiScale);
+	return VideoLayout::ComputeLayerLayout(display, want.worldZoom);
+}
+
+
+bool VideoWindowSizeChanged()
+{
+	if (sgp::IsHeadless() || !g_game_window) return false;
+	if (CurrentSettings.uiScale != VideoLayout::UI_SCALE_AUTO) return false;
+	auto const actual{ WindowPixelSize() };
+	if (actual.w <= 0 || actual.h <= 0) return false;
+	auto const display = VideoLayout::ComputeDisplayLayout(actual, VideoLayout::UI_SCALE_AUTO);
+	auto const layers = VideoLayout::ComputeLayerLayout(display, CurrentSettings.worldZoom);
+	return layers.ui.w != SCREEN_WIDTH || layers.ui.h != SCREEN_HEIGHT
+		|| layers.uiScale != g_ui.m_uiScale || layers.worldZoom != g_ui.m_worldZoom;
+}
+
+
+void VideoRebuildBuffers()
+{
+	Layered = g_ui.isLayered();
+
+	DestroyTextures();
+	SharpBilinearScale = 0;
+	PresentedWindowSize = { 0, 0 };
+
+	// The wrappers stay where they are: the whole game holds pointers to them.
+	ScreenBuffer = g_back_buffer->Resize(SCREEN_WIDTH, SCREEN_HEIGHT);
+	FrameBuffer = g_frame_buffer->Resize(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+	if (Layered)
+	{
+		if (WorldBuffer)
+		{
+			WorldBuffer = g_world_buffer->Resize(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT);
+		}
+		else
+		{
+			WorldBuffer = SDL_CreateSurface(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT, SDL_PIXELFORMAT_RGB565);
+			if (!WorldBuffer) throw std::runtime_error("Failed to create the world buffer");
+			g_world_buffer = new SGPVSurface(WorldBuffer);
+		}
+		WorldDirty = { 0, 0, WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT };
+	}
+	else if (WorldBuffer)
+	{
+		delete g_world_buffer;
+		g_world_buffer = g_frame_buffer;
+		WorldBuffer = nullptr;
+		WorldDirty = { 0, 0, 0, 0 };
+	}
+	WorldLayerShown = false;
+
+	ClippingRect.set(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	MouseBackground = { 0, 0, 0, 0 };
+	guiDirtyRegionCount = 0;
+	guiDirtyRegionExCount = 0;
+	gfForceFullScreenRefresh = TRUE;
+
+	if (GameRenderer)
+	{
+		CreateTextures();
+		UpdatePresentation(true);
+	}
 }
 
 

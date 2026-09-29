@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "VideoLayout.h"
+#include "VSurface.h"
 
 using namespace VideoLayout;
 
@@ -247,4 +248,36 @@ TEST(VideoLayout, UiToWorldAndBack)
 	auto const l = ComputeLayerLayout(Layout(2560, 1440, 2), 1);
 	EXPECT_EQ(UiToWorld(l.ui.w, l.uiScale, l.worldZoom), l.world.w);
 	EXPECT_EQ(WorldToUi(l.world.w, l.uiScale, l.worldZoom), l.ui.w);
+}
+
+TEST(VideoLayout, AutoScaleFollowsAWindowBeingResized)
+{
+	// What the runtime does when the user drags the window with an automatic UI scale: the canvas and the scale
+	// are a pure function of the window size, so going there and back gives the same layout.
+	auto const before = Layout(1920, 1080);
+	EXPECT_EQ(Layout(2560, 1440), (DisplayLayout{ { 1280, 720 }, 2 }));
+	EXPECT_EQ(Layout(1280, 720), (DisplayLayout{ { 1280, 720 }, 1 }));
+	EXPECT_EQ(Layout(800, 600), (DisplayLayout{ { 800, 600 }, 1 }));
+	EXPECT_EQ(Layout(1920, 1080), before);
+	// a layered layout follows too: the world covers the window at its own scale
+	auto const l = ComputeLayerLayout(Layout(2560, 1440), 1);
+	EXPECT_TRUE(l.layered);
+	EXPECT_EQ(l.world, (Size{ 2560, 1440 }));
+	EXPECT_EQ(l.ui, (Size{ 1280, 720 }));
+}
+
+TEST(VSurface, ResizeKeepsTheObjectAndClearsIt)
+{
+	SGPVSurface s(64, 48, 16);
+	s.Fill(0x1234);
+	SGPVSurface* const address = &s;
+	SDL_Surface* const resized = s.Resize(128, 96);
+	EXPECT_EQ(address, &s);
+	EXPECT_EQ(s.Width(), 128);
+	EXPECT_EQ(s.Height(), 96);
+	EXPECT_EQ(s.BPP(), 16);
+	EXPECT_EQ(&s.GetSDLSurface(), resized);
+	auto const* px = static_cast<uint16_t const*>(resized->pixels);
+	EXPECT_EQ(px[0], 0);
+	EXPECT_EQ(px[128 * 96 - 1], 0);
 }

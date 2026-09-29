@@ -43,6 +43,8 @@ void EnterTacticalScreen(void);
 void LeaveTacticalScreen(ScreenID uiNewScreen);
 
 void     MainGameScreenInit(void);
+/** The world buffer has another size: the Z-buffer has to follow. */
+void     ResizeZBuffer(void);
 ScreenID MainGameScreenHandle(void);
 void     MainGameScreenShutdown(void);
 

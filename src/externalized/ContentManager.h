@@ -159,6 +159,10 @@ public:
 
 	virtual const ST::string* getMusicForMode(MusicMode mode) const = 0;
 
+	/** Writes the video settings to ja2.json (through the Rust config writer). windowMode and scalingQuality are the
+	 * WindowMode and ScalingQuality enum values. Returns false when it could not be written. */
+	virtual bool saveVideoSettings(int resX, int resY, int uiScale, int worldZoom, int windowMode, int scalingQuality) { return false; }
+
 	virtual const GamePolicy* getGamePolicy() const = 0;
 	virtual const IMPPolicy* getIMPPolicy() const = 0;
 	virtual const StrategicAIPolicy* getStrategicAIPolicy() const = 0;

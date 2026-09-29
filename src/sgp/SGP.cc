@@ -21,6 +21,7 @@
 #include "Automation.h"
 #include "Clock.h"
 #include "Headless.h"
+#include "VideoOptionsScreen.h"
 #include "ModPackContentManager.h"
 #include "policy/GamePolicy.h"
 #include "RustInterface.h"
@@ -162,6 +163,7 @@ bool StepFrame()
 	while (SDL_PollEvent(&event))
 	{
 		if (event.type == SDL_EVENT_QUIT) g_quitRequested = true;
+		else if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED || event.type == SDL_EVENT_WINDOW_DISPLAY_CHANGED ) VideoNotifyWindowChanged();
 	}
 
 	if (!g_quitRequested)
@@ -230,6 +232,15 @@ static void MainLoop()
 					{
 						KeyDown(&event.key);
 					}
+					break;
+
+				case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+				case SDL_EVENT_WINDOW_DISPLAY_CHANGED:
+				case SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED:
+				case SDL_EVENT_DISPLAY_CURRENT_MODE_CHANGED:
+					// A resized window or another display: with an automatic UI scale the canvas follows
+					VideoNotifyWindowChanged();
+					sgp::DispatchInputEvent(event);
 					break;
 
 				case SDL_EVENT_QUIT: deinitGameAndExit(); break;

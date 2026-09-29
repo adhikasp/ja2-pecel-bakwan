@@ -27,6 +27,7 @@
 #include "GameMode.h"
 #include "FPS.h"
 #include "Logger.h"
+#include "VideoOptionsScreen.h"
 
 #include <string_theory/format>
 #include <string_theory/string>
@@ -110,6 +111,10 @@ void GameLoop(void)
 try
 {
 	InputAtom InputEvent;
+
+	// Video settings requested since the last frame, and window resizes, change what everything else draws into
+	HandlePendingVideoChanges();
+
 	ScreenID uiOldScreen = guiCurrentScreen;
 
 	auto const MousePos{ GetMousePos() };

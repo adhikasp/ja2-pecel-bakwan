@@ -36,6 +36,11 @@ class SGPVSurface
 		UINT16 Height() const { return surface_->h; }
 		UINT8  BPP()    const { return SDL_GetPixelFormatDetails(surface_->format)->bits_per_pixel; }
 
+		/** Replaces the pixels with a blank (zero) surface of another size and the same format. The
+		 * object stays where it is, so pointers to it (FRAME_BUFFER, guiSAVEBUFFER, ...) remain valid.
+		 * Returns the new SDL surface. Nothing may be locked. */
+		SDL_Surface* Resize(UINT16 w, UINT16 h);
+
 		// Set palette, also sets 16BPP palette
 		void SetPalette(const SGPPaletteEntry* src_pal);
 

@@ -6,6 +6,8 @@
 
 
 void InitMapScreenInterfaceMap();
+/** The rectangle of the sector map (it moves with the screen layout): call when the map screen is entered. */
+void UpdateMapScreenRect();
 
 // functions
 void DrawMapIndexBigMap( BOOLEAN fSelectedCursorIsYellow );
