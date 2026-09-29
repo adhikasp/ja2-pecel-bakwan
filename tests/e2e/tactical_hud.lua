@@ -9,6 +9,11 @@ campaign.startWithMerc("Barry")
 ja2.waitIdle()
 shots.take("team_panel.png", "small")
 
+-- Park the mouse over the middle of the world on wide screens. Where landing leaves it depends on the map screen
+-- layout, and it decides whether the 3D cursor is drawn. (Classic 640x480 keeps its old, golden position.)
+local size = ja2.screenSize()
+if size.w > 640 then ja2.move(size.w // 2, size.h // 2 - 100) end
+
 -- A line in the message queue (Home toggles the 3D cursor and says so).
 ja2.key("home")
 ja2.wait(500)
