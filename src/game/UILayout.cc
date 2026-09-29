@@ -92,10 +92,17 @@ bool UILayout::isBigScreen() const
 }
 
 
+UINT16 UILayout::tacticalButtonsBoxX() const
+{
+	return m_anchorRadarClockToScreen ? m_screenWidth - TEAMPANEL_BUTTONSBOX_WIDTH
+	                                  : m_teamPanelPosition.iX + m_teamPanelSlotsTotalWidth;
+}
+
+
 UINT16 UILayout::currentHeight() const             { return fInMapMode ? (STD_SCREEN_Y + m_mapScreenHeight) : m_screenHeight; }
-UINT16 UILayout::get_CLOCK_X() const               { return fInMapMode ? (STD_SCREEN_X + 554) : m_teamPanelPosition.iX + m_teamPanelSlotsTotalWidth + 56; }
+UINT16 UILayout::get_CLOCK_X() const               { return fInMapMode ? (STD_SCREEN_X + 554) : tacticalButtonsBoxX() + 56; }
 UINT16 UILayout::get_CLOCK_Y() const               { return currentHeight() - 23;                                  }
-UINT16 UILayout::get_RADAR_WINDOW_X() const        { return fInMapMode ? (STD_SCREEN_X + 543) : m_teamPanelPosition.iX + m_teamPanelSlotsTotalWidth + 45; }
+UINT16 UILayout::get_RADAR_WINDOW_X() const        { return fInMapMode ? (STD_SCREEN_X + 543) : tacticalButtonsBoxX() + 45; }
 UINT16 UILayout::get_RADAR_WINDOW_TM_Y() const     { return currentHeight() - 107;                                 }
 UINT16 UILayout::get_INV_INTERFACE_START_Y() const { return m_screenHeight - INV_INTERFACE_HEIGHT;                                  }
 

@@ -1023,7 +1023,7 @@ static void HandleExternNPCSpeechFace(FACETYPE& f)
 	INT16 const h = 98;
 	if (guiCurrentScreen != MAP_SCREEN)
 	{
-		x = 10;
+		x = g_ui.stdBox().x + 10;
 		y = 20;
 	}
 	else
@@ -1088,7 +1088,7 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 			gfRerenderInterfaceFromHelpText = TRUE;
 		}
 
-		INT16 const x = 10;
+		INT16 const x = g_ui.stdBox().x + 10;
 		INT16 const y = 20;
 		INT16 const w = 99;
 		INT16 const h = 98;

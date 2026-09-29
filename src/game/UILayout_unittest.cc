@@ -69,3 +69,15 @@ TEST(UILayout, ClassicStdBoxIsScreen)
 	EXPECT_EQ(b.x, 0);
 	EXPECT_EQ(b.y, 0);
 }
+
+TEST(UILayout, RadarClockAnchor)
+{
+	UILayout ui(1280, 720);
+	ui.m_teamPanelPosition.set(322, 600);
+	ui.m_teamPanelSlotsTotalWidth = 6 * TEAMPANEL_SLOT_WIDTH;
+	ui.m_teamPanelWidth = ui.m_teamPanelSlotsTotalWidth + TEAMPANEL_BUTTONSBOX_WIDTH;
+	// panel-anchored (default): right end of the slots
+	EXPECT_EQ(ui.tacticalButtonsBoxX(), 322 + 6 * TEAMPANEL_SLOT_WIDTH);
+	ui.m_anchorRadarClockToScreen = true;
+	EXPECT_EQ(ui.tacticalButtonsBoxX(), 1280 - TEAMPANEL_BUTTONSBOX_WIDTH);
+}
