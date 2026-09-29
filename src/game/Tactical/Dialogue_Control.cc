@@ -961,8 +961,8 @@ static void DisplayTextForExternalNPC(UINT8 ubCharacterNum, const ST::string& zQ
 	{
 		// on the tactical screen show message always in the same position (corner
 		// of the screen)
-		sLeft = 110;
-		sTop = 20;
+		sLeft = g_ui.getTacticalTextBoxX();
+		sTop = g_ui.getTacticalTextBoxY();
 	}
 
 	ExecuteTacticalTextBox( sLeft, sTop, gTalkPanel.zQuoteStr );

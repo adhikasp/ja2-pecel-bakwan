@@ -7,6 +7,7 @@
 #include "MapScreen.h"
 #include "ScreenIDs.h"
 #include "Soldier_Control.h"
+#include <algorithm>
 #include <stdexcept>
 #include <string_theory/string>
 
@@ -36,6 +37,51 @@ void UILayout::setScreenSize(UINT16 width, UINT16 height)
 	}
 	m_screenWidth = width;
 	m_screenHeight = height;
+}
+
+
+SGPPoint UILayout::anchorIn(UINT16 screen_w, UINT16 screen_h, Anchor a, UINT16 w, UINT16 h, INT16 dx, INT16 dy)
+{
+	int x = 0;
+	int y = 0;
+	switch (a)
+	{
+		case Anchor::TopLeft:     case Anchor::Left:   case Anchor::BottomLeft:  x = 0; break;
+		case Anchor::Top:         case Anchor::Center: case Anchor::Bottom:      x = (screen_w - w) / 2; break;
+		case Anchor::TopRight:    case Anchor::Right:  case Anchor::BottomRight: x = screen_w - w; break;
+	}
+	switch (a)
+	{
+		case Anchor::TopLeft:     case Anchor::Top:    case Anchor::TopRight:    y = 0; break;
+		case Anchor::Left:        case Anchor::Center: case Anchor::Right:       y = (screen_h - h) / 2; break;
+		case Anchor::BottomLeft:  case Anchor::Bottom: case Anchor::BottomRight: y = screen_h - h; break;
+	}
+	SGPPoint p;
+	p.set(std::max(0, x + dx), std::max(0, y + dy)); // SGPPoint is unsigned: never wrap
+	return p;
+}
+
+
+SGPPoint UILayout::anchor(Anchor a, UINT16 w, UINT16 h, INT16 dx, INT16 dy) const
+{
+	return anchorIn(m_screenWidth, m_screenHeight, a, w, h, dx, dy);
+}
+
+
+SGPBox UILayout::stdBox() const
+{
+	SGPPoint p = anchor(Anchor::Center, MIN_INTERFACE_WIDTH, MIN_INTERFACE_HEIGHT);
+	SGPBox b;
+	b.set(p.iX, p.iY, MIN_INTERFACE_WIDTH, MIN_INTERFACE_HEIGHT);
+	return b;
+}
+
+
+SGPBox UILayout::screenBox() const
+{
+	SGPBox b;
+	b.set(0, 0, m_screenWidth, m_screenHeight);
+	return b;
 }
 
 
@@ -147,7 +193,7 @@ UINT16 UILayout::getTacticalTextBoxX() const
 	}
 	else
 	{
-		return 110;
+		return stdBox().x + 110;
 	}
 }
 

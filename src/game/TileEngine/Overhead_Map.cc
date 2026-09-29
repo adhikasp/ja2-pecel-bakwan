@@ -727,6 +727,22 @@ void RenderOverheadMap(INT16 const sStartPointX_M, INT16 const sStartPointY_M, I
 	if (!fFromMapUtility)
 	{ // Render border!
 		BltVideoObject(FRAME_BUFFER, uiOVERMAP, 0, STD_SCREEN_X + 0, STD_SCREEN_Y + 0);
+
+		// On screens bigger than 640x480 the map sits in the middle: fill the rest of the tactical
+		// area around it instead of leaving the world showing through.
+		if (g_ui.isBigScreen() && !gfEditMode)
+		{
+			UINT16 const c      = Get16BPPColor(FROMRGB(20, 15, 10));
+			INT32  const left   = STD_SCREEN_X;
+			INT32  const top    = STD_SCREEN_Y;
+			INT32  const right  = STD_SCREEN_X + 640;
+			INT32  const bottom = STD_SCREEN_Y + (gfTacticalPlacementGUIActive ? 480 : 360);
+			INT32  const areaB  = gfTacticalPlacementGUIActive ? SCREEN_HEIGHT : INTERFACE_START_Y;
+			if (top > 0)                  ColorFillVideoSurfaceArea(FRAME_BUFFER, 0,     0,      SCREEN_WIDTH, top,    c);
+			if (bottom < areaB)           ColorFillVideoSurfaceArea(FRAME_BUFFER, 0,     bottom, SCREEN_WIDTH, areaB,  c);
+			if (left > 0)                 ColorFillVideoSurfaceArea(FRAME_BUFFER, 0,     top,    left,         std::min<INT32>(bottom, areaB), c);
+			if (right < (INT32)SCREEN_WIDTH) ColorFillVideoSurfaceArea(FRAME_BUFFER, right, top,   SCREEN_WIDTH, std::min<INT32>(bottom, areaB), c);
+		}
 	}
 
 	// Update the save buffer

@@ -75,6 +75,15 @@ struct MoneyLoc
 };
 
 
+/** Anchor point on the screen used by UILayout::anchor. */
+enum class Anchor
+{
+	TopLeft,    Top,     TopRight,
+	Left,       Center,  Right,
+	BottomLeft, Bottom,  BottomRight
+};
+
+
 /** User Interface layout definition. */
 struct UILayout
 {
@@ -134,6 +143,19 @@ public:
 
 	/** Set new screen size. Element positions should be recalculated after setting this. @see UILayout::recalculatePositions */
 	void setScreenSize(UINT16 width, UINT16 height);
+
+	/** Position of a w x h rectangle attached to the given anchor of a screen_w x screen_h screen, shifted by (dx, dy).
+	 * Pure function, no dependency on game state. */
+	static SGPPoint anchorIn(UINT16 screen_w, UINT16 screen_h, Anchor a, UINT16 w, UINT16 h, INT16 dx = 0, INT16 dy = 0);
+
+	/** Top-left position of a w x h rectangle attached to the given anchor of the current screen. */
+	SGPPoint anchor(Anchor a, UINT16 w, UINT16 h, INT16 dx = 0, INT16 dy = 0) const;
+
+	/** The standard (640x480) box centred on the current screen. Replaces ad-hoc STD_SCREEN_X + n arithmetic in new code. */
+	SGPBox stdBox() const;
+
+	/** The rectangle of the whole screen. */
+	SGPBox screenBox() const;
 
 	/** Check if the screen is bigger than original 640x480. */
 	bool isBigScreen() const;

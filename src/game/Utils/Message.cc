@@ -43,7 +43,7 @@ struct ScrollStringSt
 
 
 #define MAX_LINE_COUNT 6
-#define X_START 2
+#define X_START (INTERFACE_START_X + 2) // the left edge of the bottom bar (0 at 640x480)
 #define Y_START (SCREEN_HEIGHT - 150)
 #define MAX_AGE 10000
 #define LINE_WIDTH 320
