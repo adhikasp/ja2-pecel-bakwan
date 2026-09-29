@@ -408,8 +408,6 @@ int main(int argc, char* argv[])
 			return EXIT_SUCCESS;
 		}
 
-		auto shouldStartInFullScreen = EngineOptions_shouldStartInFullscreen(params.get());
-
 		if (EngineOptions_shouldStartWithoutSound(params.get())) {
 			SoundEnableSound(FALSE);
 		}
@@ -423,8 +421,17 @@ int main(int argc, char* argv[])
 			GameMode::getInstance()->setEditorMode(false);
 		}
 
-		uint16_t width = EngineOptions_getResolutionX(params.get());
-		uint16_t height = EngineOptions_getResolutionY(params.get());
+		// Resolution 0x0 is "auto": the desktop size, only known once SDL's video
+		// subsystem is up. Until then (and for headless sessions, which have no
+		// display and ignore the UI scale) a classic canvas is used.
+		VideoDisplaySettings displaySettings{
+			EngineOptions_getResolutionX(params.get()),
+			EngineOptions_getResolutionY(params.get()),
+			EngineOptions_getUiScale(params.get()),
+			EngineOptions_getWindowMode(params.get()) };
+		bool const autoResolution = displaySettings.resX == 0 || displaySettings.resY == 0;
+		uint16_t width = autoResolution ? 640 : displaySettings.resX;
+		uint16_t height = autoResolution ? 480 : displaySettings.resY;
 		g_ui.setScreenSize(width, height);
 
 	if (EngineOptions_shouldRunUnittests(params.get())) {
@@ -454,6 +461,13 @@ int main(int argc, char* argv[])
 
 		// Headless sessions need SDL only for its event queue (quit requests).
 		SDL_Init(sgp::IsHeadless() ? SDL_INIT_EVENTS : SDL_INIT_VIDEO);
+
+		if (!sgp::IsHeadless())
+		{
+			// logical canvas = window / UI scale, see VideoLayout.h
+			auto const layout = VideoComputeLayout(displaySettings);
+			g_ui.setScreenSize(layout.logical.w, layout.logical.h);
+		}
 
 		// restore output to the console (on windows when built with MINGW)
 		// Not for automation: its output is usually piped to the controller.
@@ -491,18 +505,12 @@ int main(int argc, char* argv[])
 		g_ui.recalculatePositions();
 
 		SLOGD("Initializing Video Manager");
-		InitializeVideoManager(scalingQuality, GCM->getGamePolicy()->target_fps);
+		InitializeVideoManager(scalingQuality, GCM->getGamePolicy()->target_fps, displaySettings);
 		VideoSetBrightness(brightness);
 
 		#ifdef __ANDROID__
 			// On Android, always run fullscreen to hide system bars
 			VideoSetFullScreen(TRUE);
-		#else
-			if (shouldStartInFullScreen) {
-				VideoSetFullScreen(TRUE);
-			} else {
-				VideoSetFullScreen(FALSE);
-			}
 		#endif
 
 		SLOGD("Initializing Video Surface Manager");

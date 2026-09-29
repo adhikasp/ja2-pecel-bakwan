@@ -113,7 +113,7 @@ on their features.");
           o->tooltip("Specify the resolution for tactical screen rendering. Texts and sprites becom\
 e very small at higher internal resolutions. Note that menus and the strategic\
  map screen are always rendered at 640x480.");
-          { resolutionXInput = new Fl_Value_Input(20, 130, 75, 30, "Internal Resolution:");
+          { resolutionXInput = new Fl_Value_Input(20, 130, 75, 30, "Window Size:");
             resolutionXInput->minimum(640);
             resolutionXInput->maximum(0);
             resolutionXInput->value(640);
@@ -136,7 +136,12 @@ e very small at higher internal resolutions. Note that menus and the strategic\
             o->end();
             Fl_Group::current()->resizable(o);
           } // Fl_Group* o
-          { invalidResolutionLabel = new Fl_Box(340, 130, 160, 30, "invalid!");
+          { autoResolutionCheckbox = new Fl_Check_Button(330, 130, 175, 30, "Auto (desktop size)");
+            autoResolutionCheckbox->tooltip("Use the size of the desktop as window size. The game canvas is then the wind\
+ow size divided by the UI scale.");
+            autoResolutionCheckbox->down_box(FL_DOWN_BOX);
+          } // Fl_Check_Button* autoResolutionCheckbox
+          { invalidResolutionLabel = new Fl_Box(200, 112, 120, 18, "invalid!");
             invalidResolutionLabel->tooltip("the resolution must be at least 640x480, the original game resolution");
             invalidResolutionLabel->labelfont(1);
             invalidResolutionLabel->labelcolor((Fl_Color)1);
@@ -149,19 +154,40 @@ e very small at higher internal resolutions. Note that menus and the strategic\
  Near-Perfect modes stretch the video to match any window sizes, but the image\
  may look blurred. Pixel-Perfect can only scale up by integer (1x, 2x and so o\
 n) but gives sharp images.");
-          { scalingModeChoice = new Fl_Choice(20, 185, 480, 30, "Scaling Mode:");
+          { scalingModeChoice = new Fl_Choice(20, 185, 235, 30, "Scaling Mode:");
             scalingModeChoice->down_box(FL_BORDER_BOX);
             scalingModeChoice->align(Fl_Align(FL_ALIGN_TOP_LEFT));
             Fl_Group::current()->resizable(scalingModeChoice);
           } // Fl_Choice* scalingModeChoice
+          { uiScaleChoice = new Fl_Choice(265, 185, 235, 30, "UI Scale:");
+            uiScaleChoice->tooltip("Integer factor that magnifies the whole game (world and interface). Auto pi\
+cks the largest factor that keeps the game canvas at least 1280x720.");
+            uiScaleChoice->down_box(FL_BORDER_BOX);
+            uiScaleChoice->align(Fl_Align(FL_ALIGN_TOP_LEFT));
+          } // Fl_Choice* uiScaleChoice
           o->end();
         } // Fl_Group* o
-        { Fl_Group* o = new Fl_Group(10, 220, 500, 65);
-          { fullscreenCheckbox = new Fl_Check_Button(20, 225, 95, 30, "Fullscreen");
-            fullscreenCheckbox->tooltip("Check to run in a borderless full-screen window");
-            fullscreenCheckbox->down_box(FL_DOWN_BOX);
-          } // Fl_Check_Button* fullscreenCheckbox
-          { playSoundsCheckbox = new Fl_Check_Button(20, 255, 109, 30, "Play Sounds");
+        { Fl_Group* o = new Fl_Group(10, 225, 500, 30);
+          { windowedRadio = new Fl_Round_Button(20, 228, 105, 25, "Windowed");
+            windowedRadio->type(102);
+            windowedRadio->tooltip("Run in a regular window");
+            windowedRadio->down_box(FL_ROUND_DOWN_BOX);
+          } // Fl_Round_Button* windowedRadio
+          { borderlessRadio = new Fl_Round_Button(125, 228, 165, 25, "Borderless desktop");
+            borderlessRadio->type(102);
+            borderlessRadio->tooltip("Run in a borderless window that covers the desktop (recommended)");
+            borderlessRadio->down_box(FL_ROUND_DOWN_BOX);
+          } // Fl_Round_Button* borderlessRadio
+          { fullscreenRadio = new Fl_Round_Button(290, 228, 210, 25, "Exclusive fullscreen");
+            fullscreenRadio->type(102);
+            fullscreenRadio->tooltip("Run fullscreen and switch the display to the closest mode to the window si\
+ze");
+            fullscreenRadio->down_box(FL_ROUND_DOWN_BOX);
+          } // Fl_Round_Button* fullscreenRadio
+          o->end();
+        } // Fl_Group* o
+        { Fl_Group* o = new Fl_Group(10, 260, 500, 30);
+          { playSoundsCheckbox = new Fl_Check_Button(20, 260, 109, 30, "Play Sounds");
             playSoundsCheckbox->down_box(FL_DOWN_BOX);
             playSoundsCheckbox->value(1);
           } // Fl_Check_Button* playSoundsCheckbox

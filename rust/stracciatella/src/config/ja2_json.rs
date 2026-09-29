@@ -7,7 +7,9 @@ use log::warn;
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-use crate::config::{EngineOptions, Resolution, ScalingQuality, VanillaVersion};
+use crate::config::{
+    EngineOptions, Resolution, ScalingQuality, UiScale, VanillaVersion, WindowMode,
+};
 use crate::fs::resolve_existing_components;
 use crate::json;
 
@@ -40,7 +42,11 @@ pub struct Ja2JsonContent {
     res: Option<Resolution>,
     brightness: Option<f32>,
     resversion: Option<VanillaVersion>,
+    /// Legacy switch, only read when `window_mode` is absent
+    #[serde(skip_serializing)]
     fullscreen: Option<bool>,
+    ui_scale: Option<UiScale>,
+    window_mode: Option<WindowMode>,
     scaling: Option<ScalingQuality>,
     debug: Option<bool>,
     nosound: Option<bool>,
@@ -102,7 +108,16 @@ impl Ja2Json {
         copy_to!(content.res, engine_options.resolution);
         copy_to!(content.brightness, engine_options.brightness);
         copy_to!(content.resversion, engine_options.resource_version);
-        copy_to!(content.fullscreen, engine_options.start_in_fullscreen);
+        // The legacy `fullscreen` switch was a borderless desktop window
+        if let Some(fullscreen) = content.fullscreen {
+            engine_options.window_mode = if fullscreen {
+                WindowMode::BorderlessDesktop
+            } else {
+                WindowMode::Windowed
+            };
+        }
+        copy_to!(content.window_mode, engine_options.window_mode);
+        copy_to!(content.ui_scale, engine_options.ui_scale);
         copy_to!(content.scaling, engine_options.scaling_quality);
         copy_to!(content.debug, engine_options.start_in_debug_mode);
         copy_to!(content.nosound, engine_options.start_without_sound);
@@ -127,6 +142,8 @@ impl Ja2Json {
             brightness: None,
             resversion: None,
             fullscreen: None,
+            ui_scale: None,
+            window_mode: None,
             scaling: None,
             debug: None,
             nosound: None,
@@ -138,7 +155,8 @@ impl Ja2Json {
         copy_to!(engine_options.resolution, content.res);
         copy_to!(engine_options.brightness, content.brightness);
         copy_to!(engine_options.resource_version, content.resversion);
-        copy_to!(engine_options.start_in_fullscreen, content.fullscreen);
+        copy_to!(engine_options.ui_scale, content.ui_scale);
+        copy_to!(engine_options.window_mode, content.window_mode);
         copy_to!(engine_options.scaling_quality, content.scaling);
         copy_to!(engine_options.start_in_debug_mode, content.debug);
         copy_to!(engine_options.start_without_sound, content.nosound);
@@ -316,7 +334,52 @@ mod tests {
             .apply_to_engine_options(&mut engine_options)
             .unwrap();
 
-        assert!(engine_options.start_in_fullscreen);
+        assert_eq!(engine_options.window_mode, WindowMode::BorderlessDesktop);
+    }
+
+    #[test]
+    fn apply_to_engine_options_should_map_legacy_fullscreen_false_to_windowed() {
+        let mut engine_options = EngineOptions::default();
+        let temp_dir = write_temp_folder_with_ja2_json(b"{ \"fullscreen\": false }");
+        let ja2json = Ja2Json::from_stracciatella_home(temp_dir.path().join(".ja2"));
+
+        ja2json
+            .apply_to_engine_options(&mut engine_options)
+            .unwrap();
+
+        assert_eq!(engine_options.window_mode, WindowMode::Windowed);
+    }
+
+    #[test]
+    fn apply_to_engine_options_should_read_res_auto_ui_scale_and_window_mode() {
+        let mut engine_options = EngineOptions::default();
+        let temp_dir = write_temp_folder_with_ja2_json(
+            b"{ \"res\": \"auto\", \"ui_scale\": 3, \"window_mode\": \"Fullscreen\", \"fullscreen\": false }",
+        );
+        let ja2json = Ja2Json::from_stracciatella_home(temp_dir.path().join(".ja2"));
+
+        ja2json
+            .apply_to_engine_options(&mut engine_options)
+            .unwrap();
+
+        assert!(engine_options.resolution.is_auto());
+        assert_eq!(engine_options.ui_scale, UiScale(3));
+        // window_mode wins over the legacy switch
+        assert_eq!(engine_options.window_mode, WindowMode::Fullscreen);
+    }
+
+    #[test]
+    fn apply_to_engine_options_should_accept_ui_scale_auto_string() {
+        let mut engine_options = EngineOptions::default();
+        engine_options.ui_scale = UiScale(2);
+        let temp_dir = write_temp_folder_with_ja2_json(b"{ \"ui_scale\": \"auto\" }");
+        let ja2json = Ja2Json::from_stracciatella_home(temp_dir.path().join(".ja2"));
+
+        ja2json
+            .apply_to_engine_options(&mut engine_options)
+            .unwrap();
+
+        assert!(engine_options.ui_scale.is_auto());
     }
 
     #[test]

@@ -3,6 +3,7 @@
 
 #include "Types.h"
 #include "RustInterface.h"
+#include "VideoLayout.h"
 #include "SDL3/SDL.h"
 
 
@@ -16,8 +17,24 @@ extern SDL_Renderer* GameRenderer;
 
 using VideoScaleQuality = ScalingQuality;
 
+/** What the user asked for: window size in physical pixels (0x0 = auto = desktop size),
+ * UI scale (0 = auto, else 1..4) and how the window is shown. */
+struct VideoDisplaySettings
+{
+	int        resX;
+	int        resY;
+	int        uiScale;
+	WindowMode windowMode;
+};
+
+/** Logical canvas size and effective scale for the settings. Queries the desktop, so SDL's
+ * video subsystem has to be initialised. Not used for headless sessions (logical = -res). */
+VideoLayout::DisplayLayout VideoComputeLayout(VideoDisplaySettings const& settings);
+
 void         VideoSetFullScreen(BOOLEAN enable);
-void         InitializeVideoManager(VideoScaleQuality quality, int32_t targetFPS);
+/** Creates the window and renderer. The logical canvas (SCREEN_WIDTH x SCREEN_HEIGHT) must have
+ * been set from VideoComputeLayout() beforehand. */
+void         InitializeVideoManager(VideoScaleQuality quality, int32_t targetFPS, VideoDisplaySettings const& settings);
 void         ShutdownVideoManager(void);
 void         InvalidateRegion(INT32 iLeft, INT32 iTop, INT32 iRight, INT32 iBottom);
 void         InvalidateScreen(void);

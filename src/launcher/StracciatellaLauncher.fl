@@ -127,7 +127,7 @@ class StracciatellaLauncher {open
             tooltip {Specify the resolution for tactical screen rendering. Texts and sprites become very small at higher internal resolutions. Note that menus and the strategic map screen are always rendered at 640x480.} xywh {10 115 500 52}
           } {
             Fl_Value_Input resolutionXInput {
-              label {Internal Resolution:}
+              label {Window Size:}
               xywh {20 130 75 30} align 5 minimum 640 maximum 0 value 640
             }
             Fl_Box {} {
@@ -145,9 +145,13 @@ class StracciatellaLauncher {open
               label resizable open
               xywh {415 115 30 30} labeltype NO_LABEL align 17 resizable
             } {}
+            Fl_Check_Button autoResolutionCheckbox {
+              label {Auto (desktop size)}
+              tooltip {Use the size of the desktop as window size. The game canvas is then the window size divided by the UI scale.} xywh {330 130 175 30} down_box DOWN_BOX
+            }
             Fl_Box invalidResolutionLabel {
               label {invalid!}
-              tooltip {the resolution must be at least 640x480, the original game resolution} xywh {340 130 160 30} labelfont 1 labelcolor 1 align 20
+              tooltip {the resolution must be at least 640x480, the original game resolution} xywh {200 112 120 18} labelfont 1 labelcolor 1 align 20
             }
           }
           Fl_Group {} {open
@@ -155,19 +159,35 @@ class StracciatellaLauncher {open
           } {
             Fl_Choice scalingModeChoice {
               label {Scaling Mode:} open
-              xywh {20 185 480 30} down_box BORDER_BOX align 5 resizable
+              xywh {20 185 235 30} down_box BORDER_BOX align 5 resizable
+            } {}
+            Fl_Choice uiScaleChoice {
+              label {UI Scale:}
+              tooltip {Integer factor that magnifies the whole game (world and interface). Auto picks the largest factor that keeps the game canvas at least 1280x720.} xywh {265 185 235 30} down_box BORDER_BOX align 5
             } {}
           }
           Fl_Group {} {open
-            xywh {10 220 500 65}
+            xywh {10 225 500 30}
           } {
-            Fl_Check_Button fullscreenCheckbox {
-              label Fullscreen
-              tooltip {Check to run in a borderless full-screen window} xywh {20 225 95 30} down_box DOWN_BOX
+            Fl_Round_Button windowedRadio {
+              label Windowed
+              tooltip {Run in a regular window} xywh {20 228 105 25} type Radio down_box ROUND_DOWN_BOX
             }
+            Fl_Round_Button borderlessRadio {
+              label {Borderless desktop}
+              tooltip {Run in a borderless window that covers the desktop (recommended)} xywh {125 228 165 25} type Radio down_box ROUND_DOWN_BOX
+            }
+            Fl_Round_Button fullscreenRadio {
+              label {Exclusive fullscreen}
+              tooltip {Run fullscreen and switch the display to the closest mode to the window size} xywh {290 228 210 25} type Radio down_box ROUND_DOWN_BOX
+            }
+          }
+          Fl_Group {} {open
+            xywh {10 260 500 30}
+          } {
             Fl_Check_Button playSoundsCheckbox {
               label {Play Sounds}
-              xywh {20 255 109 30} down_box DOWN_BOX value 1
+              xywh {20 260 109 30} down_box DOWN_BOX value 1
             }
           }
         }

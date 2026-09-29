@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::config::{Resolution, ScalingQuality, VanillaVersion};
+use crate::config::{Resolution, ScalingQuality, UiScale, VanillaVersion, WindowMode};
 use crate::fs::resolve_existing_components;
 use crate::get_assets_dir;
 
@@ -61,8 +61,12 @@ pub struct EngineOptions {
     pub save_game_dir: PathBuf,
     /// List of enabled mods
     pub mods: Vec<String>,
-    /// Resolution the game will start in
+    /// Window size in physical pixels (`Resolution::AUTO` = desktop size)
     pub resolution: Resolution,
+    /// Integer scale of the whole game (`UiScale::AUTO` = engine picks)
+    pub ui_scale: UiScale,
+    /// How the window is presented
+    pub window_mode: WindowMode,
     /// Gamma correction parameter
     pub brightness: f32,
     /// Vanilla game version that the user is in posession of
@@ -73,10 +77,6 @@ pub struct EngineOptions {
     pub run_unittests: bool,
     /// Wether to run the editor instead of the game itself
     pub run_editor: bool,
-    /// Whether to start the game in fullscreen
-    pub start_in_fullscreen: bool,
-    /// Whether to start the game in windowed mode
-    pub start_in_window: bool,
     /// Scaling quality that is used when scaling up game resources
     pub scaling_quality: ScalingQuality,
     /// Whether to start in debug mode
@@ -96,13 +96,13 @@ impl Default for EngineOptions {
             save_game_dir: PathBuf::from(""),
             mods: vec![],
             resolution: Resolution::default(),
+            ui_scale: UiScale::default(),
+            window_mode: WindowMode::default(),
             brightness: -1.0,
             resource_version: VanillaVersion::ENGLISH,
             show_help: false,
             run_unittests: false,
             run_editor: false,
-            start_in_fullscreen: false,
-            start_in_window: true,
             scaling_quality: ScalingQuality::default(),
             start_in_debug_mode: false,
             start_without_sound: false,
@@ -214,7 +214,7 @@ mod tests {
 
         assert_eq!(engine_options.resolution.0, 1100);
         assert_eq!(engine_options.resolution.1, 480);
-        assert!(engine_options.start_in_fullscreen);
+        assert_eq!(engine_options.window_mode, WindowMode::BorderlessDesktop);
     }
 
     #[test]
