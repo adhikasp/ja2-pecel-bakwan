@@ -184,6 +184,7 @@ namespace
 			case CREDIT_SCREEN:            return "CREDIT_SCREEN";
 			case QUEST_DEBUG_SCREEN:       return "QUEST_DEBUG_SCREEN";
 			case VIDEO_OPTIONS_SCREEN:     return "VIDEO_OPTIONS_SCREEN";
+			case UI_SPIKE_SCREEN:          return "UI_SPIKE_SCREEN";
 			default:                       return "UNKNOWN_SCREEN";
 		}
 	}

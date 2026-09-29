@@ -34,10 +34,17 @@
 #include "Overhead_Types.h"
 #include "StrategicMap.h"
 #include "Text.h"
+#include "HImage.h"
+#include "UiSpikeScreen.h"
+#include "WorldSpike.h"
 
 #include <string_theory/format>
 
 #include <cstdio>
+#include <filesystem>
+#include <fstream>
+#include <map>
+#include <set>
 #include <cstring>
 #include <sstream>
 
@@ -52,6 +59,18 @@ namespace
 
 	constexpr unsigned DEFAULT_TIMEOUT_MS = 10'000;
 	constexpr unsigned LONG_TIMEOUT_MS    = 120'000;
+
+	// ja2.recordImageUsage(): screen -> images loaded on it, and the optional JSON-lines log
+	std::map<std::string, std::set<std::string>>& ImageUsage()
+	{
+		static std::map<std::string, std::set<std::string>> usage;
+		return usage;
+	}
+	std::ofstream*& ImageUsageLog()
+	{
+		static std::ofstream* log = nullptr;
+		return log;
+	}
 
 	/* Run an API call, remembering what kind of failure (if any) it raised so
 	 * that the runner can pick the right exit code. The exception itself is
@@ -594,10 +613,100 @@ namespace
 					FakeEncounter();
 					EnterAutoResolveMode(gubPBSector);
 				}
+				else if (what == "uispike_rml" || what == "uispike_inhouse")
+				{
+					// Phase 0 UI toolkit spike: the save/load spike screen in RmlUi or the in-house layer
+					UiSpikeOpen(what.substr(8));
+				}
 				else
 				{
 					throw std::runtime_error(("ja2.debug: unknown target " + what).c_str());
 				}
+			});
+		});
+
+		// ja2.recordImageUsage([file]): from now on, note every image the game loads with the screen it was loaded
+		// on (the asset usage map, tools/assets/usage.py). With a file (relative to -out), also appends one JSON line
+		// per load to it. ja2.imageUsage() returns {screen = {file, ...}, ...} recorded so far.
+		ja2.set_function("recordImageUsage", [](sol::optional<std::string> file) {
+			Guarded([&] {
+				static std::ofstream log;
+				if (log.is_open()) log.close();
+				if (file) log.open(Session::ResolveOutputPath(*file), std::ios::app);
+				ImageUsageLog() = file ? &log : nullptr;
+				SetImageLoadHook([](ST::string const& f) {
+					std::string const screen = Session::ScreenName();
+					ImageUsage()[screen].insert(f.to_std_string());
+					if (std::ofstream* l = ImageUsageLog())
+					{
+						*l << "{\"screen\": \"" << screen << "\", \"file\": \"" << f.to_std_string() << "\", \"frame\": "
+							<< Session::Frame() << "}\n";
+						l->flush();
+					}
+				});
+			});
+		});
+		ja2.set_function("imageUsage", [] {
+			sol::table t = g_lua.create_table();
+			for (auto const& [screen, files] : ImageUsage())
+			{
+				sol::table list = g_lua.create_table();
+				int i = 1;
+				for (auto const& f : files) list[i++] = f;
+				t[screen] = list;
+			}
+			return t;
+		});
+
+		// ja2.spikeWorld([dir]): the world renderer spike on the current sector (WorldSpike.h). Returns the pixel
+		// diff against the legacy renderer and timings; writes world_legacy/world_spike/world_diff.png to dir
+		// (relative to -out) when given.
+		ja2.set_function("spikeWorld", [](sol::optional<std::string> dir) {
+			return Guarded([&] {
+				std::string out;
+				if (dir) { out = Session::ResolveOutputPath(*dir); std::filesystem::create_directories(out); }
+				WorldSpikeResult const r = RunWorldSpike(out);
+				sol::table t = g_lua.create_table();
+				t["width"] = r.width;
+				t["height"] = r.height;
+				t["pixels"] = double(r.pixels);
+				t["different"] = double(r.different);
+				t["percent"] = r.percent;
+				t["instances"] = r.instances;
+				t["skipped"] = r.skipped;
+				t["sprites"] = r.sprites;
+				t["legacyMs"] = r.legacyMs;
+				t["buildMs"] = r.buildMs;
+				t["rasterMs"] = r.rasterMs;
+				t["legacyPng"] = r.legacyPng;
+				t["spikePng"] = r.spikePng;
+				t["diffPng"] = r.diffPng;
+				return t;
+			});
+		});
+
+		// ja2.spike(): the open UI spike screen: {toolkit, lastFrameMs, meanFrameMs, frames, selected, hovered,
+		// modal, status, elements = {{id, x, y, w, h}, ...}} (element ids are what Phase 2 automation will target).
+		ja2.set_function("spike", [] {
+			return Guarded([&] {
+				UiSpikeInfo const info = UiSpikeGetInfo();
+				sol::table t = g_lua.create_table();
+				t["toolkit"]     = info.toolkit;
+				t["lastFrameMs"] = info.lastFrameMs;
+				t["meanFrameMs"] = info.meanFrameMs;
+				t["frames"]      = info.frames;
+				t["selected"]    = info.selected;
+				t["hovered"]     = info.hovered;
+				t["modal"]       = info.modal;
+				t["status"]      = info.status;
+				sol::table els = g_lua.create_table();
+				int i = 1;
+				for (auto const& e : info.elements)
+				{
+					els[i++] = g_lua.create_table_with("id", e.id, "x", e.x, "y", e.y, "w", e.w, "h", e.h);
+				}
+				t["elements"] = els;
+				return t;
 			});
 		});
 

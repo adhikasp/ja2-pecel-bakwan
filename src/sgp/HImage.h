@@ -94,6 +94,11 @@ struct SGPImage
 
 SGPImage* CreateImage(const ST::string& ImageFile, UINT16 fContents);
 
+/** Called with the file name of every image CreateImage() loads (asset usage maps, see tools/assets/usage.py).
+ * nullptr (the default) turns it off. */
+using ImageLoadHook = void (*)(ST::string const& filename);
+void SetImageLoadHook(ImageLoadHook);
+
 // UTILITY FUNCTIONS
 
 // Used to create a 16BPP Palette from an 8 bit palette, found in himage.c

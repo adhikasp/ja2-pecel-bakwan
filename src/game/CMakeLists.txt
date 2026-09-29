@@ -36,6 +36,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/SaveLoadGameStates.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/SaveLoadScreen.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Screens.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/UiSpikeScreen.cc
 )
 
 if (WITH_UNITTESTS)

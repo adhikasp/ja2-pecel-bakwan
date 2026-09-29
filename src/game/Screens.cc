@@ -15,6 +15,7 @@
 #include "Screens.h"
 #include "ScreenIDs.h"
 #include "ShopKeeper_Interface.h"
+#include "UiSpikeScreen.h"
 #include "VideoOptionsScreen.h"
 
 
@@ -46,7 +47,8 @@ Screens const GameScreens[] =
 	{ NULL,                 IntroScreenHandle,           NULL                     },
 	{ nullptr,              HandleScreen<CREDIT_SCREEN>, nullptr                  },
 	{ QuestDebugScreenInit, QuestDebugScreenHandle,      NULL                     },
-	{ NULL,                 VideoOptionsScreenHandle,    NULL                     }
+	{ NULL,                 VideoOptionsScreenHandle,    NULL                     },
+	{ nullptr,              UiSpikeScreenHandle,         nullptr                  }
 };
 
 
