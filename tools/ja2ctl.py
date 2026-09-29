@@ -161,6 +161,10 @@ def game_args(opts) -> list:
         args.append("-no-intro")
     if opts.res:
         args += ["-res", opts.res]
+    if getattr(opts, "uiscale", None):
+        args += ["-uiscale", opts.uiscale]
+    if getattr(opts, "worldzoom", None):
+        args += ["-worldzoom", opts.worldzoom]
     if opts.timeout:
         args += ["-timeout", str(opts.timeout)]
     return args
@@ -444,6 +448,8 @@ def build_parser():
         sp.add_argument("--show", action="store_true", help="show a window instead of headless")
         sp.add_argument("--intro", action="store_true", help="play the splash/intro videos")
         sp.add_argument("--res", help="resolution, e.g. 1280x720")
+        sp.add_argument("--uiscale", help="UI scale 1-4 (headless: only together with --worldzoom)")
+        sp.add_argument("--worldzoom", help="world zoom 1-4 or match_ui: runs the world as a layer of its own (headless too)")
         sp.add_argument("--saves", help="save game directory to use (shared with other sessions)")
         sp.add_argument("--game-dir", help="JA2 data directory (default: from your ja2.json)")
         sp.add_argument("--timeout", type=float, help="kill the game after this many wall-clock seconds")

@@ -85,3 +85,10 @@ Things worth knowing:
 screen) and can register the shot for comparison with `golden/<res>/`. See
 `golden/README.md`. Use `campaign.std{...}` to convert classic 640x480
 coordinates (e.g. in `within=`) to the current screen.
+
+## Layers (world zoom)
+
+`tactical_layers.lua` and `tactical_layers_ui.lua` run tactical with the world as a layer of its own:
+`ja2ctl run ... --res 2560x1440 --uiscale 2 --worldzoom 1` (headless only splits when `--worldzoom` is
+given). Clicks and `ja2.gridPos` are in UI pixels; screenshots are the composite at window size
+(UI size * UI scale), so 2560x1440 here. `ctest -L e2e` runs them at three combinations.

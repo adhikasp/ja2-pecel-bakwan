@@ -674,6 +674,7 @@ uint32_t Pixel(int const x, int const y)
 	{
 		throw std::out_of_range(ST::format("pixel ({}, {}) is outside the {}x{} screen", x, y, s->w, s->h).to_std_string());
 	}
+	if (VideoIsLayered()) return VideoComposePixel(x, y);
 	auto const* row = static_cast<UINT8 const*>(s->pixels) + y * s->pitch;
 	return Rgb565To888(reinterpret_cast<UINT16 const*>(row)[x]);
 }
@@ -688,6 +689,19 @@ std::string ResolveOutputPath(std::string const& path)
 
 void Screenshot(std::string const& path)
 {
+	{
+		// With layers the picture is the UI over the world, at the size of the window
+		std::vector<uint8_t> composed;
+		int cw = 0, ch = 0;
+		if (VideoComposeFrame(composed, cw, ch))
+		{
+			if (!stbi_write_png(path.c_str(), cw, ch, 3, composed.data(), cw * 3))
+			{
+				throw std::runtime_error("could not write screenshot to " + path);
+			}
+			return;
+		}
+	}
 	SDL_Surface const* s = FrameSurface();
 	std::vector<uint8_t> rgb(size_t(s->w) * s->h * 3);
 	for (int y = 0; y < s->h; ++y)

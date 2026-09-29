@@ -2243,6 +2243,9 @@ void RenderTopmostFlashingItems(void)
 		if (wi.ubLevel)
 			sYPos -= ROOF_LEVEL_HEIGHT;
 
+		sXPos = g_ui.worldToUi(sXPos);
+		sYPos = g_ui.worldToUi(sYPos);
+
 		// Center circle!
 		sXPos -= 20;
 		sYPos -= 20;

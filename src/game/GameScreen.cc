@@ -77,9 +77,9 @@ static BOOLEAN  guiTacticalLeaveScreen   = FALSE;
 void MainGameScreenInit(void)
 {
 	// all blit functions expect z-buffer pitch to match framebuffer pitch
-	SDL_Surface const& surface = FRAME_BUFFER->GetSDLSurface();
+	SDL_Surface const& surface = WORLD_BUFFER->GetSDLSurface();
 	gZBufferPitch = surface.pitch / SDL_GetPixelFormatDetails(surface.format)->bytes_per_pixel;
-	gpZBuffer = InitZBuffer(gZBufferPitch, SCREEN_HEIGHT);
+	gpZBuffer = InitZBuffer(gZBufferPitch, WORLD_SCREEN_HEIGHT);
 	gZBufferPitch *= sizeof(*gpZBuffer);
 	InitializeBackgroundRects();
 

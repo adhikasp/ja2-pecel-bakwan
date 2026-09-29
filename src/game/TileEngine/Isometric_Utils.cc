@@ -180,8 +180,10 @@ BOOLEAN GetWorldCoordsAtScreenPos(INT16 const sScreenX, INT16 const sScreenY, IN
 	INT16 sTempPosX_W, sTempPosY_W;
 	INT16 sStartPointX_W, sStartPointY_W;
 
-	sOffsetX = sScreenX - ( g_ui.m_tacticalMapCenterX ); // + gsRenderWorldOffsetX;
-	sOffsetY = sScreenY - ( g_ui.m_tacticalMapCenterY ) + 10;// + gsRenderWorldOffsetY;
+	// The position is in UI pixels (like the mouse); the world is in world pixels
+	LayerPoint const world = g_ui.uiToWorld(sScreenX, sScreenY);
+	sOffsetX = world.x - ( g_ui.m_tacticalMapCenterX ); // + gsRenderWorldOffsetX;
+	sOffsetY = world.y - ( g_ui.m_tacticalMapCenterY ) + 10;// + gsRenderWorldOffsetY;
 
 	// OK, Let's offset by a value if our interfac level is changed!
 	if ( gsInterfaceLevel != 0 )

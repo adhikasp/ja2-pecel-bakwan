@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use crate::config::{Resolution, ScalingQuality, UiScale, VanillaVersion, WindowMode};
+use crate::config::{Resolution, ScalingQuality, UiScale, VanillaVersion, WindowMode, WorldZoom};
 use crate::fs::resolve_existing_components;
 use crate::get_assets_dir;
 
@@ -65,6 +65,8 @@ pub struct EngineOptions {
     pub resolution: Resolution,
     /// Integer scale of the whole game (`UiScale::AUTO` = engine picks)
     pub ui_scale: UiScale,
+    /// Scale of the tactical world layer (`WorldZoom::MATCH_UI` = same layer and scale as the UI)
+    pub world_zoom: WorldZoom,
     /// How the window is presented
     pub window_mode: WindowMode,
     /// Gamma correction parameter
@@ -97,6 +99,7 @@ impl Default for EngineOptions {
             mods: vec![],
             resolution: Resolution::default(),
             ui_scale: UiScale::default(),
+            world_zoom: WorldZoom::default(),
             window_mode: WindowMode::default(),
             brightness: -1.0,
             resource_version: VanillaVersion::ENGLISH,

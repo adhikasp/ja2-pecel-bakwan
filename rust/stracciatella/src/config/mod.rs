@@ -9,6 +9,7 @@ mod stracciatella_home;
 mod ui_scale;
 mod vanilla_version;
 mod window_mode;
+mod world_zoom;
 
 pub use self::cli::{Cli, CliError};
 pub use self::engine_options::{EngineOptions, EngineOptionsError};
@@ -19,3 +20,4 @@ pub use self::stracciatella_home::find_stracciatella_home;
 pub use self::ui_scale::{MAX_UI_SCALE, UiScale};
 pub use self::vanilla_version::VanillaVersion;
 pub use self::window_mode::WindowMode;
+pub use self::world_zoom::{MAX_WORLD_ZOOM, WorldZoom};

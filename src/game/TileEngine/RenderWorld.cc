@@ -376,7 +376,7 @@ private: void Render(RenderTilesFlags const uiFlags, size_t const ubNumLevels, R
 	SGPVSurface::Lockable lock;
 	if  (!(uiFlags & TILES_DIRTY))
 	{
-		lock.Lock(FRAME_BUFFER);
+		lock.Lock(WORLD_BUFFER);
 		pDestBuf         = lock.Buffer<UINT16>();
 		uiDestPitchBYTES = lock.Pitch();
 	}
@@ -1148,11 +1148,11 @@ zlevel_onroof:
 								sXPos += pTrav.sOffsetX;
 								sYPos += pTrav.sOffsetY;
 
-								INT16 const h = std::min((int) uiBrushHeight, std::max(0, gsVIEWPORT_WINDOW_END_Y - sYPos));
-								RegisterBackgroundRect(uiDirtyFlags, sXPos, sYPos, uiBrushWidth, h);
+								INT16 const h = std::min((int) uiBrushHeight, std::max(0, gsWORLD_VIEWPORT_WINDOW_END_Y - sYPos));
+								RegisterBackgroundRect(uiDirtyFlags | BGND_FLAG_WORLD, sXPos, sYPos, uiBrushWidth, h);
 								if (fSaveZ)
 								{
-									RegisterBackgroundRect(uiDirtyFlags | BGND_FLAG_SAVE_Z, sXPos, sYPos, uiBrushWidth, h);
+									RegisterBackgroundRect(uiDirtyFlags | BGND_FLAG_SAVE_Z | BGND_FLAG_WORLD, sXPos, sYPos, uiBrushWidth, h);
 								}
 							}
 						}
@@ -1165,7 +1165,21 @@ zlevel_onroof:
 							UINT8 const foreground = gfUIDisplayActionPointsBlack ? FONT_MCOLOR_BLACK : FONT_MCOLOR_WHITE;
 							SetFontAttributes(TINYFONT1, foreground);
 							SetFontDestBuffer(FRAME_BUFFER, 0, gsVIEWPORT_WINDOW_START_Y, SCREEN_WIDTH, gsVIEWPORT_WINDOW_END_Y);
-							MPrint(sXPos, sYPos, pNode->uiAPCost, HCenterVCenterAlign(1, 1));
+							if (VideoIsLayered())
+							{
+								// Text is UI: it stays readable at any world zoom, so it goes to the UI layer at the UI
+								// position of the tile, and is erased again next frame like the other single-frame text.
+								LayerPoint const p = g_ui.worldToUi(sXPos, sYPos);
+								ST::string const cost = ST::format("{}", pNode->uiAPCost);
+								INT16 const w = StringPixLength(cost, TINYFONT1);
+								INT16 const h = GetFontHeight(TINYFONT1);
+								RegisterBackgroundRectSingleFilled(p.x - w / 2 - 1, p.y - h / 2 - 1, w + 2, h + 2);
+								MPrint(p.x, p.y, cost, HCenterVCenterAlign(1, 1));
+							}
+							else
+							{
+								MPrint(sXPos, sYPos, pNode->uiAPCost, HCenterVCenterAlign(1, 1));
+							}
 							SetFontDestBuffer(FRAME_BUFFER);
 						}
 						else if (uiLevelNodeFlags & LEVELNODE_ITEM)
@@ -1313,7 +1327,7 @@ zlevel_onroof:
 
 											if (uiLevelNodeFlags & LEVELNODE_UPDATESAVEBUFFERONCE)
 											{
-												SGPVSurface::Lock l(guiSAVEBUFFER);
+												SGPVSurface::Lock l(guiWORLDSAVEBUFFER);
 
 												// BLIT HERE
 												BltTransShadow(clipinfo, l.Buffer<UINT16>(), l.Pitch(), pShadeTable);
@@ -1358,7 +1372,7 @@ zlevel_onroof:
 
 										if (uiLevelNodeFlags & LEVELNODE_UPDATESAVEBUFFERONCE)
 										{
-											SGPVSurface::Lock l(guiSAVEBUFFER);
+											SGPVSurface::Lock l(guiWORLDSAVEBUFFER);
 
 											// BLIT HERE
 											BltTransZ(clipinfo, l.Buffer<UINT16>(), l.Pitch(), gpZBuffer, sZLevel);
@@ -1407,7 +1421,7 @@ zlevel_onroof:
 
 											if (uiLevelNodeFlags & LEVELNODE_UPDATESAVEBUFFERONCE)
 											{
-												SGPVSurface::Lock l(guiSAVEBUFFER);
+												SGPVSurface::Lock l(guiWORLDSAVEBUFFER);
 
 												// BLIT HERE
 												Blt8BPPDataTo16BPPBufferTransShadow(l.Buffer<UINT16>(), l.Pitch(), hVObject, sXPos, sYPos, usImageIndex, pShadeTable);
@@ -1459,7 +1473,7 @@ zlevel_onroof:
 
 										if (uiLevelNodeFlags & LEVELNODE_UPDATESAVEBUFFERONCE)
 										{
-											SGPVSurface::Lock l(guiSAVEBUFFER);
+											SGPVSurface::Lock l(guiWORLDSAVEBUFFER);
 
 											// BLIT HERE
 											Blt8BPPDataTo16BPPBufferTransZ(l.Buffer<UINT16>(), l.Pitch(), gpZBuffer, sZLevel, hVObject, sXPos, sYPos, usImageIndex);
@@ -1504,7 +1518,9 @@ next_node:
 						 * taskbar. */
 						if (iTempPosY_S < 360)
 						{
-							ColorFillVideoSurfaceArea(FRAME_BUFFER, iTempPosX_S, iTempPosY_S, iTempPosX_S + 40, std::min(iTempPosY_S + 20, 360), Get16BPPColor(FROMRGB(0, 0, 0)));
+							SGPRect const oldClip = SetClippingRect(gClippingRect);
+							ColorFillVideoSurfaceArea(WORLD_BUFFER, iTempPosX_S, iTempPosY_S, iTempPosX_S + 40, std::min(iTempPosY_S + 20, 360), Get16BPPColor(FROMRGB(0, 0, 0)));
+							SetClippingRect(oldClip);
 						}
 					}
 				}
@@ -1543,9 +1559,9 @@ static void ScrollBackground(INT16 sScrollXIncrement, INT16 sScrollYIncrement)
 	if (!gfDoVideoScroll)
 	{
 		// Clear z-buffer
-		std::fill_n(gpZBuffer, gsVIEWPORT_END_Y * SCREEN_WIDTH, LAND_Z_LEVEL);
+		std::fill_n(gpZBuffer, gsWORLD_VIEWPORT_END_Y * WORLD_SCREEN_WIDTH, LAND_Z_LEVEL);
 
-		RenderStaticWorldRect(gsVIEWPORT_START_X, gsVIEWPORT_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_END_Y, FALSE);
+		RenderStaticWorldRect(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y, FALSE);
 
 		FreeBackgroundRectType(BGND_FLAG_ANIMATED);
 	}
@@ -1573,6 +1589,19 @@ static void RenderRoomInfo(INT16 sStartPointX_M, INT16 sStartPointY_M, INT16 sSt
 static void RenderStaticWorld(void);
 
 
+/** With layers the world is not drawn into the UI's surface, so where the world used to be drawn over it (the
+ * viewport) the UI layer is made transparent. */
+static void ClearUiViewport()
+{
+	INT32 const top    = gsVIEWPORT_WINDOW_START_Y;
+	INT32 const bottom = gsVIEWPORT_WINDOW_END_Y;
+	SGPRect const oldClip = SetClippingRect({ 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT });
+	ColorFillVideoSurfaceArea(FRAME_BUFFER, 0, top, SCREEN_WIDTH, bottom, UI_LAYER_TRANSPARENT);
+	SetClippingRect(oldClip);
+	InvalidateRegion(0, top, SCREEN_WIDTH, bottom);
+}
+
+
 // Render routine takes center X, Y and Z coordinate and gets world
 // Coordinates for the window from that using the following functions
 // For coordinate transformations
@@ -1583,7 +1612,9 @@ void RenderWorld(void)
 	// If we are testing renderer, set background to pink!
 	if (gTacticalStatus.uiFlags & DEBUGCLIFFS)
 	{
-		ColorFillVideoSurfaceArea(FRAME_BUFFER, 0, gsVIEWPORT_WINDOW_START_Y, SCREEN_WIDTH, gsVIEWPORT_WINDOW_END_Y, Get16BPPColor(FROMRGB(0, 255, 0)));
+		SGPRect const oldClip = SetClippingRect(gClippingRect);
+		ColorFillVideoSurfaceArea(WORLD_BUFFER, 0, gsWORLD_VIEWPORT_WINDOW_START_Y, WORLD_SCREEN_WIDTH, gsWORLD_VIEWPORT_WINDOW_END_Y, Get16BPPColor(FROMRGB(0, 255, 0)));
+		SetClippingRect(oldClip);
 		SetRenderFlags(RENDER_FLAG_FULL);
 	}
 
@@ -1621,9 +1652,12 @@ void RenderWorld(void)
 		ApplyScrolling(gsRenderCenterX, gsRenderCenterY, TRUE, FALSE);
 		ResetLayerOptimizing();
 
+		// Redrawing the world wipes what the UI had in front of it, in the UI layer too
+		if (VideoIsLayered()) ClearUiViewport();
+
 		if (gRenderFlags & RENDER_FLAG_NOZ)
 		{
-			RenderStaticWorldRect(gsVIEWPORT_START_X, gsVIEWPORT_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_END_Y, FALSE);
+			RenderStaticWorldRect(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y, FALSE);
 		}
 		else
 		{
@@ -1674,7 +1708,7 @@ void RenderWorld(void)
 
 	if (gRenderFlags & RENDER_FLAG_CHECKZ && !(gTacticalStatus.uiFlags & NOHIDE_REDUNDENCY))
 	{
-		ExamineZBufferRect(gsVIEWPORT_START_X, gsVIEWPORT_WINDOW_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_WINDOW_END_Y);
+		ExamineZBufferRect(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_WINDOW_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_WINDOW_END_Y);
 	}
 
 	gRenderFlags &= ~(RENDER_FLAG_FULL | RENDER_FLAG_MARKED | RENDER_FLAG_ROOMIDS | RENDER_FLAG_CHECKZ);
@@ -1682,10 +1716,10 @@ void RenderWorld(void)
 	if (gTacticalStatus.uiFlags & SHOW_Z_BUFFER)
 	{
 		// COPY Z BUFFER TO FRAME BUFFER
-		SGPVSurface::Lock l(FRAME_BUFFER);
+		SGPVSurface::Lock l(WORLD_BUFFER);
 		UINT16* const pDestBuf = l.Buffer<UINT16>();
 
-		for (UINT32 i = 0; i < SCREEN_WIDTH * SCREEN_HEIGHT; ++i)
+		for (UINT32 i = 0; i < WORLD_SCREEN_WIDTH * WORLD_SCREEN_HEIGHT; ++i)
 		{
 			pDestBuf[i] = gpZBuffer[i];
 		}
@@ -1747,17 +1781,17 @@ void RenderStaticWorldRect(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sBottom,
 
 	ResetRenderParameters();
 
-	if (!gfDoVideoScroll) InvalidateRegionEx(sLeft, sTop, sRight, sBottom);
+	if (!gfDoVideoScroll) InvalidateWorldRegion(sLeft, sTop, sRight, sBottom);
 }
 
 
 static void RenderStaticWorld(void)
 {
 	// Calculate render starting parameters
-	CalcRenderParameters(gsVIEWPORT_START_X, gsVIEWPORT_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_END_Y);
+	CalcRenderParameters(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y);
 
 	// Clear z-buffer
-	std::fill_n(gpZBuffer, gsVIEWPORT_END_Y * SCREEN_WIDTH, LAND_Z_LEVEL);
+	std::fill_n(gpZBuffer, gsWORLD_VIEWPORT_END_Y * WORLD_SCREEN_WIDTH, LAND_Z_LEVEL);
 
 	FreeBackgroundRectType(BGND_FLAG_ANIMATED);
 	InvalidateBackgroundRects();
@@ -1781,14 +1815,14 @@ static void RenderStaticWorld(void)
 	//ATE: Do obsucred layer!
 	RenderTiles(TILES_OBSCURED, RENDER_STATIC_STRUCTS, RENDER_STATIC_ONROOF);
 
-	InvalidateRegionEx(gsVIEWPORT_START_X, gsVIEWPORT_WINDOW_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_WINDOW_END_Y);
+	InvalidateWorldRegion(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_WINDOW_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_WINDOW_END_Y);
 	ResetRenderParameters();
 }
 
 
 static void RenderMarkedWorld(void)
 {
-	CalcRenderParameters(gsVIEWPORT_START_X, gsVIEWPORT_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_END_Y);
+	CalcRenderParameters(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y);
 
 	RestoreBackgroundRects();
 	FreeBackgroundRectType(BGND_FLAG_ANIMATED);
@@ -1810,7 +1844,7 @@ static void RenderMarkedWorld(void)
 	RenderTiles(TILES_MARKED, RENDER_STATIC_ONROOF);
 	RenderTiles(TILES_MARKED, RENDER_STATIC_TOPMOST);
 
-	InvalidateRegionEx(gsVIEWPORT_START_X, gsVIEWPORT_WINDOW_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_WINDOW_END_Y);
+	InvalidateWorldRegion(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_WINDOW_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_WINDOW_END_Y);
 
 	ResetRenderParameters();
 }
@@ -1818,7 +1852,7 @@ static void RenderMarkedWorld(void)
 
 static void RenderDynamicWorld(void)
 {
-	CalcRenderParameters(gsVIEWPORT_START_X, gsVIEWPORT_START_Y, gsVIEWPORT_END_X, gsVIEWPORT_END_Y);
+	CalcRenderParameters(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y);
 
 	RestoreBackgroundRects();
 
@@ -2204,10 +2238,10 @@ static BOOLEAN ApplyScrolling(INT16 sTempRenderCenterX, INT16 sTempRenderCenterY
 	const BOOLEAN fOutBottom = (gsBottomY + SCROLL_BOTTOM_PADDING < sBottomRightWorldY);          /* bottom of the screen is below bottom if the map */
 
 	const int mapHeight = (gsBottomY + SCROLL_BOTTOM_PADDING) - (gsTopY + SCROLL_TOP_PADDING);
-	const int screenHeight = gsVIEWPORT_END_Y - gsVIEWPORT_START_Y;
+	const int screenHeight = 2 * sY_S; // (the viewport, see UILayout::recalculatePositions)
 
 	const int mapWidth = (gsRightX + SCROLL_RIGHT_PADDING) - (gsLeftX + SCROLL_LEFT_PADDING);
-	const int screenWidth = gsVIEWPORT_END_X - gsVIEWPORT_START_X;
+	const int screenWidth = 2 * sX_S;
 
 	BOOLEAN fScrollGood = FALSE;
 
@@ -3074,7 +3108,7 @@ static void RenderRoomInfo(INT16 sStartPointX_M, INT16 sStartPointY_M, INT16 sSt
 				if (gubWorldRoomInfo[usTileIndex] != NO_ROOM)
 				{
 					SetFont(SMALLCOMPFONT);
-					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsVIEWPORT_END_Y);
+					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsWORLD_VIEWPORT_END_Y);
 					switch (gubWorldRoomInfo[usTileIndex] % 5)
 					{
 						case 0: SetFontForeground(FONT_GRAY3);   break;
@@ -3119,7 +3153,7 @@ static void RenderFOVDebugInfo(INT16 sStartPointX_M, INT16 sStartPointY_M, INT16
 	INT16 sAnchorPosX_S = sStartPointX_S;
 	INT16 sAnchorPosY_S = sStartPointY_S;
 
-	SGPVSurface::Lock l(FRAME_BUFFER);
+	SGPVSurface::Lock l(WORLD_BUFFER);
 	UINT16* const pDestBuf         = l.Buffer<UINT16>();
 	UINT32  const uiDestPitchBYTES = l.Pitch();
 
@@ -3148,7 +3182,7 @@ static void RenderFOVDebugInfo(INT16 sStartPointX_M, INT16 sStartPointY_M, INT16
 				if (gubFOVDebugInfoInfo[usTileIndex] != 0)
 				{
 					SetFont(SMALLCOMPFONT);
-					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsVIEWPORT_END_Y);
+					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsWORLD_VIEWPORT_END_Y);
 					SetFontForeground(FONT_GRAY3);
 					MPrint(sX, sY, gubFOVDebugInfoInfo[usTileIndex]);
 					SetFontDestBuffer(FRAME_BUFFER);
@@ -3159,7 +3193,7 @@ static void RenderFOVDebugInfo(INT16 sStartPointX_M, INT16 sStartPointY_M, INT16
 				if (gubGridNoMarkers[usTileIndex] == gubGridNoValue)
 				{
 					SetFont(SMALLCOMPFONT);
-					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsVIEWPORT_END_Y);
+					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsWORLD_VIEWPORT_END_Y);
 					SetFontForeground(FONT_FCOLOR_YELLOW);
 					MPrint(sX, sY + 4, "x");
 					SetFontDestBuffer(FRAME_BUFFER);
@@ -3220,7 +3254,7 @@ static void RenderCoverDebugInfo(INT16 sStartPointX_M, INT16 sStartPointY_M, INT
 				if (gsCoverValue[usTileIndex] != 0x7F7F)
 				{
 					SetFont(SMALLCOMPFONT);
-					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsVIEWPORT_END_Y);
+					SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsWORLD_VIEWPORT_END_Y);
 					if (usTileIndex == gsBestCover)
 					{
 						SetFontForeground(FONT_MCOLOR_RED);
@@ -3290,7 +3324,7 @@ static void RenderGridNoVisibleDebugInfo(INT16 sStartPointX_M, INT16 sStartPoint
 				sY += gsRenderHeight;
 
 				SetFont(SMALLCOMPFONT);
-				SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsVIEWPORT_END_Y);
+				SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, gsWORLD_VIEWPORT_END_Y);
 
 				if (!GridNoOnVisibleWorldTile(usTileIndex))
 				{
@@ -3440,10 +3474,10 @@ static void CalcRenderParameters(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sB
 	gOldClipRect = gClippingRect;
 
 	// Set new clipped rect
-	gClippingRect.iLeft   = std::max((int) gsVIEWPORT_START_X, (int) sLeft);
-	gClippingRect.iRight  = std::min((int) gsVIEWPORT_END_X, (int) sRight);
-	gClippingRect.iTop    = std::max((int) gsVIEWPORT_WINDOW_START_Y, (int) sTop);
-	gClippingRect.iBottom = std::min((int) gsVIEWPORT_WINDOW_END_Y, (int) sBottom);
+	gClippingRect.iLeft   = std::max((int) gsWORLD_VIEWPORT_START_X, (int) sLeft);
+	gClippingRect.iRight  = std::min((int) gsWORLD_VIEWPORT_END_X, (int) sRight);
+	gClippingRect.iTop    = std::max((int) gsWORLD_VIEWPORT_WINDOW_START_Y, (int) sTop);
+	gClippingRect.iBottom = std::min((int) gsWORLD_VIEWPORT_WINDOW_END_Y, (int) sBottom);
 
 	gsEndXS = sRight  + VIEWPORT_XOFFSET_S;
 	gsEndYS = sBottom + VIEWPORT_YOFFSET_S;
@@ -3540,8 +3574,8 @@ static BOOLEAN IsTileRedundant(UINT16* pZBuffer, UINT16 usZValue, HVOBJECT hSrcV
 	CHECKF(iTempY >= 0);
 
 	UINT8 const* SrcPtr   = hSrcVObject->PixData(pTrav);
-	const UINT8* ZPtr     = (const UINT8*)(pZBuffer + iTempY * SCREEN_WIDTH + iTempX);
-	const UINT32 LineSkip = (SCREEN_WIDTH - usWidth) * 2;
+	const UINT8* ZPtr     = (const UINT8*)(pZBuffer + iTempY * WORLD_SCREEN_WIDTH + iTempX);
+	const UINT32 LineSkip = (WORLD_SCREEN_WIDTH - usWidth) * 2;
 
 	do
 	{

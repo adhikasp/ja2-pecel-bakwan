@@ -5,6 +5,8 @@
 #include "RustInterface.h"
 #include "VideoLayout.h"
 #include "SDL3/SDL.h"
+#include <cstdint>
+#include <vector>
 
 
 #define VIDEO_DEFAULT_TO_NO_CURSOR 0xFFFE // VIDEO_DEFAULT_TO_NO_CURSOR is equal to VIDEO_NO_CURSOR unless always_show_cursor_in_tactical is true
@@ -25,11 +27,73 @@ struct VideoDisplaySettings
 	int        resY;
 	int        uiScale;
 	WindowMode windowMode;
+	int        worldZoom = VideoLayout::WORLD_ZOOM_MATCH_UI; // 0 = the world follows the UI scale (one layer)
 };
 
 /** Logical canvas size and effective scale for the settings. Queries the desktop, so SDL's
  * video subsystem has to be initialised. Not used for headless sessions (logical = -res). */
 VideoLayout::DisplayLayout VideoComputeLayout(VideoDisplaySettings const& settings);
+
+/* ---- Layers -------------------------------------------------------------------------------------
+ * By default the whole picture (the tactical world and the UI) is one surface at one scale. With
+ * "world_zoom" set to a value other than the UI scale it is two: the world in a WORLD_BUFFER of
+ * window / Zw pixels, and under it the UI, the surfaces the rest of the game draws into (FRAME_BUFFER,
+ * ...), at window / Su pixels. The compositor puts the UI over the world. The UI surfaces are RGB565
+ * like always, so what is transparent in them is a reserved colour: */
+
+/** Where the UI layer has nothing, so the world shows through. */
+constexpr UINT16 UI_LAYER_TRANSPARENT = 0xF81F;
+
+/** Colours next to the transparent one stand for black with an alpha of level/16 (the result of shading
+ * the transparent area: pop-up shadows, fades). Level 0 is the transparent colour itself. */
+constexpr int    UI_LAYER_SHADOW_LEVELS = 16;
+
+constexpr bool UiLayerIsTransparentFamily(UINT16 const p)
+{
+	return p >= UI_LAYER_TRANSPARENT - (UI_LAYER_SHADOW_LEVELS - 1) && p <= UI_LAYER_TRANSPARENT;
+}
+
+/** 0 (fully transparent) to 15. p must be in the transparent family. */
+constexpr int UiLayerShadowLevel(UINT16 const p)
+{
+	return UI_LAYER_TRANSPARENT - p;
+}
+
+/** The colour of a transparent-family pixel after being darkened by `darkening` (0..1) */
+constexpr UINT16 UiLayerDarken(UINT16 const p, float const darkening)
+{
+	float const alpha    = UiLayerShadowLevel(p) / float(UI_LAYER_SHADOW_LEVELS);
+	float const newAlpha = alpha + (1.0f - alpha) * darkening;
+	int level = static_cast<int>(newAlpha * UI_LAYER_SHADOW_LEVELS + 0.5f);
+	if (darkening > 0 && level <= UiLayerShadowLevel(p)) level = UiLayerShadowLevel(p) + 1;
+	if (level > UI_LAYER_SHADOW_LEVELS - 1) level = UI_LAYER_SHADOW_LEVELS - 1;
+	return static_cast<UINT16>(UI_LAYER_TRANSPARENT - level);
+}
+
+/** 8-bit alpha of a transparent-family colour, as composed over the world. */
+constexpr UINT8 UiLayerShadowAlpha(UINT16 const p)
+{
+	return static_cast<UINT8>(UiLayerShadowLevel(p) * 17);
+}
+
+/** Whether the world is a layer of its own (window sized) under the UI. Set by InitializeVideoManager(). */
+bool VideoIsLayered();
+
+/** Shows or hides the world layer. It is only seen on the tactical screens; whatever else is on screen is
+ * an opaque UI. Kept up to date by the video manager from the current screen. */
+bool VideoWorldLayerVisible();
+
+/** Like InvalidateRegionEx() for a rectangle in world pixels: something changed in the WORLD_BUFFER. */
+void InvalidateWorldRegion(INT32 iLeft, INT32 iTop, INT32 iRight, INT32 iBottom);
+
+/** The frame as the player sees it when layered: UI over world, at the size of the window canvas
+ * (UI size * UI scale), 8 bit RGB. Returns false, leaving the arguments alone, when there are no layers
+ * (then GetScreenBuffer() is the whole picture). */
+bool VideoComposeFrame(std::vector<uint8_t>& rgb, int& width, int& height);
+
+/** The colour (0xRRGGBB) the player sees at a UI pixel: the UI layer's, or when that is transparent the
+ * world's under its centre. */
+uint32_t VideoComposePixel(int uiX, int uiY);
 
 void         VideoSetFullScreen(BOOLEAN enable);
 /** Creates the window and renderer. The logical canvas (SCREEN_WIDTH x SCREEN_HEIGHT) must have

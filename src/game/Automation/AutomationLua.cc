@@ -206,10 +206,16 @@ namespace
 	{
 		INT16 sx, sy;
 		GetGridNoScreenPos(static_cast<INT16>(grid), static_cast<UINT8>(level), &sx, &sy);
+		// that is in world pixels; clicks are in UI pixels (the same without layers)
+		LayerPoint const ui = g_ui.worldToUi(sx, sy);
+		sx = static_cast<INT16>(ui.x);
+		sy = static_cast<INT16>(ui.y);
+		int const stepX = g_ui.isLayered() ? 1 : 4;
+		int const stepY = g_ui.isLayered() ? 1 : 2;
 		long sumX = 0, sumY = 0, n = 0;
-		for (int dy = -30; dy <= 30; dy += 2)
+		for (int dy = -30; dy <= 30; dy += stepY)
 		{
-			for (int dx = -60; dx <= 60; dx += 4)
+			for (int dx = -60; dx <= 60; dx += stepX)
 			{
 				if (GridUnder(sx + dx, sy + dy) != grid) continue;
 				sumX += sx + dx;

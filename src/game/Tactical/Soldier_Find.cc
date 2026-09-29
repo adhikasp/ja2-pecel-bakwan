@@ -135,8 +135,10 @@ SOLDIERTYPE* FindSoldier(GridNo const gridno, UINT32 flags)
 			SGPRect soldier_rect;
 			GetSoldierScreenRect(&s, &soldier_rect);
 
-			INT16 const screen_x = gusMouseXPos;
-			INT16 const screen_y = gusMouseYPos;
+			// The soldier's rectangle is in world pixels, the mouse in UI pixels
+			LayerPoint const mouse = g_ui.uiToWorld(gusMouseXPos, gusMouseYPos);
+			INT16 const screen_x = static_cast<INT16>(mouse.x);
+			INT16 const screen_y = static_cast<INT16>(mouse.y);
 
 			bool in_screen_rect = IsPointInScreenRect(screen_x, screen_y, soldier_rect);
 

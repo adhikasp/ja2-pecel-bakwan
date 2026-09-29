@@ -7,6 +7,7 @@
 #include "VObject.h"
 #include "RenderWorld.h"
 #include "Interface.h"
+#include "UILayout.h"
 #include "Sound_Control.h"
 #include "WorldDef.h"
 #include "Interactive_Tiles.h"
@@ -316,7 +317,9 @@ void LogMouseOverInteractiveTile(INT16 const sGridNo)
 	ConvertGridNoToCellXY(sGridNo, &sXMapPos, &sYMapPos);
 
 	// Set mouse stuff
-	auto const cursorPosition{ GetCursorPos() };
+	// The rectangles of the nodes are in world pixels, the cursor in UI pixels
+	auto const uiCursorPosition{ GetCursorPos() };
+	LayerPoint const cursor = g_ui.uiToWorld(uiCursorPosition.iX, uiCursorPosition.iY);
 
 	for (LEVELNODE const* n = gpWorldLevelData[sGridNo].pStructHead; n; n = n->pNext)
 	{
@@ -324,9 +327,9 @@ void LogMouseOverInteractiveTile(INT16 const sGridNo)
 		GetLevelNodeScreenRect(*n, aRect, sXMapPos, sYMapPos, sGridNo);
 
 		// Make sure we are always on guy if we are on same gridno
-		if (!IsPointInScreenRect(cursorPosition.iX, cursorPosition.iY, aRect)) continue;
+		if (!IsPointInScreenRect(cursor.x, cursor.y, aRect)) continue;
 
-		if (!RefinePointCollisionOnStruct(cursorPosition.iX, cursorPosition.iY, aRect.iLeft, aRect.iBottom, *n)) continue;
+		if (!RefinePointCollisionOnStruct(cursor.x, cursor.y, aRect.iLeft, aRect.iBottom, *n)) continue;
 
 		if (!RefineLogicOnStruct(sGridNo, *n)) continue;
 

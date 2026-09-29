@@ -61,10 +61,12 @@ static BACKGROUND_SAVE* GetFreeBackgroundBuffer(void)
 
 BACKGROUND_SAVE* RegisterBackgroundRect(BackgroundFlags const uiFlags, INT16 sLeft, INT16 sTop, INT16 const usWidth, INT16 const usHeight)
 {
-	const INT32 ClipX1 = gDirtyClipRect.iLeft;
-	const INT32 ClipY1 = gDirtyClipRect.iTop;
-	const INT32 ClipX2 = gDirtyClipRect.iRight;
-	const INT32 ClipY2 = gDirtyClipRect.iBottom;
+	// World rectangles are in world pixels, which are not UI pixels when the world is a layer of its own
+	bool const world = uiFlags & BGND_FLAG_WORLD && VideoIsLayered();
+	const INT32 ClipX1 = world ? 0 : gDirtyClipRect.iLeft;
+	const INT32 ClipY1 = world ? 0 : gDirtyClipRect.iTop;
+	const INT32 ClipX2 = world ? WORLD_SCREEN_WIDTH  : gDirtyClipRect.iRight;
+	const INT32 ClipY2 = world ? WORLD_SCREEN_HEIGHT : gDirtyClipRect.iBottom;
 
 	INT16 sRight  = sLeft + usWidth;
 	INT16 sBottom = sTop  + usHeight;
@@ -130,23 +132,50 @@ void RestoreBackgroundRects(void)
 		UINT16* const pDestBuf         = ldst.Buffer<UINT16>();
 		UINT32        uiDestPitchBYTES = ldst.Pitch();
 
+		// The world has surfaces of its own when it is a layer of its own, and they are the same as the UI's if not
+		SGPVSurface::Lockable wsrc;
+		SGPVSurface::Lockable wdst;
+		UINT16* pWorldSrcBuf         = pSrcBuf;
+		UINT32  uiWorldSrcPitchBYTES = uiSrcPitchBYTES;
+		UINT16* pWorldDestBuf        = pDestBuf;
+		UINT32  uiWorldDestPitchBYTES = uiDestPitchBYTES;
+		bool const layered = VideoIsLayered();
+		if (layered)
+		{
+			wsrc.Lock(guiWORLDSAVEBUFFER);
+			wdst.Lock(WORLD_BUFFER);
+			pWorldSrcBuf          = wsrc.Buffer<UINT16>();
+			uiWorldSrcPitchBYTES  = wsrc.Pitch();
+			pWorldDestBuf         = wdst.Buffer<UINT16>();
+			uiWorldDestPitchBYTES = wdst.Pitch();
+		}
+
 		for (auto & backsave : gBackSaves)
 		{
 			const BACKGROUND_SAVE* const b = &backsave;
 			if (!b->fFilled || b->fDisabled) continue;
 
+			bool const world = layered && b->uiFlags & BGND_FLAG_WORLD;
+			UINT16* const pDst = world ? pWorldDestBuf : pDestBuf;
+			UINT32  const dstPitch = world ? uiWorldDestPitchBYTES : uiDestPitchBYTES;
+
 			if (b->pSaveArea)
 			{
-				Blt16BPPTo16BPP(pDestBuf, uiDestPitchBYTES, b->pSaveArea.get(), b->sWidth * 2, b->sLeft, b->sTop, 0, 0, b->sWidth, b->sHeight);
-				InvalidateRegionEx(b->sLeft, b->sTop, b->sRight, b->sBottom);
+				Blt16BPPTo16BPP(pDst, dstPitch, b->pSaveArea.get(), b->sWidth * 2, b->sLeft, b->sTop, 0, 0, b->sWidth, b->sHeight);
+				(world ? InvalidateWorldRegion : InvalidateRegionEx)(b->sLeft, b->sTop, b->sRight, b->sBottom);
 			}
 			else if (b->pZSaveArea)
 			{
 				Blt16BPPTo16BPP(gpZBuffer, gZBufferPitch, b->pZSaveArea.get(), b->sWidth * sizeof(UINT16), b->sLeft, b->sTop, 0, 0, b->sWidth, b->sHeight);
 			}
+			else if (world)
+			{
+				Blt16BPPTo16BPP(pDst, dstPitch, pWorldSrcBuf, uiWorldSrcPitchBYTES, b->sLeft, b->sTop, b->sLeft, b->sTop, b->sWidth, b->sHeight);
+				InvalidateWorldRegion(b->sLeft, b->sTop, b->sRight, b->sBottom);
+			}
 			else
 			{
-				Blt16BPPTo16BPP(pDestBuf, uiDestPitchBYTES, pSrcBuf, uiSrcPitchBYTES, b->sLeft, b->sTop, b->sLeft, b->sTop, b->sWidth, b->sHeight);
+				Blt16BPPTo16BPP(pDst, dstPitch, pSrcBuf, uiSrcPitchBYTES, b->sLeft, b->sTop, b->sLeft, b->sTop, b->sWidth, b->sHeight);
 				InvalidateRegionEx(b->sLeft, b->sTop, b->sRight, b->sBottom);
 			}
 		}
@@ -189,14 +218,27 @@ void SaveBackgroundRects(void)
 	UINT16* const pSrcBuf          = l.Buffer<UINT16>();
 	UINT32  const uiDestPitchBYTES = l.Pitch();
 
+	SGPVSurface::Lockable lw;
+	UINT16* pWorldSrcBuf         = pSrcBuf;
+	UINT32  uiWorldPitchBYTES    = uiDestPitchBYTES;
+	bool const layered = VideoIsLayered();
+	if (layered)
+	{
+		lw.Lock(WORLD_BUFFER);
+		pWorldSrcBuf      = lw.Buffer<UINT16>();
+		uiWorldPitchBYTES = lw.Pitch();
+	}
+
 	for (auto & backsave : gBackSaves)
 	{
 		BACKGROUND_SAVE* const b = &backsave;
 		if (!b->fAllocated || b->fDisabled) continue;
 
+		bool const world = layered && b->uiFlags & BGND_FLAG_WORLD;
+
 		if (b->pSaveArea)
 		{
-			Blt16BPPTo16BPP(b->pSaveArea.get(), b->sWidth * 2, pSrcBuf, uiDestPitchBYTES, 0, 0, b->sLeft, b->sTop, b->sWidth, b->sHeight);
+			Blt16BPPTo16BPP(b->pSaveArea.get(), b->sWidth * 2, world ? pWorldSrcBuf : pSrcBuf, world ? uiWorldPitchBYTES : uiDestPitchBYTES, 0, 0, b->sLeft, b->sTop, b->sWidth, b->sHeight);
 		}
 		else if (b->pZSaveArea)
 		{
@@ -204,7 +246,7 @@ void SaveBackgroundRects(void)
 		}
 		else
 		{
-			InvalidateRegionEx(b->sLeft, b->sTop, b->sRight, b->sBottom);
+			(world ? InvalidateWorldRegion : InvalidateRegionEx)(b->sLeft, b->sTop, b->sRight, b->sBottom);
 		}
 
 		b->fFilled = TRUE;
@@ -269,6 +311,10 @@ void UpdateSaveBuffer(void)
 {
 	// Update saved buffer - do for the viewport size ony!
 	BlitBufferToBuffer(FRAME_BUFFER, guiSAVEBUFFER, 0, gsVIEWPORT_WINDOW_START_Y, SCREEN_WIDTH, gsVIEWPORT_WINDOW_END_Y - gsVIEWPORT_WINDOW_START_Y);
+	if (VideoIsLayered())
+	{
+		BlitBufferToBuffer(WORLD_BUFFER, guiWORLDSAVEBUFFER, 0, gsWORLD_VIEWPORT_WINDOW_START_Y, WORLD_SCREEN_WIDTH, gsWORLD_VIEWPORT_WINDOW_END_Y - gsWORLD_VIEWPORT_WINDOW_START_Y);
+	}
 }
 
 

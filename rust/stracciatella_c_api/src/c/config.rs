@@ -6,7 +6,7 @@ use std::ptr;
 
 use stracciatella::config::{
     Cli, EngineOptions, EngineOptionsError, Ja2Json, Resolution, ScalingQuality, UiScale,
-    VanillaVersion, WindowMode, find_stracciatella_home,
+    VanillaVersion, WindowMode, WorldZoom, find_stracciatella_home,
 };
 
 use crate::c::common::*;
@@ -280,6 +280,20 @@ pub extern "C" fn EngineOptions_setUiScale(ptr: *mut EngineOptions, scale: u8) {
     engine_options.ui_scale = UiScale(scale.min(stracciatella::config::MAX_UI_SCALE));
 }
 
+/// Gets `EngineOptions.world_zoom`: 0 means match the UI scale (single layer), otherwise 1 to 4.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_getWorldZoom(ptr: *const EngineOptions) -> u8 {
+    let engine_options = unsafe_ref(ptr);
+    engine_options.world_zoom.0
+}
+
+/// Sets `EngineOptions.world_zoom`: 0 means match the UI scale, otherwise 1 to 4 (larger values are clamped).
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_setWorldZoom(ptr: *mut EngineOptions, zoom: u8) {
+    let engine_options = unsafe_mut(ptr);
+    engine_options.world_zoom = WorldZoom(zoom.min(stracciatella::config::MAX_WORLD_ZOOM));
+}
+
 /// Gets `EngineOptions.scaling_quality`.
 #[unsafe(no_mangle)]
 pub extern "C" fn EngineOptions_getScalingQuality(ptr: *const EngineOptions) -> ScalingQuality {
@@ -406,6 +420,7 @@ mod tests {
   "brightness": -1.0,
   "resversion": "ENGLISH",
   "ui_scale": "auto",
+  "world_zoom": "match_ui",
   "window_mode": "BorderlessDesktop",
   "scaling": "PERFECT",
   "debug": false,

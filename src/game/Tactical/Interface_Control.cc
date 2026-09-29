@@ -416,6 +416,8 @@ void RenderTopmostTacticalInterface()
 		INT16 sMercScreenX;
 		INT16 sMercScreenY;
 		GetSoldierTRUEScreenPos(&s, &sMercScreenX, &sMercScreenY);
+		sMercScreenX = g_ui.worldToUi(sMercScreenX);
+		sMercScreenY = g_ui.worldToUi(sMercScreenY);
 
 		INT16 x = sMercScreenX + s.sDamageX;
 		INT16 y = sMercScreenY + s.sDamageY;

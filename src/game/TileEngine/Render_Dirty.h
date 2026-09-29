@@ -15,6 +15,7 @@ enum BackgroundFlags
 	BGND_FLAG_PERMANENT = 0x80000000,
 	BGND_FLAG_SINGLE    = 0x40000000,
 	BGND_FLAG_SAVE_Z    = 0x20000000,
+	BGND_FLAG_WORLD     = 0x10000000, // in world pixels, saved from and restored to the WORLD_BUFFER (not the UI)
 	BGND_FLAG_SAVERECT  = 0x08000000,
 	BGND_FLAG_ANIMATED  = 0x00000001
 };

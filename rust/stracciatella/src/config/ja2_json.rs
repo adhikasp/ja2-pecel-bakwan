@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use std::path::Path;
 
 use crate::config::{
-    EngineOptions, Resolution, ScalingQuality, UiScale, VanillaVersion, WindowMode,
+    EngineOptions, Resolution, ScalingQuality, UiScale, VanillaVersion, WindowMode, WorldZoom,
 };
 use crate::fs::resolve_existing_components;
 use crate::json;
@@ -46,6 +46,7 @@ pub struct Ja2JsonContent {
     #[serde(skip_serializing)]
     fullscreen: Option<bool>,
     ui_scale: Option<UiScale>,
+    world_zoom: Option<WorldZoom>,
     window_mode: Option<WindowMode>,
     scaling: Option<ScalingQuality>,
     debug: Option<bool>,
@@ -118,6 +119,7 @@ impl Ja2Json {
         }
         copy_to!(content.window_mode, engine_options.window_mode);
         copy_to!(content.ui_scale, engine_options.ui_scale);
+        copy_to!(content.world_zoom, engine_options.world_zoom);
         copy_to!(content.scaling, engine_options.scaling_quality);
         copy_to!(content.debug, engine_options.start_in_debug_mode);
         copy_to!(content.nosound, engine_options.start_without_sound);
@@ -143,6 +145,7 @@ impl Ja2Json {
             resversion: None,
             fullscreen: None,
             ui_scale: None,
+            world_zoom: None,
             window_mode: None,
             scaling: None,
             debug: None,
@@ -156,6 +159,7 @@ impl Ja2Json {
         copy_to!(engine_options.brightness, content.brightness);
         copy_to!(engine_options.resource_version, content.resversion);
         copy_to!(engine_options.ui_scale, content.ui_scale);
+        copy_to!(engine_options.world_zoom, content.world_zoom);
         copy_to!(engine_options.window_mode, content.window_mode);
         copy_to!(engine_options.scaling_quality, content.scaling);
         copy_to!(engine_options.start_in_debug_mode, content.debug);
