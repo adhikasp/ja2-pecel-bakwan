@@ -627,6 +627,24 @@ std::optional<Target> Find(Locator const& loc)
 	return found[loc.index - 1].target;
 }
 
+std::vector<Element> OffscreenElements()
+{
+	SDL_Surface const* frame = GetScreenBuffer();
+	int const sw = frame ? frame->w : 0;
+	int const sh = frame ? frame->h : 0;
+	std::vector<Element> bad;
+	for (Element const& e : Elements())
+	{
+		// Degenerate regions (zero-sized placeholders) cannot be clicked.
+		if (e.rect.w <= 0 || e.rect.h <= 0) continue;
+		if (e.rect.x < 0 || e.rect.y < 0 || e.rect.x + e.rect.w > sw || e.rect.y + e.rect.h > sh)
+		{
+			bad.push_back(e);
+		}
+	}
+	return bad;
+}
+
 Target Resolve(Locator const& loc, unsigned const timeoutMs)
 {
 	std::optional<Target> t;

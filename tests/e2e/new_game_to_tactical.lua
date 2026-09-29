@@ -1,5 +1,6 @@
 -- Start a campaign through the real UI, hire a merc, land in Omerta, then
 -- check that saving and loading the game round-trips.
+local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
 campaign.newGame()
@@ -24,7 +25,7 @@ ja2.expect(landed.screen == "GAME_SCREEN", "in tactical after landing")
 ja2.expect(landed.sector == "A9", "landed in A9 (Omerta), got " .. landed.sector)
 ja2.expect(landed.mercs[1].inSector, "Barry is in the sector")
 ja2.expect(ja2.exists("A9: Omerta"), "the sector name is shown on the tactical panel")
-ja2.screenshot("landed.png")
+shots.take("landed.png", "small")
 
 -- Save, wander off, load: the game comes back as it was.
 ja2.save("e2e-landed", "e2e: landed in Omerta")

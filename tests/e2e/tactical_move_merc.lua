@@ -1,5 +1,6 @@
 -- In tactical: walk a merc a few tiles by clicking the map, and check they
 -- end up exactly on the clicked tile.
+local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
 campaign.startWithMerc("Barry")
@@ -22,7 +23,7 @@ ja2.waitIdle(30000)
 local moved = campaign.firstMerc()
 ja2.expect(moved.gridNo == target, ("Barry walked to %d, is at %d"):format(target, moved.gridNo))
 ja2.expect(ja2.time() > 0, "walking takes game time")
-ja2.screenshot("moved.png")
+shots.take("moved.png", "small")
 
 -- And back again.
 ja2.click(ja2.gridPos(merc.gridNo))

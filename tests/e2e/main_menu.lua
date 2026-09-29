@@ -1,5 +1,6 @@
 -- The main menu comes up and offers its entries; without saves, loading is
 -- greyed out. Preferences and Credits open and return.
+local shots = require("lib.shots")
 
 ja2.waitScreen("MAINMENU_SCREEN")
 ja2.expect(ja2.exists("Stracciatella"), "the version line is shown")
@@ -24,4 +25,4 @@ ja2.click("Credits")
 ja2.waitScreen("CREDIT_SCREEN")
 ja2.key("ESC")
 ja2.waitScreen("MAINMENU_SCREEN")
-ja2.screenshot("main_menu.png")
+shots.take("main_menu.png", true)

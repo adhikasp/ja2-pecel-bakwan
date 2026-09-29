@@ -1,5 +1,6 @@
 -- The strategic map with a merc on the ground: the clock runs and pauses,
 -- the merc's inventory opens, and Options and the laptop are reachable.
+local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
 campaign.startWithMerc("Barry")
@@ -23,7 +24,7 @@ ja2.expect(ja2.state().time.paused == paused, "and toggles it back")
 -- Barry's inventory.
 ja2.click("Enter Inventory")
 ja2.waitIdle()
-ja2.screenshot("inventory.png")
+shots.take("inventory.png")
 ja2.key("ESC")
 ja2.waitIdle()
 
@@ -40,4 +41,4 @@ campaign.dismissLaptopPopups()
 ja2.expect(ja2.exists("Mercs: 1"), "the laptop counts one merc")
 ja2.click("Shut Down")
 ja2.waitScreen("MAP_SCREEN")
-ja2.screenshot("map.png")
+shots.take("map.png", true)

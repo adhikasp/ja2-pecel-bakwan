@@ -422,6 +422,13 @@ namespace
 			});
 		});
 		ja2.set_function("state", [] { return Guarded([] { return GameState(); }); });
+		// {w, h, stdX, stdY}: the screen size and where the classic 640x480 area starts in it.
+		ja2.set_function("screenSize", [] {
+			sol::table t = g_lua.create_table();
+			t["w"] = SCREEN_WIDTH; t["h"] = SCREEN_HEIGHT;
+			t["stdX"] = STD_SCREEN_X; t["stdY"] = STD_SCREEN_Y;
+			return t;
+		});
 
 		// --- tactical map ---
 		ja2.set_function("gridPos", [](int grid, sol::optional<int> level) {
@@ -466,6 +473,20 @@ namespace
 				{
 					throw ExpectationError("expectation failed: " + msg.value_or("(no message)"));
 				}
+			});
+		});
+		ja2.set_function("assertInsideScreen", [] {
+			Guarded([&] {
+				auto const bad = Session::OffscreenElements();
+				if (bad.empty()) return;
+				std::string msg = ST::format("{} mouse region(s)/button(s) lie outside the {}x{} screen:",
+					bad.size(), SCREEN_WIDTH, SCREEN_HEIGHT).to_std_string();
+				for (Element const& e : bad)
+				{
+					msg += ST::format("\n  {} \"{}\" at ({}, {}, {}x{})",
+						e.kind, e.label, e.rect.x, e.rect.y, e.rect.w, e.rect.h).to_std_string();
+				}
+				throw ExpectationError(msg);
 			});
 		});
 		ja2.set_function("check", [](sol::object cond, sol::optional<std::string> msg) {

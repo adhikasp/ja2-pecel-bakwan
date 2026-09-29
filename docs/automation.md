@@ -178,6 +178,8 @@ actually reach count: a button behind a modal dialog does not.
 
 | | |
 |---|---|
+| `ja2.assertInsideScreen()` | Fails (exit 1) if any mouse region or button lies outside the screen. |
+| `ja2.screenSize()` | `{w, h, stdX, stdY}`: screen size and where the classic 640x480 area starts. |
 | `ja2.expect(value, message)` | Fails the script (exit 1) unless value is truthy. |
 | `ja2.check(value, message)` | Records a failure and carries on; the script exits 1 at the end. |
 | `ja2.log(...)` | To stderr and the log. |
