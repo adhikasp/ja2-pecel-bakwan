@@ -22,6 +22,7 @@
 #include "VObject.h"
 #include "VSurface.h"
 #include "SoundMan.h"
+#include "UILayout.h"
 
 struct SMKFLIC
 {
@@ -302,17 +303,57 @@ static void SmkBlitVideoFrame(SMKFLIC* const sf, SGPVSurface* surface)
 	UINT32 dst_pitch = lock.Pitch() / 2; // pitch in pixels
 	UINT16 dst_height = surface->Height();
 
-	// blit the intersection
-	unsigned long y_end = sf->top >= dst_height ? 0 : std::min(src_height, (unsigned long) (dst_height - sf->top));
-	unsigned long x_end = sf->left >= dst_pitch ? 0 : std::min(src_width, (unsigned long) (dst_pitch - sf->left));
-	dst += sf->left + sf->top * dst_pitch;
-	for (unsigned long y = 0; y < y_end; y++)
+	// Scale to fit the screen (nearest neighbour): integer factors from 2x up, otherwise the
+	// largest fractional factor that fits. Videos that already fill the standard area are
+	// blitted 1:1 at the requested position.
+	UINT32 const dst_width = surface->Width();
+	UINT32 scale_num = 1; // scale = scale_num / scale_den
+	UINT32 scale_den = 1;
+	if (surface == FRAME_BUFFER && g_ui.isBigScreen() && src_width > 0 && src_height > 0)
 	{
-		for (unsigned long x = 0; x < x_end; x++)
+		UINT32 const fit_x = dst_width  * 256 / src_width;
+		UINT32 const fit_y = dst_height * 256 / src_height;
+		UINT32 const fit   = std::min(fit_x, fit_y);
+		if (fit >= 2 * 256)
 		{
-			dst[x] = palette[src[x]];
+			scale_num = fit / 256;
 		}
-		dst += dst_pitch;
-		src += src_width;
+		else if (fit > 256)
+		{
+			scale_num = fit;
+			scale_den = 256;
+		}
+	}
+
+	if (scale_num == scale_den)
+	{
+		// blit the intersection
+		unsigned long y_end = sf->top >= dst_height ? 0 : std::min(src_height, (unsigned long) (dst_height - sf->top));
+		unsigned long x_end = sf->left >= dst_pitch ? 0 : std::min(src_width, (unsigned long) (dst_pitch - sf->left));
+		dst += sf->left + sf->top * dst_pitch;
+		for (unsigned long y = 0; y < y_end; y++)
+		{
+			for (unsigned long x = 0; x < x_end; x++)
+			{
+				dst[x] = palette[src[x]];
+			}
+			dst += dst_pitch;
+			src += src_width;
+		}
+		return;
+	}
+
+	UINT32 const out_w = std::min<UINT32>(src_width  * scale_num / scale_den, dst_width);
+	UINT32 const out_h = std::min<UINT32>(src_height * scale_num / scale_den, dst_height);
+	UINT32 const x0    = (dst_width  - out_w) / 2;
+	UINT32 const y0    = (dst_height - out_h) / 2;
+	for (UINT32 y = 0; y < out_h; ++y)
+	{
+		unsigned char const* const row = src + (y * scale_den / scale_num) * src_width;
+		UINT16* const d = dst + (y0 + y) * dst_pitch + x0;
+		for (UINT32 x = 0; x < out_w; ++x)
+		{
+			d[x] = palette[row[x * scale_den / scale_num]];
+		}
 	}
 }

@@ -19,6 +19,7 @@
 #include "Video.h"
 #include "WordWrap.h"
 #include "UILayout.h"
+#include "ScreenBackdrop.h"
 
 #include <optional>
 #include <string_theory/string>
@@ -292,6 +293,11 @@ static void HandleCreditScreen(void)
 
 static void RenderCreditScreen(void)
 {
+	if (SGPVSurface* const backdrop = BeginScreenBackdrop())
+	{
+		BltVideoObject(backdrop, guiCreditBackGroundImage, 0, 0, 0);
+		EndScreenBackdrop(backdrop);
+	}
 	BltVideoObject(FRAME_BUFFER, guiCreditBackGroundImage, 0, STD_SCREEN_X, STD_SCREEN_Y);
 	InvalidateScreen();
 }

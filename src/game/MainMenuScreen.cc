@@ -29,6 +29,7 @@
 #include "Video.h"
 #include "WordWrap.h"
 #include "UILayout.h"
+#include "ScreenBackdrop.h"
 
 #include <string_theory/format>
 
@@ -376,6 +377,11 @@ static void CreateDestroyMainMenuButtons(BOOLEAN fCreate)
 
 static void RenderMainMenu(void)
 {
+	if (SGPVSurface* const backdrop = BeginScreenBackdrop())
+	{
+		BltVideoObject(backdrop, guiMainMenuBackGroundImage, 0, 0, 0);
+		EndScreenBackdrop(backdrop);
+	}
 	BltVideoObject(FRAME_BUFFER, guiMainMenuBackGroundImage, 0, STD_SCREEN_X,       STD_SCREEN_Y     );
 	BltVideoObject(FRAME_BUFFER, guiJa2LogoImage,            0, STD_SCREEN_X + 188, STD_SCREEN_Y + 15);
 }

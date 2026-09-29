@@ -25,6 +25,7 @@
 #include "Video.h"
 #include "WordWrap.h"
 #include "UILayout.h"
+#include "ScreenBackdrop.h"
 
 #include <string_theory/string>
 
@@ -315,7 +316,10 @@ static void EnterGIOScreen()
 	// Render the screen once, so we can blt to the save buffer
 	RenderGIOScreen();
 
-	BlitBufferToBuffer(FRAME_BUFFER, guiSAVEBUFFER, STD_SCREEN_X, STD_SCREEN_Y, 640, 439);
+	if (g_ui.isBigScreen())
+		BlitBufferToBuffer(FRAME_BUFFER, guiSAVEBUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+	else
+		BlitBufferToBuffer(FRAME_BUFFER, guiSAVEBUFFER, STD_SCREEN_X, STD_SCREEN_Y, 640, 439);
 
 	gfGIOButtonsAllocated = TRUE;
 }
@@ -414,6 +418,11 @@ static void RenderGIOScreen(void)
 {
 	UINT16		usPosY;
 
+	if (SGPVSurface* const backdrop = BeginScreenBackdrop())
+	{
+		BltVideoObject(backdrop, guiGIOMainBackGroundImage, 0, 0, 0);
+		EndScreenBackdrop(backdrop);
+	}
 	BltVideoObject(FRAME_BUFFER, guiGIOMainBackGroundImage, 0, STD_SCREEN_X, STD_SCREEN_Y);
 
 	//Shade the background
