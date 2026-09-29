@@ -5,7 +5,9 @@
 #include "Types.h"
 
 
-#define MAX_MESSAGES_ON_MAP_BOTTOM  9
+#include "UILayout.h"
+
+#define MAX_MESSAGES_ON_MAP_BOTTOM  (g_ui.getMapMessageLines())
 
 
 enum ExitToWhere

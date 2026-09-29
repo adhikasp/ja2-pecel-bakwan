@@ -637,10 +637,25 @@ void ExitLaptop(void)
 }
 
 
+/** On screens larger than 640x480 the laptop stays a framed 640x480 viewport: the margins around it are dressed as a desk. */
+static void DrawLaptopDesk(SGPVSurface* const dst)
+{
+	if (!g_ui.isBigScreen()) return;
+	SGPBox const b = g_ui.stdBox();
+	INT32 const W = SCREEN_WIDTH;
+	INT32 const H = SCREEN_HEIGHT;
+	FillMarginArt(dst, 0,             0,             W,                 b.y,              MarginStyle::Desk);
+	FillMarginArt(dst, 0,             b.y + b.h,     W,                 H - (b.y + b.h),  MarginStyle::Desk);
+	FillMarginArt(dst, 0,             b.y,           b.x,               b.h,              MarginStyle::Desk);
+	FillMarginArt(dst, b.x + b.w,     b.y,           W - (b.x + b.w),   b.h,              MarginStyle::Desk);
+}
+
+
 static void RenderLapTopImage(void)
 {
 	if (fMaximizingProgram || fMinizingProgram) return;
 
+	DrawLaptopDesk(FRAME_BUFFER);
 	BltVideoObject(FRAME_BUFFER, guiLAPTOP,           0, LAPTOP_X,      LAPTOP_Y);
 	BltVideoObject(FRAME_BUFFER, guiLaptopBACKGROUND, 1, LAPTOP_X + 25, LAPTOP_Y + 23);
 

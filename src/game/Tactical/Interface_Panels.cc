@@ -3431,10 +3431,10 @@ void KeyRingItemPanelButtonCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 		if( guiCurrentScreen == MAP_SCREEN )
 		{
 			// shade the background
-			FRAME_BUFFER->ShadowRect(STD_SCREEN_X + 0, STD_SCREEN_Y + 107,
-							STD_SCREEN_X + 261, STD_SCREEN_Y + 359);
-			InvalidateRegion(STD_SCREEN_X + 0, STD_SCREEN_Y + 107, STD_SCREEN_X + 261, STD_SCREEN_Y + 359);
-			InitKeyRingPopup(pSoldier, STD_SCREEN_X + 0, sStartYPosition, sWidth, sHeight);
+			FRAME_BUFFER->ShadowRect(MAPLEFT_X + 0, STD_SCREEN_Y + 107,
+							MAPLEFT_X + 261, STD_SCREEN_Y + 359);
+			InvalidateRegion(MAPLEFT_X + 0, STD_SCREEN_Y + 107, MAPLEFT_X + 261, STD_SCREEN_Y + 359);
+			InitKeyRingPopup(pSoldier, MAPLEFT_X + 0, sStartYPosition, sWidth, sHeight);
 		}
 		else
 		{

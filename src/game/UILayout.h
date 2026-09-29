@@ -29,6 +29,9 @@
 #define STD_SCREEN_Y                    (g_ui.m_stdScreenOffsetY)
 #define MAP_SCREEN_WIDTH                (g_ui.m_mapScreenWidth)
 #define MAP_SCREEN_HEIGHT               (g_ui.m_mapScreenHeight)
+#define MAPLEFT_X                       (g_ui.m_mapLeftX)              // left edge of the map screen left column (character list and info panel)
+#define MAP_MESSAGE_EXTRA_Y             (g_ui.m_mapMessageExtraPx)
+#define MAPBOT_Y                        (g_ui.m_mapBottomY)            // top edge of the map screen bottom bar art minus 359, i.e. the bar is at MAPBOT_Y + 359
 
 /* The tactical world can be a layer of its own, with its own scale (see "world_zoom"). World
  * pixels are then not UI pixels: the world is rendered into a WORLD_BUFFER of
@@ -89,6 +92,18 @@ struct MoneyLoc
 	}
 };
 
+
+class SGPVSurface;
+
+/** Procedural backdrop art for the margins around fixed-size (640x480 era) screens on big displays. */
+enum class MarginStyle
+{
+	Bronze, /**< riveted brass plates, matches the strategic map screen frame */
+	Desk    /**< dark desk surface, for the laptop */
+};
+
+/** Fill the rectangle (x, y, w, h) of dst with margin art (clipped to dst). Deterministic. */
+void FillMarginArt(SGPVSurface* dst, INT32 x, INT32 y, INT32 w, INT32 h, MarginStyle style);
 
 /** Anchor point on the screen used by UILayout::anchor. */
 enum class Anchor
@@ -172,6 +187,18 @@ public:
 	UINT16                m_stdScreenOffsetX;             /** Offset of the standard (640x480) window */
 	UINT16                m_stdScreenOffsetY;             /** Offset of the standard (640x480) window */
 
+	/** Map screen: the left column (character list, info panel, inventory) is anchored to the left screen edge.
+	 * The sector map and the bottom bar stay centred on the standard 640x480 box; the space in between is dressed with art. */
+	UINT16                m_mapLeftX;
+
+	/** Map screen: y origin of the bottom bar (message log, clock, buttons). The bar is anchored to the bottom screen edge:
+	 * its art (121 px high) starts at m_mapBottomY + 359. Equal to m_stdScreenOffsetY * 2 on even heights, 0 at 640x480. */
+	UINT16                m_mapBottomY;
+
+	/** Map screen: extra height (px) of the message log above the standard bar, a multiple of the line height. 0 at 640x480. */
+	UINT16                m_mapMessageExtraPx;
+
+
 	/** Constructor.
 	 * @param screenWidth Screen width
 	 * @param screenHeight Screen height */
@@ -216,6 +243,9 @@ public:
 
 	/** The rectangle of the whole screen. */
 	SGPBox screenBox() const;
+
+	/** Number of message lines shown in the map screen message log (9 in the standard layout, more on tall screens). */
+	int getMapMessageLines() const;
 
 	/** Check if the screen is bigger than original 640x480. */
 	bool isBigScreen() const;
