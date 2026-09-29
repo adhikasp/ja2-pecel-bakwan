@@ -87,10 +87,13 @@ def compare(a: Path, b: Path, tol: int):
     if (wa, ha) != (wb, hb):
         return None
     bad = 0
-    for la, lb in zip(ra, rb):
+    # The main menu prints the build's version string in the bottom-left corner: don't compare it.
+    mask_x = 260 if "main_menu" in a.name else 0
+    for y, (la, lb) in enumerate(zip(ra, rb)):
         if la == lb:
             continue
-        for x in range(wa):
+        masked = y >= ha - 16
+        for x in range(mask_x if masked else 0, wa):
             pa, pb = x * ca, x * cb
             if (abs(la[pa] - lb[pb]) > tol or abs(la[pa + 1] - lb[pb + 1]) > tol
                     or abs(la[pa + 2] - lb[pb + 2]) > tol):
