@@ -15,6 +15,11 @@ void setGameVersion(GameVersion ver)
 	s_gameVersion = ver;
 }
 
+GameVersion getGameVersion()
+{
+	return s_gameVersion;
+}
+
 
 /** Check if this is English version of the game. */
 bool isEnglishVersion()

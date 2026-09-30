@@ -1,4 +1,5 @@
 #include "StrategicMap.h"
+#include "NativeUI.h"
 
 #include "AI.h"
 #include "Ambient_Control.h"
@@ -432,6 +433,7 @@ static void HandleDefiniteUnloadingOfWorld(UINT8 ubUnloadCode);
 
 void SetCurrentWorldSector(const SGPSector& sector)
 {
+	NativeUI::Notify(NativeUI::TOPIC_SECTOR);
 	SyncStrategicTurnTimes();
 
 	// is the sector already loaded?

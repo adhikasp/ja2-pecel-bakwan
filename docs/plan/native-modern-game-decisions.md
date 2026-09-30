@@ -132,3 +132,35 @@ capture is available where a GPU exists.
 `ctest -L spike` (added to `.ci/ci-build.sh`): UI toolkit unit tests (both toolkits, all states, input by id),
 `ja2-spike selftest`, render path (software), world raster rules, asset tool tests. `ctest -L spike-gamedata`
 runs the in-game spikes (needs the game data).
+
+# Phase 2 — native UI runtime
+
+What [native-modern-game.md](native-modern-game.md) Phase 2 built, and the decisions taken on the way.
+
+| Question | Decision |
+|---|---|
+| Where the runtime lives | `src/nativeui/` (toolkit layer, no game code: render interface, clock, tokens, fonts, icons; shared with the spikes and unit tests) and `src/game/NativeUI/` (the game side: `NativeUI.h`). `WITH_NATIVE_UI` (default on, off on Android) builds it; without it a stub keeps every screen legacy |
+| Render paths | **GPU:** in normal play the native layer is drawn with `SDL_RenderGeometry` on the game's renderer, after the frame, at the window's own pixels (`VideoOverlay::GpuRender`). **Software:** headless and every automation session (also `--show`) rasterize it into a premultiplied ARGB layer that is blended into the ScreenBuffer, so screenshots, pixel reads and goldens include it. `JA2_NATIVE_UI_RENDERER=software` forces the software path in a window |
+| Size and scale | output pixels (window pixels on the GPU path, the ScreenBuffer headless); `1dp = min(w / 1920, h / 1080) × native_ui_scale`, clamped so the layout is never smaller than 1280x720 dp. Resizes, video-mode changes and DPI changes are picked up every frame |
+| Minimum output | 1280x720 pixels. Below that the native UI does not run and every screen resolves to legacy (so 640x480 keeps the legacy screens) |
+| ui_mode | `ja2.json` `"ui_mode": { "credits": "native", "msgbox": "legacy", ... }` and `"native_ui_scale": 1.25`; runtime override `ja2.setUiMode(key, mode)`. Resolved once when a screen is entered (`NativeUI::HandleScreen` in the game loop). Keys: `credits` (default native), `msgbox`, `tooltip`, `toasts`, `cursor` (default legacy) |
+| Input | a native screen or a native modal takes the mouse (legacy regions get nothing) and gets the keyboard queue first; RmlUi's own navigation (Tab, arrows via `nav`, Enter/Space on the focused element) with `:focus-visible` rings; text fields start SDL text input |
+| View models | `ViewModel.h`: fields declared once (`Describe`), bound to RmlUi by `Binding`, snapshotted for tests and `ja2.viewModel`; commands are named callbacks; `NativeUI::Notify(TOPIC_...)` is called where the game changes money, time, sector and team |
+| Strings | new UI strings are in `assets/ui/strings/strings-<lang>.json` (English fills gaps). The translations of the Phase 2 strings need a translator's review |
+
+## Obsolete pixel-coordinate UI settings
+
+The plan asks which moddable settings stop meaning anything once screens are native (they place things in the 640x480
+legacy layouts). None is removed yet: each stays until the screen that reads it has gone native, then it is dropped
+with that screen's legacy code (Phase 10).
+
+| Setting | Where | Used by | Obsolete when |
+|---|---|---|---|
+| `townPoint` (`x`, `y`) | `strategic-map-towns.json` | town name labels on the 640x480 strategic map image | Phase 4 (native map places labels from sector data) |
+| `squad_size` pixel rule ("640 + (n-6)*83 px") | `game.json` (comment and the check in the tactical panel) | the legacy squad bar's fixed-width slots | Phase 5 (the native squad bar wraps/scrolls; `squad_size` itself stays) |
+| Credits record codes `D`, `B`, `S`, `J`, `C`, `R` (spacing, speed, justification, colours) | `credits` EDT (game data, moddable) | legacy credits | **now**, on the native credits screen (docs/ui/credits.md §8); still read by the legacy screen |
+| Credit face rectangles (`gCreditFaces`) | code, not data | legacy credits hit regions | now (native cards); kept as the crop rectangles for the portraits |
+| `eyesXY`, `mouthXY` | `mercs-rpc-small-faces.json` | face animation offsets | **not** obsolete: they are relative to the face art, not to a screen layout |
+
+Nothing else in `assets/externalized/` holds screen coordinates: the other UI positions are compiled into the legacy
+screen code (`STD_SCREEN_*`, `UILayout`), which Phase 10 deletes.

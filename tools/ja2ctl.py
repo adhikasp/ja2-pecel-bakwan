@@ -243,7 +243,9 @@ def format_ui(items):
     for e in items or []:
         flags = "" if e.get("enabled") else " (disabled)"
         extra = f' help="{e["help"]}"' if e.get("help") and e.get("help") != e.get("label") else ""
-        print(f'{e["kind"]:6} {e["x"]:4},{e["y"]:<4} {e["w"]:3}x{e["h"]:<3} "{e.get("label", "")}"{extra}{flags}')
+        nid = f' #{e["id"]}' if e.get("kind") == "native" else ""
+        focus = " (focused)" if e.get("focused") else ""
+        print(f'{e["kind"]:6} {e["x"]:4},{e["y"]:<4} {e["w"]:3}x{e["h"]:<3}{nid} "{e.get("label", "")}"{extra}{flags}{focus}')
 
 
 def format_text(items):
@@ -426,6 +428,9 @@ def cmd_run(opts):
 def locator_args(opts):
     if len(opts.target) == 2 and all(t.lstrip("-").isdigit() for t in opts.target):
         return [int(opts.target[0]), int(opts.target[1])]
+    # "#credits.back" (or --id credits.back): a native element by id
+    if getattr(opts, "id", False) or (len(opts.target) == 1 and opts.target[0].startswith("#")):
+        return [{"id": opts.target[0].lstrip("#")}]
     loc = {"text": " ".join(opts.target)}
     if opts.exact:
         loc["exact"] = True
@@ -477,6 +482,15 @@ def build_parser():
     sp = sub.add_parser("ui", help="clickable elements")
     sp.add_argument("--all", action="store_true", help="include unlabelled and covered regions")
     sub.add_parser("text", help="text visible on screen")
+    sub.add_parser("audit", help="layout problems (legacy regions off screen, native layout audit)")
+    sub.add_parser("native", help="native UI state: renderer, size, scale, screen, ui_mode per screen")
+    sp = sub.add_parser("uimode", help="set a screen's ui_mode for this session: uimode credits legacy|native|default")
+    sp.add_argument("key")
+    sp.add_argument("mode")
+    sp = sub.add_parser("uiscale", help="native UI scale for this session, e.g. 1.5")
+    sp.add_argument("scale", type=float)
+    sp = sub.add_parser("vm", help="a view model's fields, e.g. vm status / vm credits")
+    sp.add_argument("name")
 
     for verb, fn in (("click", "click"), ("rclick", "rclick"), ("dblclick", "dblclick"), ("hover", "hover"),
                      ("wait-for", "waitFor"), ("find", "find")):
@@ -484,9 +498,11 @@ def build_parser():
         sp.add_argument("target", nargs="+")
         sp.add_argument("--exact", action="store_true", help="whole-label match")
         sp.add_argument("--index", type=int, default=1, help="n-th match in reading order")
+        sp.add_argument("--id", action="store_true", help="TARGET is a native element id (same as #ID)")
         sp.set_defaults(fn=fn)
     sp = sub.add_parser("wait-gone", help="wait until a label/text disappears")
     sp.add_argument("target", nargs="+")
+    sp.add_argument("--id", action="store_true")
     sp.add_argument("--exact", action="store_true")
     sp.add_argument("--index", type=int, default=1)
 
@@ -570,6 +586,16 @@ def main(argv=None):
             return print_result(call(name, "ui", {"all": opts.all}), raw, None if raw else format_ui)
         if cmd == "text":
             return print_result(call(name, "texts"), raw, None if raw else format_text)
+        if cmd == "audit":
+            return print_result(call(name, "layoutProblems"), raw, None if raw else (lambda r: print("\n".join(r or []) or "no layout problems")))
+        if cmd == "native":
+            return print_result(call(name, "nativeUi"), raw, None if raw else (lambda r: print(json.dumps(r, indent=1))))
+        if cmd == "uimode":
+            return print_result(call(name, "setUiMode", opts.key, opts.mode), raw)
+        if cmd == "uiscale":
+            return print_result(call(name, "setUiScale", opts.scale), raw)
+        if cmd == "vm":
+            return print_result(call(name, "viewModel", opts.name), raw, None if raw else (lambda r: print(json.dumps(r, indent=1, ensure_ascii=False))))
         if cmd in ("click", "rclick", "dblclick", "hover", "wait-for", "find"):
             fmt = None if raw else (lambda r: print(r["description"] if r else "not found"))
             return print_result(call(name, opts.fn, *locator_args(opts)), raw, fmt)

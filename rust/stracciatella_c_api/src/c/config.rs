@@ -294,6 +294,54 @@ pub extern "C" fn EngineOptions_setWorldZoom(ptr: *mut EngineOptions, zoom: u8) 
     engine_options.world_zoom = WorldZoom(zoom.min(stracciatella::config::MAX_WORLD_ZOOM));
 }
 
+/// Gets `EngineOptions.ui_mode` as `screen=mode` pairs separated by newlines (for example "credits=native\nmsgbox=legacy").
+/// The caller is responsible for the returned memory.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_getUiModes(ptr: *const EngineOptions) -> *mut c_char {
+    let engine_options = unsafe_ref(ptr);
+    let pairs: Vec<String> = engine_options
+        .ui_mode
+        .iter()
+        .map(|(k, v)| format!("{}={}", k, v))
+        .collect();
+    c_string_from_str(&pairs.join("\n")).into_raw()
+}
+
+/// Sets `EngineOptions.ui_mode[screen]`; an empty mode removes the entry (the engine default applies again).
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_setUiMode(
+    ptr: *mut EngineOptions,
+    screen: *const c_char,
+    mode: *const c_char,
+) {
+    let engine_options = unsafe_mut(ptr);
+    let screen = str_from_c_str_or_panic(unsafe_c_str(screen)).to_owned();
+    let mode = str_from_c_str_or_panic(unsafe_c_str(mode)).to_owned();
+    if mode.is_empty() {
+        engine_options.ui_mode.remove(&screen);
+    } else {
+        engine_options.ui_mode.insert(screen, mode);
+    }
+}
+
+/// Gets `EngineOptions.native_ui_scale` (1.0 = 100%).
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_getNativeUiScale(ptr: *const EngineOptions) -> f32 {
+    let engine_options = unsafe_ref(ptr);
+    engine_options.native_ui_scale
+}
+
+/// Sets `EngineOptions.native_ui_scale`, clamped to 0.5 .. 3.0.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_setNativeUiScale(ptr: *mut EngineOptions, scale: f32) {
+    let engine_options = unsafe_mut(ptr);
+    engine_options.native_ui_scale = if scale.is_finite() {
+        scale.clamp(0.5, 3.0)
+    } else {
+        1.0
+    };
+}
+
 /// Gets `EngineOptions.scaling_quality`.
 #[unsafe(no_mangle)]
 pub extern "C" fn EngineOptions_getScalingQuality(ptr: *const EngineOptions) -> ScalingQuality {

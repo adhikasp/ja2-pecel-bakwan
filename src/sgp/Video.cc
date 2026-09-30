@@ -23,6 +23,7 @@
 #include <SDL3/SDL_surface.h>
 #include <algorithm>
 #include <chrono>
+#include <cstring>
 #include <stdexcept>
 
 #define MAX_CURSOR_WIDTH  64
@@ -79,6 +80,8 @@ static VideoLayout::Size PresentedWindowSize{ 0, 0 };
 static sgp::GameClock::duration TimeBetweenRefreshScreens;
 static int32_t TargetFPS = 40;
 static VideoDisplaySettings CurrentSettings{ 0, 0, 0, WindowMode::BorderlessDesktop };
+static VideoOverlay* Overlay = nullptr;
+static SDL_Rect     OverlayArea{ 0, 0, 0, 0 }; // what the software overlay covered last frame
 
 static void DeletePrimaryVideoSurfaces(void);
 static SDL_Rect ClipToSurface(SDL_Rect const& rect, SDL_Surface const* surface);
@@ -878,6 +881,101 @@ static uint32_t ComposeAt(int const x, int const y)
 }
 
 
+/** ComposeAt with the software overlay (native UI) blended on top. */
+static uint32_t ComposeWithOverlay(int const x, int const y)
+{
+	uint32_t const c = ComposeAt(x, y);
+	if (!Overlay || OverlayArea.w <= 0) return c;
+	int const su = g_ui.m_uiScale;
+	uint32_t const o = Overlay->SoftwarePixel(std::clamp(x / su, 0, ScreenBuffer->w - 1), std::clamp(y / su, 0, ScreenBuffer->h - 1));
+	uint32_t const a = o >> 24;
+	if (a == 0) return c;
+	auto const ch = [&](int shift) {
+		uint32_t const v = ((o >> shift) & 0xff) + ((c >> shift) & 0xff) * (255 - a) / 255;
+		return std::min<uint32_t>(v, 255) << shift;
+	};
+	return ch(16) | ch(8) | ch(0);
+}
+
+
+void VideoSetOverlay(VideoOverlay* const overlay)
+{
+	Overlay = overlay;
+	OverlayArea = { 0, 0, 0, 0 };
+	gfForceFullScreenRefresh = TRUE;
+}
+
+
+VideoOutputMapping VideoGetOutputMapping()
+{
+	VideoOutputMapping m{ 1, 1, 0, 0, ScreenBuffer ? ScreenBuffer->w : SCREEN_WIDTH, ScreenBuffer ? ScreenBuffer->h : SCREEN_HEIGHT, false };
+	if (!GameRenderer || !g_game_window || !Overlay || !Overlay->UsesGpu()) return m;
+	int pw = 0, ph = 0;
+	SDL_GetWindowSizeInPixels(g_game_window, &pw, &ph);
+	SDL_FRect r{};
+	if (!SDL_GetRenderLogicalPresentationRect(GameRenderer, &r) || r.w <= 0 || r.h <= 0) r = { 0, 0, float(pw), float(ph) };
+	m = { r.w / SCREEN_WIDTH, r.h / SCREEN_HEIGHT, r.x, r.y, pw, ph, true };
+	return m;
+}
+
+
+static bool                 OutputCaptureWanted = false;
+static std::vector<uint8_t> OutputCapture;
+static int                  OutputCaptureW = 0, OutputCaptureH = 0;
+
+/** Reads the finished output back from the GPU before it is presented (VideoRequestOutputCapture). */
+static void CaptureOutputIfRequested()
+{
+	if (!OutputCaptureWanted || !GameRenderer) return;
+	OutputCaptureWanted = false;
+	int lw = 0, lh = 0;
+	SDL_RendererLogicalPresentation mode = SDL_LOGICAL_PRESENTATION_DISABLED;
+	SDL_GetRenderLogicalPresentation(GameRenderer, &lw, &lh, &mode);
+	SDL_SetRenderLogicalPresentation(GameRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+	SDL_Surface* s = SDL_RenderReadPixels(GameRenderer, nullptr);
+	SDL_SetRenderLogicalPresentation(GameRenderer, lw, lh, mode);
+	if (!s) return;
+	SDL_Surface* rgb = SDL_ConvertSurface(s, SDL_PIXELFORMAT_RGB24);
+	SDL_DestroySurface(s);
+	if (!rgb) return;
+	OutputCaptureW = rgb->w;
+	OutputCaptureH = rgb->h;
+	OutputCapture.resize(size_t(rgb->w) * rgb->h * 3);
+	for (int y = 0; y < rgb->h; ++y)
+		std::memcpy(&OutputCapture[size_t(y) * rgb->w * 3], static_cast<uint8_t const*>(rgb->pixels) + y * rgb->pitch, size_t(rgb->w) * 3);
+	SDL_DestroySurface(rgb);
+}
+
+void VideoRequestOutputCapture()
+{
+	OutputCaptureWanted = true;
+	OutputCapture.clear();
+}
+
+bool VideoTakeOutputCapture(std::vector<uint8_t>& rgb, int& w, int& h)
+{
+	if (OutputCapture.empty()) return false;
+	rgb.swap(OutputCapture);
+	w = OutputCaptureW;
+	h = OutputCaptureH;
+	OutputCapture.clear();
+	return true;
+}
+
+/** GPU path: the overlay in window pixels, over whatever was presented. */
+static void RenderOverlayGpu()
+{
+	if (!Overlay || !Overlay->UsesGpu()) return;
+	int lw = 0, lh = 0;
+	SDL_RendererLogicalPresentation mode = SDL_LOGICAL_PRESENTATION_DISABLED;
+	SDL_GetRenderLogicalPresentation(GameRenderer, &lw, &lh, &mode);
+	SDL_SetRenderLogicalPresentation(GameRenderer, 0, 0, SDL_LOGICAL_PRESENTATION_DISABLED);
+	Overlay->GpuRender(GameRenderer);
+	SDL_SetRenderClipRect(GameRenderer, nullptr);
+	SDL_SetRenderLogicalPresentation(GameRenderer, lw, lh, mode);
+}
+
+
 bool VideoComposeFrame(std::vector<uint8_t>& rgb, int& width, int& height)
 {
 	if (!Layered || !ScreenBuffer || !WorldBuffer) return false;
@@ -889,7 +987,7 @@ bool VideoComposeFrame(std::vector<uint8_t>& rgb, int& width, int& height)
 		uint8_t* d = &rgb[size_t(y) * width * 3];
 		for (int x = 0; x < width; ++x, d += 3)
 		{
-			uint32_t const c = ComposeAt(x, y);
+			uint32_t const c = ComposeWithOverlay(x, y);
 			d[0] = c >> 16; d[1] = (c >> 8) & 0xff; d[2] = c & 0xff;
 		}
 	}
@@ -900,7 +998,7 @@ bool VideoComposeFrame(std::vector<uint8_t>& rgb, int& width, int& height)
 uint32_t VideoComposePixel(int const uiX, int const uiY)
 {
 	int const su = g_ui.m_uiScale;
-	return ComposeAt(uiX * su + su / 2, uiY * su + su / 2);
+	return ComposeWithOverlay(uiX * su + su / 2, uiY * su + su / 2);
 }
 
 
@@ -1136,8 +1234,26 @@ void RefreshScreen(void)
 
 	// This variable will hold the union of all modified regions.
 	struct rect : SDL_Rect {
-		void operator+=(SDL_Rect const& r) { SDL_GetRectUnion(this, &r, this); }
+		void operator+=(SDL_Rect const& r) { if (r.w > 0 && r.h > 0) SDL_GetRectUnion(this, &r, this); }
 	} ScreenTextureUpdateRect{ MouseBackground };
+
+	// Software overlay (native UI): what it covered last frame and covers now is restored from the frame
+	// buffer, so it is blended over the legacy picture exactly once.
+	SDL_Rect overlayNow{ 0, 0, 0, 0 };
+	bool const softOverlay = Overlay && !Overlay->UsesGpu();
+	if (softOverlay)
+	{
+		overlayNow = Overlay->SoftwarePrepare();
+		if (!Layered)
+		{
+			for (SDL_Rect r : { OverlayArea, overlayNow })
+			{
+				if (r.w <= 0 || r.h <= 0) continue;
+				SDL_BlitSurface(FrameBuffer, &r, ScreenBuffer, &r);
+				ScreenTextureUpdateRect += r;
+			}
+		}
+	}
 
 	if (gfForceFullScreenRefresh || guiDirtyRegionCount > 0 || guiDirtyRegionExCount > 0)
 	{
@@ -1182,6 +1298,14 @@ void RefreshScreen(void)
 		gfIgnoreScrollDueToCenterAdjust = FALSE;
 	}
 
+	if (softOverlay && !Layered && overlayNow.w > 0 && overlayNow.h > 0)
+	{
+		Overlay->SoftwareCompose(ScreenBuffer, overlayNow);
+		ScreenTextureUpdateRect += overlayNow;
+	}
+	if (softOverlay) OverlayArea = overlayNow;
+	else OverlayArea = { 0, 0, 0, 0 };
+
 	auto const cursorPos{ GetCursorPos() };
 	SDL_Rect src;
 	src.x = 0;
@@ -1194,10 +1318,11 @@ void RefreshScreen(void)
 		cursorPos.iX - gsMouseCursorXOffset,
 		cursorPos.iY - gsMouseCursorYOffset,
 		src.w, src.h };
-	SDL_BlitSurface(MouseCursor, &src, ScreenBuffer, &dst);
+	bool const drawCursor = !(Overlay && Overlay->HidesLegacyCursor());
+	if (drawCursor) SDL_BlitSurface(MouseCursor, &src, ScreenBuffer, &dst);
 
 	// The part that actually ended up on screen
-	SDL_Rect const blitted{ ClipToSurface(dst, ScreenBuffer) };
+	SDL_Rect const blitted{ drawCursor ? ClipToSurface(dst, ScreenBuffer) : SDL_Rect{ 0, 0, 0, 0 } };
 	ScreenTextureUpdateRect += blitted;
 	MouseBackground = blitted;
 
@@ -1210,7 +1335,9 @@ void RefreshScreen(void)
 		// Headless: the layers are composed when someone wants to see them, see VideoComposeFrame()
 		if (!CanvasTexture) return;
 		PresentLayers(ClipToSurface(ScreenTextureUpdateRect, ScreenBuffer));
+		RenderOverlayGpu();
 		Visualizer::Render(GameRenderer);
+		CaptureOutputIfRequested();
 		FPS::RenderPresentPtr(GameRenderer);
 		return;
 	}
@@ -1246,8 +1373,10 @@ void RefreshScreen(void)
 		SDL_RenderTexture(GameRenderer, ScreenTexture, NULL, NULL);
 	}
 
+	RenderOverlayGpu();
 	Visualizer::Render(GameRenderer);
 
+	CaptureOutputIfRequested();
 	FPS::RenderPresentPtr(GameRenderer);
 }
 

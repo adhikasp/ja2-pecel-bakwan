@@ -1,5 +1,6 @@
 #include "Font.h"
 #include "Game_Clock.h"
+#include "NativeUI.h"
 #include "Font_Control.h"
 #include "Render_Dirty.h"
 #include "Timer_Control.h"
@@ -925,7 +926,9 @@ void UpdateGameClockGlobals(ST::string const& dayStringToUse)
 	//Calculate the day, hour, and minutes.
 	guiDay = guiGameClock / NUM_SEC_IN_DAY;
 	guiHour = (guiGameClock - guiDay * NUM_SEC_IN_DAY) / NUM_SEC_IN_HOUR;
+	UINT32 const oldMin = guiMin;
 	guiMin = (guiGameClock - (guiDay * NUM_SEC_IN_DAY +  guiHour * NUM_SEC_IN_HOUR)) / NUM_SEC_IN_MIN;
+	if (guiMin != oldMin) NativeUI::Notify(NativeUI::TOPIC_CLOCK);
 
 	WORLDTIMESTR = ST::format("{} {}, {02d}:{02d}", dayStringToUse, guiDay, guiHour, guiMin);
 }

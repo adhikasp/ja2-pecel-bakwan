@@ -1,0 +1,23 @@
+/* Shared overlays (overlays.rml). The document covers the output but never takes the mouse. */
+body.nui-overlays { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; }
+
+/* toasts: bottom right, newest at the bottom */
+#nui-toasts { position: absolute; right: var(--sp-5); bottom: var(--sp-5); width: 380dp; }
+#nui-toasts .toast { width: 380dp; box-sizing: border-box; }
+
+/* fast help: placed by the runtime (left/top in pixels) */
+#nui-tooltip {
+	display: none; position: absolute; width: auto; max-width: 420dp;
+	font-size: var(--fs-sm); line-height: 20dp; white-space: normal;
+}
+#nui-tooltip.shown { display: block; }
+#nui-tooltip .tip-key { font-weight: 700; color: var(--c-accent); }
+#nui-tooltip .tip-good { color: var(--c-ok); }
+#nui-tooltip .tip-bad { color: var(--c-danger); }
+
+/* the mouse pointer: a light arrow with a dark edge, its hot spot at the arrow's tip (4, 2 of 24) */
+#nui-cursor { display: none; position: absolute; width: 28dp; height: 28dp; margin-left: -4.7dp; margin-top: -2.3dp; }
+#nui-cursor.shown { display: block; }
+#nui-cursor img { position: absolute; left: 0; top: 0; width: 28dp; height: 28dp; }
+#nui-cursor .cursor-fill { image-color: var(--c-text-strong); }
+#nui-cursor .cursor-edge { image-color: var(--c-void); }

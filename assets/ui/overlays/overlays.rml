@@ -1,0 +1,22 @@
+<rml>
+<head>
+	<title>Native UI overlays</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="overlays.rcss"/>
+</head>
+<!-- Shared overlays over every screen (NativeUI.cc): screen messages as toasts, fast help, and the mouse pointer.
+     Nothing here takes the mouse: pointer-events are off for the whole document. -->
+<body class="nui-overlays">
+<div id="nui-toasts" data-model="toasts">
+	<div class="toast" data-for="t : toasts" data-class-ok="t.kind == 'ok'" data-class-warn="t.kind == 'warn'" data-class-danger="t.kind == 'danger'">
+		<img class="icon" data-attr-src="t.icon"/>
+		<div class="body">
+			<div class="title" data-if="t.title != ''">{{t.title}}</div>
+			<div class="text">{{t.text}}</div>
+		</div>
+	</div>
+</div>
+<div id="nui-tooltip" class="tooltip"></div>
+<div id="nui-cursor" class="audit-skip"><img class="cursor-fill" src="icon-pointer@64"/><img class="cursor-edge" src="icon-pointer-edge@64"/></div>
+</body>
+</rml>

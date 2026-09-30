@@ -1,4 +1,5 @@
 #include "GameLoop.h"
+#include "NativeUI.h"
 #include "GameVersion.h"
 #include "Input.h"
 #include "SGP.h"
@@ -118,14 +119,19 @@ try
 	ScreenID uiOldScreen = guiCurrentScreen;
 
 	auto const MousePos{ GetMousePos() };
+	// The native UI (a native screen or modal) takes the mouse from the legacy regions while it is shown
+	NativeUI::BeginFrame();
+	NativeUI::MouseMoved(MousePos.iX, MousePos.iY);
+	bool const nativeMouse = NativeUI::CapturesMouse();
 	// Hook into mouse stuff for MOVEMENT MESSAGES
-	MouseSystemHook(MOUSE_POS, 0, MousePos.iX, MousePos.iY);
+	if (!nativeMouse) MouseSystemHook(MOUSE_POS, 0, MousePos.iX, MousePos.iY);
 	MusicPoll();
 
-	HandleSingleClicksAndButtonRepeats();
+	if (!nativeMouse) HandleSingleClicksAndButtonRepeats();
 	while (DequeueSpecificEvent(&InputEvent, MOUSE_EVENTS))
 	{
-		MouseSystemHook(InputEvent.usEvent, InputEvent.usParam, MousePos.iX, MousePos.iY);
+		if (nativeMouse) NativeUI::HandleMouseEvent(InputEvent);
+		else MouseSystemHook(InputEvent.usEvent, InputEvent.usParam, MousePos.iX, MousePos.iY);
 	}
 	while (DequeueSpecificEvent(&InputEvent, TOUCH_EVENTS))
 	{
@@ -206,7 +212,8 @@ try
 
 
 
-	uiOldScreen = (*(GameScreens[guiCurrentScreen].HandleScreen))();
+	// A screen with a native UI runs it when its ui_mode resolves to native at entry (NativeUI.h)
+	uiOldScreen = NativeUI::HandleScreen(guiCurrentScreen, GameScreens[guiCurrentScreen].HandleScreen);
 
 	// if the screen has chnaged
 	if( uiOldScreen != guiCurrentScreen )

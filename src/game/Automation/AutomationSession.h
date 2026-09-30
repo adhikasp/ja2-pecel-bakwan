@@ -39,6 +39,8 @@ namespace Automation
 		bool        clickable; // a click at its centre would reach it
 		int         priority;
 		std::optional<SDL_Rect> labelFrom; // caption printed beside the control, if the label came from one
+		std::string nativeId;  // kind "native": the element's id in the native UI (NativeUI.h)
+		bool        focused = false;
 
 		SDL_Point Center() const { return { rect.x + rect.w / 2, rect.y + rect.h / 2 }; }
 	};
@@ -47,6 +49,7 @@ namespace Automation
 	struct Locator
 	{
 		std::string text;               // matches element label/text/help or on-screen text
+		std::string id;                 // a native element's id (exact), instead of text
 		bool        exact = false;      // whole-string match instead of substring
 		int         index = 1;          // pick the n-th match in reading order
 		std::optional<SDL_Point> point; // explicit coordinates
@@ -95,6 +98,9 @@ namespace Automation
 		std::vector<Element> Elements();
 		/** Active regions/buttons (non-empty, enabled or not) not fully inside the screen. */
 		std::vector<Element> OffscreenElements();
+		/** OffscreenElements() as messages, plus the native UI's layout audit (clipped, overlapping, off screen,
+		 * truncated text). Empty when the layout is fine. */
+		std::vector<std::string> LayoutProblems();
 		std::vector<TextRegistry::VisibleText> Texts();
 		std::optional<Target> Find(Locator const&);
 		/** Wait until the locator resolves (and is enabled), then return it. */

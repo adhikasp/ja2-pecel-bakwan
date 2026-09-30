@@ -1,0 +1,11 @@
+{
+  "common.back": "Назад",
+  "credits.title": "Авторы",
+  "credits.team": "Команда",
+  "credits.pause": "Пауза",
+  "credits.resume": "Продолжить",
+  "credits.paused": "Пауза",
+  "credits.hint": "Наведите на человека, чтобы узнать, кто это.",
+  "msgbox.notice": "Сообщение",
+  "msgbox.confirm": "Подтверждение"
+}

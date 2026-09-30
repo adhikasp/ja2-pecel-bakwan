@@ -1,0 +1,10 @@
+/* The native message box (msgbox.rml): the design system's modal, centred on the output. */
+body.nui-msgbox { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+#msgbox { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; }
+#msgbox .scrim { background-color: var(--c-scrim); }
+.msgbox { position: relative; width: 560dp; }
+.msgbox .modal-head .icon.status { image-color: var(--c-info); }
+.msgbox.danger .modal-head .icon.status { image-color: var(--c-danger); }
+.msgbox-text { font-size: var(--fs-lg); line-height: 28dp; color: var(--c-text-strong); padding: var(--sp-5) var(--sp-5) var(--sp-6) var(--sp-5); }
+.msgbox .modal-foot { padding: var(--sp-3) var(--sp-5); }
+.msgbox .modal-foot .btn { min-width: 112dp; }

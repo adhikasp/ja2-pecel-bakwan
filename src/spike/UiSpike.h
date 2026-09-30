@@ -10,6 +10,8 @@
 
 #include <SDL3/SDL.h>
 
+#include "UiCore.h"
+
 #include <functional>
 #include <memory>
 #include <string>
@@ -102,35 +104,27 @@ std::vector<unsigned char> LoadAssetBytes(std::string const& name);
 std::unique_ptr<Screen> CreateStyleDemoScreen(SDL_Renderer*, std::string const& direction, std::string const& screen);
 extern char const* const StyleDirections[1];
 extern char const* const StyleScreens[3];
-/** Where the UI (design system, gallery, mocks) is read from. Default: <base path>/ui, or $JA2_UI_DIR. */
-void        SetStyleDir(std::string dir);
-std::string StyleDir();
 
-/** Supplies images the host owns (merc faces from the player's game data) for "face-<n>" sources. Returns a new
- * ARGB/RGBA surface (the caller frees it), or nullptr to fall back to a placeholder. */
-using ImageProvider = std::function<SDL_Surface*(std::string const& name)>;
-void         SetImageProvider(ImageProvider);
-bool         HasImageProvider();
-SDL_Surface* ProvideImage(std::string const& name);
-
-/** RmlUi warnings and errors logged since the last reset (tests assert the style mocks load cleanly). */
-int  RmlWarnings();
-void ResetRmlWarnings();
-/** Procedural texture ("gen-<name>" in RCSS) as straight-alpha RGBA32. Unknown name → empty result. */
-std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, int& h, bool& repeat);
+// The design system's runtime pieces live in the native UI core (src/nativeui/UiCore.h).
+using nui::SetStyleDir;
+using nui::StyleDir;
+using nui::ImageProvider;
+using nui::SetImageProvider;
+using nui::HasImageProvider;
+using nui::ProvideImage;
+using nui::RmlWarnings;
+using nui::ResetRmlWarnings;
+using nui::GenerateProcedural;
+using nui::RasterizeSvg;
+using nui::ExpandTokens;
 
 /** Phase 1 design-system gallery (docs/ui/design-system.md): every component in every state, one page at a time.
  * page = one of GalleryPages. Use setSize(w, h, uiScale) for the UI scale (1, 1.25, 1.5, 2). */
 std::unique_ptr<Screen> CreateGalleryScreen(SDL_Renderer*, std::string const& page);
 extern char const* const GalleryPages[6];
 
-/** Rasterizes an icon SVG (the subset the icon set uses) to size x size straight-alpha RGBA, white with
- * coverage in alpha. Empty on error (reason in *error). */
-std::vector<unsigned char> RasterizeSvg(std::string const& svg, int size, std::string* error = nullptr);
 /** Icon names (file names without .svg) in <StyleDir>/icons, sorted. */
 std::vector<std::string> IconNames();
-/** Replaces var(--name) with the design token from <StyleDir>/tokens.rcss (unknown names count as RmlUi warnings). */
-std::string ExpandTokens(std::string text);
 
 /** Finds an element by id (after an update), or returns false. */
 bool FindElement(Screen&, std::string const& id, SDL_FRect& out);

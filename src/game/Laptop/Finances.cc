@@ -2,6 +2,7 @@
 #include "Font.h"
 #include "Laptop.h"
 #include "Finances.h"
+#include "NativeUI.h"
 #include "Game_Clock.h"
 #include "LoadSaveData.h"
 #include "Map_Screen_Interface_Bottom.h"
@@ -186,6 +187,7 @@ void AddTransactionToPlayersBook(UINT8 ubCode, UINT8 ubSecondCode, UINT32 uiDate
 
 	// update balance
 	LaptopSaveInfo.iCurrentBalance += iAmount;
+	NativeUI::Notify(NativeUI::TOPIC_MONEY);
 
 	ProcessAndEnterAFinancialRecord(ubCode, uiDate, iAmount, ubSecondCode, LaptopSaveInfo.iCurrentBalance);
 

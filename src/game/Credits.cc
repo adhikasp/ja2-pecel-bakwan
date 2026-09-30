@@ -1,3 +1,4 @@
+#include "Credits.h"
 #include "Cursors.h"
 #include "Debug.h"
 #include "Directories.h"
@@ -127,6 +128,12 @@ static CreditFace gCreditFaces[] =
 #undef M
 };
 
+
+CreditFaceArea GetCreditFaceArea(int const i)
+{
+	CreditFace const& f = gCreditFaces[i];
+	return { f.sX, f.sY, f.sWidth, f.sHeight, f.sEyeX, f.sEyeY, f.sBlinkFreq };
+}
 
 static MOUSE_REGION gCrdtBackgroundRegion;
 static MOUSE_REGION gCrdtMouseRegions[NUM_PEOPLE_IN_CREDITS];

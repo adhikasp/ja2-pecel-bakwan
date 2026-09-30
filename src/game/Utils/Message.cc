@@ -6,6 +6,7 @@
 #include "Types.h"
 #include "Font_Control.h"
 #include "Message.h"
+#include "NativeUI.h"
 #include "Timer_Control.h"
 #include "Render_Dirty.h"
 #include "RenderWorld.h"
@@ -286,9 +287,25 @@ static void TacticalScreenMsg(UINT16 usColor, UINT8 ubPriority, const ST::string
 // new screen message
 void ScreenMsg(UINT16 usColor, UINT8 ubPriority, const ST::string& str)
 {
-	// pass onto tactical message and mapscreen message
-	TacticalScreenMsg(usColor, ubPriority, str);
+	// pass onto tactical message and mapscreen message; with native toasts (ui_mode "toasts", or a native screen
+	// showing) the on-screen part is a toast instead of the tactical scroll text
+	if (NativeUI::ToastsActive())
+	{
+		if (!IsTimeBeingCompressed())
+		{
+			NativeUI::ToastKind const kind =
+				usColor == FONT_MCOLOR_RED ? NativeUI::ToastKind::Danger :
+				usColor == FONT_MCOLOR_LTYELLOW || ubPriority == MSG_DIALOG ? NativeUI::ToastKind::Warn :
+				NativeUI::ToastKind::Info;
+			NativeUI::Toast(str.to_std_string(), kind);
+		}
+	}
+	else
+	{
+		TacticalScreenMsg(usColor, ubPriority, str);
+	}
 	MapScreenMessage(usColor, ubPriority, str);
+	NativeUI::Notify(NativeUI::TOPIC_MESSAGES);
 
 	if (guiCurrentScreen == MAP_SCREEN)
 	{

@@ -18,32 +18,6 @@ namespace spike {
 char const* const StyleDirections[1] = { "b" }; // Night Ops, chosen (docs/ui/style-directions.md)
 char const* const StyleScreens[3]    = { "mainmenu", "squadbar", "mapscreen" };
 
-static std::string g_styleDir;
-static ImageProvider g_imageProvider;
-
-void SetStyleDir(std::string dir) { g_styleDir = std::move(dir); }
-
-std::string StyleDir()
-{
-	std::string d = g_styleDir;
-	if (d.empty())
-	{
-		if (char const* env = std::getenv("JA2_UI_DIR")) d = env;
-	}
-	if (d.empty())
-	{
-		char const* base = SDL_GetBasePath();
-		d = std::string(base ? base : "./") + "ui";
-	}
-	std::replace(d.begin(), d.end(), '\\', '/');
-	while (!d.empty() && d.back() == '/') d.pop_back();
-	return d;
-}
-
-void SetImageProvider(ImageProvider p) { g_imageProvider = std::move(p); }
-bool HasImageProvider() { return bool(g_imageProvider); }
-SDL_Surface* ProvideImage(std::string const& name) { return g_imageProvider ? g_imageProvider(name) : nullptr; }
-
 namespace {
 
 struct DemoMerc

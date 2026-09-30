@@ -25,6 +25,7 @@ body { width: 100%; height: 100%; background-color: var(--c-void); }
 .g-cell { display: flex; flex-wrap: wrap; align-items: center; width: 250dp; }
 .g-state { display: block; flex: 0 0 100%; height: 16dp; font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--c-text-faint); text-transform: uppercase; }
 .g-cell .icon-btn { margin-right: var(--sp-2); }
+.g-field { width: 220dp; }
 .g-cell .tabs { border-bottom-width: 0; }
 
 /* two columns */

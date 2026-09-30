@@ -93,8 +93,10 @@ are independent processes, so any number can run side by side. Pick one with
 |---|---|
 | `start [--load SAVE\|FILE.sav] [--seed N] [--show] [--res WxH] [--saves DIR]` | Start a session. `--load` also accepts a path to a `.sav` file. `--saves` shares a save directory. |
 | `stop [--all]`, `list` | |
-| `screen`, `state`, `ui [--all]`, `text` | Look. |
-| `click / rclick / dblclick / hover / wait-for / find TARGET [--exact] [--index N]` | TARGET is a label or text, or `X Y`. |
+| `screen`, `state`, `ui [--all]`, `text` | Look. Native elements show as `native` with their `#id`. |
+| `audit` | Layout problems: legacy regions off screen and the native layout audit. |
+| `native`, `uimode KEY legacy\|native\|default`, `uiscale S`, `vm NAME` | The native UI: state, per-screen `ui_mode`, UI scale, a view model's fields. |
+| `click / rclick / dblclick / hover / wait-for / find TARGET [--exact] [--index N] [--id]` | TARGET is a label or text, `X Y`, or a native element id as `#credits.back` (or with `--id`). |
 | `wait-gone TARGET` | |
 | `key COMBO [TIMES]`, `type TEXT` | Keys such as `ESC`, `enter`, `space`, `pause`, `alt+c`, `ctrl+s`. |
 | `move X Y`, `drag X0 Y0 X1 Y1`, `wheel DY` | |
@@ -146,7 +148,7 @@ release).
 
 **Locators.** Either a string (case-insensitive substring of a label, button
 text, tooltip, name, or any text on screen), or a table:
-`{text=..., exact=true, index=2, within={x=,y=,w=,h=}}` or `{x=, y=}`. Whole
+`{text=..., exact=true, index=2, within={x=,y=,w=,h=}}`, `{id="credits.back"}` (a native element by id) or `{x=, y=}`. Whole
 matches win over partial ones, then reading order. Only things a click would
 actually reach count: a button behind a modal dialog does not.
 
@@ -156,7 +158,7 @@ actually reach count: a button behind a modal dialog does not.
 |---|---|
 | `ja2.screen()` | `"MAINMENU_SCREEN"`, `"LAPTOP_SCREEN"`, `"MAP_SCREEN"`, `"GAME_SCREEN"` (tactical), `"MSG_BOX_SCREEN"`, ... |
 | `ja2.idle()` | |
-| `ja2.ui([{all=true}])` | Clickable elements: `{kind, label, text, name, help, x, y, w, h, enabled, clickable}`. |
+| `ja2.ui([{all=true}])` | Clickable elements: `{kind, label, text, name, help, x, y, w, h, enabled, clickable}`. Native ones come first with `kind = "native"`, `id` (their element id), `role` and `focused`. |
 | `ja2.texts()` | Visible text: `{text, x, y, w, h}`. |
 | `ja2.find(locator)`, `ja2.exists(locator)` | |
 | `ja2.pixel(x, y)`, `ja2.pixelIs(x, y, "#rrggbb", [tol])` | |
@@ -178,7 +180,7 @@ actually reach count: a button behind a modal dialog does not.
 
 | | |
 |---|---|
-| `ja2.assertInsideScreen()` | Fails (exit 1) if any mouse region or button lies outside the screen. |
+| `ja2.assertInsideScreen()` | Fails (exit 1) if any mouse region or button lies outside the screen, or the native layout audit finds a problem (see *Native UI*). `ja2.assertLayout()` is the same; `ja2.layoutProblems()` lists them. |
 | `ja2.setVideo{res="1280x720", uiscale=1, worldzoom=0, window=, filter=}` | Changes the video settings at runtime like the Video options do (the current screen is built again); returns the new `screenSize()` plus `uiScale`, `worldZoom`, `layered`. Headless: `res` is the canvas, and the UI scale only applies with a `worldzoom` other than the UI scale. Nothing is written to ja2.json. |
 | `ja2.screenSize()` | `{w, h, stdX, stdY}`: screen size and where the classic 640x480 area starts. |
 | `ja2.mapSector(x, y)` | `{x, y, w, h, cx, cy}`: where the strategic map shows sector (x, y) (1..16, A = 1), in screen pixels. The map is scaled on big screens, so use this rather than fixed coordinates. |
@@ -190,6 +192,40 @@ actually reach count: a button behind a modal dialog does not.
 Timeouts report the screen and, if one is open, the message box text, e.g.
 `timed out after 120000 ms waiting for screen MAP_SCREEN (screen:
 MSG_BOX_SCREEN); a message box is open: "Surrender? YES NO"`.
+
+## Native UI
+
+Screens and overlays redesigned for [native-modern-game.md](plan/native-modern-game.md) run on RmlUi over the legacy
+game (`src/game/NativeUI/`). Which UI a screen uses is its `ui_mode`, resolved when the screen is entered:
+`ja2.setUiMode(key)` override > `"ui_mode"` in `ja2.json` > the default. Keys: `credits` (default native), `msgbox`,
+`tooltip`, `toasts`, `cursor` (default legacy). The native UI needs a 1280x720 output: below that everything is legacy.
+
+Headless (and in every automation session) the native layer is drawn in software and blended into the frame, so
+screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas pixels as everything else.
+
+| | |
+|---|---|
+| `ja2.setUiMode(key, "legacy" \| "native" \| "default")` | Override a screen's ui_mode for this session (applies at the next entry). |
+| `ja2.uiMode(key)` | `{configured, resolved, reason}`. |
+| `ja2.nativeUi()` | `{running, renderer, w, h, dp, uiScale, screen, documents, warnings, capturesMouse, focused, modes}`. |
+| `ja2.setUiScale(s)` | The native UI scale (1 = 100 %, up to 3). |
+| `ja2.focus(id)` | Give an element keyboard focus (with the focus ring). Tab/arrows/Enter work through `ja2.key`. |
+| `ja2.viewModel(name)` | A view model's fields as a table: an open screen's (`"credits"`) or one made for the call (`"status"`: day, time, money, sector, mercs). |
+| `ja2.viewModelCommand(name, command, ...)` | Run a view model command, like a click on its button would. |
+| `ja2.toast(text, [kind])` | Show a toast (`info`, `ok`, `warn`, `danger`). |
+| `ja2.debug("msgbox", text, [kind])` | Open a message box from the current screen (`ok`, `yesno`, `yesnolie`, `okskip`, `four`); `ja2.lastMessageBoxResult()` is what it returned. |
+
+**Element ids.** Every element with an `id` in a native document is addressable: `ja2.click{id="credits.back"}`,
+`ja2.find{id="msgbox.yes"}`, `ja2ctl click '#credits.back'`. Ids are stable English names with dots
+(`screen.part[index].name`). The label is the element's `data-label`, else its text, else its `title` (tooltip).
+
+**Layout audit** (`ja2.layoutProblems()`, part of `assertInsideScreen`): for every visible native element, nothing
+lies off the output unless a clipping container hides it, nothing is cut sideways by a clipping container
+(scroll areas may cut vertically), no text is wider than its box (truncated) unless the element has a `title`, and no
+two interactive elements overlap. Mark decorative or deliberately clipped parts `class="audit-skip"`.
+
+**Idle.** Native screens have no loading states of their own; a scrolling screen (credits) counts as idle, like its
+legacy version.
 
 ## The server protocol
 

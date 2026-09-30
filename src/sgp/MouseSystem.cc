@@ -20,6 +20,7 @@
 #include "VObject.h"
 #include "Video.h"
 #include "MouseSystem.h"
+#include "NativeUI.h"
 #include "Cursor_Control.h"
 #include "Button_System.h"
 #include "Timer.h"
@@ -777,7 +778,14 @@ static void DisplayHelpTokenizedString(const ST::utf32_buffer& codepoints, INT16
 
 static void DisplayFastHelp(MOUSE_REGION* const r)
 {
-	if (!(r->uiFlags & MSYS_FASTHELP)) return;
+	if (!(r->uiFlags & MSYS_FASTHELP))
+	{
+		NativeUI::HideFastHelp();
+		return;
+	}
+	// ui_mode "tooltip" = native: the native UI draws it
+	if (NativeUI::ShowFastHelp(r->FastHelpText.c_str(), r->RegionTopLeftX, r->RegionTopLeftY,
+		r->RegionBottomRightX - r->RegionTopLeftX, r->RegionBottomRightY - r->RegionTopLeftY)) return;
 
 	INT32 const w = GetWidthOfString(r->FastHelpText) + 10;
 	INT32 const lines = std::count(r->FastHelpText.begin(), r->FastHelpText.end(), U'\n') + 1;
@@ -924,7 +932,11 @@ void RenderFastHelp()
 	last_clock = current_clock;
 
 	MOUSE_REGION* const r = MSYS_CurrRegion;
-	if (!r || r->FastHelpText.empty()) return;
+	if (!r || r->FastHelpText.empty())
+	{
+		NativeUI::HideFastHelp();
+		return;
+	}
 
 	if (r->uiFlags & (MSYS_ALLOW_DISABLED_FASTHELP | MSYS_REGION_ENABLED) && !IsUsingTouch())
 	{
