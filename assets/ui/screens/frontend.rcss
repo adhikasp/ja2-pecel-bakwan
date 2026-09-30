@@ -300,3 +300,12 @@ body.p3 .gone { display: none; }
 .op-row .seg, .op-row .dropdown, .op-row .vol { margin: var(--sp-1) 0; }
 .op-row .seg { flex-wrap: wrap; }
 .seg-b { white-space: nowrap; }
+/* toggle rows keep the switch next to the label; a long label wraps instead */
+.op-row.op-toggle { flex-wrap: nowrap; }
+.op-row.op-toggle .name { min-width: 0; }
+/* no text is cut: RmlUi draws no ellipsis, so values wrap to a second line instead */
+.kv { height: auto; min-height: 30dp; align-items: flex-start; padding: 5dp 0; box-sizing: border-box; }
+.kv .v, .mm-card-name, .mm-foot .copy, .mm-item .meta, .sl-name .fn, .ld-step { white-space: normal; overflow: visible; }
+.sl-table .tr { height: auto; min-height: 58dp; padding-top: var(--sp-1); padding-bottom: var(--sp-1); }
+.sl-table .tr span { white-space: normal; overflow: visible; }
+.mm-foot { height: auto; min-height: 36dp; }

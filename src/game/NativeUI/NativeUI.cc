@@ -1192,8 +1192,16 @@ std::vector<std::string> LayoutAudit()
 			// text wider than its box (cut, or spilling out)
 			bool hasText = false;
 			for (int i = 0; i < e->GetNumChildren(); ++i) if (rmlui_dynamic_cast<Rml::ElementText*>(e->GetChild(i))) hasText = true;
-			if (hasText && e->GetScrollWidth() > e->GetClientWidth() + tol && e->GetClientWidth() > 0 && !e->HasAttribute("title"))
-				out.push_back("truncated text: " + Describe(e));
+			// RmlUi draws no ellipsis: text cut by overflow: hidden is cut mid-letter, so a tooltip does not excuse it.
+			// Only text the screen ellipsized itself (ending in "…", with the full text as its title) may overflow.
+			if (hasText && e->GetScrollWidth() > e->GetClientWidth() + tol && e->GetClientWidth() > 0)
+			{
+				std::string shown;
+				for (int i = 0; i < e->GetNumChildren(); ++i)
+					if (auto* t = rmlui_dynamic_cast<Rml::ElementText*>(e->GetChild(i))) shown += t->GetText();
+				bool const ellipsized = e->HasAttribute("title") && shown.size() >= 3 && shown.compare(shown.size() - 3, 3, "\xE2\x80\xA6") == 0;
+				if (!ellipsized) out.push_back("truncated text: " + Describe(e));
+			}
 			if (Interactive(e)) interactive.push_back(e);
 		});
 		// interactive elements must not overlap (one would hide the other's clicks)

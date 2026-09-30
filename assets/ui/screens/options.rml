@@ -29,12 +29,12 @@
 			<div class="op-cols" data-if="tab == 'gameplay'">
 				<div class="op-col">
 					<div class="op-group"><span class="section">{{l_combat}}</span>
-						<div class="op-row" data-for="o : options" data-class-gone="o.group != 'combat'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><span class="kbd" data-if="o.kbd != ''">{{o.kbd}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'combat'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><span class="kbd" data-if="o.kbd != ''">{{o.kbd}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
 					</div>
 				</div>
 				<div class="op-col">
 					<div class="op-group"><span class="section">{{l_campaign}}</span>
-						<div class="op-row" data-for="o : options" data-class-gone="o.group != 'campaign'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'campaign'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
 					</div>
 					<div class="op-group" data-if="in_game"><span class="section">{{l_this_campaign}}</span>
 						<div class="panel pad" id="options.campaign">
@@ -78,7 +78,7 @@
 				</div>
 				<div class="op-col">
 					<div class="op-group"><span class="section">{{l_world}}</span>
-						<div class="op-row" data-for="o : options" data-class-gone="o.group != 'world'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><span class="kbd" data-if="o.kbd != ''">{{o.kbd}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'world'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><span class="kbd" data-if="o.kbd != ''">{{o.kbd}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
 					</div>
 				</div>
 			</div>
@@ -102,7 +102,7 @@
 				</div>
 				<div class="op-col">
 					<div class="op-group"><span class="section">{{l_dialogue}}</span>
-						<div class="op-row" data-for="o : options" data-class-gone="o.group != 'dialogue'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'dialogue'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
 					</div>
 				</div>
 			</div>
@@ -110,7 +110,7 @@
 			<div class="op-cols" data-if="tab == 'controls'">
 				<div class="op-col">
 					<div class="op-group"><span class="section">{{l_mouse}}</span>
-						<div class="op-row" data-for="o : options" data-class-gone="o.group != 'mouse'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'mouse'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
 					</div>
 					<div class="op-group"><span class="section">{{l_keys_map}}</span>
 						<div class="keyrow" data-for="k : keys" data-class-gone="k.group != 'map'"><span class="name">{{k.name}}</span><span class="kbd">{{k.k1}}</span><span class="kbd" data-if="k.k2 != ''">{{k.k2}}</span></div>
@@ -129,12 +129,12 @@
 						<div class="op-row" id="options.access.uiscale" data-event-mouseover="help_text(s_ui_size, s_ui_size_help)"><span class="name">{{s_ui_size}}</span><div class="seg">
 							<span class="seg-b" data-for="c : choices" data-class-gone="c.group != 'uiscale'" data-class-on="c.selected" data-attr-id="'options.access.uiscale[' + c.index + ']'" data-event-click="choose('uiscale', c.index)">{{c.label}}</span>
 						</div></div>
-						<div class="op-row" data-for="o : options" data-class-gone="o.group != 'reading'" data-attr-id="'options.access.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'reading'" data-attr-id="'options.access.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
 					</div>
 				</div>
 				<div class="op-col">
 					<div class="op-group"><span class="section">{{l_motion}}</span>
-						<div class="op-row" id="options.access.motion" data-event-click="motion" data-event-mouseover="help_text(s_motion, s_motion_help)"><span class="name">{{s_motion}}</span><div class="toggle" data-class-on="reduced_motion"><span class="switch"><span class="knob"></span></span></div></div>
+						<div class="op-row op-toggle" id="options.access.motion" data-event-click="motion" data-event-mouseover="help_text(s_motion, s_motion_help)"><span class="name">{{s_motion}}</span><div class="toggle" data-class-on="reduced_motion"><span class="switch"><span class="knob"></span></span></div></div>
 					</div>
 				</div>
 			</div>
