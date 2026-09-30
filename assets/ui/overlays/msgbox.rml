@@ -1,0 +1,25 @@
+<rml>
+<head>
+	<title>Message box</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="msgbox.rcss"/>
+</head>
+<!-- The native message box (DoMessageBox with ui_mode "msgbox" = native, and on native screens). A modal over the
+     current screen; the buttons come from the box's flags, the primary one on the right has the keyboard focus. -->
+<body class="nui-msgbox">
+<div id="msgbox" data-model="msgbox">
+	<div class="scrim"></div>
+	<div class="modal msgbox" id="msgbox.dialog" data-class-danger="danger">
+		<div class="modal-head">
+			<img class="icon status" data-attr-src="danger ? 'icon-warning' : 'icon-info'"/>
+			<span class="title" id="msgbox.title">{{title}}</span>
+		</div>
+		<div class="modal-body msgbox-text" id="msgbox.text">{{text}}</div>
+		<div class="modal-foot">
+			<button class="btn" data-for="b : buttons" data-attr-id="b.id" data-class-btn-primary="b.primary"
+				data-attr-data-label="b.label" data-event-click="press(b.result)"><span class="label">{{b.label}}</span><span class="kbd" data-if="b.key != ''">{{b.key}}</span></button>
+		</div>
+	</div>
+</div>
+</body>
+</rml>

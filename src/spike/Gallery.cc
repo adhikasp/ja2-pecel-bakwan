@@ -55,7 +55,7 @@ std::vector<IconGroupDef> const& IconGroupDefs()
 			"filter", "sort-asc", "sort-desc", "chevron-left", "chevron-right", "chevron-up", "chevron-down", "menu", "more", "drag",
 			"pause", "play", "fast-forward", "stance-stand", "stance-crouch", "stance-prone", "walk", "run", "sneak", "look", "talk",
 			"target", "burst", "throw", "punch", "stab", "reload", "climb", "door", "key", "wire-cut", "repair", "remote", "bomb",
-			"exit-sector", "wait", "inventory", "trade" } },
+			"exit-sector", "wait", "inventory", "trade", "pointer" } },
 		{ "Status", { "health", "breath", "morale", "action-points", "bleeding", "drunk", "asleep", "fatigue", "suppressed",
 			"wounded", "unconscious", "dead", "contract", "level-up", "ok", "info", "warning", "error", "lock" } },
 		{ "Assignments", { "squad", "on-duty", "doctor", "patient", "vehicle", "in-transit", "repair", "train-self", "train-town",
@@ -277,7 +277,8 @@ private:
 		}
 		GGroup other{ "Other", {} };
 		for (auto const& n : names)
-			if (std::find(grouped.begin(), grouped.end(), n) == grouped.end()) other.names.push_back(n);
+			// pointer-edge is not an icon of its own: it is the outline of the native mouse pointer
+			if (n != "pointer-edge" && std::find(grouped.begin(), grouped.end(), n) == grouped.end()) other.names.push_back(n);
 		if (!other.names.empty()) m_iconGroups.push_back(other);
 
 		for (auto const& [k, v] : Tokens())

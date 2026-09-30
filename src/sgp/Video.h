@@ -119,6 +119,40 @@ bool VideoComposeFrame(std::vector<uint8_t>& rgb, int& width, int& height);
  * world's under its centre. */
 uint32_t VideoComposePixel(int uiX, int uiY);
 
+/* ---- Overlay -------------------------------------------------------------------------------------
+ * Something drawn over the finished frame at the output's own resolution: the native UI
+ * (src/game/NativeUI). It draws either through the GPU renderer, after the frame is put on the window,
+ * or (headless, automation) into a layer of its own that is blended into the ScreenBuffer, so
+ * screenshots and pixel reads include it. */
+struct VideoOverlay
+{
+	virtual ~VideoOverlay() = default;
+	/** Whether this frame is drawn with GpuRender (a window and a GPU renderer) instead of the software path. */
+	virtual bool UsesGpu() = 0;
+	/** Software path: bring the layer (ScreenBuffer sized) up to date. Returns the area it covers, empty if none.
+	 * Called once per RefreshScreen. */
+	virtual SDL_Rect SoftwarePrepare() = 0;
+	/** Software path: blend the layer over @a dst (the RGB565 ScreenBuffer) inside @a area. */
+	virtual void SoftwareCompose(SDL_Surface* dst, SDL_Rect const& area) = 0;
+	/** Software path: the layer at a ScreenBuffer pixel, premultiplied 0xAARRGGBB (0 = nothing there). */
+	virtual uint32_t SoftwarePixel(int x, int y) = 0;
+	/** GPU path: draw onto the window in output pixels (the logical presentation is switched off meanwhile). */
+	virtual void GpuRender(SDL_Renderer*) = 0;
+	/** The overlay draws the mouse cursor itself: the legacy one is not drawn. */
+	virtual bool HidesLegacyCursor() = 0;
+};
+void VideoSetOverlay(VideoOverlay*);
+
+/** Reads the next presented frame back from the GPU (window pixels, what the player sees, native UI included).
+ * Call VideoRequestOutputCapture, let a frame be presented, then VideoTakeOutputCapture (false: no window/renderer). */
+void VideoRequestOutputCapture();
+bool VideoTakeOutputCapture(std::vector<uint8_t>& rgb, int& w, int& h);
+
+/** Where canvas pixel (x, y) lands in the output: (x * sx + ox, y * sy + oy); the output is w x h pixels (the
+ * window's pixels, or the ScreenBuffer headless, where the mapping is the identity). */
+struct VideoOutputMapping { float sx, sy, ox, oy; int w, h; bool gpu; };
+VideoOutputMapping VideoGetOutputMapping();
+
 void         VideoSetFullScreen(BOOLEAN enable);
 /** Creates the window and renderer. The logical canvas (SCREEN_WIDTH x SCREEN_HEIGHT) must have
  * been set from VideoComputeLayout() beforehand. */

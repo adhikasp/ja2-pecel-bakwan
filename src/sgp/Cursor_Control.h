@@ -6,6 +6,8 @@
 
 void    CursorDatabaseClear(void);
 BOOLEAN SetCurrentCursorFromDatabase(UINT32 uiCursorIndex);
+/** The cursor last set with SetCurrentCursorFromDatabase (VIDEO_NO_CURSOR: none). */
+UINT32 GetCurrentCursorIndex();
 
 #define USE_OUTLINE_BLITTER		0x08
 

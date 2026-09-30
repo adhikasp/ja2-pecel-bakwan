@@ -10,6 +10,7 @@
 #include "Game_Clock.h"
 #include "Soldier_Create.h"
 #include "Merc_Hiring.h"
+#include "NativeUI.h"
 #include "Game_Event_Hook.h"
 #include "Message.h"
 #include "StrategicMap.h"
@@ -61,6 +62,7 @@ void CreateSpecialItem(SOLDIERTYPE* const s, UINT16 item)
 
 INT8 HireMerc(MERC_HIRE_STRUCT& h)
 {
+	NativeUI::Notify(NativeUI::TOPIC_TEAM);
 	ProfileID  const   pid = h.ubProfileID;
 	MERCPROFILESTRUCT& p   = GetProfile(pid);
 

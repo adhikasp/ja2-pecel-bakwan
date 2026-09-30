@@ -37,6 +37,8 @@
 #include "HImage.h"
 #include "UiSpikeScreen.h"
 #include "WorldSpike.h"
+#include "NativeUI.h"
+#include "GameViewModelsLua.h"
 
 #include <string_theory/format>
 
@@ -56,6 +58,7 @@ namespace
 	sol::state  g_lua;
 	FailureKind g_lastFailure = FailureKind::None;
 	int         g_checkFailures = 0;
+	int         g_lastMessageBoxResult = 0; // what the last ja2.debug("msgbox") box returned
 
 	constexpr unsigned DEFAULT_TIMEOUT_MS = 10'000;
 	constexpr unsigned LONG_TIMEOUT_MS    = 120'000;
@@ -113,6 +116,7 @@ namespace
 		{
 			sol::table t = o.as<sol::table>();
 			loc.text  = t.get_or<std::string>("text", "");
+			loc.id    = t.get_or<std::string>("id", "");
 			loc.exact = t.get_or("exact", false);
 			loc.index = t.get_or("index", 1);
 			sol::optional<int> x = t["x"], y = t["y"];
@@ -130,12 +134,21 @@ namespace
 	sol::table ElementTable(Element const& e)
 	{
 		sol::table t = g_lua.create_table();
-		t["id"] = e.id;
+		if (e.kind == "native")
+		{
+			t["id"] = e.nativeId;
+			t["role"] = e.name;
+			t["focused"] = e.focused;
+		}
+		else
+		{
+			t["id"] = e.id;
+		}
 		t["kind"] = e.kind;
 		t["x"] = e.rect.x; t["y"] = e.rect.y; t["w"] = e.rect.w; t["h"] = e.rect.h;
 		t["label"] = e.label;
 		if (!e.text.empty()) t["text"] = e.text;
-		if (!e.name.empty()) t["name"] = e.name;
+		if (!e.name.empty() && e.kind != "native") t["name"] = e.name;
 		if (!e.help.empty()) t["help"] = e.help;
 		t["enabled"] = e.enabled;
 		t["clickable"] = e.clickable;
@@ -592,7 +605,13 @@ namespace
 				}
 				else if (what == "msgbox")
 				{
-					DoMessageBox(MSG_BOX_BASIC_STYLE, ST::string(a && a->is<std::string>() ? a->as<std::string>() : "Debug message box"), guiCurrentScreen, MSG_BOX_FLAG_OK);
+					// b = "ok" (default), "yesno", "yesnolie", "okskip", "four"; the answer goes to ja2.lastMessageBoxResult()
+					std::string const kind = b && b->is<std::string>() ? b->as<std::string>() : "ok";
+					MessageBoxFlags const flags = kind == "yesno" ? MSG_BOX_FLAG_YESNO : kind == "yesnolie" ? MSG_BOX_FLAG_YESNOLIE :
+						kind == "okskip" ? MSG_BOX_FLAG_OKSKIP : kind == "four" ? MSG_BOX_FLAG_FOUR_NUMBERED_BUTTONS : MSG_BOX_FLAG_OK;
+					g_lastMessageBoxResult = 0;
+					DoMessageBox(MSG_BOX_BASIC_STYLE, ST::string(a && a->is<std::string>() ? a->as<std::string>() : "Debug message box"),
+						guiCurrentScreen, flags, [](MessageBoxReturnValue r) { g_lastMessageBoxResult = int(r); });
 				}
 				else if (what == "loadscreen")
 				{
@@ -758,20 +777,101 @@ namespace
 				}
 			});
 		});
+		// Legacy regions and buttons must lie inside the screen; native documents must pass the layout audit
+		// (nothing off screen, cut sideways, overlapping or truncated). ja2.layoutProblems() lists the same.
 		ja2.set_function("assertInsideScreen", [] {
 			Guarded([&] {
-				auto const bad = Session::OffscreenElements();
+				auto const bad = Session::LayoutProblems();
 				if (bad.empty()) return;
-				std::string msg = ST::format("{} mouse region(s)/button(s) lie outside the {}x{} screen:",
-					bad.size(), SCREEN_WIDTH, SCREEN_HEIGHT).to_std_string();
-				for (Element const& e : bad)
-				{
-					msg += ST::format("\n  {} \"{}\" at ({}, {}, {}x{})",
-						e.kind, e.label, e.rect.x, e.rect.y, e.rect.w, e.rect.h).to_std_string();
-				}
+				std::string msg = ST::format("{} layout problem(s) on the {}x{} screen:", bad.size(), SCREEN_WIDTH, SCREEN_HEIGHT).to_std_string();
+				for (std::string const& p : bad) msg += "\n  " + p;
 				throw ExpectationError(msg);
 			});
 		});
+		ja2.set_function("assertLayout", [] {
+			Guarded([&] {
+				auto const bad = Session::LayoutProblems();
+				if (bad.empty()) return;
+				std::string msg = ST::format("{} layout problem(s):", bad.size()).to_std_string();
+				for (std::string const& p : bad) msg += "\n  " + p;
+				throw ExpectationError(msg);
+			});
+		});
+		ja2.set_function("layoutProblems", [] {
+			return Guarded([&] {
+				sol::table t = g_lua.create_table();
+				int i = 1;
+				for (std::string const& p : Session::LayoutProblems()) t[i++] = p;
+				return t;
+			});
+		});
+
+		// --- native UI (docs/automation.md, "Native UI") ---
+		ja2.set_function("setUiMode", [](std::string const& key, sol::optional<std::string> mode) {
+			Guarded([&] {
+				std::optional<NativeUI::UiMode> m;
+				if (mode && *mode != "default")
+				{
+					m = NativeUI::ParseUiMode(*mode);
+					if (!m) throw std::invalid_argument("ja2.setUiMode: mode must be legacy, native or default");
+				}
+				NativeUI::SetModeOverride(key, m);
+			});
+		});
+		ja2.set_function("uiMode", [](std::string const& key) {
+			return Guarded([&] {
+				if (!NativeUI::IsModeKey(key)) throw std::invalid_argument("unknown ui_mode key " + key);
+				std::string reason;
+				sol::table t = g_lua.create_table();
+				t["configured"] = NativeUI::ToString(NativeUI::ConfiguredMode(key));
+				t["resolved"] = NativeUI::ToString(NativeUI::ResolveMode(key, &reason));
+				t["reason"] = reason;
+				return t;
+			});
+		});
+		ja2.set_function("setUiScale", [](double scale) {
+			Guarded([&] {
+				NativeUI::SetUserScale(float(scale));
+				Session::Step(2);
+			});
+		});
+		ja2.set_function("nativeUi", [] {
+			return Guarded([&] {
+				NativeUI::Info const i = NativeUI::GetInfo();
+				sol::table t = g_lua.create_table();
+				t["running"] = i.running;
+				t["renderer"] = i.renderer;
+				t["w"] = i.width; t["h"] = i.height;
+				t["dp"] = i.dp;
+				t["uiScale"] = i.userScale;
+				t["screen"] = i.screen;
+				t["warnings"] = i.warnings;
+				t["capturesMouse"] = NativeUI::CapturesMouse();
+				t["focused"] = NativeUI::FocusedId();
+				sol::table docs = g_lua.create_table();
+				for (size_t k = 0; k < i.documents.size(); ++k) docs[k + 1] = i.documents[k];
+				t["documents"] = docs;
+				sol::table modes = g_lua.create_table();
+				for (auto const& m : NativeUI::ModeKeys()) modes[m.key] = NativeUI::ToString(NativeUI::ResolveMode(m.key));
+				t["modes"] = modes;
+				return t;
+			});
+		});
+		ja2.set_function("focus", [](std::string const& id) {
+			Guarded([&] {
+				if (!NativeUI::Focus(id)) throw std::runtime_error("ja2.focus: no native element " + id);
+				Session::Step(1);
+			});
+		});
+		ja2.set_function("lastMessageBoxResult", [] { return g_lastMessageBoxResult; });
+		ja2.set_function("toast", [](std::string const& text, sol::optional<std::string> kind) {
+			Guarded([&] {
+				std::string const k = kind.value_or("info");
+				NativeUI::Toast(text, k == "ok" ? NativeUI::ToastKind::Ok : k == "warn" ? NativeUI::ToastKind::Warn :
+					k == "danger" ? NativeUI::ToastKind::Danger : NativeUI::ToastKind::Info);
+			});
+		});
+		RegisterViewModelApi(g_lua, ja2);
 		ja2.set_function("check", [](sol::object cond, sol::optional<std::string> msg) {
 			bool const ok = cond.valid() && cond != sol::lua_nil && !(cond.is<bool>() && !cond.as<bool>());
 			if (!ok)

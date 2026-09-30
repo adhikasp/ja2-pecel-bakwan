@@ -76,6 +76,24 @@ scrollbarhorizontal sliderarrowdec, scrollbarhorizontal sliderarrowinc { width: 
 .btn-danger:hover .icon, .btn-danger.is-hover .icon { image-color: var(--c-on-accent); }
 .btn-danger.is-focus { border-color: var(--c-focus); }
 
+/* ================================================================ text input (<input type="text" class="field-input"/>) */
+.field-input {
+	display: inline-block; width: 280dp; height: var(--h-control); padding: 0 var(--sp-3); box-sizing: border-box;
+	line-height: 34dp; font-family: var(--font-body); font-size: var(--fs-md); color: var(--c-text-strong);
+	background-color: var(--c-panel); border: var(--border) var(--c-line-2); border-radius: var(--r-1);
+	caret-color: var(--c-accent); focus: auto; tab-index: auto;
+	transition: border-color var(--t-fast) var(--ease);
+}
+.field-input selection { background-color: var(--c-accent-soft); color: var(--c-text-strong); }
+.field-input:hover, .field-input.is-hover { border-color: var(--c-text-faint); }
+.field-input:focus, .field-input.is-active { border-color: var(--c-accent); background-color: var(--c-panel-2); }
+.field-input:focus-visible, .field-input.is-focus { border: var(--focus-ring) var(--c-focus); }
+.field-input.is-error { border-color: var(--c-danger); }
+.field-input:disabled, .field-input.is-disabled { color: var(--c-text-faint); border-color: var(--c-line); background-color: var(--c-bg); }
+.field-label { display: block; margin-bottom: var(--sp-1); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-dim); }
+.field-hint { display: block; margin-top: var(--sp-1); font-size: var(--fs-xs); color: var(--c-text-faint); }
+.field-hint.error { color: var(--c-danger); }
+
 /* ================================================================ icon button */
 .icon-btn {
 	display: inline-flex; align-items: center; justify-content: center;

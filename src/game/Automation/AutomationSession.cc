@@ -1,4 +1,5 @@
 #include "AutomationSession.h"
+#include "NativeUI.h"
 #include "Automation.h"
 
 #include "Button_System.h"
@@ -243,6 +244,7 @@ namespace
 std::string Locator::Describe() const
 {
 	if (point) return ST::format("({}, {})", point->x, point->y).to_std_string();
+	if (!id.empty()) return "id \"" + id + "\"";
 	std::string d = exact ? "exact \"" + text + "\"" : "\"" + text + "\"";
 	if (index != 1) d += ST::format(" #{}", index).to_std_string();
 	return d;
@@ -473,7 +475,18 @@ std::string MessageBoxText()
 
 std::vector<TextRegistry::VisibleText> Texts()
 {
-	return TextRegistry::Visible(FrameSurface(), GetMouseCursorRect());
+	// the native UI's text first (it is on top), then what the legacy screen printed and is still visible
+	std::vector<TextRegistry::VisibleText> out;
+	for (NativeUI::TextInfo const& t : NativeUI::Texts())
+	{
+		out.push_back({ ST::string(t.text), SDL_Rect{ t.x, t.y, t.w, t.h }, std::nullopt });
+	}
+	auto legacy = TextRegistry::Visible(FrameSurface(), GetMouseCursorRect());
+	if (!NativeUI::CapturesMouse() || !NativeUI::ScreenKey(guiCurrentScreen))
+	{
+		out.insert(out.end(), legacy.begin(), legacy.end());
+	}
+	return out;
 }
 
 std::vector<Element> Elements()
@@ -484,9 +497,28 @@ std::vector<Element> Elements()
 		if (b) buttons[b->Area.Region()] = b;
 	}
 
-	auto const texts = Texts();
+	auto const texts = TextRegistry::Visible(FrameSurface(), GetMouseCursorRect());
 	std::vector<Element> out;
 	int id = 0;
+	// Native elements first: they are drawn over the legacy screen
+	for (NativeUI::ElementInfo const& n : NativeUI::Elements())
+	{
+		Element e;
+		e.id        = id++;
+		e.kind      = "native";
+		e.nativeId  = n.id;
+		e.rect      = { n.x, n.y, n.w, n.h };
+		e.label     = n.label;
+		e.text      = n.text;
+		e.help      = n.help;
+		e.name      = n.role;
+		e.enabled   = n.enabled;
+		e.clickable = n.clickable;
+		e.focused   = n.focused;
+		e.priority  = 1000;
+		out.push_back(std::move(e));
+	}
+	bool const nativeOnTop = NativeUI::CapturesMouse();
 	MSYS_ForEachRegion([&](MOUSE_REGION const& r) {
 		Element e;
 		e.id       = id++;
@@ -513,7 +545,7 @@ std::vector<Element> Elements()
 		}
 
 		auto const c = e.Center();
-		e.clickable = e.enabled && MSYS_RegionAt(static_cast<INT16>(c.x), static_cast<INT16>(c.y)) == &r;
+		e.clickable = e.enabled && !nativeOnTop && MSYS_RegionAt(static_cast<INT16>(c.x), static_cast<INT16>(c.y)) == &r;
 
 		e.label = !e.name.empty() ? e.name : e.text;
 		// Backdrops (modal blockers, screen-wide click catchers) contain all
@@ -573,6 +605,19 @@ std::vector<Element> Elements()
 std::optional<Target> Find(Locator const& loc)
 {
 	if (loc.point) return Target{ *loc.point, loc.Describe(), std::nullopt };
+	if (!loc.id.empty())
+	{
+		// by id: native elements, exact
+		for (Element const& e : Elements())
+		{
+			if (e.kind != "native" || e.nativeId != loc.id) continue;
+			if (loc.within && !Contains(*loc.within, e.Center())) continue;
+			std::string const desc = ST::format("native #{} \"{}\" at ({}, {}, {}x{})",
+				e.nativeId, e.label, e.rect.x, e.rect.y, e.rect.w, e.rect.h).to_std_string();
+			return Target{ e.Center(), desc, e };
+		}
+		return std::nullopt;
+	}
 
 	std::string const want = Normalize(loc.text);
 	if (want.empty()) throw std::invalid_argument("a locator needs text or coordinates");
@@ -594,6 +639,7 @@ std::optional<Target> Find(Locator const& loc)
 	for (Element const& e : elements)
 	{
 		if (!e.clickable || !inside(e.rect)) continue;
+		if (e.kind == "native" && e.label.empty()) continue;
 		bool exactMatch = false;
 		if (matches(e.label, exactMatch) || matches(e.name, exactMatch) || matches(e.text, exactMatch) || matches(e.help, exactMatch))
 		{
@@ -641,12 +687,27 @@ std::vector<Element> OffscreenElements()
 	{
 		// Degenerate regions (zero-sized placeholders) cannot be clicked.
 		if (e.rect.w <= 0 || e.rect.h <= 0) continue;
+		if (e.kind == "native") continue; // NativeUI::LayoutAudit checks those
 		if (e.rect.x < 0 || e.rect.y < 0 || e.rect.x + e.rect.w > sw || e.rect.y + e.rect.h > sh)
 		{
 			bad.push_back(e);
 		}
 	}
 	return bad;
+}
+
+std::vector<std::string> LayoutProblems()
+{
+	std::vector<std::string> out;
+	SDL_Surface const* frame = GetScreenBuffer();
+	for (Element const& e : OffscreenElements())
+	{
+		if (e.kind == "native") continue; // the native audit below covers them
+		out.push_back(ST::format("{} \"{}\" at ({}, {}, {}x{}) lies outside the {}x{} screen", e.kind, e.label,
+			e.rect.x, e.rect.y, e.rect.w, e.rect.h, frame ? frame->w : 0, frame ? frame->h : 0).to_std_string());
+	}
+	for (std::string const& p : NativeUI::LayoutAudit()) out.push_back("native UI: " + p);
+	return out;
 }
 
 Target Resolve(Locator const& loc, unsigned const timeoutMs)
@@ -693,6 +754,19 @@ std::string ResolveOutputPath(std::string const& path)
 
 void Screenshot(std::string const& path)
 {
+	if (VideoGetOutputMapping().gpu)
+	{
+		// The native UI is drawn by the GPU (a window with JA2_NATIVE_UI_RENDERER=gpu): read the window back
+		std::vector<uint8_t> out;
+		int ow = 0, oh = 0;
+		VideoRequestOutputCapture();
+		Step(1);
+		if (VideoTakeOutputCapture(out, ow, oh))
+		{
+			if (!stbi_write_png(path.c_str(), ow, oh, 3, out.data(), ow * 3)) throw std::runtime_error("could not write screenshot to " + path);
+			return;
+		}
+	}
 	{
 		// With layers the picture is the UI over the world, at the size of the window
 		std::vector<uint8_t> composed;

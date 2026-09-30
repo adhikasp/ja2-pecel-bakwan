@@ -33,6 +33,9 @@ static SGPVObject const* guiExternVo;
 static UINT16            gusExternVoSubIndex;
 static UINT32 guiOldSetCursor = 0;
 static UINT32 guiDelayTimer = 0;
+static UINT32 guiRequestedCursor = VIDEO_NO_CURSOR; // the last SetCurrentCursorFromDatabase, after ModifyCursorIndex
+
+UINT32 GetCurrentCursorIndex() { return guiRequestedCursor; }
 
 static MOUSEBLT_HOOK gMouseBltOverride = NULL;
 
@@ -212,6 +215,7 @@ void CursorDatabaseClear(void)
 BOOLEAN SetCurrentCursorFromDatabase(UINT32 uiCursorIndex)
 {
 	uiCursorIndex = ModifyCursorIndex(uiCursorIndex);
+	guiRequestedCursor = uiCursorIndex;
 
 	if (uiCursorIndex == VIDEO_NO_CURSOR)
 	{

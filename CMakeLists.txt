@@ -93,11 +93,17 @@ option(LOCAL_SMACKER_LIB "Build with local smacker lib" ON)
 option(WITH_UNITTESTS "Build with unittests" ON)
 option(WITH_EDITOR_SLF "Include the latest free editor.slf" OFF)
 option(WITH_RUST_BINARIES "Include rust binaries in build" ON)
-# Phase 0 spikes of docs/plan/native-modern-game.md (RmlUi + FreeType are fetched at configure time)
+# The native UI of docs/plan/native-modern-game.md (RmlUi + FreeType are fetched at configure time), and the Phase 0
+# spikes built on it
 if(ANDROID)
+    option(WITH_NATIVE_UI "Build the native UI runtime (RmlUi); without it every screen uses its legacy UI" OFF)
     option(WITH_NATIVE_SPIKES "Build the native-UI / render spikes (ja2-spike, ja2.debug(\"uispike_*\"))" OFF)
 else()
+    option(WITH_NATIVE_UI "Build the native UI runtime (RmlUi); without it every screen uses its legacy UI" ON)
     option(WITH_NATIVE_SPIKES "Build the native-UI / render spikes (ja2-spike, ja2.debug(\"uispike_*\"))" ON)
+endif()
+if(WITH_NATIVE_SPIKES AND NOT WITH_NATIVE_UI)
+    message(FATAL_ERROR "WITH_NATIVE_SPIKES needs WITH_NATIVE_UI")
 endif()
 # @see LOCAL_LUA_LIB in dependencies/lib-lua/CMakeLists.txt
 # @see LOCAL_SOL_LIB in dependencies/lib-sol2/CMakeLists.txt
@@ -190,6 +196,13 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lib-string_theory")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lib-miniaudio")
 
 
+if(WITH_NATIVE_UI)
+    message(STATUS "Building the native UI runtime")
+    add_subdirectory(src/nativeui)
+    target_link_libraries(${JA2_BINARY} PRIVATE ja2-nativeui-core)
+    target_compile_definitions(${JA2_BINARY} PRIVATE WITH_NATIVE_UI)
+endif()
+
 # Prepare compilation of our own C++ source files.
 add_subdirectory(src)
 
@@ -250,9 +263,10 @@ endmacro()
 copy_assets_dir_to_ja2_binary_after_build("externalized")
 copy_assets_dir_to_ja2_binary_after_build("unittests")
 copy_assets_dir_to_ja2_binary_after_build("mods")
-if(WITH_NATIVE_SPIKES)
-    # Phase 1 design system: tokens, components, icons, fonts, gallery and mocks (read at runtime, editable without a rebuild)
-    # copied on every build (not only when the binary relinks), so RML/RCSS/SVG edits reach the build dir
+if(WITH_NATIVE_UI)
+    # The native UI: design system (tokens, components, icons, fonts), screens, overlays, strings, gallery and mocks
+    # (read at runtime, editable without a rebuild), copied on every build (not only when the binary relinks), so
+    # RML/RCSS/SVG edits reach the build dir
     add_custom_target(ja2-ui-assets ALL
         COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets/ui" "${CMAKE_CURRENT_BINARY_DIR}/ui")
     add_dependencies(${JA2_BINARY} ja2-ui-assets)
@@ -521,6 +535,15 @@ else()
         install(FILES "${EDITORSLF_FILE}" DESTINATION ./externalized)
     endif()
     install(FILES changes.md DESTINATION .)
+endif()
+if(WITH_NATIVE_UI AND NOT ANDROID)
+    # the native UI reads <binary dir>/ui, or <assets dir>/ui (share/ja2/ui on Linux)
+    if(UNIX AND NOT MINGW AND NOT APPLE)
+        set(NATIVE_UI_INSTALL_DIR share/ja2)
+    else()
+        set(NATIVE_UI_INSTALL_DIR .)
+    endif()
+    install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/ui" DESTINATION ${NATIVE_UI_INSTALL_DIR})
 endif()
 
 if(MSVC OR MINGW)

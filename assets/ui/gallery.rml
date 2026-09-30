@@ -117,6 +117,15 @@
 			<span class="g-cell"><span class="g-state">Disabled</span><div class="dropdown is-disabled"><div class="field"><span class="text">Novice</span><img class="icon sm" src="icon-chevron-down"/></div></div></span>
 			<span class="g-cell"><span class="g-state">Error</span><div class="dropdown is-error"><div class="field"><span class="text">Pick one</span><img class="icon sm" src="icon-chevron-down"/></div><div class="error-text">Choose a difficulty</div></div></span>
 		</div>
+		<div class="g-section">Text input</div>
+		<div class="g-row"><span class="g-label">Field</span>
+			<span class="g-cell"><span class="g-state">Default</span><input type="text" class="field-input g-field" id="text-input" value="Omerta landing"/></span>
+			<span class="g-cell"><span class="g-state">Hover</span><input type="text" class="field-input g-field is-hover" value="Drassen"/></span>
+			<span class="g-cell"><span class="g-state">Active</span><input type="text" class="field-input g-field is-active" value="Typing"/></span>
+			<span class="g-cell"><span class="g-state">Focus</span><input type="text" class="field-input g-field is-focus" value="Keyboard"/></span>
+			<span class="g-cell"><span class="g-state">Disabled</span><input type="text" class="field-input g-field is-disabled" value="Locked"/></span>
+			<span class="g-cell"><span class="g-state">Error</span><input type="text" class="field-input g-field is-error" value=""/><span class="field-hint error">Name the save</span></span>
+		</div>
 	</div>
 </div>
 

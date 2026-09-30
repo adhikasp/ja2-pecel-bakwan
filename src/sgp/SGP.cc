@@ -7,6 +7,7 @@
 #include "JA2_Splash.h"
 #include "Random.h"
 #include "SGP.h"
+#include "NativeUI.h"
 #include "SoundMan.h"
 #include "VObject.h"
 #include "Video.h"
@@ -465,6 +466,12 @@ int main(int argc, char* argv[])
 	#else
 			SLOGW("This executable does not include unit tests.");
 	#endif
+		}
+
+		{
+			// ja2.json "ui_mode" and "native_ui_scale" (docs/plan/native-modern-game.md, Phase 2)
+			RustPointer<char> modes(EngineOptions_getUiModes(params.get()));
+			NativeUI::Configure(modes.get() ? modes.get() : "", EngineOptions_getNativeUiScale(params.get()));
 		}
 
 		GameVersion version = EngineOptions_getResourceVersion(params.get());

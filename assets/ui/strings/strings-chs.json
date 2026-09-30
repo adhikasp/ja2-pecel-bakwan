@@ -1,0 +1,11 @@
+{
+  "common.back": "返回",
+  "credits.title": "制作人员",
+  "credits.team": "制作团队",
+  "credits.pause": "暂停",
+  "credits.resume": "继续",
+  "credits.paused": "已暂停",
+  "credits.hint": "指向某人以查看其身份。",
+  "msgbox.notice": "提示",
+  "msgbox.confirm": "确认"
+}

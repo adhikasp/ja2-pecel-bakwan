@@ -1,0 +1,11 @@
+{
+  "common.back": "Back",
+  "credits.title": "Credits",
+  "credits.team": "The team",
+  "credits.pause": "Pause",
+  "credits.resume": "Resume",
+  "credits.paused": "Paused",
+  "credits.hint": "Point at someone to see who they are.",
+  "msgbox.notice": "Notice",
+  "msgbox.confirm": "Confirm"
+}

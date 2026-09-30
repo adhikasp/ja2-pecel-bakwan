@@ -4,6 +4,7 @@
 #include "Overhead.h"
 #include "Types.h"
 #include "Merc_Contract.h"
+#include "NativeUI.h"
 #include "Soldier_Profile.h"
 #include "History.h"
 #include "Finances.h"
@@ -612,6 +613,7 @@ static void CalculateMedicalDepositRefund(SOLDIERTYPE const&);
 
 void StrategicRemoveMerc(SOLDIERTYPE& s)
 {
+	NativeUI::Notify(NativeUI::TOPIC_TEAM);
 	if (gfInContractMenuFromRenewSequence)
 	{
 		EndCurrentContractRenewal();

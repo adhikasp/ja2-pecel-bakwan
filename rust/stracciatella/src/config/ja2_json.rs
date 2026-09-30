@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::fs;
 use std::fs::File;
 use std::io::Write;
@@ -51,6 +52,10 @@ pub struct Ja2JsonContent {
     scaling: Option<ScalingQuality>,
     debug: Option<bool>,
     nosound: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    ui_mode: Option<BTreeMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    native_ui_scale: Option<f32>,
 }
 
 /// Struct to handle interactions with the JSON configuration file
@@ -123,6 +128,8 @@ impl Ja2Json {
         copy_to!(content.scaling, engine_options.scaling_quality);
         copy_to!(content.debug, engine_options.start_in_debug_mode);
         copy_to!(content.nosound, engine_options.start_without_sound);
+        copy_to!(content.ui_mode, engine_options.ui_mode);
+        copy_to!(content.native_ui_scale, engine_options.native_ui_scale);
 
         Ok(())
     }
@@ -150,6 +157,8 @@ impl Ja2Json {
             scaling: None,
             debug: None,
             nosound: None,
+            ui_mode: None,
+            native_ui_scale: None,
         };
 
         copy_to!(engine_options.vanilla_game_dir, content.game_dir);
@@ -164,6 +173,13 @@ impl Ja2Json {
         copy_to!(engine_options.scaling_quality, content.scaling);
         copy_to!(engine_options.start_in_debug_mode, content.debug);
         copy_to!(engine_options.start_without_sound, content.nosound);
+        // Only written when set, so ja2.json stays as it was for everyone who never touched them
+        if !engine_options.ui_mode.is_empty() {
+            copy_to!(engine_options.ui_mode, content.ui_mode);
+        }
+        if engine_options.native_ui_scale != 1.0 {
+            copy_to!(engine_options.native_ui_scale, content.native_ui_scale);
+        }
 
         let json = json::ser::to_string(&content)
             .map_err(|x| format!("Error creating contents of ja2.json config file: {}", x))?;
@@ -299,6 +315,29 @@ mod tests {
             Err(Ja2JsonError::ParsingFailed(_)) => {}
             _ => panic!("incorrect error variant"),
         }
+    }
+
+    #[test]
+    fn apply_to_engine_options_should_read_ui_mode_and_native_ui_scale() {
+        let mut engine_options = EngineOptions::default();
+        let temp_dir = write_temp_folder_with_ja2_json(
+            br#"{ "ui_mode": { "credits": "legacy", "msgbox": "native" }, "native_ui_scale": 1.5 }"#,
+        );
+        let ja2json = Ja2Json::from_stracciatella_home(temp_dir.path().join(".ja2"));
+
+        ja2json
+            .apply_to_engine_options(&mut engine_options)
+            .unwrap();
+
+        assert_eq!(
+            engine_options.ui_mode.get("credits").map(String::as_str),
+            Some("legacy")
+        );
+        assert_eq!(
+            engine_options.ui_mode.get("msgbox").map(String::as_str),
+            Some("native")
+        );
+        assert_eq!(engine_options.native_ui_scale, 1.5);
     }
 
     #[test]

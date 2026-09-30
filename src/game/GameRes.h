@@ -58,6 +58,8 @@ void BltVideoObject(SGPVSurface * dst, MultiLanguageGraphic, UINT16 subIndex, in
 
 /** Choose game version. */
 void setGameVersion(GameVersion ver);
+/** The chosen game version. */
+GameVersion getGameVersion();
 
 /** Check if this is English version of the game. */
 bool isEnglishVersion();

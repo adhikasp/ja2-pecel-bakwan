@@ -1,0 +1,59 @@
+<rml>
+<head>
+	<title>Credits</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="credits.rcss"/>
+</head>
+<!-- The native credits screen (docs/ui/credits.md). View model: CreditsViewModel ("credits"). -->
+<body class="screen-credits">
+<div id="credits" data-model="credits">
+	<div class="cr-bg"></div>
+
+	<div class="cr-head">
+		<div class="cr-heading">
+			<span class="cr-kicker">Jagged Alliance 2</span>
+			<span class="cr-title" id="credits.title">{{title}}</span>
+		</div>
+		<div class="cr-actions">
+			<button class="btn btn-ghost" id="credits.pause" data-event-click="pause"><img class="icon" data-attr-src="paused ? 'icon-play' : 'icon-pause'"/><span class="label">{{pause_label}}</span><span class="kbd">Space</span></button>
+			<button class="btn" id="credits.back" data-event-click="back"><img class="icon" src="icon-chevron-left"/><span class="label">{{back_label}}</span><span class="kbd">Esc</span></button>
+		</div>
+	</div>
+
+	<div class="cr-main">
+		<div class="cr-team">
+			<div class="cr-section">{{team_label}}</div>
+			<div class="cr-roster scroll" id="credits.roster">
+				<div class="cr-person" data-for="p : people" data-attr-id="'credits.person[' + p.index + ']'"
+					data-class-selected="selected == p.index"
+					data-event-mouseover="select(p.index)" data-event-focus="select(p.index)" data-event-click="select(p.index)">
+					<div class="cr-face">
+						<img class="cr-portrait" data-attr-src="p.blink ? p.face_blink : p.face"/>
+					</div>
+					<div class="cr-who">
+						<span class="cr-name">{{p.name}}</span>
+						<span class="cr-role">{{p.title}}</span>
+					</div>
+				</div>
+			</div>
+			<div class="cr-detail" id="credits.detail" data-class-empty="selected < 0">
+				<div class="cr-detail-name" id="credits.detail.name">{{selected >= 0 ? sel_name : hint}}</div>
+				<div class="cr-detail-title" id="credits.detail.title" data-if="selected >= 0">{{sel_title}}</div>
+				<div class="cr-detail-funny" id="credits.detail.funny" data-if="selected >= 0 &amp;&amp; sel_funny != ''">{{sel_funny}}</div>
+			</div>
+		</div>
+
+		<div class="cr-reel-frame">
+			<div class="cr-reel audit-skip" id="credits.reel">
+				<div class="cr-reel-content" id="credits.reel-content">
+					<div data-for="l : lines" data-class-cr-t="l.kind == 'title'" data-class-cr-l="l.kind == 'line'" data-class-cr-g="l.kind == 'gap'">{{l.text}}</div>
+				</div>
+			</div>
+			<img class="cr-fade top" src="gen-fade-top"/>
+			<img class="cr-fade bottom" src="gen-fade-bottom"/>
+			<div class="cr-paused" data-if="paused"><img class="icon sm" src="icon-pause"/><span>{{paused_text}}</span></div>
+		</div>
+	</div>
+</div>
+</body>
+</rml>

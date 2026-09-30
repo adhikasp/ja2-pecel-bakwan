@@ -25,6 +25,7 @@
 #include "JAScreens.h"
 #include "Video.h"
 #include "UILayout.h"
+#include "NativeUI.h"
 
 #include <string_theory/format>
 #include <string_theory/string>
@@ -51,6 +52,7 @@ static SGPRect gOldCursorLimitRectangle;
 
 MESSAGE_BOX_STRUCT gMsgBox;
 static BOOLEAN     gfNewMessageBox = FALSE;
+static bool        gfNativeMessageBox = false; // this box is drawn by the native UI (ui_mode "msgbox")
 static BOOLEAN     gfStartedFromGameScreen = FALSE;
 BOOLEAN            gfStartedFromMapScreen = FALSE;
 BOOLEAN            fRestoreBackgroundForMessageBox = FALSE;
@@ -85,6 +87,88 @@ static MessageBoxStyle const g_msg_box_style[] =
 static_assert(NUMBER_OF_MSG_BOX_STYLES == std::size(g_msg_box_style));
 
 
+/** The buttons a box with these flags has, as the native message box shows them (primary last, on the right). */
+static std::vector<NativeUI::MessageBoxButton> NativeButtons(MessageBoxFlags const flags)
+{
+	using B = NativeUI::MessageBoxButton;
+	auto const S = [](ST::string const& t) { return t.to_std_string(); };
+	switch (flags)
+	{
+		case MSG_BOX_FLAG_FOUR_NUMBERED_BUTTONS:
+			return { B{ "msgbox.1", "1", "1", MSG_BOX_RETURN_1, true }, B{ "msgbox.2", "2", "2", MSG_BOX_RETURN_2, false },
+			         B{ "msgbox.3", "3", "3", MSG_BOX_RETURN_3, false }, B{ "msgbox.4", "4", "4", MSG_BOX_RETURN_4, false } };
+		case MSG_BOX_FLAG_OK:
+			return { B{ "msgbox.ok", S(pMessageStrings[MSG_OK]), "Enter", MSG_BOX_RETURN_OK, true } };
+		case MSG_BOX_FLAG_YESNO:
+			return { B{ "msgbox.no", S(pMessageStrings[MSG_NO]), "N", MSG_BOX_RETURN_NO, false },
+			         B{ "msgbox.yes", S(pMessageStrings[MSG_YES]), "Y", MSG_BOX_RETURN_YES, true } };
+		case MSG_BOX_FLAG_CONTINUESTOP:
+			return { B{ "msgbox.stop", S(pUpdatePanelButtons[1]), "", MSG_BOX_RETURN_NO, false },
+			         B{ "msgbox.continue", S(pUpdatePanelButtons[0]), "Enter", MSG_BOX_RETURN_YES, true } };
+		case MSG_BOX_FLAG_OKCONTRACT:
+			return { B{ "msgbox.rehire", S(pMessageStrings[MSG_REHIRE]), "", MSG_BOX_RETURN_CONTRACT, false },
+			         B{ "msgbox.ok", S(pMessageStrings[MSG_OK]), "", MSG_BOX_RETURN_YES, true } };
+		case MSG_BOX_FLAG_GENERICCONTRACT:
+			return { B{ "msgbox.rehire", S(pMessageStrings[MSG_REHIRE]), "", MSG_BOX_RETURN_CONTRACT, false },
+			         B{ "msgbox.button2", S(gzUserDefinedButton2), "", MSG_BOX_RETURN_NO, false },
+			         B{ "msgbox.button1", S(gzUserDefinedButton1), "", MSG_BOX_RETURN_YES, true } };
+		case MSG_BOX_FLAG_GENERIC:
+			return { B{ "msgbox.button2", S(gzUserDefinedButton2), "", MSG_BOX_RETURN_NO, false },
+			         B{ "msgbox.button1", S(gzUserDefinedButton1), "", MSG_BOX_RETURN_YES, true } };
+		case MSG_BOX_FLAG_YESNOLIE:
+			return { B{ "msgbox.lie", S(pMessageStrings[MSG_LIE]), "", MSG_BOX_RETURN_LIE, false },
+			         B{ "msgbox.no", S(pMessageStrings[MSG_NO]), "N", MSG_BOX_RETURN_NO, false },
+			         B{ "msgbox.yes", S(pMessageStrings[MSG_YES]), "Y", MSG_BOX_RETURN_YES, true } };
+		case MSG_BOX_FLAG_OKSKIP:
+			return { B{ "msgbox.skip", S(pMessageStrings[MSG_SKIP]), "", MSG_BOX_RETURN_NO, false },
+			         B{ "msgbox.ok", S(pMessageStrings[MSG_OK]), "Enter", MSG_BOX_RETURN_YES, true } };
+	}
+	return {};
+}
+
+
+/** DoMessageBox with the native UI: the same modal flow (MSG_BOX_SCREEN, pause, callback), drawn natively. */
+static void DoNativeMessageBox(MessageBoxStyleID const style, ST::string const& str, ScreenID const uiExitScreen,
+	MessageBoxFlags const usFlags, MSGBOX_CALLBACK const ReturnCallback)
+{
+	gMsgBox.usFlags      = usFlags;
+	gMsgBox.uiExitScreen = uiExitScreen;
+	gMsgBox.ExitCallback = ReturnCallback;
+	gMsgBox.fRenderBox   = FALSE;
+	gMsgBox.bHandled     = MSG_BOX_RETURN_NONE;
+	gMsgBox.box          = nullptr;
+	gMsgBox.uiSaveBuffer = nullptr;
+	gMsgBox.uX = gMsgBox.uY = gMsgBox.usWidth = gMsgBox.usHeight = 0;
+	gfNativeMessageBox = true;
+
+	if (guiCurrentScreen == GAME_SCREEN) gfStartedFromGameScreen = TRUE;
+	if (fInMapMode) fMapPanelDirty = TRUE;
+	SetPendingNewScreen(MSG_BOX_SCREEN);
+
+	// legacy regions under the box get nothing (the native UI takes the mouse as well)
+	MSYS_DefineRegion(&gMsgBox.BackRegion, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK, MSYS_NO_CALLBACK);
+
+	if (IsCursorRestricted())
+	{
+		fCursorLockedToArea = TRUE;
+		GetRestrictedClipCursor(&MessageBoxRestrictedCursorRegion);
+		FreeMouseCursor();
+	}
+
+	NativeUI::OpenMessageBox(str.to_std_string(), NativeButtons(usFlags), style == MSG_BOX_RED_ON_WHITE);
+
+	InterruptTime();
+	PauseGame();
+	LockPauseState(LOCK_PAUSE_MSGBOX);
+	PauseTime(TRUE);
+	GetRestrictedClipCursor(&gOldCursorLimitRectangle);
+	FreeMouseCursor();
+
+	gfNewMessageBox = TRUE;
+	gfInMsgBox     = TRUE;
+}
+
+
 void DoMessageBox(MessageBoxStyleID ubStyle, const ST::string& str, ScreenID uiExitScreen, MessageBoxFlags usFlags, MSGBOX_CALLBACK ReturnCallback, const SGPBox* centering_rect)
 {
 	pOldMousePosition = GetMousePos();
@@ -98,6 +182,13 @@ void DoMessageBox(MessageBoxStyleID ubStyle, const ST::string& str, ScreenID uiE
 
 	Assert(ubStyle >= 0 && ubStyle < NUMBER_OF_MSG_BOX_STYLES);
 	auto const& style{ g_msg_box_style[ubStyle] };
+
+	if (NativeUI::MessageBoxWanted())
+	{
+		DoNativeMessageBox(ubStyle, str, uiExitScreen, usFlags, ReturnCallback);
+		return;
+	}
+	gfNativeMessageBox = false;
 
 	// Set some values!
 	gMsgBox.usFlags      = usFlags;
@@ -285,11 +376,13 @@ void DoMessageBox(MessageBoxStyleID ubStyle, const ST::string& str, ScreenID uiE
 
 static ScreenID ExitMsgBox(MessageBoxReturnValue const ubExitCode)
 {
-	RemoveMercPopupBox(gMsgBox.box);
+	bool const native = gfNativeMessageBox;
+	if (native) NativeUI::CloseMessageBox();
+	if (gMsgBox.box) RemoveMercPopupBox(gMsgBox.box);
 	gMsgBox.box = 0;
 
 	//Delete buttons!
-	switch (gMsgBox.usFlags)
+	if (!native) switch (gMsgBox.usFlags)
 	{
 		case MSG_BOX_FLAG_FOUR_NUMBERED_BUTTONS:
 			RemoveButton(gMsgBox.uiButton[0]);
@@ -320,7 +413,7 @@ static ScreenID ExitMsgBox(MessageBoxReturnValue const ubExitCode)
 	}
 
 	// Delete button images
-	UnloadButtonImage(gMsgBox.iButtonImages);
+	if (!native) UnloadButtonImage(gMsgBox.iButtonImages);
 
 	// Unpause game....
 	UnLockPauseState();
@@ -337,7 +430,7 @@ static ScreenID ExitMsgBox(MessageBoxReturnValue const ubExitCode)
 	if (gMsgBox.ExitCallback != NULL) gMsgBox.ExitCallback(ubExitCode);
 
 	//if you are in a non gamescreen and DONT want the msg box to use the save buffer, unset gfDontOverRideSaveBuffer in your callback
-	if ((gMsgBox.uiExitScreen != GAME_SCREEN || fRestoreBackgroundForMessageBox) && gfDontOverRideSaveBuffer)
+	if (!native && (gMsgBox.uiExitScreen != GAME_SCREEN || fRestoreBackgroundForMessageBox) && gfDontOverRideSaveBuffer)
 	{
 		// restore what we have under here...
 		BltVideoSurface(FRAME_BUFFER, gMsgBox.uiSaveBuffer, gMsgBox.uX, gMsgBox.uY, NULL);
@@ -362,7 +455,9 @@ static ScreenID ExitMsgBox(MessageBoxReturnValue const ubExitCode)
 	}
 
 	MSYS_RemoveRegion(&gMsgBox.BackRegion);
-	DeleteVideoSurface(gMsgBox.uiSaveBuffer);
+	if (gMsgBox.uiSaveBuffer) DeleteVideoSurface(gMsgBox.uiSaveBuffer);
+	gMsgBox.uiSaveBuffer = nullptr;
+	gfNativeMessageBox = false;
 
 	switch (gMsgBox.uiExitScreen)
 	{
@@ -394,6 +489,8 @@ static ScreenID ExitMsgBox(MessageBoxReturnValue const ubExitCode)
 }
 
 
+static void HandleMessageBoxKey(UINT32 key);
+
 ScreenID MessageBoxScreenHandle()
 {
 	if (gfNewMessageBox)
@@ -406,6 +503,26 @@ ScreenID MessageBoxScreenHandle()
 		}
 
 		gfNewMessageBox = FALSE;
+		return MSG_BOX_SCREEN;
+	}
+
+	if (gfNativeMessageBox)
+	{
+		// The native box: its buttons and keyboard focus first, then the legacy shortcuts
+		InputAtom e;
+		while (gMsgBox.bHandled == MSG_BOX_RETURN_NONE && DequeueSpecificEvent(&e, KEYBOARD_EVENTS))
+		{
+			bool const used = NativeUI::HandleKeyEvent(e);
+			if (NativeUI::MessageBoxResult()) break;
+			if (used || e.usEvent != KEY_UP) continue;
+			HandleMessageBoxKey(e.usParam);
+		}
+		if (int const r = NativeUI::MessageBoxResult()) gMsgBox.bHandled = static_cast<MessageBoxReturnValue>(r);
+		if (gMsgBox.bHandled != MSG_BOX_RETURN_NONE)
+		{
+			SetRenderFlags(RENDER_FLAG_FULL);
+			return ExitMsgBox(gMsgBox.bHandled);
+		}
 		return MSG_BOX_SCREEN;
 	}
 
@@ -457,11 +574,27 @@ ScreenID MessageBoxScreenHandle()
 	while (DequeueSpecificEvent(&InputEvent, KEYBOARD_EVENTS))
 	{
 		if (InputEvent.usEvent != KEY_UP) continue;
+		HandleMessageBoxKey(InputEvent.usParam);
+	}
 
+	if (gMsgBox.bHandled != MSG_BOX_RETURN_NONE)
+	{
+		SetRenderFlags(RENDER_FLAG_FULL);
+		return ExitMsgBox(gMsgBox.bHandled);
+	}
+
+	return MSG_BOX_SCREEN;
+}
+
+
+/** The keyboard shortcuts of a message box (on key release). */
+static void HandleMessageBoxKey(UINT32 const key)
+{
+	{
 		switch (gMsgBox.usFlags)
 		{
 			case MSG_BOX_FLAG_YESNO:
-				switch (InputEvent.usParam)
+				switch (key)
 				{
 					case 'n':
 					case SDLK_ESCAPE: gMsgBox.bHandled = MSG_BOX_RETURN_NO;  break;
@@ -471,7 +604,7 @@ ScreenID MessageBoxScreenHandle()
 				break;
 
 			case MSG_BOX_FLAG_OK:
-				switch (InputEvent.usParam)
+				switch (key)
 				{
 					case 'o':
 					case SDLK_RETURN: gMsgBox.bHandled = MSG_BOX_RETURN_OK; break;
@@ -479,14 +612,14 @@ ScreenID MessageBoxScreenHandle()
 				break;
 
 			case MSG_BOX_FLAG_CONTINUESTOP:
-				switch (InputEvent.usParam)
+				switch (key)
 				{
 					case SDLK_RETURN: gMsgBox.bHandled = MSG_BOX_RETURN_OK; break;
 				}
 				break;
 
 			case MSG_BOX_FLAG_FOUR_NUMBERED_BUTTONS:
-				switch (InputEvent.usParam)
+				switch (key)
 				{
 					case '1': gMsgBox.bHandled = MSG_BOX_RETURN_1; break;
 					case '2': gMsgBox.bHandled = MSG_BOX_RETURN_2; break;
@@ -498,14 +631,6 @@ ScreenID MessageBoxScreenHandle()
 				break;
 		}
 	}
-
-	if (gMsgBox.bHandled != MSG_BOX_RETURN_NONE)
-	{
-		SetRenderFlags(RENDER_FLAG_FULL);
-		return ExitMsgBox(gMsgBox.bHandled);
-	}
-
-	return MSG_BOX_SCREEN;
 }
 
 

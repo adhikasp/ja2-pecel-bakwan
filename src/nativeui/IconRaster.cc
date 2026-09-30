@@ -4,7 +4,7 @@
 // stroke-dasharray, opacity and transform="rotate(a cx cy)" on shapes; presentation attributes on <svg> are
 // inherited. Joins and caps are always round. Output is white with coverage in alpha, so the UI tints it
 // (image-color). Anti-aliasing: 4x4 samples per pixel.
-#include "UiSpike.h"
+#include "UiCore.h"
 
 #include <algorithm>
 #include <cctype>
@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-namespace spike {
+namespace nui {
 namespace {
 
 struct Pt { float x, y; };
@@ -383,4 +383,4 @@ std::vector<unsigned char> RasterizeSvg(std::string const& svg, int size, std::s
 	return out;
 }
 
-} // namespace spike
+} // namespace nui

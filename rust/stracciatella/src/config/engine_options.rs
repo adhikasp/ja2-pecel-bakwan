@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use crate::config::{Resolution, ScalingQuality, UiScale, VanillaVersion, WindowMode, WorldZoom};
@@ -87,6 +88,11 @@ pub struct EngineOptions {
     pub start_without_sound: bool,
     /// Whether to enum-gen for Lua
     pub run_enum_gen: bool,
+    /// Per-screen UI implementation (`"credits": "native"`, `"msgbox": "legacy"`, ...); unlisted screens use the
+    /// engine's default. See docs/plan/native-modern-game.md (Phase 2, the `ui_mode` switch).
+    pub ui_mode: BTreeMap<String, String>,
+    /// User scale of the native UI on top of its resolution scale (1.0 = 100%)
+    pub native_ui_scale: f32,
 }
 
 impl Default for EngineOptions {
@@ -110,6 +116,8 @@ impl Default for EngineOptions {
             start_in_debug_mode: false,
             start_without_sound: false,
             run_enum_gen: false,
+            ui_mode: BTreeMap::new(),
+            native_ui_scale: 1.0,
         }
     }
 }
