@@ -19,6 +19,7 @@
 #include "MessageBoxScreen.h"
 #include "Overhead.h"
 #include "Soldier_Control.h"
+#include "Soldier_Create.h"
 #include "Soldier_Profile.h"
 #include "Dialogue_Control.h"
 #include "Message.h"
@@ -643,6 +644,14 @@ namespace
 					// Fake an enemy encounter in the current sector on the map screen and open the pre-battle panel.
 					FakeEncounter();
 					InitPreBattleInterface(nullptr, false);
+				}
+				else if (what == "clearenemies")
+				{
+					// Test aid: remove every enemy from the loaded sector (the soldiers and the strategic counts), as if
+					// the battle had been won, so that a script can reach the states of a secured sector quickly.
+					FOR_EACH_IN_TEAM(s, ENEMY_TEAM) TacticalRemoveSoldier(*s);
+					EliminateAllEnemies(gWorldSector);
+					gTacticalStatus.fEnemyInSector = FALSE;
 				}
 				else if (what == "autoresolve")
 				{
