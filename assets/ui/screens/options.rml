@@ -1,0 +1,157 @@
+<rml>
+<head>
+	<title>Options</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="frontend.rcss"/>
+</head>
+<!-- The native options screen (docs/ui/options.md). View model: OptionsViewModel ("options"). -->
+<body class="p3">
+<div class="p3-root" id="options" data-model="options">
+	<div class="p3-bg audit-skip"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker" id="options.kicker">{{kicker}}</span><span class="p3-title" id="options.title">{{title}}</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="options.save" data-label="Save Game" data-class-is-disabled="!can_save" data-event-click="save"><img class="icon" src="icon-save"/><span class="label">{{l_save}}</span><span class="kbd">S</span></button>
+			<button class="btn" id="options.load" data-label="Load Game" data-event-click="load"><img class="icon" src="icon-load"/><span class="label">{{l_load}}</span><span class="kbd">L</span></button>
+			<button class="btn btn-ghost" id="options.quit" data-label="Quit" data-if="in_game" data-event-click="quit"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_quit}}</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="op-nav">
+			<div class="op-tab" id="options.tab.gameplay" data-class-active="tab == 'gameplay'" data-event-click="tab('gameplay')"><img class="icon" src="icon-target"/><span>{{l_gameplay}}</span><span class="kbd">1</span></div>
+			<div class="op-tab" id="options.tab.video" data-class-active="tab == 'video'" data-event-click="tab('video')"><img class="icon" src="icon-look"/><span>{{l_video}}</span><span class="kbd">2</span></div>
+			<div class="op-tab" id="options.tab.audio" data-class-active="tab == 'audio'" data-event-click="tab('audio')"><img class="icon" src="icon-talk"/><span>{{l_audio}}</span><span class="kbd">3</span></div>
+			<div class="op-tab" id="options.tab.controls" data-class-active="tab == 'controls'" data-event-click="tab('controls')"><img class="icon" src="icon-pointer"/><span>{{l_controls}}</span><span class="kbd">4</span></div>
+			<div class="op-tab" id="options.tab.access" data-class-active="tab == 'access'" data-event-click="tab('access')"><img class="icon" src="icon-info"/><span>{{l_access}}</span><span class="kbd">5</span></div>
+		</div>
+		<div class="op-content">
+			<!-- gameplay -->
+			<div class="op-cols" data-if="tab == 'gameplay'">
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_combat}}</span>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'combat'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><span class="kbd" data-if="o.kbd != ''">{{o.kbd}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+					</div>
+				</div>
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_campaign}}</span>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'campaign'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+					</div>
+					<div class="op-group" data-if="in_game"><span class="section">{{l_this_campaign}}</span>
+						<div class="panel pad" id="options.campaign">
+							<div class="kv"><span class="k">{{s_difficulty}}</span><span class="v">{{difficulty}}</span></div>
+							<div class="kv"><span class="k">{{s_style}}</span><span class="v">{{style}}</span></div>
+							<div class="kv"><span class="k">{{s_guns}}</span><span class="v">{{guns}}</span></div>
+							<div class="kv"><span class="k">{{s_saving}}</span><span class="v">{{saving}}</span></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- video -->
+			<div class="op-cols" data-if="tab == 'video'">
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_display}}</span>
+						<div class="op-row op-row-menu" id="options.video.resolution">
+							<span class="name">{{s_resolution}}</span>
+							<div class="dropdown" data-class-open="open_menu == 'res'">
+								<div class="field" id="options.video.resolution.field" data-event-click="menu('res')"><span class="text">{{res_text}}</span><img class="icon sm" src="icon-chevron-down"/></div>
+								<div class="options scroll">
+									<div class="option" data-for="c : choices" data-class-gone="c.group != 'res'" data-class-selected="c.selected" data-attr-id="'options.video.res[' + c.index + ']'" data-event-click="choose('res', c.index)">{{c.label}}</div>
+								</div>
+							</div>
+						</div>
+						<div class="op-row" id="options.video.uiscale"><span class="name">{{s_ui_size}}</span><div class="seg">
+							<span class="seg-b" data-for="c : choices" data-class-gone="c.group != 'uiscale'" data-class-on="c.selected" data-attr-id="'options.video.uiscale[' + c.index + ']'" data-event-click="choose('uiscale', c.index)" data-event-mouseover="help_text(s_ui_size, s_ui_size_help)">{{c.label}}</span>
+						</div></div>
+						<div class="op-row" id="options.video.window"><span class="name">{{s_window}}</span><div class="seg">
+							<span class="seg-b" data-for="c : choices" data-class-gone="c.group != 'window'" data-class-on="c.selected" data-attr-id="'options.video.window[' + c.index + ']'" data-event-click="choose('window', c.index)">{{c.label}}</span>
+						</div></div>
+						<div class="op-row" id="options.video.fps"><span class="name">{{s_fps}}</span><div class="seg">
+							<span class="seg-b" data-for="c : choices" data-class-gone="c.group != 'fps'" data-class-on="c.selected" data-attr-id="'options.video.fps[' + c.index + ']'" data-event-click="choose('fps', c.index)">{{c.label}}</span>
+						</div></div>
+						<div class="op-row" id="options.video.filter"><span class="name">{{s_filter}}</span><div class="seg">
+							<span class="seg-b" data-for="c : choices" data-class-gone="c.group != 'filter'" data-class-on="c.selected" data-attr-id="'options.video.filter[' + c.index + ']'" data-event-click="choose('filter', c.index)">{{c.label}}</span>
+						</div></div>
+						<div class="op-row" id="options.video.zoom"><span class="name">{{s_zoom}}</span><div class="seg">
+							<span class="seg-b" data-for="c : choices" data-class-gone="c.group != 'zoom'" data-class-on="c.selected" data-attr-id="'options.video.zoom[' + c.index + ']'" data-event-click="choose('zoom', c.index)">{{c.label}}</span>
+						</div></div>
+					</div>
+				</div>
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_world}}</span>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'world'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><span class="kbd" data-if="o.kbd != ''">{{o.kbd}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+					</div>
+				</div>
+			</div>
+			<!-- audio -->
+			<div class="op-cols" data-if="tab == 'audio'">
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_volume}}</span>
+						<div class="op-row" id="options.audio.effects"><span class="name">{{l_effects}}</span><div class="vol">
+							<div class="slider" id="options.audio.effects.track" data-event-click="vol_at('effects', ev.mouse_x)"><div class="track"><div class="fill" data-style-width="effects + '%'"></div></div><div class="thumb" data-style-left="effects + '%'"></div></div>
+							<span class="volv" id="options.audio.effects.value">{{effects_text}}</span>
+							<button class="icon-btn" id="options.audio.effects.sample" data-attr-title="s_play" data-event-click="sample('effects')"><img class="icon" src="icon-play"/></button></div></div>
+						<div class="op-row" id="options.audio.speech"><span class="name">{{l_speech}}</span><div class="vol">
+							<div class="slider" id="options.audio.speech.track" data-event-click="vol_at('speech', ev.mouse_x)"><div class="track"><div class="fill" data-style-width="speech + '%'"></div></div><div class="thumb" data-style-left="speech + '%'"></div></div>
+							<span class="volv" id="options.audio.speech.value">{{speech_text}}</span>
+							<button class="icon-btn" id="options.audio.speech.sample" data-attr-title="s_play" data-event-click="sample('speech')"><img class="icon" src="icon-play"/></button></div></div>
+						<div class="op-row" id="options.audio.music"><span class="name">{{l_music}}</span><div class="vol">
+							<div class="slider" id="options.audio.music.track" data-event-click="vol_at('music', ev.mouse_x)"><div class="track"><div class="fill" data-style-width="music + '%'"></div></div><div class="thumb" data-style-left="music + '%'"></div></div>
+							<span class="volv" id="options.audio.music.value">{{music_text}}</span>
+							<span class="icon-spacer"></span></div></div>
+					</div>
+				</div>
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_dialogue}}</span>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'dialogue'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+					</div>
+				</div>
+			</div>
+			<!-- controls -->
+			<div class="op-cols" data-if="tab == 'controls'">
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_mouse}}</span>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'mouse'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+					</div>
+					<div class="op-group"><span class="section">{{l_keys_map}}</span>
+						<div class="keyrow" data-for="k : keys" data-class-gone="k.group != 'map'"><span class="name">{{k.name}}</span><span class="kbd">{{k.k1}}</span><span class="kbd" data-if="k.k2 != ''">{{k.k2}}</span></div>
+					</div>
+				</div>
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_keys_tactical}}</span>
+						<div class="keyrow" data-for="k : keys" data-class-gone="k.group != 'tactical'"><span class="name">{{k.name}}</span><span class="kbd">{{k.k1}}</span><span class="kbd" data-if="k.k2 != ''">{{k.k2}}</span></div>
+					</div>
+				</div>
+			</div>
+			<!-- accessibility -->
+			<div class="op-cols" data-if="tab == 'access'">
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_reading}}</span>
+						<div class="op-row" id="options.access.uiscale" data-event-mouseover="help_text(s_ui_size, s_ui_size_help)"><span class="name">{{s_ui_size}}</span><div class="seg">
+							<span class="seg-b" data-for="c : choices" data-class-gone="c.group != 'uiscale'" data-class-on="c.selected" data-attr-id="'options.access.uiscale[' + c.index + ']'" data-event-click="choose('uiscale', c.index)">{{c.label}}</span>
+						</div></div>
+						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'reading'" data-attr-id="'options.access.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>
+					</div>
+				</div>
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_motion}}</span>
+						<div class="op-row op-toggle" id="options.access.motion" data-event-click="motion" data-event-mouseover="help_text(s_motion, s_motion_help)"><span class="name">{{s_motion}}</span><div class="toggle" data-class-on="reduced_motion"><span class="switch"><span class="knob"></span></span></div></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="op-help">
+				<div class="panel" id="options.help"><span class="h" id="options.help.title">{{help_title}}</span><span class="p" id="options.help.text">{{help_text}}</span><div class="m" data-if="help_meta != ''"><span>{{help_meta}}</span></div></div>
+				<div class="op-note warn" data-if="help_warn"><img class="icon" src="icon-warning"/><span>{{help_meta}}</span></div>
+				<div class="op-note" data-if="tab == 'video'"><img class="icon" src="icon-info"/><span id="options.video.now">{{effect_now}}</span></div>
+				<div class="op-note" data-if="tab == 'controls'"><img class="icon" src="icon-info"/><span>{{s_keys_note}}</span></div>
+				<div class="op-note" data-if="tab == 'access'"><img class="icon" src="icon-info"/><span>{{s_colour_note}}</span></div>
+			</div>
+		</div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">1</span><span class="kbd">5</span><span class="h">{{s_page}}</span><span class="kbd">Tab</span><span class="h">{{s_next}}</span><span class="kbd">Enter</span><span class="h">{{s_change}}</span><span class="h">{{s_saved_note}}</span></div>
+		<button class="btn btn-primary" id="options.done" data-label="Done" data-event-click="done"><img class="icon" src="icon-confirm"/><span class="label">{{l_done}}</span><span class="kbd">Esc</span></button>
+	</div>
+</div>
+</body>
+</rml>

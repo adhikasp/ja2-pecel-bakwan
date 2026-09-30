@@ -1,3 +1,4 @@
+#include "NativeUI.h"
 #include "Loading_Screen.h"
 
 #include "Campaign_Types.h"
@@ -104,6 +105,12 @@ void DisplayLoadScreenWithID(UINT8 const id)
 {
 	const LoadingScreen* screen = GCM->getLoadingScreen(id);
 	ST::string filename = LOADSCREENSDIR + screen->filename;
+
+	if (NativeUI::ShowLoadingScreen(id))
+	{ // the native loading screen (docs/ui/loadingscreen.md) draws the same art full screen
+		gubLastLoadingScreenID = id;
+		return;
+	}
 
 	try
 	{ // Blit the background image.

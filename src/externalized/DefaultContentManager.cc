@@ -1111,6 +1111,16 @@ bool DefaultContentManager::saveVideoSettings(int const resX, int const resY, in
 }
 
 
+bool DefaultContentManager::saveNativeUiSettings(float const scale, bool const reducedMotion)
+{
+	EngineOptions* const options = m_engineOptions.get();
+	if (!options) return false;
+	EngineOptions_setNativeUiScale(options, scale);
+	EngineOptions_setReducedMotion(options, reducedMotion);
+	return EngineOptions_write(options);
+}
+
+
 const GamePolicy* DefaultContentManager::getGamePolicy() const
 {
 	return m_gamePolicy.get();

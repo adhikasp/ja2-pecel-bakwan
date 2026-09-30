@@ -1,0 +1,74 @@
+<rml>
+<head>
+	<title>Save and load</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="frontend.rcss"/>
+</head>
+<!-- The native save/load screen (docs/ui/saveload.md). View model: SaveLoadViewModel ("saveload"). -->
+<body class="p3">
+<div class="p3-root" id="saveload" data-model="saveload">
+	<div class="p3-bg audit-skip"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">{{count_text}}</span><span class="p3-title" id="saveload.title">{{title}}</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="saveload.back" data-label="Cancel" data-event-click="cancel"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_cancel}}</span><span class="kbd">Esc</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="sl-list">
+			<div class="sl-tools">
+				<div class="sl-filter-box"><img class="icon sm" src="icon-search"/><input type="text" class="field-input sl-filter-in" id="saveload.filter" data-value="filter" data-event-change="filter_changed" data-attr-title="l_filter"/></div>
+				<button class="btn btn-ghost" id="saveload.showauto" data-if="!save_mode" data-class-on="show_auto" data-event-click="show_auto"><img class="icon" data-attr-src="show_auto ? 'icon-confirm' : 'icon-filter'"/><span class="label">{{l_show_auto}}</span></button>
+			</div>
+			<div class="sl-table">
+				<div class="thead">
+					<span class="th sortable c-name" id="saveload.sort.name" data-class-sorted="sort_key == 'name'" data-event-click="sort('name')"><span>{{l_col_name}}</span><img class="icon" data-if="sort_key == 'name'" data-attr-src="sort_desc ? 'icon-sort-desc' : 'icon-sort-asc'"/></span>
+					<span class="th sortable c-when" id="saveload.sort.when" data-class-sorted="sort_key == 'when'" data-event-click="sort('when')"><span>{{l_col_when}}</span><img class="icon" data-if="sort_key == 'when'" data-attr-src="sort_desc ? 'icon-sort-desc' : 'icon-sort-asc'"/></span>
+					<span class="th sortable c-sector" id="saveload.sort.sector" data-class-sorted="sort_key == 'sector'" data-event-click="sort('sector')"><span>{{l_col_sector}}</span><img class="icon" data-if="sort_key == 'sector'" data-attr-src="sort_desc ? 'icon-sort-desc' : 'icon-sort-asc'"/></span>
+					<span class="th sortable c-team" id="saveload.sort.team" data-class-sorted="sort_key == 'team'" data-event-click="sort('team')"><span>{{l_col_team}}</span><img class="icon" data-if="sort_key == 'team'" data-attr-src="sort_desc ? 'icon-sort-desc' : 'icon-sort-asc'"/></span>
+					<span class="th sortable c-money" id="saveload.sort.money" data-class-sorted="sort_key == 'money'" data-event-click="sort('money')"><span>{{l_col_money}}</span><img class="icon" data-if="sort_key == 'money'" data-attr-src="sort_desc ? 'icon-sort-desc' : 'icon-sort-asc'"/></span>
+					<span class="th sortable c-saved" id="saveload.sort.saved" data-class-sorted="sort_key == 'saved'" data-event-click="sort('saved')"><span>{{l_col_saved}}</span><img class="icon" data-if="sort_key == 'saved'" data-attr-src="sort_desc ? 'icon-sort-desc' : 'icon-sort-asc'"/></span>
+				</div>
+				<div class="sl-new" id="saveload.new" data-if="save_mode" data-class-selected="new_selected" data-event-click="select_new"><img class="icon" src="icon-add"/>
+					<input type="text" class="field-input" id="saveload.new.name" maxlength="46" data-value="new_name" data-attr-title="l_new"/></div>
+				<div class="sl-rows scroll" id="saveload.rows">
+					<div class="tr" data-for="r : rows" data-attr-id="'saveload.save[' + r.index + ']'" data-class-selected="r.selected" data-event-click="select(r.index)" data-event-dblclick="open(r.index)">
+						<div class="c-name sl-name"><span class="n strong" data-attr-title="r.name">{{r.name}}</span>
+							<div class="f"><span class="tag quick" data-if="r.quick">{{l_quick}}</span><span class="tag auto" data-if="r.auto">{{l_auto}}</span><span class="tag iron" data-if="r.ironman">{{l_ironman}}</span><span class="tag did" data-if="r.did">{{l_did}}</span><span class="fn" data-attr-title="r.file">{{r.file}}</span></div></div>
+						<span class="c-when num" data-attr-title="r.when">{{r.when}}</span><span class="c-sector" data-attr-title="r.sector">{{r.sector}}</span>
+						<span class="c-team num">{{r.mercs}}</span><span class="c-money num" data-attr-title="r.money">{{r.money}}</span><span class="c-saved dim" data-attr-title="r.saved">{{r.saved}}</span>
+					</div>
+					<div class="sl-empty" data-if="count == 0 &amp;&amp; !save_mode">{{l_empty}}</div>
+				</div>
+			</div>
+		</div>
+		<div class="sl-detail" id="saveload.detail">
+			<div class="sl-thumb" id="saveload.detail.thumb">
+				<div class="sl-thumb-img" data-if="d_thumb != ''" data-style-decorator="'image(' + d_thumb + ' cover)'"></div>
+				<div class="cap" data-if="d_thumb_caption != ''"><span>{{d_thumb_caption}}</span></div>
+			</div>
+			<span class="sl-dname" id="saveload.detail.name" data-attr-title="d_name">{{d_name}}</span>
+			<span class="sl-dfile" data-attr-title="d_file">{{d_file}}</span>
+			<div class="panel pad" data-if="has_selection">
+				<div class="kv"><span class="k">{{l_time}}</span><span class="v" id="saveload.detail.when">{{d_when}}</span></div>
+				<div class="kv"><span class="k">{{l_sector}}</span><span class="v" data-attr-title="d_sector">{{d_sector}}</span></div>
+				<div class="kv"><span class="k">{{l_team}}</span><span class="v">{{d_team}}</span></div>
+				<div class="kv"><span class="k">{{l_balance}}</span><span class="v">{{d_money}}</span></div>
+				<div class="kv"><span class="k">{{l_difficulty}}</span><span class="v">{{d_difficulty}}</span></div>
+				<div class="kv"><span class="k">{{l_saving}}</span><span class="v">{{d_saving}}</span></div>
+				<div class="kv"><span class="k">{{l_guns_style}}</span><span class="v" data-attr-title="d_guns_style">{{d_guns_style}}</span></div>
+				<div class="kv"><span class="k">{{l_mods}}</span><span class="v" id="saveload.detail.mods" data-attr-title="d_mods">{{d_mods}}</span></div>
+			</div>
+			<div class="sl-actions">
+				<button class="btn btn-danger" id="saveload.delete" data-label="Delete" data-if="!save_mode" data-class-is-disabled="!has_selection" data-event-click="delete"><img class="icon" src="icon-remove"/><span class="label">{{l_delete}}</span><span class="kbd">Del</span></button>
+				<span class="grow"></span>
+				<button class="btn btn-primary" id="saveload.confirm" data-attr-data-label="title" data-class-is-disabled="!save_mode &amp;&amp; !has_selection" data-event-click="confirm"><img class="icon" data-attr-src="save_mode ? 'icon-save' : 'icon-load'"/><span class="label">{{l_confirm}}</span><span class="kbd">Enter</span></button>
+			</div>
+		</div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">Up</span><span class="kbd">Down</span><span class="h">{{l_choose}}</span><span class="kbd">Enter</span><span class="h">{{l_confirm}}</span><span class="kbd" data-if="!save_mode">Del</span><span class="h" data-if="!save_mode">{{l_delete}}</span><span class="h">{{l_dbl}}</span></div>
+	</div>
+</div>
+</body>
+</rml>

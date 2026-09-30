@@ -1,0 +1,72 @@
+<rml>
+<head>
+	<title>New game</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="frontend.rcss"/>
+</head>
+<!-- The native new-game settings screen (docs/ui/newgame.md). View model: NewGameViewModel ("newgame"). -->
+<body class="p3">
+<div class="p3-root" id="newgame" data-model="newgame">
+	<div class="p3-bg audit-skip"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">{{t_kicker}}</span><span class="p3-title" id="newgame.title">{{t_title}}</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="newgame.cancel" data-label="Cancel" data-event-click="cancel"><img class="icon" src="icon-chevron-left"/><span class="label">{{t_cancel}}</span><span class="kbd">Esc</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="ng-cols">
+			<div class="ng-left">
+				<div class="ng-group">
+					<span class="section">{{t_dif}}</span>
+					<div class="ng-cards">
+						<div class="ng-card" id="newgame.difficulty[1]" data-label="Novice" data-class-on="difficulty == 1" data-event-click="difficulty(1)"><div class="top"><span class="radio"></span><span class="t">{{t_novice}}</span></div><span class="d">{{t_d_novice}}</span></div>
+						<div class="ng-card" id="newgame.difficulty[2]" data-label="Experienced" data-class-on="difficulty == 2" data-event-click="difficulty(2)"><div class="top"><span class="radio"></span><span class="t">{{t_experienced}}</span></div><span class="d">{{t_d_experienced}}</span></div>
+						<div class="ng-card" id="newgame.difficulty[3]" data-label="Expert" data-class-on="difficulty == 3" data-event-click="difficulty(3)"><div class="top"><span class="radio"></span><span class="t">{{t_expert}}</span></div><span class="d">{{t_d_expert}}</span></div>
+					</div>
+				</div>
+				<div class="ng-group">
+					<span class="section">{{t_extra}}</span>
+					<div class="ng-cards">
+						<div class="ng-card" id="newgame.saving[0]" data-label="Save Anytime" data-class-on="saving == 0" data-event-click="saving(0)"><div class="top"><span class="radio"></span><span class="t">{{t_anytime}}</span><img class="icon" src="icon-save"/></div><span class="d">{{t_d_anytime}}</span></div>
+						<div class="ng-card" id="newgame.saving[1]" data-label="Iron Man" data-class-on="saving == 1" data-event-click="saving(1)"><div class="top"><span class="radio"></span><span class="t">{{t_ironman}}</span><img class="icon" src="icon-lock"/></div><span class="d">{{t_d_ironman}}</span></div>
+						<div class="ng-card warn" id="newgame.saving[2]" data-label="Dead is Dead" data-class-on="saving == 2" data-event-click="saving(2)"><div class="top"><span class="radio"></span><span class="t">{{t_did}}</span><img class="icon" src="icon-dead"/></div><span class="d">{{t_d_did}}</span></div>
+					</div>
+				</div>
+				<div class="ng-cards ng-halves">
+					<div class="ng-group ng-half">
+						<span class="section">{{t_style}}</span>
+						<div class="ng-cards">
+							<div class="ng-card" id="newgame.style[0]" data-label="Realistic" data-class-on="!scifi" data-event-click="style(0)"><div class="top"><span class="radio"></span><span class="t">{{t_realistic}}</span></div><span class="d">{{t_d_realistic}}</span></div>
+							<div class="ng-card" id="newgame.style[1]" data-label="Sci Fi" data-class-on="scifi" data-event-click="style(1)"><div class="top"><span class="radio"></span><span class="t">{{t_scifi}}</span></div><span class="d">{{t_d_scifi}}</span></div>
+						</div>
+					</div>
+					<div class="ng-group ng-half">
+						<span class="section">{{t_guns}}</span>
+						<div class="ng-cards">
+							<div class="ng-card" id="newgame.guns[0]" data-label="Normal" data-class-on="!gun_nut" data-event-click="guns(0)"><div class="top"><span class="radio"></span><span class="t">{{t_normal}}</span></div><span class="d">{{t_d_normal}}</span></div>
+							<div class="ng-card" id="newgame.guns[1]" data-label="Tons of Guns" data-class-on="gun_nut" data-event-click="guns(1)"><div class="top"><span class="radio"></span><span class="t">{{t_tons}}</span></div><span class="d">{{t_d_tons}}</span></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="ng-summary">
+				<div class="panel" id="newgame.summary">
+					<span class="section">{{t_summary}}</span>
+					<div class="kv"><span class="k">{{t_s_difficulty}}</span><span class="v" id="newgame.summary.difficulty">{{difficulty == 1 ? t_novice : (difficulty == 2 ? t_experienced : t_expert)}}</span></div>
+					<div class="kv"><span class="k">{{t_s_saving}}</span><span class="v" id="newgame.summary.saving">{{saving == 0 ? t_anytime : (saving == 1 ? t_ironman : t_did)}}</span></div>
+					<div class="kv"><span class="k">{{t_s_style}}</span><span class="v">{{scifi ? t_scifi : t_realistic}}</span></div>
+					<div class="kv"><span class="k">{{t_s_guns}}</span><span class="v">{{gun_nut ? t_tons : t_normal}}</span></div>
+					<div class="op-note warn"><img class="icon" src="icon-warning"/><span>{{t_fixed}}</span></div>
+				</div>
+				<div class="op-note"><img class="icon" src="icon-info"/><span>{{t_next}}</span></div>
+			</div>
+		</div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">Tab</span><span class="h">{{t_next_group}}</span><span class="kbd">Enter</span><span class="h">{{t_start}}</span></div>
+		<button class="btn btn-primary" id="newgame.start" data-label="Ok" data-event-click="start"><img class="icon" src="icon-play"/><span class="label">{{t_start}}</span><span class="kbd">Enter</span></button>
+	</div>
+</div>
+</body>
+</rml>

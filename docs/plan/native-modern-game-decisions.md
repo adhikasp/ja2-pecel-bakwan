@@ -164,3 +164,24 @@ with that screen's legacy code (Phase 10).
 
 Nothing else in `assets/externalized/` holds screen coordinates: the other UI positions are compiled into the legacy
 screen code (`STD_SCREEN_*`, `UILayout`), which Phase 10 deletes.
+
+# Phase 3 — front-end screens
+
+What [native-modern-game.md](native-modern-game.md) Phase 3 built. The per-screen parity contracts are
+[mainmenu.md](../ui/mainmenu.md), [options.md](../ui/options.md), [saveload.md](../ui/saveload.md),
+[newgame.md](../ui/newgame.md) and [loadingscreen.md](../ui/loadingscreen.md); the owner approved each screen's wireframe
+(`native-phase-3-wireframes/` on the `pr-screenshots` branch).
+
+| Question | Decision |
+|---|---|
+| Defaults | `mainmenu`, `options`, `saveload`, `newgame` and `loadscreen` are native by default; below a 1280x720 output every one of them is legacy. A video change re-decides the current screen (`NativeUI::ScreenRelaidOut`), so a 640x480 legacy menu becomes native at 1920x1080 and back |
+| Shared logic | the native screens call the legacy screens' game code, not copies of it: `SaveLoadScreen.cc` exports `SaveLoadNative*` (list, save, delete, leave target, compatibility), the main menu its splash (`HandleMainMenuSplash`); the options screen calls the same setters, `SaveGameSettings` and the world refreshes the legacy exit does |
+| Loading a save | the native save/load screen asks its questions natively, then hands over to the legacy screen's "load upon entry" path (`Screen::Finished`), which loads with the game's own fades and error handling. Continue on the main menu uses the same path |
+| Loading screen | loading blocks the game loop: `DisplayLoadScreenWithID` and the progress bar call `NativeUI::ShowLoadingScreen/LoadingProgress/LoadingStep`, which draw and present synchronously; the screen closes at the next frame |
+| Video settings | the options screen's Video page replaces the legacy Video screen (`OPTIONS_SCREEN` accepts video changes when the native options screen runs) |
+| Save thumbnails | a 480 px PNG next to each save (`<save>.png`), written by `SaveGame` from a snapshot of the map/tactical picture (`NativeUI::SnapshotGameFrame`); nothing in the save file changes; saves without one show the sector's load screen art |
+| Full-screen art | the main menu art and load screens come from the player's data at runtime; the menu art is uplifted 4x with Scale2x and filtered to the screen size (cover: aspect kept, cropped). Nothing derived is written anywhere |
+| New settings | `reduced_motion` (native UI: no autoscrolling credits) and `native_ui_scale` are written to ja2.json from the options screen (`ContentManager::saveNativeUiSettings`) |
+| Keys on release | Esc and Enter act on key release on the native options, new-game and save/load screens, so a release never answers the next message box or quits the main menu (which acts on release, as legacy) |
+| Automation | `ja2.viewModel(name)` prefers an open screen's view model to one it made before, and makes a new one each time otherwise (`options`, `mainmenu`, `saveload` read the game when made); `ja2.state().messageBoxText` reads native message boxes; `ja2.debug("mock", "phase3/<name>")` shows a wireframe through the runtime |
+| Strings | new strings are English in `assets/ui/strings/strings-eng.json`; the other languages fall back to English and carry a `_todo.phase3` note for a translator |

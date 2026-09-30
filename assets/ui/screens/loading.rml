@@ -1,0 +1,38 @@
+<rml>
+<head>
+	<title>Loading</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="frontend.rcss"/>
+</head>
+<!-- The native loading screen (docs/ui/loadingscreen.md). Data model "loading" (NativeUI.cc, ShowLoadingScreen). The
+     art is the sector's load screen from the player's game data (loadscreen-<id>). -->
+<body class="p3">
+<div class="p3-root" id="loading" data-model="loading">
+	<div class="ld-art audit-skip" id="loading.art" data-style-decorator="'image(' + art + ' cover)'"></div>
+	<div class="ld-shade audit-skip"></div>
+
+	<div class="ld-top">
+		<div class="ld-chip"><span class="k">{{day_label}}</span><span id="loading.day">{{day}}</span></div>
+		<div class="ld-chip"><span class="k">{{time_label}}</span><span id="loading.time">{{time}}</span></div>
+	</div>
+
+	<div class="ld-bottom">
+		<div class="ld-where">
+			<span class="k">{{kicker}}</span>
+			<span class="t" id="loading.sector" data-attr-title="sector">{{sector}}</span>
+			<span class="s">{{sub}}</span>
+		</div>
+		<div class="ld-tip" id="loading.tip">
+			<div class="h"><img class="icon" src="icon-info"/><span>{{tip_head}}</span><span class="n">{{tip_n}}</span></div>
+			<span class="p" id="loading.tip.text">{{tip}}</span>
+		</div>
+	</div>
+
+	<div class="ld-progress">
+		<div class="ld-bar" id="loading.progress"><div class="fill" data-style-width="pct + '%'"></div></div>
+		<span class="ld-step" id="loading.step" data-attr-title="step">{{step}}</span>
+		<span class="ld-pct" id="loading.pct">{{pct_text}}</span>
+	</div>
+</div>
+</body>
+</rml>

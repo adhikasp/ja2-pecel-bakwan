@@ -114,20 +114,22 @@ static void RedrawActiveButtonBackgrounds() {
 }
 
 
+bool gfNativeMainMenuActive = false;
+
 bool MainMenuIsReady()
 {
-	return guiSplashStartTime + INTRO_SPLASH_DURATION <= GetJA2Clock() &&
-		!guiSplashFrameFade && !gfMainMenuScreenEntry && !fInitialRender;
+	if (guiSplashStartTime + INTRO_SPLASH_DURATION > GetJA2Clock() || guiSplashFrameFade) return false;
+	return gfNativeMainMenuActive || (!gfMainMenuScreenEntry && !fInitialRender);
 }
 
 
-ScreenID MainMenuScreenHandle(void)
+bool HandleMainMenuSplash()
 {
 	if (guiSplashStartTime + INTRO_SPLASH_DURATION > GetJA2Clock())
 	{
 		SetCurrentCursorFromDatabase(VIDEO_NO_CURSOR);
 		SetMusicMode(MUSIC_NONE);
-		return MAINMENU_SCREEN; // The splash screen hasn't been up long enough yet.
+		return true; // The splash screen hasn't been up long enough yet.
 	}
 	if (guiSplashFrameFade)
 	{
@@ -149,8 +151,15 @@ ScreenID MainMenuScreenHandle(void)
 		guiSplashFrameFade--;
 
 		InvalidateScreen();
-		return MAINMENU_SCREEN;
+		return true;
 	}
+	return false;
+}
+
+
+ScreenID MainMenuScreenHandle(void)
+{
+	if (HandleMainMenuSplash()) return MAINMENU_SCREEN;
 
 	if (gfMainMenuScreenEntry)
 	{
@@ -397,7 +406,17 @@ void RenderCopyright() {
 
 void RelayoutMainMenu()
 {
+	if (gfNativeMainMenuActive) return; // the native menu lays itself out
 	if (!MainMenuIsReady()) return; // not built yet: it will be, in the new layout
 	ExitMainMenu();
 	gfMainMenuScreenEntry = TRUE;
+}
+
+
+void RemoveLegacyMainMenu()
+{
+	// the start-up (JAScreens.cc) builds the legacy menu before the first frame; the native menu takes its place
+	CreateDestroyMainMenuButtons(FALSE);
+	gfMainMenuScreenEntry = TRUE;
+	fInitialRender = FALSE;
 }

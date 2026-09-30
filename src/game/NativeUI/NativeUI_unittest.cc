@@ -204,3 +204,80 @@ TEST(NativeUI, creditRecordsParse)
 	vm.Invoke("back");
 	EXPECT_TRUE(back);
 }
+
+// ---- Phase 3 front end
+
+#include "FrontEndViewModels.h"
+#include "NativeImages.h"
+
+#include <ctime>
+
+TEST(NativeUI, frontEndScreensAreNativeByDefault)
+{
+	for (char const* key : { "mainmenu", "options", "saveload", "newgame", "loadscreen" })
+	{
+		EXPECT_TRUE(IsModeKey(key)) << key;
+		EXPECT_EQ(ConfiguredMode(key), UiMode::Native) << key;
+	}
+	EXPECT_STREQ(ScreenKey(MAINMENU_SCREEN), "mainmenu");
+	EXPECT_STREQ(ScreenKey(OPTIONS_SCREEN), "options");
+	EXPECT_STREQ(ScreenKey(SAVE_LOAD_SCREEN), "saveload");
+	EXPECT_STREQ(ScreenKey(GAME_INIT_OPTIONS_SCREEN), "newgame");
+	EXPECT_EQ(ScreenKey(VIDEO_OPTIONS_SCREEN), nullptr); // folded into the options screen
+}
+
+TEST(NativeUI, reducedMotionSetting)
+{
+	SetReducedMotion(true);
+	EXPECT_TRUE(ReducedMotion());
+	SetReducedMotion(false);
+	EXPECT_FALSE(ReducedMotion());
+}
+
+TEST(NativeUI, savedAtIsRelativeToNow)
+{
+	std::tm t{};
+	t.tm_year = 2026 - 1900; t.tm_mon = 8; t.tm_mday = 30; t.tm_hour = 14; t.tm_min = 5; t.tm_isdst = -1;
+	double const now = double(std::mktime(&t));
+	EXPECT_EQ(FormatSavedAt(now - 60, now), "Today 14:04");
+	EXPECT_EQ(FormatSavedAt(now - 86400, now), "Yesterday 14:05");
+	EXPECT_EQ(FormatSavedAt(now - 3 * 86400, now), "3 days ago");
+	EXPECT_EQ(FormatSavedAt(now - 30 * 86400, now).substr(0, 2), "31"); // 31 Aug 2026
+	EXPECT_EQ(FormatSavedAt(0, now), "");
+}
+
+TEST(NativeUI, upliftDoublesAndKeepsEdges)
+{
+	// a 2x2 checker: Scale2x keeps the colours, and the size doubles per pass
+	SDL_Surface* s = SDL_CreateSurface(2, 2, SDL_PIXELFORMAT_RGBA32);
+	ASSERT_NE(s, nullptr);
+	auto* p = static_cast<Uint32*>(s->pixels);
+	int const pitch = s->pitch / 4;
+	p[0] = 0xFF0000FFu; p[1] = 0xFFFFFFFFu; p[pitch] = 0xFFFFFFFFu; p[pitch + 1] = 0xFF0000FFu;
+	SDL_Surface* up = UpliftArt(s, 2);
+	ASSERT_NE(up, nullptr);
+	EXPECT_EQ(up->w, 8);
+	EXPECT_EQ(up->h, 8);
+	auto const* q = static_cast<Uint32 const*>(up->pixels);
+	EXPECT_EQ(q[0], 0xFF0000FFu); // the corners keep their colour
+	EXPECT_EQ(q[(up->pitch / 4) * 7 + 7], 0xFF0000FFu);
+	EXPECT_EQ(q[7], 0xFFFFFFFFu);
+	SDL_DestroySurface(up);
+	EXPECT_EQ(UpliftArt(nullptr, 2), nullptr);
+}
+
+TEST(NativeUI, mainMenuViewModelWithoutSaves)
+{
+	MainMenuViewModel vm;
+	std::string picked;
+	vm.onPick = [&](std::string const& p) { picked = p; };
+	vm.hasSaves = false;
+	vm.Invoke("continue");
+	EXPECT_EQ(picked, ""); // nothing to continue
+	vm.Invoke("load");
+	EXPECT_EQ(picked, "");
+	vm.Invoke("new");
+	EXPECT_EQ(picked, "new");
+	vm.Invoke("quit");
+	EXPECT_EQ(picked, "quit");
+}

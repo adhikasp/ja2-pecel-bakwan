@@ -190,6 +190,7 @@ namespace
 			RegisterImageSource("credits-blink-", [](std::string const& n) { return FaceImage(n, true); });
 			m_vm.Load();
 			m_vm.onBack = [this] { m_done = true; };
+			if (ReducedMotion()) m_vm.Invoke("pause"); // accessibility: the reel only moves by hand
 			m_binding.emplace(Context(), m_vm);
 			m_doc = LoadDocument("screens/credits.rml");
 			m_doc->Show(Rml::ModalFlag::None, Rml::FocusFlag::Document);

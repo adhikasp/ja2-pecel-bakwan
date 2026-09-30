@@ -472,6 +472,7 @@ int main(int argc, char* argv[])
 			// ja2.json "ui_mode" and "native_ui_scale" (docs/plan/native-modern-game.md, Phase 2)
 			RustPointer<char> modes(EngineOptions_getUiModes(params.get()));
 			NativeUI::Configure(modes.get() ? modes.get() : "", EngineOptions_getNativeUiScale(params.get()));
+			NativeUI::SetReducedMotion(EngineOptions_getReducedMotion(params.get()));
 		}
 
 		GameVersion version = EngineOptions_getResourceVersion(params.get());

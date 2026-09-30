@@ -11,6 +11,9 @@
 #include "GameRes.h"
 #include "Headless.h"
 #include "Input.h"
+#include "Game_Clock.h"
+#include "StrategicMap.h"
+#include "JAScreens.h"
 #include "Localization.h"
 #include "Logger.h"
 #include "Timer.h"
@@ -45,6 +48,12 @@ namespace
 		double until = 0;
 	};
 
+	struct LoadingInfo
+	{
+		std::string art, kicker, sector, sub, day, time, tipHead, tip, tipN, step, pctText;
+		int pct = 0;
+	};
+
 	struct Route
 	{
 		ScreenID id;
@@ -52,7 +61,11 @@ namespace
 		std::unique_ptr<Screen> (*make)();
 	};
 	Route const g_routes[] = {
-		{ CREDIT_SCREEN, "credits", &CreateCreditsScreen },
+		{ CREDIT_SCREEN,            "credits",  &CreateCreditsScreen },
+		{ MAINMENU_SCREEN,          "mainmenu", &CreateMainMenuScreen },
+		{ OPTIONS_SCREEN,           "options",  &CreateOptionsScreen },
+		{ SAVE_LOAD_SCREEN,         "saveload", &CreateSaveLoadScreen },
+		{ GAME_INIT_OPTIONS_SCREEN, "newgame",  &CreateNewGameScreen },
 	};
 
 	class Runtime final : public VideoOverlay
@@ -89,6 +102,9 @@ namespace
 		std::vector<MessageBoxButton> boxButtons;
 		int  boxResult = 0;
 		bool tipShown = false;
+		Rml::ElementDocument* loading = nullptr;
+		Rml::DataModelHandle loadingModel;
+		LoadingInfo loadingInfo;
 
 		std::map<std::string, std::string> strings;
 
@@ -107,6 +123,8 @@ namespace
 	};
 
 	Runtime g_rt;
+	std::string g_loadingDayLabel, g_loadingTimeLabel;
+	void CloseLoadingScreen();
 
 	bool WantsGpu()
 	{
@@ -273,6 +291,7 @@ bool Start()
 			else SDL_StopTextInput(g_game_window);
 		};
 		nui::SetImageProvider(ProvideGameImage);
+		RegisterFrontEndImages();
 		LoadStrings();
 		g_rt.gpu = WantsGpu();
 		OutputSize(g_rt.w, g_rt.h);
@@ -331,6 +350,18 @@ bool Start()
 			g_rt.boxResult = a.empty() ? 0 : a[0].Get<int>();
 		});
 		g_rt.boxModel = b.GetModelHandle();
+
+		Rml::DataModelConstructor ld = g_rt.ctx->CreateDataModel("loading");
+		{
+			LoadingInfo& l = g_rt.loadingInfo;
+			ld.Bind("art", &l.art); ld.Bind("kicker", &l.kicker); ld.Bind("sector", &l.sector); ld.Bind("sub", &l.sub);
+			ld.Bind("day", &l.day); ld.Bind("time", &l.time); ld.Bind("tip_head", &l.tipHead); ld.Bind("tip", &l.tip);
+			ld.Bind("tip_n", &l.tipN); ld.Bind("step", &l.step); ld.Bind("pct", &l.pct); ld.Bind("pct_text", &l.pctText);
+			ld.Bind("day_label", &g_loadingDayLabel); ld.Bind("time_label", &g_loadingTimeLabel);
+		}
+		g_rt.loadingModel = ld.GetModelHandle();
+		g_loadingDayLabel = Str("loading.day_label");
+		g_loadingTimeLabel = Str("loading.time_label");
 
 		g_rt.overlays = LoadDocument("overlays/overlays.rml");
 		g_rt.overlays->Show(Rml::ModalFlag::None, Rml::FocusFlag::None);
@@ -471,6 +502,7 @@ void BeginFrame()
 	}
 	g_rt.Sync();
 	nui::RmlClock().now = GetClock() / 1000.0;
+	CloseLoadingScreen(); // a load happens within one frame: its screen is gone in the next
 	g_rt.UpdateOverlays();
 }
 
@@ -697,6 +729,17 @@ ScreenID HandleScreen(ScreenID const id, ScreenID (* const legacy)())
 	if (rt.screen && rt.suspendedFor == ERROR_SCREEN)
 	{
 		ScreenID const next = rt.screen->Handle();
+		if (rt.screen->Finished())
+		{
+			// a mock closed: the legacy screen underneath runs again (and draws itself anew)
+			rt.screen->Exit();
+			rt.screen.reset();
+			rt.screenKey.clear();
+			rt.routedScreen = id;
+			Invalidate();
+			InvalidateScreen();
+			return legacy();
+		}
 		if (next != id && next != MSG_BOX_SCREEN)
 		{
 			rt.screen->Exit();
@@ -708,6 +751,49 @@ ScreenID HandleScreen(ScreenID const id, ScreenID (* const legacy)())
 		return next;
 	}
 	return legacy();
+}
+
+void SetCompact(Rml::ElementDocument* const doc, char const* const rootId, float const widthDp)
+{
+	if (!doc || !g_rt.ctx) return;
+	float const w = g_rt.ctx->GetDimensions().x / std::max(0.01f, DpScale());
+	if (Rml::Element* root = doc->GetElementById(rootId)) root->SetClass("compact", w < widthDp);
+}
+
+void ScreenRelaidOut()
+{
+	// the output changed size (video settings): a screen with a native version decides again, at its next frame,
+	// whether it runs native (a legacy main menu at 640x480 becomes native at 1920x1080 and back)
+	Runtime& rt = g_rt;
+	char const* key = ScreenKey(rt.routedScreen);
+	if (!key || rt.suspendedFor != ERROR_SCREEN) return;
+	bool const wantNative = ResolveMode(key) == UiMode::Native;
+	if (wantNative == bool(rt.screen)) return;
+	if (rt.screen)
+	{
+		rt.screen->Exit();
+		rt.screen.reset();
+		rt.screenKey.clear();
+	}
+	rt.routedScreen = ERROR_SCREEN;
+	Invalidate();
+}
+
+void OpenMock(std::string const& path)
+{
+	Runtime& rt = g_rt;
+	if (!Start()) throw std::runtime_error("the native UI cannot run here (see ja2.nativeUi())");
+	if (rt.screen)
+	{
+		rt.screen->Exit();
+		rt.screen.reset();
+	}
+	rt.routedScreen = guiCurrentScreen;
+	rt.suspendedFor = ERROR_SCREEN;
+	rt.screen = CreateMockScreen(path, guiCurrentScreen);
+	rt.screenKey = "mock";
+	rt.screen->Enter();
+	Invalidate();
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -815,6 +901,7 @@ void OpenMessageBox(std::string const& text, std::vector<MessageBoxButton> const
 }
 
 bool MessageBoxOpen() { return g_rt.msgbox && g_rt.msgbox->IsVisible(); }
+std::string MessageBoxText() { return MessageBoxOpen() ? g_rt.boxText : std::string(); }
 int  MessageBoxResult() { return g_rt.boxResult; }
 
 void CloseMessageBox()
@@ -824,6 +911,85 @@ void CloseMessageBox()
 	g_rt.boxResult = 0;
 	Invalidate();
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Loading screen (docs/ui/loadingscreen.md). Loading blocks the game loop, so the screen draws itself now and at
+// every progress step, and goes away at the start of the next frame.
+
+namespace
+{
+	constexpr int NUM_TIPS = 40;
+	int g_tipCounter = 0;
+
+	void DrawLoadingNow()
+	{
+		g_rt.loadingModel.DirtyAllVariables();
+		g_rt.overlays->PullToFront();
+		g_rt.dirtyFrames = std::max(g_rt.dirtyFrames, 1);
+		InvalidateScreen();
+		RefreshScreen();
+	}
+}
+
+bool ShowLoadingScreen(int const id)
+{
+	if (ResolveMode("loadscreen") != UiMode::Native || !Start()) return false;
+	try
+	{
+		Runtime& rt = g_rt;
+		LoadingInfo& l = rt.loadingInfo;
+		l = {};
+		l.art = "loadscreen-" + std::to_string(id);
+		l.kicker = Str("loading.entering");
+		l.sector = gWorldSector.IsValid() ? GetSectorIDString(gWorldSector, TRUE).to_std_string() : std::string();
+		if (l.sector.empty()) l.kicker = Str("loading.loading");
+		l.sub = Str(NightTime() ? "loading.night" : "loading.day");
+		l.day = std::to_string(GetWorldDay());
+		l.time = ST::format("{02d}:{02d}", GetWorldHour(), GetWorldMinutesInDay() % 60).to_std_string();
+		int const tip = (g_tipCounter++ + int(GetWorldDay())) % NUM_TIPS + 1;
+		l.tipHead = Str("loading.tip_head");
+		l.tip = Str("loading.tip." + std::to_string(tip));
+		l.tipN = std::to_string(tip) + " / " + std::to_string(NUM_TIPS);
+		l.step = Str("loading.loading");
+		l.pct = 0;
+		l.pctText = "0%";
+		if (!rt.loading) rt.loading = LoadDocument("screens/loading.rml");
+		rt.loading->Show(Rml::ModalFlag::None, Rml::FocusFlag::None);
+		rt.ctx->Update();
+		DrawLoadingNow();
+		return true;
+	}
+	catch (std::exception const& e)
+	{
+		SLOGE("native loading screen: {}", e.what());
+		return false;
+	}
+}
+
+void LoadingStep(std::string const& text)
+{
+	if (!g_rt.loading || !g_rt.loading->IsVisible() || text.empty()) return;
+	g_rt.loadingInfo.step = text;
+	g_rt.loadingModel.DirtyVariable("step");
+}
+
+bool LoadingProgress(double const fraction)
+{
+	if (!g_rt.loading || !g_rt.loading->IsVisible()) return false;
+	int const pct = std::clamp(int(std::lround(fraction * 100)), 0, 100);
+	if (pct == g_rt.loadingInfo.pct) return true;
+	g_rt.loadingInfo.pct = pct;
+	g_rt.loadingInfo.pctText = std::to_string(pct) + "%";
+	DrawLoadingNow();
+	return true;
+}
+
+namespace { void CloseLoadingScreen()
+{
+	if (!g_rt.loading || !g_rt.loading->IsVisible()) return;
+	g_rt.loading->Hide();
+	Invalidate();
+} }
 
 // ---------------------------------------------------------------------------------------------------------------
 // Automation
@@ -1026,8 +1192,16 @@ std::vector<std::string> LayoutAudit()
 			// text wider than its box (cut, or spilling out)
 			bool hasText = false;
 			for (int i = 0; i < e->GetNumChildren(); ++i) if (rmlui_dynamic_cast<Rml::ElementText*>(e->GetChild(i))) hasText = true;
-			if (hasText && e->GetScrollWidth() > e->GetClientWidth() + tol && e->GetClientWidth() > 0 && !e->HasAttribute("title"))
-				out.push_back("truncated text: " + Describe(e));
+			// RmlUi draws no ellipsis: text cut by overflow: hidden is cut mid-letter, so a tooltip does not excuse it.
+			// Only text the screen ellipsized itself (ending in "…", with the full text as its title) may overflow.
+			if (hasText && e->GetScrollWidth() > e->GetClientWidth() + tol && e->GetClientWidth() > 0)
+			{
+				std::string shown;
+				for (int i = 0; i < e->GetNumChildren(); ++i)
+					if (auto* t = rmlui_dynamic_cast<Rml::ElementText*>(e->GetChild(i))) shown += t->GetText();
+				bool const ellipsized = e->HasAttribute("title") && shown.size() >= 3 && shown.compare(shown.size() - 3, 3, "\xE2\x80\xA6") == 0;
+				if (!ellipsized) out.push_back("truncated text: " + Describe(e));
+			}
 			if (Interactive(e)) interactive.push_back(e);
 		});
 		// interactive elements must not overlap (one would hide the other's clicks)

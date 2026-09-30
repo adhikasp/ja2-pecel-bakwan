@@ -462,6 +462,7 @@ std::string ScreenName() { return ScreenIdName(guiCurrentScreen); }
 std::string MessageBoxText()
 {
 	if (!gfInMsgBox) return {};
+	if (NativeUI::MessageBoxOpen()) return NativeUI::MessageBoxText();
 	SDL_Rect const box{ gMsgBox.uX, gMsgBox.uY, gMsgBox.usWidth, gMsgBox.usHeight };
 	std::string text;
 	for (auto const& t : Texts())

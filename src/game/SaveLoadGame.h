@@ -78,6 +78,8 @@ void ExtractSavedGameHeaderFromFile(HWFILE, SAVED_GAME_HEADER&, bool *stracLinux
 extern ScreenID guiScreenToGotoAfterLoadingSavedGame;
 
 ST::string GetSaveGamePath(const ST::string &saveName);
+/** The save list thumbnail next to a save (a PNG on the player's machine; the save format is unchanged). */
+ST::string GetSaveThumbnailPath(const ST::string &saveName);
 BOOLEAN HasSaveGameExtension(const ST::string &fileName);
 
 ST::string GetAutoSaveName(uint32_t index);

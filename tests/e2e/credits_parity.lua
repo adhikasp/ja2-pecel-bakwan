@@ -94,7 +94,7 @@ ja2.setUiScale(1)
 -- A1: Back button returns to the main menu
 ja2.click{id = "credits.back"}
 ja2.waitScreen("MAINMENU_SCREEN")
-ja2.expect(ja2.nativeUi().screen == "", "the native screen is gone")
+ja2.expect(ja2.nativeUi().screen ~= "credits", "the native credits screen is gone")
 
 -- A2: Esc returns too (on release, like the legacy screen)
 openCredits()

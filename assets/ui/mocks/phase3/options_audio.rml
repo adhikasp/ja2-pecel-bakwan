@@ -1,0 +1,29 @@
+<rml>
+<head>
+	<title>Options (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="../../screens/frontend.rcss"/>
+</head>
+<!-- M2 wireframe of the native options screen, audio page (docs/ui/options.md). Literal data. -->
+<body class="p3">
+<div class="p3-root">
+	<div class="p3-bg"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">In game &#183; Day 12, 14:35 &#183; B13: Drassen</span><span class="p3-title" id="options.title">Options</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="options.save"><img class="icon" src="icon-save"/><span class="label">Save Game</span><span class="kbd">S</span></button>
+			<button class="btn" id="options.load"><img class="icon" src="icon-load"/><span class="label">Load Game</span><span class="kbd">L</span></button>
+			<button class="btn btn-ghost" id="options.quit"><img class="icon" src="icon-exit-sector"/><span class="label">Quit to main menu</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="op-nav"><div class="op-tab" id="options.tab.gameplay"><img class="icon" src="icon-target"/><span>Gameplay</span><span class="kbd">1</span></div><div class="op-tab" id="options.tab.video"><img class="icon" src="icon-look"/><span>Video</span><span class="kbd">2</span></div><div class="op-tab active" id="options.tab.audio"><img class="icon" src="icon-talk"/><span>Audio</span><span class="kbd">3</span></div><div class="op-tab" id="options.tab.controls"><img class="icon" src="icon-pointer"/><span>Controls</span><span class="kbd">4</span></div><div class="op-tab" id="options.tab.access"><img class="icon" src="icon-info"/><span>Accessibility</span><span class="kbd">5</span></div></div>
+		<div class="op-content"><div class="op-cols"><div class="op-col"><div class="op-group"><span class="section">Volume</span><div class="op-row" id="options.audio.effects"><span class="name">Effects</span><div class="vol"><div class="slider"><div class="track"><div class="fill" style="width: 80%"></div></div><div class="thumb" style="left: 80%"></div></div><span class="volv">80%</span><button class="icon-btn" title="Play a sample"><img class="icon" src="icon-play"/></button></div></div><div class="op-row" id="options.audio.speech"><span class="name">Speech</span><div class="vol"><div class="slider"><div class="track"><div class="fill" style="width: 100%"></div></div><div class="thumb" style="left: 100%"></div></div><span class="volv">100%</span><button class="icon-btn" title="Play a sample"><img class="icon" src="icon-play"/></button></div></div><div class="op-row" id="options.audio.music"><span class="name">Music</span><div class="vol"><div class="slider"><div class="track"><div class="fill" style="width: 55%"></div></div><div class="thumb" style="left: 55%"></div></div><span class="volv">55%</span><span class="icon-spacer"></span></div></div></div></div><div class="op-col"><div class="op-group"><span class="section">Dialogue</span><div class="op-row" id="options.toggle.speech"><span class="name">Speech</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row is-hover" id="options.toggle.subtitles"><span class="name">SubTitles</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.key_advance"><span class="name">Pause Text Dialogue</span><div class="toggle"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.mute_confirmations"><span class="name">Mute Confirmations</span><div class="toggle"><span class="switch"><span class="knob"></span></span></div></div></div></div></div><div class="op-help"><div class="panel"><span class="h">SubTitles</span><span class="p">Controls whether on-screen text is displayed for dialogue.</span><div class="m"><span>Speech or SubTitles must stay on</span></div></div><div class="op-note warn"><img class="icon" src="icon-warning"/><span>You need either the Speech option, or the Subtitle option to be enabled.</span></div></div></div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">1</span><span class="kbd">5</span><span class="h">page</span><span class="kbd">Tab</span><span class="h">next setting</span><span class="kbd">Space</span><span class="h">change</span><span class="h dim">Changes apply at once and are saved</span></div>
+		<button class="btn btn-primary" id="options.done"><img class="icon" src="icon-confirm"/><span class="label">Done</span><span class="kbd">Esc</span></button>
+	</div>
+</div>
+</body>
+</rml>
