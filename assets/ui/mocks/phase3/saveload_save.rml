@@ -1,0 +1,50 @@
+<rml>
+<head>
+	<title>Save Game (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="phase3.rcss"/>
+</head>
+<!-- M2 wireframe of the native save/load screen, save mode (docs/ui/saveload.md). Literal data. -->
+<body class="p3">
+<div class="p3-root">
+	<div class="p3-bg"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">In game &#183; Day 12, 14:35 &#183; B13: Drassen</span><span class="p3-title" id="saveload.title">Save Game</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="saveload.back"><img class="icon" src="icon-chevron-left"/><span class="label">Cancel</span><span class="kbd">Esc</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="sl-list">
+			<div class="sl-tools">
+				<div class="field-input sl-filter" id="saveload.filter"><img class="icon sm" src="icon-search"/><span>Filter by name or sector</span></div>
+				<button class="btn btn-ghost" id="saveload.showauto"><img class="icon" src="icon-filter"/><span class="label">Quick and auto saves</span></button>
+				<span class="count">5 saves &#183; quick and auto saves hidden</span>
+			</div>
+			<div class="sl-table">
+				<div class="thead"><span class="th sortable c-name" id="saveload.sort.name"><span>Name</span></span><span class="th sortable c-when" id="saveload.sort.when"><span>Game time</span></span><span class="th sortable c-sector" id="saveload.sort.sector"><span>Sector</span></span><span class="th sortable c-team" id="saveload.sort.team"><span>Mercs</span></span><span class="th sortable c-money" id="saveload.sort.money"><span>Balance</span></span><span class="th sortable c-saved sorted" id="saveload.sort.saved"><span>Saved</span><img class="icon" src="icon-sort-desc"/></span></div>
+				<div class="sl-new" id="saveload.new"><img class="icon" src="icon-add"/><input type="text" class="field-input" id="saveload.new.name" value="Day 12 Drassen B13, before the counter-attack"/></div>
+				<div class="scroll" style="height: 100%;"><div class="tr" id="saveload.save[0]"><div class="c-name sl-name"><span class="n strong">Before the Drassen airport assault</span><div class="f"><span>2026-09-28T19-02-11Z-before-the-drassen-airport-assault.sav</span></div></div><span class="c-when num" style="text-align: left;">Day 12, 14:35</span><span class="c-sector">B13: Drassen</span><span class="c-team num">9</span><span class="c-money num">$48,250</span><span class="c-saved dim">Yesterday 21:02</span></div><div class="tr" id="saveload.save[1]"><div class="c-name sl-name"><span class="n strong">Militia trained in Drassen</span><div class="f"><span>2026-09-27T18-44-02Z-militia-trained.sav</span></div></div><span class="c-when num" style="text-align: left;">Day 11, 08:00</span><span class="c-sector">C13: Drassen</span><span class="c-team num">8</span><span class="c-money num">$22,410</span><span class="c-saved dim">2 days ago</span></div><div class="tr" id="saveload.save[2]"><div class="c-name sl-name"><span class="n strong">Chitzena mine, first night</span><div class="f"><span class="tag iron">Iron Man</span><span>2026-09-26T22-10-37Z-chitzena.sav</span></div></div><span class="c-when num" style="text-align: left;">Day 9, 23:40</span><span class="c-sector">B2: Chitzena</span><span class="c-team num">7</span><span class="c-money num">$18,005</span><span class="c-saved dim">3 days ago</span></div><div class="tr" id="saveload.save[3]"><div class="c-name sl-name"><span class="n strong">Dead is Dead run, Omerta</span><div class="f"><span class="tag did">Dead is Dead</span><span>DeadIsDead-ira-run.sav</span></div></div><span class="c-when num" style="text-align: left;">Day 3, 06:15</span><span class="c-sector">A10: Omerta</span><span class="c-team num">4</span><span class="c-money num">$12,600</span><span class="c-saved dim">Last week</span></div><div class="tr" id="saveload.save[4]"><div class="c-name sl-name"><span class="n strong">Landing at Omerta</span><div class="f"><span>2026-09-20T09-00-00Z-landing.sav</span></div></div><span class="c-when num" style="text-align: left;">Day 1, 07:00</span><span class="c-sector">A9: Omerta</span><span class="c-team num">3</span><span class="c-money num">$34,500</span><span class="c-saved dim">10 Sep 2026</span></div></div>
+			</div>
+		</div>
+		<div class="sl-detail">
+			<div class="sl-thumb" id="saveload.detail.thumb"><div class="cap"><span>Snapshot of the sector when saved</span></div></div>
+			<span class="sl-dname" id="saveload.detail.name">New save</span>
+			<span class="sl-dfile">File name is made from the date and the name</span>
+			<div class="panel pad">
+				<div class="kv"><span class="k">Game time</span><span class="v">Day 12, 14:35</span></div><div class="kv"><span class="k">Sector</span><span class="v">B13: Drassen</span></div><div class="kv"><span class="k">Team</span><span class="v">9 mercs</span></div><div class="kv"><span class="k">Balance</span><span class="v">$48,250</span></div>
+				<div class="kv"><span class="k">Difficulty</span><span class="v">Experienced</span></div><div class="kv"><span class="k">Saving</span><span class="v">Save Anytime</span></div><div class="kv"><span class="k">Guns / style</span><span class="v">Tons of Guns &#183; Realistic</span></div><div class="kv"><span class="k">Mods</span><span class="v">No mods enabled</span></div>
+			</div>
+			<div class="sl-actions">
+				
+				<span class="grow"></span>
+				<button class="btn btn-primary" id="saveload.confirm"><img class="icon" src="icon-save"/><span class="label">Save</span><span class="kbd">Enter</span></button>
+			</div>
+		</div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">Up</span><span class="kbd">Down</span><span class="h">choose</span><span class="kbd">Enter</span><span class="h">save</span><span class="h dim">Double-click a save to overwrite it</span></div>
+	</div>
+</div>
+</body>
+</rml>

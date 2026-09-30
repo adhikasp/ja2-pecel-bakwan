@@ -10,6 +10,8 @@ namespace NativeUI
 {
 	/** Frame @a frame of an STI as a new RGBA surface (transparent where the image is), or nullptr. */
 	SDL_Surface* LoadStiFrame(std::string const& file, int frame);
+	/** A whole image (8 or 16 bit STI/PCX, e.g. a load screen) as a new RGBA surface, or nullptr (MockScreen.cc). */
+	SDL_Surface* LoadWholeImage(std::string const& file);
 	/** A new RGBA surface: @a src cut to (x, y, w, h) and enlarged @a scale times with nearest-neighbour sampling. */
 	SDL_Surface* CropScaled(SDL_Surface const* src, int x, int y, int w, int h, int scale);
 

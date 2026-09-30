@@ -1,0 +1,72 @@
+<rml>
+<head>
+	<title>New game (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="phase3.rcss"/>
+</head>
+<!-- M2 wireframe of the native new-game setup (GIO) screen (docs/ui/newgame.md). Literal data. -->
+<body class="p3">
+<div class="p3-root">
+	<div class="p3-bg"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">New game</span><span class="p3-title" id="newgame.title">Initial game settings</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="newgame.cancel"><img class="icon" src="icon-chevron-left"/><span class="label">Cancel</span><span class="kbd">Esc</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="ng-cols">
+			<div class="ng-left">
+				<div class="ng-group">
+					<span class="section">Difficulty Level</span>
+					<div class="ng-cards">
+						<div class="ng-card" id="newgame.difficulty[1]"><div class="top"><span class="radio"></span><span class="t">Novice</span></div><span class="d">New to Jagged Alliance or to strategy games, or want shorter battles.</span></div>
+						<div class="ng-card on" id="newgame.difficulty[2]"><div class="top"><span class="radio"></span><span class="t">Experienced</span></div><span class="d">Already familiar with Jagged Alliance or similar games.</span></div>
+						<div class="ng-card is-hover" id="newgame.difficulty[3]"><div class="top"><span class="radio"></span><span class="t">Expert</span></div><span class="d">We warned you. Don't blame us if you get shipped back in a body bag.</span></div>
+					</div>
+				</div>
+				<div class="ng-group">
+					<span class="section">Extra Difficulty</span>
+					<div class="ng-cards">
+						<div class="ng-card" id="newgame.saving[0]"><div class="top"><span class="radio"></span><span class="t">Save Anytime</span><img class="icon" src="icon-save"/></div><span class="d">Save and load whenever you like.</span></div>
+						<div class="ng-card on" id="newgame.saving[1]"><div class="top"><span class="radio"></span><span class="t">Iron Man</span><img class="icon" src="icon-lock"/></div><span class="d">(Cannot save during combat)</span></div>
+						<div class="ng-card warn" id="newgame.saving[2]"><div class="top"><span class="radio"></span><span class="t">Dead is Dead</span><img class="icon" src="icon-dead"/></div><span class="d">(Cannot load previous savegames)</span></div>
+					</div>
+				</div>
+				<div class="ng-cards">
+					<div class="ng-group" style="flex: 1 1 0; margin-right: 16dp;">
+						<span class="section">Game Style</span>
+						<div class="ng-cards">
+							<div class="ng-card on" id="newgame.style[0]"><div class="top"><span class="radio"></span><span class="t">Realistic</span></div><span class="d">The Arulco of the original story.</span></div>
+							<div class="ng-card" id="newgame.style[1]"><div class="top"><span class="radio"></span><span class="t">Sci Fi</span></div><span class="d">Adds the crepitus creatures in the mines.</span></div>
+						</div>
+					</div>
+					<div class="ng-group" style="flex: 1 1 0;">
+						<span class="section">Gun Options</span>
+						<div class="ng-cards">
+							<div class="ng-card" id="newgame.guns[0]"><div class="top"><span class="radio"></span><span class="t">Normal</span></div><span class="d">The standard arsenal.</span></div>
+							<div class="ng-card on" id="newgame.guns[1]"><div class="top"><span class="radio"></span><span class="t">Tons of Guns</span></div><span class="d">Many more weapons in shops and on enemies.</span></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="ng-summary">
+				<div class="panel">
+					<span class="section">Your campaign</span>
+					<div class="kv"><span class="k">Difficulty</span><span class="v">Experienced</span></div>
+					<div class="kv"><span class="k">Saving</span><span class="v">Iron Man</span></div>
+					<div class="kv"><span class="k">Game style</span><span class="v">Realistic</span></div>
+					<div class="kv"><span class="k">Guns</span><span class="v">Tons of Guns</span></div>
+					<div class="op-note warn"><img class="icon" src="icon-warning"/><span>These settings are fixed for the whole campaign. Starting asks you to confirm the difficulty (and Iron Man / Dead is Dead) like before.</span></div>
+				</div>
+				<div class="op-note"><img class="icon" src="icon-info"/><span>Next: the intro video, then the laptop to hire your first mercs. Dead is Dead first asks for a save name.</span></div>
+			</div>
+		</div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">Tab</span><span class="h">next group</span><span class="kbd">Left</span><span class="kbd">Right</span><span class="h">choose</span><span class="kbd">Enter</span><span class="h">start</span></div>
+		<button class="btn btn-primary" id="newgame.start"><img class="icon" src="icon-play"/><span class="label">Start campaign</span><span class="kbd">Enter</span></button>
+	</div>
+</div>
+</body>
+</rml>

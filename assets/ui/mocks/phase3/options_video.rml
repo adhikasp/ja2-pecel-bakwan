@@ -1,0 +1,29 @@
+<rml>
+<head>
+	<title>Options (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="phase3.rcss"/>
+</head>
+<!-- M2 wireframe of the native options screen, video page (docs/ui/options.md). Literal data. -->
+<body class="p3">
+<div class="p3-root">
+	<div class="p3-bg"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">In game &#183; Day 12, 14:35 &#183; B13: Drassen</span><span class="p3-title" id="options.title">Options</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="options.save"><img class="icon" src="icon-save"/><span class="label">Save Game</span><span class="kbd">S</span></button>
+			<button class="btn" id="options.load"><img class="icon" src="icon-load"/><span class="label">Load Game</span><span class="kbd">L</span></button>
+			<button class="btn btn-ghost" id="options.quit"><img class="icon" src="icon-exit-sector"/><span class="label">Quit to main menu</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="op-nav"><div class="op-tab" id="options.tab.gameplay"><img class="icon" src="icon-target"/><span>Gameplay</span><span class="kbd">1</span></div><div class="op-tab active" id="options.tab.video"><img class="icon" src="icon-look"/><span>Video</span><span class="kbd">2</span></div><div class="op-tab" id="options.tab.audio"><img class="icon" src="icon-talk"/><span>Audio</span><span class="kbd">3</span></div><div class="op-tab" id="options.tab.controls"><img class="icon" src="icon-pointer"/><span>Controls</span><span class="kbd">4</span></div><div class="op-tab" id="options.tab.access"><img class="icon" src="icon-info"/><span>Accessibility</span><span class="kbd">5</span></div></div>
+		<div class="op-content"><div class="op-cols"><div class="op-col"><div class="op-group"><span class="section">Display</span><div class="op-row" id="options.video.resolution"><span class="name">Resolution</span><div class="dropdown"><div class="field"><span class="text">Desktop (auto)</span><img class="icon sm" src="icon-chevron-down"/></div></div></div><div class="op-row" id="options.video.ui_scale"><span class="name">Interface size</span><div class="seg"><span class="seg-b on">100%</span><span class="seg-b">125%</span><span class="seg-b">150%</span><span class="seg-b">200%</span></div></div><div class="op-row" id="options.video.window"><span class="name">Window</span><div class="seg"><span class="seg-b">Windowed</span><span class="seg-b on">Borderless</span><span class="seg-b">Fullscreen</span></div></div><div class="op-row" id="options.video.fps"><span class="name">FPS cap</span><div class="dropdown"><div class="field"><span class="text">60</span><img class="icon sm" src="icon-chevron-down"/></div></div></div><div class="op-row" id="options.video.filter"><span class="name">Scaling filter</span><div class="dropdown"><div class="field"><span class="text">Sharp bilinear</span><img class="icon sm" src="icon-chevron-down"/></div></div></div><div class="op-row" id="options.video.world_zoom"><span class="name">World zoom</span><div class="seg"><span class="seg-b on">Auto</span><span class="seg-b">1x</span><span class="seg-b">2x</span><span class="seg-b">3x</span><span class="seg-b">4x</span></div></div></div></div><div class="op-col"><div class="op-group"><span class="section">World effects</span><div class="op-row" id="options.toggle.smoke"><span class="name">Animate Smoke</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row is-hover" id="options.toggle.tree_tops"><span class="name">Show Tree Tops</span><span class="kbd">T</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.wireframes"><span class="name">Show Wireframes</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.glow"><span class="name">Make Items Glow</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.3d_cursor"><span class="name">Show 3D Cursor</span><span class="kbd">Home</span><div class="toggle"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.merc_casts_light"><span class="name">Show Lights under Mercs</span><span class="kbd">G</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.merc_light_up"><span class="name">Merc Lights during Movement</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div></div></div></div><div class="op-help"><div class="panel"><span class="h">Show Tree Tops</span><span class="p">When ON, shows the Tree tops.</span><div class="m"><span class="kbd">T</span><span>toggles it in tactical</span></div></div><div class="op-note"><img class="icon" src="icon-info"/><span>In effect now: window 1920x1080, UI canvas 1920x1080, world at 2x. Display changes apply at once and are saved.</span></div></div></div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">1</span><span class="kbd">5</span><span class="h">page</span><span class="kbd">Tab</span><span class="h">next setting</span><span class="kbd">Space</span><span class="h">change</span><span class="h dim">Changes apply at once and are saved</span></div>
+		<button class="btn btn-primary" id="options.done"><img class="icon" src="icon-confirm"/><span class="label">Done</span><span class="kbd">Esc</span></button>
+	</div>
+</div>
+</body>
+</rml>

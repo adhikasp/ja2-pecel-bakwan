@@ -1,0 +1,29 @@
+<rml>
+<head>
+	<title>Options (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="phase3.rcss"/>
+</head>
+<!-- M2 wireframe of the native options screen, access page (docs/ui/options.md). Literal data. -->
+<body class="p3">
+<div class="p3-root">
+	<div class="p3-bg"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">Main menu</span><span class="p3-title" id="options.title">Options</span></div>
+		<div class="p3-actions">
+			<button class="btn is-disabled" id="options.save"><img class="icon" src="icon-save"/><span class="label">Save Game</span><span class="kbd">S</span></button>
+			<button class="btn" id="options.load"><img class="icon" src="icon-load"/><span class="label">Load Game</span><span class="kbd">L</span></button>
+			<button class="btn btn-ghost" id="options.quit"><img class="icon" src="icon-exit-sector"/><span class="label">Quit to main menu</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="op-nav"><div class="op-tab" id="options.tab.gameplay"><img class="icon" src="icon-target"/><span>Gameplay</span><span class="kbd">1</span></div><div class="op-tab" id="options.tab.video"><img class="icon" src="icon-look"/><span>Video</span><span class="kbd">2</span></div><div class="op-tab" id="options.tab.audio"><img class="icon" src="icon-talk"/><span>Audio</span><span class="kbd">3</span></div><div class="op-tab" id="options.tab.controls"><img class="icon" src="icon-pointer"/><span>Controls</span><span class="kbd">4</span></div><div class="op-tab active" id="options.tab.access"><img class="icon" src="icon-info"/><span>Accessibility</span><span class="kbd">5</span></div></div>
+		<div class="op-content"><div class="op-cols"><div class="op-col"><div class="op-group"><span class="section">Reading</span><div class="op-row" id="options.access.ui_scale"><span class="name">Interface size</span><div class="seg"><span class="seg-b">100%</span><span class="seg-b on">125%</span><span class="seg-b">150%</span><span class="seg-b">200%</span></div></div><div class="op-row" id="options.access.key_advance"><span class="name">Pause Text Dialogue</span><div class="toggle"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.access.subtitles"><span class="name">SubTitles</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div></div></div><div class="op-col"><div class="op-group"><span class="section">Motion</span><div class="op-row is-hover" id="options.access.reduced_motion"><span class="name">Reduced motion</span><div class="toggle"><span class="switch"><span class="knob"></span></span></div></div></div></div></div><div class="op-help"><div class="panel"><span class="h">Reduced motion</span><span class="p">Turns off menu transitions, the scan-line overlay and the credits reel autoscroll. Game animations are not affected.</span><div class="m"><span>New setting (ja2.json)</span></div></div><div class="op-note"><img class="icon" src="icon-info"/><span>Status colours are colour-blind safe and always come with an icon, so there is no separate colour-blind mode.</span></div></div></div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">1</span><span class="kbd">5</span><span class="h">page</span><span class="kbd">Tab</span><span class="h">next setting</span><span class="kbd">Space</span><span class="h">change</span><span class="h dim">Changes apply at once and are saved</span></div>
+		<button class="btn btn-primary" id="options.done"><img class="icon" src="icon-confirm"/><span class="label">Done</span><span class="kbd">Esc</span></button>
+	</div>
+</div>
+</body>
+</rml>

@@ -1,6 +1,8 @@
 // Built without the native UI (WITH_NATIVE_UI=OFF, e.g. Android): every screen and overlay uses its legacy UI.
 #include "NativeUI.h"
 
+#include <stdexcept>
+
 namespace NativeUI
 {
 bool Built() { return false; }
@@ -30,6 +32,7 @@ void Notify(uint32_t) {}
 std::vector<ElementInfo> Elements() { return {}; }
 std::vector<TextInfo> Texts() { return {}; }
 std::vector<std::string> LayoutAudit() { return {}; }
+void OpenMock(std::string const&) { throw std::runtime_error("built without the native UI"); }
 bool Focus(std::string const&) { return false; }
 std::string FocusedId() { return {}; }
 }

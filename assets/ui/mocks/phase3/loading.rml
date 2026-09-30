@@ -1,0 +1,40 @@
+<rml>
+<head>
+	<title>Loading (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="phase3.rcss"/>
+</head>
+<!-- M2 wireframe of the native loading screen (docs/ui/loadingscreen.md). The art is the sector's load screen from the
+     player's game data (loadscreen-<id>), drawn at runtime; literal text. -->
+<body class="p3">
+<div class="p3-root">
+	<div class="ld-art" id="loading.art"></div>
+	<div class="ld-scan"></div>
+	<div class="ld-shade"></div>
+
+	<div class="ld-top">
+		<div class="ld-chip"><span class="k">Day</span><span>12</span></div>
+		<div class="ld-chip"><span class="k">Time</span><span>14:35</span></div>
+		<div class="ld-chip"><span class="k">Squad</span><span>1 &#183; 6 mercs</span></div>
+	</div>
+
+	<div class="ld-bottom">
+		<div class="ld-where">
+			<span class="k">Entering sector</span>
+			<span class="t" id="loading.sector">B13: Drassen</span>
+			<span class="s">Town &#183; airport &#183; day</span>
+		</div>
+		<div class="ld-tip" id="loading.tip">
+			<div class="h"><img class="icon" src="icon-info"/><span>Field note</span><span class="n">7 / 40</span></div>
+			<span class="p">Mercs who are hungover, tired or wounded shoot worse. Rest them on the map screen before a big fight.</span>
+		</div>
+	</div>
+
+	<div class="ld-progress">
+		<div class="ld-bar" id="loading.progress"><div class="fill" style="width: 62%;"></div></div>
+		<span class="ld-step" id="loading.step">Loading struct layer...</span>
+		<span class="ld-pct">62%</span>
+	</div>
+</div>
+</body>
+</rml>

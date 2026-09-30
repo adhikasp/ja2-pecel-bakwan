@@ -1,0 +1,29 @@
+<rml>
+<head>
+	<title>Options (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="phase3.rcss"/>
+</head>
+<!-- M2 wireframe of the native options screen, controls page (docs/ui/options.md). Literal data. -->
+<body class="p3">
+<div class="p3-root">
+	<div class="p3-bg"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker">In game &#183; Day 12, 14:35 &#183; B13: Drassen</span><span class="p3-title" id="options.title">Options</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="options.save"><img class="icon" src="icon-save"/><span class="label">Save Game</span><span class="kbd">S</span></button>
+			<button class="btn" id="options.load"><img class="icon" src="icon-load"/><span class="label">Load Game</span><span class="kbd">L</span></button>
+			<button class="btn btn-ghost" id="options.quit"><img class="icon" src="icon-exit-sector"/><span class="label">Quit to main menu</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="op-nav"><div class="op-tab" id="options.tab.gameplay"><img class="icon" src="icon-target"/><span>Gameplay</span><span class="kbd">1</span></div><div class="op-tab" id="options.tab.video"><img class="icon" src="icon-look"/><span>Video</span><span class="kbd">2</span></div><div class="op-tab" id="options.tab.audio"><img class="icon" src="icon-talk"/><span>Audio</span><span class="kbd">3</span></div><div class="op-tab active" id="options.tab.controls"><img class="icon" src="icon-pointer"/><span>Controls</span><span class="kbd">4</span></div><div class="op-tab" id="options.tab.access"><img class="icon" src="icon-info"/><span>Accessibility</span><span class="kbd">5</span></div></div>
+		<div class="op-content"><div class="op-cols"><div class="op-col"><div class="op-group"><span class="section">Mouse</span><div class="op-row" id="options.toggle.dont_move_mouse"><span class="name">Never Move My Mouse!</span><div class="toggle"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row is-hover" id="options.toggle.old_selection"><span class="name">Old Selection Method</span><div class="toggle"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.smart_cursor"><span class="name">Snap Cursor to Mercs</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div><div class="op-row" id="options.toggle.snap_door"><span class="name">Snap Cursor to Doors</span><div class="toggle on"><span class="switch"><span class="knob"></span></span></div></div></div><div class="op-group"><span class="section">Keys: strategic map</span><div class="keyrow"><span class="name">Start / stop time</span><span class="kbd">Space</span></div><div class="keyrow"><span class="name">Faster / slower time</span><span class="kbd">+</span><span class="kbd">-</span></div><div class="keyrow"><span class="name">Laptop</span><span class="kbd">L</span></div><div class="keyrow"><span class="name">Tactical</span><span class="kbd">Esc</span></div></div></div><div class="op-col"><div class="op-group"><span class="section">Keys: tactical</span><div class="keyrow"><span class="name">End turn</span><span class="kbd">D</span></div><div class="keyrow"><span class="name">Tree tops</span><span class="kbd">T</span></div><div class="keyrow"><span class="name">Lights under mercs</span><span class="kbd">G</span></div><div class="keyrow"><span class="name">3D cursor</span><span class="kbd">Home</span></div><div class="keyrow"><span class="name">Reload</span><span class="kbd">R</span></div><div class="keyrow"><span class="name">Map screen</span><span class="kbd">M</span></div><div class="keyrow"><span class="name">Options</span><span class="kbd">O</span></div><div class="keyrow"><span class="name">Quick save</span><span class="kbd">Alt</span><span class="kbd">S</span></div><div class="keyrow"><span class="name">Quick load</span><span class="kbd">Alt</span><span class="kbd">L</span></div></div></div></div><div class="op-help"><div class="panel"><span class="h">Old Selection Method</span><span class="p">Turn this ON for character selection to work as in previous JAGGED ALLIANCE games (which is the opposite of how it works otherwise).</span><div class="m"><span>The key list is a reference; rebinding comes later</span></div></div></div></div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">1</span><span class="kbd">5</span><span class="h">page</span><span class="kbd">Tab</span><span class="h">next setting</span><span class="kbd">Space</span><span class="h">change</span><span class="h dim">Changes apply at once and are saved</span></div>
+		<button class="btn btn-primary" id="options.done"><img class="icon" src="icon-confirm"/><span class="label">Done</span><span class="kbd">Esc</span></button>
+	</div>
+</div>
+</body>
+</rml>

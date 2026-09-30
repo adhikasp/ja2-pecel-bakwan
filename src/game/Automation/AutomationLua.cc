@@ -652,6 +652,14 @@ namespace
 					double const scale = b && b->is<double>() ? b->as<double>() : 1.0;
 					UiSpikeOpen("gallery:" + page + ":" + std::to_string(scale));
 				}
+				else if (what == "mock")
+				{
+					// M2 design mock through the native runtime: ja2.debug("mock", "phase3/mainmenu") shows
+					// <ui dir>/mocks/phase3/mainmenu.rml over the current screen until Esc
+					std::string const name = a && a->is<std::string>() ? a->as<std::string>() : "";
+					if (name.empty() || name.find("..") != std::string::npos) throw std::runtime_error("ja2.debug(\"mock\", name): bad name");
+					NativeUI::OpenMock("mocks/" + name + ".rml");
+				}
 				else
 				{
 					throw std::runtime_error(("ja2.debug: unknown target " + what).c_str());

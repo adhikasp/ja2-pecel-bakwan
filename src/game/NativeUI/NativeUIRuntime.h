@@ -38,10 +38,15 @@ namespace NativeUI
 		virtual void Exit() = 0;
 		/** The output size or UI scale changed (the context has its new size already). */
 		virtual void Resized() {}
+		/** The screen is done without changing the game's screen (a design mock): the runtime closes it and the legacy
+		 * screen underneath runs again. */
+		virtual bool Finished() const { return false; }
 	};
 
 	/** Native screen factories (NativeUI.cc keeps the table). */
 	std::unique_ptr<Screen> CreateCreditsScreen();
+	/** A static design mock (assets/ui/mocks/...) over the screen @a self (MockScreen.cc). */
+	std::unique_ptr<Screen> CreateMockScreen(std::string const& path, ScreenID self);
 
 	/** Feeds one keyboard event of the input queue to the documents (RmlUi's own navigation: Tab, arrows,
 	 * Enter/Space on the focused element). Returns true if a document used it. */

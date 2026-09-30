@@ -11,6 +11,7 @@
 #include "GameRes.h"
 #include "Headless.h"
 #include "Input.h"
+#include "JAScreens.h"
 #include "Localization.h"
 #include "Logger.h"
 #include "Timer.h"
@@ -697,6 +698,17 @@ ScreenID HandleScreen(ScreenID const id, ScreenID (* const legacy)())
 	if (rt.screen && rt.suspendedFor == ERROR_SCREEN)
 	{
 		ScreenID const next = rt.screen->Handle();
+		if (rt.screen->Finished())
+		{
+			// a mock closed: the legacy screen underneath runs again (and draws itself anew)
+			rt.screen->Exit();
+			rt.screen.reset();
+			rt.screenKey.clear();
+			rt.routedScreen = id;
+			Invalidate();
+			InvalidateScreen();
+			return legacy();
+		}
 		if (next != id && next != MSG_BOX_SCREEN)
 		{
 			rt.screen->Exit();
@@ -708,6 +720,23 @@ ScreenID HandleScreen(ScreenID const id, ScreenID (* const legacy)())
 		return next;
 	}
 	return legacy();
+}
+
+void OpenMock(std::string const& path)
+{
+	Runtime& rt = g_rt;
+	if (!Start()) throw std::runtime_error("the native UI cannot run here (see ja2.nativeUi())");
+	if (rt.screen)
+	{
+		rt.screen->Exit();
+		rt.screen.reset();
+	}
+	rt.routedScreen = guiCurrentScreen;
+	rt.suspendedFor = ERROR_SCREEN;
+	rt.screen = CreateMockScreen(path, guiCurrentScreen);
+	rt.screenKey = "mock";
+	rt.screen->Enter();
+	Invalidate();
 }
 
 // ---------------------------------------------------------------------------------------------------------------

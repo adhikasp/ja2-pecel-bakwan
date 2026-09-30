@@ -83,6 +83,9 @@ namespace NativeUI
 	/** GameLoop's screen dispatch: the native implementation of @a id when its ui_mode resolves to native at entry,
 	 * else @a legacy. */
 	ScreenID HandleScreen(ScreenID id, ScreenID (*legacy)());
+	/** Shows a static design mock (an RML file under the UI dir, e.g. "mocks/phase3/mainmenu.rml") over the current
+	 * screen until Esc (M2 wireframes). Throws if the native UI cannot run. */
+	void OpenMock(std::string const& path);
 	/** The ui_mode key of a screen with a native implementation, or nullptr. */
 	char const* ScreenKey(ScreenID);
 

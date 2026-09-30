@@ -1,0 +1,47 @@
+<rml>
+<head>
+	<title>Main menu (Phase 3 wireframe)</title>
+	<link type="text/rcss" href="../../components.rcss"/>
+	<link type="text/rcss" href="phase3.rcss"/>
+</head>
+<!-- M2 wireframe of the native main menu (docs/ui/mainmenu.md). Literal data; ja2.debug("mock", "phase3/mainmenu"). -->
+<body class="p3">
+<div class="p3-root">
+	<div class="mm-art"></div>
+	<div class="mm-scrim"></div>
+	<div class="mm-scan"></div>
+	<div class="mm-vignette"></div>
+
+	<div class="mm-brand">
+		<span class="mm-kicker">Operation Arulco &#183; 1999</span>
+		<span class="mm-title">Jagged Alliance 2</span>
+		<span class="mm-sub">Stracciatella</span>
+	</div>
+
+	<div class="mm-menu">
+		<div class="mm-item primary" id="mainmenu.continue"><span class="idx">01</span><span class="label">Continue</span><span class="meta">Day 12 &#183; Drassen B13</span><span class="kbd">C</span></div>
+		<div class="mm-item is-hover" id="mainmenu.new"><span class="idx">02</span><span class="label">New Game</span><span class="meta">Difficulty, style, saving</span><span class="kbd">N</span></div>
+		<div class="mm-item" id="mainmenu.load"><span class="idx">03</span><span class="label">Load Game</span><span class="meta">14 saves</span><span class="kbd">L</span></div>
+		<div class="mm-item" id="mainmenu.options"><span class="idx">04</span><span class="label">Options</span><span class="meta">Game, video, audio, controls</span><span class="kbd">O</span></div>
+		<div class="mm-item" id="mainmenu.credits"><span class="idx">05</span><span class="label">Credits</span><span class="meta">Sir-Tech and the team</span><span class="kbd">S</span></div>
+		<div class="mm-item quit" id="mainmenu.quit"><span class="idx">06</span><span class="label">Quit</span><span class="meta">Back to the desktop</span><span class="kbd">Esc</span></div>
+	</div>
+
+	<div class="mm-card" id="mainmenu.last">
+		<div class="mm-card-head"><span class="t">Last save</span><span class="c">Continue loads it</span></div>
+		<span class="mm-card-name">Before the Drassen airport assault</span>
+		<div class="kv"><span class="k">Game time</span><span class="v">Day 12 &#183; 14:35</span></div>
+		<div class="kv"><span class="k">Sector</span><span class="v">B13: Drassen</span></div>
+		<div class="kv"><span class="k">Team</span><span class="v">9 mercs</span></div>
+		<div class="kv"><span class="k">Balance</span><span class="v">$48,250</span></div>
+		<div class="kv"><span class="k">Game</span><span class="v">Experienced &#183; Iron Man &#183; Realistic</span></div>
+	</div>
+
+	<div class="mm-foot">
+		<span class="ver">Stracciatella v0.23.0</span>
+		<span class="copy">Copyright (C) 1999 Sir-tech Canada Ltd.  All rights reserved.</span>
+		<span class="hints"><span class="kbd">&#8593;</span><span class="kbd">&#8595;</span><span>choose</span><span class="kbd">Enter</span><span>select</span><span class="kbd">Esc</span><span>quit</span></span>
+	</div>
+</div>
+</body>
+</rml>
