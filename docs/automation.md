@@ -197,8 +197,8 @@ MSG_BOX_SCREEN); a message box is open: "Surrender? YES NO"`.
 
 Screens and overlays redesigned for [native-modern-game.md](plan/native-modern-game.md) run on RmlUi over the legacy
 game (`src/game/NativeUI/`). Which UI a screen uses is its `ui_mode`, resolved when the screen is entered:
-`ja2.setUiMode(key)` override > `"ui_mode"` in `ja2.json` > the default. Keys: `credits` (default native), `msgbox`,
-`tooltip`, `toasts`, `cursor` (default legacy). The native UI needs a 1280x720 output: below that everything is legacy.
+`ja2.setUiMode(key)` override > `"ui_mode"` in `ja2.json` > the default. Keys: `credits`, `mainmenu`, `options`, `saveload`,
+`newgame`, `loadscreen` (default native), `msgbox`, `tooltip`, `toasts`, `cursor` (default legacy). The native UI needs a 1280x720 output: below that everything is legacy.
 
 Headless (and in every automation session) the native layer is drawn in software and blended into the frame, so
 screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas pixels as everything else.
@@ -210,9 +210,10 @@ screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas
 | `ja2.nativeUi()` | `{running, renderer, w, h, dp, uiScale, screen, documents, warnings, capturesMouse, focused, modes}`. |
 | `ja2.setUiScale(s)` | The native UI scale (1 = 100 %, up to 3). |
 | `ja2.focus(id)` | Give an element keyboard focus (with the focus ring). Tab/arrows/Enter work through `ja2.key`. |
-| `ja2.viewModel(name)` | A view model's fields as a table: an open screen's (`"credits"`) or one made for the call (`"status"`: day, time, money, sector, mercs). |
+| `ja2.viewModel(name)` | A view model's fields as a table: an open screen's (`"credits"`, `"options"`, ...) or one made for the call, which reads the game now (`"status"`: day, time, money, sector, mercs; `"options"`: the game settings, volumes, video settings and this campaign's options; `"mainmenu"`, `"saveload"`: the saves). |
 | `ja2.viewModelCommand(name, command, ...)` | Run a view model command, like a click on its button would. |
 | `ja2.toast(text, [kind])` | Show a toast (`info`, `ok`, `warn`, `danger`). |
+| `ja2.debug("mock", "phase3/mainmenu")` | Show a static design mock (`assets/ui/mocks/<name>.rml`) through the native runtime until Esc. |
 | `ja2.debug("msgbox", text, [kind])` | Open a message box from the current screen (`ok`, `yesno`, `yesnolie`, `okskip`, `four`); `ja2.lastMessageBoxResult()` is what it returned. |
 
 **Element ids.** Every element with an `id` in a native document is addressable: `ja2.click{id="credits.back"}`,

@@ -6,8 +6,9 @@
 | Screen id | `GAME_INIT_OPTIONS_SCREEN` |
 | Reached from | main menu New Game |
 | Returns to | `MAINMENU_SCREEN` (cancel), `INTRO_SCREEN`, or `SAVE_LOAD_SCREEN` (Dead is Dead) |
-| ui_mode key | `newgame` (planned) |
-| Status | draft: wireframe `assets/ui/mocks/phase3/newgame.rml` |
+| Native code | `src/game/NativeUI/FrontNewGame.cc` (`NewGameViewModel`, "newgame"), `assets/ui/screens/newgame.rml` |
+| ui_mode key | `newgame` (default native) |
+| Status | parity-complete (Phase 3); design and the new descriptions approved by the owner |
 
 ## 2. Information and choices
 
@@ -35,13 +36,18 @@ The three yes/no boxes and the Dead is Dead ok box, native message box. "No" on 
 ## 6. Cues
 Radio click sound, fade out, music stops on exit.
 
-## 8. Changed (proposed)
+## 8. Changed
 
 | Item | Decision |
 |---|---|
 | Radio check boxes | option cards with a one-line description (descriptions for Save Anytime, styles and guns are **new strings**) |
 | Summary panel | new, shows the choice and that it is fixed for the campaign |
-| Keyboard | Tab between groups, Left/Right inside (new) |
+| Keyboard | Tab and arrows between the cards; Enter starts on release (legacy Enter skipped the confirmations; the native one asks like the button) |
+| Fade out | not reproduced; the intro (or the save screen for Dead is Dead) follows at once |
 
 ## 9. Parity tour
-`newgame_parity.lua`: each group sets `gGameOptions`; warning chain; Cancel; Dead is Dead reaches the save screen.
+
+`tests/e2e/newgame_parity.lua` (golden `newgame_native.png`): every choice by id and the summary; the Iron Man warning,
+No resets to Save Anytime; Esc cancels; a real start (warning, difficulty confirmation, laptop), and the started game has
+the chosen settings (`ja2.viewModel("options")` reads `gGameOptions`); layout audit at 150 %. Not in the tour: the Dead
+is Dead save-name step.

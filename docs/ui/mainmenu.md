@@ -9,8 +9,9 @@
 | Screen id | `MAINMENU_SCREEN` |
 | Reached from | start-up (after the splash), Options "Quit", credits, end of game, failed new game |
 | Returns to | `GAME_INIT_OPTIONS_SCREEN`, `SAVE_LOAD_SCREEN`, `OPTIONS_SCREEN`, `CREDIT_SCREEN`, quit |
-| ui_mode key | `mainmenu` (planned; default native at ≥1280x720) |
-| Status | draft: wireframe (`assets/ui/mocks/phase3/mainmenu.rml`) awaiting the owner |
+| Native code | `src/game/NativeUI/FrontMainMenu.cc` (`MainMenuViewModel`, "mainmenu"), `assets/ui/screens/mainmenu.rml`, `frontend.rcss` |
+| ui_mode key | `mainmenu` (default native; legacy below a 1280x720 output) |
+| Status | parity-complete (Phase 3); design approved by the owner (wireframes `native-phase-3-wireframes/`) |
 
 ## 1. How it was audited
 
@@ -36,8 +37,8 @@
 | # | Action | Legacy input | Game function | Native |
 |---|---|---|---|---|
 | A1 | New game | click New Game | exit to `GAME_INIT_OPTIONS_SCREEN` | `mainmenu.new`, key N (new) |
-| A2 | Load game | click Load Game, key C | `gfSaveGame = FALSE`, `SAVE_LOAD_SCREEN` | `mainmenu.load`, keys L (new) and C |
-| A3 | Load the last save at once | Alt+click Load Game, Alt+C | `gfLoadGameUponEntry = TRUE` | **Continue** item `mainmenu.continue`, key C? (see decisions); Alt+C kept |
+| A2 | Load game | click Load Game, key C | `gfSaveGame = FALSE`, `SAVE_LOAD_SCREEN` | `mainmenu.load`, key L (C is Continue now, owner decision) |
+| A3 | Load the last save at once | Alt+click Load Game, Alt+C | `gfLoadGameUponEntry = TRUE` | **Continue** item `mainmenu.continue`, keys C and Alt+C (the newest save by file time) |
 | A4 | Options | click Preferences, key O | `guiPreviousOptionScreen = MAINMENU`, `OPTIONS_SCREEN` | `mainmenu.options`, O |
 | A5 | Credits | click Credits, key S | `CREDIT_SCREEN` | `mainmenu.credits`, S |
 | A6 | Quit | click Quit, Esc (key up), Ctrl+Q | `requestGameExit()` | `mainmenu.quit`, Esc, Ctrl+Q |
@@ -64,14 +65,30 @@ Button click sounds of the legacy buttons (keep one click sound); main menu musi
 - [ ] Long German/Russian menu words: the list is 640 dp wide; hints wrap away first.
 - [ ] 640x480: legacy menu. [ ] 21:9: art covers, menu stays left.
 
-## 8. Deliberately dropped or changed (proposed)
+## 8. Deliberately dropped or changed
 
-| Item | Decision | Reason |
-|---|---|---|
-| Bitmap title words and logo image | replaced by type | native text, localisable |
-| Alt+click Load = load last save | surfaced as a Continue item (Alt+C kept) | discoverability |
-| Last-save card, save count, key hints | added | modern UX |
+| Item | Decision | Reason | Approved by |
+|---|---|---|---|
+| Bitmap title words and logo image | replaced by type | native text, localisable | owner |
+| Alt+click Load = load last save | surfaced as a Continue item; C = Continue, Alt+C kept, L = Load Game | discoverability | owner |
+| Last-save card, save count, key hints | added | modern UX | owner |
+| Esc quits without asking | kept (as legacy) | parity | owner |
+| Background | the original `mainmenubackground.sti`, aspect kept, covering the screen and cropped, uplifted 4x with Scale2x at runtime (nothing derived is stored); dark gradient behind the menu, which sits on its own panel | owner: render the original art faithfully, readable hints | owner |
 
 ## 9. Parity tour
-`tests/e2e/mainmenu_parity.lua` (to write in M4): A1–A6 by id with screen assertions, S3 with an empty save dir, A3 loads
-the newest save (`ja2.state().time`).
+
+`tests/e2e/mainmenu_parity.lua` (every resolution of `ctest -L resolution`; golden `mainmenu_native.png`):
+
+| Row | Covered by |
+|---|---|
+| S2, I1 | `ja2.nativeUi().screen == "mainmenu"`, every item by id |
+| I3, I4 | `viewModel("mainmenu").version/copyright` |
+| S3, I2 | fresh home: no card, Continue and L do nothing |
+| A4 | options by id and by the legacy label "Preferences", Esc back |
+| A5 | S opens the credits |
+| A1 | N and the item open the new-game screen, Cancel back |
+| A7 | Tab focuses a menu item |
+| layout | UI scale 150 % and 200 %: `ja2.assertInsideScreen()` |
+| ui_mode | `ja2.setUiMode("mainmenu", "legacy")` runs the legacy menu |
+| < 1280x720 | the legacy menu runs |
+| A3, I5, I6 | `saveload_parity.lua`: the last-save card (golden `mainmenu_lastsave.png`), C loads the newest save (map screen, sector A9) |

@@ -135,7 +135,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .op-row .slider { width: 300dp; }
 .op-row .seg { display: flex; }
 .seg-b {
-	display: block; height: 32dp; line-height: 32dp; padding: 0 var(--sp-3); margin-left: -1dp;
+	display: block; height: 32dp; line-height: 32dp; padding: 0 var(--sp-3); margin-left: 0;
 	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); text-transform: uppercase; color: var(--c-text-dim);
 	background-color: var(--c-panel-2); border: var(--border) var(--c-line-2);
 }
