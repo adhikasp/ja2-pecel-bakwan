@@ -1,7 +1,9 @@
 -- M1 audit of the Phase 3 front-end screens (docs/ui/mainmenu.md, options.md, saveload.md, newgame.md,
 -- loadingscreen.md): every state of the legacy screens, with a screenshot and a dump of the clickable elements and
 -- the visible text, written to -out as <state>.png and <state>.txt. Not a test; run it by hand:
---   python tools/ja2ctl.py run tests/e2e/phase3_audit.lua --isolated --out <dir> [-- -res 1920x1080]
+--   python tools/ja2ctl.py run tests/e2e/manual/phase3_audit.lua --isolated --out <dir> [-- -res 1920x1080]
+-- (lives in manual/ so that ctest does not pick it up; lib/ is one level up)
+package.path = (debug.getinfo(1, "S").source:match("^@(.*[/\\])") or "") .. "../?.lua;" .. package.path
 local campaign = require("lib.campaign")
 
 local function dump(name)

@@ -45,8 +45,16 @@ namespace NativeUI
 
 	/** Native screen factories (NativeUI.cc keeps the table). */
 	std::unique_ptr<Screen> CreateCreditsScreen();
+	std::unique_ptr<Screen> CreateMainMenuScreen();
+	std::unique_ptr<Screen> CreateOptionsScreen();
+	std::unique_ptr<Screen> CreateSaveLoadScreen();
+	std::unique_ptr<Screen> CreateNewGameScreen();
 	/** A static design mock (assets/ui/mocks/...) over the screen @a self (MockScreen.cc). */
 	std::unique_ptr<Screen> CreateMockScreen(std::string const& path, ScreenID self);
+
+	/** Sets the "compact" class on element @a rootId when the layout is narrower than @a widthDp (big UI scales,
+	 * small windows); screens call it on entry and in Resized. */
+	void SetCompact(Rml::ElementDocument*, char const* rootId, float widthDp = 1500);
 
 	/** Feeds one keyboard event of the input queue to the documents (RmlUi's own navigation: Tab, arrows,
 	 * Enter/Space on the focused element). Returns true if a document used it. */

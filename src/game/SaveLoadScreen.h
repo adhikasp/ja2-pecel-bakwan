@@ -39,4 +39,30 @@ bool AreThereAnySavedGameFiles();
 
 void DeleteSaveGameNumber(UINT8 save_slot_id);
 
+/* ---- The native save/load screen (src/game/NativeUI/SaveLoadScreen.cc) uses the same logic ---- */
+class SaveGameInfo;
+struct SAVED_GAME_HEADER;
+extern BOOLEAN gfLoadGameUponEntry;
+void SaveLoadNativeEnter();
+/** @a handingOver: the legacy screen runs next (to load with its fades) and finishes the job. */
+void SaveLoadNativeExit(bool handingOver);
+/** Where Cancel/Esc goes (LeaveSaveLoadScreen). */
+ScreenID SaveLoadLeaveTarget();
+/** Loadable saves, newest first; for saving without the quick and auto saves. */
+std::vector<SaveGameInfo> SaveLoadListSaves(bool forSaving);
+double SaveLoadModifiedTime(const ST::string& saveName);
+/** Bit 1: another game or save version; bit 2: other mods. */
+int SaveLoadCompatibility(const SaveGameInfo&);
+/** A new save's file name from the time and its description (SaveNewSave). */
+ST::string SaveLoadNewFileName(const ST::string& description);
+/** Saves (or, for a Dead is Dead new game, only names the save); @a exitTo is where to go then. */
+bool SaveLoadNativeSave(const ST::string& saveName, const ST::string& description, ScreenID& exitTo);
+/** Deletes a save and its thumbnail. */
+bool SaveLoadNativeDelete(const ST::string& saveName);
+/** The legacy "load upon entry" path loads @a saveName the next time the save/load screen runs. */
+void SaveLoadArmLoadUponEntry(const ST::string& saveName);
+bool SaveLoadLoadUponEntryArmed();
+/** The sector a save was made in, as the save list shows it. */
+ST::string SaveLoadSectorText(const SAVED_GAME_HEADER&);
+
 #endif

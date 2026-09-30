@@ -39,6 +39,10 @@ namespace NativeUI
 
 	/** From ja2.json at startup: "key=mode" lines and the native UI scale. Unknown keys are logged and kept. */
 	void Configure(std::string const& modePairs, float nativeUiScale);
+	/** Accessibility: no transitions or automatic scrolling in the native UI (ja2.json "reduced_motion"). */
+	bool ReducedMotion();
+	void SetReducedMotion(bool);
+
 	/** Runtime override (Lua ja2.setUiMode); nullopt removes it. Throws std::invalid_argument on an unknown key. */
 	void SetModeOverride(std::string const& key, std::optional<UiMode>);
 	/** What is asked for: override > config > default. */
@@ -86,6 +90,8 @@ namespace NativeUI
 	/** Shows a static design mock (an RML file under the UI dir, e.g. "mocks/phase3/mainmenu.rml") over the current
 	 * screen until Esc (M2 wireframes). Throws if the native UI cannot run. */
 	void OpenMock(std::string const& path);
+	/** The output was laid out again (video settings): a screen with a native version picks legacy or native anew. */
+	void ScreenRelaidOut();
 	/** The ui_mode key of a screen with a native implementation, or nullptr. */
 	char const* ScreenKey(ScreenID);
 
@@ -105,9 +111,24 @@ namespace NativeUI
 	bool MessageBoxWanted();
 	void OpenMessageBox(std::string const& text, std::vector<MessageBoxButton> const& buttons, bool danger);
 	bool MessageBoxOpen();
+	/** The text of the open native message box (automation). */
+	std::string MessageBoxText();
 	/** The result of the button pressed (0 while none was). */
 	int  MessageBoxResult();
 	void CloseMessageBox();
+
+	// ---- front-end screens (Phase 3) --------------------------------------------------------------------------
+	/** Keeps a small copy of the game picture now (the map or tactical) for the next save's thumbnail. */
+	void SnapshotGameFrame();
+	/** Writes the kept picture as a PNG to @a path (next to a save; the save format is unchanged). */
+	void WriteSaveThumbnail(std::string const& path);
+	/** The loading screen for load screen @a id, when "loadscreen" resolves to native; false: draw the legacy one.
+	 * Loading blocks the game loop: the screen draws itself at once and at every progress step. */
+	bool ShowLoadingScreen(int id);
+	/** The step text of the loading progress bar (SetRelativeStartAndEndPercentage). */
+	void LoadingStep(std::string const& text);
+	/** Loading progress 0..1; false when the native loading screen is not showing. */
+	bool LoadingProgress(double fraction);
 
 	// ---- change notification (view models, ViewModel.h) -------------------------------------------------------
 	enum Topic : uint32_t

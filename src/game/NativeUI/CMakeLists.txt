@@ -10,6 +10,11 @@ if (WITH_NATIVE_UI)
         ${CMAKE_CURRENT_SOURCE_DIR}/GameViewModels.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/CreditsScreen.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/MockScreen.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontEndSupport.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontMainMenu.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontOptions.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontSaveLoad.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontNewGame.cc
     )
     if (WITH_UNITTESTS)
         list(APPEND NATIVE_UI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/NativeUI_unittest.cc)

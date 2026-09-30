@@ -120,6 +120,8 @@
 #include <array>
 #include <stdexcept>
 #include <utility>
+#include "NativeUI.h"
+#include "JAScreens.h"
 
 static const ST::string g_backup_dir     = "Backup";
 static const ST::string g_quicksave_name = "QuickSave";
@@ -154,6 +156,10 @@ UINT32 guiSavedGameLoadCount = 0;
 ScreenID guiScreenToGotoAfterLoadingSavedGame = ERROR_SCREEN; // XXX TODO001A was not properly initialised (0)
 
 extern		UINT32		guiCurrentUniqueSoldierId;
+
+ST::string GetSaveThumbnailPath(const ST::string &saveName) {
+	return ST::format("{}.png", saveName);
+}
 
 ST::string GetSaveGamePath(const ST::string &saveName) {
 	return ST::format("{}.{}", saveName, g_savegame_ext);
@@ -269,6 +275,9 @@ Observable<> OnGameLoaded;
 BOOLEAN SaveGame(const ST::string& saveName, const ST::string& gameDesc)
 {
 	BeforeGameSaved();
+	// the save list's thumbnail: the game as it is now (on the map or in tactical) or as it was when the
+	// options/save screen was opened (NativeUI::SnapshotGameFrame); written next to the save below
+	if (guiCurrentScreen == GAME_SCREEN || guiCurrentScreen == MAP_SCREEN) NativeUI::SnapshotGameFrame();
 
 	BOOLEAN	fPausedStateBeforeSaving    = gfGamePaused;
 	BOOLEAN	fLockPauseStateBeforeSaving = gfLockPauseState;
@@ -517,6 +526,8 @@ BOOLEAN SaveGame(const ST::string& saveName, const ST::string& gameDesc)
 		gGameSettings.sCurrentSavedGameName = saveName;
 		gGameSettings.sCurrentSavedGameDescription = gameDesc;
 	}
+
+	NativeUI::WriteSaveThumbnail(GCM->saveGameFiles()->absolutePath(GetSaveThumbnailPath(saveName)).to_std_string());
 
 	SaveGameSettings();
 

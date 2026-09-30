@@ -7,5 +7,6 @@
   "credits.paused": "Пауза",
   "credits.hint": "Наведите на человека, чтобы узнать, кто это.",
   "msgbox.notice": "Сообщение",
-  "msgbox.confirm": "Подтверждение"
+  "msgbox.confirm": "Подтверждение",
+  "_todo.phase3": "Phase 3 strings (mainmenu.*, options.*, saveload.*, newgame.*, loading.*) are English only for now; add them here (needs a translator)."
 }

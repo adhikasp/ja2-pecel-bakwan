@@ -13,6 +13,7 @@
 #include "Input.h"
 #include "LoadingScreenModel.h"
 #include "Logger.h"
+#include "SaveLoadGame.h"
 #include "VSurface.h"
 #include "UiCore.h"
 
@@ -36,9 +37,8 @@ SDL_Surface* LoadWholeImage(std::string const& file)
 	}
 }
 
-namespace
+void RegisterFrontEndImages()
 {
-	void RegisterMockImages()
 	{
 		// "loadscreen-<n>": loading screen n (loading-screens.json order) from the player's game data
 		RegisterImageSource("loadscreen-", [](std::string const& name) -> SDL_Surface* {
@@ -46,13 +46,25 @@ namespace
 			LoadingScreen const* ls = GCM->getLoadingScreen(uint8_t(id));
 			return ls ? LoadWholeImage((ST::string(LOADSCREENSDIR) + ls->filename).to_std_string()) : nullptr;
 		});
+		// the main menu art, uplifted 4x (Scale2x twice) so that it stays sharp when it covers a big screen
 		RegisterImageSource("mainmenu-art", [](std::string const&) {
-			return LoadWholeImage(LOADSCREENSDIR "/mainmenubackground.sti");
+			return UpliftArt(LoadStiFrame(LOADSCREENSDIR "/mainmenubackground.sti", 0), 2);
 		});
 		RegisterImageSource("mainmenu-logo", [](std::string const&) {
 			return LoadStiFrame(LOADSCREENSDIR "/ja2logo.sti", 0);
 		});
+		// "save-thumb-<save name>@<modified time>": the thumbnail next to a save (the time makes a new picture a new
+		// texture after the save was overwritten)
+		RegisterImageSource("save-thumb-", [](std::string const& name) -> SDL_Surface* {
+			std::string save = name.substr(11);
+			save = save.substr(0, save.rfind('@'));
+			return LoadThumbnail(GCM->saveGameFiles()->absolutePath(GetSaveThumbnailPath(save)).to_std_string());
+		});
 	}
+}
+
+namespace
+{
 
 	class MockScreen final : public Screen
 	{
@@ -62,7 +74,7 @@ namespace
 		void Enter() override
 		{
 			nui::SetImageProvider(ProvideGameImage);
-			RegisterMockImages();
+			RegisterFrontEndImages();
 			m_doc = LoadDocument(m_path);
 			m_doc->Show(Rml::ModalFlag::None, Rml::FocusFlag::Document);
 		}

@@ -342,6 +342,20 @@ pub extern "C" fn EngineOptions_setNativeUiScale(ptr: *mut EngineOptions, scale:
     };
 }
 
+/// Gets `EngineOptions.reduced_motion`.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_getReducedMotion(ptr: *const EngineOptions) -> bool {
+    let engine_options = unsafe_ref(ptr);
+    engine_options.reduced_motion
+}
+
+/// Sets `EngineOptions.reduced_motion`.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_setReducedMotion(ptr: *mut EngineOptions, value: bool) {
+    let engine_options = unsafe_mut(ptr);
+    engine_options.reduced_motion = value;
+}
+
 /// Gets `EngineOptions.scaling_quality`.
 #[unsafe(no_mangle)]
 pub extern "C" fn EngineOptions_getScalingQuality(ptr: *const EngineOptions) -> ScalingQuality {

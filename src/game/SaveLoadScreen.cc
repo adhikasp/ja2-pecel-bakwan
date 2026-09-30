@@ -1563,3 +1563,165 @@ static void StartFadeOutForSaveLoadScreen(void)
 	FadeOutNextFrame( );
 	gfStartedFadingOut = TRUE;
 }
+
+
+
+/* ---- Support for the native save/load screen (docs/ui/saveload.md) -------------------------------- */
+
+void SaveLoadNativeEnter()
+{
+	// the bookkeeping of EnterSaveLoadScreen, without its widgets
+	if (guiPreviousOptionScreen == GAME_INIT_OPTIONS_SCREEN) gfSaveGame = TRUE;
+	if (!gpUndergroundSectorInfoHead)
+	{
+		BuildUndergroundSectorInfoList();
+		gfHadToMakeBasementLevels = TRUE;
+	}
+	else
+	{
+		gfHadToMakeBasementLevels = FALSE;
+	}
+	RemoveMouseRegionForPauseOfClock();
+	gfDoingQuickLoad   = FALSE;
+	gfStartedFadingOut = FALSE;
+	gfLoadedGame       = FALSE;
+	gfGettingNameFromSaveLoadScreen = FALSE;
+	DisableScrollMessages();
+}
+
+void SaveLoadNativeExit(bool const handingOver)
+{
+	// the bookkeeping of ExitSaveLoadScreen, without its widgets. When the legacy screen takes over (to load with
+	// its fades), it does the rest itself.
+	if (gfHadToMakeBasementLevels) TrashUndergroundSectorInfo();
+	gfHadToMakeBasementLevels = FALSE;
+	gfGettingNameFromSaveLoadScreen = FALSE;
+	if (handingOver) return;
+	if (!gfLoadedGame)
+	{
+		UnLockPauseState();
+		UnPauseGame();
+	}
+	gfCameDirectlyFromGame = FALSE;
+}
+
+ScreenID SaveLoadLeaveTarget()
+{
+	if (gfCameDirectlyFromGame) return guiPreviousOptionScreen;
+	switch (guiPreviousOptionScreen)
+	{
+		case MAINMENU_SCREEN:
+		case GAME_INIT_OPTIONS_SCREEN:
+		case INTRO_SCREEN:
+			return guiPreviousOptionScreen;
+		default:
+			return OPTIONS_SCREEN;
+	}
+}
+
+std::vector<SaveGameInfo> SaveLoadListSaves(bool const forSaving)
+{
+	std::vector<SaveGameInfo> list;
+	for (auto& s : GetValidSaveGames())
+	{
+		if (forSaving && (IsAutoSaveName(s.name()) || IsQuickSaveName(s.name()))) continue;
+		list.push_back(std::move(s));
+	}
+	std::sort(list.begin(), list.end(), compareSaveGames);
+	return list;
+}
+
+double SaveLoadModifiedTime(ST::string const& saveName)
+{
+	return GCM->saveGameFiles()->getLastModifiedTime(GetSaveGamePath(saveName));
+}
+
+int SaveLoadCompatibility(SaveGameInfo const& save)
+{
+	int problems = 0;
+	if (save.header().uiSavedGameVersion != SAVE_GAME_VERSION ||
+		strcmp(save.header().zGameVersionNumber, g_version_number) != 0) problems |= 1;
+	if (GCM->getEnabledMods() != save.mods()) problems |= 2;
+	return problems;
+}
+
+ST::string SaveLoadNewFileName(ST::string const& description)
+{
+	time_t now;
+	time(&now);
+	char buf[sizeof "2011-10-08T07:07:09Z"];
+	strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
+	return FileMan::cleanBasename(ST::format("{}-{}", buf, description.to_lower()));
+}
+
+bool SaveLoadNativeSave(ST::string const& saveName, ST::string const& description, ScreenID& exitTo)
+{
+	// DoSaveGame without the legacy screen
+	if (guiPreviousOptionScreen == GAME_INIT_OPTIONS_SCREEN)
+	{
+		// Dead is Dead new game: only remember the name; the intro starts the game
+		guiPreviousOptionScreen = INTRO_SCREEN;
+		gGameSettings.bLastSavedGameSlot = 0;
+		gGameSettings.sCurrentSavedGameName = saveName;
+		gGameSettings.sCurrentSavedGameDescription = description;
+	}
+	else if (!SaveGame(saveName, description))
+	{
+		return false;
+	}
+	exitTo = guiPreviousOptionScreen;
+	if (exitTo == GAME_SCREEN) EnterTacticalScreen();
+	return true;
+}
+
+bool SaveLoadNativeDelete(ST::string const& saveName)
+{
+	try
+	{
+		GCM->saveGameFiles()->deleteFile(GetSaveGamePath(saveName));
+	}
+	catch (std::runtime_error const& err)
+	{
+		SLOGE("Error deleting save game {}: {}", saveName, err.what());
+		return false;
+	}
+	try
+	{
+		ST::string const thumb = GetSaveThumbnailPath(saveName);
+		if (GCM->saveGameFiles()->exists(thumb)) GCM->saveGameFiles()->deleteFile(thumb);
+	}
+	catch (...) {}
+	return true;
+}
+
+void SaveLoadArmLoadUponEntry(ST::string const& saveName)
+{
+	gfSaveGame = FALSE;
+	gzLoadGameUponEntryName = saveName;
+	gfLoadGameUponEntry = TRUE;
+}
+
+bool SaveLoadLoadUponEntryArmed()
+{
+	return gfLoadGameUponEntry;
+}
+
+ST::string SaveLoadSectorText(SAVED_GAME_HEADER const& header)
+{
+	// as DisplaySaveGameEntry shows it; underground sector names need the underground list
+	if (header.sSector.IsValid())
+	{
+		bool const made = !gpUndergroundSectorInfoHead;
+		if (made) BuildUndergroundSectorInfoList();
+		gfGettingNameFromSaveLoadScreen = TRUE;
+		ST::string const s = GetSectorIDString(header.sSector, FALSE);
+		gfGettingNameFromSaveLoadScreen = FALSE;
+		if (made) TrashUndergroundSectorInfo();
+		return s;
+	}
+	if (header.uiDay * NUM_SEC_IN_DAY + header.ubHour * NUM_SEC_IN_HOUR + header.ubMin * NUM_SEC_IN_MIN <= STARTING_TIME)
+	{
+		return gpStrategicString[STR_PB_NOTAPPLICABLE_ABBREVIATION];
+	}
+	return gzLateLocalizedString[STR_LATE_14];
+}

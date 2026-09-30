@@ -2,7 +2,7 @@
 <head>
 	<title>Loading (Phase 3 wireframe)</title>
 	<link type="text/rcss" href="../../components.rcss"/>
-	<link type="text/rcss" href="phase3.rcss"/>
+	<link type="text/rcss" href="../../screens/frontend.rcss"/>
 </head>
 <!-- M2 wireframe of the native loading screen (docs/ui/loadingscreen.md). The art is the sector's load screen from the
      player's game data (loadscreen-<id>), drawn at runtime; literal text. -->

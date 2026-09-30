@@ -1,6 +1,6 @@
 -- Screenshots of the Phase 3 wireframes (M2; assets/ui/mocks/phase3/*.rml) through the native runtime at several
 -- output sizes, with the layout audit logged. Not a test; run it by hand:
---   python tools/ja2ctl.py run tests/e2e/phase3_mocks.lua --isolated --out <dir> [--arg mainmenu,options]
+--   python tools/ja2ctl.py run tests/e2e/manual/phase3_mocks.lua --isolated --out <dir> [--arg mainmenu,options]
 local only = ja2.args and ja2.args[1]
 local mocks = { "mainmenu", "options", "options_video", "options_audio", "options_controls", "options_access", "saveload", "saveload_save", "newgame", "loading" }
 local sizes = { "1920x1080", "1280x720" }

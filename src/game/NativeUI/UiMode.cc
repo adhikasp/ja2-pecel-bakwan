@@ -31,9 +31,15 @@ std::optional<UiMode> ParseUiMode(std::string const& s)
 
 std::vector<ModeKey> const& ModeKeys()
 {
-	// Credits is the Phase 2 trivial screen and native by default; everything else stays legacy until its phase.
+	// Screens go native by default when their phase ships (credits: Phase 2; the front end: Phase 3); the shared
+	// overlays stay legacy on legacy screens until the screens around them are native.
 	static std::vector<ModeKey> const keys = {
-		{ "credits", "the credits screen",                              UiMode::Native },
+		{ "credits",    "the credits screen",                           UiMode::Native },
+		{ "mainmenu",   "the main menu",                                UiMode::Native },
+		{ "options",    "the options screen (with the video settings)", UiMode::Native },
+		{ "saveload",   "the save and load screen",                     UiMode::Native },
+		{ "newgame",    "the new game settings (GIO) screen",           UiMode::Native },
+		{ "loadscreen", "the loading screen",                           UiMode::Native },
 		{ "msgbox",  "message boxes (DoMessageBox and its wrappers)",    UiMode::Legacy },
 		{ "tooltip", "fast help of legacy screens",                      UiMode::Legacy },
 		{ "toasts",  "screen messages shown as toasts",                  UiMode::Legacy },
@@ -69,6 +75,10 @@ void Configure(std::string const& modePairs, float const nativeUiScale)
 	}
 	SetUserScale(nativeUiScale);
 }
+
+namespace { bool g_reducedMotion = false; }
+bool ReducedMotion() { return g_reducedMotion; }
+void SetReducedMotion(bool const on) { g_reducedMotion = on; }
 
 void SetModeOverride(std::string const& key, std::optional<UiMode> const mode)
 {

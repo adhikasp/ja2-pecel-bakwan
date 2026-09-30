@@ -1,3 +1,4 @@
+#include "NativeUI.h"
 #include "Font.h"
 #include "HImage.h"
 #include "Types.h"
@@ -158,11 +159,12 @@ void RemoveProgressBar( UINT8 ubID )
  * the 100% mark within UpdateProgressBar.  At that time, you would go onto the
  * next step, resetting the relative start and end percentage from 30 to
  * whatever, until your done. */
-void SetRelativeStartAndEndPercentage(UINT8 id, UINT32 uiRelStartPerc, UINT32 uiRelEndPerc, ST::string const&)
+void SetRelativeStartAndEndPercentage(UINT8 id, UINT32 uiRelStartPerc, UINT32 uiRelEndPerc, ST::string const& text)
 {
 	Assert(id < MAX_PROGRESSBARS);
 	PROGRESSBAR* const bar = pBar[id];
 	if (!bar) return;
+	if (bar->flags & PROGRESS_LOAD_BAR) NativeUI::LoadingStep(text.to_std_string()); // the native loading screen shows it
 
 	bar->rStart = uiRelStartPerc * 0.01;
 	bar->rEnd   = uiRelEndPerc   * 0.01;
@@ -222,6 +224,7 @@ void RenderProgressBar( UINT8 ubID, UINT32 uiPercentage )
 		INT32 const w   = pCurr->pos.w;
 		INT32 const h   = pCurr->pos.h;
 		INT32 const end = (INT32)(x + 2.0 + rActual * (w - 4));
+		if ((pCurr->flags & PROGRESS_LOAD_BAR) && NativeUI::LoadingProgress(rActual)) return; // drawn natively
 		if (end < x + 2 || x + w - 2 < end) return;
 		if (pCurr->flags & PROGRESS_LOAD_BAR)
 		{

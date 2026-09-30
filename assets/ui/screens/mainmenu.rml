@@ -1,0 +1,48 @@
+<rml>
+<head>
+	<title>Main menu</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="frontend.rcss"/>
+</head>
+<!-- The native main menu (docs/ui/mainmenu.md). View model: MainMenuViewModel ("mainmenu"). -->
+<body class="p3">
+<div class="p3-root" id="mainmenu" data-model="mainmenu">
+	<div class="mm-art audit-skip"></div>
+	<div class="mm-scrim audit-skip"></div>
+	<div class="mm-vignette audit-skip"></div>
+
+	<div class="mm-layout">
+		<div class="mm-brand">
+			<span class="mm-kicker">{{kicker}}</span>
+			<span class="mm-title">{{title}}</span>
+			<span class="mm-sub">{{subtitle}}</span>
+		</div>
+		<div class="mm-body">
+			<div class="mm-menu" id="mainmenu.menu">
+				<div class="mm-item primary" id="mainmenu.continue" data-label="Continue" data-class-disabled="!has_saves" data-event-click="continue"><span class="idx">01</span><span class="label">{{l_continue}}</span><span class="meta" data-attr-title="continue_meta">{{continue_meta}}</span><span class="kbd">C</span></div>
+				<div class="mm-item" id="mainmenu.new" data-label="New Game" data-event-click="new"><span class="idx">02</span><span class="label">{{l_new}}</span><span class="meta" data-attr-title="new_meta">{{new_meta}}</span><span class="kbd">N</span></div>
+				<div class="mm-item" id="mainmenu.load" data-label="Load Game" data-class-disabled="!has_saves" data-event-click="load"><span class="idx">03</span><span class="label">{{l_load}}</span><span class="meta" data-attr-title="load_meta">{{load_meta}}</span><span class="kbd">L</span></div>
+				<div class="mm-item" id="mainmenu.options" data-label="Preferences" data-event-click="options"><span class="idx">04</span><span class="label">{{l_options}}</span><span class="meta" data-attr-title="options_meta">{{options_meta}}</span><span class="kbd">O</span></div>
+				<div class="mm-item" id="mainmenu.credits" data-label="Credits" data-event-click="credits"><span class="idx">05</span><span class="label">{{l_credits}}</span><span class="meta" data-attr-title="credits_meta">{{credits_meta}}</span><span class="kbd">S</span></div>
+				<div class="mm-item quit" id="mainmenu.quit" data-label="Quit" data-event-click="quit"><span class="idx">06</span><span class="label">{{l_quit}}</span><span class="meta" data-attr-title="quit_meta">{{quit_meta}}</span><span class="kbd">Esc</span></div>
+			</div>
+			<div class="mm-spacer"></div>
+			<div class="mm-card" id="mainmenu.last" data-if="has_saves">
+				<div class="mm-card-head"><span class="t">{{l_last}}</span><span class="c">{{l_continue_loads}}</span></div>
+				<span class="mm-card-name" id="mainmenu.last.name" data-attr-title="last_name">{{last_name}}</span>
+				<div class="kv"><span class="k">{{l_time}}</span><span class="v" id="mainmenu.last.when" data-attr-title="last_when">{{last_when}}</span></div>
+				<div class="kv"><span class="k">{{l_sector}}</span><span class="v" data-attr-title="last_sector">{{last_sector}}</span></div>
+				<div class="kv"><span class="k">{{l_team}}</span><span class="v" data-attr-title="last_team">{{last_team}}</span></div>
+				<div class="kv"><span class="k">{{l_balance}}</span><span class="v" data-attr-title="last_money">{{last_money}}</span></div>
+				<div class="kv"><span class="k">{{l_game}}</span><span class="v" data-attr-title="last_game">{{last_game}}</span></div>
+			</div>
+		</div>
+		<div class="mm-foot">
+			<span class="ver" id="mainmenu.version">{{version}}</span>
+			<span class="copy" data-attr-title="copyright">{{copyright}}</span>
+			<span class="hints"><span class="kbd">Up</span><span class="kbd">Down</span><span>{{l_choose}}</span><span class="kbd">Enter</span><span>{{l_select}}</span><span class="kbd">Esc</span><span>{{l_quit_hint}}</span></span>
+		</div>
+	</div>
+</div>
+</body>
+</rml>

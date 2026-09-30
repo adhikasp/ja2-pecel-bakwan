@@ -7,5 +7,6 @@
   "credits.paused": "已暂停",
   "credits.hint": "指向某人以查看其身份。",
   "msgbox.notice": "提示",
-  "msgbox.confirm": "确认"
+  "msgbox.confirm": "确认",
+  "_todo.phase3": "Phase 3 strings (mainmenu.*, options.*, saveload.*, newgame.*, loading.*) are English only for now; add them here (needs a translator)."
 }

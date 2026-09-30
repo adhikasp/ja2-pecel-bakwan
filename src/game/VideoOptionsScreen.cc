@@ -1,4 +1,5 @@
 #include "VideoOptionsScreen.h"
+#include "NativeUI.h"
 
 #include "Button_System.h"
 #include "ContentManager.h"
@@ -74,6 +75,8 @@ bool SupportedScreen(ScreenID const screen)
 		case MAINMENU_SCREEN:
 		case VIDEO_OPTIONS_SCREEN:
 			return true;
+		case OPTIONS_SCREEN: // the native options screen has the video settings on a page and lays itself out again
+			return NativeUI::ScreenKey(OPTIONS_SCREEN) && NativeUI::ResolveMode("options") == NativeUI::UiMode::Native;
 		default:
 			return false;
 	}
@@ -177,6 +180,7 @@ bool ChangeVideoSettings(VideoDisplaySettings const& want, VideoScaleQuality con
 	SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 	BringBackScreen(screen);
+	NativeUI::ScreenRelaidOut();
 	InvalidateScreen();
 
 	if (persist && GCM)

@@ -2,7 +2,7 @@
 <head>
 	<title>New game (Phase 3 wireframe)</title>
 	<link type="text/rcss" href="../../components.rcss"/>
-	<link type="text/rcss" href="phase3.rcss"/>
+	<link type="text/rcss" href="../../screens/frontend.rcss"/>
 </head>
 <!-- M2 wireframe of the native new-game setup (GIO) screen (docs/ui/newgame.md). Literal data. -->
 <body class="p3">

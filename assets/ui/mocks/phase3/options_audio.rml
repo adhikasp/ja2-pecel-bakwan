@@ -2,7 +2,7 @@
 <head>
 	<title>Options (Phase 3 wireframe)</title>
 	<link type="text/rcss" href="../../components.rcss"/>
-	<link type="text/rcss" href="phase3.rcss"/>
+	<link type="text/rcss" href="../../screens/frontend.rcss"/>
 </head>
 <!-- M2 wireframe of the native options screen, audio page (docs/ui/options.md). Literal data. -->
 <body class="p3">

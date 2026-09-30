@@ -93,6 +93,8 @@ pub struct EngineOptions {
     pub ui_mode: BTreeMap<String, String>,
     /// User scale of the native UI on top of its resolution scale (1.0 = 100%)
     pub native_ui_scale: f32,
+    /// Native UI: no transitions or automatic scrolling (the Accessibility page of the options)
+    pub reduced_motion: bool,
 }
 
 impl Default for EngineOptions {
@@ -118,6 +120,7 @@ impl Default for EngineOptions {
             run_enum_gen: false,
             ui_mode: BTreeMap::new(),
             native_ui_scale: 1.0,
+            reduced_motion: false,
         }
     }
 }

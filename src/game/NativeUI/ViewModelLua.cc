@@ -14,10 +14,20 @@ namespace
 
 	NativeUI::ViewModel& Get(std::string const& name)
 	{
-		if (NativeUI::ViewModel* vm = NativeUI::ViewModel::Find(name)) return *vm;
-		auto made = NativeUI::MakeViewModel(name);
-		if (!made) throw std::invalid_argument("no view model \"" + name + "\" is open or can be made");
+		// an open screen's view model first (not one automation made earlier, which would shadow it)
 		auto& slot = g_owned[name];
+		for (NativeUI::ViewModel* vm : NativeUI::ViewModel::Live())
+		{
+			if (vm->Name() == name && vm != slot.get()) return *vm;
+		}
+		// else a new one, made now: it reads the game as it is now
+		auto made = NativeUI::MakeViewModel(name);
+		if (!made)
+		{
+			if (slot) return *slot;
+			throw std::invalid_argument("no view model \"" + name + "\" is open or can be made");
+		}
+		slot.reset();
 		slot = std::move(made);
 		return *slot;
 	}

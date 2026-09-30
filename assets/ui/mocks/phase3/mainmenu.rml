@@ -2,7 +2,7 @@
 <head>
 	<title>Main menu (Phase 3 wireframe)</title>
 	<link type="text/rcss" href="../../components.rcss"/>
-	<link type="text/rcss" href="phase3.rcss"/>
+	<link type="text/rcss" href="../../screens/frontend.rcss"/>
 </head>
 <!-- M2 wireframe of the native main menu (docs/ui/mainmenu.md). Literal data; ja2.debug("mock", "phase3/mainmenu"). -->
 <body class="p3">
