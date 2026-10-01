@@ -75,6 +75,7 @@ namespace
 		{
 			nui::SetImageProvider(ProvideGameImage);
 			RegisterFrontEndImages();
+			RegisterLaptopImages();
 			m_doc = LoadDocument(m_path);
 			m_doc->Show(Rml::ModalFlag::None, Rml::FocusFlag::Document);
 		}

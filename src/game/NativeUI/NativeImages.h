@@ -25,4 +25,6 @@ namespace NativeUI
 	void RegisterFrontEndImages();
 	/** The image provider of the native UI: "face-<n>" (a merc's big portrait) and the registered sources. */
 	SDL_Surface* ProvideGameImage(std::string const& name);
+	/** The laptop images: "shop-item-<index>" (an item's big picture, LaptopImages.cc). */
+	void RegisterLaptopImages();
 }
