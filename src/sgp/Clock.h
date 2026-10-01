@@ -32,6 +32,8 @@ namespace Clock
 	/** Switch to virtual time. Each frame advances time by @a quantum. */
 	void EnableVirtual(std::chrono::nanoseconds quantum);
 	bool IsVirtual();
+	/** Back to the wall clock (frame-rate measurements in a driven window). Time jumps forward. */
+	void DisableVirtual();
 	std::chrono::nanoseconds Quantum();
 
 	/** Milliseconds since start; what GetClock()/SDL_GetTicks() used to return. */

@@ -178,7 +178,8 @@ TEST(WorldPipeline, SpritePoolReusesAndNoticesChanges)
 	auto const a = pool.Get(data, sizeof data, 2, 1);
 	auto const b = pool.Get(data, sizeof data, 2, 1);
 	EXPECT_EQ(a.offset, b.offset);
-	data[1] = 9; // another image at the same address
+	data[1] = 9; // another image at the same address (noticed from the next frame on)
+	pool.NextFrame();
 	auto const c = pool.Get(data, sizeof data, 2, 1);
 	EXPECT_NE(a.offset, c.offset);
 	EXPECT_EQ(pool.pixels[c.offset], 0x109);

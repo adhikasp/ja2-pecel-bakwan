@@ -82,7 +82,9 @@ struct SpritePool
 	size_t                uploaded = 0;
 	uint32_t              generation = 1;  // changes when the pool is reset (a GPU copy must be redone)
 
-	struct Entry { uint32_t offset; uint16_t w, h; uint32_t length; uint32_t hash; };
+	struct Entry { uint32_t offset; uint16_t w, h; uint32_t length; uint32_t hash; uint32_t checked; };
+	uint32_t              frame = 1;       // NextFrame(): data is re-checked once per frame (images can be reloaded)
+	void NextFrame() { ++frame; }
 	std::unordered_map<uint8_t const*, Entry> byData;
 
 	/** The frame for ETRLE data (decoded on first use, again if the data at that address changed). */
@@ -102,6 +104,8 @@ struct Frame
 	std::vector<uint16_t> palettes;        // 256 entries each
 	std::vector<uint16_t> columns;         // per-column depths of the strip ops
 	std::unordered_map<uint16_t const*, uint32_t> paletteIndex;
+	struct PaletteSlot { uint16_t const* p; uint32_t index; };
+	PaletteSlot paletteCache[1024] = {}; // direct-mapped in front of paletteIndex
 
 	void Clear(int w, int h);
 	/** Index of a palette in this frame (copied the first time). */

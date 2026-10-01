@@ -1226,7 +1226,12 @@ void TacticalViewPortTouchCallbackTB(MOUSE_REGION* region, UINT32 reason) {
 			TogglePanMode();
 		}
 	} else if (reason & (MSYS_CALLBACK_REASON_WHEEL_UP | MSYS_CALLBACK_REASON_WHEEL_DOWN)) {
-		if (gamepolicy(extra_mousewheel_actions) &&
+		if (_KeyDown(CTRL))
+		{
+			// Ctrl+wheel: world zoom (in fine steps with the GPU world renderer)
+			StepWorldZoom((reason & MSYS_CALLBACK_REASON_WHEEL_UP) ? +1 : -1);
+		}
+		else if (gamepolicy(extra_mousewheel_actions) &&
 			gCurrentUIMode == CONFIRM_ACTION_MODE &&
 			gpItemPointer == NULL &&
 			guiCurrentCursorGridNo != NOWHERE)

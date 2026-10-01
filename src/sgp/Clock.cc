@@ -60,6 +60,12 @@ void EnableVirtual(std::chrono::nanoseconds const quantum)
 
 bool IsVirtual() { return g_virtual; }
 
+void DisableVirtual()
+{
+	g_virtual = false;
+	SLOGI("Virtual clock disabled: the wall clock from now on");
+}
+
 std::chrono::nanoseconds Quantum() { return g_quantum; }
 
 uint32_t TicksMs()

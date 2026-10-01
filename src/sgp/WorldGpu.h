@@ -4,8 +4,8 @@
 // texture that the presentation draws as the world layer, or reads back as RGB565 (headless, screenshots and the
 // equivalence tests).
 //
-// The shader ships as SPIR-V, so the device must take SPIR-V: Vulkan (the renderer asks SDL for it on Windows
-// and Linux). Where there is none, Init fails and the game keeps the software world.
+// The shader ships as SPIR-V (Vulkan), DXBC SM 5.1 (D3D12) and MSL (Metal), all made from the one GLSL source by
+// tools/shaders/build.sh. Where no device works, Init fails and the game keeps the software world.
 
 #include "WorldPipeline.h"
 
@@ -23,6 +23,9 @@ struct Stats
 	size_t binItems = 0;
 	size_t uploadBytes = 0;
 };
+
+/** The shader formats there is code for (for SDL_CreateGPUDevice). */
+SDL_GPUShaderFormat ShaderFormats();
 
 class Renderer
 {

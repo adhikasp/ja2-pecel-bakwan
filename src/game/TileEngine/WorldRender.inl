@@ -25,6 +25,8 @@ WorldPipe::Frame    gWorldFrame;
 WorldPipe::Target   gWorldTarget;
 WorldRenderStats    gWorldStats;
 WorldGpu::Renderer* gWorldGpu = nullptr;
+bool                gNoStaticCache = false; // measure the worst case (every frame re-records everything, as when scrolling)
+bool                gNoReadback = false; // driven windows: skip the read-back into the WORLD_BUFFER (frame-rate runs)
 
 using wr_clock = std::chrono::steady_clock;
 double WrMs(wr_clock::time_point a, wr_clock::time_point b) { return std::chrono::duration<double, std::milli>(b - a).count(); }
@@ -187,13 +189,16 @@ void RecordBlit(WorldPipe::Op const op, ClipInfo const& ci, UINT16 const* palett
 
 	static UINT16 const noPalette[256] = {};
 	in.palette = r.frame->Palette(palette ? palette : noPalette);
+	if (r.glowTable) r.glowing.emplace_back(UINT32(r.frame->instances.size()), r.glowTable);
+	r.glowTable = nullptr;
 	r.frame->instances.push_back(in);
 	++r.blits;
 }
 
 /** The passes of a full redraw: RenderStaticWorld, then what RenderDynamicWorld draws (not its dirty-rectangle pass).
- * CalcRenderParameters must have been called. */
-void RenderWorldScene(bool const checkInteractive)
+ * The static part (everything up to the dynamic layers) only changes when the software renderer would redraw the
+ * static world too (RENDER_FLAG_FULL/MARKED) or the view moves. CalcRenderParameters must have been called. */
+void RenderWorldStatic()
 {
 	{
 		RenderTiles const S(gsLStartPointX_M, gsLStartPointY_M, gsLStartPointX_S, gsLStartPointY_S, gsLEndXS, gsLEndYS);
@@ -205,25 +210,83 @@ void RenderWorldScene(bool const checkInteractive)
 	}
 	RenderTiles const D(gsStartPointX_M, gsStartPointY_M, gsStartPointX_S, gsStartPointY_S, gsEndXS, gsEndYS);
 	D(TILES_OBSCURED, RENDER_STATIC_STRUCTS);
+}
+
+void RenderWorldDynamic(bool const checkInteractive)
+{
+	RenderTiles const D(gsStartPointX_M, gsStartPointY_M, gsStartPointX_S, gsStartPointY_S, gsEndXS, gsEndYS);
 	D(TILES_NONE, RENDER_DYNAMIC_OBJECTS, RENDER_DYNAMIC_SHADOWS, RENDER_DYNAMIC_STRUCT_MERCS, RENDER_DYNAMIC_MERCS, RENDER_DYNAMIC_STRUCTS);
 	D(TILES_NONE, RENDER_DYNAMIC_ROOF, RENDER_DYNAMIC_HIGHMERCS, RENDER_DYNAMIC_ONROOF);
 	D(checkInteractive ? TILES_DYNAMIC_CHECKFOR_INT_TILE : TILES_NONE, RENDER_DYNAMIC_TOPMOST);
 }
 
-/** Records the current view into gWorldFrame. */
-void RecordWorldFrame(bool const mutate, bool const checkInteractive)
+void RenderWorldScene(bool const checkInteractive)
 {
-	gWorldFrame.Clear(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT);
-	gWorldFrame.clearColor = 0;
-	gWorldFrame.clearDepth = LAND_Z_LEVEL;
-	gWorldFrame.translucentMask = UINT16(guiTranslucentMask);
+	RenderWorldStatic();
+	RenderWorldDynamic(checkInteractive);
+}
+
+/** The static part of the last runtime frame, kept while nothing it depends on changes. */
+struct StaticCache
+{
+	bool                  valid = false;
+	WorldPipe::Frame      frame;
+	std::vector<std::pair<UINT32, UINT16 const*>> glowing;
+	std::vector<INT32>    key;
+	int                   hits = 0, misses = 0;
+} gStaticCache;
+
+std::vector<INT32> StaticKey()
+{
+	return { gsRenderCenterX, gsRenderCenterY, gsRenderHeight, gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y,
+		gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y, WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT,
+		gClippingRect.iLeft, gClippingRect.iTop, gClippingRect.iRight, gClippingRect.iBottom,
+		INT32(gTacticalStatus.uiFlags & (SHOW_ALL_ROOFS | NOHIDE_REDUNDENCY | SHOW_ALL_ITEMS | SHOW_ALL_MERCS | RED_ITEM_GLOW_ON)),
+		INT32(gGameSettings.fOptions[TOPTION_GLOW_ITEMS]), INT32(gGameSettings.fOptions[TOPTION_TOGGLE_WIREFRAME]),
+		INT32(gRenderFlags & RENDER_FLAG_SHADOWS), INT32(gWorldPool.generation), INT32(gfWorldLoaded),
+		INT32(guiTranslucentMask), INT32(ShadeTable[0x7BEF]) };
+}
+
+void InvalidateStaticCache() { gStaticCache.valid = false; }
+
+/** Records the current view into gWorldFrame. With `cached`, the static part comes from the cache when it is
+ * still valid. */
+void RecordWorldFrame(bool const mutate, bool const checkInteractive, bool const cached = false)
+{
 	if (gWorldPool.pixels.size() > (size_t(96) << 20)) gWorldPool.Reset(); // 192 MB: start over
+	gWorldPool.NextFrame();
 	WorldRecorder rec{ &gWorldFrame, &gWorldPool, mutate };
-	ResetLayerOptimizing();
+	std::vector<INT32> const key = cached ? StaticKey() : std::vector<INT32>{};
+	bool const reuse = cached && gStaticCache.valid && gStaticCache.key == key && !(gRenderFlags & (RENDER_FLAG_FULL | RENDER_FLAG_MARKED));
 	gWorldRecorder = &rec;
 	try
 	{
-		RenderWorldScene(checkInteractive);
+		if (reuse)
+		{
+			gWorldFrame = gStaticCache.frame;
+			for (auto const& [i, table] : gStaticCache.glowing) gWorldFrame.instances[i].outline = table[gsCurrentItemGlowFrame];
+			++gStaticCache.hits;
+		}
+		else
+		{
+			gWorldFrame.Clear(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT);
+			gWorldFrame.clearColor = 0;
+			gWorldFrame.clearDepth = LAND_Z_LEVEL;
+			gWorldFrame.translucentMask = UINT16(guiTranslucentMask);
+			ResetLayerOptimizing();
+			RenderWorldStatic();
+			if (cached)
+			{
+				gStaticCache.frame = gWorldFrame;
+				gStaticCache.glowing = rec.glowing;
+				gStaticCache.key = key;
+				gStaticCache.valid = true;
+				++gStaticCache.misses;
+			}
+		}
+		// the dynamic layers: every frame (all of them, not only those used last frame)
+		ResetLayerOptimizing();
+		RenderWorldDynamic(checkInteractive);
 	}
 	catch (...)
 	{
@@ -322,15 +385,16 @@ char const* WorldRendererName(WorldRendererKind const k)
 
 WorldRendererKind WorldRendererDefault(bool const driven)
 {
-	// Software everywhere for now: the gpu renderer is pixel-equivalent, but at 4K it has not yet been shown to hold
-	// 60 fps end to end in a real window (docs/plan/native-modern-game-decisions.md, Phase 8). Driven sessions
-	// keep software in any case: their screenshots are the reference images.
-	(void)driven;
-	return WorldRendererKind::Software;
+	// Real windows draw the world on the GPU (pixel-equivalent, see docs/plan/native-modern-game-decisions.md,
+	// Phase 8), falling back to software when there is no usable device. Driven sessions (headless, automation)
+	// keep software: their screenshots are the reference images.
+	return driven ? WorldRendererKind::Software : WorldRendererKind::Gpu;
 }
 
+void WorldRenderFrameTick();
 void WorldRendererConfigure(WorldRendererKind const k)
 {
+	VideoSetPresentHook(WorldRenderFrameTick);
 	gWorldRequested = k;
 	gWorldStarted = false;
 }
@@ -356,12 +420,43 @@ WorldRendererKind WorldRendererSwitch(WorldRendererKind const k)
 
 std::string WorldRendererError() { return gWorldError; }
 
+void WorldRendererSetReadback(bool const on) { gNoReadback = !on; }
+void WorldRendererSetStaticCache(bool const on) { gNoStaticCache = !on; }
+
+std::vector<double> gFrameIntervals; // wall-clock intervals between RenderWorld calls since the last reset
+uint64_t            gFrameTicks = 0;
+
 void WorldRenderFrameTick()
 {
 	static wr_clock::time_point last{};
 	auto const now = wr_clock::now();
-	if (last != wr_clock::time_point{}) gWorldStats.frameMs = WrMs(last, now);
+	if (last != wr_clock::time_point{})
+	{
+		gWorldStats.frameMs = WrMs(last, now);
+		if (gFrameIntervals.size() < 100000) gFrameIntervals.push_back(gWorldStats.frameMs);
+	}
 	last = now;
+	++gFrameTicks;
+}
+
+WorldFrameTiming WorldRenderTiming(bool const reset)
+{
+	WorldFrameTiming t;
+	t.frames = gFrameTicks;
+	t.samples = int(gFrameIntervals.size());
+	if (!gFrameIntervals.empty())
+	{
+		std::vector<double> v = gFrameIntervals;
+		std::sort(v.begin(), v.end());
+		double sum = 0;
+		for (double x : v) sum += x;
+		t.meanMs = sum / double(v.size());
+		t.p50Ms = v[v.size() / 2];
+		t.p95Ms = v[std::min(v.size() - 1, v.size() * 95 / 100)];
+		t.maxMs = v.back();
+	}
+	if (reset) gFrameIntervals.clear();
+	return t;
 }
 
 WorldRenderStats const& WorldRenderLastStats() { return gWorldStats; }
@@ -374,6 +469,13 @@ bool RenderWorldRecorded()
 	{
 		VideoSetWorldGpuTexture(nullptr, 0, 0);
 		return false;
+	}
+
+	// Real windows: the game loop runs faster than frames are presented; a GPU world frame nobody saw yet is enough
+	if (kind == WorldRendererKind::Gpu && VideoGpuDevice() && !sgp::IsHeadless() && !(Automation::GetOptions().Active() && !gNoReadback)
+		&& !(gRenderFlags & (RENDER_FLAG_FULL | RENDER_FLAG_MARKED)) && !VideoTakeWorldGpuPresented())
+	{
+		return true;
 	}
 
 	if (gRenderFlags & RENDER_FLAG_FULL)
@@ -391,7 +493,7 @@ bool RenderWorldRecorded()
 	SaveBackgroundRects();
 
 	auto const t0 = wr_clock::now();
-	RecordWorldFrame(true, true);
+	RecordWorldFrame(true, true, !gNoStaticCache);
 	auto const t1 = wr_clock::now();
 	ResetRenderParameters();
 
@@ -402,9 +504,11 @@ bool RenderWorldRecorded()
 	gWorldStats.palettes = int(gWorldFrame.palettes.size() / 256);
 	gWorldStats.spritePoolPixels = gWorldPool.pixels.size();
 	gWorldStats.recordMs = WrMs(t0, t1);
+	gWorldStats.staticHits = gStaticCache.hits;
+	gWorldStats.staticMisses = gStaticCache.misses;
 
 	// Whoever reads the world buffer (headless composition, screenshots of driven sessions) gets a copy
-	bool const cpuCopy = sgp::IsHeadless() || Automation::GetOptions().Active() || !VideoGpuDevice();
+	bool const cpuCopy = sgp::IsHeadless() || (Automation::GetOptions().Active() && !gNoReadback) || !VideoGpuDevice();
 	if (kind == WorldRendererKind::Gpu)
 	{
 		std::string error;

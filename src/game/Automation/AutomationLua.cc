@@ -540,7 +540,13 @@ namespace
 					else throw std::runtime_error("ja2.setVideo: res must be \"WIDTHxHEIGHT\" or \"auto\"");
 				}
 				if (sol::optional<int> v = t["uiscale"]) want.uiScale = *v;
-				if (sol::optional<int> v = t["worldzoom"]) want.worldZoom = *v;
+				if (sol::optional<int> v = t["worldzoom"]) { want.worldZoom = *v; want.worldZoomQ = 0; }
+				if (sol::optional<double> z = t["zoom"])
+				{
+					// a fractional world zoom (Phase 8), in steps of 1/WORLD_ZOOM_STEPS
+					want.worldZoomQ = int(*z * VideoLayout::WORLD_ZOOM_STEPS + 0.5);
+					want.worldZoom = std::max(1, want.worldZoomQ / VideoLayout::WORLD_ZOOM_STEPS);
+				}
 				if (sol::optional<std::string> m = t["window"])
 				{
 					if      (*m == "windowed")   want.windowMode = WindowMode::Windowed;
@@ -566,6 +572,7 @@ namespace
 				r["w"] = SCREEN_WIDTH; r["h"] = SCREEN_HEIGHT;
 				r["stdX"] = STD_SCREEN_X; r["stdY"] = STD_SCREEN_Y;
 				r["uiScale"] = int(g_ui.m_uiScale); r["worldZoom"] = int(g_ui.m_worldZoom);
+				r["zoom"] = double(g_ui.m_worldZoomQ) / VideoLayout::WORLD_ZOOM_STEPS;
 				r["layered"] = VideoIsLayered();
 				return r;
 			});
@@ -817,11 +824,31 @@ namespace
 			t["gpuWaitMs"] = s.gpuWaitMs;
 			t["uploadBytes"] = double(s.uploadBytes);
 			t["frameMs"] = s.frameMs;
+			t["staticHits"] = s.staticHits;
+			t["staticMisses"] = s.staticMisses;
 			t["wallMs"] = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count(); // wall clock, for frame-rate measurements
 			return t;
 		});
 
+		// ja2.realClock(): the game runs on the wall clock from now on (frame-rate measurements; not reproducible)
+		// With {readback = false} GPU world frames are no longer copied back for screenshots (as in normal play).
+		ja2.set_function("realClock", [](sol::optional<sol::table> o) {
+			sgp::Clock::DisableVirtual();
+			if (o) WorldRendererSetReadback(o->get_or("readback", true));
+			if (o) { if (sol::optional<int> fps = (*o)["fps"]) VideoSetTargetFPS(*fps); } // 0 = unlimited
+		});
+
+		// ja2.frameTiming([reset]): wall-clock frame intervals since the last reset {frames, samples, mean, p50, p95, max}
+		ja2.set_function("frameTiming", [](sol::optional<bool> reset) {
+			WorldFrameTiming const f = WorldRenderTiming(reset.value_or(false));
+			sol::table t = g_lua.create_table();
+			t["frames"] = double(f.frames); t["samples"] = f.samples;
+			t["mean"] = f.meanMs; t["p50"] = f.p50Ms; t["p95"] = f.p95Ms; t["max"] = f.maxMs;
+			return t;
+		});
+
 		// ja2.setWorldRenderer("software" | "gpu" | "pipeline"): switches now; returns what is active afterwards
+		ja2.set_function("setWorldStaticCache", [](bool on) { WorldRendererSetStaticCache(on); });
 		ja2.set_function("setWorldRenderer", [](std::string const& name) {
 			return Guarded([&] { return std::string(WorldRendererName(WorldRendererSwitch(ParseWorldRenderer(name)))); });
 		});

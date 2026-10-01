@@ -12,6 +12,7 @@
 #include "VObject_Blitters.h"
 #include "VSurface.h"
 #include "Video.h"
+#include "WorldGpu.h"
 #include "Visualizer.h"
 #include "UILayout.h"
 #include "Icon.h"
@@ -80,6 +81,8 @@ static SDL_GPUTexture* WorldGpuTexture = nullptr;
 static SDL_Texture*   WorldGpuSdlTexture = nullptr;
 static int            WorldGpuW = 0, WorldGpuH = 0;
 static bool           WorldRecorded = false;
+static bool           WorldGpuPresented = true; // the GPU world texture has been put on screen since it was drawn
+static void         (*PresentHook)() = nullptr;
 static Uint32       g_window_flags = 0;
 static VideoScaleQuality ScaleQuality = VideoScaleQuality::LINEAR;
 // Sharp-bilinear: nearest-neighbour multiple of the canvas (0 = not needed)
@@ -250,12 +253,13 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 #if SDL_VERSION_ATLEAST(3, 4, 0)
 	if (WantGpuDevice)
 	{
-		// The world renderer's shaders are SPIR-V: a Vulkan device, shared with SDL's own GPU renderer
-		GpuDevice = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, false, "vulkan");
+		// One SDL_GPU device (the platform's default driver: D3D12, Vulkan or Metal; JA2_GPU_DRIVER picks another)
+		// shared by SDL's own GPU renderer and the world renderer
+		GpuDevice = SDL_CreateGPUDevice(WorldGpu::ShaderFormats(), false, std::getenv("JA2_GPU_DRIVER"));
 		if (GpuDevice) GameRenderer = SDL_CreateGPURenderer(GpuDevice, g_game_window);
 		if (!GameRenderer)
 		{
-			SLOGW("No SDL_GPU (Vulkan) renderer ({}), the world will be drawn in software", SDL_GetError());
+			SLOGW("No SDL_GPU renderer ({}), the world will be drawn in software", SDL_GetError());
 			if (GpuDevice) SDL_DestroyGPUDevice(GpuDevice);
 			GpuDevice = nullptr;
 		}
@@ -376,6 +380,7 @@ VideoLayout::LayerLayout VideoApplyWindow(VideoDisplaySettings const& want, Vide
 		int const su = layered && want.uiScale != VideoLayout::UI_SCALE_AUTO ? want.uiScale : 1;
 		VideoLayout::Size const window{ want.resX > 0 ? want.resX : SCREEN_WIDTH, want.resY > 0 ? want.resY : SCREEN_HEIGHT };
 		display = VideoLayout::ComputeDisplayLayout(window, su);
+		if (want.worldZoomQ > 0) return VideoLayout::ComputeLayerLayoutFine(display, want.worldZoomQ);
 		auto const layers = VideoLayout::ComputeLayerLayout(display, want.worldZoom);
 		return ForceLayers ? VideoLayout::ForceLayered(layers) : layers;
 	}
@@ -426,6 +431,7 @@ VideoLayout::LayerLayout VideoApplyWindow(VideoDisplaySettings const& want, Vide
 	auto const actual{ WindowPixelSize() };
 	SLOGI("Video change: window {}x{} px, UI scale {}, world zoom {}", actual.w, actual.h, want.uiScale, want.worldZoom);
 	display = VideoLayout::ComputeDisplayLayout(actual, want.uiScale);
+	if (want.worldZoomQ > 0) return VideoLayout::ComputeLayerLayoutFine(display, want.worldZoomQ);
 	auto const layers = VideoLayout::ComputeLayerLayout(display, want.worldZoom);
 	return ForceLayers ? VideoLayout::ForceLayered(layers) : layers;
 }
@@ -438,7 +444,8 @@ bool VideoWindowSizeChanged()
 	auto const actual{ WindowPixelSize() };
 	if (actual.w <= 0 || actual.h <= 0) return false;
 	auto const display = VideoLayout::ComputeDisplayLayout(actual, VideoLayout::UI_SCALE_AUTO);
-	auto const layers = VideoLayout::ComputeLayerLayout(display, CurrentSettings.worldZoom);
+	auto const layers = CurrentSettings.worldZoomQ > 0 ? VideoLayout::ComputeLayerLayoutFine(display, CurrentSettings.worldZoomQ)
+		: VideoLayout::ComputeLayerLayout(display, CurrentSettings.worldZoom);
 	return layers.ui.w != SCREEN_WIDTH || layers.ui.h != SCREEN_HEIGHT
 		|| layers.uiScale != g_ui.m_uiScale || layers.worldZoom != g_ui.m_worldZoom;
 }
@@ -645,6 +652,8 @@ bool VideoForceLayered() { return ForceLayers; }
 void VideoRequestGpuDevice(bool const on) { WantGpuDevice = on; }
 SDL_GPUDevice* VideoGpuDevice() { return GameRenderer ? GpuDevice : nullptr; }
 void VideoSetWorldRecorded(bool const on) { WorldRecorded = on; }
+bool VideoTakeWorldGpuPresented() { bool const p = WorldGpuPresented || !WorldGpuSdlTexture; WorldGpuPresented = false; return p; }
+void VideoSetPresentHook(void (*hook)()) { PresentHook = hook; }
 
 void VideoSetWorldGpuTexture(SDL_GPUTexture* const tex, int const w, int const h)
 {
@@ -669,7 +678,7 @@ void VideoSetWorldGpuTexture(SDL_GPUTexture* const tex, int const w, int const h
 		SLOGE("Wrapping the GPU world texture failed: {}", SDL_GetError());
 		return;
 	}
-	SDL_SetTextureScaleMode(WorldGpuSdlTexture, SDL_SCALEMODE_NEAREST);
+	SDL_SetTextureScaleMode(WorldGpuSdlTexture, SDL_SCALEMODE_PIXELART); // sharp at fractional zooms too
 #endif
 }
 
@@ -922,7 +931,7 @@ static uint32_t World565To888(UINT16 const p)
 static uint32_t ComposeAt(int const x, int const y)
 {
 	int const su = g_ui.m_uiScale;
-	int const zw = g_ui.m_worldZoom;
+	int const zq = g_ui.m_worldZoomQ; // in 1/WORLD_ZOOM_STEPS
 	int const ux = std::clamp(x / su, 0, ScreenBuffer->w - 1);
 	int const uy = std::clamp(y / su, 0, ScreenBuffer->h - 1);
 	UINT16 const ui = reinterpret_cast<UINT16 const*>(
@@ -932,8 +941,8 @@ static uint32_t ComposeAt(int const x, int const y)
 	uint32_t under = 0;
 	if (WorldLayerShown)
 	{
-		int const wx = std::clamp(x / zw, 0, WorldBuffer->w - 1);
-		int const wy = std::clamp(y / zw, 0, WorldBuffer->h - 1);
+		int const wx = std::clamp(x * VideoLayout::WORLD_ZOOM_STEPS / zq, 0, WorldBuffer->w - 1);
+		int const wy = std::clamp(y * VideoLayout::WORLD_ZOOM_STEPS / zq, 0, WorldBuffer->h - 1);
 		under = World565To888(reinterpret_cast<UINT16 const*>(
 			static_cast<UINT8 const*>(WorldBuffer->pixels) + wy * WorldBuffer->pitch)[wx]);
 	}
@@ -1251,19 +1260,20 @@ static void PresentLayers(SDL_Rect const& uiUpdate)
 	UpdatePresentation(false);
 
 	int const su = g_ui.m_uiScale;
-	int const zw = g_ui.m_worldZoom;
+	float const zw = float(g_ui.m_worldZoomQ) / VideoLayout::WORLD_ZOOM_STEPS;
 	SDL_SetRenderTarget(GameRenderer, CanvasTexture);
 	SDL_SetRenderDrawColor(GameRenderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
 	SDL_RenderClear(GameRenderer);
 	if (WorldLayerShown && WorldGpuSdlTexture)
 	{
-		// Phase 8: drawn by the GPU world renderer this frame
-		SDL_FRect const dst{ 0, 0, float(WorldGpuW * zw), float(WorldGpuH * zw) };
+		// Phase 8: drawn by the GPU world renderer
+		WorldGpuPresented = true;
+		SDL_FRect const dst{ 0, 0, WorldGpuW * zw, WorldGpuH * zw };
 		SDL_RenderTexture(GameRenderer, WorldGpuSdlTexture, nullptr, &dst);
 	}
 	else if (WorldLayerShown)
 	{
-		SDL_FRect const dst{ 0, 0, float(WorldBuffer->w * zw), float(WorldBuffer->h * zw) };
+		SDL_FRect const dst{ 0, 0, WorldBuffer->w * zw, WorldBuffer->h * zw };
 		SDL_RenderTexture(GameRenderer, WorldTexture, nullptr, &dst);
 	}
 	SDL_FRect const uiDst{ 0, 0, float(ScreenBuffer->w * su), float(ScreenBuffer->h * su) };
@@ -1408,6 +1418,7 @@ void RefreshScreen(void)
 		RenderOverlayGpu();
 		Visualizer::Render(GameRenderer);
 		CaptureOutputIfRequested();
+		if (PresentHook) PresentHook();
 		FPS::RenderPresentPtr(GameRenderer);
 		return;
 	}
@@ -1447,6 +1458,7 @@ void RefreshScreen(void)
 	Visualizer::Render(GameRenderer);
 
 	CaptureOutputIfRequested();
+	if (PresentHook) PresentHook();
 	FPS::RenderPresentPtr(GameRenderer);
 }
 

@@ -48,6 +48,7 @@ void UILayout::setLayers(VideoLayout::LayerLayout const& layers)
 	m_layered     = layers.layered;
 	m_uiScale     = static_cast<UINT8>(layers.uiScale);
 	m_worldZoom   = static_cast<UINT8>(layers.worldZoom);
+	m_worldZoomQ  = static_cast<UINT16>(layers.worldZoomQ ? layers.worldZoomQ : layers.worldZoom * VideoLayout::WORLD_ZOOM_STEPS);
 	m_worldWidth  = static_cast<UINT16>(layers.world.w);
 	m_worldHeight = static_cast<UINT16>(layers.world.h);
 }
@@ -67,13 +68,13 @@ LayerPoint UILayout::worldToUi(INT32 const x, INT32 const y) const
 
 INT32 UILayout::uiToWorld(INT32 const v) const
 {
-	return m_layered ? VideoLayout::UiToWorld(v, m_uiScale, m_worldZoom) : v;
+	return m_layered ? VideoLayout::UiToWorldQ(v, m_uiScale, m_worldZoomQ) : v;
 }
 
 
 INT32 UILayout::worldToUi(INT32 const v) const
 {
-	return m_layered ? VideoLayout::WorldToUi(v, m_uiScale, m_worldZoom) : v;
+	return m_layered ? VideoLayout::WorldToUiQ(v, m_uiScale, m_worldZoomQ) : v;
 }
 
 

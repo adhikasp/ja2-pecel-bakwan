@@ -1,8 +1,9 @@
 #include "WorldGpu.h"
-#include "shaders/world_raster.comp.spv.h"
+#include "shaders/world_raster.comp.h"
 
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 
 namespace WorldGpu {
@@ -17,6 +18,11 @@ struct Params
 };
 
 uint32_t Align4(size_t v) { return uint32_t((v + 3) & ~size_t(3)); }
+}
+
+SDL_GPUShaderFormat ShaderFormats()
+{
+	return SDL_GPU_SHADERFORMAT_SPIRV | SDL_GPU_SHADERFORMAT_DXBC | SDL_GPU_SHADERFORMAT_MSL;
 }
 
 Renderer::~Renderer()
@@ -36,21 +42,16 @@ bool Renderer::Init(SDL_GPUDevice* device)
 	m_error.clear();
 	if (!device)
 	{
-		device = SDL_CreateGPUDevice(SDL_GPU_SHADERFORMAT_SPIRV, false, nullptr);
+		device = SDL_CreateGPUDevice(ShaderFormats(), false, std::getenv("JA2_GPU_DRIVER"));
 		if (!device)
 		{
-			m_error = std::string("no GPU device that takes SPIR-V: ") + SDL_GetError();
+			m_error = std::string("no GPU device: ") + SDL_GetError();
 			return false;
 		}
 		m_ownDevice = true;
 	}
 	m_device = device;
-	if (!(SDL_GetGPUShaderFormats(device) & SDL_GPU_SHADERFORMAT_SPIRV))
-	{
-		m_error = std::string("the GPU device (") + DriverName() + ") does not take SPIR-V";
-		Shutdown();
-		return false;
-	}
+	SDL_GPUShaderFormat const formats = SDL_GetGPUShaderFormats(device);
 	if (!SDL_GPUTextureSupportsFormat(device, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, SDL_GPU_TEXTURETYPE_2D,
 		SDL_GPU_TEXTUREUSAGE_SAMPLER | SDL_GPU_TEXTUREUSAGE_COMPUTE_STORAGE_WRITE))
 	{
@@ -60,10 +61,25 @@ bool Renderer::Init(SDL_GPUDevice* device)
 	}
 
 	SDL_GPUComputePipelineCreateInfo ci{};
-	ci.code = world_raster_comp_spv;
-	ci.code_size = world_raster_comp_spv_size;
-	ci.entrypoint = "main";
-	ci.format = SDL_GPU_SHADERFORMAT_SPIRV;
+	// The shader in the device's language (tools/shaders/build.sh makes all three from the GLSL source)
+	if (formats & SDL_GPU_SHADERFORMAT_SPIRV)
+	{
+		ci.code = world_raster_spirv; ci.code_size = world_raster_spirv_size; ci.entrypoint = "main"; ci.format = SDL_GPU_SHADERFORMAT_SPIRV;
+	}
+	else if (formats & SDL_GPU_SHADERFORMAT_DXBC)
+	{
+		ci.code = world_raster_dxbc; ci.code_size = world_raster_dxbc_size; ci.entrypoint = "main"; ci.format = SDL_GPU_SHADERFORMAT_DXBC;
+	}
+	else if (formats & SDL_GPU_SHADERFORMAT_MSL)
+	{
+		ci.code = world_raster_msl; ci.code_size = world_raster_msl_size; ci.entrypoint = "main0"; ci.format = SDL_GPU_SHADERFORMAT_MSL;
+	}
+	else
+	{
+		m_error = std::string("the GPU device (") + DriverName() + ") takes none of SPIR-V, DXBC, MSL";
+		Shutdown();
+		return false;
+	}
 	ci.num_readonly_storage_buffers = 7;
 	ci.num_readwrite_storage_textures = 1;
 	ci.num_readwrite_storage_buffers = 1;

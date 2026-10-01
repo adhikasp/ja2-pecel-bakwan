@@ -1,4 +1,5 @@
 #include "VideoOptionsScreen.h"
+#include "WorldRender.h"
 #include "NativeUI.h"
 
 #include "Button_System.h"
@@ -205,6 +206,18 @@ void StepWorldZoom(int const delta)
 {
 	if (GameMode::getInstance()->isEditorMode()) return; // the editor draws over the world at one scale
 	auto settings = VideoGetDisplaySettings();
+	if (WorldRendererActive() == WorldRendererKind::Gpu)
+	{
+		// The GPU world renderer zooms in fine steps (1/WORLD_ZOOM_STEPS); only the whole part is saved
+		int const current = g_ui.m_worldZoomQ;
+		int const next = std::clamp(current + delta, VideoLayout::WORLD_ZOOM_STEPS, VideoLayout::MAX_UI_SCALE * VideoLayout::WORLD_ZOOM_STEPS);
+		if (next == current) return;
+		settings.worldZoomQ = next;
+		settings.worldZoom = std::max(1, next / VideoLayout::WORLD_ZOOM_STEPS);
+		RequestVideoSettings(settings, VideoGetScaleQuality(), false);
+		return;
+	}
+	settings.worldZoomQ = 0;
 	int const current = settings.worldZoom == VideoLayout::WORLD_ZOOM_MATCH_UI ? g_ui.m_uiScale : settings.worldZoom;
 	int const next = std::clamp(current + delta, 1, VideoLayout::MAX_UI_SCALE);
 	if (next == current) return;

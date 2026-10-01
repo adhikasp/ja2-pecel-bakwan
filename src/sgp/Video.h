@@ -28,6 +28,7 @@ struct VideoDisplaySettings
 	int        uiScale;
 	WindowMode windowMode;
 	int        worldZoom = VideoLayout::WORLD_ZOOM_MATCH_UI; // 0 = the world follows the UI scale (one layer)
+	int        worldZoomQ = 0; // fractional world zoom in 1/WORLD_ZOOM_STEPS (GPU world renderer only); 0 = worldZoom
 };
 
 /** Logical canvas size and effective scale for the settings. Queries the desktop, so SDL's
@@ -165,6 +166,10 @@ SDL_GPUDevice* VideoGpuDevice();
 /** The world layer is this texture (RGBA8, on VideoGpuDevice(), w x h world pixels) instead of the WORLD_BUFFER;
  * null goes back to the WORLD_BUFFER. */
 void VideoSetWorldGpuTexture(SDL_GPUTexture*, int w, int h);
+/** Whether the GPU world texture was presented since the last call (then a new world frame is worth drawing). */
+bool VideoTakeWorldGpuPresented();
+/** Called whenever a frame is put on the window (frame-rate measurements). */
+void VideoSetPresentHook(void (*)());
 /** The world is redrawn whole every frame: scrolling does not move and patch the WORLD_BUFFER. */
 void VideoSetWorldRecorded(bool);
 

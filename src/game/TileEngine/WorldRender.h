@@ -33,6 +33,10 @@ WorldRendererKind WorldRendererRequested();
 WorldRendererKind WorldRendererActive();
 /** Switches at run time (automation, tests). Returns what is active afterwards. */
 WorldRendererKind WorldRendererSwitch(WorldRendererKind);
+/** Driven sessions read GPU frames back into the WORLD_BUFFER (screenshots); off for frame-rate measurements. */
+void              WorldRendererSetReadback(bool);
+/** The static layers are recorded once and reused while the view does not change; off = re-record every frame. */
+void              WorldRendererSetStaticCache(bool);
 /** Why the gpu renderer is not active, if it was asked for. */
 std::string       WorldRendererError();
 
@@ -46,10 +50,14 @@ struct WorldRenderStats
 	size_t spritePoolPixels = 0;
 	double recordMs = 0, rasterMs = 0, gpuSubmitMs = 0, gpuBinMs = 0, gpuWaitMs = 0;
 	size_t uploadBytes = 0;
-	double frameMs = 0;       // wall-clock time since the previous RenderWorld (any renderer)
+	double frameMs = 0;
+	int    staticHits = 0, staticMisses = 0; // frames that reused / re-recorded the static layers       // wall-clock time since the previous RenderWorld (any renderer)
 };
-/** Called at the start of every RenderWorld: measures the frame interval. */
+/** Called whenever a frame is presented: measures the frame interval. */
 void WorldRenderFrameTick();
+struct WorldFrameTiming { uint64_t frames = 0; int samples = 0; double meanMs = 0, p50Ms = 0, p95Ms = 0, maxMs = 0; };
+/** Wall-clock frame intervals (between RenderWorld calls) since the last reset. */
+WorldFrameTiming WorldRenderTiming(bool reset);
 WorldRenderStats const& WorldRenderLastStats();
 
 struct WorldEquivalenceResult

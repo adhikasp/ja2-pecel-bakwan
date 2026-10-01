@@ -51,13 +51,17 @@ static uint32_t HashData(uint8_t const* d, uint32_t n)
 
 SpritePool::Entry const& SpritePool::Get(uint8_t const* etrle, uint32_t length, int w, int h)
 {
-	uint32_t const hash = HashData(etrle, length);
 	auto it = byData.find(etrle);
-	if (it != byData.end() && it->second.length == length && it->second.w == w && it->second.h == h && it->second.hash == hash)
+	if (it != byData.end() && it->second.length == length && it->second.w == w && it->second.h == h)
 	{
-		return it->second;
+		if (it->second.checked == frame) return it->second;
+		if (it->second.hash == HashData(etrle, length))
+		{
+			it->second.checked = frame;
+			return it->second;
+		}
 	}
-	Entry e{ uint32_t(pixels.size()), uint16_t(w), uint16_t(h), length, hash };
+	Entry e{ uint32_t(pixels.size()), uint16_t(w), uint16_t(h), length, HashData(etrle, length), frame };
 	pixels.resize(pixels.size() + size_t(w) * h);
 	DecodeEtrle(etrle, length, w, h, pixels.data() + e.offset);
 	return byData[etrle] = e;
@@ -79,15 +83,26 @@ void Frame::Clear(int const w, int const h)
 	palettes.clear();
 	columns.clear();
 	paletteIndex.clear();
+	std::fill(std::begin(paletteCache), std::end(paletteCache), PaletteSlot{});
 }
 
 uint32_t Frame::Palette(uint16_t const* const p)
 {
+	PaletteSlot& slot = paletteCache[(reinterpret_cast<uintptr_t>(p) >> 9) & 1023];
+	if (slot.p == p) return slot.index;
 	auto it = paletteIndex.find(p);
-	if (it != paletteIndex.end()) return it->second;
-	uint32_t const i = uint32_t(palettes.size() / 256);
-	palettes.insert(palettes.end(), p, p + 256);
-	paletteIndex.emplace(p, i);
+	uint32_t i;
+	if (it != paletteIndex.end())
+	{
+		i = it->second;
+	}
+	else
+	{
+		i = uint32_t(palettes.size() / 256);
+		palettes.insert(palettes.end(), p, p + 256);
+		paletteIndex.emplace(p, i);
+	}
+	slot = { p, i };
 	return i;
 }
 

@@ -295,6 +295,8 @@ struct WorldRecorder
 	bool                   mutate;  // clear the one-shot node flags like a real frame does
 	int                    blits = 0;
 	std::vector<LEVELNODE*> cleared; // LASTDYNAMIC flags cleared while recording without side effects
+	UINT16 const*          glowTable = nullptr; // set for the next item instance
+	std::vector<std::pair<UINT32, UINT16 const*>> glowing; // instance, glow colour table
 };
 WorldRecorder* gWorldRecorder = nullptr;
 
@@ -1209,6 +1211,7 @@ zlevel_onroof:
 						else if (uiLevelNodeFlags & LEVELNODE_ITEM)
 						{
 							UINT16     outline_colour;
+							UINT16 const* glowTable = nullptr;
 							bool const on_roof = uiRowFlags == TILES_STATIC_ONROOF || uiRowFlags == TILES_DYNAMIC_ONROOF;
 							if (gGameSettings.fOptions[TOPTION_GLOW_ITEMS])
 							{
@@ -1217,6 +1220,7 @@ zlevel_onroof:
 									gTacticalStatus.uiFlags & RED_ITEM_GLOW_ON ? us16BPPItemCycleRedColors    :
 									us16BPPItemCycleWhiteColors;
 								outline_colour = palette[gsCurrentItemGlowFrame];
+								glowTable      = palette;
 							}
 							else
 							{
@@ -1230,6 +1234,7 @@ zlevel_onroof:
 							{
 								using WorldPipe::Op;
 								bool const whole = clipinfo.status == ClipInfo::Status::Not_Clipped;
+								rec->glowTable = glowTable; // the outline cycles: a cached static frame updates it
 								RecordBlit(!fObscuredBlitter ? Op::OutlineZ : whole ? Op::OutlineZObscuredLT : Op::OutlineZObscuredLE,
 									clipinfo, hVObject->CurrentShade(), sZLevel, outline_colour);
 							}
@@ -1731,7 +1736,6 @@ void RenderWorld(void)
 	}
 
 	// Phase 8: the gpu and pipeline renderers redraw the whole scene every frame (WorldRender.inl)
-	WorldRenderFrameTick();
 	if (RenderWorldRecorded()) return;
 
 	if (gRenderFlags & RENDER_FLAG_FULL)

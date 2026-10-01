@@ -194,26 +194,32 @@ Radeon Vega 7 integrated, Windows 11, Vulkan through SDL_GPU 3.4).
 | Question | Decision |
 |---|---|
 | Scene | **The legacy traversal records, the GPU rasterizes.** `RenderTiles` stays the one scene walk (which nodes, which blitter, positions, heights, depths, shade levels, glow, items, corpses, mercs, animated tiles, reveal translucency). With a recorder set it does not blit: each blitter call becomes an instance naming that blitter (`WorldPipe::Op`, 23 of them) with its clipped rectangle, palette (the shade/lighting table it would use), depth and outline colour. The Phase 0 spike re-derived the traversal and covered static tiles only; recording covers everything the software renderer draws, by construction |
-| Raster | **A compute shader, not the raster pipeline.** One thread per world pixel walks the instances covering its 16x16 bin in submission order, with colour (RGB565) and depth in registers. That makes the blitters that read the destination (shade-table shadows, 50 % translucency, shadows over shadows) exact, which fixed-function blending and a depth texture cannot be. `src/sgp/shaders/world_raster.comp`, compiled to SPIR-V (`tools/shaders/build.sh`, glslangValidator), committed as `world_raster.comp.spv.h` |
+| Raster | **A compute shader, not the raster pipeline.** One thread per world pixel walks the instances covering its 16x16 bin in submission order (the workgroup loads them into shared memory 256 at a time), with colour (RGB565) and depth in registers. That makes the blitters that read the destination (shade-table shadows, 50 % translucency, shadows over shadows) exact, which fixed-function blending and a depth texture cannot be. One GLSL source, `src/sgp/shaders/world_raster.comp` |
 | Same rules twice | `WorldPipe::ApplyPixel` (C++) is the reference; the shader is its transcription. `world_renderer = pipeline` runs the recording on the CPU implementation, so CI checks the recording, order and shading logic without a GPU |
-| Setting | `ja2.json` `"world_renderer": "software" \| "gpu" \| "pipeline"`, `JA2_WORLD_RENDERER` wins, `ja2.setWorldRenderer()` at run time. gpu/pipeline make the world a layer of its own (at the UI scale if no world zoom is set) and redraw it whole every frame; the WORLD_BUFFER is not drawn or scrolled by copy. gpu creates the SDL renderer on an SDL_GPU **Vulkan** device (SPIR-V) and shares it; the world texture is wrapped as an `SDL_Texture` and drawn as the world layer. Headless and driven sessions read the result back into the WORLD_BUFFER. No Vulkan device, no gpu: falls back to software |
-| Default | **software**, for now (see performance) |
+| Setting | `ja2.json` `"world_renderer": "software" \| "gpu" \| "pipeline"`, `JA2_WORLD_RENDERER` wins, `ja2.setWorldRenderer()` at run time. gpu/pipeline make the world a layer of its own (at the UI scale if no world zoom is set). gpu creates the SDL renderer on an SDL_GPU device of the platform's default driver (D3D12 on Windows, Vulkan, Metal; `JA2_GPU_DRIVER` picks another) and shares it; the world texture is wrapped as an `SDL_Texture` and drawn as the world layer (`SDL_SCALEMODE_PIXELART`). Headless and driven sessions read the result back into the WORLD_BUFFER |
+| Default | **gpu in real windows**, software in headless and driven sessions (their screenshots are the references). Automatic fallback to software when no device or pipeline can be created, or a GPU frame fails |
+| Backends | `tools/shaders/build.sh` builds, from the GLSL source: **SPIR-V** (glslangValidator), **DXBC SM 5.1** for D3D12 (spirv-cross to HLSL, then D3DCompile from Windows' own `d3dcompiler_47.dll`, no download), **MSL** (spirv-cross, from a variant with Metal's flat slot numbers). All three are committed in `world_raster.comp.h`; the renderer picks what the device takes. Verified on this machine: D3D12 (default) and Vulkan, both headless and in windows, 0 px on every scene. **MSL is generated but not verified: no Mac here** |
+| Static cache | The static passes (land, objects, shadows, structures, roofs, on-roof, topmost and the obscured passes) are recorded once and reused while their inputs stay the same: camera, viewport and world size, the render/redundancy/roof/item flags, the shade table, the sprite pool, and no RENDER_FLAG_FULL/MARKED (when the software renderer would redraw the static world too). Item outlines in the cache follow the glow cycle each frame. The dynamic layers are recorded every frame |
+| Zoom | **Fractional world zoom in 1/8 steps (1.0–4.0)** with the gpu renderer: the layered layout takes the zoom in eighths (`LayerLayout::worldZoomQ`, `ComputeLayerLayoutFine`), `UiToWorldQ`/`WorldToUiQ` map exactly (integer math), so picking follows. Keypad +/- and Ctrl+wheel step it. Software and pipeline keep whole zooms. Only the whole part is saved to ja2.json |
 
 ## Equivalence (1x, before any HD art)
 
 `tests/e2e/world_renderer.lua` (`ctest -R e2e_world_renderer`), Omerta after the landing, 1920x1080 world viewport
 (2,073,600 px compared per scene), software full redraw vs the recorded instances:
 
-| Scene | Instances | CPU pipeline | GPU (Vulkan) |
+| Scene | Instances | CPU pipeline | GPU (D3D12 and Vulkan) |
 |---|---|---|---|
 | day, Barry | 10,826 | 0 px (0.0000 %) | 0 px (0.0000 %) |
 | items (outlines/glow) + 2 corpses | 12,387 | 0 px | 0 px |
 | interior (roof taken off) | 12,363 | 0 px | 0 px |
 | night, lights on (96 shade palettes) | 11,993 | 0 px | 0 px |
 | scrolled to the map edge, night | 9,555 | 0 px | 0 px |
+| world zoom 1.5 (1280x720 world) | 4,967 | 0 px | 0 px |
+| night at world zoom 2, 4K window | — | — | 0 px (D3D12) |
 
-Also checked: the whole composed frame (UI over world) with pipeline and gpu equals software's (sampled pixels), and
-**picking**: at about 600 screen points (headless) the cursor tile, the interactive tile (doors etc., found during the recorded
+Also checked: the composed frames (UI over world, static cache in use) match software at all but a few sampled
+pixels (animations move on between the screenshots); tiles aimed at by their centre are picked right at zoom 1 and
+1.5; and **picking**: at 144 screen points (headless) the cursor tile, the interactive tile (doors etc., found during the recorded
 topmost pass) and the soldier under the mouse are the same as with software. `WorldPipeline_unittest` checks every
 non-strip op against its legacy blitter (clipped and unclipped, random sprites, colours and depths).
 
@@ -234,29 +240,31 @@ Found on the way (legacy quirks the recording reproduces):
 
 ## Performance
 
-CPU per frame (the recording is the cost; binning and upload are small), GPU compute measured headless with a
-read-back fence:
+Real 3840x2160 window, **wall clock** (`tests/perf/world_renderer_perf.lua`: a driven session switches to the wall
+clock with `ja2.realClock{readback=false, fps=0}` after loading, so nothing is read back and the frame rate is not
+capped; intervals are measured between presents, 5 s per case). "uncached" re-records every static tile each
+frame, which is what a scrolling frame costs.
 
-| World size | Instances | Record | Bin | Submit | GPU raster + read-back |
-|---|---|---|---|---|---|
-| 1920x1080 (4K at world zoom 2, or 1080p) | ~12,400 | 5.5 ms | 0.4 ms | 0.2 ms | 3.8–8 ms |
-| 3840x2160 (4K at world zoom 1) | ~37,400 | 14.3 ms | 1.2 ms | 0.3 ms | not measured separately |
+| | Driver | GPU cached (still) | GPU uncached (scrolling) | Software (incremental, still) |
+|---|---|---|---|---|
+| 4K, world zoom 1 (3840x2160 world, 37,431 instances) | D3D12 | 12.1 ms, 82 fps (p95 13.2) | 17.5 ms, 57 fps (p95 19.1) | 6.3 ms |
+| | Vulkan | 13.9 ms, 72 fps (p95 15.3) | 17.6 ms, 57 fps (p95 19.1) | 7.9 ms |
+| 4K, world zoom 2 (1920x1080 world, 10,596 instances) | D3D12 | 6.4 ms, 156 fps | 6.8 ms, 148 fps | 4.5 ms |
+| | Vulkan | 8.5 ms, 117 fps | 8.6 ms, 117 fps | 6.3 ms |
 
-In a real 3840x2160 window (`tests/perf/world_renderer_perf.lua`) frame intervals were ~8–22 ms at world zoom 2 for
-both renderers, but those sessions are driven (virtual clock, software-rendered native UI overlay), so they are not a
-clean frame-rate measurement. **Conclusion:** 4K at world zoom 2 fits in 16.6 ms (≈ 6 ms CPU + a few ms GPU); 4K at
-world zoom 1 does not yet (14 ms recording alone). Next: cache the static passes' instances (they only change with
-RENDER_FLAG_FULL/MARKED) and re-record only dynamic layers per frame, then flip the window default to gpu.
+Recording costs 3.3 ms per frame with the cache (dynamic layers only) and 13 ms without it at 4K zoom 1, down from
+14–16 ms before the cache, a per-frame sprite check and a palette cache. **4K at 60 fps holds standing still and
+at zoom 2 always; scrolling at 4K zoom 1 runs at 57 fps.** The software renderer's still frames are cheap because
+it redraws incrementally; it does not scale or zoom fractionally.
 
 ## Gaps
 
-- Smooth **fractional** zoom and sub-tile camera: not done; zoom stays the integer `world_zoom` of the layered
-  compositor (the GPU texture is scaled with nearest). Edge scrolling and keyboard panning are the existing ones and
-  work unchanged with the recording renderers.
-- Shaders ship as SPIR-V only: no D3D12 (DXIL) or Metal (MSL) builds; on those drivers the gpu renderer is not
-  available and software is used.
-- Night vision has no separate render path in the game (lighting is the shade palettes, covered). Explosions,
-  smoke and animated tiles are anitiles/level nodes and go through the recording; no dedicated scene with a live
-  explosion is in the equivalence test.
-- The sprite pool is keyed by the frame's data address plus a content hash; it is reset past 192 MB.
-- The scenes were also run in a real 1920x1080 window with the gpu renderer (all 0 px). A 3840x2160 window run did not finish within the session watchdog (GPU read-back of every frame in a driven session) and is not reported.
+- Scrolling at 4K world zoom 1 misses 60 fps by a little (57). Next step: keep the static cache across camera
+  moves by recording a margin around the view and re-recording only strips, as the software renderer does.
+- The camera still moves in the game's own steps. Zoom is fractional (1/8 steps), but there is no free sub-pixel
+  camera or zoom animation between steps; each step rebuilds the world layer.
+- MSL is generated but not compiled or run (no Mac).
+- The screenshots of driven windows are composed from the read-back world buffer with nearest scaling; the player
+  sees the GPU texture scaled with SDL's pixel-art filter.
+- Night vision has no separate render path in the game (lighting is the shade palettes, covered). Explosions are
+  anitiles and go through the recording; there is no live-explosion scene in the equivalence test.

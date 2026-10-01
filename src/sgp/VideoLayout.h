@@ -73,6 +73,9 @@ constexpr DisplayLayout ComputeDisplayLayout(Size const window, int const uiScal
 	return { logical, scale };
 }
 
+/** Fractional world zoom (Phase 8, GPU world renderer): zooms are multiples of 1/WORLD_ZOOM_STEPS. */
+constexpr int WORLD_ZOOM_STEPS = 8;
+
 /** World zoom value meaning "same layer and scale as the UI" (the classic single layer). */
 constexpr int WORLD_ZOOM_MATCH_UI = 0;
 
@@ -95,8 +98,9 @@ struct LayerLayout
 	Size world;      // world buffer in world pixels; == ui when not layered
 	Size canvas;     // ui * uiScale: the physical area both layers fill
 	int  uiScale;    // Su
-	int  worldZoom;  // Zw; == uiScale when not layered
+	int  worldZoom;  // Zw; == uiScale when not layered (with a fractional zoom: rounded down, at least 1)
 	bool layered;    // world and UI are separate layers
+	int  worldZoomQ = 0; // Zw in 1/WORLD_ZOOM_STEPS units (exact, also for fractional zooms); 0 = worldZoom
 	constexpr bool operator==(LayerLayout const&) const = default;
 };
 
@@ -105,10 +109,19 @@ constexpr LayerLayout ComputeLayerLayout(DisplayLayout const ui, int const world
 {
 	Size const canvas{ ui.logical.w * ui.scale, ui.logical.h * ui.scale };
 	int const zw = worldZoom == WORLD_ZOOM_MATCH_UI ? ui.scale : std::clamp(worldZoom, 1, MAX_UI_SCALE);
-	if (zw == ui.scale) return { ui.logical, ui.logical, canvas, ui.scale, ui.scale, false };
+	if (zw == ui.scale) return { ui.logical, ui.logical, canvas, ui.scale, ui.scale, false, ui.scale * WORLD_ZOOM_STEPS };
 	// Rounded up so that the world covers the whole canvas.
 	Size const world{ (canvas.w + zw - 1) / zw, (canvas.h + zw - 1) / zw };
-	return { ui.logical, world, canvas, ui.scale, zw, true };
+	return { ui.logical, world, canvas, ui.scale, zw, true, zw * WORLD_ZOOM_STEPS };
+}
+
+/** A fractional world zoom, zoomQ / WORLD_ZOOM_STEPS (1x..MAX_UI_SCALE x): always a layer of its own. */
+constexpr LayerLayout ComputeLayerLayoutFine(DisplayLayout const ui, int const zoomQ)
+{
+	Size const canvas{ ui.logical.w * ui.scale, ui.logical.h * ui.scale };
+	int const q = std::clamp(zoomQ, WORLD_ZOOM_STEPS, MAX_UI_SCALE * WORLD_ZOOM_STEPS);
+	Size const world{ (canvas.w * WORLD_ZOOM_STEPS + q - 1) / q, (canvas.h * WORLD_ZOOM_STEPS + q - 1) / q };
+	return { ui.logical, world, canvas, ui.scale, std::max(1, q / WORLD_ZOOM_STEPS), true, q };
 }
 
 /** The same layers, but the world a layer of its own even at the UI scale (for renderers that draw the world
@@ -128,6 +141,17 @@ constexpr int UiToWorld(int const v, int const uiScale, int const worldZoom)
 constexpr int WorldToUi(int const v, int const uiScale, int const worldZoom)
 {
 	return FloorDiv(v * worldZoom, uiScale);
+}
+
+/** The same with the zoom in 1/WORLD_ZOOM_STEPS units (exact for fractional zooms; equal to the above for whole ones). */
+constexpr int UiToWorldQ(int const v, int const uiScale, int const zoomQ)
+{
+	return FloorDiv(v * uiScale * WORLD_ZOOM_STEPS, zoomQ);
+}
+
+constexpr int WorldToUiQ(int const v, int const uiScale, int const zoomQ)
+{
+	return FloorDiv(v * zoomQ, uiScale * WORLD_ZOOM_STEPS);
 }
 
 /** How the logical canvas is put on a window of some (physical) size. */
