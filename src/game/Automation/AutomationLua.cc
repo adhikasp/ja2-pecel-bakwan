@@ -37,11 +37,22 @@
 #include "HImage.h"
 #include "UiSpikeScreen.h"
 #include "WorldSpike.h"
+#include "WorldRender.h"
+#include "Interactive_Tiles.h"
+#include "Lighting.h"
+#include "Environment.h"
+#include "Rotting_Corpses.h"
+#include "Handle_Items.h"
+#include "Items.h"
+#include "Render_Fun.h"
+#include "RenderWorld.h"
+#include "Handle_UI.h"
 #include "NativeUI.h"
 #include "GameViewModelsLua.h"
 
 #include <string_theory/format>
 
+#include <chrono>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -652,6 +663,55 @@ namespace
 					double const scale = b && b->is<double>() ? b->as<double>() : 1.0;
 					UiSpikeOpen("gallery:" + page + ":" + std::to_string(scale));
 				}
+				else if (what == "light")
+				{
+					// World scenes for the renderer tests (Phase 8): the ambient light level (a; 3 = day ...
+					// NORMAL_LIGHTLEVEL_NIGHT = 12), with the night lights on when b is true
+					int const level = a && a->is<int>() ? a->as<int>() : NORMAL_LIGHTLEVEL_NIGHT;
+					LightSetBaseLevel(UINT8(level));
+					if (b && b->is<bool>() && b->as<bool>()) TurnOnNightLights();
+					HandlePlayerTogglingLightEffects(FALSE);
+					SetRenderFlags(RENDER_FLAG_FULL);
+				}
+				else if (what == "item")
+				{
+					// an item (b = item index, default 1) on the ground at grid a
+					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"item\", grid, [item])");
+					OBJECTTYPE o;
+					CreateItem(UINT16(b && b->is<int>() ? b->as<int>() : 1), 100, &o);
+					AddItemToPool(INT16(a->as<int>()), &o, VISIBLE, 0, 0, -1);
+					SetRenderFlags(RENDER_FLAG_FULL);
+				}
+				else if (what == "corpse")
+				{
+					// a corpse of the selected merc's body type at grid a (b = direction)
+					SOLDIERTYPE const* const s = GetSelectedMan();
+					if (!s || !a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"corpse\", grid): needs a selected merc");
+					ROTTING_CORPSE_DEFINITION def{};
+					def.ubType = SMERC_BCK;
+					def.ubBodyType = s->ubBodyType;
+					def.sGridNo = INT16(a->as<int>());
+					def.HeadPal = s->HeadPal;
+					def.VestPal = s->VestPal;
+					def.SkinPal = s->SkinPal;
+					def.PantsPal = s->PantsPal;
+					def.bDirection = INT8(b && b->is<int>() ? b->as<int>() : 3);
+					def.uiTimeOfDeath = GetWorldTotalMin();
+					def.bVisible = 1;
+					ROTTING_CORPSE* const c = AddRottingCorpse(&def);
+					if (!c) throw std::runtime_error("ja2.debug(\"corpse\"): could not add it");
+					c->def.bVisible = 1;
+					SetRenderFlags(RENDER_FLAG_FULL);
+				}
+				else if (what == "roof")
+				{
+					// takes the roof off the room at grid a, as when a merc walks in (an interior view)
+					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"roof\", grid)");
+					UINT8 const room = GetRoom(UINT16(a->as<int>()));
+					if (room == NO_ROOM) throw std::runtime_error("ja2.debug(\"roof\"): no room there");
+					RemoveRoomRoof(UINT16(a->as<int>()), room, nullptr);
+					SetRenderFlags(RENDER_FLAG_FULL);
+				}
 				else if (what == "mock")
 				{
 					// M2 design mock through the native runtime: ja2.debug("mock", "phase3/mainmenu") shows
@@ -697,6 +757,84 @@ namespace
 				for (auto const& f : files) list[i++] = f;
 				t[screen] = list;
 			}
+			return t;
+		});
+
+		// ja2.worldEquivalence([dir], [{gpu = true}]): the Phase 8 world renderer against the software renderer on the
+		// current view (WorldRender.h): the recorded instances on the CPU pipeline and on the GPU (when a device
+		// is available), each compared pixel by pixel with a full software redraw. PNGs to dir (relative to -out).
+		ja2.set_function("worldEquivalence", [](sol::optional<std::string> dir, sol::optional<sol::table> opts) {
+			return Guarded([&] {
+				std::string out;
+				if (dir && !dir->empty()) { out = Session::ResolveOutputPath(*dir); std::filesystem::create_directories(out); }
+				bool const gpu = opts ? opts->get_or("gpu", true) : true;
+				WorldEquivalenceResult const r = RunWorldEquivalence(out, gpu);
+				sol::table t = g_lua.create_table();
+				t["width"] = r.width;
+				t["height"] = r.height;
+				t["instances"] = r.instances;
+				t["sprites"] = r.sprites;
+				t["palettes"] = r.palettes;
+				sol::table ops = g_lua.create_table();
+				for (auto const& [name, n] : r.ops) ops[name] = n;
+				t["ops"] = ops;
+				t["pixels"] = double(r.pixels);
+				t["pipelineDifferent"] = double(r.pipelineDifferent);
+				t["pipelinePercent"] = r.pipelinePercent;
+				t["gpuRan"] = r.gpuRan;
+				t["gpuDriver"] = r.gpuDriver;
+				t["gpuError"] = r.gpuError;
+				t["gpuDifferent"] = double(r.gpuDifferent);
+				t["gpuPercent"] = r.gpuPercent;
+				t["gpuVsPipelineDifferent"] = double(r.gpuVsPipelineDifferent);
+				t["legacyMs"] = r.legacyMs;
+				t["recordMs"] = r.recordMs;
+				t["pipelineMs"] = r.pipelineMs;
+				t["gpuMs"] = r.gpuMs;
+				t["legacyPng"] = r.legacyPng;
+				t["pipelinePng"] = r.pipelinePng;
+				t["gpuPng"] = r.gpuPng;
+				t["pipelineDiffPng"] = r.pipelineDiffPng;
+				t["gpuDiffPng"] = r.gpuDiffPng;
+				return t;
+			});
+		});
+
+		// ja2.worldRenderer(): {requested, active, error, instances, recordMs, rasterMs, gpuSubmitMs, gpuWaitMs, ...}
+		ja2.set_function("worldRenderer", [] {
+			sol::table t = g_lua.create_table();
+			t["requested"] = WorldRendererName(WorldRendererRequested());
+			t["active"] = WorldRendererName(WorldRendererActive());
+			t["error"] = WorldRendererError();
+			WorldRenderStats const& s = WorldRenderLastStats();
+			t["instances"] = s.instances;
+			t["palettes"] = s.palettes;
+			t["spritePoolPixels"] = double(s.spritePoolPixels);
+			t["recordMs"] = s.recordMs;
+			t["rasterMs"] = s.rasterMs;
+			t["gpuBinMs"] = s.gpuBinMs;
+			t["gpuSubmitMs"] = s.gpuSubmitMs;
+			t["gpuWaitMs"] = s.gpuWaitMs;
+			t["uploadBytes"] = double(s.uploadBytes);
+			t["frameMs"] = s.frameMs;
+			t["wallMs"] = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count(); // wall clock, for frame-rate measurements
+			return t;
+		});
+
+		// ja2.setWorldRenderer("software" | "gpu" | "pipeline"): switches now; returns what is active afterwards
+		ja2.set_function("setWorldRenderer", [](std::string const& name) {
+			return Guarded([&] { return std::string(WorldRendererName(WorldRendererSwitch(ParseWorldRenderer(name)))); });
+		});
+
+		// ja2.pick(): what the mouse picks in tactical now: {grid (cursor tile), interactive (tile of the interactive
+		// structure under the mouse, e.g. a door, or -1), target (soldier id under the mouse or -1)}
+		ja2.set_function("pick", [] {
+			sol::table t = g_lua.create_table();
+			t["grid"] = int(guiCurrentCursorGridNo);
+			INT16 g = NOWHERE;
+			LEVELNODE const* const n = GetCurInteractiveTileGridNo(&g);
+			t["interactive"] = n ? int(g) : -1;
+			t["target"] = gUIFullTarget ? int(gUIFullTarget->ubID) : -1;
 			return t;
 		});
 

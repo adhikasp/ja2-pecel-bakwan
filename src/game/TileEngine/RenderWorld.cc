@@ -36,6 +36,7 @@
 #include "VSurface.h"
 #include "WCheck.h"
 #include "WorldDef.h"
+#include "WorldRender.h"
 
 #include <string_theory/format>
 #include <string_theory/string>
@@ -281,6 +282,27 @@ void BltTransZTransShadowInc(ClipInfo const& ci, UINT16* pBuffer, UINT32 uiDestP
 void BltTransZTransShadowIncObscure(ClipInfo const& ci, UINT16* pBuffer, UINT32 uiDestPitchBYTES, UINT16* pZBuffer, UINT16 usZValue, INT16 sZIndex, const UINT16* p16BPPPalette);
 }
 
+/* ---- Phase 8: recording the frame for the world pipeline (WorldRender.h, src/sgp/WorldPipeline.h) ----------
+ * While a recorder is set, RenderTiles does not blit: every blitter call becomes an instance naming that blitter
+ * (WorldPipe::Op), with the clipped rectangle, the palette the blitter would use and the depth (per column for the
+ * strip blitters, computed the way they do). Everything else in RenderTiles (which nodes, which blitter, positions,
+ * depths, shades) is shared with the software renderer. */
+namespace {
+struct WorldRecorder
+{
+	WorldPipe::Frame*      frame;
+	WorldPipe::SpritePool* pool;
+	bool                   mutate;  // clear the one-shot node flags like a real frame does
+	int                    blits = 0;
+	std::vector<LEVELNODE*> cleared; // LASTDYNAMIC flags cleared while recording without side effects
+};
+WorldRecorder* gWorldRecorder = nullptr;
+
+enum class Strips { None, MultiZ, TransShadow };
+void RecordBlit(WorldPipe::Op op, ClipInfo const& ci, UINT16 const* palette, UINT16 z, UINT16 outline = 0,
+	Strips strips = Strips::None, INT16 zIndex = 0);
+}
+
 class RenderTiles
 {
 	struct RenderFXType
@@ -374,7 +396,8 @@ private: void Render(RenderTilesFlags const uiFlags, size_t const ubNumLevels, R
 	UINT32                uiDestPitchBYTES = 0;
 	UINT16*               pDestBuf         = 0;
 	SGPVSurface::Lockable lock;
-	if  (!(uiFlags & TILES_DIRTY))
+	WorldRecorder* const rec = gWorldRecorder;
+	if  (!(uiFlags & TILES_DIRTY) && !rec)
 	{
 		lock.Lock(WORLD_BUFFER);
 		pDestBuf         = lock.Buffer<UINT16>();
@@ -1130,6 +1153,7 @@ zlevel_onroof:
 						{
 							// Remove flags!
 							pNode->uiFlags &= ~LEVELNODE_LASTDYNAMIC;
+							if (rec && !rec->mutate) rec->cleared.push_back(pNode); // put back after recording
 							fZWrite = TRUE;
 						}
 
@@ -1202,7 +1226,14 @@ zlevel_onroof:
 							}
 
 							ClipInfo const clipinfo(hVObject, sXPos, sYPos, usImageIndex, &gClippingRect);
-							if (clipinfo.status == ClipInfo::Status::Not_Clipped)
+							if (rec)
+							{
+								using WorldPipe::Op;
+								bool const whole = clipinfo.status == ClipInfo::Status::Not_Clipped;
+								RecordBlit(!fObscuredBlitter ? Op::OutlineZ : whole ? Op::OutlineZObscuredLT : Op::OutlineZObscuredLE,
+									clipinfo, hVObject->CurrentShade(), sZLevel, outline_colour);
+							}
+							else if (clipinfo.status == ClipInfo::Status::Not_Clipped)
 							{
 								if (fObscuredBlitter)
 								{
@@ -1230,7 +1261,16 @@ zlevel_onroof:
 						{
 							ClipInfo const clipinfo(hVObject, sXPos, sYPos, usImageIndex, &gClippingRect);
 
-							if (fShadowBlitter)
+							if (rec)
+							{
+								using WorldPipe::Op;
+								bool const whole = clipinfo.status == ClipInfo::Status::Not_Clipped;
+								if (fShadowBlitter) RecordBlit(Op::ShadowZNB, clipinfo, hVObject->CurrentShade(), sZLevel);
+								else if (whole) RecordBlit(Op::OutlineZNB, clipinfo, hVObject->CurrentShade(), sZLevel);
+								else if (clipinfo.status == ClipInfo::Status::Partially_Clipped)
+									RecordBlit(Op::Outline, clipinfo, hVObject->CurrentShade(), sZLevel, SGP_TRANSPARENT);
+							}
+							else if (fShadowBlitter)
 							{
 								if (clipinfo.status == ClipInfo::Status::Not_Clipped)
 								{
@@ -1256,7 +1296,57 @@ zlevel_onroof:
 						else
 						{
 							ClipInfo const clipinfo(hVObject, sXPos, sYPos, usImageIndex, &gClippingRect);
-							if (fMultiTransShadowZBlitter)
+							if (rec)
+							{
+								// The same choice of blitter as below, as ops
+								using WorldPipe::Op;
+								UINT16 const* const shade = hVObject->CurrentShade();
+								bool const whole = clipinfo.status == ClipInfo::Status::Not_Clipped;
+								bool const part  = clipinfo.status == ClipInfo::Status::Partially_Clipped;
+								if (fMultiTransShadowZBlitter)
+								{
+									if (fZBlitter)
+									{
+										RecordBlit(fObscuredBlitter ? Op::TransShadowZIncObscure : Op::TransShadowZInc, clipinfo, pShadeTable,
+											sZLevel, 0, Strips::TransShadow, sMultiTransShadowZBlitterIndex);
+									}
+								}
+								else if (fMultiZBlitter)
+								{
+									if (!fZBlitter) RecordBlit(Op::Transparent, clipinfo, shade, sZLevel);
+									else RecordBlit(fObscuredBlitter ? Op::TransZIncObscure : fWallTile ? Op::TransZIncBurns : Op::TransZInc,
+										clipinfo, shade, sZLevel, 0, Strips::MultiZ);
+								}
+								else if (whole || part)
+								{
+									Op op;
+									UINT16 const* pal = shade;
+									if (fPixelate)
+									{
+										op = part || !fZWrite ? Op::TranslucentZNB : Op::TranslucentZ;
+									}
+									else if (fMerc)
+									{
+										pal = pShadeTable;
+										op = !fZBlitter ? Op::TransShadow : fZWrite ? Op::TransShadowZ :
+											fObscuredBlitter ? Op::TransShadowZNBObscured : Op::TransShadowZNB;
+									}
+									else if (fShadowBlitter)
+									{
+										op = !fZBlitter ? Op::Shadow : fZWrite ? Op::ShadowZ : Op::ShadowZNB;
+									}
+									else if (fZBlitter)
+									{
+										op = !fZWrite ? Op::TransZNB : fObscuredBlitter ? Op::TransZObscured : Op::TransZ;
+									}
+									else
+									{
+										op = Op::Transparent;
+									}
+									RecordBlit(op, clipinfo, pal, sZLevel);
+								}
+							}
+							else if (fMultiTransShadowZBlitter)
 							{
 								if (fZBlitter)
 								{
@@ -1639,6 +1729,10 @@ void RenderWorld(void)
 		gsCurrentGlowFrame     = (gsCurrentGlowFrame     + 1) % lengthof(gsGlowFrames);
 		gsCurrentItemGlowFrame = (gsCurrentItemGlowFrame + 1) % NUM_ITEM_CYCLE_COLORS;
 	}
+
+	// Phase 8: the gpu and pipeline renderers redraw the whole scene every frame (WorldRender.inl)
+	WorldRenderFrameTick();
+	if (RenderWorldRecorded()) return;
 
 	if (gRenderFlags & RENDER_FLAG_FULL)
 	{
@@ -3654,3 +3748,4 @@ void RenderCoverDebug(void)
 
 
 #include "WorldSpike.inl"
+#include "WorldRender.inl"

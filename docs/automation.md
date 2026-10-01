@@ -188,6 +188,10 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.check(value, message)` | Records a failure and carries on; the script exits 1 at the end. |
 | `ja2.log(...)` | To stderr and the log. |
 | `ja2.args` | Values of `-arg`. |
+| `ja2.worldEquivalence([dir], [{gpu=true}])` | Phase 8: the current view by the software renderer, the recorded pipeline on the CPU and on the GPU; pixel diffs, op counts, timings, PNGs to `dir`. |
+| `ja2.setWorldRenderer(name)` / `ja2.worldRenderer()` | Switch the world renderer (`software`, `gpu`, `pipeline`; the latter two need the world as a layer: `--worldzoom`, or start with `JA2_WORLD_RENDERER`) / what is active and last-frame stats. |
+| `ja2.pick()` | What the mouse picks in tactical: `{grid, interactive, target}`. |
+| `ja2.debug("light", level, nightLights)`, `("item", grid, item)`, `("corpse", grid, dir)`, `("roof", grid)` | Renderer test scenes: ambient light, an item or a corpse on the ground, a room's roof taken off. |
 
 Timeouts report the screen and, if one is open, the message box text, e.g.
 `timed out after 120000 ms waiting for screen MAP_SCREEN (screen:

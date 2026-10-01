@@ -307,6 +307,20 @@ pub extern "C" fn EngineOptions_getUiModes(ptr: *const EngineOptions) -> *mut c_
     c_string_from_str(&pairs.join("\n")).into_raw()
 }
 
+/// Gets `EngineOptions.world_renderer` ("" when not set).
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_getWorldRenderer(ptr: *const EngineOptions) -> *mut c_char {
+    let engine_options = unsafe_ref(ptr);
+    c_string_from_str(&engine_options.world_renderer).into_raw()
+}
+
+/// Sets `EngineOptions.world_renderer` ("" = the engine's default).
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_setWorldRenderer(ptr: *mut EngineOptions, value: *const c_char) {
+    let engine_options = unsafe_mut(ptr);
+    engine_options.world_renderer = str_from_c_str_or_panic(unsafe_c_str(value)).to_owned();
+}
+
 /// Sets `EngineOptions.ui_mode[screen]`; an empty mode removes the entry (the engine default applies again).
 #[unsafe(no_mangle)]
 pub extern "C" fn EngineOptions_setUiMode(

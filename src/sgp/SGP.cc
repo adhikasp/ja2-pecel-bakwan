@@ -23,6 +23,7 @@
 #include "Clock.h"
 #include "Headless.h"
 #include "VideoOptionsScreen.h"
+#include "WorldRender.h"
 #include "ModPackContentManager.h"
 #include "policy/GamePolicy.h"
 #include "RustInterface.h"
@@ -433,6 +434,21 @@ int main(int argc, char* argv[])
 			GameMode::getInstance()->setEditorMode(false);
 		}
 
+		{
+			// ja2.json "world_renderer", JA2_WORLD_RENDERER wins (docs/plan/native-modern-game.md, Phase 8)
+			RustPointer<char> wr(EngineOptions_getWorldRenderer(params.get()));
+			std::string setting = wr.get() ? wr.get() : "";
+			if (char const* env = std::getenv("JA2_WORLD_RENDERER")) setting = env;
+			WorldRendererKind const kind = setting.empty() ? WorldRendererDefault(sgp::IsHeadless() || automation.Active()) : ParseWorldRenderer(setting);
+			bool const editor = GameMode::getInstance()->isEditorMode();
+			WorldRendererConfigure(editor ? WorldRendererKind::Software : kind);
+			if (!editor && kind != WorldRendererKind::Software)
+			{
+				VideoSetForceLayered(true);
+				VideoRequestGpuDevice(kind == WorldRendererKind::Gpu && !sgp::IsHeadless());
+			}
+		}
+
 		// Resolution 0x0 is "auto": the desktop size, only known once SDL's video
 		// subsystem is up. Until then (and for headless sessions, which have no
 		// display and ignore the UI scale) a classic canvas is used.
@@ -448,14 +464,15 @@ int main(int argc, char* argv[])
 		uint16_t width = autoResolution ? 640 : displaySettings.resX;
 		uint16_t height = autoResolution ? 480 : displaySettings.resY;
 		g_ui.setScreenSize(width, height);
-		if (sgp::IsHeadless() && displaySettings.worldZoom != VideoLayout::WORLD_ZOOM_MATCH_UI && !autoResolution)
+		if (sgp::IsHeadless() && (displaySettings.worldZoom != VideoLayout::WORLD_ZOOM_MATCH_UI || VideoForceLayered()) && !autoResolution)
 		{
 			// A headless session normally renders a single layer at scale 1 (its screenshots are the reference
 			// images). Asking for a world zoom explicitly makes it run the layers, so they can be tested:
 			// -res is the window, the UI scale defaults to 1.
 			int const uiScale = displaySettings.uiScale == VideoLayout::UI_SCALE_AUTO ? 1 : displaySettings.uiScale;
 			auto const display = VideoLayout::ComputeDisplayLayout({ displaySettings.resX, displaySettings.resY }, uiScale);
-			g_ui.setLayers(VideoLayout::ComputeLayerLayout(display, displaySettings.worldZoom));
+			auto const layers = VideoLayout::ComputeLayerLayout(display, displaySettings.worldZoom);
+			g_ui.setLayers(VideoForceLayered() ? VideoLayout::ForceLayered(layers) : layers);
 		}
 
 	if (EngineOptions_shouldRunUnittests(params.get())) {
@@ -497,7 +514,8 @@ int main(int argc, char* argv[])
 		{
 			// logical canvas = window / UI scale, see VideoLayout.h
 			auto const layout = VideoComputeLayout(displaySettings);
-			auto const layers = VideoLayout::ComputeLayerLayout(layout, displaySettings.worldZoom);
+			auto layers = VideoLayout::ComputeLayerLayout(layout, displaySettings.worldZoom);
+			if (VideoForceLayered()) layers = VideoLayout::ForceLayered(layers);
 			g_ui.setLayers(layers);
 			SLOGI("Layers: UI {}x{} at {}x, world {}x{} at {}x{}", layers.ui.w, layers.ui.h, layers.uiScale,
 				layers.world.w, layers.world.h, layers.worldZoom, layers.layered ? " (separate layer)" : " (same layer)");

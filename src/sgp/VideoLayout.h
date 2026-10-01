@@ -111,6 +111,14 @@ constexpr LayerLayout ComputeLayerLayout(DisplayLayout const ui, int const world
 	return { ui.logical, world, canvas, ui.scale, zw, true };
 }
 
+/** The same layers, but the world a layer of its own even at the UI scale (for renderers that draw the world
+ * separately, see WorldRender.h). */
+constexpr LayerLayout ForceLayered(LayerLayout l)
+{
+	l.layered = true;
+	return l;
+}
+
 /** A position in UI pixels expressed in world pixels (and back): both cover the same area. */
 constexpr int UiToWorld(int const v, int const uiScale, int const worldZoom)
 {

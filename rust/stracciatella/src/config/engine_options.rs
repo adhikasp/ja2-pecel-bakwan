@@ -95,6 +95,9 @@ pub struct EngineOptions {
     pub native_ui_scale: f32,
     /// Native UI: no transitions or automatic scrolling (the Accessibility page of the options)
     pub reduced_motion: bool,
+    /// What draws the tactical world: "software", "gpu" or "pipeline" (empty = the engine's default).
+    /// See docs/plan/native-modern-game.md, Phase 8.
+    pub world_renderer: String,
 }
 
 impl Default for EngineOptions {
@@ -121,6 +124,7 @@ impl Default for EngineOptions {
             ui_mode: BTreeMap::new(),
             native_ui_scale: 1.0,
             reduced_motion: false,
+            world_renderer: String::new(),
         }
     }
 }

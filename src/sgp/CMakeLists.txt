@@ -31,6 +31,8 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/VSurface.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Video.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Visualizer.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/WorldGpu.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/WorldPipeline.cc
 )
 
 if (WITH_UNITTESTS)
@@ -43,6 +45,7 @@ if (WITH_UNITTESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/string_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/TextRegistry_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Video_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/WorldPipeline_unittest.cc
     )
 endif()
 
