@@ -134,7 +134,9 @@ namespace
 		{
 			nui::SetImageProvider(ProvideGameImage);
 			RegisterFrontEndImages();
+			RegisterTacticalMockImages();
 			m_doc = LoadDocument(m_path);
+			PrepareMockDocument(m_doc);
 			m_doc->Show(Rml::ModalFlag::None, Rml::FocusFlag::Document);
 		}
 
@@ -154,6 +156,7 @@ namespace
 		{
 			CloseDocument(m_doc);
 			m_doc = nullptr;
+			RestoreAfterMock();
 		}
 
 		bool Finished() const override { return m_done; }

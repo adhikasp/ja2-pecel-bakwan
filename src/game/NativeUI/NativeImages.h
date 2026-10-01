@@ -3,6 +3,8 @@
 
 #include <SDL3/SDL.h>
 
+namespace Rml { class ElementDocument; }
+
 #include <functional>
 #include <string>
 
@@ -25,4 +27,11 @@ namespace NativeUI
 	void RegisterFrontEndImages();
 	/** The image provider of the native UI: "face-<n>" (a merc's big portrait) and the registered sources. */
 	SDL_Surface* ProvideGameImage(std::string const& name);
+
+	/** The Phase 5 mock pictures: "nitem-<item>", "nitembig-<item>", "sface-<face>", each at "@<k>" times (MockWorld.cc). */
+	void RegisterTacticalMockImages();
+	/** Integer-scales the mock pictures of @a doc and, for data-world="clear", shows the whole tactical world behind it. */
+	void PrepareMockDocument(Rml::ElementDocument* doc);
+	/** The legacy tactical HUD draws itself again after a mock closed. */
+	void RestoreAfterMock();
 }
