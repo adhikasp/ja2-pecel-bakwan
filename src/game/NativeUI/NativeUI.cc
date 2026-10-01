@@ -66,6 +66,7 @@ namespace
 		{ OPTIONS_SCREEN,           "options",  &CreateOptionsScreen },
 		{ SAVE_LOAD_SCREEN,         "saveload", &CreateSaveLoadScreen },
 		{ GAME_INIT_OPTIONS_SCREEN, "newgame",  &CreateNewGameScreen },
+		{ MAP_SCREEN,               "mapscreen", &CreateMapScreen },
 	};
 
 	class Runtime final : public VideoOverlay
@@ -577,7 +578,7 @@ void Runtime::GpuRender(SDL_Renderer*)
 
 bool CapturesMouse()
 {
-	return g_rt.running && (g_rt.screen || (g_rt.msgbox && g_rt.msgbox->IsVisible()));
+	return g_rt.running && ((g_rt.screen && !g_rt.screen->PassThrough()) || (g_rt.msgbox && g_rt.msgbox->IsVisible()));
 }
 
 void MouseMoved(int const canvasX, int const canvasY)
@@ -1181,7 +1182,11 @@ std::vector<std::string> LayoutAudit()
 			{
 				if (b.x < -tol || b.y < -tol || b.x + b.w > g_rt.w + tol || b.y + b.h > g_rt.h + tol) out.push_back("off screen: " + Describe(e));
 			}
-			else if (!rmlui_dynamic_cast<Rml::ElementText*>(e))
+			else if (!rmlui_dynamic_cast<Rml::ElementText*>(e) && ![&] {
+				// pannable content (class "audit-pan", e.g. a zoomed map) may be cut by its view on any side
+				for (Rml::Element* p = e; p && p != clip; p = p->GetParentNode()) if (p->IsClassSet("audit-pan")) return true;
+				return false;
+			}())
 			{
 				// scroll areas may cut vertically; nothing may be cut sideways
 				SDL_FRect const c = Box(clip);
@@ -1214,7 +1219,27 @@ std::vector<std::string> LayoutAudit()
 				for (Rml::Element* p = b->GetParentNode(); p; p = p->GetParentNode()) if (p == a) nested = true;
 				for (Rml::Element* p = a->GetParentNode(); p; p = p->GetParentNode()) if (p == b) nested = true;
 				if (nested) continue;
-				SDL_FRect const ra = Box(a), rb = Box(b);
+				// a floating layer drawn on top (class "audit-over": a menu, a map overlay) may cover what is under it
+				auto over = [](Rml::Element* e) -> Rml::Element* {
+					for (; e; e = e->GetParentNode()) if (e->IsClassSet("audit-over")) return e;
+					return nullptr;
+				};
+				if (over(a) != over(b)) continue;
+				// what is visible of each: cut by the containers that clip (a zoomed map under its view)
+				auto visible = [](Rml::Element* e) {
+					SDL_FRect r = Box(e);
+					for (Rml::Element* p = e->GetParentNode(); p; p = p->GetParentNode())
+					{
+						auto const& cv = p->GetComputedValues();
+						if (cv.overflow_x() == Rml::Style::Overflow::Visible && cv.overflow_y() == Rml::Style::Overflow::Visible) continue;
+						SDL_FRect const c = Box(p);
+						float const x0 = std::max(r.x, c.x), y0 = std::max(r.y, c.y);
+						float const x1 = std::min(r.x + r.w, c.x + c.w), y1 = std::min(r.y + r.h, c.y + c.h);
+						r = { x0, y0, std::max(0.f, x1 - x0), std::max(0.f, y1 - y0) };
+					}
+					return r;
+				};
+				SDL_FRect const ra = visible(a), rb = visible(b);
 				float const ox = std::min(ra.x + ra.w, rb.x + rb.w) - std::max(ra.x, rb.x);
 				float const oy = std::min(ra.y + ra.h, rb.y + rb.h) - std::max(ra.y, rb.y);
 				if (ox > tol && oy > tol) out.push_back("overlap: " + Describe(a) + " and " + Describe(b));

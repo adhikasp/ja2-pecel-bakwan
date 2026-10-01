@@ -1,5 +1,5 @@
-/* Phase 4 wireframes of the native strategic map screen (docs/ui/mapscreen.md, M2). Built only from the design-system
- * tokens and components; the finished screen will move this sheet to screens/mapscreen.rcss.
+/* The native strategic map screen (docs/ui/mapscreen.md) and its Phase 4 wireframes (mocks/phase4/, which link this
+ * sheet). Built only from the design-system tokens and components.
  * Layout (dp at 1920x1080): top bar 56, bottom log bar 40, team dock left 468, sector dock right 332, the map in the
  * middle. At 2:1 and wider the docks grow (the team table gets its condition columns) and the map stays centred. */
 body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--c-void); font-family: var(--font-body); }
@@ -201,6 +201,7 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .mk.items .icon { image-color: var(--c-warn); }
 .mk.moving { border-color: var(--c-accent); background-color: #1B2A12E6; }
 .site { position: absolute; width: 20dp; height: 20dp; }
+.sec .site { right: 1dp; top: 1dp; }
 .site .icon { width: 20dp; height: 20dp; image-color: var(--c-text-strong); }
 .site.enemy .icon { image-color: var(--c-danger); }
 .site.ours .icon { image-color: var(--c-accent); }
@@ -215,8 +216,9 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .wp { position: absolute; width: 10dp; height: 10dp; border-radius: 5dp; background-color: var(--c-void); border: 2dp var(--c-accent); }
 .wp.temp { border-color: var(--c-select); }
 .wp.heli { border-color: var(--c-info); }
-.dest { position: absolute; width: 26dp; height: 26dp; }
-.dest .icon { width: 26dp; height: 26dp; image-color: var(--c-accent); }
+/* the route flag is 22dp so that it never covers a site icon (top right of the sector) */
+.dest { position: absolute; width: 22dp; height: 22dp; margin-left: 2dp; margin-top: 2dp; }
+.dest .icon { width: 22dp; height: 22dp; image-color: var(--c-accent); }
 .dest.temp .icon { image-color: var(--c-select); }
 .dest.heli .icon { image-color: var(--c-info); }
 .eta-tag { position: absolute; display: block; padding: 1dp 5dp; background-color: var(--c-accent); color: var(--c-on-accent); font-family: var(--font-mono); font-size: var(--fs-2xs); line-height: 15dp; }
@@ -436,3 +438,86 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 	.log { left: 640dp; right: 400dp; }
 	.team .wide-only { display: flex; }
 }
+
+
+/* ================================================================ the live screen (screens/mapscreen.rml) */
+.gone { display: none; }
+.map-frame.live { left: 0; top: 0; margin: 0; }
+.map-canvas.live, .map-frame.live .map-canvas { width: auto; height: auto; left: 24dp; top: 24dp; right: 0; bottom: 0; }
+.map-frame.live .map-cols { left: 24dp; right: 0; width: auto; }
+.map-frame.live .map-rows { top: 24dp; bottom: 0; height: auto; }
+.map-frame.live .map-cols span { width: 6.25%; }
+.map-frame.live .map-rows span { height: 6.25%; display: flex; align-items: center; justify-content: center; }
+.map-frame.live .map-art { width: 100%; height: 100%; }
+.map-frame.live .sec { width: 6.25%; height: 6.25%; }
+.sec .mks { left: 2dp; bottom: 2dp; width: 60dp; height: auto; }
+.sec .site { right: 3dp; top: 3dp; }
+.sec .mine-t { left: 50%; margin-left: -55dp; bottom: 2dp; }
+.sec .battle { left: 0; top: 0; width: 100%; height: 100%; }
+.map-frame.live .town-lbl { margin-left: -90dp; margin-top: -20dp; }
+.map-frame.live .site.heli, .map-frame.live .site.arrive { margin-left: -10dp; margin-top: -10dp; }
+.rt.dest { background-color: transparent; width: 22dp; height: 22dp; margin-left: -11dp; margin-top: -9dp; }
+.rt.dest .icon { width: 22dp; height: 22dp; image-color: var(--c-accent); }
+.rt.dest.temp .icon { image-color: var(--c-select); }
+.rt.dest.heli .icon { image-color: var(--c-info); }
+.rt.wp { background-color: var(--c-void); width: 10dp; height: 10dp; margin-left: -5dp; margin-top: -5dp; border-radius: 5dp; border: 2dp var(--c-accent); }
+.rt.wp.temp { border-color: var(--c-select); }
+.rt.wp.heli { border-color: var(--c-info); }
+.dock .team { display: flex; flex-direction: column; }
+.team-rows { display: block; flex: 1 1 0; min-height: 0; overflow-y: auto; }
+.team-empty { display: flex; align-items: center; padding: var(--sp-4); color: var(--c-text-dim); font-size: var(--fs-sm); }
+.team-empty .icon { margin-right: var(--sp-2); image-color: var(--c-text-faint); }
+.team-empty span { display: block; flex: 1 1 0; }
+.team .tr div, .team .tr span { cursor: pointer; }
+.merc-id .asg.dim { margin-top: 0; color: var(--c-text-dim); }
+.merc-face .icon.lg { position: absolute; left: 34dp; top: 40dp; image-color: var(--c-text-faint); }
+.ctx { position: absolute; z-index: 30; }
+.ctx .menu-item { cursor: pointer; }
+.menu-item.shaded { color: var(--c-text-faint); }
+.menu-item.hl { background-color: var(--c-accent-soft); color: var(--c-text-strong); }
+.menu-item.head { height: 26dp; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-faint); }
+.menu-item.blank { height: 8dp; }
+.ctx-drop { position: absolute; right: var(--sp-3); top: 56dp; z-index: 30; }
+.map-msg {
+	position: absolute; left: 50%; top: 40%; width: 520dp; margin-left: -260dp; padding: var(--sp-3) var(--sp-4);
+	background-color: var(--e3-bg); border: var(--border) var(--e3-line); border-top: 2dp var(--c-select); font-size: var(--fs-md); color: var(--c-text-strong);
+}
+.map-msg span { display: block; }
+.gear { display: block; position: relative; height: 440dp; margin-top: var(--sp-2); }
+.gslot { position: absolute; }
+.slot img.art { position: absolute; image-color: #FFFFFF; }
+.pslot { width: 132dp; height: 72dp; margin: 0 var(--sp-2) var(--sp-2) 0; }
+.pslot.sel, .gslot.sel { border-color: var(--c-select); background-color: var(--c-select-soft); }
+.pslot .nm { position: absolute; left: 6dp; bottom: 8dp; right: 6dp; font-size: 11dp; color: var(--c-text-dim); white-space: nowrap; overflow: hidden; }
+.cursor-item { position: absolute; z-index: 50; }
+.cursor-item img { image-color: #FFFFFF; }
+.p4-bottom .msg { cursor: pointer; }
+.log-body .lm .x { white-space: normal; }
+.tc-rate { min-width: 64dp; }
+.mapview { cursor: pointer; }
+/* overlays on the map let clicks through to the sector under them */
+.map-frame.live .rt, .map-frame.live .tb, .map-frame.live .town-lbl, .map-frame.live .site.heli, .map-frame.live .site.arrive { pointer-events: none; }
+.sec.fog { background-color: #0B0F0DA8; }
+.inv-closed { display: flex; align-items: center; justify-content: center; flex: 1 1 0; }
+/* narrow layouts (big UI scales, 1280-wide windows): the top bar keeps icons and key hints */
+.p4-top .timectl .clock { white-space: nowrap; }
+.compact .flt > span { display: none; }
+.compact .flt .kbd { display: inline-block; margin-left: var(--sp-1); }
+.compact .flt .icon { margin-right: 0; }
+.compact .money .k { display: none; }
+.compact .p4-top .btn .label { display: none; }
+.compact .p4-top .btn .icon { margin-right: 0; }
+.compact .tc-rate { min-width: 52dp; }
+.compact .dock-l { flex: 0 0 420dp; }
+.compact .dock-r { flex: 0 0 300dp; }
+.compact .p4-bottom .hint { display: none; }
+.compact .dock-head .m { display: none; }
+.compact .merc-acts .btn .kbd { display: none; }
+.inv-empty { display: flex; align-items: center; padding: var(--sp-4) 0; color: var(--c-text-dim); font-size: var(--fs-sm); }
+.inv-empty .icon { margin-right: var(--sp-2); image-color: var(--c-text-faint); }
+.inv-empty span { display: block; }
+/* item art at its own size times a whole number, centred (docs/ui/mapscreen.md, "Item art") */
+.slot .item.nat, .drag-ghost.nat { display: flex; align-items: center; justify-content: center; }
+.slot .item.nat img, .drag-ghost.nat img { position: static; width: auto; height: auto; image-color: #FFFFFF; }
+/* 21:9 and wider: the condition column takes the room of the destination header's key hint */
+.team .thead .c-de .kbd { display: none; }

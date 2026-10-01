@@ -40,6 +40,7 @@ std::vector<ModeKey> const& ModeKeys()
 		{ "saveload",   "the save and load screen",                     UiMode::Native },
 		{ "newgame",    "the new game settings (GIO) screen",           UiMode::Native },
 		{ "loadscreen", "the loading screen",                           UiMode::Native },
+		{ "mapscreen",  "the strategic map screen",                     UiMode::Native },
 		{ "msgbox",  "message boxes (DoMessageBox and its wrappers)",    UiMode::Legacy },
 		{ "tooltip", "fast help of legacy screens",                      UiMode::Legacy },
 		{ "toasts",  "screen messages shown as toasts",                  UiMode::Legacy },

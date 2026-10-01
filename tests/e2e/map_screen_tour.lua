@@ -3,6 +3,9 @@
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
+-- This is the tour of the legacy map screen (the native one has tests/e2e/mapscreen_parity.lua).
+ja2.setUiMode("mapscreen", "legacy")
+
 campaign.startWithMerc("Barry")
 ja2.click("Map Screen")
 ja2.waitScreen("MAP_SCREEN")

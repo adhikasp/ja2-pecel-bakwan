@@ -993,3 +993,25 @@ void RemoveRegions(std::span<MOUSE_REGION> regions)
 		MSYS_RemoveRegion(&r);
 	}
 }
+
+
+void MSYS_SimulateHover(MOUSE_REGION* const r, bool const gain)
+{
+	if (!r || !(r->uiFlags & MSYS_REGION_ENABLED)) return;
+	r->MouseXPos = r->RegionTopLeftX + r->W() / 2;
+	r->MouseYPos = r->RegionTopLeftY + r->H() / 2;
+	r->RelativeXPos = r->MouseXPos - r->RegionTopLeftX;
+	r->RelativeYPos = r->MouseYPos - r->RegionTopLeftY;
+	if (r->MovementCallback) r->MovementCallback(r, gain ? MSYS_CALLBACK_REASON_GAIN_MOUSE : MSYS_CALLBACK_REASON_LOST_MOUSE);
+}
+
+
+void MSYS_SimulateClick(MOUSE_REGION* const r, bool const right)
+{
+	if (!r || !(r->uiFlags & MSYS_REGION_ENABLED)) return;
+	MSYS_SimulateHover(r, true);
+	if (!r->ButtonCallback || !(r->uiFlags & MSYS_REGION_ENABLED)) return;
+	r->ButtonCallback(r, right ? MSYS_CALLBACK_REASON_RBUTTON_DWN : MSYS_CALLBACK_REASON_LBUTTON_DWN);
+	if (!(r->uiFlags & MSYS_REGION_EXISTS) || !(r->uiFlags & MSYS_REGION_ENABLED) || !r->ButtonCallback) return;
+	r->ButtonCallback(r, right ? MSYS_CALLBACK_REASON_RBUTTON_UP : MSYS_CALLBACK_REASON_LBUTTON_UP);
+}

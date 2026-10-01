@@ -4,6 +4,7 @@
 #include "JA2Types.h"
 
 #include <string_theory/string>
+#include <vector>
 
 
 #define MAX_POPUP_BOX_STRING_COUNT 50		// worst case = 45: move menu with 20 soldiers, each on different squad + overhead
@@ -89,4 +90,15 @@ void SetBoxSecondaryShade(PopUpBox*, UINT8 colour);
 // min width for box
 void SpecifyBoxMinWidth(PopUpBox*, INT32 iMinWidth);
 
+
+// Introspection for native screens that draw the legacy boxes themselves (NativeUI/MapScreenNative.cc).
+struct PopUpBoxLine
+{
+	ST::string text, second;
+	bool       shaded = false, secondaryShade = false, highlighted = false;
+	SGPBox     area{}; // where the line is on the legacy screen (what a click on it hits)
+};
+/** Every box shown now, in creation order. */
+std::vector<PopUpBox*> ShownPopUpBoxes();
+std::vector<PopUpBoxLine> GetBoxLines(PopUpBox const*);
 #endif

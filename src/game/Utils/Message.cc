@@ -289,7 +289,8 @@ void ScreenMsg(UINT16 usColor, UINT8 ubPriority, const ST::string& str)
 {
 	// pass onto tactical message and mapscreen message; with native toasts (ui_mode "toasts", or a native screen
 	// showing) the on-screen part is a toast instead of the tactical scroll text
-	if (NativeUI::ToastsActive())
+	// (not on the map screen: its message log shows them)
+	if (guiCurrentScreen != MAP_SCREEN && NativeUI::ToastsActive())
 	{
 		if (!IsTimeBeingCompressed())
 		{
@@ -618,4 +619,18 @@ UINT8 GetRangeOfMapScreenMessages(void)
 		// this should always be 255 now, since this only happens when queue fills up, and we never remove any messages
 		return 256 + gubEndOfMapScreenMessageList - gubStartOfMapScreenMessageList;
 	}
+}
+
+
+std::vector<MapScreenMessage_t> GetMapScreenMessages()
+{
+	std::vector<MapScreenMessage_t> out;
+	for (UINT8 i = gubStartOfMapScreenMessageList; i != gubEndOfMapScreenMessageList; i = UINT8((i + 1) % 256))
+	{
+		auto const& m = gMapScreenMessageList[i];
+		if (!m) continue;
+		if (m->fBeginningOfNewString || out.empty()) out.push_back({ m->pString, m->usColor });
+		else out.back().text += ST::string(" ") + m->pString;
+	}
+	return out;
 }

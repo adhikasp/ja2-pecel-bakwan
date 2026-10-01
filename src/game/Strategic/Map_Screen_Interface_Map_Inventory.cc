@@ -1361,3 +1361,10 @@ static BOOLEAN CanPlayerUseSectorInventory(void)
 		sSelMap.y           != sector.y ||
 		iCurrentMapSectorZ != sector.z;
 }
+
+
+// the native map screen's bridge (MapScreenBridge.h)
+MOUSE_REGION* MapBridgePoolSlotRegion(int const slot)
+{
+	return slot >= 0 && slot < MAP_INVENTORY_POOL_SLOT_COUNT ? &MapInventoryPoolSlots[slot] : nullptr;
+}

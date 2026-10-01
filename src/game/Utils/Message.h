@@ -3,6 +3,7 @@
 
 #include "Font_Control.h"
 #include "Types.h"
+#include <vector>
 
 #include <string_theory/string>
 
@@ -49,6 +50,10 @@ void ClearTacticalMessageQueue( void );
 
 void LoadMapScreenMessagesFromSaveGameFile(HWFILE, bool stracLinuxFormat);
 void SaveMapScreenMessagesToSaveGameFile(HWFILE);
+
+// The map screen message list, oldest first, one entry per message (wrapped lines joined), with its font colour.
+struct MapScreenMessage_t { ST::string text; UINT16 color; };
+std::vector<MapScreenMessage_t> GetMapScreenMessages();
 
 // use these if you are not Kris
 void HideMessagesDuringNPCDialogue( void );

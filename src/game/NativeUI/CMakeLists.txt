@@ -15,6 +15,7 @@ if (WITH_NATIVE_UI)
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontOptions.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontSaveLoad.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontNewGame.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/MapScreenNative.cc
     )
     if (WITH_UNITTESTS)
         list(APPEND NATIVE_UI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/NativeUI_unittest.cc)

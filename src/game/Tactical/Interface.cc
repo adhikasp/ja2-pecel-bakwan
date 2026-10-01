@@ -96,6 +96,7 @@ static MOUSE_REGION gMenuOverlayRegion;
 
 
 VIDEO_OVERLAY*       g_ui_message_overlay = NULL;
+ST::string           g_ui_message_text; // what the message overlay says (the native map screen draws it)
 static UINT16        gusUIMessageWidth;
 static UINT16        gusUIMessageHeight;
 UINT32 guiUIMessageTime = 0;
@@ -1624,6 +1625,7 @@ void BeginUIMessage(BOOLEAN fUseSkullIcon, const ST::string& text)
 {
 	guiUIMessageTime = GetJA2Clock( );
 	guiUIMessageTimeDelay = CalcUIMessageDuration(text);
+	g_ui_message_text = text;
 
 	MercPopupBoxFlags const flags = fUseSkullIcon ?
 		MERC_POPUP_PREPARE_FLAGS_SKULLICON :
@@ -1652,6 +1654,7 @@ void BeginMapUIMessage(INT16 delta_y, const ST::string& text)
 {
 	guiUIMessageTime      = GetJA2Clock();
 	guiUIMessageTimeDelay = CalcUIMessageDuration(text);
+	g_ui_message_text     = text;
 
 	g_ui_message_box = PrepareMercPopupBox(g_ui_message_box, BASIC_MERC_POPUP_BACKGROUND, BASIC_MERC_POPUP_BORDER, text, 200, 10, 0, 0, &gusUIMessageWidth, &gusUIMessageHeight, MERC_POPUP_PREPARE_FLAGS_TRANS_BACK);
 

@@ -712,3 +712,36 @@ static void RemoveBoxSecondaryText(PopUpBox* const Box, const INT32 hStringHandl
 		Box->pSecondColumnString[hStringHandle] = NULL;
 	}
 }
+
+
+std::vector<PopUpBox*> ShownPopUpBoxes()
+{
+	std::vector<PopUpBox*> out;
+	FOR_EACH_POPUP_BOX(i)
+	{
+		if ((*i)->fShowBox) out.push_back(*i);
+	}
+	return out;
+}
+
+
+std::vector<PopUpBoxLine> GetBoxLines(PopUpBox const* const box)
+{
+	std::vector<PopUpBoxLine> out;
+	INT32 const h = GetFontHeight(box->font);
+	for (UINT32 i = 0; i < MAX_POPUP_BOX_STRING_COUNT; ++i)
+	{
+		PopUpString const* const t = box->Text[i];
+		if (!t) break;
+		PopUpBoxLine l;
+		l.text = ST::string(t->codepoints);
+		if (PopUpString const* const s = box->pSecondColumnString[i]) l.second = ST::string(s->codepoints);
+		l.shaded = t->fShadeFlag;
+		l.secondaryShade = t->fSecondaryShadeFlag;
+		l.highlighted = t->fHighLightFlag;
+		INT32 const y = box->pos.y + box->uiTopMargin + i * (h + box->uiLineSpace);
+		l.area = SGPBox{ UINT16(box->pos.x + box->uiLeftMargin), UINT16(y), UINT16(box->pos.w - box->uiLeftMargin - box->uiRightMargin), UINT16(h) };
+		out.push_back(std::move(l));
+	}
+	return out;
+}

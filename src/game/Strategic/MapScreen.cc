@@ -81,6 +81,7 @@
 #include "VObject.h"
 #include "VObject_Blitters.h"
 #include "VSurface.h"
+#include "MapScreenBridge.h"
 
 #include <string_theory/format>
 
@@ -8114,4 +8115,119 @@ void SetMapCursorItem()
 	SetMouseCursorFromCurrentItem();
 	gMPanelRegion.ChangeCursor(EXTERN_CURSOR);
 	fMapInventoryItem = TRUE;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------
+// The native map screen's bridge (MapScreenBridge.h): its clicks and keys reach the handlers above.
+
+MOUSE_REGION* MapBridgeInvSlotRegion(int invPos);  // Interface_Items.cc
+MOUSE_REGION* MapBridgePoolSlotRegion(int slot);    // Map_Screen_Interface_Map_Inventory.cc
+
+namespace MapBridge
+{
+
+static MOUSE_REGION* TeamRegion(int const line, TeamColumn const c)
+{
+	if (line < 0 || line >= MAX_CHARACTER_COUNT) return nullptr;
+	CharacterRegions& r = g_character_regions[line];
+	switch (c)
+	{
+		case TEAM_NAME:        return &r.name;
+		case TEAM_ASSIGNMENT:  return &r.assignment;
+		case TEAM_SLEEP:       return &r.sleep;
+		case TEAM_LOCATION:    return &r.location;
+		case TEAM_DESTINATION: return &r.destination;
+		case TEAM_CONTRACT:    return &r.contract;
+	}
+	return nullptr;
+}
+
+void TeamClick(int const line, TeamColumn const c, bool const right)
+{
+	MSYS_SimulateClick(TeamRegion(line, c), right);
+}
+
+void TeamHover(int const line, TeamColumn const c, bool const gain)
+{
+	MSYS_SimulateHover(TeamRegion(line, c), gain);
+}
+
+void SectorHover(SGPSector const* const sector)
+{
+	MOUSE_REGION* const r = &gMapViewRegion;
+	if (!(r->uiFlags & MSYS_REGION_ENABLED)) return;
+	if (!sector)
+	{
+		if (r->MovementCallback) r->MovementCallback(r, MSYS_CALLBACK_REASON_LOST_MOUSE);
+		return;
+	}
+	SGPBox const b = g_ui.m_map.sectorBox(sector->x, sector->y);
+	r->MouseXPos = b.x + b.w / 2;
+	r->MouseYPos = b.y + b.h / 2;
+	r->RelativeXPos = r->MouseXPos - r->RegionTopLeftX;
+	r->RelativeYPos = r->MouseYPos - r->RegionTopLeftY;
+	if (r->MovementCallback) r->MovementCallback(r, MSYS_CALLBACK_REASON_MOVE);
+}
+
+void SectorClick(SGPSector const& sector, bool const right)
+{
+	MOUSE_REGION* const r = &gMapViewRegion;
+	if (!(r->uiFlags & MSYS_REGION_ENABLED)) return;
+	SectorHover(&sector);
+	if (!r->ButtonCallback) return;
+	r->ButtonCallback(r, right ? MSYS_CALLBACK_REASON_RBUTTON_DWN : MSYS_CALLBACK_REASON_LBUTTON_DWN);
+	r->ButtonCallback(r, right ? MSYS_CALLBACK_REASON_RBUTTON_UP : MSYS_CALLBACK_REASON_LBUTTON_UP);
+}
+
+void Key(UINT32 const key, int const mods)
+{
+	switch (mods)
+	{
+		case 1:  HandleModShift(key); break;
+		case 2:  HandleModCtrl(key);  break;
+		case 3:  HandleModAlt(key);   break;
+		default: HandleModNone(key);  break;
+	}
+}
+
+void InventorySlotClick(int const invPos, bool const right)
+{
+	MSYS_SimulateClick(MapBridgeInvSlotRegion(invPos), right);
+}
+
+void PoolItemClick(int const index, bool const right)
+{
+	if (index < 0) return;
+	// the legacy pool shows MAP_INVENTORY_POOL_SLOT_COUNT items a page: turn to the item's page, click its slot
+	iCurrentInventoryPoolPage = index / MAP_INVENTORY_POOL_SLOT_COUNT;
+	fMapPanelDirty = TRUE;
+	MSYS_SimulateClick(MapBridgePoolSlotRegion(index % MAP_INVENTORY_POOL_SLOT_COUNT), right);
+}
+
+void ClickAt(int const x, int const y, bool const right)
+{
+	MSYS_SimulateClick(const_cast<MOUSE_REGION*>(MSYS_RegionAt(INT16(x), INT16(y))), right);
+}
+
+void HoverAt(int const x, int const y)
+{
+	MSYS_SimulateHover(const_cast<MOUSE_REGION*>(MSYS_RegionAt(INT16(x), INT16(y))), true);
+}
+
+void CloseMercInventory()
+{
+	if (fShowInventoryFlag && !fMapInventoryItem && !InItemStackPopup()) fEndShowInventoryFlag = TRUE;
+}
+
+void ToggleSectorInventory()
+{
+	::ToggleSectorInventory();
+}
+
+void CancelMessage()
+{
+	if (g_ui_message_overlay && !gfInConfirmMapMoveMode) CancelMapUIMessage();
+}
+
 }

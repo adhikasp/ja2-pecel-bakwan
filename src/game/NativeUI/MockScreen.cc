@@ -20,6 +20,7 @@
 #include "VSurface.h"
 #include "UiCore.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <memory>
 
@@ -72,8 +73,12 @@ void RegisterFrontEndImages()
 			SDL_DestroySurface(whole);
 			return UpliftArt(map, 2);
 		});
-		// "item-<index>": an item's inventory picture from the player's game data, uplifted 2x
+		// "item-<index>[@<k>]": an item's inventory picture from the player's game data, enlarged by the whole factor k
+		// (default 2): Scale2x for 2 and 4, nearest neighbour for 3. Item art is never scaled by a fraction or stretched:
+		// the UI draws it at exactly k times its own size (MapScreenNative.cc, ItemArt).
 		RegisterImageSource("item-", [](std::string const& name) -> SDL_Surface* {
+			size_t const at = name.find('@');
+			int const k = at == std::string::npos ? 2 : std::clamp(std::atoi(name.c_str() + at + 1), 1, 4);
 			ItemModel const* const item = GCM->getItem(uint16_t(std::atoi(name.c_str() + 5)), ItemSystem::nothrow);
 			if (!item) return nullptr;
 			GraphicModel const& g = item->getInventoryGraphicSmall();
@@ -88,7 +93,14 @@ void RegisterFrontEndImages()
 					if (p[3] && p[1] >= 200 && p[0] <= 64 && p[2] <= 64) { p[0] = p[1] = p[2] = 0; p[3] = 70; }
 				}
 			}
-			return UpliftArt(pic, 1);
+			if (k == 1) return pic;
+			if (k == 3)
+			{
+				SDL_Surface* const big = CropScaled(pic, 0, 0, pic->w, pic->h, 3);
+				SDL_DestroySurface(pic);
+				return big;
+			}
+			return UpliftArt(pic, k == 4 ? 2 : 1);
 		});
 	}
 }

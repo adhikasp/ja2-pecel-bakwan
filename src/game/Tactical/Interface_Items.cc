@@ -5244,3 +5244,10 @@ void DeleteInterfaceItemsGraphics()
 	}
 	allInventoryGraphics.clear();
 }
+
+
+// the native map screen's bridge (Strategic/MapScreenBridge.h)
+MOUSE_REGION* MapBridgeInvSlotRegion(int const invPos)
+{
+	return invPos >= 0 && invPos < NUM_INV_SLOTS ? &gSMInvRegion[invPos] : nullptr;
+}

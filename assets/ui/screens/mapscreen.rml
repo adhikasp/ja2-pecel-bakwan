@@ -1,0 +1,234 @@
+<rml>
+<head>
+	<title>Strategic map</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="mapscreen.rcss"/>
+</head>
+<!-- The native strategic map screen (docs/ui/mapscreen.md). View model: MapScreenViewModel ("mapscreen",
+     src/game/NativeUI/MapScreenNative.cc). Elements with an rclick attribute ("command(args)") also take the right mouse button. -->
+<body class="p4">
+<div class="p4-root" id="map" data-model="mapscreen">
+
+	<!-- ============================================================== top bar -->
+	<div class="p4-top">
+		<div class="timectl" id="map.time" data-class-paused="paused" data-class-is-disabled="!can_compress" data-attr-title="l_time_help">
+			<div class="clock" id="map.clock"><span class="day">{{day}}</span>{{clock}}</div>
+			<div class="tc-btn" id="map.time.pause" data-class-active="paused" data-event-click="time('toggle')" title="Start/Stop Time (Space)"><img class="icon" src="icon-pause"/></div>
+			<div class="tc-btn" id="map.time.slower" data-event-click="time('less')" title="Time Compress (-)"><img class="icon" src="icon-chevron-left"/></div>
+			<div class="tc-btn tc-rate" id="map.time.rate" data-class-active="!paused"><span>{{rate}}</span></div>
+			<div class="tc-btn" id="map.time.faster" data-event-click="time('more')" title="Time Compress (+)"><img class="icon" src="icon-chevron-right"/></div>
+		</div>
+		<div class="filters" id="map.filters">
+			<div class="flt first" id="map.filter.towns" data-class-on="f_towns" data-event-click="filter('w')" title="Show Towns (W)"><img class="icon" src="icon-town"/><span>{{l_towns}}</span><span class="kbd">W</span></div>
+			<div class="flt" id="map.filter.mines" data-class-on="f_mines" data-event-click="filter('m')" title="Show Mines (M)"><img class="icon" src="icon-mine"/><span>{{l_mines}}</span><span class="kbd">M</span></div>
+			<div class="flt" id="map.filter.teams" data-class-on="f_teams" data-event-click="filter('t')" title="Show Teams &amp; Enemies (T)"><img class="icon" src="icon-player-group"/><span>{{l_teams}}</span><span class="kbd">T</span></div>
+			<div class="flt" id="map.filter.militia" data-class-on="f_militia" data-event-click="filter('z')" title="Show Militia &amp; Enemies (Z)"><img class="icon" src="icon-militia"/><span>{{l_militia}}</span><span class="kbd">Z</span></div>
+			<div class="flt" id="map.filter.airspace" data-class-on="f_airspace" data-event-click="filter('a')" title="Show Airspace (A)"><img class="icon" src="icon-helicopter"/><span>{{l_airspace}}</span><span class="kbd">A</span></div>
+			<div class="flt" id="map.filter.items" data-class-on="f_items" data-event-click="filter('i')" title="Show Items (I)"><img class="icon" src="icon-sector-inventory"/><span>{{l_items}}</span><span class="kbd">I</span></div>
+		</div>
+		<div class="grow"></div>
+		<div class="money" id="map.balance" data-attr-title="l_balance"><span class="k">{{l_balance}}</span><span class="v">{{money}} <span class="inc">{{income}}</span></span></div>
+		<button class="btn" id="map.laptop" data-label="Laptop" data-event-click="exit('laptop')"><img class="icon" src="icon-laptop"/><span class="label">{{l_laptop}}</span><span class="badge info" data-if="new_mail">!</span><span class="kbd">L</span></button>
+		<button class="btn" id="map.tactical" data-label="Tactical" data-class-is-disabled="!can_tactical" data-event-click="exit('tactical')"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_tactical}}</span><span class="kbd">Esc</span></button>
+		<button class="icon-btn" id="map.options" data-label="Options" title="Options (O)" data-event-click="exit('options')"><img class="icon" src="icon-options"/></button>
+		<button class="icon-btn" id="map.menu" data-label="Menu" title="Save, load, help, game settings" data-class-on="menu_open" data-event-click="menu"><img class="icon" src="icon-menu"/></button>
+	</div>
+	<div class="ctx-drop audit-over" id="map.menu.list" data-if="menu_open">
+		<div class="menu">
+			<div class="menu-item" id="map.menu.save" data-event-click="exit('save')"><img class="icon" src="icon-save"/><span class="label">{{l_save}}</span><span class="kbd">Ctrl+S</span></div>
+			<div class="menu-item" id="map.menu.load" data-event-click="exit('load')"><img class="icon" src="icon-load"/><span class="label">{{l_load}}</span><span class="kbd">Ctrl+L</span></div>
+			<div class="menu-sep"></div>
+			<div class="menu-item" id="map.menu.help" data-event-click="key('h')"><img class="icon" src="icon-info"/><span class="label">{{l_help}}</span><span class="kbd">H</span></div>
+			<div class="menu-item" id="map.menu.settings" data-event-click="key('v')"><img class="icon" src="icon-options"/><span class="label">{{l_settings}}</span><span class="kbd">V</span></div>
+		</div>
+	</div>
+
+	<div class="p4-main">
+		<!-- ============================================================ team dock -->
+		<div class="dock dock-l" id="map.teamdock">
+			<div class="dock-head"><span class="t">{{l_team}}</span><span class="m">{{team_count}}</span>
+				<button class="icon-btn" id="map.team.group" title="Group by squad" data-class-on="grouped" data-event-click="group"><img class="icon" src="icon-squad"/></button>
+			</div>
+			<div class="team table" id="map.team">
+				<div class="thead"><span class="th c-st"></span>
+					<span class="th c-nm sortable" id="map.sort.name" data-class-sorted="sort == 0" data-event-click="sort(0)" title="Sort by Name (F1)"><span>{{l_col_name}}</span><span class="kbd">F1</span></span>
+					<span class="th c-as sortable" id="map.sort.assignment" data-class-sorted="sort == 1" data-event-click="sort(1)" title="Sort by Assignment (F2)"><span>{{l_col_assign}}</span><span class="kbd">F2</span></span>
+					<span class="th c-lo sortable" id="map.sort.location" data-class-sorted="sort == 3" data-event-click="sort(3)" title="Sort by Location (F4)"><span>{{l_col_loc}}</span></span>
+					<span class="th c-de sortable" id="map.sort.destination" data-class-sorted="sort == 4" data-event-click="sort(4)" title="Sort by Destination (F5)"><span>{{l_col_dest}}</span></span>
+					<span class="th c-hp wide-only"><span>{{l_col_cond}}</span></span>
+					<span class="th c-co sortable" id="map.sort.contract" data-class-sorted="sort == 5" data-event-click="sort(5)" title="Sort by Departure Time (F6)"><span>{{l_col_left}}</span></span>
+				</div>
+				<div class="team-rows scroll" id="map.team.rows">
+					<div data-for="r : team">
+						<div class="grp" data-if="r.group != ''"><img class="icon" data-attr-src="'icon-' + r.group_icon"/><span>{{r.group}}</span><span class="r">{{r.group_meta}}</span></div>
+						<div class="tr" data-attr-id="'map.team[' + r.line + ']'" data-class-selected="r.selected" data-class-multi="r.multi" data-class-plotting="r.plotting" data-class-dimmed="r.dimmed">
+							<div class="c-st" data-attr-id="'map.team[' + r.line + '].sleep'" data-event-click="team(r.line, 2)" data-attr-rclick="'team_r(' + r.line + ',' + 2 + ')'" title="Sleep"><img class="icon" src="icon-asleep" data-if="r.asleep"/></div>
+							<div class="c-nm" data-attr-id="'map.team[' + r.line + '].name'" data-event-click="team(r.line, 0)" data-attr-rclick="'team_r(' + r.line + ',' + 0 + ')'" title="Select Character"><span class="strong">{{r.name}}</span></div>
+							<div class="c-as" data-attr-id="'map.team[' + r.line + '].assignment'" data-event-click="team(r.line, 1)" data-attr-rclick="'team_r(' + r.line + ',' + 1 + ')'" title="Assign Merc"><img class="icon" data-attr-src="'icon-' + r.assign_icon"/><span>{{r.assignment}}</span></div>
+							<span class="c-lo" data-attr-id="'map.team[' + r.line + '].location'" data-event-click="team(r.line, 3)" data-attr-rclick="'team_r(' + r.line + ',' + 3 + ')'" title="Select Character">{{r.location}}</span>
+							<span class="c-de" data-attr-id="'map.team[' + r.line + '].destination'" data-event-click="team(r.line, 4)" data-attr-rclick="'team_r(' + r.line + ',' + 4 + ')'" title="Plot Travel Route">{{r.destination}}</span>
+							<div class="c-hp wide-only"><div class="bar hp"><div class="fill" data-style-width="r.hp + '%'"></div></div><div class="bar breath"><div class="fill" data-style-width="r.energy + '%'"></div></div><div class="bar morale"><div class="fill" data-style-width="r.morale + '%'"></div></div></div>
+							<span class="c-co" data-class-warn-t="r.contract_warn" data-attr-id="'map.team[' + r.line + '].contract'" data-event-click="team(r.line, 5)" data-attr-rclick="'team_r(' + r.line + ',' + 5 + ')'" title="Merc Contract">{{r.contract}}</span>
+						</div>
+					</div>
+					<div class="team-empty" data-if="team_empty"><img class="icon" src="icon-laptop"/><span>{{l_no_team}}</span></div>
+				</div>
+			</div>
+			<div class="team-foot"><span class="kbd">1</span><span>-</span><span class="kbd">0</span><span>{{l_hint_squad}}</span><span class="kbd">Ctrl</span><span>{{l_hint_add}}</span><span class="kbd">&#8592;</span><span class="kbd">&#8594;</span><span>{{l_hint_next}}</span></div>
+			<div class="merc" id="map.merc" data-if="has_merc">
+				<div class="merc-top">
+					<div class="merc-face" id="map.merc.face" title="Enter Inventory (Enter)" data-event-click="key('enter')"><img data-if="m_face != ''" data-attr-src="m_face"/><img class="icon lg" src="icon-vehicle" data-if="m_face == ''"/></div>
+					<div class="merc-id">
+						<span class="nick">{{m_nick}}</span><span class="full">{{m_full}}</span>
+						<div class="asg"><img class="icon" data-attr-src="'icon-' + m_assign_icon"/><span>{{m_assign}}</span></div>
+						<div class="asg dim"><span>{{m_assign2}}</span></div>
+						<div class="stat hp"><span class="k">{{l_hp}}</span><span class="bar hp"><span class="fill" data-style-width="m_hp + '%'"></span></span><span class="v">{{m_hp_text}}</span></div>
+						<div class="stat"><span class="k">{{l_en}}</span><span class="bar breath"><span class="fill" data-style-width="m_en + '%'"></span></span><span class="v">{{m_en_text}}</span></div>
+						<div class="stat"><span class="k">{{l_mor}}</span><span class="bar morale"><span class="fill" data-style-width="m_mor + '%'"></span></span><span class="v">{{m_mor_text}}</span></div>
+					</div>
+				</div>
+				<div class="attrs" data-if="!m_mech"><div class="attr" data-for="a : attrs"><span class="k">{{a.k}}</span><span class="v" data-class-up="a.up">{{a.v}}</span></div></div>
+				<div class="kvs" data-if="!m_mech">
+					<div class="kv2"><span class="k">{{l_contract}}</span><span class="v" data-class-warn-t="m_contract_warn"><span>{{m_contract}}</span></span></div>
+					<div class="kv2"><span class="k">{{l_daily}}</span><span class="v"><span>{{m_salary}}</span></span></div>
+					<div class="kv2"><span class="k">{{l_deposit}}</span><span class="v"><span>{{m_deposit}}</span></span></div>
+					<div class="kv2"><span class="k">{{l_insured}}</span><span class="v"><span>{{m_insured}}</span></span></div>
+				</div>
+				<div class="merc-acts">
+					<button class="btn" id="map.merc.inventory" data-label="Enter Inventory" data-event-click="key('enter')"><img class="icon" src="icon-inventory"/><span class="label">{{l_gear}}</span><span class="kbd">Enter</span></button>
+					<button class="btn" id="map.merc.assign" data-label="Assign" data-event-click="assign"><img class="icon" src="icon-squad"/><span class="label">{{l_assign}}</span><span class="kbd">Alt+A</span></button>
+					<button class="btn last" id="map.merc.contract" data-label="Contract" data-class-is-disabled="m_mech" data-event-click="key('c')"><img class="icon" src="icon-contract"/><span class="label">{{l_contract}}</span><span class="kbd">C</span></button>
+				</div>
+			</div>
+		</div>
+
+		<!-- ============================================================ the map -->
+		<div class="mapview" id="map.view" data-if="!pool_open">
+			<div class="mapview-bg audit-skip"></div>
+			<div class="map-frame live audit-pan" id="map.frame">
+				<div class="map-cols audit-skip"><span data-for="c : cols" data-class-hl="c.hl" data-style-left="c.pos">{{c.label}}</span></div>
+				<div class="map-rows audit-skip"><span data-for="c : rows" data-class-hl="c.hl" data-style-top="c.pos">{{c.label}}</span></div>
+				<div class="map-canvas" id="map.canvas" data-class-airspace="f_airspace">
+					<img class="map-art audit-skip" data-attr-src="map_art"/>
+					<div data-for="s : sectors" data-attr-class="s.cls" data-attr-id="'map.sector[' + s.code + ']'" data-attr-style="s.style" data-event-click="sector(s.x, s.y)" data-attr-rclick="'sector_r(' + s.x + ',' + s.y + ')'" data-event-mouseover="hover(s.x, s.y)">
+						<div class="mks" data-if="s.mk"><div class="mk team" data-class-sel="s.sel_team" data-if="s.team != ''"><img class="icon" src="icon-player-group"/><span>{{s.team}}</span></div><div class="mk moving" data-if="s.moving != ''"><img class="icon" src="icon-merc-moving"/><span>{{s.moving}}</span></div><div class="mk militia" data-if="s.militia != ''"><img class="icon" src="icon-militia"/><span>{{s.militia}}</span></div><div class="mk enemy" data-if="s.enemy != ''"><img class="icon" src="icon-enemy"/><span>{{s.enemy}}</span></div><div class="mk items" data-if="s.items != ''"><img class="icon" src="icon-sector-inventory"/><span>{{s.items}}</span></div></div>
+						<div class="site" data-if="s.site != ''" data-attr-class="'site ' + s.site_cls"><img class="icon" data-attr-src="'icon-' + s.site"/></div>
+						<div class="mine-t" data-if="s.mine_text != ''"><span data-class-ours="s.mine_ours">{{s.mine_text}}</span></div>
+						<div class="battle" data-if="s.battle"></div>
+					</div>
+					<div class="tb audit-skip" data-for="b : borders" data-attr-style="b.style"></div>
+					<div data-for="r : route" data-attr-class="r.cls" data-attr-style="r.style"><img class="icon" src="icon-destination" data-if="r.dest"/></div>
+					<div class="town-lbl audit-skip" data-for="t : towns" data-attr-class="'town-lbl audit-skip ' + t.cls" data-attr-style="t.style"><span class="n">{{t.name}}</span><span class="l ok-t" data-if="t.loyalty != ''">{{t.loyalty}}</span></div>
+					<div class="site heli" id="map.heli" data-if="heli_on" data-attr-style="heli_style" title="Skyrider"><img class="icon" src="icon-helicopter"/></div>
+					<div class="site arrive" id="map.arrival" data-if="arrive_on" data-attr-style="arrive_style" title="Arrivals land here"><img class="icon" src="icon-destination"/></div>
+				</div>
+			</div>
+			<div class="levels audit-over" id="map.levels" title="Map level (Insert, Delete)"><span class="cap">{{l_level}}</span><span data-for="v : levels" data-attr-class="v.cls" data-attr-id="'map.level[' + v.z + ']'" data-event-click="level(v.z)">{{v.label}}</span></div>
+			<div class="map-tools audit-over" id="map.zoom">
+				<button class="icon-btn" id="map.zoom.out" title="Zoom out (wheel)" data-event-click="zoom(-1)"><img class="icon" src="icon-remove"/></button>
+				<span class="zoom">{{zoom_text}}</span>
+				<button class="icon-btn" id="map.zoom.in" title="Zoom in (wheel)" data-event-click="zoom(1)"><img class="icon" src="icon-add"/></button>
+				<button class="icon-btn" id="map.zoom.fit" title="Fit the map" data-event-click="zoom(0)"><img class="icon" src="icon-map"/></button>
+				<button class="icon-btn" id="map.legend.toggle" title="Legend" data-class-on="legend" data-event-click="legend"><img class="icon" src="icon-info"/></button>
+			</div>
+			<div class="legend audit-over" id="map.legend" data-if="legend">
+				<div class="li"><div class="mk team"><img class="icon" src="icon-player-group"/><span>5</span></div><span>{{l_lg_team}}</span></div>
+				<div class="li"><div class="mk militia"><img class="icon" src="icon-militia"/><span>4</span></div><span>{{l_lg_militia}}</span></div>
+				<div class="li"><div class="mk enemy"><img class="icon" src="icon-enemy"/><span>?</span></div><span>{{l_lg_enemy}}</span></div>
+				<div class="li"><div class="sw" style="background-color: #0B0F0D8C;"></div><span>{{l_lg_fog}}</span></div>
+			</div>
+			<div class="banner audit-over" id="map.plot.banner" data-if="banner != ''" data-class-heli="banner_heli"><img class="icon" data-attr-src="banner_heli ? 'icon-helicopter' : 'icon-destination'"/>
+				<div class="txt"><span class="t1">{{banner}}</span><span class="t2">{{banner_sub}}</span></div>
+				<button class="btn" id="map.plot.cancel" data-label="Cancel" data-event-click="key('escape')"><span class="label">{{l_cancel}}</span><span class="kbd">Esc</span></button>
+			</div>
+			<div class="map-msg audit-over" id="map.uimsg" data-if="ui_message != ''" data-event-click="dismiss"><span>{{ui_message}}</span></div>
+		</div>
+
+		<!-- ============================================================ sector inventory -->
+		<div class="inv-area" id="map.inv" data-if="pool_open">
+			<div class="inv-merc" id="map.inv.merc">
+				<span class="sec-title">{{gear_title}}</span>
+				<div class="gear" id="map.inv.gear"><div data-for="g : gear" data-attr-class="'slot gslot ' + g.cls" data-attr-id="'map.inv.slot[' + g.pos + ']'" data-attr-style="g.style" data-event-click="slot(g.pos)" data-attr-rclick="'slot_r(' + g.pos + ')'" data-attr-title="g.name"><img class="art" data-if="g.art != ''" data-attr-src="g.art" data-attr-style="g.art_style"/><span class="count" data-if="g.count != ''">{{g.count}}</span><span class="lbl">{{g.label}}</span><div class="cond" data-if="g.cond >= 0"><div class="fill" data-style-width="g.cond + '%'"></div></div></div></div>
+				<div class="inv-stats"><div class="kv2"><span class="k">{{l_weight}}</span><span class="v"><span>{{gear_weight}}</span></span></div><div class="kv2"><span class="k">{{l_camo}}</span><span class="v"><span>{{gear_camo}}</span></span></div></div>
+			</div>
+			<div class="inv-pool" id="map.inv.pool">
+				<div class="inv-tools">
+					<span class="sec-title">{{pool_title}}</span>
+					<div class="grow"></div>
+				</div>
+				<div class="inv-closed" data-if="pool_title == ''"><button class="btn" id="map.inv.openpool" data-label="Sector Inventory" data-event-click="open_pool"><img class="icon" src="icon-sector-inventory"/><span class="label">{{l_sector_inv}}</span><span class="kbd">Ctrl+I</span></button></div>
+				<div class="inv-tools" data-if="pool_title != ''"><div data-for="c : cats" data-attr-class="c.on ? 'cat on' : 'cat'" data-attr-id="'map.inv.cat.' + c.key" data-event-click="category(c.key)"><img class="icon" data-attr-src="'icon-' + c.icon"/><span>{{c.label}}</span><span class="n">{{c.n}}</span></div></div>
+				<div class="inv-empty" data-if="pool_title != '' &amp;&amp; pool.size == 0"><img class="icon" src="icon-sector-inventory"/><span>{{l_pool_empty}}</span></div>
+				<div class="inv-grid scroll" id="map.inv.grid"><div data-for="p : pool" class="slot pslot" data-class-away="p.away" data-class-sel="p.sel" data-attr-id="'map.inv.item[' + p.index + ']'" data-event-click="pool(p.index)" data-attr-rclick="'pool_r(' + p.index + ')'" data-attr-title="p.name"><img class="art" data-attr-src="p.art" data-attr-style="p.art_style"/><span class="count" data-if="p.count != ''">{{p.count}}</span><span class="nm">{{p.name}}</span><div class="cond"><div class="fill" data-style-width="p.cond + '%'"></div></div></div></div>
+				<div class="inv-foot"><span>{{l_inv_hint}}</span><div class="grow"></div>
+					<button class="btn btn-primary" id="map.inv.done" data-label="Done" data-event-click="pool_done"><img class="icon" src="icon-confirm"/><span class="label">{{l_done}}</span><span class="kbd">Esc</span></button>
+				</div>
+			</div>
+		</div>
+
+		<!-- ============================================================ sector dock -->
+		<div class="dock dock-r" id="map.sectordock" data-if="!pool_open">
+			<div class="dock-head"><span class="t">{{l_sector}}</span><span class="m">{{l_sector_hint}}</span></div>
+			<div class="sector" id="map.sector">
+				<div class="sec-head"><span class="sec-code" id="map.sector.code">{{s_code}}</span><div class="sec-name"><span class="n">{{s_name}}</span><span class="s">{{s_sub}}</span></div></div>
+				<div class="box" id="map.sector.forces"><span class="sec-title">{{l_forces}}</span>
+					<div class="forces">
+						<div class="force"><span class="n">{{s_mercs}}</span><span class="l">{{l_mercs}}</span></div>
+						<div class="force g"><span class="n">{{s_green}}</span><span class="l">{{l_green}}</span></div>
+						<div class="force r"><span class="n">{{s_regular}}</span><span class="l">{{l_regular}}</span></div>
+						<div class="force v"><span class="n">{{s_veteran}}</span><span class="l">{{l_veteran}}</span></div>
+						<div class="force e last"><span class="n">{{s_enemy}}</span><span class="l">{{l_enemy}}</span></div>
+					</div>
+				</div>
+				<div class="box" id="map.sector.town" data-if="s_town != ''"><span class="sec-title">{{s_town}}</span>
+					<div class="row"><img class="icon" src="icon-town"/><span class="k">{{l_control}}</span><span class="v">{{s_control}}</span></div>
+					<div class="row" data-if="s_loyalty >= 0"><img class="icon" src="icon-loyalty"/><span class="k">{{l_loyalty}}</span><span class="bar ok"><span class="fill" data-style-width="s_loyalty + '%'"></span></span><span class="v">{{s_loyalty}}%</span></div>
+					<div class="row" data-if="s_training != ''"><img class="icon" src="icon-militia"/><span class="k">{{l_training}}</span><span class="v">{{s_training}}</span></div>
+				</div>
+				<div class="box" id="map.sector.mine" data-if="s_mine != ''"><span class="sec-title">{{s_mine}}</span>
+					<div class="row"><img class="icon" src="icon-mine"/><span class="k">{{l_producing}}</span><span class="v">{{s_mine_now}}</span></div>
+					<div class="row"><span class="k">{{l_possible}}</span><span class="v">{{s_mine_max}}</span></div>
+				</div>
+				<div class="box" id="map.sector.sam" data-if="s_sam != ''"><span class="sec-title">{{l_sam}}</span><div class="row"><img class="icon" src="icon-sam-site"/><span class="k">{{s_sam}}</span></div></div>
+				<div class="box" id="map.sector.items"><span class="sec-title">{{l_items}}</span>
+					<div class="row"><img class="icon" src="icon-sector-inventory"/><span class="k">{{l_in_sector}}</span><span class="v">{{s_items}}</span></div>
+					<button class="btn" id="map.sector.inventory" data-label="Sector Inventory" data-event-click="open_pool"><img class="icon" src="icon-sector-inventory"/><span class="label">{{l_sector_inv}}</span><span class="kbd">Ctrl+I</span></button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- ============================================================== bottom bar and log -->
+	<div class="p4-bottom" id="map.log.bar">
+		<button class="icon-btn" id="map.log.expand" title="Message log (Page Up)" data-event-click="log"><img class="icon" data-attr-src="log_open ? 'icon-chevron-down' : 'icon-chevron-up'"/></button>
+		<span class="msg" id="map.log.last" data-attr-title="last_message">{{last_message}}</span>
+		<span class="hint">{{l_map_hint}}</span>
+	</div>
+	<div class="log audit-over" id="map.log" data-if="log_open">
+		<div class="log-head"><span class="t">{{l_messages}}</span><div class="grow"></div>
+			<button class="icon-btn" id="map.log.collapse" title="Close" data-event-click="log"><img class="icon" src="icon-chevron-down"/></button>
+		</div>
+		<div class="log-body scroll" id="map.log.list"><div class="lm" data-for="m : messages" data-attr-class="'lm ' + m.cls"><img class="icon" data-attr-src="'icon-' + m.icon"/><span class="x">{{m.text}}</span></div></div>
+	</div>
+
+	<!-- ============================================================== menus mirrored from the legacy popup boxes -->
+	<div class="ctx audit-over" data-for="b : menus" data-attr-id="'map.popup[' + b.index + ']'" data-style-left="b.l" data-style-top="b.t">
+		<div class="menu">
+			<div data-for="l : mlines" data-attr-class="l.box == b.index ? l.cls : 'gone'" data-attr-id="'map.popup[' + l.box + '].line[' + l.line + ']'" data-event-click="menu_pick(l.box, l.line)" data-attr-rclick="'menu_pick_r(' + l.box + ',' + l.line + ')'" data-event-mouseover="menu_hover(l.box, l.line)"><span class="label">{{l.text}}</span><span class="val" data-if="l.second != ''">{{l.second}}</span></div>
+		</div>
+	</div>
+
+	<!-- ============================================================== update box -->
+	<div class="scrim" data-if="update_open"></div>
+	<div class="modal audit-over" id="map.update" data-if="update_open" style="left: 50%; top: 50%; width: 520dp; margin-left: -260dp; margin-top: -200dp;">
+		<div class="modal-head"><img class="icon status" src="icon-info"/><span class="title">{{update_title}}</span></div>
+		<div class="modal-body"><div class="upd"><div class="upd-m" data-for="u : update"><div class="f"><img data-if="u.face != ''" data-attr-src="u.face"/></div><span class="n">{{u.name}}</span></div></div></div>
+		<div class="modal-foot">
+			<button class="btn" id="map.update.stop" data-label="Stop" data-event-click="update_end(0)"><img class="icon" src="icon-pause"/><span class="label">{{l_stop}}</span><span class="kbd">Esc</span></button>
+			<button class="btn btn-primary" id="map.update.continue" data-label="Continue" data-event-click="update_end(1)"><img class="icon" src="icon-play"/><span class="label">{{l_continue}}</span><span class="kbd">Space</span></button>
+		</div>
+	</div>
+
+</div>
+</body>
+</rml>

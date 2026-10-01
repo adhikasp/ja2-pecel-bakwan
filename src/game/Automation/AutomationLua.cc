@@ -24,6 +24,7 @@
 #include "Dialogue_Control.h"
 #include "Message.h"
 #include "Strategic_Exit_GUI.h"
+#include "Strategic_Pathing.h"
 #include "Strategic_Movement.h"
 #include "PreBattle_Interface.h"
 #include "Auto_Resolve.h"
@@ -318,6 +319,10 @@ namespace
 			{
 				t["assignmentName"] = pAssignmentStrings[m->bAssignment].to_std_string();
 			}
+			// where the merc is going on the strategic map (his plotted route's last sector), and whether he sleeps
+			t["destination"] = SGPSector::FromStrategicIndex(GetLastSectorIdInCharactersPath(m)).AsShortString().to_std_string();
+			t["asleep"]   = m->fMercAsleep != 0;
+			t["trainStat"] = static_cast<int>(m->bTrainStat);
 			t["life"]     = static_cast<int>(m->bLife);
 			t["lifeMax"]  = static_cast<int>(m->bLifeMax);
 			t["inSector"] = m->bInSector != 0;
