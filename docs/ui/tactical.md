@@ -121,6 +121,15 @@ locator, cursor AP text, sounds on buttons and drops. All stay; face animation m
 | Item pictures | original art at integer scale (2× at 1080p, floor(2·dp) elsewhere), centred, never stretched | owner rule |
 | Overhead map | integer-scaled, full screen, with legend and squad list | was 640×320 |
 
+## Owner decisions (approved)
+
+- All Phase 5 wireframes (the ten states in `assets/ui/mocks/phase5/`, screenshots in
+  `pr-screenshots/native-phase-5-wireframes/`) and the changes in section 8 are approved by the owner.
+- The message log key is **H**. H opens the tactical help screen today (`ShouldTheHelpScreenComeUp`), so help needs a new
+  key at implementation time.
+- Long guns must not be clipped in the hand slot. The hand slot and the card's hand strip must fit the widest small item
+  picture at its integer scale, never cut it and never stretch it.
+
 ## 9. Parity tour
 
 Planned `tests/e2e/tactical_parity.lua` (M4): every row of §2–§3 by element id (`tac.*` ids used in the mocks) with
