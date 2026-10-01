@@ -236,7 +236,8 @@ public:
 	UINT16                m_worldWidth = 0;                               /**< World buffer size in world pixels (0: same as the screen). */
 	UINT16                m_worldHeight = 0;
 	UINT8                 m_uiScale = 1;                                  /**< Su: physical pixels per UI pixel */
-	UINT8                 m_worldZoom = 1;                                /**< Zw: physical pixels per world pixel */
+	UINT8                 m_worldZoom = 1;                                /**< Zw: physical pixels per world pixel (whole part) */
+	UINT16                m_worldZoomQ = 8;                               /**< Zw exactly, in 1/WORLD_ZOOM_STEPS (fractional zoom) */
 
 	// Map screen interface
 	SGPPoint              m_versionPosition;

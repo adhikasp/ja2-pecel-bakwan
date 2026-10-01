@@ -358,7 +358,7 @@ if (WITH_UNITTESTS)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
-            if(n MATCHES "^tactical_layers")
+            if(n MATCHES "^(tactical_layers|world_renderer)")
                 continue() # run below, with layers
             endif()
             add_test(
@@ -380,6 +380,20 @@ if (WITH_UNITTESTS)
                     --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/tactical_layers_${lres}_su${lsu}_zw${lzw}"
             )
         endforeach()
+        # Phase 8 world renderer: per-pixel equivalence (CPU pipeline always, GPU where there is one), frames and
+        # picking; then the layered tactical test with the whole game drawn by the recorded pipeline.
+        add_test(
+            NAME e2e_world_renderer
+            COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/world_renderer.lua" --isolated
+                --res 1920x1080 --uiscale 2 --worldzoom 1 --timeout 900
+                --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/world_renderer"
+        )
+        add_test(
+            NAME e2e_tactical_layers_pipeline
+            COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/tactical_layers.lua" --isolated
+                --res 1920x1080 --uiscale 2 --worldzoom 1 --timeout 600
+                --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/tactical_layers_pipeline"
+        )
         add_test(
             NAME e2e_tactical_layers_ui
             COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/tactical_layers_ui.lua" --isolated
@@ -398,6 +412,8 @@ if (WITH_UNITTESTS)
             LABELS e2e
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>"
         )
+        set_tests_properties(e2e_tactical_layers_pipeline PROPERTIES
+            ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>;JA2_WORLD_RENDERER=pipeline")
         # Resolution matrix: every tour at every supported resolution, with a
         # layout check (ja2.assertInsideScreen) and golden-screenshot compare.
         set(RESOLUTION_MATRIX 640x480 1280x720 1920x1080 2560x1080 3440x1440)
@@ -405,7 +421,7 @@ if (WITH_UNITTESTS)
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             get_filename_component(ext ${f} EXT)
-            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options)")
+            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer)")
                 continue()
             endif()
             foreach(res ${RESOLUTION_MATRIX})

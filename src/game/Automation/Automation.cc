@@ -230,7 +230,8 @@ void PreInit(Options const& o)
 	if (!o.Active()) return;
 
 	sgp::SetHeadless(o.Headless());
-	sgp::Clock::EnableVirtual(std::chrono::duration_cast<std::chrono::nanoseconds>(
+	// JA2_REAL_CLOCK: keep the wall clock (frame-rate measurements in a real window; runs are not reproducible)
+	if (!std::getenv("JA2_REAL_CLOCK")) sgp::Clock::EnableVirtual(std::chrono::duration_cast<std::chrono::nanoseconds>(
 		std::chrono::duration<double, std::milli>(o.frameMs)));
 	TextRegistry::SetEnabled(true);
 }

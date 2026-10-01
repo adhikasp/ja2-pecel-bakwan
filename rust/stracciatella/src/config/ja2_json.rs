@@ -58,6 +58,8 @@ pub struct Ja2JsonContent {
     native_ui_scale: Option<f32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     reduced_motion: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    world_renderer: Option<String>,
 }
 
 /// Struct to handle interactions with the JSON configuration file
@@ -133,6 +135,7 @@ impl Ja2Json {
         copy_to!(content.ui_mode, engine_options.ui_mode);
         copy_to!(content.native_ui_scale, engine_options.native_ui_scale);
         copy_to!(content.reduced_motion, engine_options.reduced_motion);
+        copy_to!(content.world_renderer, engine_options.world_renderer);
 
         Ok(())
     }
@@ -163,6 +166,7 @@ impl Ja2Json {
             ui_mode: None,
             native_ui_scale: None,
             reduced_motion: None,
+            world_renderer: None,
         };
 
         copy_to!(engine_options.vanilla_game_dir, content.game_dir);
@@ -186,6 +190,9 @@ impl Ja2Json {
         }
         if engine_options.reduced_motion {
             copy_to!(engine_options.reduced_motion, content.reduced_motion);
+        }
+        if !engine_options.world_renderer.is_empty() {
+            copy_to!(engine_options.world_renderer, content.world_renderer);
         }
 
         let json = json::ser::to_string(&content)

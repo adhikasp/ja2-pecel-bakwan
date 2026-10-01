@@ -1,0 +1,159 @@
+#version 450
+// The world renderer's rasterizer (src/sgp/WorldPipeline.h): one thread per pixel of the world, walking the
+// sprite instances that cover its 16x16 bin in the legacy submission order. Colour (RGB565) and depth stay in
+// registers, so every legacy blitter rule, including the ones that read the destination (shade-table shadows,
+// 50 % translucency), is exact. ApplyPixel in WorldPipeline.h is the reference; keep the two in step.
+//
+// Compiled to SPIR-V by tools/shaders/build.sh (glslangValidator) into world_raster.comp.spv.h.
+// SDL_GPU compute resource layout: set 0 = read-only storage buffers, set 1 = read-write storage
+// textures then buffers, set 2 = uniform buffers.
+
+layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
+
+// Resource slots per backend. SPIR-V / HLSL (spirv-cross maps set -> register space): SDL_GPU's compute sets.
+// MSL (spirv-cross --msl-decoration-binding): [[buffer]] uniform 0, read-only 1..7, read-write 8; [[texture]] 0.
+#ifdef MSL_LAYOUT
+#define RO(n) set = 0, binding = (n + 1)
+#define RW_TEX set = 0, binding = 0
+#define RW_BUF set = 0, binding = 8
+#define UNIFORM set = 0, binding = 0
+#else
+#define RO(n) set = 0, binding = n
+#define RW_TEX set = 1, binding = 0
+#define RW_BUF set = 1, binding = 1
+#define UNIFORM set = 2, binding = 0
+#endif
+
+layout(std430, RO(0)) readonly buffer Instances { uvec4 inst[]; };  // 2 per instance
+layout(std430, RO(1)) readonly buffer Ranges    { uint ranges[]; }; // first, count per bin
+layout(std430, RO(2)) readonly buffer Items     { uint items[]; };
+layout(std430, RO(3)) readonly buffer Pixels    { uint pixels[]; };  // uint16 pairs
+layout(std430, RO(4)) readonly buffer Palettes  { uint palettes[]; };// uint16 pairs
+layout(std430, RO(5)) readonly buffer Columns   { uint columns[]; }; // uint16 pairs
+layout(std430, RO(6)) readonly buffer Shade     { uint shade[]; };   // uint16 pairs, 65536
+
+layout(RW_TEX, rgba8) uniform writeonly image2D outImage;
+layout(std430, RW_BUF) writeonly buffer Out565 { uint out565[]; };
+
+layout(std140, UNIFORM) uniform Params
+{
+	uint width;
+	uint height;
+	uint binCols;
+	uint clearColor;
+	uint clearDepth;
+	uint mask;
+	uint pad0;
+	uint pad1;
+};
+
+uint Pixel(uint i)   { return (pixels[i >> 1]   >> ((i & 1u) * 16u)) & 0xFFFFu; }
+uint Pal(uint i)     { return (palettes[i >> 1] >> ((i & 1u) * 16u)) & 0xFFFFu; }
+uint Column(uint i)  { return (columns[i >> 1]  >> ((i & 1u) * 16u)) & 0xFFFFu; }
+uint ShadeOf(uint c) { return (shade[c >> 1]    >> ((c & 1u) * 16u)) & 0xFFFFu; }
+
+// Op numbers: WorldPipe::Op
+const uint Transparent = 0u, TransZ = 1u, TransZNB = 2u, TransZObscured = 3u, TransZInc = 4u, TransZIncBurns = 5u,
+	TransZIncObscure = 6u, TransShadow = 7u, TransShadowZ = 8u, TransShadowZNB = 9u, TransShadowZNBObscured = 10u,
+	Shadow = 11u, ShadowZ = 12u, ShadowZNB = 13u, TranslucentZ = 14u, TranslucentZNB = 15u, Outline = 16u,
+	OutlineZ = 17u, OutlineZObscuredLE = 18u, OutlineZObscuredLT = 19u, OutlineZNB = 20u, TransShadowZInc = 21u,
+	TransShadowZIncObscure = 22u;
+
+shared uvec4 sharedA[256];
+shared uvec4 sharedB[256];
+
+void main()
+{
+	uint x = gl_GlobalInvocationID.x;
+	uint y = gl_GlobalInvocationID.y;
+	bool inside = x < width && y < height;
+
+	uint D = clearColor;
+	uint Z = clearDepth;
+	// The whole workgroup is one bin: its instances are loaded into shared memory 256 at a time
+	uint bin = gl_WorkGroupID.y * binCols + gl_WorkGroupID.x;
+	uint first = ranges[bin * 2u];
+	uint count = ranges[bin * 2u + 1u];
+	for (uint base = 0u; base < count; base += 256u)
+	{
+	uint lane = gl_LocalInvocationIndex;
+	if (base + lane < count)
+	{
+		uint li = items[first + base + lane];
+		sharedA[lane] = inst[li * 2u];
+		sharedB[lane] = inst[li * 2u + 1u];
+	}
+	barrier();
+	uint n = min(256u, count - base);
+	for (uint k = 0u; k < n && inside; ++k)
+	{
+		uvec4 a = sharedA[k];
+		uvec4 b = sharedB[k];
+		uint x0 = a.x & 0xFFFFu, y0 = a.x >> 16;
+		uint x1 = a.y & 0xFFFFu, y1 = a.y >> 16;
+		if (x < x0 || x >= x1 || y < y0 || y >= y1) continue;
+		int ox = int(a.z << 16) >> 16;
+		int oy = int(a.z) >> 16;
+		// layout: a = (x0|y0, x1|y1, ox|oy, sprite), b = (w|op|parity, palette, z|outline, columns)
+		uint w = b.x & 0xFFFFu;
+		uint op = (b.x >> 16) & 0xFFu;
+		uint parity = b.x >> 24;
+		uint s = Pixel(a.w + uint(int(y) - oy) * w + uint(int(x) - ox));
+		if ((s & 0x100u) == 0u) continue;
+		uint idx = s & 0xFFu;
+		uint pal = b.y * 256u;
+		uint zc = b.w == 0xFFFFFFFFu ? (b.z & 0xFFFFu) :
+			(parity & 2u) != 0u ? Column(b.w + (y - y0) * (x1 - x0) + (x - x0)) : Column(b.w + (x - x0));
+		uint outline = b.z >> 16;
+		bool L = ((y + (parity & 1u)) & 1u) == (x & 1u);
+		switch (op)
+		{
+			case Transparent: D = Pal(pal + idx); break;
+			case TransZ: if (Z <= zc) { Z = zc; D = Pal(pal + idx); } break;
+			case TransZNB: if (Z <= zc) D = Pal(pal + idx); break;
+			case TransZObscured: if (Z < zc) { Z = zc; D = Pal(pal + idx); } else if (L) D = Pal(pal + idx); break;
+			case TransZInc: if (Z < zc) { Z = zc; D = Pal(pal + idx); } break;
+			case TransZIncBurns: if (Z <= zc) { Z = zc; D = Pal(pal + idx); } break;
+			case TransZIncObscure: if (Z < zc || L) { Z = zc; D = Pal(pal + idx); } break;
+			case TransShadow: D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); break;
+			case TransShadowZ: if (Z < zc) { Z = zc; D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); } break;
+			case TransShadowZNB: if (Z < zc) D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); break;
+			case TransShadowZNBObscured:
+				if (idx == 254u) { if (Z < zc) D = ShadeOf(D); }
+				else if (Z <= zc || L) D = Pal(pal + idx);
+				break;
+			case Shadow: D = ShadeOf(D); break;
+			case ShadowZ: if (Z < zc) { Z = zc; D = ShadeOf(D); } break;
+			case ShadowZNB: if (Z < zc) D = ShadeOf(D); break;
+			case TranslucentZ:
+				if (Z <= zc) { Z = zc; D = (((Pal(pal + idx) >> 1) & mask) + ((D >> 1) & mask)) & 0xFFFFu; }
+				break;
+			case TranslucentZNB:
+				if (Z <= zc) D = (((Pal(pal + idx) >> 1) & mask) + ((D >> 1) & mask)) & 0xFFFFu;
+				break;
+			case Outline: if (idx != 254u) D = Pal(pal + idx); else if (outline != 0u) D = outline; break;
+			case OutlineZ: if (Z <= zc) { if (idx == 254u) D = outline; else { Z = zc; D = Pal(pal + idx); } } break;
+			case OutlineZObscuredLE:
+				if (Z <= zc) Z = zc; else if (!L) break;
+				D = idx == 254u ? outline : Pal(pal + idx);
+				break;
+			case OutlineZObscuredLT:
+				if (Z < zc) Z = zc; else if (!L) break;
+				D = idx == 254u ? outline : Pal(pal + idx);
+				break;
+			case OutlineZNB: if (Z < zc && idx != 254u) D = Pal(pal + idx); break;
+			case TransShadowZInc: if (Z <= zc) { Z = zc; D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); } break;
+			case TransShadowZIncObscure: if (Z < zc || L) { Z = zc; D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); } break;
+			default: break;
+		}
+	}
+
+	barrier();
+	}
+
+	if (!inside) return;
+	out565[y * width + x] = D;
+	uint r = (D >> 11) & 31u, g = (D >> 5) & 63u, bl = D & 31u;
+	vec3 c = vec3(float((r << 3) | (r >> 2)), float((g << 2) | (g >> 4)), float((bl << 3) | (bl >> 2))) / 255.0;
+	imageStore(outImage, ivec2(int(x), int(y)), vec4(c, 1.0));
+}

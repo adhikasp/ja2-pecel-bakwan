@@ -28,6 +28,7 @@ struct VideoDisplaySettings
 	int        uiScale;
 	WindowMode windowMode;
 	int        worldZoom = VideoLayout::WORLD_ZOOM_MATCH_UI; // 0 = the world follows the UI scale (one layer)
+	int        worldZoomQ = 0; // fractional world zoom in 1/WORLD_ZOOM_STEPS (GPU world renderer only); 0 = worldZoom
 };
 
 /** Logical canvas size and effective scale for the settings. Queries the desktop, so SDL's
@@ -152,6 +153,25 @@ bool VideoTakeOutputCapture(std::vector<uint8_t>& rgb, int& w, int& h);
  * window's pixels, or the ScreenBuffer headless, where the mapping is the identity). */
 struct VideoOutputMapping { float sx, sy, ox, oy; int w, h; bool gpu; };
 VideoOutputMapping VideoGetOutputMapping();
+
+/* ---- Phase 8: the world drawn by a recording renderer (src/game/TileEngine/WorldRender.h) ---------------------
+ * Set before InitializeVideoManager: */
+/** The world is always a layer of its own (at the UI scale when no world zoom is set). */
+void VideoSetForceLayered(bool);
+bool VideoForceLayered();
+/** Create the renderer on an SDL_GPU Vulkan device that the world renderer shares (SDL's "gpu" render driver). */
+void VideoRequestGpuDevice(bool);
+/** That device, or null (headless, not asked for, or not available). */
+SDL_GPUDevice* VideoGpuDevice();
+/** The world layer is this texture (RGBA8, on VideoGpuDevice(), w x h world pixels) instead of the WORLD_BUFFER;
+ * null goes back to the WORLD_BUFFER. */
+void VideoSetWorldGpuTexture(SDL_GPUTexture*, int w, int h);
+/** Whether the GPU world texture was presented since the last call (then a new world frame is worth drawing). */
+bool VideoTakeWorldGpuPresented();
+/** Called whenever a frame is put on the window (frame-rate measurements). */
+void VideoSetPresentHook(void (*)());
+/** The world is redrawn whole every frame: scrolling does not move and patch the WORLD_BUFFER. */
+void VideoSetWorldRecorded(bool);
 
 void         VideoSetFullScreen(BOOLEAN enable);
 /** Creates the window and renderer. The logical canvas (SCREEN_WIDTH x SCREEN_HEIGHT) must have
