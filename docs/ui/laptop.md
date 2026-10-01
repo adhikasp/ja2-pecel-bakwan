@@ -9,7 +9,7 @@
 | Screen id | `LAPTOP_SCREEN` (`ja2.state().laptopMode` = `LaptopMode` in `Laptop.h`) |
 | Reached from | new game (straight after the difficulty confirmation), map screen Laptop button / `L`, tactical `L` |
 | Returns to | `MAP_SCREEN` (`SetLaptopExitScreen`), or the screen it came from |
-| Status | draft, M2 wireframes awaiting owner approval |
+| Status | wireframes approved by the owner (2026-10-02); implementation in progress |
 
 ## 1. How it was audited
 
@@ -191,17 +191,26 @@ motion (`--t-slow` panel transitions).
 - [ ] 1280x720 to 3440x1440: the wireframes hold at all three sizes (no layout-audit findings)
 - [ ] Keyboard only: F1–F6, Tab, Esc, quiz answers by number, Enter confirms
 
-## 8. Deliberately dropped or changed (proposed, needs owner approval)
+## 8. Deliberately dropped or changed
 
-| Item | Decision | Reason |
-|---|---|---|
-| Laptop bezel, LEDs, desk wallpaper | dropped | full-screen OS per the plan; status moves to the system bar |
-| Program windows minimise/maximise animation | replaced by panel transitions | |
-| Bookmark drop-down | always-visible bookmark bar | one click instead of two |
-| Back/Forward in the browser | added | modern browser expectation; within visited modes only |
-| A.I.M. sort page + mug-shot index | merged into one member grid with sort chips | same functions, one page |
-| Paged lists (mail, ledger, history, Bobby Ray's 4-per-page) | scrolling lists | modern displays fit more; page keys kept |
-| Site art (logos, wood, marble, wallpapers) | native per-site styling (`--site-*` tokens) | page content from text data, no baked images |
+Owner decisions on the M2 wireframes (2026-10-02, `native-phase-6-wireframes/` on `pr-screenshots`):
+- Every wireframe is approved as shown: the shell (system bar, dock, desktop), e-mail, A.I.M. members and member page
+  with the docked hire panel, M.E.R.C., the I.M.P. quiz, Bobby Ray's shop and order form, finances and personnel.
+- The sites that were not mocked (florist, insurance, mortuary, the remaining A.I.M. and I.M.P. pages, files, history)
+  follow the same patterns: Night Ops shell, the site's own `--site-*` identity, content from the text data.
+- Faces and other content art may scale fractionally (the 1dp layout scale), as long as the aspect ratio is kept;
+  they are never stretched non-uniformly.
+- The changes in the table below are approved.
+
+| Item | Decision | Reason | Approved by |
+|---|---|---|---|
+| Laptop bezel, LEDs, desk wallpaper | dropped | full-screen OS per the plan; status moves to the system bar | owner, 2026-10-02 |
+| Program windows minimise/maximise animation | replaced by panel transitions | | owner, 2026-10-02 |
+| Bookmark drop-down | always-visible bookmark bar | one click instead of two | owner, 2026-10-02 |
+| Back/Forward in the browser | added | modern browser expectation; within visited modes only | owner, 2026-10-02 |
+| A.I.M. sort page + mug-shot index | merged into one member grid with sort chips | same functions, one page | owner, 2026-10-02 |
+| Paged lists (mail, ledger, history, Bobby Ray's 4-per-page) | scrolling lists | modern displays fit more; page keys kept | owner, 2026-10-02 |
+| Site art (logos, wood, marble, wallpapers) | native per-site styling (`--site-*` tokens) | page content from text data, no baked images | owner, 2026-10-02 |
 
 ## 9. Parity tour
 
