@@ -49,6 +49,7 @@ namespace NativeUI
 	std::unique_ptr<Screen> CreateOptionsScreen();
 	std::unique_ptr<Screen> CreateSaveLoadScreen();
 	std::unique_ptr<Screen> CreateNewGameScreen();
+	std::unique_ptr<Screen> CreateLaptopScreen();
 	/** A static design mock (assets/ui/mocks/...) over the screen @a self (MockScreen.cc). */
 	std::unique_ptr<Screen> CreateMockScreen(std::string const& path, ScreenID self);
 

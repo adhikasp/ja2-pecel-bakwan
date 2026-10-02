@@ -66,6 +66,7 @@ namespace
 		{ OPTIONS_SCREEN,           "options",  &CreateOptionsScreen },
 		{ SAVE_LOAD_SCREEN,         "saveload", &CreateSaveLoadScreen },
 		{ GAME_INIT_OPTIONS_SCREEN, "newgame",  &CreateNewGameScreen },
+		{ LAPTOP_SCREEN,            "laptop",   &CreateLaptopScreen },
 	};
 
 	class Runtime final : public VideoOverlay

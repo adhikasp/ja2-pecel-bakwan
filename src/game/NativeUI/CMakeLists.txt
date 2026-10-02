@@ -11,6 +11,9 @@ if (WITH_NATIVE_UI)
         ${CMAKE_CURRENT_SOURCE_DIR}/CreditsScreen.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/MockScreen.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LaptopImages.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/LaptopScreen.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/LaptopSites.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/LaptopNativeScreen.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontEndSupport.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontMainMenu.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontOptions.cc
