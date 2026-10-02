@@ -3878,3 +3878,14 @@ static std::unique_ptr<SGPVSurface> CreateVideoSurfaceFromObjectFile(const ST::s
 
 	return sf;
 }
+
+
+// The native tactical HUD's cash button: the single-merc panel's money region (deposit / withdraw).
+void NativeSMMoneyClick()
+{
+	MOUSE_REGION& r = gSM_SELMERCMoneyRegion;
+	if (!(r.uiFlags & MSYS_REGION_ENABLED) || !r.ButtonCallback) return;
+	r.ButtonCallback(&r, MSYS_CALLBACK_REASON_LBUTTON_DWN);
+	if (!(r.uiFlags & MSYS_REGION_ENABLED) || !r.ButtonCallback) return;
+	r.ButtonCallback(&r, MSYS_CALLBACK_REASON_LBUTTON_UP);
+}

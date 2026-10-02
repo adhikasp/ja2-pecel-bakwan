@@ -130,6 +130,13 @@ namespace NativeUI
 	/** Loading progress 0..1; false when the native loading screen is not showing. */
 	bool LoadingProgress(double fraction);
 
+	// ---- tactical HUD (Phase 5, docs/ui/tactical.md) ----------------------------------------------------------
+	/** The native tactical HUD is showing ("tactical" resolves to native on GAME_SCREEN): the legacy HUD keeps its
+	 * logic and regions but draws nothing the native one shows (names over mercs, message lines, turn banner). */
+	bool TacticalHudActive();
+	/** H: open or close the message log of the native HUD. */
+	void TacticalHudToggleLog();
+
 	// ---- change notification (view models, ViewModel.h) -------------------------------------------------------
 	enum Topic : uint32_t
 	{

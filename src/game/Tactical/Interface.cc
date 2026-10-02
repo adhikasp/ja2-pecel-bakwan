@@ -17,6 +17,7 @@
 #include "HImage.h"
 #include "Input.h"
 #include "Interface.h"
+#include "NativeUI.h"
 #include "Interface_Control.h"
 #include "Interface_Cursors.h"
 #include "Interface_Items.h"
@@ -1927,6 +1928,13 @@ void HandleTopMessages(void)
 			break;
 	}
 
+	// the native HUD shows the turn banner itself, over the world
+	if (NativeUI::TacticalHudActive())
+	{
+		if (gsVIEWPORT_WINDOW_START_Y != 0) SetRenderFlags(RENDER_FLAG_FULL);
+		gsVIEWPORT_WINDOW_START_Y = 0;
+		return;
+	}
 	gsVIEWPORT_WINDOW_START_Y = 20;
 
 	if (gfTopMessageDirty ||

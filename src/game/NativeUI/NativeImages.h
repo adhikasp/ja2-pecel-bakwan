@@ -6,6 +6,7 @@
 namespace Rml { class ElementDocument; }
 
 #include <functional>
+#include <utility>
 #include <string>
 
 namespace NativeUI
@@ -30,6 +31,8 @@ namespace NativeUI
 
 	/** The Phase 5 mock pictures: "nitem-<item>", "nitembig-<item>", "sface-<face>", each at "@<k>" times (MockWorld.cc). */
 	void RegisterTacticalMockImages();
+	/** The size of one of those pictures at 1x (0 x 0 if there is none). */
+	std::pair<int, int> PictureBaseSize(std::string const& name);
 	/** Integer-scales the mock pictures of @a doc and, for data-world="clear", shows the whole tactical world behind it. */
 	void PrepareMockDocument(Rml::ElementDocument* doc);
 	/** The legacy tactical HUD draws itself again after a mock closed. */

@@ -113,8 +113,10 @@ namespace
 		return s;
 	}
 
-	/** Width and height of the 1x picture (cached; 0 x 0 if there is none). */
-	std::pair<int, int> BaseSize(std::string const& name)
+}
+
+/** Width and height of the 1x picture (cached; 0 x 0 if there is none). */
+std::pair<int, int> PictureBaseSize(std::string const& name)
 	{
 		static std::map<std::string, std::pair<int, int>> sizes;
 		auto const i = sizes.find(name);
@@ -125,6 +127,8 @@ namespace
 		return sizes[name] = wh;
 	}
 
+namespace
+{
 	SDL_Surface* Provide(std::string const& full)
 	{
 		std::string name = full;
@@ -163,7 +167,7 @@ void PrepareMockDocument(Rml::ElementDocument* const doc)
 		std::string const src = e->GetAttribute<Rml::String>("src", "");
 		if (src.find('@') != std::string::npos) continue;
 		if (src.rfind("nitem-", 0) != 0 && src.rfind("nitembig-", 0) != 0 && src.rfind("sface-", 0) != 0 && src != "overhead-snap") continue;
-		auto const [w, h] = src == "overhead-snap" ? std::make_pair(640, 320) : BaseSize(src);
+		auto const [w, h] = src == "overhead-snap" ? std::make_pair(640, 320) : PictureBaseSize(src);
 		if (!w) continue;
 		float const want = e->GetAttribute<float>("data-x", 2.0f);
 		int const k = std::max(1, int(std::floor(want * dp + 0.001f)));

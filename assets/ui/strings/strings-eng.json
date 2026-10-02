@@ -296,5 +296,24 @@
   "map.desc_hint": "Drop an item from your hand on an attachment slot to attach it; click an attachment to take it off.",
   "map.stack_hint": "Click an item to take it; right-click: its details.",
   "map.move_all": "All",
-  "map.close": "Close"
+  "map.close": "Close",
+
+  "tac.end_turn": "End turn",
+  "tac.turn_based": "Turn-based",
+  "tac.map": "Map",
+  "tac.done": "Done",
+  "tac.unload": "Unload",
+  "tac.attachments": "Attachments",
+  "tac.ammo": "Ammo",
+  "tac.weapon": "Item",
+  "tac.log": "Message log",
+  "tac.burst": "Burst",
+  "tac.with_ap": "{} of {} mercs have AP left",
+  "tac.slot.face1": "Face 1",
+  "tac.slot.face2": "Face 2",
+  "tac.slot.helmet": "Helmet",
+  "tac.slot.vest": "Vest",
+  "tac.slot.legs": "Legs",
+  "tac.slot.hand": "Hand",
+  "tac.slot.offhand": "Off hand"
 }

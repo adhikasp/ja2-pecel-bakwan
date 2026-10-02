@@ -40,6 +40,8 @@ void WriteSaveThumbnail(std::string const&) {}
 bool ShowLoadingScreen(int) { return false; }
 void LoadingStep(std::string const&) {}
 bool LoadingProgress(double) { return false; }
+bool TacticalHudActive() { return false; }
+void TacticalHudToggleLog() {}
 bool Focus(std::string const&) { return false; }
 std::string FocusedId() { return {}; }
 }

@@ -175,4 +175,31 @@ void SetItemPointer(OBJECTTYPE*, SOLDIERTYPE*);
 void LoadInterfaceItemsGraphics();
 void DeleteInterfaceItemsGraphics();
 
+// The native tactical HUD (src/game/NativeUI/TacticalHud.cc) acts through the legacy regions and buttons, so that
+// every rule of the legacy inventory stays the same.
+void NativeInvSlotClick(int slot, bool right);
+void NativeItemDescAttachmentClick(int i, bool right);
+void NativeItemDescUnload();
+void NativeItemDescDone();
+/** which: 0 = 1000, 1 = 100, 2 = 10 (right: take the amount back), 3 = done */
+void NativeMoneyButton(int which, bool right);
+struct NativeMoneySplit { UINT32 total, remaining, removing; };
+NativeMoneySplit NativeMoneyState();
+SOLDIERTYPE* NativeItemDescSoldier();
+void NativeKeyRingClick();
+UINT8 NativeItemDescStatusIndex();
+/** What the open item description box shows, as values (the native HUD draws them). */
+struct NativeItemDescInfo
+{
+	ST::string name, desc, type, pros, cons, statusLabel, statusText, weight, weightUnit;
+	bool weapon = false, gun = false, money = false, ammo = false, key = false, prosCons = false, attachmentsHatched = false;
+	int  status = 0, range = -1, damage = -1, aps = -1, burstAps = -1, burstShots = 0;
+	int  shotsLeft = -1, magSize = 0;
+	UINT16 ammoItem = 0;
+	UINT16 attachments[4]{};
+	int  attachmentStatus[4]{};
+	ST::string keySector, keyDate;
+};
+NativeItemDescInfo NativeItemDescData();
+
 #endif

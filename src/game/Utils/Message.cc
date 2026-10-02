@@ -98,6 +98,7 @@ static void SetStringVideoOverlayPosition(ScrollStringSt* pStringSt, UINT16 usX,
 static void BlitString(VIDEO_OVERLAY* pBlitter)
 {
 	if (fScrollMessagesHidden) return;
+	if (NativeUI::TacticalHudActive()) return; // the native HUD shows these lines
 
 	SetFontAttributes(pBlitter->uiFontID, pBlitter->ubFontFore, DEFAULT_SHADOW, pBlitter->ubFontBack);
 	{
@@ -637,6 +638,42 @@ std::vector<MapScreenMessage_t> GetMapScreenMessages()
 		if (!m) continue;
 		if (m->fBeginningOfNewString || out.empty()) out.push_back({ m->pString, m->usColor, m->uiGameMinute, m->ubPriority });
 		else out.back().text += ST::string(" ") + m->pString;
+	}
+	return out;
+}
+
+std::vector<MessageLine> GetTacticalScrollLines()
+{
+	// gpDisplayList[0] is the newest line; a message's continuation lines are newer than its first line
+	std::vector<MessageLine> out;
+	ST::string tail;
+	for (auto const& l : gpDisplayList)
+	{
+		if (!l) continue;
+		ST::string const text = tail.empty() ? l->pString : l->pString + " " + tail;
+		if (l->fBeginningOfNewString)
+		{
+			out.push_back({ text, l->usColor });
+			tail.clear();
+		}
+		else
+		{
+			tail = text;
+		}
+	}
+	if (!tail.empty()) out.push_back({ tail, FONT_MCOLOR_WHITE });
+	return out;
+}
+
+std::vector<MessageLine> GetMessageHistory()
+{
+	std::vector<MessageLine> out;
+	for (UINT8 i = gubStartOfMapScreenMessageList; i != gubEndOfMapScreenMessageList; i = UINT8(i + 1))
+	{
+		auto const& l = gMapScreenMessageList[i];
+		if (!l) continue;
+		if (l->fBeginningOfNewString || out.empty()) out.push_back({ l->pString, l->usColor });
+		else out.back().text += " " + l->pString;
 	}
 	return out;
 }

@@ -62,6 +62,14 @@ void UnHideMessagesDuringNPCDialogue( void );
 
 // disable and enable scroll string, only to be used by Kris
 void DisableScrollMessages( void );
+
+// The native tactical HUD reads the messages as data
+#include <vector>
+struct MessageLine { ST::string text; UINT16 colour; };
+/** The lines the tactical scroll shows now, newest first (wrapped lines of one message joined). */
+std::vector<MessageLine> GetTacticalScrollLines();
+/** Every message kept for the map screen log, oldest first (wrapped lines joined). */
+std::vector<MessageLine> GetMessageHistory();
 void EnableScrollMessages( void );
 
 extern UINT8 gubStartOfMapScreenMessageList;

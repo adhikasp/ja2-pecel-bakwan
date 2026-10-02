@@ -14,6 +14,7 @@
 #include "Game_Clock.h"
 #include "StrategicMap.h"
 #include "JAScreens.h"
+#include "ScreenIDs.h"
 #include "Localization.h"
 #include "Logger.h"
 #include "Timer.h"
@@ -460,6 +461,7 @@ bool Runtime::AnythingShown() const
 {
 	if (!ctx) return false;
 	if (screen || (msgbox && msgbox->IsVisible()) || !toasts.empty() || tipShown || NativeCursorShown()) return true;
+	if (TacticalHudActive()) return true;
 	return false;
 }
 
@@ -498,12 +500,14 @@ void BeginFrame()
 	ViewModel::UpdateAll();
 	if (!g_rt.running)
 	{
-		// screens and overlays start the runtime; nothing to do until then
-		return;
+		// screens and overlays start the runtime; the tactical HUD starts it on the tactical screen
+		if (guiCurrentScreen != GAME_SCREEN || ConfiguredMode("tactical") != UiMode::Native || !Available()) return;
+		if (!Start()) return;
 	}
 	g_rt.Sync();
 	nui::RmlClock().now = GetClock() / 1000.0;
 	CloseLoadingScreen(); // a load happens within one frame: its screen is gone in the next
+	TacticalHudUpdate();
 	g_rt.UpdateOverlays();
 }
 
@@ -578,7 +582,7 @@ void Runtime::GpuRender(SDL_Renderer*)
 
 bool CapturesMouse()
 {
-	return g_rt.running && ((g_rt.screen && !g_rt.screen->PassThrough()) || (g_rt.msgbox && g_rt.msgbox->IsVisible()));
+	return g_rt.running && ((g_rt.screen && !g_rt.screen->PassThrough()) || (g_rt.msgbox && g_rt.msgbox->IsVisible()) || TacticalHudWantsMouse());
 }
 
 void MouseMoved(int const canvasX, int const canvasY)
@@ -589,7 +593,8 @@ void MouseMoved(int const canvasX, int const canvasY)
 	if (x == g_rt.mouseX && y == g_rt.mouseY) return;
 	g_rt.mouseX = x;
 	g_rt.mouseY = y;
-	if (CapturesMouse()) g_rt.ctx->ProcessMouseMove(int(x), int(y), 0);
+	// the tactical HUD needs the hover element to know whether it takes the mouse
+	if (CapturesMouse() || TacticalHudActive()) g_rt.ctx->ProcessMouseMove(int(x), int(y), 0);
 	if (g_rt.NativeCursorShown()) Invalidate(2);
 	else if (CapturesMouse()) Invalidate();
 }

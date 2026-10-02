@@ -1,0 +1,219 @@
+<rml>
+<head>
+	<title>Tactical HUD</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="tactical.rcss"/>
+</head>
+<!-- The native tactical HUD (docs/ui/tactical.md, src/game/NativeUI/TacticalHud.cc). An overlay over the tactical
+     screen: everything with class "hit" takes the mouse, the rest lets it through to the world. -->
+<body class="t5">
+<div class="t5-root" id="tac" data-model="tactical">
+
+	<!-- names, bars and damage over the mercs (the legacy rules of who gets one) -->
+	<div class="ov-layer">
+		<div class="ov ov-merc audit-skip" data-for="o : overlays" data-class-sel="o.sel" data-style-left="(o.x - 60) + 'px'" data-style-top="(o.y - 4) + 'px'">
+			<span class="act" data-if="o.action != ''" data-class-yellow="o.yellow">{{o.action}}</span>
+			<span class="nm" data-if="o.name != ''">{{o.name}}</span>
+			<div class="bars" data-if="o.bars"><div class="bar hp"><div class="fill" data-style-width="o.hpw + '%'"></div></div><div class="bar breath"><div class="fill" data-style-width="o.enw + '%'"></div></div></div>
+			<span class="health" data-if="o.health != ''">{{o.health}}</span>
+			<span class="dmg" data-if="o.dmg != ''">{{o.dmg}}</span>
+		</div>
+	</div>
+
+	<!-- message lines (top left) -->
+	<div class="log-lines audit-skip" id="tac.log.lines" data-if="!log_open">
+		<div class="log-line" data-for="l : lines" data-class-combat="l.cls == 'combat'" data-class-dialogue="l.cls == 'dialogue'" data-class-ok="l.cls == 'ok'"><span class="tx">{{l.text}}</span></div>
+	</div>
+
+	<!-- message log (H) -->
+	<div class="logp hud hit" id="tac.logpanel" data-if="log_open">
+		<div class="hud-head"><img class="icon sm" src="icon-menu"/><span class="t" style="margin-left: 8dp;">{{l_log}}</span><span class="m">{{log_all}}</span><div class="grow"></div>
+			<button class="icon-btn" id="tac.logpanel.close" title="Close (H)" data-event-click="log"><img class="icon" src="icon-close"/></button></div>
+		<div class="filters">
+			<div class="chip" id="tac.log.all" data-class-on="log_filter == 'all'" data-event-click="log_filter('all')"><span>All</span><span class="n">{{log_all}}</span></div>
+			<div class="chip" id="tac.log.combat" data-class-on="log_filter == 'combat'" data-event-click="log_filter('combat')"><span>Combat</span><span class="n">{{log_combat}}</span></div>
+			<div class="chip" id="tac.log.speech" data-class-on="log_filter == 'speech'" data-event-click="log_filter('speech')"><span>Speech</span><span class="n">{{log_speech}}</span></div>
+			<div class="chip" id="tac.log.system" data-class-on="log_filter == 'system'" data-event-click="log_filter('system')"><span>System</span><span class="n">{{log_system}}</span></div>
+		</div>
+		<div class="list scroll" id="tac.log.list">
+			<div class="ln" data-for="l : log" data-class-combat="l.cls == 'combat'" data-class-dialogue="l.cls == 'dialogue'" data-class-ok="l.cls == 'ok'"><span class="tx">{{l.text}}</span></div>
+		</div>
+	</div>
+
+	<!-- turn banner -->
+	<div class="banner" id="tac.turn" data-if="banner">
+		<div class="pill" data-class-foe="banner_cls == 'foe' || banner_cls == 'int foe'" data-class-int="banner_cls == 'int' || banner_cls == 'int foe'">
+			<img class="icon" src="icon-action-points"/><span class="t" id="tac.turn.title">{{banner_title}}</span><span class="m" data-if="banner_text != ''">{{banner_text}}</span>
+			<div class="prog" data-if="banner_progress"><div class="fill" data-style-width="banner_pct + '%'"></div></div>
+		</div>
+	</div>
+
+	<!-- sector card (top right) -->
+	<div class="mini hud hit" id="tac.minimap">
+		<div class="where"><span class="sec" id="tac.sector">{{sector}}</span><span class="town">{{town}}</span><div class="grow"></div><span class="day">{{day}}</span><span class="clock" id="tac.clock">{{clock}}</span></div>
+		<div class="mtools">
+			<button class="icon-btn" id="tac.overhead" title="Overhead map (Insert)" data-event-click="key('insert')"><img class="icon" src="icon-map"/></button>
+			<button class="icon-btn" id="tac.roofs" title="Tree tops (T)" data-event-click="key('t')"><img class="icon" src="icon-unexplored"/></button>
+			<button class="icon-btn" id="tac.glow" title="Item glow (I)" data-event-click="key('i')"><img class="icon" src="icon-sector-inventory"/></button>
+			<button class="icon-btn" id="tac.log" title="Message log (H)" data-event-click="log"><img class="icon" src="icon-menu"/></button>
+		</div>
+	</div>
+
+	<!-- merc details and inventory (` or a double click on a card) -->
+	<div class="detail hud hit" id="tac.detail" data-if="detail">
+		<div class="who">
+			<div class="face"><img class="pic" data-attr-src="d_face" data-style-width="d_fw + 'px'" data-style-height="d_fh + 'px'"/></div>
+			<div class="names"><span class="nm" id="tac.detail.name">{{d_name}}</span><span class="full">{{d_full}}</span></div>
+			<div class="vit">
+				<div class="stat"><span class="k">HP</span><span class="bar hp"><span class="fill" data-style-width="d_hpw + '%'"></span><span class="lost" data-style-width="d_lostw + '%'"></span></span><span class="v">{{d_hp}}</span></div>
+				<div class="stat"><span class="k">EN</span><span class="bar breath"><span class="fill" data-style-width="d_enw + '%'"></span></span><span class="v">{{d_en}}</span></div>
+				<div class="stat"><span class="k">MO</span><span class="bar morale"><span class="fill" data-style-width="d_mow + '%'"></span></span><span class="v">{{d_mo}}</span></div>
+			</div>
+			<div class="acts">
+				<button class="icon-btn" id="tac.detail.close" title="Close (`)" data-event-click="detail_close"><img class="icon" src="icon-close"/></button>
+			</div>
+		</div>
+		<div class="body">
+			<div class="attrs" id="tac.detail.attrs">
+				<div class="row" data-for="a : attrs"><span class="k">{{a.k}}</span><span class="v">{{a.v}}</span></div>
+				<div class="row"><span class="k">Armour</span><span class="v">{{d_armour}}</span></div>
+				<div class="row"><span class="k">Weight</span><span class="v">{{d_weight}}</span></div>
+				<div class="row"><span class="k">Camo</span><span class="v">{{d_camo}}</span></div>
+			</div>
+			<div class="doll" id="tac.inv.body">
+				<div class="col">
+					<div class="slot" data-for="s : body" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+						<span class="lbl">{{s.label}}</span>
+					</div>
+				</div>
+				<div class="col">
+					<div class="slot big" data-for="s : hands" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<img class="att" data-if="s.att" src="icon-add"/>
+						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+						<span class="lbl">{{s.label}}</span>
+					</div>
+					<div class="purse"><button class="btn" id="tac.inv.money" title="Deposit or withdraw money" data-event-click="money_region"><img class="icon" src="icon-money"/><span class="label">Cash</span><span class="mono">{{d_money}}</span></button></div>
+					<div class="purse"><button class="btn" id="tac.inv.keys" title="Key ring (K)" data-event-click="keyring"><img class="icon" src="icon-key"/><span class="label">Keys</span><span class="mono">{{d_keys}}</span></button></div>
+				</div>
+			</div>
+			<div class="pockets" id="tac.inv.pockets">
+				<div class="grid">
+					<div class="slot big" data-for="s : big" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<img class="att" data-if="s.att" src="icon-add"/>
+						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+					</div>
+				</div>
+				<div class="grid">
+					<div class="slot" data-for="s : small" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="foot"><span class="kbd">Click</span><span>pick up / put down</span><span class="kbd">RMB</span><span>details</span><span class="kbd">Ctrl+Q</span><span>swap hands</span><span class="kbd">Space</span><span>next merc</span></div>
+	</div>
+
+	<!-- item description (right click on an item) -->
+	<div class="idesc hud hit" id="tac.desc" data-if="desc">
+		<div class="hud-head"><span class="t" id="tac.desc.name">{{x_name}}</span><span class="m">{{x_type}}</span><div class="grow"></div>
+			<button class="icon-btn" id="tac.desc.close" title="Close (right click)" data-event-click="desc_done"><img class="icon" src="icon-close"/></button></div>
+		<div class="pic-area" id="tac.desc.picture"><img class="pic" data-attr-src="x_pic" data-style-width="x_pw + 'px'" data-style-height="x_ph + 'px'"/></div>
+		<span class="text" data-if="!desc_money">{{x_text}}</span>
+		<div class="cols" data-if="!desc_money">
+			<div class="c">
+				<span class="cap">{{l_weapon}}</span>
+				<div class="kv" data-for="k : x_stats"><span class="k">{{k.k}}</span><span class="v">{{k.v}}</span></div>
+				<div class="cond-row"><span class="k">{{x_status_label}}</span><div class="bar ok"><div class="fill" data-style-width="x_cond + '%'"></div></div><span class="v" id="tac.desc.status">{{x_status}}</span></div>
+				<span class="fits" data-if="x_key != ''">{{x_key}}</span>
+			</div>
+			<div class="c last" data-if="desc_weapon || desc_gun">
+				<div data-if="desc_gun">
+					<span class="cap">{{l_ammo}}</span>
+					<div class="ammo" id="tac.desc.ammo"><div class="a"><span class="n" id="tac.desc.rounds">{{x_ammo}}</span><span class="t">{{x_ammo_type}}</span></div>
+						<button class="btn" id="tac.desc.unload" title="Take the magazine out" data-event-click="unload"><img class="icon sm" src="icon-reload"/><span class="label">{{l_unload}}</span></button></div>
+				</div>
+				<span class="cap">{{l_attachments}}</span>
+				<div class="atts" id="tac.desc.atts">
+					<div class="slot" data-for="s : x_atts" data-attr-id="'tac.desc.att[' + s.idx + ']'" data-attr-title="s.title" data-class-is-disabled="desc_hatched" data-event-mouseup="att(s.idx, ev.button)">
+						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+						<img class="ghost" data-if="s.empty" src="icon-add"/>
+						<div class="cond" data-if="!s.empty"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="money-split" data-if="desc_money" id="tac.money">
+			<div class="kv"><span class="k">Amount</span><span class="v" id="tac.money.total">{{m_total}}</span></div>
+			<div class="kv"><span class="k">Remaining</span><span class="v" id="tac.money.remaining">{{m_remaining}}</span></div>
+			<div class="amt"><span id="tac.money.amount">{{m_removing}}</span></div>
+			<div class="chips">
+				<button class="btn" id="tac.money.add1000" data-class-is-disabled="!m_1000" title="Right click: take back" data-event-mouseup="money(0, ev.button)"><span class="label">+1000</span></button>
+				<button class="btn" id="tac.money.add100" data-class-is-disabled="!m_100" title="Right click: take back" data-event-mouseup="money(1, ev.button)"><span class="label">+100</span></button>
+				<button class="btn" id="tac.money.add10" data-class-is-disabled="!m_10" title="Right click: take back" data-event-mouseup="money(2, ev.button)"><span class="label">+10</span></button>
+			</div>
+		</div>
+		<div class="pc" data-if="desc_pros_cons"><span class="k pro">{{l_pros}}</span><span class="v">{{x_pros}}</span></div>
+		<div class="pc" data-if="desc_pros_cons"><span class="k con">{{l_cons}}</span><span class="v">{{x_cons}}</span></div>
+		<div class="foot"><div class="grow"></div><button class="btn btn-primary" id="tac.desc.done" data-event-click="desc_done"><span class="label">{{l_done}}</span></button></div>
+	</div>
+
+	<!-- squad bar -->
+	<div class="sbar hit" id="tac.bar">
+		<div class="squads" id="tac.squadtabs">
+			<div class="sq" data-for="q : squads" data-class-on="q.on" data-attr-id="'tac.squadtab[' + q.n + ']'" data-event-click="squad(q.n)"><span>{{q.n}}</span><span class="n">{{q.count}}</span></div>
+			<div class="sq" id="tac.squadtab.next" title="Next squad (Shift+Space)" data-event-click="next_squad"><img class="icon sm" src="icon-chevron-down"/></div>
+		</div>
+		<div class="cards" id="tac.squad">
+			<div class="tcard" data-for="c : cards" data-attr-id="'tac.squad[' + c.slot + ']'" data-class-ghost="c.empty" data-class-sel="c.sel" data-class-done="c.done" data-class-crit="c.crit" data-class-talking="c.talking" data-event-click="select(c.slot)" data-event-dblclick="details(c.slot)">
+				<span data-if="c.empty" class="empty-label"> </span>
+				<div class="face" data-if="!c.empty"><img class="pic" data-attr-src="c.face" data-style-width="c.fw + 'px'" data-style-height="c.fh + 'px'"/><div class="ap" data-if="combat"><span class="k">AP </span>{{c.ap}}</div><img class="spk" data-if="c.talking" src="icon-talk"/></div>
+				<div class="info" data-if="!c.empty">
+					<div class="nr"><span class="nm">{{c.name}}</span><img class="icon danger" data-if="c.bleeding" src="icon-bleeding" title="Bleeding"/><img class="icon info" data-if="c.asleep" src="icon-asleep" title="Asleep"/><img class="icon info" data-if="c.stealth" src="icon-sneak" title="Stealth"/><img class="icon" data-if="c.drunk" src="icon-drunk" title="Drunk"/></div>
+					<span class="sub">{{c.sub}}</span>
+					<div class="st"><span class="k">HP</span><div class="bar hp"><div class="fill" data-style-width="c.hpw + '%'"></div><div class="lost" data-style-width="c.lostw + '%'"></div></div><span class="v">{{c.hp}}</span></div>
+					<div class="st"><span class="k">EN</span><div class="bar breath"><div class="fill" data-style-width="c.en + '%'"></div></div><span class="v">{{c.en}}</span></div>
+					<div class="st"><span class="k">MO</span><div class="bar morale"><div class="fill" data-style-width="c.mo + '%'"></div></div><span class="v">{{c.mo}}</span></div>
+					<div class="hand" data-attr-title="c.hand_name"><img class="pic" data-if="c.hand != ''" data-attr-src="c.hand" data-style-width="c.hw + 'px'" data-style-height="c.hh + 'px'"/><span class="am" data-class-low="c.low">{{c.ammo}}</span></div>
+				</div>
+			</div>
+		</div>
+		<div class="tools" id="tac.tools">
+			<div class="row">
+				<button class="icon-btn" id="tac.stance.stand" title="Stand (S)" data-class-on="stance == 'stand'" data-event-click="key('s')"><img class="icon" src="icon-stance-stand"/><span class="kk">S</span></button>
+				<button class="icon-btn" id="tac.stance.crouch" title="Crouch (C)" data-class-on="stance == 'crouch'" data-event-click="key('c')"><img class="icon" src="icon-stance-crouch"/><span class="kk">C</span></button>
+				<button class="icon-btn" id="tac.stance.prone" title="Prone (P)" data-class-on="stance == 'prone'" data-event-click="key('p')"><img class="icon" src="icon-stance-prone"/><span class="kk">P</span></button>
+				<div class="sep"></div>
+				<button class="icon-btn" id="tac.move.run" title="Run (R)" data-class-on="run" data-event-click="key('r')"><img class="icon" src="icon-run"/><span class="kk">R</span></button>
+				<button class="icon-btn" id="tac.stealth" title="Stealth mode (Z)" data-class-on="stealth" data-event-click="key('z')"><img class="icon" src="icon-sneak"/><span class="kk">Z</span></button>
+			</div>
+			<div class="row">
+				<button class="icon-btn" id="tac.burst" title="Burst fire (B)" data-class-on="burst" data-event-click="key('b')"><img class="icon" src="icon-burst"/><span class="kk">B</span></button>
+				<button class="icon-btn" id="tac.look" title="Look / turn (L)" data-event-click="key('l')"><img class="icon" src="icon-look"/><span class="kk">L</span></button>
+				<button class="icon-btn" id="tac.talk" title="Talk" data-event-click="talk"><img class="icon" src="icon-talk"/></button>
+				<div class="sep"></div>
+				<button class="icon-btn" id="tac.climb" title="Climb (J)" data-event-click="key('j')"><img class="icon" src="icon-climb"/><span class="kk">J</span></button>
+				<button class="icon-btn" id="tac.level" title="View roof level (Tab)" data-class-on="roof" data-event-click="key('tab')"><img class="icon" src="icon-chevron-up"/><span class="kk">Tab</span></button>
+			</div>
+		</div>
+		<div class="sys" id="tac.sys">
+			<button class="btn" id="tac.endturn" data-class-btn-primary="can_end" data-attr-title="combat ? 'End your turn (D)' : 'Start turn-based combat (D)'" data-event-click="key('d')"><img class="icon" src="icon-end-turn"/><span class="label" data-if="combat">{{l_end_turn}}</span><span class="label" data-if="!combat">{{l_turn_based}}</span><span class="kbd">D</span></button>
+			<button class="btn" id="tac.map" title="Strategic map (M)" data-event-click="key('m')"><img class="icon" src="icon-map"/><span class="label">{{l_map}}</span><span class="kbd">M</span></button>
+			<div class="row"><button class="icon-btn" id="tac.inventory" title="Merc details and inventory (`)" data-event-click="key('grave')"><img class="icon" src="icon-inventory"/></button><button class="icon-btn" id="tac.logbtn" title="Message log (H)" data-event-click="log"><img class="icon" src="icon-menu"/></button><button class="icon-btn last" id="tac.options" title="Options (O)" data-event-click="options"><img class="icon" src="icon-options"/></button></div>
+		</div>
+	</div>
+</div>
+</body>
+</rml>

@@ -1,5 +1,7 @@
 -- In tactical: walk a merc a few tiles by clicking the map, and check they
 -- end up exactly on the clicked tile.
+-- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
+ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 

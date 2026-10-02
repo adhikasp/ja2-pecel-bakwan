@@ -5,9 +5,9 @@
 | Legacy code | `src/game/Tactical/Interface.cc` (panels, movement/door menus, above-guy names and bars, top banners), `Interface_Panels.cc` (team panel and single-merc panel), `Interface_Items.cc` (inventory slots, item description box, money split, stack/key-ring popups, pick-up menu, item cursor), `Interface_Dialogue.cc` (NPC talk panel), `Dialogue_Control.cc` + `Faces.cc` (talking faces, subtitles), `Interface_Control.cc`, `Interface_Cursors.cc`, `Handle_UI.cc` (cursor modes), `Turn_Based_Input.cc` / `Real_Time_Input.cc` (keys and mouse), `TileEngine/Overhead_Map.cc`, `TileEngine/Radar_Screen.cc`, `TileEngine/Tactical_Placement_GUI.cc`, `Utils/Message.cc` (message lines) |
 | Screen id | `GAME_SCREEN` (overhead map and placement are modes of it) |
 | Reached from | map screen (Esc / sector), loading a save, sector entry |
-| Native code | none yet (Phase 5 M3). Mocks: `assets/ui/mocks/phase5/*.rml` (generator `tools/ui/phase5_mocks.py`), shown over the real world by `src/game/NativeUI/MockWorld.cc` |
-| ui_mode key | `tactical` (planned) |
-| Status | draft (M1 + M2 for owner review) |
+| Native code | `src/game/NativeUI/TacticalHud.cc` (`TacticalViewModel`, "tactical"), `assets/ui/screens/tactical.rml`/`.rcss`; legacy hooks `Native*` in `Interface_Items.cc`, `Interface_Panels.cc`, `Message.cc`. Mocks: `assets/ui/mocks/phase5/*.rml` (generator `tools/ui/phase5_mocks.py`), shown over the real world by `src/game/NativeUI/MockWorld.cc` |
+| ui_mode key | `tactical` (default native from 1280x720; legacy below) |
+| Status | M3 first slice (see "Implementation status"); wireframes approved |
 
 ## 1. How it was audited
 
@@ -130,7 +130,54 @@ locator, cursor AP text, sounds on buttons and drops. All stay; face animation m
 - Long guns must not be clipped in the hand slot. The hand slot and the card's hand strip must fit the widest small item
   picture at its integer scale, never cut it and never stretch it.
 
+## Implementation status (Phase 5, first PR)
+
+How it works: the native HUD is an overlay over `GAME_SCREEN`, not a screen. The legacy tactical screen keeps running
+with its panels and regions under the native bar and draws nothing the HUD shows (names over mercs, message lines,
+turn bar). Every native control acts through the legacy code, so the rules cannot drift:
+- buttons press the legacy hotkey (`PressKey`: same handler, same checks);
+- inventory slots, the description's attachments, Unload, Done and the money buttons click the legacy regions and buttons
+  of the hidden panel (`NativeInvSlotClick`, `NativeItemDescAttachmentClick`, `NativeItemDescUnload`, `NativeMoneyButton`,
+  `NativeSMMoneyClick`, `NativeKeyRingClick`);
+- the item description shows `NativeItemDescData()`, the values the legacy box prints.
+The detail panel is open exactly when the legacy single-merc panel is (`, double click on a card).
+
+| Done | Rows |
+|---|---|
+| Squad bar: cards (face, HP/lost, EN, MO, AP in combat, status icons, stance, hand item and ammo), squad tabs, select, details | I1–I7, A1–A2 |
+| Tools: stance, run, stealth, burst, look, talk, climb, roof level; End turn / Turn-based, Map, inventory, log, options | A4–A11 |
+| Detail panel: attributes, armour/weight/camo, vitals, all 19 slots (pick up / put down / description by click), cash, keys | I8–I10, A13, A16 (key ring opens the legacy popup) |
+| Item description: picture, text, stats, status, ammo + Unload, 4 attachments, pros/cons, keys; money split +1000/+100/+10 (right click takes back) | I11, A14, A15 |
+| Names, bars, assignment/catch/give prompts, health of others, damage numbers over the mercs | I12 |
+| Message lines; message log on **H** with filters (help moved to **Shift+H**) | I13 |
+| Turn / interrupt / enemy banner with progress | I14 |
+| Sector, town, day and time; overhead (Insert), tree tops, item glow | I15 |
+
+Gaps, still legacy or not done in this PR:
+- Action, door, pick-up, sector-exit menus and the NPC talk panel: the legacy ones (they draw over the world and work).
+  The stack and key-ring popups open where the legacy panel is: the native HUD hides itself while they are open.
+- Overhead map and placement: legacy. The sector card has no radar picture yet.
+- Inventory uses the legacy click-to-pick, click-to-put model; no RmlUi drag and drop, no "drop on a card to give".
+- The hit chance / AP chip at the target and the path cost of the wireframes are not done.
+- Legacy/native equivalence is by construction (the native controls run the legacy handlers); there is no save-dump
+  comparison test yet.
+
 ## 9. Parity tour
 
-Planned `tests/e2e/tactical_parity.lua` (M4): every row of §2–§3 by element id (`tac.*` ids used in the mocks) with
-game-state assertions (stance changed, item moved, money split amount, door opened, AP spent, squad changed).
+`tests/e2e/tactical_parity.lua` (every resolution of `ctest -L resolution`; goldens at 1280x720: `hud`, `detail`,
+`desc`, `money`, `log`):
+
+| Row | Covered by |
+|---|---|
+| I1, I15 | the card is Ivan's with his gun and ammo; the sector card says A9 |
+| A1, I7 | clicking the card selects him |
+| A4 | crouch and stand buttons: `stance` changes |
+| A6 | stealth toggles the merc's flag |
+| A2, I8 | inventory button: the detail panel shows Ivan |
+| A14, I11 | right click on the hand slot: description with 4 attachment slots; Unload empties the gun; clicking the gun with the magazine reloads it |
+| A13 | an item moves from one small pocket to an empty one |
+| A15 | cash: +100, Done, put in a pocket: the account loses 100 |
+| I13 | H opens and closes the log |
+| I14, A10 | turn-based: AP on the cards (when there is a fight) |
+| layout | UI scale 150% and 200%: layout audit (`shots.take`) |
+| < 1280x720 | the legacy HUD runs |

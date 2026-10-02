@@ -4,6 +4,7 @@
 #include "Structure.h"
 #include "TileDat.h"
 #include "Turn_Based_Input.h"
+#include "NativeUI.h"
 #include "VideoOptionsScreen.h"
 #include "JAScreens.h"
 #include "PathAI.h"
@@ -1504,7 +1505,11 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			break;
 
 		case 'g': HandlePlayerTogglingLightEffects(TRUE);                      break;
-		case 'h': ShouldTheHelpScreenComeUp(HELP_SCREEN_TACTICAL, TRUE);       break;
+		case 'h':
+			// with the native HUD, H opens the message log and Shift+H the help screen
+			if (NativeUI::TacticalHudActive()) NativeUI::TacticalHudToggleLog();
+			else ShouldTheHelpScreenComeUp(HELP_SCREEN_TACTICAL, TRUE);
+			break;
 		case 'i': ToggleItemGlow(!gGameSettings.fOptions[TOPTION_GLOW_ITEMS]); break;
 		case 'j':
 			if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_None, 'j')))
@@ -1740,6 +1745,9 @@ static void HandleModShift(UINT32 const key, UIEventKind* const new_event)
 			}
 			break;
 
+	case 'h':
+		if (NativeUI::TacticalHudActive()) ShouldTheHelpScreenComeUp(HELP_SCREEN_TACTICAL, TRUE);
+		break;
 	case 'j':
 		if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_SHIFT, 'j')))
 		{
