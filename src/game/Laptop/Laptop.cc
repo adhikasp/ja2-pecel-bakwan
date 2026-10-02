@@ -554,8 +554,8 @@ void ExitLaptop(void)
 {
 	if (LaptopNative::Active())
 	{
-		// the native laptop: a message box over it is not an exit
-		if (guiPendingScreen != MSG_BOX_SCREEN) LaptopNative::Exit();
+		// the native laptop leaves with its screen (LaptopNative::Exit from its Exit); a message box over it, or a
+		// video mode change that keeps it, are not exits
 		return;
 	}
 
@@ -3512,6 +3512,8 @@ bool Active() { return g_active; }
 
 void Enter()
 {
+	// the video mode changed from one that runs the legacy laptop: take that one down first
+	if (!g_active && !gfEnterLapTop) ExitLaptop();
 	g_active = true;
 	fExitDueToMessageBox = FALSE;
 	if (gRadarRegion.uiFlags & MSYS_REGION_ENABLED) gRadarRegion.Disable();
@@ -3554,6 +3556,7 @@ ScreenID Leave()
 
 void Exit()
 {
+	if (!g_active) return;
 	if (DidGameJustStart()) SetMusicMode(MUSIC_LAPTOP);
 	else SetMusicMode(MUSIC_RESTORE);
 	BuildDayAmbientSounds();
@@ -3576,8 +3579,8 @@ void Exit()
 
 void SetMode(int const mode)
 {
-	guiPreviousLaptopMode = guiCurrentLaptopMode;
-	guiCurrentLaptopMode = LaptopMode(mode);
+	// no legacy frame runs to catch the previous mode up: both are the page shown (LaptopIsBusy compares them)
+	guiPreviousLaptopMode = guiCurrentLaptopMode = LaptopMode(mode);
 	if (mode > LAPTOP_MODE_WWW) guiCurrentWWWMode = LaptopMode(mode);
 }
 

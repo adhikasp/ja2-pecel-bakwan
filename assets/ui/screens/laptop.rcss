@@ -39,7 +39,7 @@ span, div { display: block; }
 .app .icon { width: 28dp; height: 28dp; margin: 0 auto; image-color: var(--c-text); }
 .app .label { margin-top: var(--sp-1); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text); }
 .app .kbd { position: absolute; right: 2dp; top: 2dp; font-size: 11dp; padding: 0 3dp; height: 16dp; line-height: 16dp; }
-.app .badge { position: absolute; left: 6dp; top: 6dp; }
+.app .badge { position: absolute; left: 8dp; top: 8dp; width: 18dp; padding: 0; line-height: 16dp; }
 .app:hover { background-color: var(--c-panel-2); }
 .app.active { background-color: var(--c-accent-soft); border-left-color: var(--c-accent); }
 .app.active .icon { image-color: var(--c-accent); }
@@ -469,3 +469,7 @@ span, div { display: block; }
 .fun .site-head { background-color: #1E1826; border-bottom: 3dp var(--site-funeral); }
 .fun .wm { color: var(--site-funeral); }
 .page-florist { background-color: #160F13; } .page-insurance { background-color: #15130F; } .page-funeral { background-color: #120F17; }
+
+/* fit-ups from the review of the screenshots */
+.btn-site.wide { box-sizing: border-box; }
+.speck .bubble { max-height: 300dp; overflow-y: auto; }

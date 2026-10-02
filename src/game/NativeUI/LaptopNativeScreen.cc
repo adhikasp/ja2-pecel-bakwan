@@ -240,6 +240,8 @@ namespace
 			m_doc = nullptr;
 			m_binding.reset();
 			StopAnyCurrentlyTalkingSpeech();
+			// the legacy laptop (a smaller video mode, or the next visit) enters afresh; this is also what leaving does
+			LaptopNative::Exit();
 		}
 
 	private:

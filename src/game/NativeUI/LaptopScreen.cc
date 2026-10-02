@@ -39,6 +39,22 @@ namespace NativeUI
 namespace
 {
 	std::string S(ST::string const& s) { return s.to_std_string(); }
+	/** Mail and file records carry the legacy font markers (U+00B1 to U+00B3: line end, key, title); the page flows its own text. */
+	std::string Clean(ST::string const& in)
+	{
+		std::string out;
+		std::string const s = in.to_std_string();
+		for (size_t i = 0; i < s.size(); ++i)
+		{
+			if (s[i] == '\xC2' && i + 1 < s.size() && (s[i + 1] == '\xB1' || s[i + 1] == '\xB2' || s[i + 1] == '\xB3')) { out += ' '; ++i; continue; }
+			out += s[i];
+		}
+		// collapse the blanks the markers leave and trim
+		std::string r;
+		for (char const c : out) { if (c == ' ' && (r.empty() || r.back() == ' ')) continue; r += c; }
+		while (!r.empty() && r.back() == ' ') r.pop_back();
+		return r;
+	}
 	std::string Money(INT32 const v) { return S(SPrintMoney(v)); }
 	std::string Day(UINT32 const minutes) { return std::to_string(minutes / (24 * 60)); }
 
@@ -419,7 +435,7 @@ void LaptopViewModel::MailOpen(int const i)
 	Email& m = *mailPtrs[i];
 	mailOpen = i;
 	mailBody.clear();
-	for (ST::string const& p : LaptopNative::OpenMail(m)) mailBody.push_back(S(p));
+	for (ST::string const& p : LaptopNative::OpenMail(m)) { std::string t = Clean(p); if (!t.empty()) mailBody.push_back(t); }
 	mailSubject = S(m.pSubject);
 	if (!mailSubject.empty() && mailSubject[0] == ' ') mailSubject.erase(0, 1);
 	mailFrom = S(LaptopNative::MailSender(m));
@@ -464,7 +480,7 @@ void LaptopViewModel::FileOpen(int const i)
 {
 	fileOpen = i;
 	fileBody.clear();
-	for (ST::string const& p : LaptopNative::OpenFile(i)) fileBody.push_back(S(p));
+	for (ST::string const& p : LaptopNative::OpenFile(i)) { std::string t = Clean(p); if (!t.empty()) fileBody.push_back(t); }
 	unreadFiles = LaptopNative::UnreadFiles();
 	ReadFiles();
 }

@@ -10,6 +10,7 @@ local suffix = "_" .. size .. (scale ~= 1 and ("_" .. tostring(scale * 100) .. "
 ja2.setVideo{ res = size }
 ja2.setUiScale(scale)
 campaign.newGame()
+ja2.wait(6000)
 ja2.debug("bookmarks")
 ja2.waitIdle()
 
