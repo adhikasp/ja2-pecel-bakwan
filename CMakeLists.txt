@@ -438,6 +438,12 @@ if (WITH_UNITTESTS)
             TIMEOUT 900
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>"
         )
+        # the map screen tours are long (a campaign, every state) and render in software at 21:9
+        foreach(t ${RESOLUTION_TESTS})
+            if(t MATCHES "^resolution_mapscreen_")
+                set_tests_properties(${t} PROPERTIES TIMEOUT 2400)
+            endif()
+        endforeach()
         add_custom_target(run-${JA2_BINARY}-resolution
             COMMAND ctest -L resolution --output-on-failure
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
