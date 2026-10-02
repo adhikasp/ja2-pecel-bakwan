@@ -8123,6 +8123,7 @@ void SetMapCursorItem()
 
 MOUSE_REGION* MapBridgeInvSlotRegion(int invPos);  // Interface_Items.cc
 MOUSE_REGION* MapBridgePoolSlotRegion(int slot);    // Map_Screen_Interface_Map_Inventory.cc
+void          MapBridgeStackAndMerge();             // Map_Screen_Interface_Map_Inventory.cc
 
 namespace MapBridge
 {
@@ -8223,6 +8224,11 @@ void CloseMercInventory()
 void ToggleSectorInventory()
 {
 	::ToggleSectorInventory();
+}
+
+void StackAndMerge()
+{
+	if (fShowMapInventoryPool && !fMapInventoryItem) MapBridgeStackAndMerge();
 }
 
 void CancelMessage()

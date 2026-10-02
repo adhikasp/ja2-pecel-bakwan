@@ -327,8 +327,26 @@ static void MapBorderButtonOff(UINT8 ubBorderButtonIndex);
 static void MapBorderButtonOn(UINT8 ubBorderButtonIndex);
 
 
+// Mines, airspace and items hide the town names (they would overlap); this remembers that they did, so that the names
+// come back when that view is turned off again.
+static bool s_townsHiddenByFilter = false;
+
+static void ShowTownsAgainIfHiddenByFilter()
+{
+	if (!s_townsHiddenByFilter || fShowMineFlag || fShowAircraftFlag || fShowItemsFlag) return;
+	s_townsHiddenByFilter = false;
+	if (!fShowTownFlag)
+	{
+		fShowTownFlag = TRUE;
+		MapBorderButtonOn( MAP_BORDER_TOWN_BTN );
+		fMapPanelDirty = TRUE;
+	}
+}
+
+
 void ToggleShowTownsMode( void )
 {
+	s_townsHiddenByFilter = false;
 	if (fShowTownFlag)
 	{
 		fShowTownFlag = FALSE;
@@ -368,6 +386,7 @@ void ToggleShowMinesMode( void )
 	{
 		fShowMineFlag = FALSE;
 		MapBorderButtonOff( MAP_BORDER_MINE_BTN );
+		ShowTownsAgainIfHiddenByFilter();
 	}
 	else
 	{
@@ -377,6 +396,7 @@ void ToggleShowMinesMode( void )
 		if (fShowTownFlag)
 		{
 			fShowTownFlag = FALSE;
+			s_townsHiddenByFilter = true;
 			MapBorderButtonOff( MAP_BORDER_TOWN_BTN );
 		}
 
@@ -495,6 +515,7 @@ void ToggleAirspaceMode( void )
 		{
 			AbortMovementPlottingMode( );
 		}
+		ShowTownsAgainIfHiddenByFilter();
 
 		// dirty regions
 		fMapPanelDirty = TRUE;
@@ -518,6 +539,7 @@ void ToggleItemsFilter( void )
 		// turn items OFF
 		fShowItemsFlag = FALSE;
 		MapBorderButtonOff( MAP_BORDER_ITEM_BTN );
+		ShowTownsAgainIfHiddenByFilter();
 
 		// dirty regions
 		fMapPanelDirty = TRUE;
@@ -677,6 +699,7 @@ void TurnOnAirSpaceMode( void )
 		if (fShowTownFlag)
 		{
 			fShowTownFlag = FALSE;
+			s_townsHiddenByFilter = true;
 			MapBorderButtonOff( MAP_BORDER_TOWN_BTN );
 		}
 
@@ -743,6 +766,7 @@ static void TurnOnItemFilterMode(void)
 		if (fShowTownFlag)
 		{
 			fShowTownFlag = FALSE;
+			s_townsHiddenByFilter = true;
 			MapBorderButtonOff( MAP_BORDER_TOWN_BTN );
 		}
 

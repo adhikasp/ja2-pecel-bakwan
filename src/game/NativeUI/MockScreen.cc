@@ -73,6 +73,23 @@ void RegisterFrontEndImages()
 			SDL_DestroySurface(whole);
 			return UpliftArt(map, 2);
 		});
+		// "itembig-<index>@<k>": the item's big picture (the description box), at the whole factor k
+		RegisterImageSource("itembig-", [](std::string const& name) -> SDL_Surface* {
+			size_t const at = name.find('@');
+			int const k = at == std::string::npos ? 1 : std::clamp(std::atoi(name.c_str() + at + 1), 1, 4);
+			ItemModel const* const item = GCM->getItem(uint16_t(std::atoi(name.c_str() + 8)), ItemSystem::nothrow);
+			if (!item) return nullptr;
+			GraphicModel const& g = item->getInventoryGraphicBig();
+			SDL_Surface* const pic = LoadStiFrame(g.getPath().to_lower().to_std_string(), g.getSubImageIndex());
+			if (!pic || k == 1) return pic;
+			if (k == 3)
+			{
+				SDL_Surface* const big = CropScaled(pic, 0, 0, pic->w, pic->h, 3);
+				SDL_DestroySurface(pic);
+				return big;
+			}
+			return UpliftArt(pic, k == 4 ? 2 : 1);
+		});
 		// "item-<index>[@<k>]": an item's inventory picture from the player's game data, enlarged by the whole factor k
 		// (default 2): Scale2x for 2 and 4, nearest neighbour for 3. Item art is never scaled by a fraction or stretched:
 		// the UI draws it at exactly k times its own size (MapScreenNative.cc, ItemArt).

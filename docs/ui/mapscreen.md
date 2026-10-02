@@ -178,9 +178,25 @@ legacy hotkeys. The legacy popup boxes (assignment, squad, training, attribute, 
 move) are drawn as native menus from `ShownPopUpBoxes()`. So legacy and native run the same game code
 (`mapscreen_equivalence.lua` checks it).
 
-Not drawn natively yet; the legacy screen shows them and takes the mouse while they are up (`PassThrough`):
-the pre-battle panel (Phase 7), the help overlay, militia redistribution, the item description box and the stack
-popup. Message boxes are native (Phase 2).
+The contract and move boxes are drawn as the approved card modals (prices and the balance after; check boxes per
+squad and merc), the item description box and the stack popup as native modals, all from the legacy boxes' state with
+their clicks on the legacy lines and regions.
+
+Left to the legacy screen, which shows them and takes the mouse while they are up (`PassThrough`): the pre-battle
+panel, the help overlay and militia redistribution. They belong to **Phase 7** (remaining screens). Message boxes are
+native (Phase 2).
+
+**Message log.** Messages now carry the game minute and their kind (not saved: a loaded save's messages show under
+"Earlier"); the log groups by day, has All/Combat/Team/Money tabs (combat = the red messages, money = they name a sum,
+team = merc dialogue), a search field, and a link to the sector a message names.
+
+**Sector inventory.** Items move by drag and drop or click, click (through the legacy slots); category filters,
+search, sort by type/name/condition, and "Stack & merge" (new: like items stacked to the stash's per-pile limit,
+money in one pile, `MapBridge::StackAndMerge`).
+
+**Town names.** Mines, airspace and items hide the town names (they overlap); before, they stayed hidden after
+those views were turned off (the "Towns off after plotting" seen in the Phase 4 screenshots came from the tour's filter
+toggles). Now the names come back when the view that hid them is turned off (both UIs, `Map_Screen_Interface_Border.cc`).
 
 **Item art** is never scaled by a fraction or stretched to a slot: it is drawn at its own size times a whole number
 of output pixels (2 at 1080p, 3 at 1440p, 4 at 4K; Scale2x or nearest neighbour), centred, stepping down only when it
@@ -208,5 +224,11 @@ would not fit. Ammo, clips and grenades therefore stay small.
 | A24 | laptop and back, options and back, tactical |
 | layout | UI scale 150 % and 200 %: layout audit |
 
-Not covered by a tour: the update box (needs an assignment to finish), the helicopter (needs Skyrider), militia
-redistribution and pre-battle (legacy pass-through), mercs in transit and dead mercs (seen in the audit only).
+`tests/e2e/mapscreen_states.lua` (with test aids `ja2.debug("hiretransit" | "updatebox" | "helicopter" | "killmerc")`):
+a merc in transit (dimmed, own group), the update box (Stop), the helicopter and arrival point in airspace mode, a dead
+merc (Dead group and assignment). The parity tour also covers the contract and move modals, the log's tabs, search
+and sector link, drag and drop, the item description, the stack popup, filters, search, sort and Stack & merge.
+`MapScreenModel_unittest.cc` tests the view model's rules (team grouping, the box lines, the log, item art) on
+game-state fixtures.
+
+Not covered: militia redistribution, pre-battle and help (legacy, Phase 7).

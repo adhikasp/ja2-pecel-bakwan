@@ -148,19 +148,22 @@
 		<div class="inv-area" id="map.inv" data-if="pool_open">
 			<div class="inv-merc" id="map.inv.merc">
 				<span class="sec-title">{{gear_title}}</span>
-				<div class="gear" id="map.inv.gear"><div data-for="g : gear" data-attr-class="'slot gslot ' + g.cls" data-attr-id="'map.inv.slot[' + g.pos + ']'" data-attr-style="g.style" data-event-click="slot(g.pos)" data-attr-rclick="'slot_r(' + g.pos + ')'" data-attr-title="g.name"><img class="art" data-if="g.art != ''" data-attr-src="g.art" data-attr-style="g.art_style"/><span class="count" data-if="g.count != ''">{{g.count}}</span><span class="lbl">{{g.label}}</span><div class="cond" data-if="g.cond >= 0"><div class="fill" data-style-width="g.cond + '%'"></div></div></div></div>
+				<div class="gear" id="map.inv.gear"><div data-for="g : gear" data-attr-class="'slot gslot ' + g.cls" data-attr-id="'map.inv.slot[' + g.pos + ']'" data-attr-style="g.style" data-attr-dnd-slot="g.pos" data-attr-rclick="'slot_r(' + g.pos + ')'" data-attr-title="g.name"><img class="art" data-if="g.art != ''" data-attr-src="g.art" data-attr-style="g.art_style"/><span class="count" data-if="g.count != ''">{{g.count}}</span><span class="lbl">{{g.label}}</span><div class="cond" data-if="g.cond >= 0"><div class="fill" data-style-width="g.cond + '%'"></div></div></div></div>
 				<div class="inv-stats"><div class="kv2"><span class="k">{{l_weight}}</span><span class="v"><span>{{gear_weight}}</span></span></div><div class="kv2"><span class="k">{{l_camo}}</span><span class="v"><span>{{gear_camo}}</span></span></div></div>
 			</div>
 			<div class="inv-pool" id="map.inv.pool">
 				<div class="inv-tools">
 					<span class="sec-title">{{pool_title}}</span>
 					<div class="grow"></div>
+					<div class="search-box" data-if="pool_title != ''"><img class="icon sm" src="icon-search"/><input type="text" class="field-input" id="map.inv.search" data-value="pool_query" data-event-change="pool_filter" data-attr-title="l_search_items"/></div>
+					<div class="seg" data-if="pool_title != ''" id="map.inv.sort"><span class="seg-b" id="map.inv.sort.type" data-class-on="pool_sort == 'type'" data-event-click="pool_sort('type')">{{l_sort_type}}</span><span class="seg-b" id="map.inv.sort.name" data-class-on="pool_sort == 'name'" data-event-click="pool_sort('name')">{{l_sort_name}}</span><span class="seg-b" id="map.inv.sort.condition" data-class-on="pool_sort == 'condition'" data-event-click="pool_sort('condition')">{{l_sort_cond}}</span></div>
 				</div>
 				<div class="inv-closed" data-if="pool_title == ''"><button class="btn" id="map.inv.openpool" data-label="Sector Inventory" data-event-click="open_pool"><img class="icon" src="icon-sector-inventory"/><span class="label">{{l_sector_inv}}</span><span class="kbd">Ctrl+I</span></button></div>
 				<div class="inv-tools" data-if="pool_title != ''"><div data-for="c : cats" data-attr-class="c.on ? 'cat on' : 'cat'" data-attr-id="'map.inv.cat.' + c.key" data-event-click="category(c.key)"><img class="icon" data-attr-src="'icon-' + c.icon"/><span>{{c.label}}</span><span class="n">{{c.n}}</span></div></div>
 				<div class="inv-empty" data-if="pool_title != '' &amp;&amp; pool.size == 0"><img class="icon" src="icon-sector-inventory"/><span>{{l_pool_empty}}</span></div>
-				<div class="inv-grid scroll" id="map.inv.grid"><div data-for="p : pool" class="slot pslot" data-class-away="p.away" data-class-sel="p.sel" data-attr-id="'map.inv.item[' + p.index + ']'" data-event-click="pool(p.index)" data-attr-rclick="'pool_r(' + p.index + ')'" data-attr-title="p.name"><img class="art" data-attr-src="p.art" data-attr-style="p.art_style"/><span class="count" data-if="p.count != ''">{{p.count}}</span><span class="nm">{{p.name}}</span><div class="cond"><div class="fill" data-style-width="p.cond + '%'"></div></div></div></div>
+				<div class="inv-grid scroll" id="map.inv.grid"><div data-for="p : pool" class="slot pslot" data-class-away="p.away" data-class-sel="p.sel" data-attr-id="'map.inv.item[' + p.index + ']'" data-attr-dnd-pool="p.index" data-attr-rclick="'pool_r(' + p.index + ')'" data-attr-title="p.name"><img class="art" data-attr-src="p.art" data-attr-style="p.art_style"/><span class="count" data-if="p.count != ''">{{p.count}}</span><span class="tag" data-if="p.tag != ''">{{p.tag}}</span><span class="nm">{{p.name}}</span><div class="cond"><div class="fill" data-style-width="p.cond + '%'"></div></div></div></div>
 				<div class="inv-foot"><span>{{l_inv_hint}}</span><div class="grow"></div>
+					<button class="btn" id="map.inv.stack" data-label="Stack and merge" data-if="pool_title != ''" data-event-click="stack"><img class="icon" src="icon-sector-inventory"/><span class="label">{{l_stack}}</span></button>
 					<button class="btn btn-primary" id="map.inv.done" data-label="Done" data-event-click="pool_done"><img class="icon" src="icon-confirm"/><span class="label">{{l_done}}</span><span class="kbd">Esc</span></button>
 				</div>
 			</div>
@@ -205,10 +208,19 @@
 		<span class="hint">{{l_map_hint}}</span>
 	</div>
 	<div class="log audit-over" id="map.log" data-if="log_open">
-		<div class="log-head"><span class="t">{{l_messages}}</span><div class="grow"></div>
+		<div class="log-head"><span class="t">{{l_messages}}</span>
+			<div class="tabs">
+				<span class="tab" id="map.log.tab.all" data-class-active="log_tab == 'all'" data-event-click="log_tab('all')">{{l_log_all}}</span>
+				<span class="tab" id="map.log.tab.combat" data-class-active="log_tab == 'combat'" data-event-click="log_tab('combat')">{{l_log_combat}}</span>
+				<span class="tab" id="map.log.tab.team" data-class-active="log_tab == 'team'" data-event-click="log_tab('team')">{{l_log_team}}</span>
+				<span class="tab" id="map.log.tab.money" data-class-active="log_tab == 'money'" data-event-click="log_tab('money')">{{l_log_money}}</span>
+			</div>
+			<div class="grow"></div>
+			<span class="log-count">{{log_count}}</span>
+			<div class="search-box"><img class="icon sm" src="icon-search"/><input type="text" class="field-input" id="map.log.search" data-value="log_query" data-event-change="log_filter" data-attr-title="l_search"/></div>
 			<button class="icon-btn" id="map.log.collapse" title="Close" data-event-click="log"><img class="icon" src="icon-chevron-down"/></button>
 		</div>
-		<div class="log-body scroll" id="map.log.list"><div class="lm" data-for="m : messages" data-attr-class="'lm ' + m.cls"><img class="icon" data-attr-src="'icon-' + m.icon"/><span class="x">{{m.text}}</span></div></div>
+		<div class="log-body scroll" id="map.log.list"><div data-for="m : messages"><span class="lday" data-if="m.day != ''">{{m.day}}</span><div data-attr-class="'lm ' + m.cls"><span class="tm">{{m.time}}</span><img class="icon" data-attr-src="'icon-' + m.icon"/><span class="x">{{m.text}}</span><span class="go" data-if="m.go != ''" data-attr-id="'map.log.go.' + m.go" data-event-click="log_go(m.go)" title="Show on the map">{{m.go}}</span></div></div></div>
 	</div>
 
 	<!-- ============================================================== menus mirrored from the legacy popup boxes -->
@@ -216,6 +228,53 @@
 		<div class="menu">
 			<div data-for="l : mlines" data-attr-class="l.box == b.index ? l.cls : 'gone'" data-attr-id="'map.popup[' + l.box + '].line[' + l.line + ']'" data-event-click="menu_pick(l.box, l.line)" data-attr-rclick="'menu_pick_r(' + l.box + ',' + l.line + ')'" data-event-mouseover="menu_hover(l.box, l.line)"><span class="label">{{l.text}}</span><span class="val" data-if="l.second != ''">{{l.second}}</span></div>
 		</div>
+	</div>
+
+	<!-- ============================================================== contract and move boxes as card modals -->
+	<div class="scrim" data-if="modal != ''"></div>
+	<div class="modal audit-over" id="map.contract" data-if="modal == 'contract'" style="left: 50%; top: 50%; width: 520dp; margin-left: -260dp; margin-top: -250dp;">
+		<div class="modal-head"><img class="icon status" src="icon-contract"/><span class="title">{{modal_title}}</span></div>
+		<div class="modal-body">
+			<span class="lead">{{modal_lead}}</span>
+			<div data-for="r : modal_rows" data-attr-class="r.cls" data-attr-id="'map.contract.line[' + r.line + ']'" data-event-click="menu_pick(r.box, r.line)" data-event-mouseover="menu_hover(r.box, r.line)"><img class="icon" data-attr-src="r.kind == 'dismiss' ? 'icon-exit-sector' : 'icon-contract'"/><div class="l"><span class="a">{{r.label}}</span><span class="b" data-if="r.sub != ''">{{r.sub}}</span></div><span class="p" data-if="r.price != ''">{{r.price}}</span></div>
+		</div>
+		<div class="modal-foot"><button class="btn btn-ghost" id="map.contract.cancel" data-label="Cancel" data-event-click="menu_pick(modal_box, modal_cancel)"><span class="label">{{l_cancel}}</span><span class="kbd">Esc</span></button></div>
+	</div>
+	<div class="modal audit-over" id="map.move" data-if="modal == 'move'" style="left: 50%; top: 50%; width: 480dp; margin-left: -240dp; margin-top: -270dp;">
+		<div class="modal-head"><img class="icon status" src="icon-merc-moving"/><span class="title">{{modal_title}}</span></div>
+		<div class="modal-body">
+			<span class="lead">{{modal_lead}}</span>
+			<div class="mv-list scroll" id="map.move.list"><div data-for="r : modal_rows" data-attr-class="r.cls" data-attr-id="'map.move.line[' + r.line + ']'" data-event-click="menu_pick(r.box, r.line)"><span class="chk" data-class-on="r.checked"></span><img class="icon" src="icon-squad" data-if="r.kind == 'group'"/><span class="n">{{r.label}}</span></div></div>
+		</div>
+		<div class="modal-foot"><button class="btn btn-ghost" id="map.move.cancel" data-label="Cancel" data-event-click="menu_pick(modal_box, modal_cancel)"><span class="label">{{l_cancel}}</span><span class="kbd">Esc</span></button>
+			<button class="btn btn-primary" id="map.move.plot" data-label="Plot route" data-class-is-disabled="modal_go &lt; 0" data-event-click="menu_pick(modal_box, modal_go)"><img class="icon" src="icon-destination"/><span class="label">{{modal_go_label}}</span></button></div>
+	</div>
+
+	<!-- ============================================================== item description and stack popup -->
+	<div class="scrim" data-if="desc_open || stack_open"></div>
+	<div class="modal audit-over desc" id="map.desc" data-if="desc_open" style="left: 50%; top: 50%; width: 560dp; margin-left: -280dp; margin-top: -260dp;">
+		<div class="modal-head"><img class="icon status" src="icon-info"/><span class="title">{{desc_name}}</span></div>
+		<div class="modal-body">
+			<div class="desc-art" id="map.desc.art"><img data-if="desc_art != ''" data-attr-src="desc_art" data-attr-style="desc_art_style"/></div>
+			<div class="desc-stats">
+				<div class="kv2"><span class="k">{{l_desc_cond}}</span><span class="v"><span>{{desc_cond}}</span></span></div>
+				<div class="kv2"><span class="k">{{l_desc_weight}}</span><span class="v"><span>{{desc_weight}}</span></span></div>
+				<div class="kv2" data-if="desc_ammo != ''"><span class="k">{{l_desc_ammo}}</span><span class="v"><span>{{desc_ammo}}</span></span></div>
+			</div>
+			<span class="desc-text">{{desc_text}}</span>
+			<span class="sec-title" data-if="desc_attach.size &gt; 0">{{l_desc_attach}}</span>
+			<div class="desc-attach"><div data-for="a : desc_attach" class="slot aslot" data-attr-id="'map.desc.attach[' + a.slot + ']'" data-event-click="desc_attach(a.slot)" data-attr-rclick="'desc_attach_r(' + a.slot + ')'" data-attr-title="a.name"><img class="art" data-if="a.art != ''" data-attr-src="a.art" data-attr-style="a.art_style"/><img class="ghost" src="icon-add" data-if="a.art == ''"/></div></div>
+			<span class="hint-text">{{l_desc_hint}}</span>
+		</div>
+		<div class="modal-foot"><button class="btn btn-primary" id="map.desc.done" data-label="Done" data-event-click="desc_close"><img class="icon" src="icon-confirm"/><span class="label">{{l_done}}</span></button></div>
+	</div>
+	<div class="modal audit-over" id="map.stack" data-if="stack_open" style="left: 50%; top: 50%; width: 520dp; margin-left: -260dp; margin-top: -150dp;">
+		<div class="modal-head"><img class="icon status" src="icon-inventory"/><span class="title">{{stack_name}}</span></div>
+		<div class="modal-body">
+			<div class="stack-grid"><div data-for="p : stack" class="slot sslot" data-attr-id="'map.stack.item[' + p.index + ']'" data-event-click="stack_pick(p.index)" data-attr-rclick="'stack_pick_r(' + p.index + ')'"><img class="art" data-if="p.art != ''" data-attr-src="p.art" data-attr-style="p.art_style"/><div class="cond" data-if="p.art != ''"><div class="fill" data-style-width="p.cond + '%'"></div></div></div></div>
+			<span class="hint-text">{{l_stack_hint}}</span>
+		</div>
+		<div class="modal-foot"><button class="btn" id="map.stack.close" data-label="Close" data-event-click="stack_close"><span class="label">{{l_close}}</span><span class="kbd">Esc</span></button></div>
 	</div>
 
 	<!-- ============================================================== update box -->

@@ -7,6 +7,7 @@
 // legacy hotkeys, so the native and the legacy UI run exactly the same game code. Legacy popups (the assignment,
 // squad, training, contract, move ... boxes) are mirrored as native menus; screens the native UI does not draw yet
 // (pre-battle, help, militia redistribution, item description, stack popup) pass the mouse through to the legacy one.
+#include "MapScreenModel.h"
 #include "NativeImages.h"
 #include "NativeUIRuntime.h"
 #include "ViewModel.h"
@@ -94,21 +95,17 @@ namespace
 	struct ItemArt { std::string art, style; };
 	/** Item @a id drawn at a whole-number scale, centred in a box of @a boxW x @a boxH dp; the scale steps down (never
 	 * below 1) only when the picture would not fit. Small items (ammo, grenades) stay at their natural size. */
-	ItemArt MakeItemArt(UINT16 const id, float const boxW, float const boxH)
+	ItemArt MakeItemArt(UINT16 const id, float const boxW, float const boxH, bool const big = false)
 	{
 		ItemArt a;
 		ItemModel const* const item = GCM->getItem(id, ItemSystem::nothrow);
 		if (!item || id == NOTHING) return a;
-		CSubVObject const g = GetSmallInventoryGraphicForItem(item);
+		CSubVObject const g = big ? GetBigInventoryGraphicForItem(item) : GetSmallInventoryGraphicForItem(item);
 		if (!g.first) return a;
 		ETRLEObject const& e = g.first->SubregionProperties(g.second);
-		float const dp = std::max(0.01f, DpScale());
-		int const bw = int(boxW * dp), bh = int(boxH * dp);
-		int k = ItemScale();
-		while (k > 1 && (e.usWidth * k > bw || e.usHeight * k > bh)) --k;
-		int const w = e.usWidth * k, h = e.usHeight * k;
-		a.art = "item-" + std::to_string(id) + "@" + std::to_string(k);
-		a.style = "width: " + Px(w) + "; height: " + Px(h) + "; left: " + Px((bw - w) / 2) + "; top: " + Px((bh - h) / 2) + ";";
+		MapModel::ItemFit const f = MapModel::FitItem(e.usWidth, e.usHeight, boxW, boxH, std::max(0.01f, DpScale()));
+		a.art = std::string(big ? "itembig-" : "item-") + std::to_string(id) + "@" + std::to_string(f.scale);
+		a.style = "width: " + Px(f.w) + "; height: " + Px(f.h) + "; left: " + Px(f.left) + "; top: " + Px(f.top) + ";";
 		return a;
 	}
 
@@ -227,9 +224,34 @@ struct AttrCell
 
 struct MessageRow
 {
-	std::string text, cls, icon;
+	std::string text, cls, icon, day, time, go;
 	bool operator==(MessageRow const&) const = default;
-	static void Describe(RowFields<MessageRow>& f) { f("text", &MessageRow::text)("cls", &MessageRow::cls)("icon", &MessageRow::icon); }
+	static void Describe(RowFields<MessageRow>& f)
+	{
+		f("text", &MessageRow::text)("cls", &MessageRow::cls)("icon", &MessageRow::icon)("day", &MessageRow::day)("time", &MessageRow::time)("go", &MessageRow::go);
+	}
+};
+
+/** A line of the contract or move box drawn as a card modal (the clicks go to the legacy line). */
+struct ModalRow
+{
+	int box = 0, line = 0;
+	std::string kind, label, sub, price, cls;
+	bool checked = false;
+	bool operator==(ModalRow const&) const = default;
+	static void Describe(RowFields<ModalRow>& f)
+	{
+		f("box", &ModalRow::box)("line", &ModalRow::line)("kind", &ModalRow::kind)("label", &ModalRow::label)("sub", &ModalRow::sub)
+		 ("price", &ModalRow::price)("cls", &ModalRow::cls)("checked", &ModalRow::checked);
+	}
+};
+
+struct DescAttachment
+{
+	int slot = 0;
+	std::string art, art_style, name, cls;
+	bool operator==(DescAttachment const&) const = default;
+	static void Describe(RowFields<DescAttachment>& f) { f("slot", &DescAttachment::slot)("art", &DescAttachment::art)("art_style", &DescAttachment::art_style)("name", &DescAttachment::name)("cls", &DescAttachment::cls); }
 };
 
 struct MenuBox
@@ -270,12 +292,12 @@ struct GearSlot
 struct PoolItem
 {
 	int index = 0, cond = 0;
-	std::string art, art_style, count, name;
+	std::string art, art_style, count, name, tag;
 	bool away = false, sel = false;
 	bool operator==(PoolItem const&) const = default;
 	static void Describe(RowFields<PoolItem>& f)
 	{
-		f("index", &PoolItem::index)("cond", &PoolItem::cond)("art", &PoolItem::art)("art_style", &PoolItem::art_style)("count", &PoolItem::count)("name", &PoolItem::name)("away", &PoolItem::away)("sel", &PoolItem::sel);
+		f("index", &PoolItem::index)("cond", &PoolItem::cond)("art", &PoolItem::art)("art_style", &PoolItem::art_style)("count", &PoolItem::count)("name", &PoolItem::name)("tag", &PoolItem::tag)("away", &PoolItem::away)("sel", &PoolItem::sel);
 	}
 };
 
@@ -366,6 +388,23 @@ public:
 		Command("legend", [this](Args const&) { legend = !legend; Poke(); });
 		Command("group", [this](Args const&) { grouped = !grouped; Poke(); });
 		Command("log", [this](Args const&) { logOpen = !logOpen; Poke(); });
+		Command("log_tab", [this](Args const& a) { if (!a.empty()) logTab = a[0]; Poke(); });
+		Command("log_filter", [this](Args const&) { Poke(); });
+		Command("log_go", [this](Args const& a) {
+			if (a.empty() || a[0].size() < 2) return;
+			SGPSector const s(std::atoi(a[0].c_str() + 1), a[0][0] - 'A' + 1, 0);
+			if (s.IsValid()) { if (iCurrentMapSectorZ != 0) JumpToLevel(0); ChangeSelectedMapSector(s); }
+			Poke();
+		});
+		Command("pool_filter", [this](Args const&) { Poke(); });
+		Command("pool_sort", [this](Args const& a) { if (!a.empty()) poolSort = a[0]; Poke(); });
+		Command("stack", [this](Args const&) { StackAndMerge(); Poke(); });
+		Command("desc_close", [this](Args const&) { ItemDescNativeClose(); Poke(); });
+		Command("desc_attach",   [this](Args const& a) { if (!a.empty()) ItemDescNativeAttachmentClick(std::atoi(a[0].c_str()), false); Poke(); });
+		Command("desc_attach_r", [this](Args const& a) { if (!a.empty()) ItemDescNativeAttachmentClick(std::atoi(a[0].c_str()), true); Poke(); });
+		Command("stack_pick",   [this](Args const& a) { if (!a.empty()) ItemStackNativeClick(std::atoi(a[0].c_str()), false); Poke(); });
+		Command("stack_pick_r", [this](Args const& a) { if (!a.empty()) ItemStackNativeClick(std::atoi(a[0].c_str()), true); Poke(); });
+		Command("stack_close", [this](Args const&) { ItemStackNativeClose(); Poke(); });
 		Command("open_pool", [this](Args const&) { ToggleSectorInventory(); Poke(); });
 		Command("pool_done", [this](Args const&) {
 			if (fShowInventoryFlag) CloseMercInventory();
@@ -399,7 +438,9 @@ public:
 			"hint_add", "hint_next", "hp", "en", "mor", "contract", "daily", "deposit", "insured", "gear", "assign", "level", "lg_team",
 			"lg_militia", "lg_enemy", "lg_fog", "cancel", "weight", "camo", "inv_hint", "done", "sector", "sector_hint", "forces", "mercs",
 			"green", "regular", "veteran", "enemy", "control", "loyalty", "training", "producing", "possible", "sam", "in_sector",
-			"sector_inv", "map_hint", "messages", "stop", "continue", "time_help", "open_gear", "pool_empty" })
+			"sector_inv", "map_hint", "messages", "stop", "continue", "time_help", "open_gear", "pool_empty",
+			"log_all", "log_combat", "log_team", "log_money", "search", "search_items", "sort_type", "sort_name", "sort_cond", "stack",
+			"desc_cond", "desc_weight", "desc_ammo", "desc_attach", "desc_hint", "stack_hint", "move_all", "close" })
 		{
 			labels[k] = Str(std::string("map.") + k);
 		}
@@ -428,6 +469,14 @@ public:
 		f.Field("s_control", sControl); f.Field("s_loyalty", sLoyalty); f.Field("s_training", sTraining); f.Field("s_mine", sMine);
 		f.Field("s_mine_now", sMineNow); f.Field("s_mine_max", sMineMax); f.Field("s_sam", sSam); f.Field("s_items", sItems);
 		f.Field("last_message", lastMessage); f.Field("log_open", logOpen); f.Rows("messages", messages);
+		f.Field("log_tab", logTab); f.Field("log_query", logQuery); f.Field("log_count", logCount);
+		f.Field("modal", modal); f.Field("modal_title", modalTitle); f.Field("modal_lead", modalLead); f.Rows("modal_rows", modalRows);
+		f.Field("modal_box", modalBox); f.Field("modal_go", modalGo); f.Field("modal_cancel", modalCancel); f.Field("modal_go_label", modalGoLabel);
+		f.Field("pool_query", poolQuery); f.Field("pool_sort", poolSort); f.Field("pool_empty_index", poolEmptyIndex);
+		f.Field("desc_open", descOpen); f.Field("desc_name", descName); f.Field("desc_text", descText); f.Field("desc_art", descArt);
+		f.Field("desc_art_style", descArtStyle); f.Field("desc_cond", descCond); f.Field("desc_weight", descWeight); f.Field("desc_ammo", descAmmo);
+		f.Rows("desc_attach", descAttach);
+		f.Field("stack_open", stackOpen); f.Field("stack_name", stackName); f.Rows("stack", stack);
 		f.Rows("menus", menus); f.Rows("mlines", mlines);
 		f.Field("update_open", updateOpen); f.Field("update_title", updateTitle); f.Rows("update", update);
 		f.Field("pool_open", poolOpen); f.Field("gear_open", gearOpen); f.Field("gear_title", gearTitle); f.Rows("gear", gear);
@@ -495,6 +544,16 @@ public:
 	std::string lastMessage;
 	bool logOpen = false;
 	std::vector<MessageRow> messages;
+	std::string logTab = "all", logQuery, logCount;
+	std::string modal, modalTitle, modalLead, modalGoLabel;
+	int modalBox = -1, modalGo = -1, modalCancel = -1;
+	std::vector<ModalRow> modalRows;
+	std::string poolQuery, poolSort = "type";
+	int poolEmptyIndex = -1;
+	bool descOpen = false, stackOpen = false;
+	std::string descName, descText, descArt, descArtStyle, descCond, descWeight, descAmmo, stackName;
+	std::vector<DescAttachment> descAttach;
+	std::vector<PoolItem> stack;
 	std::vector<MenuBox> menus;
 	std::vector<MenuLine> mlines;
 	bool updateOpen = false;
@@ -536,34 +595,21 @@ private:
 	{
 		team.clear();
 		int count = 0, vehicles = 0;
-		struct Entry { int line; SOLDIERTYPE* s; std::string key; };
-		std::vector<Entry> entries;
+		std::vector<MapModel::MercFact> facts;
 		for (int i = 0; i < MAX_CHARACTER_COUNT; ++i)
 		{
 			SOLDIERTYPE* const s = gCharactersList[i].merc;
 			if (!s) continue;
-			std::string key;
-			if (s->uiStatusFlags & SOLDIER_VEHICLE) { key = "4vehicles"; ++vehicles; }
-			else
-			{
-				++count;
-				if (s->bAssignment < ON_DUTY) key = "1squad" + ST::format("{02d}", s->bAssignment).to_std_string();
-				else if (s->bAssignment == IN_TRANSIT) key = "3transit";
-				else key = "2other";
-			}
-			entries.push_back({ i, s, key });
+			bool const vehicle = s->uiStatusFlags & SOLDIER_VEHICLE;
+			(vehicle ? vehicles : count)++;
+			facts.push_back({ i, MercName(*s), int(s->bAssignment), vehicle, s->bLife <= 0 });
 		}
-		if (grouped)
+		for (MapModel::TeamEntry const& e : MapModel::GroupTeam(facts, grouped))
 		{
-			std::stable_sort(entries.begin(), entries.end(), [](Entry const& a, Entry const& b) { return a.key < b.key; });
-		}
-		std::string lastKey;
-		for (Entry const& e : entries)
-		{
-			SOLDIERTYPE const& s = *e.s;
+			SOLDIERTYPE const& s = *gCharactersList[e.fact.line].merc;
 			TeamRow r;
-			r.line = e.line;
-			r.name = MercName(s);
+			r.line = e.fact.line;
+			r.name = e.fact.name;
 			r.assignment = S(GetMapscreenMercAssignmentString(s));
 			r.assign_icon = AssignmentIcon(s);
 			r.location = S(GetMapscreenMercLocationString(s));
@@ -573,23 +619,23 @@ private:
 			r.contract = S(GetMapscreenMercDepartureString(s, &colour));
 			r.contract_warn = IsWarnColour(colour);
 			r.asleep = s.fMercAsleep;
-			r.selected = e.line == bSelectedInfoChar;
-			r.multi = !r.selected && IsEntryInSelectedListSet(INT8(e.line));
-			r.plotting = CharacterIsGettingPathPlotted(INT16(e.line));
-			r.dimmed = s.bAssignment == IN_TRANSIT || s.bLife == 0 || s.bAssignment == ASSIGNMENT_POW;
+			r.selected = e.fact.line == bSelectedInfoChar;
+			r.multi = !r.selected && IsEntryInSelectedListSet(INT8(e.fact.line));
+			r.plotting = CharacterIsGettingPathPlotted(INT16(e.fact.line));
+			r.dimmed = s.bAssignment == IN_TRANSIT || s.bLife <= 0 || s.bAssignment == ASSIGNMENT_POW;
 			int const lifeMax = std::max<int>(1, s.bLifeMax);
 			r.hp = std::clamp(100 * s.bLife / lifeMax, 0, 100);
 			r.energy = std::clamp<int>(s.bBreath, 0, 100);
 			r.morale = std::clamp<int>(s.bMorale, 0, 100);
-			if (grouped && e.key != lastKey)
+			if (grouped && e.firstInGroup)
 			{
-				lastKey = e.key;
-				switch (e.key[0])
+				switch (e.group)
 				{
-					case '1': r.group = S(pLongAssignmentStrings[s.bAssignment]); r.group_icon = "squad"; r.group_meta = S(GetMapscreenMercLocationString(s)); break;
-					case '2': r.group = Str("map.group.other"); r.group_icon = "on-duty"; break;
-					case '3': r.group = S(pLongAssignmentStrings[IN_TRANSIT]); r.group_icon = "in-transit"; break;
-					default:  r.group = Str("map.group.vehicles"); r.group_icon = "vehicle"; break;
+					case MapModel::Group::Squad:    r.group = S(pLongAssignmentStrings[e.squad]); r.group_icon = "squad"; r.group_meta = r.location; break;
+					case MapModel::Group::Other:    r.group = Str("map.group.other"); r.group_icon = "on-duty"; break;
+					case MapModel::Group::Transit:  r.group = S(pLongAssignmentStrings[IN_TRANSIT]); r.group_icon = "in-transit"; break;
+					case MapModel::Group::Dead:     r.group = S(pLongAssignmentStrings[ASSIGNMENT_DEAD]); r.group_icon = "dead"; break;
+					case MapModel::Group::Vehicles: r.group = Str("map.group.vehicles"); r.group_icon = "vehicle"; break;
 				}
 			}
 			team.push_back(std::move(r));
@@ -939,16 +985,33 @@ private:
 		lastMessage = all.empty() ? "" : S(all.back().text);
 		messages.clear();
 		if (!logOpen) return;
+		int lastDay = -1, shown = 0;
 		for (auto it = all.rbegin(); it != all.rend(); ++it)
 		{
+			std::string const text = S(it->text);
+			bool const red = it->color == FONT_MCOLOR_RED || it->color == FONT_RED || it->color == FONT_LTRED;
+			MapModel::MessageKind const kind = MapModel::Classify(red, it->priority == MSG_DIALOG, text);
+			if (logTab == "combat" && kind != MapModel::MessageKind::Combat) continue;
+			if (logTab == "team" && kind != MapModel::MessageKind::Team) continue;
+			if (logTab == "money" && kind != MapModel::MessageKind::Money) continue;
+			if (!MapModel::Matches(text, logQuery)) continue;
 			MessageRow r;
-			r.text = S(it->text);
-			bool const red = it->color == FONT_MCOLOR_RED || it->color == FONT_RED;
-			bool const yellow = it->color == FONT_MCOLOR_LTYELLOW || it->color == FONT_YELLOW;
-			r.cls = red ? "danger" : yellow ? "warn" : "";
-			r.icon = red ? "error" : yellow ? "warning" : "info";
+			r.text = text;
+			// yellow is the colour of ordinary interface messages: no warning
+			r.cls = red ? "danger" : "";
+			r.icon = red ? "error" : kind == MapModel::MessageKind::Money ? "money" : kind == MapModel::MessageKind::Team ? "talk" : "info";
+			int const day = it->gameMinute ? MapModel::DayOf(it->gameMinute) : 0;
+			if (day != lastDay)
+			{
+				lastDay = day;
+				r.day = day ? S(pDayStrings) + " " + std::to_string(day) : Str("map.log_earlier");
+			}
+			r.time = it->gameMinute ? MapModel::ClockOf(it->gameMinute) : "";
+			r.go = MapModel::SectorNamed(text);
 			messages.push_back(std::move(r));
+			++shown;
 		}
+		logCount = ST::format(Str("map.log_count").c_str(), shown, int(all.size())).to_std_string();
 	}
 
 	void ReadMenus()
@@ -956,33 +1019,106 @@ private:
 		menus.clear();
 		mlines.clear();
 		boxLines.clear();
+		modal.clear();
+		modalRows.clear();
+		modalBox = modalGo = modalCancel = -1;
 		int k = 0;
 		for (PopUpBox* const b : ShownPopUpBoxes())
 		{
 			if (b == ghTownMineBox) continue; // the sector dock shows it
 			auto lines = GetBoxLines(b);
 			if (lines.empty()) continue;
-			MenuBox m;
-			m.index = int(boxLines.size());
-			m.l = std::to_string(int(anchorX) + k * 262) + "dp";
-			m.t = std::to_string(int(anchorY)) + "dp";
-			menus.push_back(m);
-			for (size_t i = 0; i < lines.size(); ++i)
+			int const index = int(boxLines.size());
+			if (b == ghContractBox) ContractModal(index, lines);
+			else if (b == ghMoveBox) MoveModal(index, lines);
+			else
 			{
-				PopUpBoxLine const& l = lines[i];
-				MenuLine ml;
-				ml.box = m.index;
-				ml.line = int(i);
-				ml.text = S(l.text);
-				ml.second = S(l.second);
-				ml.cls = "menu-item";
-				if (ml.text.empty() && ml.second.empty()) ml.cls += " blank";
-				if (l.shaded || l.secondaryShade) ml.cls += " shaded";
-				if (l.highlighted) ml.cls += " hl";
-				mlines.push_back(std::move(ml));
+				MenuBox m;
+				m.index = index;
+				m.l = std::to_string(int(anchorX) + k * 262) + "dp";
+				m.t = std::to_string(int(anchorY)) + "dp";
+				menus.push_back(m);
+				for (size_t i = 0; i < lines.size(); ++i)
+				{
+					PopUpBoxLine const& l = lines[i];
+					MenuLine ml;
+					ml.box = m.index;
+					ml.line = int(i);
+					ml.text = S(l.text);
+					ml.second = S(l.second);
+					ml.cls = "menu-item";
+					if (ml.text.empty() && ml.second.empty()) ml.cls += " blank";
+					if (l.shaded || l.secondaryShade) ml.cls += " shaded";
+					if (l.highlighted) ml.cls += " hl";
+					mlines.push_back(std::move(ml));
+				}
+				++k;
 			}
 			boxLines.push_back(std::move(lines));
-			++k;
+		}
+	}
+
+	/** The contract box as the approved card modal: one card per offer with its price and the balance after. */
+	void ContractModal(int const box, std::vector<PopUpBoxLine> const& lines)
+	{
+		modal = "contract";
+		modalBox = box;
+		SOLDIERTYPE const* const s = bSelectedContractChar != -1 ? gCharactersList[bSelectedContractChar].merc : GetSelectedInfoChar();
+		modalTitle = S(lines.front().text);
+		if (s) modalTitle += " " + MercName(*s);
+		modalLead.clear();
+		if (s)
+		{
+			UINT8 colour = 0;
+			modalLead = Str("map.contract_left") + " " + S(GetMapscreenMercDepartureString(*s, &colour));
+		}
+		for (size_t i = 1; i < lines.size(); ++i)
+		{
+			std::string const text = S(lines[i].text);
+			if (text.empty()) continue;
+			MapModel::ContractOption const o = MapModel::ParseContractLine(text);
+			ModalRow r;
+			r.box = box;
+			r.line = int(i);
+			r.label = o.label;
+			bool const last = i + 1 == lines.size();
+			r.kind = last ? "cancel" : o.price >= 0 ? "offer" : "dismiss";
+			if (o.price >= 0)
+			{
+				r.price = S(SPrintMoney(o.price));
+				r.sub = Str("map.balance_after") + " " + S(SPrintMoney(LaptopSaveInfo.iCurrentBalance - o.price));
+			}
+			r.cls = std::string("opt ") + r.kind + (lines[i].shaded ? " is-disabled" : "") + (lines[i].highlighted ? " is-hover" : "");
+			if (r.kind == "cancel") { modalCancel = r.line; continue; }
+			modalRows.push_back(r);
+		}
+	}
+
+	/** The move box as the approved modal: groups and mercs with check boxes, "Plot route" and Cancel. */
+	void MoveModal(int const box, std::vector<PopUpBoxLine> const& lines)
+	{
+		modal = "move";
+		modalBox = box;
+		modalTitle = S(lines.front().text);
+		modalLead = Str("map.move_lead");
+		size_t const n = lines.size();
+		modalCancel = int(n) - 1;
+		modalGo = n >= 2 && !lines[n - 2].text.empty() && !lines[n - 2].shaded ? int(n) - 2 : -1;
+		modalGoLabel = modalGo >= 0 ? S(lines[n - 2].text) : "";
+		for (size_t i = 1; i + 1 < n; ++i)
+		{
+			if (int(i) == modalGo || int(i) == modalCancel) continue;
+			std::string const text = S(lines[i].text);
+			if (text.empty()) continue;
+			MapModel::MoveLine const m = MapModel::ParseMoveLine(text);
+			ModalRow r;
+			r.box = box;
+			r.line = int(i);
+			r.kind = m.merc ? "merc" : "group";
+			r.label = m.label;
+			r.checked = m.checked;
+			r.cls = std::string(m.merc ? "mv-row" : "mv-grp") + (lines[i].shaded ? " no" : "");
+			modalRows.push_back(r);
 		}
 	}
 
@@ -1002,8 +1138,61 @@ private:
 		updateTitle = S(pUpdateMercStrings[std::clamp(reason, 0, 5)]);
 	}
 
+	/** The item description box and the stack popup, drawn natively (item art at whole-number scales). */
+	void ReadItemPopups()
+	{
+		ItemDescNativeView const d = GetItemDescNativeView();
+		descOpen = d.open;
+		descAttach.clear();
+		if (d.open)
+		{
+			ItemModel const* const item = GCM->getItem(d.item, ItemSystem::nothrow);
+			descName = item ? S(item->getName()) : "";
+			descText = item ? S(item->getDescription()) : "";
+			ItemArt const a = MakeItemArt(d.item, 300, 140, true);
+			descArt = a.art; descArtStyle = a.style;
+			descCond = d.item == MONEY ? S(SPrintMoney(INT32(d.money))) : std::to_string(d.status) + "%";
+			descWeight = item ? ST::format("{.1f} kg", item->getWeight() / 10.0).to_std_string() : "";
+			descAmmo = d.shotsLeft >= 0 ? std::to_string(d.shotsLeft) + " / " + std::to_string(d.magSize) : "";
+			for (int i = 0; i < 4; ++i)
+			{
+				if (!d.attachEnabled[i]) continue;
+				DescAttachment at;
+				at.slot = i;
+				if (d.attachments[i] != NOTHING)
+				{
+					ItemArt const aa = MakeItemArt(d.attachments[i], 60, 48);
+					at.art = aa.art; at.art_style = aa.style;
+					at.name = S(GCM->getItem(d.attachments[i])->getShortName());
+				}
+				descAttach.push_back(at);
+			}
+		}
+		ItemStackNativeView const st = GetItemStackNativeView();
+		stackOpen = st.open;
+		stack.clear();
+		if (st.open)
+		{
+			ItemModel const* const item = GCM->getItem(st.item, ItemSystem::nothrow);
+			stackName = item ? S(item->getShortName()) : "";
+			for (int i = 0; i < st.slots; ++i)
+			{
+				PoolItem p;
+				p.index = i;
+				if (i < st.count)
+				{
+					ItemArt const a = MakeItemArt(st.item, 64, 52);
+					p.art = a.art; p.art_style = a.style;
+					p.cond = std::clamp<int>(st.status[i], 0, 100);
+				}
+				stack.push_back(p);
+			}
+		}
+	}
+
 	void ReadInventory()
 	{
+		ReadItemPopups();
 		poolOpen = fShowMapInventoryPool || fShowInventoryFlag;
 		gearOpen = fShowInventoryFlag;
 		gear.clear();
@@ -1057,6 +1246,11 @@ private:
 			{ "medical", "medkit", IC_MEDKIT }, { "other", "misc-item", ~uint32_t(IC_GUN | IC_LAUNCHER | IC_AMMO | IC_ARMOUR | IC_GRENADE | IC_BOMB | IC_MEDKIT) },
 		};
 		std::map<std::string, int> counts;
+		poolEmptyIndex = -1;
+		for (size_t i = 0; i < pInventoryPoolList.size(); ++i)
+		{
+			if (pInventoryPoolList[i].o.usItem == NOTHING) { poolEmptyIndex = int(i); break; }
+		}
 		uint32_t mask = 0xFFFFFFFF;
 		for (Cat const& c : catDefs) if (category == c.key) mask = c.mask;
 		for (size_t i = 0; i < pInventoryPoolList.size(); ++i)
@@ -1068,6 +1262,7 @@ private:
 			uint32_t const cls = item->getItemClass();
 			for (Cat const& c : catDefs) if (cls & c.mask) ++counts[c.key];
 			if (!(cls & mask)) continue;
+			if (!MapModel::Matches(S(item->getShortName()) + " " + S(item->getName()), poolQuery)) continue;
 			PoolItem p;
 			p.index = int(i);
 			ItemArt const a = MakeItemArt(w.o.usItem, 128, 50);
@@ -1076,8 +1271,13 @@ private:
 			p.name = S(item->getShortName());
 			p.cond = std::clamp<int>(w.o.bStatus[0], 0, 100);
 			p.away = !(w.usFlags & WORLD_ITEM_REACHABLE);
+			if (p.away) p.tag = Str("map.unreachable");
 			pool.push_back(std::move(p));
 		}
+		if (poolSort == "name")
+			std::stable_sort(pool.begin(), pool.end(), [](PoolItem const& a, PoolItem const& b) { return a.name < b.name; });
+		else if (poolSort == "condition")
+			std::stable_sort(pool.begin(), pool.end(), [](PoolItem const& a, PoolItem const& b) { return a.cond > b.cond; });
 		for (Cat const& c : catDefs)
 		{
 			Category k;
@@ -1108,6 +1308,16 @@ namespace
 
 		ScreenID Handle() override
 		{
+			// a native text field (log or item search) has the keyboard: its keys are not map hotkeys
+			if (Rml::Element* const f = Context()->GetFocusElement(); f && f->GetTagName() == "input")
+			{
+				InputAtom e;
+				while (DequeueEvent(&e))
+				{
+					if (e.usEvent == KEY_DOWN && (e.usParam == SDLK_ESCAPE || e.usParam == SDLK_RETURN)) { f->Blur(); continue; }
+					ProcessKey(e);
+				}
+			}
 			// the legacy screen runs every frame: time, events, dialogue, its hotkeys and its own state
 			ScreenID const next = MapScreenHandle();
 			bool const pass = WantsPassThrough();
@@ -1164,6 +1374,10 @@ namespace
 						break;
 					}
 				}
+				else if (button == 0 && DragItem(target, true))
+				{
+					m_itemDrag = true;
+				}
 				else if (button == 0 && InMap(target))
 				{
 					m_dragging = true;
@@ -1195,6 +1409,11 @@ namespace
 			}
 			else if (type == "mouseup")
 			{
+				if (m_itemDrag && ev.GetParameter<int>("button", 0) == 0)
+				{
+					m_itemDrag = false;
+					DragItem(target, false);
+				}
 				if (m_dragging && m_dragged && m_vm->zoom > 1) m_vm->suppressClick = true;
 				m_dragging = false;
 			}
@@ -1213,8 +1432,38 @@ namespace
 		bool WantsPassThrough() const
 		{
 			// what the native screen does not draw: the legacy screen shows it and takes the mouse
-			return gfPreBattleInterfaceActive || sSelectedMilitiaTown != 0 || fShowDescriptionFlag || InItemStackPopup() ||
+			// (pre-battle, help and militia redistribution belong to Phase 7)
+			return gfPreBattleInterfaceActive || sSelectedMilitiaTown != 0 ||
 				(gHelpScreen.uiFlags & 0x00000001) != 0; // HELP_SCREEN_ACTIVE (HelpScreen.cc)
+		}
+
+		/** Items move by drag and drop (press on an item, release over a slot) and by click, click: a press picks the
+		 * item up and a release over another slot (or the pool) puts it down, through the legacy slot handlers. */
+		bool DragItem(Rml::Element* e, bool const press)
+		{
+			for (; e; e = e->GetParentNode())
+			{
+				std::string const slot = e->GetAttribute<Rml::String>("dnd-slot", "");
+				std::string const pool = e->GetAttribute<Rml::String>("dnd-pool", "");
+				bool const grid = e->GetId() == "map.inv.grid";
+				if (slot.empty() && pool.empty() && !grid) continue;
+				std::string const key = !slot.empty() ? "s" + slot : !pool.empty() ? "p" + pool : "grid";
+				if (press)
+				{
+					if (grid && !fMapInventoryItem) return false; // a press on the empty grid picks up nothing
+					m_dragFrom = key;
+				}
+				else if (key == m_dragFrom)
+				{
+					return true;            // released where it was picked up: a click; the item stays in the hand
+				}
+				if (!slot.empty()) MapBridge::InventorySlotClick(std::atoi(slot.c_str()), false);
+				else if (!pool.empty()) MapBridge::PoolItemClick(std::atoi(pool.c_str()), false);
+				else if (m_vm->poolEmptyIndex >= 0) MapBridge::PoolItemClick(m_vm->poolEmptyIndex, false);
+				m_vm->Poke();
+				return true;
+			}
+			return false;
 		}
 
 		bool InMap(Rml::Element* e) const
@@ -1296,7 +1545,8 @@ namespace
 		Rml::ElementDocument* m_doc = nullptr;
 		std::unique_ptr<MapScreenViewModel> m_vm;
 		std::unique_ptr<Binding> m_binding;
-		bool m_pass = false, m_layoutDirty = true, m_dragging = false, m_dragged = false;
+		bool m_pass = false, m_layoutDirty = true, m_dragging = false, m_dragged = false, m_itemDrag = false;
+		std::string m_dragFrom;
 		Rml::Vector2f m_dragStart{}, m_panStart{}, m_lastView{};
 	};
 }

@@ -38,6 +38,8 @@ namespace MapBridge
 	void ToggleSectorInventory();
 	/** The map UI message ("Click again on the destination..."), dismissed like a click on the map does. */
 	void CancelMessage();
+	/** Sector inventory: like items stacked together, money in one pile (new; the legacy screen has no button). */
+	void StackAndMerge();
 }
 
 #include <vector>
