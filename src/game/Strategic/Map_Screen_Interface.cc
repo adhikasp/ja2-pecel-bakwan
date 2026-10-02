@@ -4326,3 +4326,16 @@ void DeleteMapScreenInterfaceGraphics()
 	RemoveVObject(guiSectorLocatorGraphicID);
 	RemoveVObject(guiSelectedCharArrow);
 }
+
+
+// the native map screen (MapScreenBridge.h): who is in the update box and why
+std::vector<SOLDIERTYPE*> UpdateBoxSoldiers(int* const reason)
+{
+	std::vector<SOLDIERTYPE*> out;
+	for (SOLDIERTYPE* const s : pUpdateSoldierBox)
+	{
+		if (s) out.push_back(s);
+	}
+	if (reason) *reason = int(iReasonForSoldierUpDate);
+	return out;
+}

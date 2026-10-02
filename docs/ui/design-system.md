@@ -168,6 +168,16 @@ RmlUi does not lay out bare text inside a flex container, so **every label in a 
   shaders on our render interface (hence flat elevation), gradients have two stops only, and bare text is not laid
   out in flex containers.
 
+## Layout audit classes
+
+`audit-skip` (decorative, not audited), `audit-over` (a floating layer: a menu or map overlay may cover what is under
+it), `audit-pan` (pannable content, such as the zoomed strategic map, may be cut by its view on any side).
+
+## Item art
+
+Item pictures keep their shape: drawn at their own size times a whole number of output pixels (`item-<id>@<k>`,
+k = 1..4), centred in the slot, never stretched to fill it (docs/ui/mapscreen.md).
+
 ## Known gaps
 
 - The live gallery demonstrates keyboard focus with the forced `.is-focus` state. Real focus navigation (Tab,

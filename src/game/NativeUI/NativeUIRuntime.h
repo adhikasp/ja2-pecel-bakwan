@@ -41,6 +41,9 @@ namespace NativeUI
 		/** The screen is done without changing the game's screen (a design mock): the runtime closes it and the legacy
 		 * screen underneath runs again. */
 		virtual bool Finished() const { return false; }
+		/** The legacy screen underneath is showing something the native screen does not draw (a legacy-only popup):
+		 * the runtime hides nothing but gives the mouse to the legacy regions, and the screen hides its document. */
+		virtual bool PassThrough() const { return false; }
 	};
 
 	/** Native screen factories (NativeUI.cc keeps the table). */
@@ -49,6 +52,7 @@ namespace NativeUI
 	std::unique_ptr<Screen> CreateOptionsScreen();
 	std::unique_ptr<Screen> CreateSaveLoadScreen();
 	std::unique_ptr<Screen> CreateNewGameScreen();
+	std::unique_ptr<Screen> CreateMapScreen();
 	/** A static design mock (assets/ui/mocks/...) over the screen @a self (MockScreen.cc). */
 	std::unique_ptr<Screen> CreateMockScreen(std::string const& path, ScreenID self);
 

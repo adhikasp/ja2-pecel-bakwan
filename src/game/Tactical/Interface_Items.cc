@@ -5244,3 +5244,80 @@ void DeleteInterfaceItemsGraphics()
 	}
 	allInventoryGraphics.clear();
 }
+
+
+// the native map screen's bridge (Strategic/MapScreenBridge.h)
+MOUSE_REGION* MapBridgeInvSlotRegion(int const invPos)
+{
+	return invPos >= 0 && invPos < NUM_INV_SLOTS ? &gSMInvRegion[invPos] : nullptr;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------
+// The native map screen draws the item description box and the stack popup itself (Interface_Items.h,
+// ItemDescNativeView); its clicks reach the regions above.
+
+ItemDescNativeView GetItemDescNativeView()
+{
+	ItemDescNativeView v;
+	if (!gfInItemDescBox || !gpItemDescObject) return v;
+	OBJECTTYPE const& o = *gpItemDescObject;
+	v.open      = true;
+	v.item      = o.usItem;
+	v.status    = o.bStatus[gubItemDescStatusIndex];
+	v.count     = o.ubNumberOfObjects;
+	v.money     = o.usItem == MONEY ? o.uiMoneyAmount : 0;
+	v.shotsLeft = -1;
+	ItemModel const* const item = GCM->getItem(o.usItem, ItemSystem::nothrow);
+	if (item && item->isWeapon() && item->asWeapon() && item->asWeapon()->ubMagSize > 0)
+	{
+		v.shotsLeft = o.ubGunShotsLeft;
+		v.magSize   = item->asWeapon()->ubMagSize;
+	}
+	for (int i = 0; i < MAX_ATTACHMENTS; ++i)
+	{
+		v.attachments[i]     = o.usAttachItem[i];
+		v.attachStatus[i]    = o.bAttachStatus[i];
+		v.attachEnabled[i]   = (gItemDescAttachmentRegions[i].uiFlags & MSYS_REGION_EXISTS) != 0;
+	}
+	return v;
+}
+
+void ItemDescNativeAttachmentClick(int const i, bool const right)
+{
+	if (i < 0 || i >= MAX_ATTACHMENTS || !(gItemDescAttachmentRegions[i].uiFlags & MSYS_REGION_EXISTS)) return;
+	MSYS_SimulateClick(&gItemDescAttachmentRegions[i], right);
+}
+
+void ItemDescNativeClose()
+{
+	// what the box's Done button does
+	if (!gfInItemDescBox) return;
+	if (gpItemDescObject && gpItemDescObject->usItem == MONEY) RemoveMoney();
+	DeleteItemDescriptionBox();
+}
+
+ItemStackNativeView GetItemStackNativeView()
+{
+	ItemStackNativeView v;
+	if (!InItemStackPopup() || !gpItemPopupObject) return v;
+	v.open  = true;
+	v.item  = gpItemPopupObject->usItem;
+	v.slots = gubNumItemPopups;
+	v.count = gpItemPopupObject->ubNumberOfObjects;
+	for (int i = 0; i < v.count && i < 8; ++i) v.status[i] = gpItemPopupObject->bStatus[i];
+	return v;
+}
+
+void ItemStackNativeClick(int const i, bool const right)
+{
+	if (i < 0 || i >= gubNumItemPopups) return;
+	MSYS_SimulateClick(&gItemPopupRegions[i], right);
+}
+
+void ItemStackNativeClose()
+{
+	if (!InItemStackPopup()) return;
+	DeleteItemStackPopup();
+	fTeamPanelDirty = TRUE;
+}

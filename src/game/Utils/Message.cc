@@ -36,6 +36,10 @@ struct ScrollStringSt
 	UINT16  usColor;
 	BOOLEAN fBeginningOfNewString;
 	UINT32  uiTimeOfLastUpdate;
+	// for the native map screen's log: when (game minutes, 0 = unknown, e.g. loaded from a save) and of what kind
+	// (MSG_INTERFACE, MSG_DIALOG, ...). Not saved: the save format is unchanged.
+	UINT32  uiGameMinute = 0;
+	UINT8   ubPriority = 0;
 
 	ScrollStringSt() = default;
 	ScrollStringSt(const ST::string& str, UINT16 usColor, BOOLEAN fStartOfNewString)
@@ -289,7 +293,8 @@ void ScreenMsg(UINT16 usColor, UINT8 ubPriority, const ST::string& str)
 {
 	// pass onto tactical message and mapscreen message; with native toasts (ui_mode "toasts", or a native screen
 	// showing) the on-screen part is a toast instead of the tactical scroll text
-	if (NativeUI::ToastsActive())
+	// (not on the map screen: its message log shows them)
+	if (guiCurrentScreen != MAP_SCREEN && NativeUI::ToastsActive())
 	{
 		if (!IsTimeBeingCompressed())
 		{
@@ -338,7 +343,7 @@ static void TacticalScreenMsg(UINT16 colour, UINT8 const priority, const ST::str
 }
 
 
-static void AddStringToMapScreenMessageList(const ST::string& pString, UINT16 usColor, BOOLEAN fStartOfNewString);
+static void AddStringToMapScreenMessageList(const ST::string& pString, UINT16 usColor, BOOLEAN fStartOfNewString, UINT8 ubPriority = 0, UINT32 uiGameMinute = 0);
 
 
 // this function sets up the string into several single line structures
@@ -378,7 +383,7 @@ void MapScreenMessage(UINT16 usColor, UINT8 ubPriority, const ST::string& str)
 	BOOLEAN fNewString = TRUE;
 	for (auto const& codepoints : LineWrap(MAP_SCREEN_MESSAGE_FONT, MAP_LINE_WIDTH, DestString))
 	{
-		AddStringToMapScreenMessageList(codepoints, usColor, fNewString);
+		AddStringToMapScreenMessageList(codepoints, usColor, fNewString, ubPriority, GetWorldTotalMin());
 		fNewString = FALSE;
 	}
 
@@ -387,9 +392,11 @@ void MapScreenMessage(UINT16 usColor, UINT8 ubPriority, const ST::string& str)
 
 
 // add string to the map screen message list
-static void AddStringToMapScreenMessageList(const ST::string& pString, UINT16 usColor, BOOLEAN fStartOfNewString)
+static void AddStringToMapScreenMessageList(const ST::string& pString, UINT16 usColor, BOOLEAN fStartOfNewString, UINT8 ubPriority, UINT32 uiGameMinute)
 {
 	auto pStringSt = std::make_shared<ScrollStringSt>(pString, usColor, fStartOfNewString);
+	pStringSt->ubPriority = ubPriority;
+	pStringSt->uiGameMinute = uiGameMinute;
 
 	// Figure out which queue slot index we're going to use to store this
 	// If queue isn't full, this is easy, if is is full, we'll re-use the oldest slot
@@ -618,4 +625,18 @@ UINT8 GetRangeOfMapScreenMessages(void)
 		// this should always be 255 now, since this only happens when queue fills up, and we never remove any messages
 		return 256 + gubEndOfMapScreenMessageList - gubStartOfMapScreenMessageList;
 	}
+}
+
+
+std::vector<MapScreenMessage_t> GetMapScreenMessages()
+{
+	std::vector<MapScreenMessage_t> out;
+	for (UINT8 i = gubStartOfMapScreenMessageList; i != gubEndOfMapScreenMessageList; i = UINT8((i + 1) % 256))
+	{
+		auto const& m = gMapScreenMessageList[i];
+		if (!m) continue;
+		if (m->fBeginningOfNewString || out.empty()) out.push_back({ m->pString, m->usColor, m->uiGameMinute, m->ubPriority });
+		else out.back().text += ST::string(" ") + m->pString;
+	}
+	return out;
 }

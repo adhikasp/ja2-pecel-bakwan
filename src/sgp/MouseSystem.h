@@ -164,6 +164,12 @@ void MSYS_ForEachRegion(std::function<void(MOUSE_REGION const&)> const&);
 
 /* The region that would receive a click at (x, y), or nullptr. */
 MOUSE_REGION const* MSYS_RegionAt(INT16 x, INT16 y);
+/* Sends @a r what the mouse system would send for a click in its centre, without asking which region is on top there:
+ * gain mouse, button down, button up (left, or right with @a right). A disabled region gets nothing. Used by native
+ * screens that forward the player's input to the legacy screen's handlers. */
+void MSYS_SimulateClick(MOUSE_REGION* r, bool right);
+/* The mouse entered (@a gain) or left the region, as the mouse system would report it. */
+void MSYS_SimulateHover(MOUSE_REGION* r, bool gain);
 void RemoveRegions(std::span<MOUSE_REGION>);
 
 /* Set one of the user data entries in a mouse region */

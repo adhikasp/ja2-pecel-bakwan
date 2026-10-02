@@ -106,6 +106,33 @@ void DrawItemTileCursor(void);
 BOOLEAN HandleItemPointerClick( UINT16 usMapPos );
 UINT8 GetAttachmentHintColor(const OBJECTTYPE* pObj);
 CSubVObject GetSmallInventoryGraphicForItem(const ItemModel *item);
+
+// For the native map screen: what the item description box and the stack popup show, and their clicks.
+struct ItemDescNativeView
+{
+	bool   open = false;
+	UINT16 item = 0;
+	INT8   status = 0;
+	UINT8  count = 0;
+	UINT32 money = 0;
+	INT32  shotsLeft = -1, magSize = 0;
+	UINT16 attachments[4]{};
+	INT8   attachStatus[4]{};
+	bool   attachEnabled[4]{};
+};
+ItemDescNativeView GetItemDescNativeView();
+void ItemDescNativeAttachmentClick(int slot, bool right);
+void ItemDescNativeClose();
+struct ItemStackNativeView
+{
+	bool   open = false;
+	UINT16 item = 0;
+	int    slots = 0, count = 0;
+	INT8   status[8]{};
+};
+ItemStackNativeView GetItemStackNativeView();
+void ItemStackNativeClick(int index, bool right);
+void ItemStackNativeClose();
 CSubVObject GetBigInventoryGraphicForItem(const ItemModel *item);
 UINT16            GetTileGraphicForItem(const ItemModel *item);
 

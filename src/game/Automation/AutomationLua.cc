@@ -19,10 +19,19 @@
 #include "MessageBoxScreen.h"
 #include "Overhead.h"
 #include "Soldier_Control.h"
+#include "Soldier_Create.h"
 #include "Soldier_Profile.h"
 #include "Dialogue_Control.h"
 #include "Message.h"
 #include "Strategic_Exit_GUI.h"
+#include "Strategic_Pathing.h"
+#include "Strategic_Merc_Handler.h"
+#include "Strategic.h"
+#include "Map_Screen_Helicopter.h"
+#include "Map_Screen_Interface.h"
+#include "MapScreen.h"
+#include "Merc_Hiring.h"
+#include "Game_Clock.h"
 #include "Strategic_Movement.h"
 #include "PreBattle_Interface.h"
 #include "Auto_Resolve.h"
@@ -317,6 +326,10 @@ namespace
 			{
 				t["assignmentName"] = pAssignmentStrings[m->bAssignment].to_std_string();
 			}
+			// where the merc is going on the strategic map (his plotted route's last sector), and whether he sleeps
+			t["destination"] = SGPSector::FromStrategicIndex(GetLastSectorIdInCharactersPath(m)).AsShortString().to_std_string();
+			t["asleep"]   = m->fMercAsleep != 0;
+			t["trainStat"] = static_cast<int>(m->bTrainStat);
 			t["life"]     = static_cast<int>(m->bLife);
 			t["lifeMax"]  = static_cast<int>(m->bLifeMax);
 			t["inSector"] = m->bInSector != 0;
@@ -643,6 +656,65 @@ namespace
 					// Fake an enemy encounter in the current sector on the map screen and open the pre-battle panel.
 					FakeEncounter();
 					InitPreBattleInterface(nullptr, false);
+				}
+				else if (what == "clearenemies")
+				{
+					// Test aid: remove every enemy from the loaded sector (the soldiers and the strategic counts), as if
+					// the battle had been won, so that a script can reach the states of a secured sector quickly.
+					FOR_EACH_IN_TEAM(s, ENEMY_TEAM) TacticalRemoveSoldier(*s);
+					EliminateAllEnemies(gWorldSector);
+					gTacticalStatus.fEnemyInSector = FALSE;
+				}
+				else if (what == "helicopter")
+				{
+					// Test aid: Skyrider's helicopter as if he had been hired, parked in sector a (default "A9")
+					std::string const at = a && a->is<std::string>() ? a->as<std::string>() : "A9";
+					SetUpHelicopterForPlayer(SGPSector::FromShortString(at));
+					ReBuildCharactersList();
+				}
+				else if (what == "updatebox")
+				{
+					// Test aid: the map screen's update box, as if merc a (name) had finished his assignment
+					std::string const name = a && a->is<std::string>() ? a->as<std::string>() : "";
+					SOLDIERTYPE* found = nullptr;
+					FOR_EACH_IN_TEAM(s, OUR_TEAM) if (s->name.to_std_string() == name) found = s;
+					if (!found) throw std::runtime_error("no merc " + name);
+					AddSoldierToWaitingListQueue(*found);
+					AddReasonToWaitingListQueue(ASSIGNMENT_FINISHED_FOR_UPDATE);
+					AddDisplayBoxToWaitingQueue();
+				}
+				else if (what == "killmerc")
+				{
+					// Test aid: merc a (name) dies (the strategic handling of a death: assignment, list, email)
+					std::string const name = a && a->is<std::string>() ? a->as<std::string>() : "";
+					SOLDIERTYPE* found = nullptr;
+					FOR_EACH_IN_TEAM(s, OUR_TEAM) if (s->name.to_std_string() == name) found = s;
+					if (!found) throw std::runtime_error("no merc " + name);
+					found->bLife = 0;
+					StrategicHandlePlayerTeamMercDeath(*found);
+					ReBuildCharactersList();
+				}
+				else if (what == "hiretransit")
+				{
+					// Test aid: an A.I.M. merc (a: profile id) hired for a week, arriving in b minutes (default 600)
+					MERC_HIRE_STRUCT h{};
+					// a: the profile id; without one, the first A.I.M. merc who can be hired now
+					int pid = a && a->is<int>() ? a->as<int>() : -1;
+					for (int i = 0; pid < 0 && i < 40; ++i)
+					{
+						if (GetProfile(ProfileID(i)).bMercStatus == 0 && !FindSoldierByProfileID(ProfileID(i))) pid = i;
+					}
+					if (pid < 0) throw std::runtime_error("no A.I.M. merc to hire");
+					h.ubProfileID = UINT8(pid);
+					h.sSector = g_merc_arrive_sector;
+					h.iTotalContractLength = 7;
+					h.fCopyProfileItemsOver = FALSE;
+					h.uiTimeTillMercArrives = GetWorldTotalMin() + UINT32(b && b->is<int>() ? b->as<int>() : 600);
+					h.fUseLandingZoneForArrival = TRUE;
+					h.ubInsertionCode = INSERTION_CODE_ARRIVING_GAME;
+					h.bWhatKindOfMerc = MERC_TYPE__AIM_MERC;
+					if (HireMerc(h) != MERC_HIRE_OK) throw std::runtime_error("hiring failed");
+					ReBuildCharactersList();
 				}
 				else if (what == "autoresolve")
 				{

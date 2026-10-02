@@ -145,6 +145,7 @@ void BeginMapUIMessage(INT16 delta_y, const ST::string& text);
 
 
 extern VIDEO_OVERLAY* g_ui_message_overlay;
+extern ST::string     g_ui_message_text;
 extern UINT32         guiUIMessageTime;
 
 enum MESSAGE_TYPES

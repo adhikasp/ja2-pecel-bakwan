@@ -48,7 +48,8 @@ function campaign.dismissLaptopPopups()
 end
 
 -- In the laptop: hire an A.I.M. merc by the name shown under their portrait.
-function campaign.hireFromAim(name, contract)
+-- With equipment = true the merc brings his A.I.M. gear ("Buy Equipment").
+function campaign.hireFromAim(name, contract, equipment)
 	ja2.click("Web")
 	ja2.waitIdle()
 	ja2.click("A.I.M.")
@@ -64,7 +65,7 @@ function campaign.hireFromAim(name, contract)
 	ja2.click("HIRE")
 	ja2.waitIdle()
 	ja2.click(contract or "One Week")
-	ja2.click("No Equipment")
+	ja2.click(equipment and "Buy Equipment" or "No Equipment")
 	ja2.click("TRANSFER FUNDS")
 	ja2.waitFor("TRANSFER SUCCESSFUL")
 	ja2.click{text = "OK", exact = true}

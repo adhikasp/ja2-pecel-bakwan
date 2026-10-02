@@ -1,3 +1,4 @@
+#include <algorithm>
 #include "Auto_Resolve.h"
 #include "Directories.h"
 #include "Font.h"
@@ -1360,4 +1361,50 @@ static BOOLEAN CanPlayerUseSectorInventory(void)
 		sSelMap.x           != sector.x ||
 		sSelMap.y           != sector.y ||
 		iCurrentMapSectorZ != sector.z;
+}
+
+
+// the native map screen's bridge (MapScreenBridge.h)
+MOUSE_REGION* MapBridgePoolSlotRegion(int const slot)
+{
+	return slot >= 0 && slot < MAP_INVENTORY_POOL_SLOT_COUNT ? &MapInventoryPoolSlots[slot] : nullptr;
+}
+
+
+// the native map screen's "Stack & merge" (MapScreenBridge.h): like items in the sector inventory go together, as many
+// as the stash takes per slot (getPerPocket, the rule PlaceObjectInInventoryStash uses), money into one pile.  the emptied slots are sorted to the end as when the pool is built.
+void MapBridgeStackAndMerge()
+{
+	size_t const n = pInventoryPoolList.size();
+	for (size_t i = 0; i < n; ++i)
+	{
+		WORLDITEM& a = pInventoryPoolList[i];
+		if (a.o.usItem == NOTHING) continue;
+		ItemModel const* const item = GCM->getItem(a.o.usItem);
+		UINT8 const limit = item->getPerPocket();
+		for (size_t j = i + 1; j < n; ++j)
+		{
+			WORLDITEM& b = pInventoryPoolList[j];
+			// only piles that are equally reachable (an unreachable pile stays where it lies)
+			if (b.o.usItem != a.o.usItem || (b.usFlags & WORLD_ITEM_REACHABLE) != (a.usFlags & WORLD_ITEM_REACHABLE)) continue;
+			if (item->isMoney())
+			{
+				a.o.uiMoneyAmount += b.o.uiMoneyAmount;
+				DeleteObj(&b.o);
+				b = WORLDITEM{};
+				continue;
+			}
+			if (limit < 2 || a.o.ubNumberOfObjects >= limit) break;
+			UINT8 const room = limit - a.o.ubNumberOfObjects;
+			UINT8 const move = std::min<UINT8>(room, b.o.ubNumberOfObjects);
+			StackObjs(&b.o, &a.o, move);
+			if (b.o.ubNumberOfObjects == 0) b = WORLDITEM{};
+		}
+	}
+	// the visible, non-empty ones first
+	std::stable_partition(pInventoryPoolList.begin(), pInventoryPoolList.end(), [](WORLDITEM const& w) { return w.o.usItem != NOTHING; });
+	size_t visible = 0;
+	while (visible < n && pInventoryPoolList[visible].o.usItem != NOTHING) ++visible;
+	SortSectorInventory(pInventoryPoolList.data(), visible);
+	fMapPanelDirty = TRUE;
 }
