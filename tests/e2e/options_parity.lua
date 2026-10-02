@@ -1,5 +1,7 @@
 -- Parity tour of the native options screen (docs/ui/options.md, section 9), driven by element id, with the game
 -- settings checked through a fresh view model (it reads gGameSettings, the volumes and the video settings).
+-- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
+ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 
 ja2.waitScreen("MAINMENU_SCREEN")

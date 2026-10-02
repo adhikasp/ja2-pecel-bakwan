@@ -1,5 +1,7 @@
 -- The strategic map with a merc on the ground: the clock runs and pauses,
 -- the merc's inventory opens, and Options and the laptop are reachable.
+-- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
+ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 

@@ -1,5 +1,7 @@
 -- Start a campaign through the real UI, hire a merc, land in Omerta, then
 -- check that saving and loading the game round-trips.
+-- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
+ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 

@@ -803,6 +803,22 @@ void TacticalHudUpdate()
 		float const legacy = float((gsCurInterfacePanel == SM_PANEL ? INV_INTERFACE_HEIGHT : TEAMPANEL_HEIGHT) * g_ui.m_uiScale);
 		float const want = std::max(legacy, std::round(156 * DpScale()));
 		bar->SetProperty(Rml::PropertyId::Height, Rml::Property(want, Rml::Unit::PX));
+		// only as many cards as fit whole (a card is at least 236 dp wide); the rest wait for a wider view
+		if (Rml::Element* cards = g_hud.doc->GetElementById("tac.squad"))
+		{
+			int const fit = std::max(1, int(std::floor(cards->GetClientWidth() / (236.f * DpScale()))));
+			for (int i = 0; i < cards->GetNumChildren(); ++i)
+				cards->GetChild(i)->SetProperty(Rml::PropertyId::Display, Rml::Property(i < fit ? Rml::Style::Display::Flex : Rml::Style::Display::None));
+		}
+		// detail panel and description side by side need 1580 dp; on a narrower view the description takes its place
+		bool const narrow = float(Context()->GetDimensions().x) < 1580.f * DpScale();
+		if (Rml::Element* d = g_hud.doc->GetElementById("tac.detail"))
+		{
+			bool const hide = narrow && g_hud.vm && g_hud.vm->desc;
+			d->SetProperty(Rml::PropertyId::Visibility, Rml::Property(hide ? Rml::Style::Visibility::Hidden : Rml::Style::Visibility::Visible));
+		}
+		if (Rml::Element* d = g_hud.doc->GetElementById("tac.desc"))
+			d->SetProperty(Rml::PropertyId::Left, Rml::Property(narrow ? std::round(12 * DpScale()) : std::round(968 * DpScale()), Rml::Unit::PX));
 		// the panels above the bar sit on it, whatever its height
 		for (char const* id : { "tac.detail", "tac.desc" })
 		{
