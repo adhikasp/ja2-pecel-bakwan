@@ -34,6 +34,7 @@ std::vector<ModeKey> const& ModeKeys()
 	// Screens go native by default when their phase ships (credits: Phase 2; the front end: Phase 3); the shared
 	// overlays stay legacy on legacy screens until the screens around them are native.
 	static std::vector<ModeKey> const keys = {
+		{ "setup",      "the pre-game setup screen (game directory, mods, logs)", UiMode::Native },
 		{ "credits",    "the credits screen",                           UiMode::Native },
 		{ "mainmenu",   "the main menu",                                UiMode::Native },
 		{ "options",    "the options screen (with the video settings)", UiMode::Native },

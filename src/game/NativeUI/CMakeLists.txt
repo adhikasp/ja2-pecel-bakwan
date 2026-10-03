@@ -13,6 +13,7 @@ if (WITH_NATIVE_UI)
         ${CMAKE_CURRENT_SOURCE_DIR}/MockWorld.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/TacticalHud.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontEndSupport.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrontSetup.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontMainMenu.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontOptions.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontSaveLoad.cc

@@ -214,7 +214,7 @@ TEST(NativeUI, creditRecordsParse)
 
 TEST(NativeUI, frontEndScreensAreNativeByDefault)
 {
-	for (char const* key : { "mainmenu", "options", "saveload", "newgame", "loadscreen" })
+	for (char const* key : { "setup", "mainmenu", "options", "saveload", "newgame", "loadscreen" })
 	{
 		EXPECT_TRUE(IsModeKey(key)) << key;
 		EXPECT_EQ(ConfiguredMode(key), UiMode::Native) << key;

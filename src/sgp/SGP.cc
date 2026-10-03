@@ -40,8 +40,11 @@
 #if defined _WIN32
 #	define WIN32_LEAN_AND_MEAN
 #	include <windows.h>
+#	include <process.h>
 #	include <typeinfo>
 #	include "Local.h"
+#else
+#	include <unistd.h>
 #endif
 
 #ifdef __ANDROID__
@@ -52,6 +55,7 @@
 #include <string_theory/format>
 
 #include <chrono>
+#include <cerrno>
 #include <cstring>
 #include <exception>
 #include <locale>
@@ -120,6 +124,21 @@ void requestGameExit()
 	SDL_Event event;
 	event.type = SDL_EVENT_QUIT;
 	SDL_PushEvent(&event);
+}
+
+
+/** Replaces this process with a fresh run of the same executable. The setup screen calls for it after it writes a
+ *  configuration that only takes effect on a restart (game directory, resource version, mods). Only returns when the
+ *  new process could not be started. */
+static void RelaunchProcess(int const argc, char* argv[])
+{
+	if (argc <= 0 || argv == nullptr || argv[0] == nullptr) return;
+#if defined(_WIN32)
+	_execv(argv[0], argv);
+#else
+	execv(argv[0], argv);
+#endif
+	SLOGE("could not relaunch {}: {}", argv[0], std::strerror(errno));
 }
 
 
@@ -519,6 +538,30 @@ int main(int argc, char* argv[])
 			g_ui.setLayers(layers);
 			SLOGI("Layers: UI {}x{} at {}x, world {}x{} at {}x{}", layers.ui.w, layers.ui.h, layers.uiScale,
 				layers.world.w, layers.world.h, layers.worldZoom, layers.layered ? " (separate layer)" : " (same layer)");
+		}
+
+		// A missing or unusable game directory opens the native setup screen instead of failing to load the game
+		// data (the launcher's replacement). Headless and driven sessions keep the old failing path.
+		if (NativeUI::Built() && !sgp::IsHeadless() && !automation.Active() &&
+		    NativeUI::ConfiguredMode("setup") == NativeUI::UiMode::Native &&
+		    !EngineOptions_shouldRunEditor(params.get()))
+		{
+			RustPointer<char> configuredDir(EngineOptions_getVanillaGameDir(params.get()));
+			std::string const dir = configuredDir && configuredDir.get() ? configuredDir.get() : "";
+			bool const usable = !dir.empty() && checkIfRelativePathExists(dir.c_str(), "Data", true);
+			// JA2_SETUP forces the screen even with a usable game directory (reach the logs; golden screenshots)
+			char const* const force = std::getenv("JA2_SETUP");
+			bool const forced = force && *force && std::strcmp(force, "0") != 0;
+			if (forced || !usable)
+			{
+				SLOGI("opening the native setup screen (game directory '{}')", dir);
+				InitializeVideoManager(scalingQuality, 60, displaySettings);
+				bool const restart = NativeUI::RunSetup(params.get());
+				ShutdownVideoManager();
+				SDL_Quit();
+				if (restart) RelaunchProcess(argc, argv);
+				return EXIT_SUCCESS;
+			}
 		}
 
 		// restore output to the console (on windows when built with MINGW)

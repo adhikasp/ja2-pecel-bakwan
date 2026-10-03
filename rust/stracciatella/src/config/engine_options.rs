@@ -144,9 +144,10 @@ impl EngineOptions {
         ja2_json.apply_to_engine_options(&mut engine_options)?;
         cli.apply_to_engine_options(&mut engine_options)?;
 
-        if engine_options.vanilla_game_dir == PathBuf::from("") {
-            return Err(EngineOptionsError::MissingGameDir);
-        }
+        // A missing game directory is not fatal any more: the native setup screen (the launcher's replacement)
+        // opens instead of exiting, so the caller needs a usable EngineOptions to write the chosen values to. An
+        // empty path is resolved to an empty path below, and loading the game data then fails, which is what
+        // routes the player to the setup screen. MissingGameDir is kept for callers that still check for it.
 
         engine_options.stracciatella_home =
             resolve_existing_components(stracciatella_home, None, true);
@@ -234,7 +235,8 @@ mod tests {
     }
 
     #[test]
-    fn build_engine_options_from_home_and_args_should_return_an_error_if_datadir_is_not_set() {
+    fn build_engine_options_from_home_and_args_should_keep_an_empty_game_dir_if_datadir_is_not_set()
+    {
         let temp_dir =
             write_temp_folder_with_ja2_json(b"{ \"res\": \"1024x768\", \"fullscreen\": true }");
         let args = vec![
@@ -245,7 +247,12 @@ mod tests {
         let home = temp_dir.path().join(".ja2");
         let engine_options_res = EngineOptions::from_home_and_args(&home, &args);
 
-        assert_eq!(engine_options_res, Err(EngineOptionsError::MissingGameDir));
+        // The native setup screen opens for this; the engine options are still usable and writable.
+        let engine_options =
+            engine_options_res.expect("a missing game dir is not an error any more");
+        assert_eq!(engine_options.vanilla_game_dir, PathBuf::from(""));
+        assert_eq!(engine_options.resolution.0, 1100);
+        assert_eq!(engine_options.resolution.1, 480);
     }
 
     #[test]

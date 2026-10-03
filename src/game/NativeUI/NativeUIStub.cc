@@ -35,6 +35,7 @@ std::vector<ElementInfo> Elements() { return {}; }
 std::vector<TextInfo> Texts() { return {}; }
 std::vector<std::string> LayoutAudit() { return {}; }
 void OpenMock(std::string const&) { throw std::runtime_error("built without the native UI"); }
+bool RunSetup(void*) { return false; }
 void ScreenRelaidOut() {}
 void SnapshotGameFrame() {}
 void WriteSaveThumbnail(std::string const&) {}

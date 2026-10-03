@@ -87,10 +87,8 @@ if [[ "$RUN_TESTS" == "true" ]]; then
   $BUILD_CMD --target cargo-test
   if [[ "$CI_TARGET" == "linux" ]]; then
     ./AppDir/usr/bin/ja2 -unittests
-    ./AppDir/usr/bin/ja2-launcher -help
   else
     ./ja2 -unittests
-    ./ja2-launcher -help
   fi
   # Phase 0 spikes that need no game data (UI toolkits headless, render path, world raster rules, asset tools)
   ctest -L '^spike$' --output-on-failure

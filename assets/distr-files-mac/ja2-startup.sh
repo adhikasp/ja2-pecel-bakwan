@@ -8,4 +8,4 @@ echo "running $0"
 echo "BUNDLE: $BUNDLE"
 echo "RESOURCES: $RESOURCES"
 
-exec "$RESOURCES/ja2-launcher"
+exec "$RESOURCES/ja2"

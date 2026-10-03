@@ -103,17 +103,13 @@ If you want to see how the sausage is made, start with [AGENTS.md](AGENTS.md) an
 1. Install the original **Jagged Alliance 2** on your computer. This project uses its data files and ships none of its own.
 2. [Compile](COMPILATION.md) it from this repository (or grab a build from CI, if one is available for your platform).
 
-### With the optional launcher
+### First start
 
-3. Start the launcher and use it to configure the game. It creates the configuration file for you.
-4. Set **"JA2 Data Directory"** to the directory where the original game was installed in step 1.
-5. If you did not install the English version, select the correct **"Game Version"** (localization). Note the two Russian releases: `RUSSIAN` for "BUKA Agonia Vlasty" and `RUSSIAN_GOLD` for "Gold".
+3. Start the game. On the first run, or whenever the configured game directory cannot be used, the native setup screen opens.
+4. Use it to set **"JA2 Data Directory"** to the directory where the original game was installed in step 1 (type the path or use the browse button). It also picks the save game directory, the resource version and mods, and shows the last `ja2.log`. Press **Apply** to write the configuration, then **Start game** to relaunch.
+5. If you did not install the English version, select the correct **"Resource version"** (localization), or press **"Guess version"**. Note the two Russian releases: `RUSSIAN` for "BUKA Agonia Vlasty" and `RUSSIAN_GOLD` for "Gold".
 
-### Without the optional launcher
-
-3. Start the game once. It creates `%USERPROFILE%\Documents\JA2\ja2.json` on Windows, or `~/.ja2/ja2.json` on Unix-like systems.
-4. Edit `ja2.json` and set `game_dir` to the install directory from step 1, for example `D:\games\ja2\` or `/home/user/games/ja2-installed`.
-5. For a localized install, pass the version explicitly: `ja2.exe -resversion FRENCH`.
+The configuration lives in `%USERPROFILE%\Documents\JA2\ja2.json` on Windows, or `~/.ja2/ja2.json` on Unix-like systems. You can also edit `game_dir` by hand, or pass a version explicitly: `ja2.exe -resversion FRENCH`.
 
 Supported localizations: `DUTCH`, `ENGLISH`, `FRENCH`, `GERMAN`, `ITALIAN`, `POLISH`, `RUSSIAN`, `RUSSIAN_GOLD`. Run `ja2.exe -help` for the full list of options.
 

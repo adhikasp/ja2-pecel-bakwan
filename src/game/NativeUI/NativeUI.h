@@ -122,6 +122,11 @@ namespace NativeUI
 	void CloseMessageBox();
 
 	// ---- front-end screens (Phase 3) --------------------------------------------------------------------------
+	/** The pre-game setup screen (game directory, save directory, resource version, mods, logs), shown before any
+	 * game data is loaded when the configured game directory cannot be used. @a engineOptions is the EngineOptions*.
+	 * Returns true when the player saved a valid configuration and asked to start the game (the caller relaunches);
+	 * false when they quit. Stops (returns false) when the native UI cannot run here. */
+	bool RunSetup(void* engineOptions);
 	/** Keeps a small copy of the game picture now (the map or tactical) for the next save's thumbnail. */
 	void SnapshotGameFrame();
 	/** Writes the kept picture as a PNG to @a path (next to a save; the save format is unchanged). */

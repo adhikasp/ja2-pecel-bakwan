@@ -31,7 +31,6 @@ endif()
 
 project(ja2-stracciatella)
 set(JA2_BINARY "ja2")
-set(LAUNCHER_BINARY "ja2-launcher")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -122,8 +121,7 @@ endif()
 # @see LOCAL_MINIAUDIO_LIB in dependencies/lib-miniaudio/CMakeLists.txt
 set(WITH_CUSTOM_LOCALE "" CACHE STRING "Set a custom locale at the start, leave empty to disable")
 # Options specific to building C++ files can be found in the list file for
-# the src directory. Options specific to building the launcher application
-# are located in the list file for the launcher directory.
+# the src directory.
 
 if(MSVC)
     # set the source and execution charset
@@ -538,16 +536,16 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "JA2 Stracciatella")
 
 set(CPACK_DEBIAN_PACKAGE_SECTION "games")
 set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://ja2-stracciatella.github.io/")
-set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl3, libstdc++6, libgcc1, libc6, libfltk1.3-dev, libfltk-images1.3")
+set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl3, libstdc++6, libgcc1, libc6")
 
 set(CPACK_BUNDLE_NAME "JA2 Stracciatella")
 set(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/logo.icns")
 set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/assets/distr-files-mac/BundleInfo.plist")
 set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/assets/distr-files-mac/ja2-startup.sh")
 
-set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortcut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\JA2 Stracciatella.lnk' '$INSTDIR\\\\ja2-launcher.exe' '' '$INSTDIR\\\\logo.ico'")
+set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortcut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\JA2 Stracciatella.lnk' '$INSTDIR\\\\ja2.exe' '' '$INSTDIR\\\\logo.ico'")
 set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
-set(CPACK_NSIS_MUI_FINISHPAGE_RUN "ja2-launcher.exe")
+set(CPACK_NSIS_MUI_FINISHPAGE_RUN "ja2.exe")
 set(CPACK_NSIS_DISPLAY_NAME "JA2 Stracciatella")
 set(CPACK_NSIS_PACKAGE_NAME "JA2 Stracciatella")
 set(CPACK_NSIS_URL_INFO_ABOUT "https://ja2-stracciatella.github.io/")
@@ -590,9 +588,6 @@ include(CPack)
 
 if (UNIX AND NOT MINGW AND NOT APPLE AND NOT ANDROID)
     install(TARGETS ${JA2_BINARY} RUNTIME DESTINATION bin)
-    if(BUILD_LAUNCHER)
-        install(TARGETS ${LAUNCHER_BINARY} RUNTIME DESTINATION bin)
-    endif()
     if(WITH_RUST_BINARIES)
         install(PROGRAMS "${STRACCIATELLA_EXECUTABLES}" DESTINATION bin)
     endif()
@@ -610,9 +605,6 @@ elseif(ANDROID)
     install(TARGETS ${JA2_BINARY} LIBRARY DESTINATION .)
 else()
     install(TARGETS ${JA2_BINARY} RUNTIME DESTINATION .)
-    if(BUILD_LAUNCHER)
-        install(TARGETS ${LAUNCHER_BINARY} RUNTIME DESTINATION .)
-    endif()
     if(WITH_RUST_BINARIES)
         install(PROGRAMS "${STRACCIATELLA_EXECUTABLES}" DESTINATION .)
     endif()

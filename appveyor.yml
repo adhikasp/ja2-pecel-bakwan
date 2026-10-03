@@ -102,7 +102,6 @@ build_script:
 test_script:
   - cmd: cmake --build . --target cargo-test
   - cmd: ja2.exe -unittests
-  - cmd: ja2-launcher.exe -help
 
 after_test:
   - cmd: sccache -s

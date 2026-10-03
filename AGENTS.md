@@ -74,8 +74,8 @@ Image-only widgets need `SetName(...)` in C++ to be clickable by label; new anim
 | `src/game/` | Core game logic (combat, AI, UI screens) |
 | `src/sgp/` | Platform layer — input, rendering, sound, file I/O |
 | `src/externalized/` | Moddable data loaded from JSON at runtime |
-| `src/launcher/` | FLTK-based launcher GUI |
-| `dependencies/` | Vendored/downloaded libs (sol2, gtest, miniaudio, fltk) |
+| `src/launcher/` | *(removed)* — the launcher's features are the native setup screen (`src/game/NativeUI/FrontSetup.cc`) |
+| `dependencies/` | Vendored/downloaded libs (sol2, gtest, miniaudio) |
 | `build/externalized/` | JSON data files copied at build time — edit originals in `src/externalized/` |
 
 - Language: C++20 with Lua scripting via sol2.
