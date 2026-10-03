@@ -17,7 +17,78 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Gate for everything below: does this run touch code that a compiler, the
+  # Rust linter or the packager can actually see? A pull request that only
+  # moves markdown, documentation or repository metadata skips the matrix
+  # below instead of burning ~60 runner minutes on a change no build reads.
+  #
+  # The verdict is deliberately one-sided. The filter is an exclusion list
+  # over '**', so a path nobody thought of still runs the full pipeline —
+  # forgetting to exclude something only costs minutes, while wrongly
+  # excluding something would hide a broken build behind a green run.
+  changes:
+    name: changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # actions/checkout, push events only
+      pull-requests: read # changed-file list of a pull request
+    outputs:
+      # Only an evaluated 'false' skips the jobs below. If the filter did
+      # not run at all — tag push, first push of a branch — the empty string
+      # counts as "we could not tell, so build it".
+      code: ${{ steps.filter.outputs.code != 'false' }}
+    steps:
+    # Pull requests are read through the REST API and need no checkout.
+    # Push events diff with git, so the pushed range has to be here; a
+    # depth-1 checkout is enough, the action fetches the 'before' commit
+    # itself when it is missing.
+    - name: Checkout
+      if: github.event_name == 'push'
+      uses: actions/checkout@v5
+
+    # A tag push (and the first push of a branch) has no previous commit to
+    # diff against. Release builds are exactly the ones that must never be
+    # filtered out, so let this step be skipped and fall through to the
+    # fail-open output above.
+    - name: Detect changed paths
+      if: github.event_name == 'pull_request' || github.event.before != '0000000000000000000000000000000000000000'
+      id: filter
+      # Pinned like the other third-party action (setup-sdl), SHA of v4.0.3.
+      uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d
+      with:
+        # On push events: diff against the commit this push replaced, so a
+        # push to nightly is measured against the previous nightly rather
+        # than against master (the default base). On pull requests the input
+        # is ignored and the API path is used instead.
+        base: ${{ github.event.before }}
+        predicate-quantifier: some-with-excludes
+        filters: |
+          # Everything counts as code except the documentation and
+          # repository metadata below: markdown anywhere, docs/, GitHub
+          # issue templates and bot config, and the handful of root files
+          # that describe the project rather than build it. C++, Rust, the
+          # build system, assets, tests and the CI scripts themselves are
+          # all covered by '**' and therefore always run.
+          code:
+            - '**'
+            - '!*.md'
+            - '!**/*.md'
+            - '!docs/**'
+            - '!.github/ISSUE_TEMPLATE/**'
+            - '!.github/CODEOWNERS'
+            - '!.github/dependabot.yml'
+            - '!.agents/**'
+            - '!.editorconfig'
+            - '!.gitignore'
+            - '!.mailmap'
+            - '!contributors.txt'
+            - '!SFI Source Code license agreement.txt'
+
   ci-build:
+    needs: changes
+    # Docs- or metadata-only changes skip the whole build matrix; see the
+    # 'changes' job for what counts as code.
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
@@ -140,6 +211,10 @@ jobs:
         path: ${{ github.workspace }}/artifacts
 
   ci-lint:
+    needs: changes
+    # Same gate as the build: cargo fmt and clippy only have something to
+    # say about code changes, so a documentation-only PR skips them too.
+    if: needs.changes.outputs.code == 'true'
     strategy:
       fail-fast: false
       matrix:
