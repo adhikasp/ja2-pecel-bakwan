@@ -135,7 +135,7 @@
 				<div class="li"><div class="mk team"><img class="icon" src="icon-player-group"/><span>5</span></div><span>{{l_lg_team}}</span></div>
 				<div class="li"><div class="mk militia"><img class="icon" src="icon-militia"/><span>4</span></div><span>{{l_lg_militia}}</span></div>
 				<div class="li"><div class="mk enemy"><img class="icon" src="icon-enemy"/><span>?</span></div><span>{{l_lg_enemy}}</span></div>
-				<div class="li"><div class="sw" style="background-color: #0B0F0D8C;"></div><span>{{l_lg_fog}}</span></div>
+				<div class="li"><div class="sw" style="background-color: #0A07048C;"></div><span>{{l_lg_fog}}</span></div>
 			</div>
 			<div class="banner audit-over" id="map.plot.banner" data-if="banner != ''" data-class-heli="banner_heli"><img class="icon" data-attr-src="banner_heli ? 'icon-helicopter' : 'icon-destination'"/>
 				<div class="txt"><span class="t1">{{banner}}</span><span class="t2">{{banner_sub}}</span></div>

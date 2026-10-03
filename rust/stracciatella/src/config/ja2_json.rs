@@ -427,8 +427,10 @@ mod tests {
 
     #[test]
     fn apply_to_engine_options_should_accept_ui_scale_auto_string() {
-        let mut engine_options = EngineOptions::default();
-        engine_options.ui_scale = UiScale(2);
+        let mut engine_options = EngineOptions {
+            ui_scale: UiScale(2),
+            ..Default::default()
+        };
         let temp_dir = write_temp_folder_with_ja2_json(b"{ \"ui_scale\": \"auto\" }");
         let ja2json = Ja2Json::from_stracciatella_home(temp_dir.path().join(".ja2"));
 

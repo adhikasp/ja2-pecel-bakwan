@@ -654,6 +654,74 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
 			if ((x + y) % 24 < 9) Put(px, w, x, y, 0, 0, 0, 0.35f);
 	}
+	else if (name == "mottle")
+	{
+		// weathered gunmetal grunge (JA2's PANELTEX and panel faces): fine blotchy olive-brown wear with pits and
+		// flecks, drawn over a flat surface colour so every panel picks up the wear
+		size(256, 256, true);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float n = 0, amp = 0.55f, f = 1.f / 32;
+			int period = 8;
+			for (int o = 0; o < 4; ++o, amp *= 0.55f, f *= 2, period *= 2) n += ValueNoise(x * f, y * f, period, 23 + o) * amp;
+			n = std::clamp(n, 0.f, 1.f);
+			float const speck = Rand01(x, y, 29);
+			if (n > 0.52f) Put(px, w, x, y, 196, 172, 122, (n - 0.52f) * 0.42f); // worn light patches
+			else if (n < 0.45f) Put(px, w, x, y, 12, 8, 4, (0.45f - n) * 0.75f); // grime
+			if (speck > 0.996f) Put(px, w, x, y, 12, 8, 4, 0.32f);              // pits
+			else if (speck < 0.004f) Put(px, w, x, y, 210, 188, 140, 0.20f);    // metal flecks
+		}
+	}
+	else if (name == "leather")
+	{
+		// dark pebbled leather (JA2 popup and talk-box backgrounds): clumped grain over broad shading
+		size(256, 256, true);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float const broad = ValueNoise(x / 96.f, y / 96.f, 8, 31) * 0.6f + ValueNoise(x / 24.f, y / 24.f, 16, 37) * 0.4f;
+			float const fine = Rand01(x, y, 41);
+			if (fine > 0.72f) Put(px, w, x, y, 214, 186, 132, 0.05f + fine * 0.05f);
+			else Put(px, w, x, y, 10, 6, 3, (0.10f + broad * 0.14f) * (0.6f + fine * 0.8f));
+		}
+	}
+	else if (name == "brushed")
+	{
+		// brushed steel: 2px horizontal streaks (tiling across, repeating bands down)
+		size(256, 256, true);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			uint32_t const band = uint32_t(y / 2);
+			float const streak = ValueNoise(x / 32.f, 0.f, 8, 101 + band % 97);
+			float const tone = 0.5f + (Rand01(0, y / 2, 61) - 0.5f) * 0.9f;
+			float const v = std::clamp(tone * 0.6f + streak * 0.4f, 0.f, 1.f);
+			if (v > 0.55f) Put(px, w, x, y, 226, 210, 172, (v - 0.55f) * 0.50f);
+			else if (v < 0.45f) Put(px, w, x, y, 8, 5, 2, (0.45f - v) * 0.70f);
+		}
+	}
+	else if (name == "wood")
+	{
+		// varnished board (JA2's map desk and laptop): warm grain lines with a slow warp
+		size(256, 256, true);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float const warp = ValueNoise(x / 128.f, y / 32.f, 8, 43) * 6.f;
+			float const rings = std::sin((y + warp) * 0.55f) * 0.5f + 0.5f;
+			float const fine = ValueNoise(x / 8.f, y / 64.f, 32, 47);
+			float const line = std::clamp(rings * 0.7f + fine * 0.3f, 0.f, 1.f);
+			if (line > 0.62f) Put(px, w, x, y, 20, 11, 5, (line - 0.62f) * 1.4f);       // dark grain
+			else if (line < 0.38f) Put(px, w, x, y, 150, 106, 58, (0.38f - line) * 0.8f); // worn lighter grain
+		}
+	}
+	else if (name == "groove")
+	{
+		// an engraved seam (JA2 panels are carved with a dark line and a lit lip): tile it along a divider
+		size(4, 4, true);
+		for (int x = 0; x < 4; ++x)
+		{
+			Put(px, w, x, 0, 10, 6, 3, 0.55f);
+			Put(px, w, x, 1, 196, 168, 112, 0.28f);
+		}
+	}
 	else if (name == "grid")
 	{
 		size(64, 64, true); // plotting grid: major line every 64, minor every 16

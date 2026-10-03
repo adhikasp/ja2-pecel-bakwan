@@ -1,34 +1,45 @@
-/* Design tokens: direction B, Night Ops (docs/ui/design-system.md).
+/* Design tokens: direction B revised, Field Manual (docs/ui/design-system.md).
+ * The first pass (Night Ops) was a cold flat green-black HUD; the owner asked for the game's own art language:
+ * warm gunmetal plates with heavy mottled wear, brass bevels, engraved grooves, dark inset recesses and cream/gold
+ * type (sampled from Interface.slf: panels #4A4231/#523931, grooves #211008, bevel golds ~#8B7547).
  * RCSS has no custom properties, so this file is not a style sheet: every .rcss the UI loads is run through a
  * preprocessor that replaces var(--name) with the value below (src/spike/RmlCommon.cc, ExpandTokens). Tokens may
  * refer to other tokens. Units are dp: 1dp = 1px at 1920x1080 and 100% UI scale.
  * Change a value here and every component follows; never hard-code a colour or size in components.rcss. */
 
-/* ---------------------------------------------------------------- colour: surfaces (darkest to lightest) */
---c-void:        #0B0F0D;   /* screen background, behind everything */
---c-bg:          #0E1310;   /* page background */
---c-panel:       #121815;   /* elevation 1: panels, cards */
---c-panel-2:     #1A221E;   /* elevation 2: raised controls, table header, popovers */
---c-panel-3:     #232D28;   /* elevation 3: menus, modals, tooltips */
---c-line:        #2A3630;   /* hairlines, dividers, control borders */
---c-line-2:      #3E4F46;   /* stronger borders, hover borders */
---c-scrim:       #05080699; /* behind modals */
+/* ---------------------------------------------------------------- colour: surfaces (darkest to lightest)
+ * Warm gunmetal, mottled at render time by the gen-mottle / gen-leather / gen-wood textures. */
+--c-void:        #0A0704;   /* screen background, behind everything */
+--c-bg:          #150F08;   /* page background */
+--c-panel:       #241A0E;   /* elevation 1: panels, cards */
+--c-panel-2:     #322515;   /* elevation 2: raised controls, table header, popovers */
+--c-panel-3:     #3E2F1B;   /* elevation 3: menus, modals, tooltips */
+--c-line:        #4E3B21;   /* hairlines, dividers, control borders */
+--c-line-2:      #7A6136;   /* stronger borders, hover borders */
+--c-scrim:       #06040299; /* behind modals */
 
-/* ---------------------------------------------------------------- colour: text */
---c-text-strong: #EEF4EF;   /* headings, values, selected */
---c-text:        #D7E2D9;   /* body */
---c-text-dim:    #8FA096;   /* labels, secondary */
---c-text-faint:  #5E6E65;   /* hints, disabled, captions (large text only) */
---c-on-accent:   #0B0F0D;   /* text on accent / status fills */
+/* carved seam and plate edges: the JA2 chrome is bevelled metal, lit from the top left */
+--c-bevel-hi:    #9A7E4C;   /* plate: top and left edge (light) */
+--c-bevel-lo:    #0D0906;   /* plate: bottom and right edge (shade) */
+--c-inset:       #100A05;   /* recessed wells: portraits, item slots, clocks */
+--c-inset-line:  #6B5530;   /* the gold hairline around a recess */
 
-/* ---------------------------------------------------------------- colour: brand and interaction */
---c-accent:      #9BE564;   /* phosphor green: primary action, active tab, on */
---c-accent-2:    #B8F08E;   /* primary hover */
---c-accent-3:    #7FC94C;   /* primary pressed */
---c-accent-soft: #9BE5641F; /* hover wash, selected row */
---c-select:      #F2B33D;   /* amber: the selected merc / sector / item */
---c-select-soft: #F2B33D22;
---c-focus:       #56B4E9;   /* keyboard focus ring (never used for state) */
+/* ---------------------------------------------------------------- colour: text (typed dossier: cream on dark) */
+--c-text-strong: #F5EDDA;   /* headings, values, selected */
+--c-text:        #DCCFB2;   /* body */
+--c-text-dim:    #A8916B;   /* labels, secondary */
+--c-text-faint:  #6E5C3E;   /* hints, disabled, captions (large text only) */
+--c-on-accent:   #1B1206;   /* text on accent / status fills */
+
+/* ---------------------------------------------------------------- colour: brand and interaction
+ * Brass hardware on gunmetal: the gold outlines and gold button faces of the original panels. */
+--c-accent:      #D8B25E;   /* brass: primary action, active tab, on */
+--c-accent-2:    #EAC97F;   /* primary hover */
+--c-accent-3:    #B8913F;   /* primary pressed */
+--c-accent-soft: #D8B25E22; /* hover wash, selected row */
+--c-select:      #F2C230;   /* amber gold: the selected merc / sector / item (the game's yellow) */
+--c-select-soft: #F2C23026;
+--c-focus:       #5BB8E8;   /* keyboard focus ring (never used for state) */
 
 /* ---------------------------------------------------------------- colour: status (colour-blind safe)
  * Okabe-Ito based: distinguishable with deuteranopia, protanopia and tritanopia, and always paired with an
@@ -46,9 +57,9 @@
 --c-stat-hp:     #FF6B3D;   /* health: the game's red, vermilion for colour-blind safety */
 --c-stat-hp-lost:#FF6B3D40; /* max health lost (bandaged / to heal) */
 --c-stat-breath: #56B4E9;
---c-stat-morale: #D7E2D9;
---c-stat-xp:     #F2B33D;
---c-stat-track:  #2A3630;
+--c-stat-morale: #DCCFB2;
+--c-stat-xp:     #F2C230;
+--c-stat-track:  #100A05;
 
 /* ---------------------------------------------------------------- type */
 --font-display:  "Barlow Condensed";  /* titles, labels, buttons; uppercase */
@@ -96,7 +107,7 @@
 --r-round: 999dp; /* toggles, badges, slider thumb */
 
 /* ---------------------------------------------------------------- elevation
- * No drop shadows (flat HUD): elevation = a lighter surface + a stronger border, plus the scrim for modals. */
+ * Elevation = a lighter mottled surface + a stronger bevelled border (the scrim for modals). */
 --e1-bg:   var(--c-panel);
 --e1-line: var(--c-line);
 --e2-bg:   var(--c-panel-2);

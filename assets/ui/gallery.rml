@@ -9,7 +9,7 @@
 
 <!-- ============================================================ header: the page tabs are the tabs component -->
 <div class="g-head" id="g-head">
-	<div class="g-title"><span class="g-brand">Arulco</span> Design system <span class="dim">&#183; Night Ops</span></div>
+	<div class="g-title"><span class="g-brand">Arulco</span> Design system <span class="dim">&#183; Field Manual</span></div>
 	<div class="g-readout mono" id="g-readout">{{readout}}</div>
 	<div class="tabs g-tabs" id="g-tabs">
 		<span class="tab" data-for="p : pages" data-attr-id="'tab-' + p" data-class-active="p == page" data-event-click="go(p)">{{p}}</span>

@@ -1,0 +1,35 @@
+# Dependabot version updates.
+#
+# This is what turns routine updates into PRs. The repo-level "Dependabot
+# security updates" toggle (Settings -> Code security and analysis) handles
+# advisories separately and is enabled too; this file does not replace it.
+#
+# The two ecosystems here are the ones that actually have manifests in this
+# repo: the GitHub Actions used by the workflows, and the Rust workspace under
+# rust/. CMake/system dependencies in dependencies/ are vendored and built by
+# cmake, so they are not managed by Dependabot and should not be.
+version: 2
+updates:
+  # GitHub Actions. Also keeps SHA-pinned actions (see jlumbroso/free-disk-space
+  # in github-ci.yml) from silently going stale, and surfaces new major versions
+  # of the official actions the CI relies on.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - ci
+
+  # The Rust workspace (rust/Cargo.toml plus the three member crates).
+  - package-ecosystem: cargo
+    directory: /rust
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - rust
