@@ -32,8 +32,7 @@ impl StciColorDepthIndexed {
             return Err(Error::new(
                 InvalidData,
                 format!(
-                    "expected RGB888 palette in indexed STCI, go RGB{}{}{} in header",
-                    red, green, blue
+                    "expected RGB888 palette in indexed STCI, go RGB{red}{green}{blue} in header"
                 ),
             ));
         }
@@ -94,8 +93,7 @@ impl StciHeaderIndexed {
             return Err(Error::new(
                 InvalidData,
                 format!(
-                    "expected 256 palette colors in indexed STCI, got {} in header",
-                    number_of_palette_colors,
+                    "expected 256 palette colors in indexed STCI, got {number_of_palette_colors} in header",
                 ),
             ));
         }
@@ -194,7 +192,7 @@ impl StciPalette {
         if number_of_colors != 256 {
             return Err(Error::new(
                 InvalidData,
-                format!("expected 256 colors for palette, got {}", number_of_colors),
+                format!("expected 256 colors for palette, got {number_of_colors}"),
             ));
         }
         let mut colors = [StciRgb888(0, 0, 0); 256];

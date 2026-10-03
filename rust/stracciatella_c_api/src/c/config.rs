@@ -80,7 +80,7 @@ pub extern "C" fn EngineOptions_getStracciatellaHome() -> *mut c_char {
             stracciatella_home.into_raw()
         }
         Err(e) => {
-            remember_rust_error(format!("EngineOptions_getStracciatellaHome: {:?}", e));
+            remember_rust_error(format!("EngineOptions_getStracciatellaHome: {e:?}"));
             std::ptr::null_mut()
         }
     }
@@ -162,7 +162,7 @@ pub extern "C" fn EngineOptions_getMod(ptr: *const EngineOptions, index: u32) ->
         }
         None => {
             let len = engine_options.mods.len();
-            panic!("Invalid mod index {}, len = {}", index, len);
+            panic!("Invalid mod index {index}, len = {len}");
         }
     }
 }
@@ -302,7 +302,7 @@ pub extern "C" fn EngineOptions_getUiModes(ptr: *const EngineOptions) -> *mut c_
     let pairs: Vec<String> = engine_options
         .ui_mode
         .iter()
-        .map(|(k, v)| format!("{}={}", k, v))
+        .map(|(k, v)| format!("{k}={v}"))
         .collect();
     c_string_from_str(&pairs.join("\n")).into_raw()
 }

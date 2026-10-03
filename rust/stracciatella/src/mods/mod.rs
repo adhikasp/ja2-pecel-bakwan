@@ -38,7 +38,7 @@ impl ModPath {
         .ok_or_else(|| {
             io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!("Mod path {:?} does not contain dir name", self),
+                format!("Mod path {self:?} does not contain dir name"),
             )
         })?;
         let dir_name = dir_name.to_string_lossy();
@@ -49,10 +49,7 @@ impl ModPath {
         } else {
             Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                format!(
-                    "Mod directory {:?} does conform to mod id format: {}",
-                    self, mod_id_regex
-                ),
+                format!("Mod directory {self:?} does conform to mod id format: {mod_id_regex}"),
             ))
         }
     }

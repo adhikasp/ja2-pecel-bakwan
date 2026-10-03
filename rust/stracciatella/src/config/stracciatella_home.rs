@@ -126,8 +126,7 @@ mod tests {
         let regex = Regex::new(r"^[A-Z]:\\(.*)+\\JA2").unwrap();
         assert!(
             regex.is_match(result),
-            "{} is not a valid home dir for windows",
-            result
+            "{result} is not a valid home dir for windows"
         );
     }
 }

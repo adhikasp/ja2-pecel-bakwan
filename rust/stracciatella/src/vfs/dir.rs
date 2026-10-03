@@ -59,8 +59,7 @@ impl DirFs {
         let mut candidates = vec![self.dir_path.to_owned()];
         let mut canonicalization_cache = self.canonicalization_cache.lock().map_err(|err| {
             io::Error::other(format!(
-                "DirFs: Error locking canonicalization cache: `{}`",
-                err
+                "DirFs: Error locking canonicalization cache: `{err}`"
             ))
         })?;
 

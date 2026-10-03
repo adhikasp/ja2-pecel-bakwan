@@ -27,7 +27,7 @@ pub mod de {
         T: DeserializeOwned,
     {
         let reader = StripComments::new(json.as_bytes());
-        serde_json::from_reader(reader).map_err(|x| format!("{}", x))
+        serde_json::from_reader(reader).map_err(|x| format!("{x}"))
     }
 }
 
@@ -69,7 +69,7 @@ pub mod ser {
         T: Serialize,
         F: Fn(&str) -> Option<String>,
     {
-        let value = serde_json::to_value(value).map_err(|x| format!("{}", x))?;
+        let value = serde_json::to_value(value).map_err(|x| format!("{x}"))?;
         let mut serializer = Serializer::new(comments);
         serializer.serialize(&value)?;
         Ok(serializer.json)
@@ -153,7 +153,7 @@ pub mod ser {
                         }
                         self.path_truncate(len);
                         self.path_push(key);
-                        let key = serde_json::to_string(key).map_err(|x| format!("{}", x))?;
+                        let key = serde_json::to_string(key).map_err(|x| format!("{x}"))?;
                         self.push_comments()?;
                         self.push_prefix();
                         self.push_str(&key);
@@ -167,7 +167,7 @@ pub mod ser {
                     self.push('}');
                 }
                 value => {
-                    let value = serde_json::to_string(value).map_err(|x| format!("{}", x))?;
+                    let value = serde_json::to_string(value).map_err(|x| format!("{x}"))?;
                     self.push_str(&value);
                 }
             }
@@ -273,7 +273,7 @@ mod tests {
             "outer.inner" => Some("/* ccc\n   ddd */".into()),
             "key" => Some("# eee\n# fff\n".into()),
             "arr" => None,
-            _ => panic!("unexpected path {}", path),
+            _ => panic!("unexpected path {path}"),
         })
         .expect("json text");
         assert_eq!(

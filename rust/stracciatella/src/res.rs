@@ -217,7 +217,7 @@ impl ResourcePackBuilder {
             match extension.as_str() {
                 "slf" => {}
                 _ => {
-                    return Err(format!("{:?} archives are not supported", extension).into());
+                    return Err(format!("{extension:?} archives are not supported").into());
                 }
             }
             let prop = "with_archive_".to_owned() + extension;
@@ -231,7 +231,7 @@ impl ResourcePackBuilder {
         for algorithm in &self.with_hashes {
             match algorithm.as_str() {
                 "md5" => {}
-                _ => return Err(format!("{:?} hashes are not supported", algorithm).into()),
+                _ => return Err(format!("{algorithm:?} hashes are not supported").into()),
             }
             let prop = "with_hash_".to_owned() + algorithm;
             self.pack.set_property(&prop, true);
@@ -376,7 +376,7 @@ impl fmt::Display for ResourceError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "ResourceError(")?;
         match self {
-            ResourceError::Text(desc) => write!(f, "{}", desc),
+            ResourceError::Text(desc) => write!(f, "{desc}"),
             ResourceError::IoError(err) => err.fmt(f),
         }?;
         write!(f, ")")?;
@@ -459,10 +459,10 @@ fn resource_path(base: &Path, path: &Path) -> Result<Nfc, ResourceError> {
     if let Ok(resource_path) = path.strip_prefix(base) {
         return match resource_path.to_str() {
             Some(utf8) => Ok(Nfc::path(utf8)),
-            None => Err(format!("{:?} contains invalid utf8", resource_path).into()),
+            None => Err(format!("{resource_path:?} contains invalid utf8").into()),
         };
     }
-    Err(format!("{:?} is not a prefix of {:?}", base, path).into())
+    Err(format!("{base:?} is not a prefix of {path:?}").into())
 }
 
 /// Trait the adds shortcuts for properties.
@@ -647,10 +647,7 @@ mod tests {
             let mib = size as f64 / 1_000_000f64;
             let speed = mib / secs;
             let hash = hex::encode(hash);
-            println!(
-                "{}: {} bytes in {:?} {:.3}MiB/s {:?}",
-                name, size, time, speed, hash
-            );
+            println!("{name}: {size} bytes in {time:?} {speed:.3}MiB/s {hash:?}");
         }
 
         #[test]

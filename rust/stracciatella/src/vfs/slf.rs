@@ -76,7 +76,7 @@ impl SlfFs {
             })
             .collect();
         Ok(Arc::new(SlfFs {
-            slf_path: format!("{}", slf_file),
+            slf_path: format!("{slf_file}"),
             slf_file: Arc::new(Mutex::new(slf_file)),
             prefix,
             entries,

@@ -112,7 +112,7 @@ impl AnyPath {
 
     /// Encodes and adds a u8 value.
     pub fn push_byte(&mut self, b: u8) {
-        let _ = write!(&mut self.inner, "%{:02X}", b);
+        let _ = write!(&mut self.inner, "%{b:02X}");
     }
 
     /// Encodes and adds a wide value.
@@ -120,7 +120,7 @@ impl AnyPath {
         if w < 0x80 {
             self.push_byte(w as u8);
         } else {
-            let _ = write!(&mut self.inner, "%u{:04X}", w);
+            let _ = write!(&mut self.inner, "%u{w:04X}");
         }
     }
 
@@ -251,7 +251,7 @@ impl TryFrom<CString> for AnyPath {
     type Error = String;
 
     fn try_from(path: CString) -> Result<Self, String> {
-        let inner = path.into_string().map_err(|err| format!("{}", err))?;
+        let inner = path.into_string().map_err(|err| format!("{err}"))?;
         percent_split(&inner)?;
         Ok(Self { inner })
     }
@@ -345,7 +345,7 @@ fn percent_split(mut s: &str) -> Result<Vec<PercentSplit<'_>>, String> {
                     continue;
                 }
             }
-            return Err(format!("expected '%uXXXX', got {:?}", s));
+            return Err(format!("expected '%uXXXX', got {s:?}"));
         } else if s.starts_with('%') {
             if let Some(len) = n_chars_len(3, s) {
                 let (encoded, next) = s.split_at(len);
@@ -357,7 +357,7 @@ fn percent_split(mut s: &str) -> Result<Vec<PercentSplit<'_>>, String> {
                     continue;
                 }
             }
-            return Err(format!("expected '%XX', got {:?}", s));
+            return Err(format!("expected '%XX', got {s:?}"));
         } else {
             let index = s.find('%').unwrap_or(s.len());
             let (raw, next) = s.split_at(index);
@@ -469,7 +469,7 @@ mod test {
             // lonely start utf8 = 0xC0 to 0xFD
             // impossible utf8 = 0xFE to 0xFF
             for b in 0x80..=0xFF {
-                t(&[b], &format!("%{:02X}", b));
+                t(&[b], &format!("%{b:02X}"));
             }
         }
         #[cfg(windows)]

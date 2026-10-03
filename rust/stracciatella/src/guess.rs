@@ -424,7 +424,7 @@ impl From<String> for GuessError {
 impl From<io::Error> for GuessError {
     fn from(err: io::Error) -> Self {
         GuessError {
-            desc: format!("{:?}", err),
+            desc: format!("{err:?}"),
         }
     }
 }
@@ -432,7 +432,7 @@ impl From<io::Error> for GuessError {
 impl From<ResourceError> for GuessError {
     fn from(err: ResourceError) -> Self {
         GuessError {
-            desc: format!("{:?}", err),
+            desc: format!("{err:?}"),
         }
     }
 }
@@ -440,7 +440,7 @@ impl From<ResourceError> for GuessError {
 impl From<serde_json::Error> for GuessError {
     fn from(err: serde_json::Error) -> Self {
         GuessError {
-            desc: format!("{:?}", err),
+            desc: format!("{err:?}"),
         }
     }
 }

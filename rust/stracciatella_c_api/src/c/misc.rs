@@ -172,7 +172,7 @@ pub extern "C" fn Env_currentDir() -> *mut c_char {
             c_path.into_raw()
         }
         Err(err) => {
-            remember_rust_error(format!("Env_currentDir: {}", err));
+            remember_rust_error(format!("Env_currentDir: {err}"));
             ptr::null_mut()
         }
     }
@@ -185,7 +185,7 @@ pub extern "C" fn Env_currentExe() -> *mut c_char {
     forget_rust_error();
     match env::current_exe() {
         Err(err) => {
-            remember_rust_error(format!("Env_currentExe: {}", err));
+            remember_rust_error(format!("Env_currentExe: {err}"));
             ptr::null_mut()
         }
         Ok(path) => {

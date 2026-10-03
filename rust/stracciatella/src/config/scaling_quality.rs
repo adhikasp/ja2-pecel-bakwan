@@ -28,7 +28,7 @@ impl FromStr for ScalingQuality {
             "LINEAR" => Ok(ScalingQuality::LINEAR),
             "NEAR_PERFECT" => Ok(ScalingQuality::NEAR_PERFECT),
             "PERFECT" => Ok(ScalingQuality::PERFECT),
-            _ => Err(format!("Scaling quality {} is unknown", s)),
+            _ => Err(format!("Scaling quality {s} is unknown")),
         }
     }
 }

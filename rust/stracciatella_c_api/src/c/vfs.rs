@@ -42,7 +42,7 @@ pub extern "C" fn Vfs_init(
     let engine_options = unsafe_ref(engine_options);
     let mod_manager = unsafe_ref(mod_manager);
     if let Err(err) = vfs.init(engine_options, mod_manager) {
-        remember_rust_error(format!("Vfs_init_from_engine_options: {}", err));
+        remember_rust_error(format!("Vfs_init_from_engine_options: {err}"));
     }
     no_rust_error()
 }
@@ -56,7 +56,7 @@ pub extern "C" fn Vfs_addDir(vfs: *mut Vfs, path: *const c_char) -> bool {
     let vfs = unsafe_mut(vfs);
     let path = path_buf_from_c_str_or_panic(unsafe_c_str(path));
     if let Err(err) = vfs.add_dir(&path) {
-        remember_rust_error(format!("Vfs_addDir {:?}: {}", path, err));
+        remember_rust_error(format!("Vfs_addDir {path:?}: {err}"));
     }
     no_rust_error()
 }
@@ -87,7 +87,7 @@ pub extern "C" fn Vfs_readDir(
     };
     match res {
         Err(err) => {
-            remember_rust_error(format!("Vfs_readDir {:?}: {}", path, err));
+            remember_rust_error(format!("Vfs_readDir {path:?}: {err}"));
             std::ptr::null_mut()
         }
         Ok(files) => {
@@ -109,7 +109,7 @@ pub extern "C" fn Vfs_open(vfs: *mut Vfs, path: *const c_char) -> *mut VFile {
     let path = str_from_c_str_or_panic(unsafe_c_str(path));
     match vfs.open(&Nfc::caseless_path(path)) {
         Err(err) => {
-            remember_rust_error(format!("Vfs_open {:?}: {}", path, err));
+            remember_rust_error(format!("Vfs_open {path:?}: {err}"));
             std::ptr::null_mut()
         }
         Ok(file) => into_ptr(file.into()),
@@ -131,7 +131,7 @@ pub extern "C" fn Vfs_openInLayer(
     let path = str_from_c_str_or_panic(unsafe_c_str(path));
     match vfs.open_in_layer(layer_index, &Nfc::caseless_path(path)) {
         Err(err) => {
-            remember_rust_error(format!("Vfs_openInLayer {:?}: {}", path, err));
+            remember_rust_error(format!("Vfs_openInLayer {path:?}: {err}"));
             std::ptr::null_mut()
         }
         Ok(file) => into_ptr(file.into()),
@@ -149,7 +149,7 @@ pub extern "C" fn Vfs_readPatchedJson(vfs: *mut Vfs, path: *const c_char) -> *mu
     let path = str_from_c_str_or_panic(unsafe_c_str(path));
     match vfs.read_patched_json(&Nfc::caseless_path(path)) {
         Err(err) => {
-            remember_rust_error(format!("Vfs_readPatchedJson {:?}: {}", path, err));
+            remember_rust_error(format!("Vfs_readPatchedJson {path:?}: {err}"));
             std::ptr::null_mut()
         }
         Ok(file) => into_ptr(RJsonValue::from_value(file)),
@@ -167,7 +167,7 @@ pub extern "C" fn Vfs_readLayers(vfs: *mut Vfs, path: *const c_char) -> *mut Vec
     let path = str_from_c_str_or_panic(unsafe_c_str(path));
     match vfs.read_layers(&Nfc::caseless_path(path)) {
         Err(err) => {
-            remember_rust_error(format!("Vfs_open {:?}: {}", path, err));
+            remember_rust_error(format!("Vfs_open {path:?}: {err}"));
             std::ptr::null_mut()
         }
         Ok(v) => into_ptr(v.into()),
