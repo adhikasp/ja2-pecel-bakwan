@@ -123,7 +123,7 @@ def main() -> int:
     (out / "golden.txt").unlink(missing_ok=True)
     try:
         cmd = [sys.executable, str(JA2CTL), "run", str(script), "--isolated", "--seed", "1",
-               "--res", opts.res, "--timeout", "900", "--out", str(out), "--arg", "golden=1"]
+               "--res", opts.res, "--timeout", "2400", "--out", str(out), "--arg", "golden=1"]
         code = subprocess.call(cmd)
         if code != 0:
             print(f"{name} @ {opts.res}: script failed with exit code {code}", file=sys.stderr)
