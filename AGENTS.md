@@ -91,11 +91,26 @@ Image-only widgets need `SetName(...)` in C++ to be clickable by label; new anim
 
 ## Dev mindset
 
-- **Prefer `src/externalized/` JSON edits over C++ changes** when tweaking game data — no recompile, hot-reloadable.
+- **Prefer `src/externalized/` JSON edits over C++ changes** when tweaking the data the original game shipped with — no recompile, hot-reloadable. New gameplay systems are native instead: see *Game design principles*.
+- **Native-first, no backward compatibility.** New gameplay and behavior are native C++ and the default. Do not add externalized rules, legacy fallbacks or compatibility shims; old saves, old behavior and old APIs are not a constraint.
 - **The VFS is layered** — files in `build/externalized/` override `.slf` archives. Use this for rapid iteration on assets.
 - **Unit tests are fast** — run `-unittests` before and after changes to catch regressions early.
 - **Log output is your debugger** — the game logs to `/var/folders/.../ja2.log`; tail it while the game runs.
 - **Don't touch `dependencies/`** — these are managed by cmake; changes get overwritten on reconfigure.
+
+## Game design principles
+
+This fork is not a preservation project. It is a modern reimplementation of Jagged Alliance 2 with a richer tactical and strategic game. These principles are the tie-breaker for design decisions: when a plan or a PR conflicts with one, the plan changes.
+
+- **The revamp is the game.** New mechanics ship on by default. There is no vanilla mode, no byte-compatible save format and no obligation to preserve old behavior. We own the rules, the balance and the save format.
+- **Native-first.** Gameplay systems live in C++ in the engine; we do not externalize rules to runtime JSON. A small set of leaf tunables (bullet spread, loot drop %, wear rate, Queen aggression weights) are exposed as toggles, but the mechanics are always baked in. `src/externalized/` is for the data the original game shipped with, not for new rules.
+- **Testable by construction.** Every system has a C++ unit-test surface and a deterministic `ja2ctl`/e2e driving surface. If a mechanic cannot be asserted headless, it is not done.
+- **Curate.** Take the design idea and ship a small, balanced set, not a catalog. Content is compiled, with unit-tested invariants.
+- **A rich tactical layer.** Equipment is a system (attachments, ammo, condition), combat is a simulation (NCTH, suppression, morale, stances, detection, vision/light), and the soldier is a character (traits, medical, encumbrance, covert ops, melee, breaching).
+- **A rich strategic layer.** The world is alive. A deed ledger tracks whether the player is the savior or the next dictator; towns, factions and NPCs react and remember; militia, facilities, the economy and the strategic sector inventory give the map teeth.
+- **The Queen has a mind.** A native emotional drive state and a native policy layer drive her strategic actions. An optional LLM layer provides her voice and turns the player's free text into a bounded intent set, but the LLM never writes game state; headless runs use a deterministic stub.
+- **Reimplement ideas, never port code.** Ideas from other JA2 projects are reimplemented natively; their code, UI and runtime data files are not imported.
+- **Moddability stays a feature.** The VFS layering and the Lua scripting API are the mod surface, within the native-first rules above.
 
 ## GitHub: remotes, issues, projects and milestones
 
