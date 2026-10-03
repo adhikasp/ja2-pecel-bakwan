@@ -469,7 +469,7 @@ mod test {
             // lonely start utf8 = 0xC0 to 0xFD
             // impossible utf8 = 0xFE to 0xFF
             for b in 0x80..=0xFF {
-                t(&[b], &format!("%{:02X}", b));
+                t(&[b], &format!("%{b:02X}"));
             }
         }
         #[cfg(windows)]

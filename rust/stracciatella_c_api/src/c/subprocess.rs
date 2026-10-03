@@ -167,8 +167,7 @@ pub unsafe extern "C" fn Subprocess_getExitCode(ptr: *mut SubProcess) -> i32 {
                         if !signal_ptr.is_null() {
                             let signal_str = str_from_c_str_or_panic(unsafe_c_str(signal_ptr));
                             remember_rust_error(format!(
-                                "Subprocess terminated by signal: {}",
-                                signal_str
+                                "Subprocess terminated by signal: {signal_str}"
                             ));
                         }
                     }
