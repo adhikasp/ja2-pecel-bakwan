@@ -3822,10 +3822,14 @@ namespace
 		return "ok";
 	}
 
+	/** The generic soldier/militia/creature face, and the skull, in interface/smfaces.sti (the legacy cell art). */
+	std::string SmFace(int const frame) { return "smface-" + std::to_string(frame); }
+
 	/** One card. @a v already has the state/surrender flags the card's clickability depends on. */
 	Cell MakeCell(View const& v, SOLDIERCELL const& c, int side, int index)
 	{
 		SOLDIERTYPE const& s = *c.pSoldier;
+		bool const creature = (c.uiFlags & CELL_CREATURE) != 0;
 		Cell cell;
 		cell.side = side;
 		cell.index = index;
@@ -3850,7 +3854,9 @@ namespace
 			cell.en  = std::clamp<int>(s.bBreath, 0, 100);
 			cell.mor = std::clamp<int>(s.bMorale, 0, 100);
 			cell.name = s.ubProfile != NO_PROFILE ? S(GetProfile(s.ubProfile).zNickname) : S(s.name);
-			if (s.uiStatusFlags & SOLDIER_VEHICLE)      cell.icon = "vehicle";
+			// a dead cell shows the skull, as the legacy RenderSoldierCell does
+			if (cell.dead)                              cell.face = SmFace(creature ? CREATURE_SKULL : HUMAN_SKULL);
+			else if (s.uiStatusFlags & SOLDIER_VEHICLE) cell.icon = "vehicle";
 			else if (s.ubProfile != NO_PROFILE)         cell.face = "face-" + std::to_string(GetProfile(s.ubProfile).ubFaceIndex);
 			else                                        cell.icon = "player-group";
 			// The legacy cell callback: no retreat when pending, already retreating/retreated, or a lone robot.
@@ -3861,6 +3867,8 @@ namespace
 		{
 			cell.name = S(s.name);
 			cell.icon = side == Militia ? "militia" : "enemy";
+			// the legacy cell draws the side's generic face (a skull when dead); c.usIndex is that frame
+			cell.face = SmFace(cell.dead ? (creature ? CREATURE_SKULL : HUMAN_SKULL) : int(c.usIndex));
 		}
 		return cell;
 	}

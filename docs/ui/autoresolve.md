@@ -51,9 +51,9 @@ deliberate omission is recorded with a reason.
   legacy colours it red / yellow / green by the thresholds
   `good*3 <= bad*2`, `good*2 >= bad*3`, otherwise yellow. The native UI shows it as a
   badge with the same thresholds.
-- **One card per participant**: portrait (merc big face, or a militia/enemy icon),
-  health text (`zHealthStr`; the soldier's name when dead), health/breath/morale bars for
-  mercs, and status: team leader, bleeding, hit flash, robot, EPC, retreating/retreated.
+- **One card per participant**: portrait (a merc's big face, or the side's generic face from
+  `interface/smfaces.sti` — the skull frame when dead), health text (`zHealthStr`; the soldier's name when dead),
+  health/breath/morale bars for mercs, and status: team leader, bleeding, hit flash, robot, EPC, retreating/retreated.
 - **Elapsed battle time** once the battle is over (the total is tripled on the first
   end frame; a retreat adds 5 minutes). Format: `STR_AR_TIME_ELAPSED`, `mm h ss m`.
 - **Result** (`STR_AR_OVER_*`), red for defeat/surrender/capture, green for victory,

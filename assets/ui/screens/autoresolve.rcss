@@ -71,8 +71,9 @@ body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 	width: 48dp; height: 54dp; margin-right: var(--sp-2);
 	background-color: var(--c-inset); border: var(--border) var(--c-inset-line); overflow: hidden;
 }
-.ar-pic { position: absolute; left: 0; top: 0; width: 100%; height: 100%; }
-.ar-skull { position: absolute; right: 1dp; bottom: 1dp; width: 20dp; height: 20dp; image-color: var(--c-danger); }
+.ar-pic { width: 100%; height: 100%; }
+/* the generic smfaces frames are small pixel art: draw them at their own size, no scaling */
+.ar-pic.sm { width: auto; height: auto; }
 .ar-meta { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
 .ar-name { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-strong); }
 .ar-health { display: block; font-size: var(--fs-xs); }

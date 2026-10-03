@@ -30,7 +30,7 @@ namespace
 		std::string name, face, icon, health, health_class, status, cls;
 		bool dead = false, unconscious = false, bleeding = false, hit = false, leader = false;
 		bool robot = false, epc = false, retreating = false, retreated = false, clickable = false;
-		bool merc = false, has_face = false;
+		bool merc = false, has_face = false, face_small = false;
 		int hp = 0, en = 0, mor = 0;
 		bool operator==(CellRow const&) const = default;
 		static void Describe(RowFields<CellRow>& f)
@@ -39,7 +39,7 @@ namespace
 			 ("health", &CellRow::health)("health_class", &CellRow::health_class)("status", &CellRow::status)("cls", &CellRow::cls)
 			 ("dead", &CellRow::dead)("unconscious", &CellRow::unconscious)("bleeding", &CellRow::bleeding)("hit", &CellRow::hit)
 			 ("leader", &CellRow::leader)("robot", &CellRow::robot)("epc", &CellRow::epc)("retreating", &CellRow::retreating)
-			 ("retreated", &CellRow::retreated)("clickable", &CellRow::clickable)("merc", &CellRow::merc)("has_face", &CellRow::has_face)
+			 ("retreated", &CellRow::retreated)("clickable", &CellRow::clickable)("merc", &CellRow::merc)("has_face", &CellRow::has_face)("face_small", &CellRow::face_small)
 			 ("hp", &CellRow::hp)("en", &CellRow::en)("mor", &CellRow::mor);
 		}
 	};
@@ -132,7 +132,7 @@ namespace
 				r.dead = c.dead; r.unconscious = c.unconscious; r.bleeding = c.bleeding; r.hit = c.hit;
 				r.leader = c.leader; r.robot = c.robot; r.epc = c.epc;
 				r.retreating = c.retreating; r.retreated = c.retreated; r.clickable = c.clickable;
-				r.merc = merc; r.has_face = !c.face.empty();
+				r.merc = merc; r.has_face = !c.face.empty(); r.face_small = c.face.rfind("smface-", 0) == 0;
 				r.hp = c.hp; r.en = c.en; r.mor = c.mor;
 				r.cls = AutoResolveModel::CellClass(c.dead, c.unconscious, c.bleeding, c.hit, c.leader,
 					c.robot, c.epc, c.retreating, c.retreated, c.clickable);
