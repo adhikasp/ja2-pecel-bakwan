@@ -121,9 +121,17 @@ impl Cli {
             "editor",
             "Start the map editor (Editor.slf is required)",
         );
-        opts.optflag("", "fullscreen", "Start the game in a borderless desktop window (same as -window-mode borderless)");
+        opts.optflag(
+            "",
+            "fullscreen",
+            "Start the game in a borderless desktop window (same as -window-mode borderless)",
+        );
         opts.optflag("", "nosound", "Turn the sound and music off");
-        opts.optflag("", "window", "Start the game in a window (same as -window-mode windowed)");
+        opts.optflag(
+            "",
+            "window",
+            "Start the game in a window (same as -window-mode windowed)",
+        );
         opts.optflag("", "debug", "Enable Debug Mode");
         opts.optflag("", "enumgen", "Generate enums for Lua and exit");
         opts.optflag("h", "help", "print this help menu");

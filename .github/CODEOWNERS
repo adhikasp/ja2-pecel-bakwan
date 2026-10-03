@@ -1,0 +1,7 @@
+# Code owners: requested for review automatically on every PR.
+#
+# "Require review from Code Owners" is NOT switched on for master — branch
+# protection only requires that a PR exists, not an approval — so this is a
+# routing convenience, not a gate. If you later want real review gates, enable
+# that option in Settings -> Branches and this file becomes load-bearing.
+* @adhikasp
