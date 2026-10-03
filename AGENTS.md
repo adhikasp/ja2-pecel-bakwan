@@ -135,6 +135,7 @@ Never push to it, never open a PR or an issue there, never comment there, never 
 ### Issues
 
 - **Open one for every slice of work**, planned or discovered. Planned work also goes onto the board (below).
+- **Ad-hoc work goes straight to a PR.** An issue is the home of planned work. A spontaneous fix or one-off correction — a typo, a broken build, a small cleanup — does not need an issue first; open the PR directly. File the issue only if it turns out to be a slice of planned work.
 - **Title** — descriptive; prefixed `bug: ` or `decision: ` for those two kinds. Tasks and goals carry no prefix; the label already says what it is.
 - **Labels** — exactly one type: `task`, `bug`, `decision`, `question` or `goal`; plus at most one area: `tactical`, `mapscreen`, `laptop`, `nativeui`, `world-renderer`, `build`, `automation`.
 - **Body** — the definition of done, and the plan, spec or PR it comes from.
