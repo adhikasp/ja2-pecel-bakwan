@@ -226,6 +226,13 @@ TEST(NativeUI, frontEndScreensAreNativeByDefault)
 	EXPECT_EQ(ScreenKey(VIDEO_OPTIONS_SCREEN), nullptr); // folded into the options screen
 }
 
+TEST(NativeUI, autoResolveScreenIsNativeByDefault)
+{
+	EXPECT_TRUE(IsModeKey("autoresolve"));
+	EXPECT_EQ(ConfiguredMode("autoresolve"), UiMode::Native);
+	EXPECT_STREQ(ScreenKey(AUTORESOLVE_SCREEN), "autoresolve");
+}
+
 TEST(NativeUI, reducedMotionSetting)
 {
 	SetReducedMotion(true);

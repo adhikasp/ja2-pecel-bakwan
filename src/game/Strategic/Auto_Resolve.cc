@@ -1,4 +1,5 @@
 #include "Auto_Resolve.h"
+#include "AutoResolveBridge.h"
 #include "Campaign.h"
 #include "ContentManager.h"
 #include "Creature_Spreading.h"
@@ -33,7 +34,9 @@
 #include "Render_Dirty.h"
 #include "RT_Time_Defines.h"
 #include "SkillCheck.h"
+#include "Soldier_Control.h"
 #include "Soldier_Macros.h"
+#include "Soldier_Profile.h"
 #include "Strategic.h"
 #include "StrategicMap.h"
 #include "Strategic_AI.h"
@@ -54,9 +57,11 @@
 #include "WeaponModels.h"
 #include "Weapons.h"
 #include "WordWrap.h"
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <stdexcept>
+#include <string>
 #include <string_theory/format>
 #include <string_theory/string>
 
@@ -2013,52 +2018,42 @@ static void MercCellMouseMoveCallback(MOUSE_REGION* reg, UINT32 reason)
 }
 
 
+/** Marks merc @a pCell retreating: the same rules the cell mouse click uses (no robot, no pending surrender). */
+static void RetreatMercCell(SOLDIERCELL* const pCell)
+{
+	if (!pCell || gpAR->fPendingSurrender) return;
+	if (pCell->uiFlags & (CELL_RETREATING | CELL_RETREATED)) return;
+	if (pCell == gpAR->pRobotCell) return; //robot retreats only when controller retreats
+
+	pCell->uiFlags |= CELL_RETREATING | CELL_DIRTY;
+	//Gets to retreat after a total of 2 attacks.
+	pCell->usNextAttack = (UINT16)((1000 + pCell->usNextAttack * 5 + PreRandom(2000 - pCell->usAttack)) * 2);
+	gpAR->usPlayerAttack -= pCell->usAttack;
+	pCell->usAttack = 0;
+
+	if (!gpAR->pRobotCell) return;
+	//if controller is retreating, make the robot retreat too.
+	const SOLDIERTYPE* const robot_controller = gpAR->pRobotCell->pSoldier->robot_remote_holder;
+	if (robot_controller == NULL)
+	{
+		gpAR->pRobotCell->uiFlags &= ~CELL_RETREATING;
+		gpAR->pRobotCell->uiFlags |= CELL_DIRTY;
+		gpAR->pRobotCell->usNextAttack = 0xffff;
+	}
+	else if (robot_controller == pCell->pSoldier)
+	{ //Found the controller, make the robot's retreat time match the controller's.
+		gpAR->pRobotCell->uiFlags |= CELL_RETREATING | CELL_DIRTY;
+		gpAR->pRobotCell->usNextAttack = pCell->usNextAttack;
+		gpAR->usPlayerAttack -= gpAR->pRobotCell->usAttack;
+		gpAR->pRobotCell->usAttack = 0;
+	}
+}
+
+
 static void MercCellMouseClickCallback(MOUSE_REGION* reg, UINT32 reason)
 {
-	if( reason & MSYS_CALLBACK_REASON_POINTER_UP )
-	{
-		if( gpAR->fPendingSurrender )
-		{ //Can't setup retreats when pending surrender.
-			return;
-		}
-
-		SOLDIERCELL * const pCell = reg->GetUserPtr<SOLDIERCELL>();
-
-		if( pCell->uiFlags & ( CELL_RETREATING | CELL_RETREATED ) )
-		{ //already retreated/retreating.
-			return;
-		}
-
-		if( pCell == gpAR->pRobotCell )
-		{ //robot retreats only when controller retreats
-			return;
-		}
-
-		pCell->uiFlags |= CELL_RETREATING | CELL_DIRTY;
-		//Gets to retreat after a total of 2 attacks.
-		pCell->usNextAttack = (UINT16)((1000 + pCell->usNextAttack * 5 + PreRandom( 2000 - pCell->usAttack ))*2);
-		gpAR->usPlayerAttack -= pCell->usAttack;
-		pCell->usAttack = 0;
-
-		if( gpAR->pRobotCell )
-		{ //if controller is retreating, make the robot retreat too.
-			const SOLDIERTYPE* const robot_controller = gpAR->pRobotCell->pSoldier->robot_remote_holder;
-			if (robot_controller == NULL)
-			{
-				gpAR->pRobotCell->uiFlags &= ~CELL_RETREATING;
-				gpAR->pRobotCell->uiFlags |= CELL_DIRTY;
-				gpAR->pRobotCell->usNextAttack = 0xffff;
-			}
-			else if (robot_controller == pCell->pSoldier)
-			{ //Found the controller, make the robot's retreat time match the contollers.
-				gpAR->pRobotCell->uiFlags |= CELL_RETREATING | CELL_DIRTY;
-				gpAR->pRobotCell->usNextAttack = pCell->usNextAttack;
-				gpAR->usPlayerAttack -= gpAR->pRobotCell->usAttack;
-				gpAR->pRobotCell->usAttack = 0;
-				return;
-			}
-		}
-	}
+	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
+		RetreatMercCell(reg->GetUserPtr<SOLDIERCELL>());
 }
 
 
@@ -3787,3 +3782,184 @@ static void AutoBandageFinishedCallback(MessageBoxReturnValue const ubResult)
 {
 	SetupDoneInterface();
 }
+
+
+// ---------------------------------------------------------------------------------------------------------------
+// The native auto-resolve screen's view (NativeUI/AutoResolveNative.cc). The battle model above is file-local, so
+// this is the only way the native UI reads it and the only way its buttons act on it. Every command calls the same
+// legacy callback the legacy button would, so both UIs run the same game code.
+namespace AutoResolveBridge
+{
+
+namespace
+{
+	std::string S(ST::string const& s) { return s.to_std_string(); }
+
+	/** The same health bucket RenderSoldierCellHealth picks: red for dying/critical, yellow for poor/wounded. */
+	UINT8 HealthBucket(SOLDIERTYPE const& s)
+	{
+		UINT8 cnt = s.bLife == s.bLifeMax ? 4 : 0;
+		for (; cnt < 6; ++cnt)
+		{
+			if (s.bLife < bHealthStrRanges[cnt]) break;
+		}
+		return cnt;
+	}
+
+	std::string HealthText(SOLDIERTYPE const& s)
+	{
+		if (s.bLife == 0) return S(s.name); // dead: the soldier's name
+		return S(zHealthStr[HealthBucket(s)]);
+	}
+
+	std::string HealthClass(SOLDIERTYPE const& s)
+	{
+		if (s.bLife == 0) return "dead";
+		UINT8 const cnt = HealthBucket(s);
+		if (cnt <= 1) return "danger";
+		if (cnt <= 3) return "warn";
+		if (s.bLife != s.bLifeMax) return "warn"; // good, but still hurt
+		return "ok";
+	}
+
+	/** One card. @a v already has the state/surrender flags the card's clickability depends on. */
+	Cell MakeCell(View const& v, SOLDIERCELL const& c, int side, int index)
+	{
+		SOLDIERTYPE const& s = *c.pSoldier;
+		Cell cell;
+		cell.side = side;
+		cell.index = index;
+		cell.dead = s.bLife == 0;
+		cell.unconscious = !cell.dead && s.bLife < OKLIFE;
+		cell.hit = (c.uiFlags & (CELL_HITBYATTACKER | CELL_HITLASTFRAME)) != 0;
+		cell.bleeding = s.bBleeding > 0;
+		cell.robot = (c.uiFlags & CELL_ROBOT) != 0;
+		cell.epc = (c.uiFlags & CELL_EPC) != 0;
+		cell.leader = (c.uiFlags & CELL_TEAMLEADER) != 0;
+		cell.retreating = (c.uiFlags & CELL_RETREATING) != 0;
+		cell.retreated = (c.uiFlags & CELL_RETREATED) != 0;
+		cell.health = HealthText(s);
+		cell.health_class = HealthClass(s);
+		if (cell.retreated)      cell.status = S(gpStrategicString[STR_AR_MERC_RETREATED]);
+		else if (cell.retreating) cell.status = S(gpStrategicString[STR_AR_MERC_RETREATING]);
+
+		if (side == Merc)
+		{
+			int const lifeMax = std::max<int>(1, s.bLifeMax);
+			cell.hp  = std::clamp(100 * s.bLife / lifeMax, 0, 100);
+			cell.en  = std::clamp<int>(s.bBreath, 0, 100);
+			cell.mor = std::clamp<int>(s.bMorale, 0, 100);
+			cell.name = s.ubProfile != NO_PROFILE ? S(GetProfile(s.ubProfile).zNickname) : S(s.name);
+			if (s.uiStatusFlags & SOLDIER_VEHICLE)      cell.icon = "vehicle";
+			else if (s.ubProfile != NO_PROFILE)         cell.face = "face-" + std::to_string(GetProfile(s.ubProfile).ubFaceIndex);
+			else                                        cell.icon = "player-group";
+			// The legacy cell callback: no retreat when pending, already retreating/retreated, or a lone robot.
+			cell.clickable = v.state == InProgress && !v.surrender_pending &&
+				!cell.retreating && !cell.retreated && !cell.robot;
+		}
+		else
+		{
+			cell.name = S(s.name);
+			cell.icon = side == Militia ? "militia" : "enemy";
+		}
+		return cell;
+	}
+}
+
+View GetView()
+{
+	View v;
+	if (!gpAR) return v;
+	v.active = true;
+	v.state = gpAR->ubBattleStatus;
+	v.paused = gpAR->fPaused;
+	v.fast   = gpAR->uiTimeSlice == 4000;
+	v.finished = gpAR->uiTimeSlice == 0xffffffff;
+	v.playing = !v.paused && !v.fast && !v.finished &&
+		gpAR->uiTimeSlice == (UINT32)(1000 * gpAR->ubTimeModifierPercentage / 100);
+	v.surrender_pending = gpAR->fPendingSurrender;
+	v.alive_mercs   = gpAR->ubAliveMercs;
+	v.alive_militia = gpAR->ubAliveCivs;
+	v.alive_enemies = gpAR->ubAliveEnemies;
+
+	switch (gubEnemyEncounterCode)
+	{
+		case ENEMY_INVASION_CODE:
+		case CREATURE_ATTACK_CODE: v.header = S(gpStrategicString[STR_AR_DEFEND_HEADER]); break;
+		default:                   v.header = S(gpStrategicString[STR_AR_ENCOUNTER_HEADER]); break;
+	}
+	v.sector = S(GetSectorIDString(SGPSector(gpAR->ubSector.x, gpAR->ubSector.y, 0), TRUE));
+
+	UINT8 const good = gpAR->ubAliveMercs + gpAR->ubAliveCivs;
+	UINT8 const bad  = gpAR->ubAliveEnemies;
+	v.forces = st_format_printf(gzLateLocalizedString[STR_LATE_17], good, bad).to_std_string();
+	if (good * 3 <= bad * 2)       v.forces_class = "danger";
+	else if (good * 2 >= bad * 3)  v.forces_class = "ok";
+	else                           v.forces_class = "warn";
+
+	v.show_speed   = v.state == BATTLE_IN_PROGRESS && !v.surrender_pending;
+	v.show_retreat = v.show_speed;
+	v.can_retreat  = gpAR->ubMercs > 0;
+	v.show_bandage = v.state == BATTLE_VICTORY && gpAR->ubAliveMercs > 0;
+	v.can_bandage  = v.show_bandage && IsAnybodyWounded() && CanAnybodyBandage() && FindMedicalKit() != nullptr;
+	v.show_done    = v.state != BATTLE_IN_PROGRESS && !v.surrender_pending;
+	v.won          = v.state == BATTLE_VICTORY && gpAR->ubAliveMercs > 0;
+
+	if (v.surrender_pending) v.surrender_text = S(gpStrategicString[STR_ENEMY_SURRENDER_OFFER]);
+	if (v.state != BATTLE_IN_PROGRESS)
+	{
+		switch (v.state)
+		{
+			case BATTLE_VICTORY:     v.result = S(gpStrategicString[STR_AR_OVER_VICTORY]);     v.result_class = "ok";     break;
+			case BATTLE_SURRENDERED: v.result = S(gpStrategicString[STR_AR_OVER_SURRENDERED]); v.result_class = "danger"; break;
+			case BATTLE_CAPTURED:    v.result = S(gpStrategicString[STR_AR_OVER_CAPTURED]);    v.result_class = "danger"; break;
+			case BATTLE_DEFEAT:      v.result = S(gpStrategicString[STR_AR_OVER_DEFEAT]);      v.result_class = "danger"; break;
+			case BATTLE_RETREAT:     v.result = S(gpStrategicString[STR_AR_OVER_RETREATED]);   v.result_class = "warn";   break;
+		}
+		if (v.state == BATTLE_CAPTURED) v.capture_text = S(gpStrategicString[STR_ENEMY_CAPTURED]);
+		v.time_text = ST::format("{}:  {}{} {02d}{}",
+			gpStrategicString[STR_AR_TIME_ELAPSED],
+			gpAR->uiTotalElapsedBattleTimeInMilliseconds / 60000,
+			gsTimeStrings[1],
+			gpAR->uiTotalElapsedBattleTimeInMilliseconds % 60000 / 1000,
+			gsTimeStrings[2]).to_std_string();
+	}
+
+	for (int i = 0; i < gpAR->ubMercs;   ++i) v.mercs.push_back(MakeCell(v, gpMercs[i],   Merc,    i));
+	for (int i = 0; i < gpAR->ubCivs;    ++i) v.militia.push_back(MakeCell(v, gpCivs[i],   Militia, i));
+	for (int i = 0; i < gpAR->ubEnemies; ++i) v.enemies.push_back(MakeCell(v, gpEnemies[i], Enemy,   i));
+	return v;
+}
+
+void Pause()  { if (gpAR) PauseButtonCallback(gpAR->iButton[PAUSE_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP); }
+void Play()   { if (gpAR) PlayButtonCallback(gpAR->iButton[PLAY_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP); }
+void Fast()   { if (gpAR) FastButtonCallback(gpAR->iButton[FAST_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP); }
+void Finish() { if (gpAR) FinishButtonCallback(gpAR->iButton[FINISH_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP); }
+void Bandage() { if (gpAR) BandageButtonCallback(gpAR->iButton[BANDAGE_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP); }
+void Done()   { if (gpAR) gpAR->fExitAutoResolve = TRUE; }
+
+void RetreatAll()
+{
+	if (!gpAR) return;
+	RetreatButtonCallback(gpAR->iButton[RETREAT_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void RetreatMerc(int const index)
+{
+	if (!gpAR || index < 0 || index >= gpAR->ubMercs) return;
+	RetreatMercCell(&gpMercs[index]);
+}
+
+void AcceptSurrender()
+{
+	if (!gpAR) return;
+	AcceptSurrenderCallback(gpAR->iButton[YES_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void RejectSurrender()
+{
+	if (!gpAR) return;
+	RejectSurrenderCallback(gpAR->iButton[NO_BUTTON], MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+} // namespace AutoResolveBridge
