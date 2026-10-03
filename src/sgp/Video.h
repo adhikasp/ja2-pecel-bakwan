@@ -120,6 +120,12 @@ bool VideoComposeFrame(std::vector<uint8_t>& rgb, int& width, int& height);
  * world's under its centre. */
 uint32_t VideoComposePixel(int uiX, int uiY);
 
+/** A headless driven session composes the frame only when something reads it (a screenshot, a pixel, the
+ * text on screen): nobody else can see it, and composing costs a full native-layer blend per stepped
+ * frame at widescreen sizes. Frame readers call this first to bring GetScreenBuffer() up to date; it is
+ * a no-op when the frame is already current, and it does not tick the virtual clock. */
+void VideoComposePending();
+
 /* ---- Overlay -------------------------------------------------------------------------------------
  * Something drawn over the finished frame at the output's own resolution: the native UI
  * (src/game/NativeUI). It draws either through the GPU renderer, after the frame is put on the window,
@@ -130,6 +136,10 @@ struct VideoOverlay
 	virtual ~VideoOverlay() = default;
 	/** Whether this frame is drawn with GpuRender (a window and a GPU renderer) instead of the software path. */
 	virtual bool UsesGpu() = 0;
+	/** Software path: tick the overlay (clock, animations, queued input) without rasterizing it or blending
+	 * it. Called once per stepped frame even while the frame's compose is deferred, so that the native UI
+	 * behaves exactly as it does when every frame is composed. */
+	virtual void SoftwareTick() {}
 	/** Software path: bring the layer (ScreenBuffer sized) up to date. Returns the area it covers, empty if none.
 	 * Called once per RefreshScreen. */
 	virtual SDL_Rect SoftwarePrepare() = 0;

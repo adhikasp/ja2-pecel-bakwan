@@ -112,6 +112,7 @@ namespace
 
 		// --- VideoOverlay
 		bool UsesGpu() override { return running && gpu; }
+		void SoftwareTick() override;
 		SDL_Rect SoftwarePrepare() override;
 		void SoftwareCompose(SDL_Surface* dst, SDL_Rect const& area) override;
 		uint32_t SoftwarePixel(int x, int y) override;
@@ -523,18 +524,27 @@ void CaptureFrame()
 	g_rt.UpdateOverlays();
 }
 
+void Runtime::SoftwareTick()
+{
+	// Everything the native UI needs to keep running between two composes: its clock, the overlays it
+	// tracks (toasts, modals) and RmlUi's own update (input it dispatches, animations, transitions).
+	// Rasterizing the layer into pixels is left to SoftwarePrepare(), which only runs when the frame is
+	// actually composed (VideoComposePending).
+	if (!running || gpu) return;
+	nui::RmlClock().now = GetClock() / 1000.0;
+	UpdateOverlays();
+	ctx->Update();
+}
+
 SDL_Rect Runtime::SoftwarePrepare()
 {
 	if (!running || gpu) return { 0, 0, 0, 0 };
-	nui::RmlClock().now = GetClock() / 1000.0;
-	UpdateOverlays();
+	SoftwareTick();
 	if (!AnythingShown())
 	{
 		if (area.w > 0) { SDL_FillSurfaceRect(layer, &area, 0); area = { 0, 0, 0, 0 }; }
-		ctx->Update();
 		return area;
 	}
-	ctx->Update();
 	if (dirtyFrames > 0 || area.w <= 0)
 	{
 		if (dirtyFrames > 0) --dirtyFrames;

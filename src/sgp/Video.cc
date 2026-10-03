@@ -92,6 +92,12 @@ static sgp::GameClock::duration TimeBetweenRefreshScreens;
 static int32_t TargetFPS = 40;
 static VideoDisplaySettings CurrentSettings{ 0, 0, 0, WindowMode::BorderlessDesktop };
 static VideoOverlay* Overlay = nullptr;
+
+// A driven session composes the frame only when something reads it (VideoComposePending): gComposePending
+// records that a stepped frame was left uncomposed, gComposeForRead marks the compose that follows a
+// driver read so that it does not tick the virtual clock.
+static bool gComposePending  = false;
+static bool gComposeForRead  = false;
 static SDL_Rect     OverlayArea{ 0, 0, 0, 0 }; // what the software overlay covered last frame
 
 static void DeletePrimaryVideoSurfaces(void);
@@ -1074,6 +1080,16 @@ uint32_t VideoComposePixel(int const uiX, int const uiY)
 }
 
 
+void VideoComposePending()
+{
+	if (!gComposePending) return;
+	gComposePending = false;
+	gComposeForRead = true;
+	RefreshScreen();
+	gComposeForRead = false;
+}
+
+
 /* Clip an SDL Rect to the SDL_Surface. This was previously done automatically by SDL_BlitSurface */
 static SDL_Rect ClipToSurface(SDL_Rect const& rect, SDL_Surface const* const surface)
 {
@@ -1291,7 +1307,12 @@ void RefreshScreen(void)
 	// Not initialised yet or already shut down?
 	if (!ScreenBuffer) return;
 
-	sgp::Clock::OnPresent();
+	// The frame now shows the current state of the game.
+	gComposePending = false;
+
+	// A compose triggered by a driver read is not an animation tick: a modal loop moves virtual time by
+	// presenting on its own, and a screenshot must not shift the clock under the stepped frames.
+	if (!gComposeForRead) sgp::Clock::OnPresent();
 
 	BOOLEAN scrolling = (gsScrollXIncrement != 0 || gsScrollYIncrement != 0);
 
@@ -1463,6 +1484,22 @@ void RefreshScreen(void)
 }
 
 
+/** Whether a driven session may leave the frame uncomposed until something reads it. Headless, virtual
+ * clock, single layer: the golden-image runs, where nothing between two reads can see ScreenBuffer. A
+ * window (the player watches it present) and a layered session (whose reads compose the layers) keep
+ * presenting every frame, as does a pending output capture, which is taken from the presented frame.
+ *
+ * A pending world scroll also keeps the present: RefreshScreen applies it (ScrollJA2Background) and
+ * clears gsScroll*Increment, and ScrollBackground() only ever adds to those, so presenting late would
+ * let them grow until the scroll blit writes past the Z buffer. RefreshScreenCapped presents for the
+ * same reason in real time. */
+static bool DeferCompose()
+{
+	return sgp::IsHeadless() && sgp::Clock::IsVirtual() && !Layered && !OutputCaptureWanted
+		&& gsScrollXIncrement == 0 && gsScrollYIncrement == 0;
+}
+
+
 // This is a semi-private function that is supposed to be called only
 // by GameLoop(). This is why is has external linkage but is not
 // declared in Video.h.
@@ -1470,9 +1507,23 @@ void RefreshScreenCapped()
 {
 	static sgp::GameClock::time_point LastRefresh;
 
+	if (DeferCompose())
+	{
+		// Nobody reads the frame between steps. The native UI still ticks (its input and animations run
+		// in SoftwareTick), and the frame is composed by the next VideoComposePending() a reader asks for.
+		if (Overlay && !Overlay->UsesGpu()) Overlay->SoftwareTick();
+		// ...but the present still has to account for itself: in a frame where a modal loop already
+		// presented, this present is what ticks virtual time, and dropping the tick would give a driver
+		// a few milliseconds less game time per modal frame than a session that presents every frame.
+		sgp::Clock::OnPresent();
+		gComposePending = true;
+		return;
+	}
+
 	auto const now{ sgp::GameClock::now() };
-	// Under virtual time every frame is presented so that what a driver sees
-	// (screenshots, pixel reads, on-screen text) is always the current frame.
+	// A session that does not defer (a window, or a layered one) presents every frame under virtual
+	// time, so that what a driver sees (screenshots, pixel reads, on-screen text) is always the current
+	// frame. A deferred one leaves this to VideoComposePending(), which a reader calls when it needs it.
 	if (sgp::Clock::IsVirtual() || gsScrollXIncrement != 0 || gsScrollYIncrement != 0 ||
 	    now - LastRefresh >= TimeBetweenRefreshScreens)
 	{

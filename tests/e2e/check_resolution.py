@@ -15,10 +15,16 @@ screenshots as the new golden images instead of comparing.
 Golden images are only stored for the shots a script marks with
 shots.golden(); other screenshots are still taken (and layout-checked) but
 never compared. See tests/e2e/golden/README.md.
+
+With --update, a script that cannot mark a golden image at this resolution
+marks none, see expected_goldens()) is skipped instead of run: it would cost
+minutes of tour to write nothing. The plain comparison run still runs it,
+because it still checks the layout.
 """
 
 import argparse
 import os
+import re
 import shutil
 import struct
 import subprocess
@@ -30,6 +36,70 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 JA2CTL = HERE.parent.parent / "tools" / "ja2ctl.py"
 GOLDEN = HERE / "golden"
+
+
+def _take_args(text: str, start: int):
+    """The arguments of a call whose '(' sits just before @a start, split at top-level commas.
+
+    String literals are taken verbatim (their parentheses and commas do not count) and the call's own
+    closing ')' ends the list.
+    """
+    args, arg, depth, i, n = [], "", 0, start, len(text)
+    while i < n:
+        c = text[i]
+        if c in "\"'":
+            j = i + 1
+            while j < n and text[j] != c:
+                j += 2 if text[j] == "\\" else 1
+            arg += text[i:j + 1]
+            i = j + 1
+            continue
+        if c in "([":
+            depth += 1
+        elif c in ")]":
+            if depth == 0:
+                break
+            depth -= 1
+        elif c == "," and depth == 0:
+            args.append(arg)
+            arg = ""
+            i += 1
+            continue
+        arg += c
+        i += 1
+    args.append(arg)
+    return args
+
+
+def expected_goldens(script: Path, width: int) -> int:
+    """How many golden images the script can mark at a screen @a width wide.
+
+    From the shots.take() calls in the script (tests/e2e/lib/shots.lua): with `true` it registers at
+    every resolution, with `"small"` only up to 1280 pixels wide, without a flag never. A flag this
+    function does not recognise counts as a golden image, so an odd script is run rather than skipped.
+    """
+    text = script.read_text(encoding="utf-8")
+    if "golden.txt" in text:      # registered by hand, not through shots.take(): assume the worst
+        return 1
+    total = 0
+    for m in re.finditer(r"shots\.take\s*\(", text):
+        args = _take_args(text, m.end())
+        if len(args) < 2:                       # shots.take(name): never a golden image
+            continue
+        flag = args[1].strip()
+        if flag == '"small"':
+            total += width <= 1280
+        else:                                   # `true`, or something this does not know about
+            total += 1
+    return total
+
+
+def png_size(path: Path):
+    """(width, height) from a PNG's IHDR, without decoding anything."""
+    head = path.read_bytes()[:24]
+    if len(head) < 24 or head[:8] != b"\x89PNG\r\n\x1a\n" or head[12:16] != b"IHDR":
+        raise ValueError(f"{path} is not a PNG")
+    return struct.unpack(">II", head[16:24])
 
 
 def read_png(path: Path):
@@ -82,6 +152,12 @@ def read_png(path: Path):
 
 def compare(a: Path, b: Path, tol: int):
     """Returns (differing_pixels, total_pixels) or None if sizes differ."""
+    # The usual case is that the shot is the golden image bit for bit: the same build with the same
+    # encoder writes the same bytes. Decoding those costs seconds per widescreen PNG (the pure-Python
+    # unfilter runs over every pixel of both images), so settle it before reading a single one.
+    if a.read_bytes() == b.read_bytes():
+        w, h = png_size(a)
+        return 0, w * h
     wa, ha, ca, ra = read_png(a)
     wb, hb, cb, rb = read_png(b)
     if (wa, ha) != (wb, hb):
@@ -106,6 +182,8 @@ def main() -> int:
     ap.add_argument("script")
     ap.add_argument("res", help="e.g. 1280x720")
     ap.add_argument("--update", action="store_true", default=bool(os.environ.get("JA2_UPDATE_GOLDEN")))
+    ap.add_argument("--force", action="store_true",
+                    help="with --update: run the tour even when it cannot register a golden image here")
     ap.add_argument("--tolerance", type=int, default=8)
     ap.add_argument("--max-diff-pct", type=float, default=0.05)
     ap.add_argument("--out", help="keep screenshots here (default: temp dir)")
@@ -114,6 +192,11 @@ def main() -> int:
     script = Path(opts.script).resolve()
     name = script.stem
     gold_dir = GOLDEN / opts.res / name
+    if opts.update and not opts.force and expected_goldens(script, int(opts.res.split("x")[0])) == 0:
+        # Nothing to write: shots.take(..., "small") registers only up to 1280 pixels wide, and some
+        # scripts never register one. Running the tour anyway costs minutes and produces no image.
+        print(f"{name} @ {opts.res}: skipped in --update mode (this tour registers no golden image at {opts.res})")
+        return 0
     tmp = None
     out = Path(opts.out) if opts.out else None
     if out is None:

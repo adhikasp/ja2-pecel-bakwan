@@ -11,6 +11,13 @@ Regenerate after an intentional visual change (from the build dir):
 or set `JA2_UPDATE_GOLDEN=1` and run `ctest -L resolution`. Review the PNGs
 before committing.
 
+`--update` skips the (script, resolution) pairs that would register no golden
+image anyway: a script whose shots are all `"small"` at a wide size, or one
+that takes no golden shot at all. That is about a third of the matrix, and
+running it would cost minutes of tour per test to write nothing. The
+comparison run still runs those tests — they still check the layout. Pass
+`--force` to run them under `--update` too.
+
 Full-screen tactical shots (`landed.png`, `moved.png`) are stored only at
 640x480 and 1280x720: at wider sizes they are 4-10 MB each. At every resolution
 the tours still run and call `ja2.assertInsideScreen()`.
