@@ -16,8 +16,8 @@ echo "## prepare environment ##"
 if [[ "$CI_TARGET" == "linux" ]]; then
     GCC_VER="${TARGET_GCC_MAJOR_VERSION:-10}"
 
-    # FLTK to link against
-    linux-install-via-apt-get libfltk1.3-dev "gcc-$GCC_VER" "g++-$GCC_VER"
+    # compiler toolchain
+    linux-install-via-apt-get "gcc-$GCC_VER" "g++-$GCC_VER"
 
     # choose a new-enough gcc version
     linux-set-gcc-version "$GCC_VER"
@@ -44,9 +44,6 @@ elif [[ "$CI_TARGET" == "linux-mingw64" ]]; then
 elif [[ "$CI_TARGET" == "mac" ]]; then
     # sccache for compilation caching
     macOS-install-via-brew sccache
-
-    # fltk for the launcher
-    macOS-install-and-overwrite-via-brew fltk@1.3
 
     # gtest
     macOS-install-via-brew googletest

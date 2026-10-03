@@ -17,17 +17,22 @@
 #include "ScreenIDs.h"
 #include "Localization.h"
 #include "Logger.h"
+#include "SGP.h"
 #include "Timer.h"
 #include "UiCore.h"
 #include "Video.h"
+#include "VideoOptionsScreen.h"
 #include "json/Json.h"
 
 #include <string_theory/format>
 
 #include <SDL3/SDL.h>
 
+#include "stb_image_write.h"
+
 #include <algorithm>
 #include <cmath>
+#include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <functional>
@@ -823,6 +828,136 @@ void OpenMock(std::string const& path)
 	rt.screenKey = "mock";
 	rt.screen->Enter();
 	Invalidate();
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Pre-game setup (FrontSetup.cc)
+
+namespace
+{
+	/** JA2_SETUP_SHOT: capture the setup screen to this PNG after a few frames and quit (goldens, CI). */
+	std::string SetupShotPath()
+	{
+		char const* const p = std::getenv("JA2_SETUP_SHOT");
+		return p ? std::string(p) : std::string();
+	}
+
+	void CaptureSetupShot(std::string const& path)
+	{
+		if (VideoGetOutputMapping().gpu)
+		{
+			std::vector<uint8_t> out;
+			int ow = 0, oh = 0;
+			VideoRequestOutputCapture();
+			CaptureFrame();
+			RefreshScreen();
+			if (VideoTakeOutputCapture(out, ow, oh) && stbi_write_png(path.c_str(), ow, oh, 3, out.data(), ow * 3)) return;
+		}
+		CaptureFrame();
+		RefreshScreen();
+		std::vector<uint8_t> composed;
+		int cw = 0, ch = 0;
+		if (VideoComposeFrame(composed, cw, ch))
+		{
+			stbi_write_png(path.c_str(), cw, ch, 3, composed.data(), cw * 3);
+			return;
+		}
+		// software overlay (JA2_NATIVE_UI_RENDERER=software) or a single layer: read the screen buffer back
+		SDL_Surface const* s = GetScreenBuffer();
+		if (!s) return;
+		std::vector<uint8_t> rgb(size_t(s->w) * s->h * 3);
+		for (int y = 0; y < s->h; ++y)
+		{
+			auto const* row = reinterpret_cast<UINT16 const*>(static_cast<UINT8 const*>(s->pixels) + y * s->pitch);
+			uint8_t* d = &rgb[size_t(y) * s->w * 3];
+			for (int x = 0; x < s->w; ++x)
+			{
+				uint16_t const c = row[x];
+				d[0] = uint8_t(((c >> 11) & 0x1F) * 255 / 31);
+				d[1] = uint8_t(((c >> 5) & 0x3F) * 255 / 63);
+				d[2] = uint8_t((c & 0x1F) * 255 / 31);
+				d += 3;
+			}
+		}
+		stbi_write_png(path.c_str(), s->w, s->h, 3, rgb.data(), s->w * 3);
+	}
+}
+
+bool RunSetup(void* const engineOptions)
+{
+	Runtime& rt = g_rt;
+	std::string reason;
+	if (!Available(&reason))
+	{
+		SLOGW("native setup: the native UI cannot run: {}", reason);
+		return false;
+	}
+	if (!Start())
+	{
+		SLOGW("native setup: the native UI failed to start");
+		return false;
+	}
+	rt.routedScreen = MAINMENU_SCREEN;
+	rt.suspendedFor = ERROR_SCREEN;
+	try
+	{
+		rt.screen = CreateSetupScreen(engineOptions);
+	}
+	catch (std::exception const& e)
+	{
+		SLOGE("native setup screen failed to open: {}", e.what());
+		rt.screen.reset();
+		return false;
+	}
+	rt.screenKey = "setup";
+	rt.screen->Enter();
+	Invalidate();
+
+	std::string const shotPath = SetupShotPath();
+	int shotFrames = shotPath.empty() ? -1 : 12;
+
+	bool quit = false;
+	while (!quit && !SetupQuitRequested() && !SetupRestartRequested())
+	{
+		SDL_Event event;
+		while (SDL_PollEvent(&event))
+		{
+			if (event.type == SDL_EVENT_QUIT) { quit = true; break; }
+			if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED ||
+			    event.type == SDL_EVENT_WINDOW_DISPLAY_CHANGED ||
+			    event.type == SDL_EVENT_WINDOW_DISPLAY_SCALE_CHANGED)
+			{
+				VideoNotifyWindowChanged();
+			}
+			sgp::DispatchInputEvent(event);
+		}
+
+		// One frame, as the game loop drives a native screen: input to RmlUi, then present.
+		BeginFrame();
+		auto const mouse = GetMousePos();
+		MouseMoved(mouse.iX, mouse.iY);
+		bool const nativeMouse = CapturesMouse();
+		InputAtom e;
+		while (DequeueSpecificEvent(&e, MOUSE_EVENTS))
+		{
+			if (nativeMouse) HandleMouseEvent(e);
+		}
+		rt.screen->Handle();
+		RefreshScreen();
+		if (shotFrames > 0 && --shotFrames == 0)
+		{
+			CaptureSetupShot(shotPath);
+			break;
+		}
+		SDL_Delay(1);
+	}
+	if (rt.screen)
+	{
+		rt.screen->Exit();
+		rt.screen.reset();
+		rt.screenKey.clear();
+	}
+	return SetupRestartRequested();
 }
 
 // ---------------------------------------------------------------------------------------------------------------

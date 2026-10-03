@@ -1,0 +1,124 @@
+<rml>
+<head>
+	<title>Setup</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="frontend.rcss"/>
+</head>
+<!-- The native setup screen (docs/plan/native-modern-game.md, "Native front end"): the launcher's remaining
+     features, shown before any game data is loaded. View model: SetupViewModel ("setup"). -->
+<body class="p3">
+<div class="p3-root" id="setup" data-model="setup">
+	<div class="p3-bg audit-skip"></div>
+	<div class="p3-head">
+		<div class="p3-heading"><span class="p3-kicker" id="setup.kicker">{{kicker}}</span><span class="p3-title" id="setup.title">{{title}}</span></div>
+		<div class="p3-actions">
+			<button class="btn" id="setup.apply" data-label="Apply" data-event-click="apply"><img class="icon" src="icon-save"/><span class="label">{{l_apply}}</span><span class="kbd">S</span></button>
+			<button class="btn btn-primary" id="setup.restart" data-label="Start game" data-class-is-disabled="!can_restart" data-event-click="restart"><img class="icon" src="icon-play"/><span class="label">{{l_restart}}</span></button>
+			<button class="btn btn-ghost" id="setup.quit" data-label="Quit" data-event-click="quit"><img class="icon" src="icon-close"/><span class="label">{{l_quit}}</span></button>
+		</div>
+	</div>
+	<div class="p3-main">
+		<div class="op-nav">
+			<div class="op-tab" id="setup.tab.game" data-class-active="tab == 'game'" data-event-click="tab('game')"><img class="icon" src="icon-options"/><span>{{l_game}}</span><span class="kbd">1</span></div>
+			<div class="op-tab" id="setup.tab.mods" data-class-active="tab == 'mods'" data-event-click="tab('mods')"><img class="icon" src="icon-more"/><span>{{l_mods}}</span><span class="kbd">2</span></div>
+			<div class="op-tab" id="setup.tab.logs" data-class-active="tab == 'logs'" data-event-click="tab('logs')"><img class="icon" src="icon-reload"/><span>{{l_logs}}</span><span class="kbd">3</span></div>
+		</div>
+		<div class="op-content">
+
+			<!-- game directory, save directory and resource version -->
+			<div class="op-cols" data-if="tab == 'game'">
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_location}}</span>
+						<div class="op-row setup-dir"><span class="name">{{l_game_dir}}</span>
+							<div class="setup-field">
+								<input type="text" class="field-input" id="setup.game_dir" data-value="game_dir" data-event-change="dir_changed"/>
+								<button class="icon-btn" id="setup.game_dir.browse" data-attr-title="l_browse" data-event-click="browse_game"><img class="icon" src="icon-load"/></button>
+							</div>
+						</div>
+						<div class="op-row setup-dir"><span class="name">{{l_save_dir}}</span>
+							<div class="setup-field">
+								<input type="text" class="field-input" id="setup.save_dir" data-value="save_dir" data-event-change="apply_fields"/>
+								<button class="icon-btn" id="setup.save_dir.browse" data-attr-title="l_browse" data-event-click="browse_save"><img class="icon" src="icon-load"/></button>
+							</div>
+						</div>
+					</div>
+					<div class="op-group"><span class="section">{{l_checks}}</span>
+						<div class="op-row"><span class="name">{{l_status}}</span><span class="setup-status" id="setup.status" data-class-warn="status_kind == 'warn'" data-class-error="status_kind == 'error'">{{status}}</span></div>
+						<div class="op-note warn" data-if="one_three"><img class="icon" src="icon-warning"/><span id="setup.warn.113">{{l_warn_113}}</span></div>
+						<div class="op-note" data-if="show_ok"><img class="icon" src="icon-ok"/><span id="setup.warn.ok">{{l_warn_ok}}</span></div>
+					</div>
+				</div>
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_version}}</span>
+						<div class="op-row op-row-menu" id="setup.version">
+							<span class="name">{{l_version}}</span>
+							<div class="dropdown" data-class-open="open_menu == 'version'">
+								<div class="field" id="setup.version.field" data-event-click="menu('version')"><span class="text">{{version_text}}</span><img class="icon sm" src="icon-chevron-down"/></div>
+								<div class="options scroll">
+									<div class="option" data-for="v : versions" data-class-selected="v.selected" data-attr-id="'setup.version[' + v.index + ']'" data-event-click="version(v.index)">{{v.label}}</div>
+								</div>
+							</div>
+						</div>
+						<div class="op-row"><span class="name">{{l_guess}}</span>
+							<button class="btn" id="setup.guess" data-label="Guess" data-event-click="guess"><img class="icon" src="icon-search"/><span class="label">{{l_guess}}</span></button>
+						</div>
+					</div>
+					<div class="op-note"><img class="icon" src="icon-info"/><span>{{l_guess_help}}</span></div>
+				</div>
+			</div>
+
+			<!-- available and enabled mods, with details and reordering -->
+			<div class="op-cols" data-if="tab == 'mods'">
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_available}}</span>
+						<div class="panel pad setup-list" id="setup.mods.available">
+							<div class="setup-modrow" data-for="m : mods_available" data-class-selected="m.id == selected_mod" data-attr-id="'setup.mod.available[' + m.id + ']'" data-event-click="mod_select(m.id)">
+								<span class="n">{{m.name}}</span><span class="v">{{m.version}}</span>
+								<button class="icon-btn" data-attr-id="'setup.mod.add[' + m.id + ']'" data-attr-title="l_enable" data-event-click="mod_add(m.id)"><img class="icon" src="icon-add"/></button>
+							</div>
+							<div class="sl-empty" data-if="mods_available_empty">{{l_no_mods}}</div>
+						</div>
+					</div>
+				</div>
+				<div class="op-col">
+					<div class="op-group"><span class="section">{{l_enabled}}</span>
+						<div class="panel pad setup-list" id="setup.mods.enabled">
+							<div class="setup-modrow" data-for="m : mods_enabled" data-class-selected="m.id == selected_mod" data-attr-id="'setup.mod.enabled[' + m.id + ']'" data-event-click="mod_select(m.id)">
+								<span class="o">{{m.order}}</span><span class="n">{{m.name}}</span><span class="v">{{m.version}}</span>
+								<button class="icon-btn" data-attr-id="'setup.mod.up[' + m.id + ']'" data-attr-title="l_up" data-event-click="mod_up(m.id)"><img class="icon" src="icon-chevron-up"/></button>
+								<button class="icon-btn" data-attr-id="'setup.mod.down[' + m.id + ']'" data-attr-title="l_down" data-event-click="mod_down(m.id)"><img class="icon" src="icon-chevron-down"/></button>
+								<button class="icon-btn" data-attr-id="'setup.mod.remove[' + m.id + ']'" data-attr-title="l_disable" data-event-click="mod_remove(m.id)"><img class="icon" src="icon-remove"/></button>
+							</div>
+							<div class="sl-empty" data-if="mods_enabled_empty">{{l_no_enabled}}</div>
+						</div>
+					</div>
+					<div class="op-help">
+						<div class="panel" id="setup.mod.details"><span class="h">{{details_name}}</span>
+							<span class="p setup-pre" data-if="has_details">{{details}}</span>
+							<span class="p" data-if="!has_details">{{l_details_hint}}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- the last ja2.log -->
+			<div class="op-cols" data-if="tab == 'logs'">
+				<div class="op-col setup-logs-col">
+					<div class="op-group"><span class="section">{{l_logs}}</span>
+						<div class="panel pad setup-logs" id="setup.logs.panel"><span class="setup-pre" id="setup.logs">{{logs}}</span></div>
+					</div>
+				</div>
+				<div class="op-col setup-logs-side">
+					<div class="op-note"><img class="icon" src="icon-info"/><span id="setup.logs.note">{{l_logs_help}}</span></div>
+					<button class="btn" id="setup.logs.refresh" data-label="Refresh" data-event-click="refresh_logs"><img class="icon" src="icon-reload"/><span class="label">{{l_refresh}}</span></button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="p3-foot">
+		<div class="p3-hints"><span class="kbd">1</span><span class="kbd">3</span><span class="h">{{l_page}}</span><span class="h">{{l_saved_note}}</span></div>
+		<span class="setup-foot-status" id="setup.foot.status" data-class-warn="status_kind == 'warn'" data-class-error="status_kind == 'error'">{{status}}</span>
+	</div>
+</div>
+</body>
+</rml>

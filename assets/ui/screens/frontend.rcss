@@ -251,6 +251,35 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .ng-summary { display: flex; flex-direction: column; flex: 0 0 440dp; }
 .ng-summary .panel { padding: var(--sp-5); border-top: 2dp var(--c-accent); }
 
+/* =============================================================== setup (first run) */
+.setup-field { display: flex; align-items: center; flex: 0 0 620dp; }
+.setup-field .field-input { flex: 1 1 0; min-width: 0; }
+.setup-field .icon-btn { margin-left: var(--sp-2); }
+.setup-status { display: block; flex: 0 0 auto; max-width: 420dp; text-align: right; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-select); }
+.setup-status.warn { color: var(--c-warn); }
+.setup-status.error { color: var(--c-danger); }
+.setup-list { min-height: 240dp; max-height: 520dp; overflow-y: auto; }
+.setup-modrow { display: flex; align-items: center; height: 38dp; padding: 0 var(--sp-2); border-bottom: var(--border) var(--c-panel-2); }
+.setup-modrow .o { display: block; width: 26dp; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-faint); }
+.setup-modrow .n { display: block; flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; font-size: var(--fs-md); color: var(--c-text); }
+.setup-modrow .v { display: block; margin-left: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-dim); }
+.setup-modrow .icon-btn { margin-left: var(--sp-1); }
+.setup-modrow.selected { background-color: var(--c-accent-soft); border-left: 3dp var(--c-accent); }
+.setup-modrow.selected .n { color: var(--c-text-strong); }
+.setup-pre { white-space: pre-wrap; }
+.setup-logs-col { flex: 1 1 0; }
+.setup-logs-side { display: flex; flex-direction: column; flex: 0 0 360dp; }
+.setup-logs-side .btn { margin-top: var(--sp-4); }
+.setup-logs { height: 560dp; overflow-y: auto; }
+.setup-logs .setup-pre { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); line-height: 18dp; color: var(--c-text); }
+.setup-foot-status { display: block; flex: 0 0 auto; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-select); }
+.setup-foot-status.warn { color: var(--c-warn); }
+.setup-foot-status.error { color: var(--c-danger); }
+#setup.compact .op-nav { flex-basis: 220dp; margin-right: var(--sp-4); }
+#setup.compact .setup-field { flex-basis: 420dp; }
+#setup.compact .setup-logs-side { flex-basis: 280dp; }
+#setup.compact .setup-logs { height: 420dp; }
+
 /* =============================================================== loading screen */
 .ld-art { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--c-void); }
 .ld-shade { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; decorator: vertical-gradient(#0A070400 #0A0704F5); }

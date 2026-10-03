@@ -9,10 +9,6 @@
 
 ## Optional dependencies
 
-FLTK is required to build the GUI launcher. If it is not installed, a bundled copy will be used.
-If you do already have it, make sure the package also provides the libfltk_images library or in
-case of Debian and derivatives, install it manually (libfltk-images1.3).
-
 Stracciatella bundles a few other projects for development purposes. If you have them installed already,
 the system version will be used. This holds for: gtest and string theory.
 

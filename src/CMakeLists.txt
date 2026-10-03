@@ -26,9 +26,6 @@ target_include_directories(${JA2_BINARY} SYSTEM PRIVATE
     ${MINIAUDIO_INCLUDE_DIRS}
 )
 
-add_subdirectory(launcher)
-source_group(TREE ${CMAKE_CURRENT_LIST_DIR})
-
 macro(add_and_include_subdirectory dir)
     add_subdirectory(${dir})
     target_include_directories(${JA2_BINARY} PRIVATE ${dir})

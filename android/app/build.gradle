@@ -29,7 +29,6 @@ android {
             cmake {
                  "-std=c++17"
                 arguments '-DBUILD_SDL_LIB=ON',
-                          '-DBUILD_LAUNCHER=OFF',
                           '-DWITH_UNITTESTS=OFF',
                           '-DWITH_RUST_BINARIES=OFF',
                           '-DCMAKE_CXX_FLAGS=-fPIC',
