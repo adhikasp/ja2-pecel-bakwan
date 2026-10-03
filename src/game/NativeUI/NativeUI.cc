@@ -68,6 +68,7 @@ namespace
 		{ SAVE_LOAD_SCREEN,         "saveload", &CreateSaveLoadScreen },
 		{ GAME_INIT_OPTIONS_SCREEN, "newgame",  &CreateNewGameScreen },
 		{ MAP_SCREEN,               "mapscreen", &CreateMapScreen },
+		{ AUTORESOLVE_SCREEN,       "autoresolve", &CreateAutoResolveScreen },
 	};
 
 	class Runtime final : public VideoOverlay

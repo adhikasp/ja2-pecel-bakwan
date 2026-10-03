@@ -96,6 +96,11 @@ SDL_Surface* ProvideGameImage(std::string const& name)
 	{
 		return LoadStiFrame(ST::format(FACESDIR "/bigfaces/{02d}.sti", std::atoi(name.c_str() + 5)).to_std_string(), 0);
 	}
+	if (name.rfind("smface-", 0) == 0)
+	{
+		// the generic soldier/militia/creature faces the auto-resolve cells use (Auto_Resolve.cc)
+		return LoadStiFrame(INTERFACEDIR "/smfaces.sti", std::atoi(name.c_str() + 7));
+	}
 	// the longest matching prefix wins
 	std::function<SDL_Surface*(std::string const&)> const* best = nullptr;
 	size_t bestLen = 0;

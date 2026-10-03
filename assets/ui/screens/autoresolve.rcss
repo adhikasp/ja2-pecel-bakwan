@@ -1,0 +1,120 @@
+/* The native auto-resolve battle panel (docs/ui/autoresolve.md). Components and tokens come from
+ * ../components.rcss and ../tokens.rcss; nothing here hard-codes a colour. Layout is flex, no coordinates, so it
+ * scales from 1280x720 dp up to 4K and 21:9. */
+
+.ar-root {
+	display: flex; align-items: center; justify-content: center;
+	position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+	background-color: var(--c-void);
+}
+body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--c-void); }
+
+.ar-panel {
+	display: flex; flex-direction: column;
+	position: relative;
+	width: 94%; height: 90%;
+	padding: var(--sp-5); box-sizing: border-box;
+	background-color: var(--e1-bg); decorator: image(gen-mottle repeat);
+	border: var(--border) var(--e1-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
+	border-radius: var(--r-2);
+}
+
+.grow { display: block; flex: 1 1 0; }
+
+/* ---------------------------------------------------------------- header */
+.ar-head { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-4); border-bottom: var(--border) var(--c-line); }
+.ar-title { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.ar-title .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); }
+.ar-title .s { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.ar-forces {
+	display: block; flex: 0 0 auto; padding: var(--sp-2) var(--sp-4); box-sizing: border-box;
+	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg);
+	border: var(--border) var(--c-line-2); border-radius: var(--r-1);
+}
+.ar-forces.danger { background-color: var(--c-danger-soft); border-color: var(--c-danger); color: var(--c-danger); }
+.ar-forces.warn   { background-color: var(--c-warn-soft);   border-color: var(--c-warn);   color: var(--c-warn); }
+.ar-forces.ok     { background-color: var(--c-ok-soft);     border-color: var(--c-ok);     color: var(--c-ok); }
+
+/* ---------------------------------------------------------------- the two sides */
+.ar-cols { display: flex; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-4) 0; }
+.ar-col { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; padding-right: var(--sp-5); }
+.ar-col.theirs { border-left: var(--border) var(--c-line); padding-left: var(--sp-5); padding-right: 0; }
+.ar-colhead { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-2); border-bottom: var(--border) var(--c-line); }
+.ar-colhead .t { display: block; flex: 1 1 0; margin-left: var(--sp-2); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); }
+.ar-colhead .n { display: block; font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-text-strong); }
+.ar-sub { display: flex; align-items: center; justify-content: space-between; margin-top: var(--sp-3); font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.ar-sub .n { font-family: var(--font-mono); color: var(--c-text); }
+
+.ar-grid { display: flex; flex-wrap: wrap; gap: var(--sp-2); margin-top: var(--sp-2); }
+
+/* ---------------------------------------------------------------- a participant card */
+.ar-cellwrap {
+	display: block; flex: 0 1 232dp; min-width: 0;
+	padding: var(--sp-2); box-sizing: border-box;
+	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1);
+	transition: border-color var(--t-fast) var(--ease);
+}
+.ar-cellwrap.is-disabled { border-color: var(--c-line); }
+.ar-cellwrap.clickable { cursor: pointer; }
+.ar-cellwrap.clickable:hover { border-color: var(--c-select); background-color: var(--c-panel-3); }
+.ar-cellwrap.hit { border-color: var(--c-danger); background-color: var(--c-danger-soft); }
+.ar-cellwrap.retreating { border-color: var(--c-warn); }
+.ar-cellwrap.retreated { border-color: var(--c-ok); }
+.ar-cellwrap.dead { background-color: var(--c-bg); }
+.ar-cellwrap.dead .ar-name, .ar-cellwrap.dead .ar-health { color: var(--c-text-faint); }
+.ar-cellwrap.unconscious .ar-pic { image-color: var(--c-text-faint); }
+.ar-cellwrap.leader .ar-name { color: var(--c-select); }
+
+.ar-card { display: flex; align-items: center; }
+.ar-portrait {
+	display: flex; position: relative; align-items: center; justify-content: center; flex: 0 0 auto;
+	width: 48dp; height: 54dp; margin-right: var(--sp-2);
+	background-color: var(--c-inset); border: var(--border) var(--c-inset-line); overflow: hidden;
+}
+.ar-pic { width: 100%; height: 100%; }
+/* the generic smfaces frames are small pixel art: draw them at their own size, no scaling */
+.ar-pic.sm { width: auto; height: auto; }
+.ar-meta { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.ar-name { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-strong); }
+.ar-health { display: block; font-size: var(--fs-xs); }
+.ar-health.ok { color: var(--c-text-dim); }
+.ar-health.warn { color: var(--c-warn); }
+.ar-health.danger { color: var(--c-danger); }
+.ar-health.dead { color: var(--c-text-faint); }
+.ar-status { display: block; font-size: var(--fs-2xs); color: var(--c-warn); }
+
+.ar-bars { display: block; margin-top: 3dp; }
+.ar-bar { display: block; position: relative; height: 4dp; margin-bottom: 2dp; background-color: var(--c-stat-track); overflow: hidden; }
+.ar-bar .fill { position: absolute; left: 0; top: 0; bottom: 0; }
+.ar-bar .fill.hp { background-color: var(--c-stat-hp); }
+.ar-bar .fill.breath { background-color: var(--c-stat-breath); }
+.ar-bar .fill.morale { background-color: var(--c-stat-morale); }
+
+/* ---------------------------------------------------------------- footer controls */
+.ar-foot { display: flex; align-items: center; flex: 0 0 auto; gap: var(--sp-2); padding-top: var(--sp-4); border-top: var(--border) var(--c-line); }
+.ar-speed { display: flex; align-items: center; gap: var(--sp-1); }
+.ar-speed .icon-btn { width: 40dp; height: 40dp; }
+.ar-foot .btn { flex: 0 0 auto; }
+
+/* ---------------------------------------------------------------- result and surrender overlays */
+.ar-result { position: absolute; left: 0; right: 0; bottom: 108dp; text-align: center; }
+.ar-result-badge {
+	display: inline-block; padding: var(--sp-2) var(--sp-6);
+	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xl); text-transform: uppercase;
+	background-color: var(--c-panel-3); border: var(--border) var(--c-line-2); border-radius: var(--r-1);
+}
+.ar-result-badge.ok { color: var(--c-ok); border-color: var(--c-ok); }
+.ar-result-badge.warn { color: var(--c-warn); border-color: var(--c-warn); }
+.ar-result-badge.danger { color: var(--c-danger); border-color: var(--c-danger); }
+.ar-result-capture { display: block; margin-top: var(--sp-2); font-size: var(--fs-sm); color: var(--c-warn); }
+.ar-result-time { display: block; margin-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-dim); }
+
+.ar-surrender { display: flex; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; background-color: var(--c-scrim); }
+.ar-surrender-box {
+	display: flex; flex-direction: column; width: 560dp; padding: var(--sp-5); box-sizing: border-box;
+	background-color: var(--e3-bg); decorator: image(gen-leather repeat);
+	border: var(--border) var(--e3-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
+	border-radius: var(--r-2);
+}
+.ar-surrender-text { display: block; font-size: var(--fs-lg); line-height: var(--lh-body); color: var(--c-text-strong); }
+.ar-surrender-acts { display: flex; justify-content: flex-end; gap: var(--sp-3); margin-top: var(--sp-5); }

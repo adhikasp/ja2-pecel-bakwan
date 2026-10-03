@@ -19,9 +19,11 @@ if (WITH_NATIVE_UI)
         ${CMAKE_CURRENT_SOURCE_DIR}/FrontNewGame.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/MapScreenNative.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/MapScreenModel.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/AutoResolveNative.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/AutoResolveModel.cc
     )
     if (WITH_UNITTESTS)
-        list(APPEND NATIVE_UI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/NativeUI_unittest.cc ${CMAKE_CURRENT_SOURCE_DIR}/MapScreenModel_unittest.cc)
+        list(APPEND NATIVE_UI_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/NativeUI_unittest.cc ${CMAKE_CURRENT_SOURCE_DIR}/MapScreenModel_unittest.cc ${CMAKE_CURRENT_SOURCE_DIR}/AutoResolveModel_unittest.cc)
     endif()
     # RmlUi headers are heavy and its names are generic: keep these out of the unity batches
     set_property(SOURCE ${NATIVE_UI_SOURCES} DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY SKIP_UNITY_BUILD_INCLUSION ON)

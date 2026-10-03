@@ -1,0 +1,115 @@
+<rml>
+<head>
+	<title>Auto-resolve</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="autoresolve.rcss"/>
+</head>
+<!-- The native auto-resolve battle panel (docs/ui/autoresolve.md). View model: AutoResolveViewModel ("autoresolve",
+     src/game/NativeUI/AutoResolveNative.cc). It owns AUTORESOLVE_SCREEN and calls the legacy AutoResolveScreenHandle
+     every frame, so the simulation and the battle rules are unchanged. -->
+<body class="ar">
+<div class="ar-root" id="ar" data-model="autoresolve">
+
+	<div class="ar-panel" data-if="active">
+		<!-- =============================================================== header -->
+		<div class="ar-head">
+			<div class="ar-title">
+				<span class="t" id="ar.header">{{header}}</span>
+				<span class="s" id="ar.sector">{{sector}}</span>
+			</div>
+			<div class="ar-forces" id="ar.forces" data-attr-class="'ar-forces ' + forces_class" title="Remaining forces">{{forces}}</div>
+		</div>
+
+		<!-- =============================================================== the two sides -->
+		<div class="ar-cols">
+			<section class="ar-col ours" id="ar.ours">
+				<header class="ar-colhead"><img class="icon sm" src="icon-player-group"/><span class="t">{{l_your_forces}}</span><span class="n">{{alive_mercs}}</span></header>
+				<div class="ar-sub" data-if="has_mercs"><span class="k">{{l_mercs}}</span><span class="n">{{alive_mercs}}</span></div>
+				<div class="ar-grid" id="ar.mercgrid">
+					<div data-for="m : mercs" data-attr-id="'ar.merc[' + m.i + ']'" data-attr-class="m.cls"
+						 data-event-click="retreat(m.i)" title="Click to retreat">
+						<div class="ar-card">
+							<div class="ar-portrait">
+								<img class="ar-pic" data-class-sm="m.face_small" data-if="m.has_face" data-attr-src="m.face"/>
+								<img class="icon lg" data-if="!m.has_face" data-attr-src="'icon-' + m.icon"/>
+							</div>
+							<div class="ar-meta">
+								<span class="ar-name" data-class-leader="m.leader" data-attr-title="m.name">{{m.name}}</span>
+								<span class="ar-health" data-attr-class="'ar-health ' + m.health_class">{{m.health}}</span>
+								<div class="ar-bars" data-if="m.merc">
+									<div class="ar-bar"><div class="fill hp" data-style-width="m.hp + '%'"></div></div>
+									<div class="ar-bar"><div class="fill breath" data-style-width="m.en + '%'"></div></div>
+									<div class="ar-bar"><div class="fill morale" data-style-width="m.mor + '%'"></div></div>
+								</div>
+								<span class="ar-status" data-if="m.status != ''">{{m.status}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="ar-sub" data-if="has_militia"><span class="k">{{l_militia}}</span><span class="n">{{alive_militia}}</span></div>
+				<div class="ar-grid" data-if="has_militia">
+					<div data-for="c : militia" data-attr-id="'ar.militia[' + c.i + ']'" data-attr-class="c.cls">
+						<div class="ar-card">
+							<div class="ar-portrait"><img class="ar-pic" data-class-sm="c.face_small" data-if="c.has_face" data-attr-src="c.face"/><img class="icon lg" data-if="!c.has_face" data-attr-src="'icon-' + c.icon"/></div>
+							<div class="ar-meta">
+								<span class="ar-name" data-attr-title="c.name">{{c.name}}</span>
+								<span class="ar-health" data-attr-class="'ar-health ' + c.health_class">{{c.health}}</span>
+								<span class="ar-status" data-if="c.status != ''">{{c.status}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section class="ar-col theirs" id="ar.theirs">
+				<header class="ar-colhead"><img class="icon sm" src="icon-enemy"/><span class="t">{{l_enemies}}</span><span class="n">{{alive_enemies}}</span></header>
+				<div class="ar-grid" id="ar.enemygrid">
+					<div data-for="e : enemies" data-attr-id="'ar.enemy[' + e.i + ']'" data-attr-class="e.cls">
+						<div class="ar-card">
+							<div class="ar-portrait"><img class="ar-pic" data-class-sm="e.face_small" data-if="e.has_face" data-attr-src="e.face"/><img class="icon lg" data-if="!e.has_face" data-attr-src="'icon-' + e.icon"/></div>
+							<div class="ar-meta">
+								<span class="ar-name" data-attr-title="e.name">{{e.name}}</span>
+								<span class="ar-health" data-attr-class="'ar-health ' + e.health_class">{{e.health}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</div>
+
+		<!-- =============================================================== controls -->
+		<div class="ar-foot">
+			<div class="ar-speed" data-if="show_speed" id="ar.speed">
+				<button class="icon-btn" id="ar.pause" data-attr-data-label="l_pause" title="Pause (Space)" data-class-on="paused" data-event-click="speed('pause')"><img class="icon" src="icon-pause"/></button>
+				<button class="icon-btn" id="ar.play" data-attr-data-label="l_play" title="Play (Space)" data-class-on="playing" data-event-click="speed('play')"><img class="icon" src="icon-play"/></button>
+				<button class="icon-btn" id="ar.fast" data-attr-data-label="l_fast" title="Fast forward" data-class-on="fast" data-event-click="speed('fast')"><img class="icon" src="icon-fast-forward"/></button>
+				<button class="btn" id="ar.finish" data-attr-data-label="l_finish" title="Resolve the battle instantly" data-event-click="speed('finish')"><img class="icon" src="icon-end-turn"/><span class="label">{{l_finish}}</span></button>
+			</div>
+			<div class="grow"></div>
+			<button class="btn" id="ar.retreat" data-if="show_retreat" data-attr-data-label="l_retreat_all" data-class-is-disabled="!can_retreat" data-event-click="retreat('all')" title="Order every merc to retreat"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_retreat_all}}</span></button>
+			<button class="btn" id="ar.bandage" data-if="show_bandage" data-attr-data-label="l_bandage" data-class-is-disabled="!can_bandage" data-event-click="bandage" title="Bandage the wounded"><img class="icon" src="icon-medkit"/><span class="label">{{l_bandage}}</span></button>
+			<button class="btn btn-primary" id="ar.done" data-if="show_done" data-attr-data-label="l_done" data-event-click="done" title="Leave the battle panel"><img class="icon" src="icon-confirm"/><span class="label">{{l_done}}</span></button>
+		</div>
+
+		<!-- =============================================================== result -->
+		<div class="ar-result audit-over" data-if="result != ''" id="ar.result">
+			<div class="ar-result-badge" data-attr-class="'ar-result-badge ' + result_class"><span>{{result}}</span></div>
+			<div class="ar-result-capture" data-if="capture_text != ''">{{capture_text}}</div>
+			<div class="ar-result-time mono">{{time_text}}</div>
+		</div>
+
+		<!-- =============================================================== surrender offer -->
+		<div class="ar-surrender audit-over" data-if="surrender_pending" id="ar.surrender">
+			<div class="ar-surrender-box">
+				<div class="ar-surrender-text">{{surrender_text}}</div>
+				<div class="ar-surrender-acts">
+					<button class="btn btn-danger" id="ar.yes" data-attr-data-label="l_yes" data-event-click="yes"><span class="label">{{l_yes}}</span></button>
+					<button class="btn btn-primary" id="ar.no" data-attr-data-label="l_no" data-event-click="no"><span class="label">{{l_no}}</span></button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+</body>
+</rml>

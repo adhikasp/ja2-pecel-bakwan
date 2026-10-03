@@ -333,5 +333,26 @@
   "tac.pick.sub": "{} · {} items here",
   "tac.pick.take": "Take {}",
   "tac.pick.all": "All",
-  "tac.pick.cancel": "Cancel"
+  "tac.pick.cancel": "Cancel",
+
+  "ar.pause": "Pause",
+  "ar.play": "Play",
+  "ar.fast": "Fast",
+  "ar.finish": "Finish",
+  "ar.retreat": "Retreat",
+  "ar.retreat_all": "Retreat all",
+  "ar.bandage": "Bandage",
+  "ar.done": "Done",
+  "ar.yes": "Accept",
+  "ar.no": "Refuse",
+  "ar.mercs": "Mercs",
+  "ar.militia": "Militia",
+  "ar.enemies": "Enemies",
+  "ar.your_forces": "Your forces",
+  "ar.enemies_forces": "Enemies",
+  "ar.battle": "Battle",
+  "ar.time": "Time",
+  "ar.leader": "Leader",
+  "ar.robot": "Robot",
+  "ar.epc": "Civilian"
 }
