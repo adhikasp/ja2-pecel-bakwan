@@ -1,0 +1,116 @@
+/* The native shopkeeper / arms-dealer trade screen (docs/ui/shopkeeper.md). Components and tokens come from
+ * ../components.rcss and ../tokens.rcss; nothing here hard-codes a colour. Layout is flex, so it scales from
+ * 1280x720 dp up to 4K and 21:9. */
+
+.sk-root {
+	display: flex; align-items: center; justify-content: center;
+	position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+	background-color: var(--c-void);
+}
+body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--c-void); }
+.grow { display: block; flex: 1 1 0; }
+
+.sk-panel {
+	display: flex; flex-direction: column;
+	position: relative;
+	width: 96%; height: 94%;
+	padding: var(--sp-4); box-sizing: border-box;
+	background-color: var(--e1-bg); decorator: image(gen-mottle repeat);
+	border: var(--border) var(--e1-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
+	border-radius: var(--r-2);
+}
+
+/* ---------------------------------------------------------------- header */
+.sk-head { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-3); border-bottom: var(--border) var(--c-line); }
+.sk-dealer { display: flex; align-items: center; }
+.sk-face { width: 64dp; height: 72dp; margin-right: var(--sp-3); border: var(--border) var(--c-line); background-color: var(--c-inset); }
+.sk-face.sm { width: 40dp; height: 46dp; margin: 0 var(--sp-2) 0 0; }
+.sk-who { display: flex; flex-direction: column; }
+.sk-who .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); }
+.sk-who .s { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.sk-money { display: flex; flex-direction: column; margin-right: var(--sp-5); }
+.sk-mrow { display: flex; align-items: baseline; justify-content: flex-end; }
+.sk-mrow .k { display: block; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); margin-right: var(--sp-2); }
+.sk-mrow .v { display: block; font-size: var(--fs-lg); color: var(--c-text-strong); }
+.sk-merc { display: flex; align-items: center; }
+.sk-merc .n { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); text-transform: uppercase; color: var(--c-text); }
+
+/* ---------------------------------------------------------------- body columns */
+.sk-body { display: flex; flex: 1 1 auto; min-height: 0; padding: var(--sp-4) 0; }
+.sk-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.stockcol { flex: 1.4 1 0; padding-right: var(--sp-4); }
+.tradecol { flex: 1.05 1 0; padding: 0 var(--sp-4); border-left: var(--border) var(--c-line); }
+.invcol   { flex: 0.9 1 0; padding-left: var(--sp-4); border-left: var(--border) var(--c-line); }
+.sk-colhead { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-2); border-bottom: var(--border) var(--c-line); }
+.sk-colhead .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); }
+.sk-page { display: block; margin: 0 var(--sp-2); font-size: var(--fs-sm); color: var(--c-text-dim); }
+
+/* ---------------------------------------------------------------- grids */
+.sk-grid, .sk-trade { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--sp-2); margin-top: var(--sp-2); overflow-y: auto; }
+.sk-grid { flex: 1 1 auto; }
+.sk-trade { flex: 0 0 auto; max-height: 30%; }
+.sk-cell {
+	display: flex; flex-direction: column; position: relative;
+	width: 150dp; padding: var(--sp-2); box-sizing: border-box;
+	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1);
+	cursor: pointer; transition: border-color var(--t-fast) var(--ease);
+}
+.sk-cell.trade { width: 108dp; }
+.sk-cell:hover { border-color: var(--c-select); background-color: var(--c-panel-3); }
+.sk-cell.selected { border-color: var(--c-warn); }
+.sk-cell.repaired { border-color: var(--c-ok); }
+.sk-cell.is-empty { border-color: var(--c-line); background-color: var(--c-bg); cursor: default; }
+.sk-art { display: flex; align-items: center; justify-content: center; height: 34dp; margin-bottom: var(--sp-1); }
+.sk-art img { max-width: 100%; max-height: 34dp; }
+.sk-name { display: block; font-size: var(--fs-xs); color: var(--c-text-strong); }
+.sk-bar { display: block; position: relative; height: 4dp; margin: 3dp 0; background-color: var(--c-stat-track); overflow: hidden; }
+.sk-bar .fill { position: absolute; left: 0; top: 0; bottom: 0; }
+.sk-bar .fill.ok { background-color: var(--c-ok); }
+.sk-bar .fill.warn { background-color: var(--c-warn); }
+.sk-bar .fill.danger { background-color: var(--c-danger); }
+.sk-price { display: block; font-size: var(--fs-xs); color: var(--c-text-strong); }
+.sk-qty { display: block; position: absolute; right: var(--sp-1); top: var(--sp-1); font-size: var(--fs-xs); color: var(--c-text-dim); }
+.sk-ov { display: block; font-size: var(--fs-2xs); color: var(--c-warn); }
+.sk-empty { display: block; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--c-text-faint); }
+
+/* ---------------------------------------------------------------- totals */
+.sk-total { display: flex; align-items: baseline; justify-content: flex-end; margin: var(--sp-2) 0 var(--sp-3); }
+.sk-total .k { display: block; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); margin-right: var(--sp-2); }
+.sk-total .v { display: block; font-size: var(--fs-md); color: var(--c-text-strong); }
+
+/* ---------------------------------------------------------------- your items */
+.sk-inv { display: flex; flex-direction: column; gap: var(--sp-1); margin-top: var(--sp-2); overflow-y: auto; flex: 1 1 auto; }
+.sk-invrow {
+	display: flex; align-items: center; position: relative;
+	padding: var(--sp-1) var(--sp-2); box-sizing: border-box;
+	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1); cursor: pointer;
+}
+.sk-invrow:hover { border-color: var(--c-select); background-color: var(--c-panel-3); }
+.sk-invrow.selected { border-color: var(--c-warn); decorator: image(gen-hatch repeat); }
+.sk-invpic { width: 28dp; height: 28dp; margin-right: var(--sp-2); }
+.sk-invrow .sk-name { display: block; flex: 1 1 0; }
+.sk-invrow .sk-bar { width: 44dp; margin: 0 var(--sp-2); }
+.sk-invrow .sk-price { display: block; }
+
+/* ---------------------------------------------------------------- comparison / detail */
+.sk-detail { display: flex; flex: 0 0 auto; padding: var(--sp-3); margin-top: var(--sp-1);
+	background-color: var(--c-panel); border: var(--border) var(--c-line-2); border-radius: var(--r-1); }
+.sk-detail-art { display: flex; align-items: center; justify-content: center; width: 56dp; height: 56dp; margin-right: var(--sp-3); background-color: var(--c-inset); border: var(--border) var(--c-inset-line); }
+.sk-detail-art img { max-width: 100%; max-height: 100%; }
+.sk-detail-main { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.sk-detail-head { display: flex; align-items: baseline; }
+.sk-detail-head .n { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); margin-right: var(--sp-3); }
+.sk-detail-head .c { display: block; font-family: var(--font-mono); font-size: var(--fs-sm); }
+.sk-detail-head .c.ok { color: var(--c-ok); }
+.sk-detail-head .c.warn { color: var(--c-warn); }
+.sk-detail-head .c.danger { color: var(--c-danger); }
+.sk-detail-head .ov { display: block; margin-left: var(--sp-3); font-size: var(--fs-xs); color: var(--c-warn); }
+.sk-detail-cmp { display: flex; align-items: baseline; margin-top: var(--sp-1); }
+.sk-detail-cmp .k { display: block; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); margin-right: var(--sp-1); }
+.sk-detail-cmp .v { display: block; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-strong); margin-right: var(--sp-4); }
+.sk-help { display: block; margin-top: var(--sp-1); font-size: var(--fs-xs); line-height: 18dp; color: var(--c-text-dim); }
+
+/* ---------------------------------------------------------------- footer */
+.sk-foot { display: flex; align-items: center; flex: 0 0 auto; gap: var(--sp-2); padding-top: var(--sp-3); border-top: var(--border) var(--c-line); }
+.sk-hint { display: block; font-size: var(--fs-xs); color: var(--c-text-faint); }
+.sk-foot .btn { flex: 0 0 auto; }

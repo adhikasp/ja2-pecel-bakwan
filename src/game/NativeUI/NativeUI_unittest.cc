@@ -233,6 +233,13 @@ TEST(NativeUI, autoResolveScreenIsNativeByDefault)
 	EXPECT_STREQ(ScreenKey(AUTORESOLVE_SCREEN), "autoresolve");
 }
 
+TEST(NativeUI, shopKeeperScreenIsNativeByDefault)
+{
+	EXPECT_TRUE(IsModeKey("shopkeeper"));
+	EXPECT_EQ(ConfiguredMode("shopkeeper"), UiMode::Native);
+	EXPECT_STREQ(ScreenKey(SHOPKEEPER_SCREEN), "shopkeeper");
+}
+
 TEST(NativeUI, reducedMotionSetting)
 {
 	SetReducedMotion(true);

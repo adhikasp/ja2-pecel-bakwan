@@ -20,6 +20,13 @@
 #include "Overhead.h"
 #include "Soldier_Control.h"
 #include "Soldier_Create.h"
+#include "Soldier_Add.h"
+#include "Soldier_Tile.h"
+#include "ShopKeeper_Interface.h"
+#include "Arms_Dealer.h"
+#include "ContentManager.h"
+#include "DealerModel.h"
+#include "GameInstance.h"
 #include "Soldier_Profile.h"
 #include "Dialogue_Control.h"
 #include "Message.h"
@@ -757,6 +764,36 @@ namespace
 					// Fake an enemy encounter in the current sector and go straight into auto resolve.
 					FakeEncounter();
 					EnterAutoResolveMode(gubPBSector);
+				}
+				else if (what == "shopkeeper")
+				{
+					// Test aid: open the native/legacy arms-dealer trade screen with dealer a (default Tony). The
+					// dealer NPC is spawned next to the selected merc if he is not already in the sector, so a script
+					// can reach the screen without travelling.
+					int const dealer_id = a && a->is<int>() ? a->as<int>() : ARMS_DEALER_TONY;
+					const DealerModel* const dealer = GCM->getDealer(static_cast<ArmsDealerID>(dealer_id));
+					if (!dealer) throw std::runtime_error("ja2.debug(\"shopkeeper\"): no such dealer");
+					SOLDIERTYPE* const merc = GetSelectedMan();
+					if (!merc) throw std::runtime_error("ja2.debug(\"shopkeeper\"): no selected merc");
+					SOLDIERTYPE* npc = FindSoldierByProfileID(dealer->profileID);
+					if (!npc || !npc->bInSector)
+					{
+						SOLDIERCREATE_STRUCT cs{};
+						cs.bTeam            = CIV_TEAM;
+						cs.ubProfile        = dealer->profileID;
+						cs.sSector          = gWorldSector;
+						cs.sInsertionGridNo = merc->sGridNo;
+						npc = TacticalCreateSoldier(cs);
+						if (npc) AddSoldierToSector(npc);
+					}
+					if (npc)
+					{
+						// stand beside the merc: CanMercInteractWithSelectedShopkeeper needs line of sight at a
+						// nonzero range (a shared tile has range 0, which its visibility test rejects).
+						INT16 const beside = NewGridNo(merc->sGridNo, DirectionInc(NORTH));
+						TeleportSoldier(*npc, beside != NOWHERE ? beside : merc->sGridNo, true);
+					}
+					EnterShopKeeperInterfaceScreen(dealer->profileID);
 				}
 				else if (what == "uispike_rml" || what == "uispike_inhouse")
 				{
