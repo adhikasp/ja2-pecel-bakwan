@@ -42,6 +42,7 @@
 #include "Interface_Items.h"
 #include "WordWrap.h"
 #include "Interface_Control.h"
+#include "NativeUI.h"
 #include "VObject_Blitters.h"
 #include "World_Items.h"
 #include "Points.h"
@@ -4391,6 +4392,16 @@ void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, 
 
 	DisableButton(menu.iOKButton);
 
+	// the native HUD draws the menu itself; the buttons stay for its clicks only
+	if (NativeUI::TacticalHudActive())
+	{
+		if (menu.iUpButton)   HideButton(menu.iUpButton);
+		if (menu.iDownButton) HideButton(menu.iDownButton);
+		HideButton(menu.iOKButton);
+		HideButton(menu.iAllButton);
+		HideButton(menu.iCancelButton);
+	}
+
 	// Create regions
 	INT16 const sCenX = sX;
 	INT16       sCenY = sY + ITEMPICK_GRAPHIC_Y;
@@ -4531,6 +4542,7 @@ void RenderItemPickupMenu()
 {
 	ST::string pStr;
 
+	if (NativeUI::TacticalHudActive()) return; // the native HUD draws the menu itself
 	if (!gfInItemPickupMenu) return;
 
 	ITEM_PICKUP_MENU_STRUCT& menu = gItemPickupMenu;
@@ -5376,6 +5388,96 @@ NativeMoneySplit NativeMoneyState()
 }
 
 void NativeKeyRingClick() { ClickRegion(gKeyRingPanel, false); }
+
+// The pick-up menu: the native HUD draws the rows above and reaches the same regions and buttons.
+NativePickupView NativeItemPickupView()
+{
+	NativePickupView v;
+	if (!gfInItemPickupMenu) return v;
+	ITEM_PICKUP_MENU_STRUCT const& menu = gItemPickupMenu;
+	v.open = true;
+	v.x = menu.sX;
+	v.y = menu.sY;
+	v.who = menu.pSoldier ? menu.pSoldier->name : ST::string();
+	v.total = menu.ubTotalItems;
+	v.page = menu.bScrollPage;
+	v.pages = (INT16)((menu.ubTotalItems + NUM_PICKUP_SLOTS - 1) / NUM_PICKUP_SLOTS);
+	v.canUp = menu.bScrollPage > 0;
+	v.canDown = (INT32)(menu.bScrollPage + 1) * NUM_PICKUP_SLOTS < menu.ubTotalItems;
+	v.okEnabled = menu.iOKButton && menu.iOKButton->Enabled();
+	v.allSelected = menu.fAllSelected;
+	for (INT32 i = 0; i < menu.bNumSlotsPerPage; ++i)
+	{
+		NativePickupRow r;
+		r.slot = (INT16)i;
+		r.sel = menu.pfSelectedArray[i + menu.ubScrollAnchor] != 0;
+		INT32 const world_item = menu.items[i];
+		if (world_item != -1)
+		{
+			r.empty = false;
+			OBJECTTYPE const& o = GetWorldItem(world_item).o;
+			ItemModel const* const item = GCM->getItem(o.usItem);
+			r.item = (INT16)o.usItem;
+			r.cond = (INT16)o.bStatus[0];
+			if (item->getItemClass() == IC_MONEY)
+			{
+				r.name = item->getName();
+				r.count = SPrintMoney(o.uiMoneyAmount);
+			}
+			else
+			{
+				r.name = item->getShortName();
+				if (o.ubNumberOfObjects > 1) r.count = ST::format("×{}", o.ubNumberOfObjects);
+			}
+			if (!item->isAmmo() && !item->isKey()) r.title = ST::format("{}%", o.bStatus[0]);
+			r.att = ItemHasAttachments(o);
+		}
+		v.rows.push_back(r);
+	}
+	return v;
+}
+
+void NativePickupClick(INT16 const slot)
+{
+	if (!gfInItemPickupMenu || slot < 0 || slot >= gItemPickupMenu.bNumSlotsPerPage) return;
+	ClickRegion(gItemPickupMenu.Regions[slot], false);
+}
+
+void NativePickupHover(INT16 const slot)
+{
+	if (!gfInItemPickupMenu) return;
+	if (slot < 0 || slot >= gItemPickupMenu.bNumSlotsPerPage)
+		ItemPickMenuMouseMoveCallback(&gItemPickupMenu.Regions[0], MSYS_CALLBACK_REASON_LOST_MOUSE);
+	else
+		ItemPickMenuMouseMoveCallback(&gItemPickupMenu.Regions[slot], MSYS_CALLBACK_REASON_MOVE);
+}
+
+void NativePickupAll()
+{
+	if (gfInItemPickupMenu && gItemPickupMenu.iAllButton)
+		ItemPickupAll(gItemPickupMenu.iAllButton, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativePickupOK()
+{
+	if (gfInItemPickupMenu && gItemPickupMenu.iOKButton && gItemPickupMenu.iOKButton->Enabled())
+		ItemPickupOK(gItemPickupMenu.iOKButton, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativePickupCancel()
+{
+	if (gfInItemPickupMenu && gItemPickupMenu.iCancelButton)
+		ItemPickupCancel(gItemPickupMenu.iCancelButton, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativePickupScroll(INT16 const dir)
+{
+	if (!gfInItemPickupMenu) return;
+	INT32 const pages = (gItemPickupMenu.ubTotalItems + NUM_PICKUP_SLOTS - 1) / NUM_PICKUP_SLOTS;
+	INT32 const page  = gItemPickupMenu.bScrollPage + dir;
+	if (page < 0 || page >= pages) return;
+	SetupPickupPage((INT8)page);
+}
 
 SOLDIERTYPE* NativeItemDescSoldier() { return gfInItemDescBox ? gpItemDescSoldier : nullptr; }
 UINT8 NativeItemDescStatusIndex() { return gubItemDescStatusIndex; }

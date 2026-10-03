@@ -53,6 +53,9 @@
 #include "Rotting_Corpses.h"
 #include "Handle_Items.h"
 #include "Items.h"
+#include "Keys.h"
+#include "Interface.h"
+#include "Interface_Items.h"
 #include "Render_Fun.h"
 #include "RenderWorld.h"
 #include "Handle_UI.h"
@@ -609,7 +612,9 @@ namespace
 		// ja2.debug(what, [a]): open a piece of tactical UI directly, for layout tests that cannot
 		// easily reach it through play. what = "exitmenu" (a = direction), "placement", "quote"
 		// (a = quote number, spoken by the selected merc), "message" (a = text), "msgbox" (a = text),
-		// "loadscreen" (a = id), "prebattle" and "autoresolve" (fake a fight in the current sector).
+		// "loadscreen" (a = id), "prebattle" and "autoresolve" (fake a fight in the current sector),
+		// "doormenu" (a = the door's grid number, default: the nearest door), "pickupmenu" (a small
+		// pile of tools at the merc's feet and the pick-up menu on it).
 		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a, sol::optional<sol::object> b) {
 			Guarded([&] {
 				if (what == "exitmenu")
@@ -682,6 +687,37 @@ namespace
 					AddSoldierToWaitingListQueue(*found);
 					AddReasonToWaitingListQueue(ASSIGNMENT_FINISHED_FOR_UPDATE);
 					AddDisplayBoxToWaitingQueue();
+				}
+				else if (what == "doormenu")
+				{
+					// Test aid: the door menu on the nearest door (a = the door's grid number)
+					SOLDIERTYPE* const s = GetSelectedMan();
+					if (!s) throw std::runtime_error("no selected merc");
+					DOOR* found = nullptr;
+					INT32 best = NOWHERE;
+					for (DOOR& d : DoorTable)
+					{
+						if (a && a->is<int>() && d.sGridNo != (INT16)a->as<int>()) continue;
+						INT32 const dist = SpacesAway(s->sGridNo, d.sGridNo);
+						if (!found || dist < best) { found = &d; best = dist; }
+					}
+					if (!found) throw std::runtime_error("no door in this sector");
+					InitDoorOpenMenu(s, found, FALSE);
+				}
+				else if (what == "pickupmenu")
+				{
+					// Test aid: a small pile of tools at the merc's feet and the pick-up menu on it
+					SOLDIERTYPE* const s = GetSelectedMan();
+					if (!s) throw std::runtime_error("no selected merc");
+					for (UINT16 const item : { (UINT16)CROWBAR, (UINT16)LOCKSMITHKIT, (UINT16)SHAPED_CHARGE })
+					{
+						OBJECTTYPE obj;
+						CreateItem(item, 90, &obj);
+						AddItemToPool(s->sGridNo, &obj, VISIBLE, s->bLevel, 0, -1);
+					}
+					ITEM_POOL* const pool = GetItemPool(s->sGridNo, s->bLevel);
+					if (!pool) throw std::runtime_error("no items on this tile");
+					InitializeItemPickupMenu(s, s->sGridNo, pool, 0);
 				}
 				else if (what == "killmerc")
 				{

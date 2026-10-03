@@ -70,6 +70,8 @@
 				<div class="stat"><span class="k">MO</span><span class="bar morale"><span class="fill" data-style-width="d_mow + '%'"></span></span><span class="v">{{d_mo}}</span></div>
 			</div>
 			<div class="acts">
+				<button class="icon-btn" id="tac.detail.swap" title="Swap hands (Ctrl+Q)" data-event-click="swap_hands"><img class="icon" src="icon-swap-hands"/></button>
+				<button class="icon-btn" id="tac.detail.mute" title="Mute this merc" data-class-on="d_mute" data-event-click="mute"><img class="icon" src="icon-mute"/></button>
 				<button class="icon-btn" id="tac.detail.close" title="Close (`)" data-event-click="detail_close"><img class="icon" src="icon-close"/></button>
 			</div>
 		</div>
@@ -212,6 +214,44 @@
 			<button class="btn" id="tac.endturn" data-class-btn-primary="can_end" data-attr-title="combat ? 'End your turn (D)' : 'Start turn-based combat (D)'" data-event-click="key('d')"><img class="icon" src="icon-end-turn"/><span class="label" data-if="combat">{{l_end_turn}}</span><span class="label" data-if="!combat">{{l_turn_based}}</span><span class="kbd">D</span></button>
 			<button class="btn" id="tac.map" title="Strategic map (M)" data-event-click="key('m')"><img class="icon" src="icon-map"/><span class="label">{{l_map}}</span><span class="kbd">M</span></button>
 			<div class="row"><button class="icon-btn" id="tac.inventory" title="Merc details and inventory (`)" data-event-click="key('grave')"><img class="icon" src="icon-inventory"/></button><button class="icon-btn" id="tac.logbtn" title="Message log (H)" data-event-click="log"><img class="icon" src="icon-menu"/></button><button class="icon-btn last" id="tac.options" title="Options (O)" data-event-click="options"><img class="icon" src="icon-options"/></button></div>
+		</div>
+	</div>
+
+	<!-- the action menu (right click hold) and the door menu (clicking a door): they press the legacy buttons -->
+	<div class="scrim hit audit-over" data-if="menu_open" data-event-click="menu_cancel"></div>
+	<div class="pop hit audit-over" id="tac.menu" data-if="menu_open" data-style-left="menu_x + 'px'" data-style-top="menu_y + 'px'">
+		<div class="menu">
+			<div class="menu-title"><span class="t">{{menu_title}}</span><span class="m">{{menu_sub}}</span></div>
+			<div data-for="m : menu" data-attr-id="m.eid" data-class-menu-item="m.kind == 'item'" data-class-menu-head="m.kind == 'head'" data-class-menu-sep="m.kind == 'sep'" data-class-is-disabled="m.disabled" data-attr-title="m.title" data-event-click="menu_item(m.id)">
+				<img class="icon" data-if="m.kind == 'item'" data-attr-src="'icon-' + m.icon"/>
+				<span class="label">{{m.label}}</span>
+				<span class="kbd" data-if="m.kbd != ''">{{m.kbd}}</span>
+				<span class="ap" data-if="m.kind == 'item' &amp;&amp; m.ap >= 0">{{m.ap}} AP</span>
+				<span class="why" data-if="m.why != ''">{{m.why}}</span>
+			</div>
+		</div>
+	</div>
+
+	<!-- the pick-up menu (items on the ground): the same rows and rules as the legacy list -->
+	<div class="scrim hit audit-over" data-if="pick_open"></div>
+	<div class="pop pick hit audit-over" id="tac.pickup" data-if="pick_open" data-style-left="pick_x + 'px'" data-style-top="pick_y + 'px'">
+		<div class="hud-head"><img class="icon sm" src="icon-sector-inventory"/><span class="t">{{pick_title}}</span><span class="m">{{pick_sub}}</span></div>
+		<div class="rows">
+			<div class="prow" data-for="p : pick" data-attr-id="p.eid" data-class-on="p.sel" data-attr-title="p.title" data-event-click="pick_item(p.slot)" data-event-mouseover="pick_hover(p.slot)" data-event-mouseout="pick_hover(-1)">
+				<div class="chk" data-class-on="p.sel"><img class="icon" src="icon-confirm"/></div>
+				<div class="pbox"><img class="pic" data-if="!p.empty" data-attr-src="p.src" data-style-width="p.w + 'px'" data-style-height="p.h + 'px'"/></div>
+				<span class="n">{{p.name}}</span>
+				<img class="att" data-if="p.att" src="icon-add"/>
+				<span class="q">{{p.count}}</span>
+			</div>
+		</div>
+		<div class="foot">
+			<button class="btn" id="tac.pickup.all" data-class-on="pick_all" title="Take or drop everything" data-event-click="pick_all"><span class="label">All</span></button>
+			<button class="icon-btn" data-if="pick_pages > 1" id="tac.pickup.up" data-class-is-disabled="!pick_can_up" title="Previous page" data-event-click="pick_scroll(-1)"><img class="icon" src="icon-chevron-up"/></button>
+			<button class="icon-btn" data-if="pick_pages > 1" id="tac.pickup.down" data-class-is-disabled="!pick_can_down" title="Next page" data-event-click="pick_scroll(1)"><img class="icon" src="icon-chevron-down"/></button>
+			<div class="grow"></div>
+			<button class="btn" id="tac.pickup.cancel" title="Close (Esc)" data-event-click="pick_cancel"><span class="label">Cancel</span></button>
+			<button class="btn btn-primary" id="tac.pickup.ok" data-class-is-disabled="!pick_ok_enabled" data-event-click="pick_ok"><span class="label">{{pick_ok}}</span></button>
 		</div>
 	</div>
 </div>

@@ -117,6 +117,64 @@ ja2.key("h")
 ja2.waitIdle()
 ja2.expect(not vm().log_open, "H closes it")
 
+-- A18: the action menu (a right click held on the terrain): Move and Act with keys and AP costs
+ja2.move(math.floor(ja2.screenSize().w / 2), math.floor(ja2.screenSize().h / 4))
+ja2.mousedown("right")
+ja2.wait(2500)
+local v = vm()
+if v.menu_open then
+	local items = 0
+	for _, m in ipairs(v.menu) do if m.kind == "item" then items = items + 1 end end
+	ja2.expect(items >= 8, "the action menu has its rows, got " .. items)
+	ja2.expect(v.menu_title == "Ivan", "the action menu is titled with the merc, got " .. tostring(v.menu_title))
+	shots.take("menu_action.png", "small")
+	ja2.mouseup("right")
+	ja2.wait(300)
+	-- the Walk row (group Move) presses the legacy button and closes the menu
+	ja2.click{ id = "tac.menu.item[0]" }
+	ja2.waitIdle()
+	ja2.expect(not vm().menu_open, "choosing a row closes the action menu")
+else
+	ja2.mouseup("right")
+	ja2.waitIdle()
+	ja2.expect(false, "a right click held on the terrain opens the action menu")
+end
+
+-- A19: the door menu: what can be done with a door, the AP costs, and why a choice is off
+ja2.debug("doormenu")
+ja2.waitIdle()
+v = vm()
+if v.menu_open then
+	ja2.expect(v.menu_title == "Door", "the door menu is titled Door, got " .. tostring(v.menu_title))
+	local lockpick
+	for _, m in ipairs(v.menu) do if m.kind == "item" and m.label:find("ockpick") then lockpick = m end end
+	ja2.expect(lockpick, "the door menu has the lockpick row")
+	if lockpick and lockpick.disabled then
+		ja2.expect(lockpick.why ~= "", "a disabled door action says why (" .. tostring(lockpick.why) .. ")")
+	end
+	shots.take("menu_door.png", "small")
+	-- Examine for traps: the row runs the legacy door action and closes the menu
+	ja2.click{ id = "tac.menu.item[9]" }
+	ja2.waitIdle()
+	ja2.expect(not vm().menu_open, "choosing a door action closes the menu")
+end
+
+-- A17: the pick-up menu: the items on the ground, All, Take and Cancel
+ja2.debug("pickupmenu")
+ja2.waitIdle()
+v = vm()
+ja2.expect(v.pick_open and #v.pick >= 3, "the pick-up menu lists the items on the ground")
+ja2.expect(v.pick_title == "Pick up", "the pick-up menu is titled Pick up, got " .. tostring(v.pick_title))
+shots.take("menu_pickup.png", "small")
+ja2.click{ id = "tac.pick.item[0]" }
+ja2.waitIdle()
+v = vm()
+ja2.expect(v.pick[1].sel, "clicking a row selects it")
+ja2.expect(v.pick_ok == "Take 1", "the OK button says Take 1, got " .. tostring(v.pick_ok))
+ja2.click{ id = "tac.pickup.ok" }
+ja2.waitIdle()
+ja2.expect(not vm().pick_open, "take closes the pick-up menu")
+
 -- I14, A10: turn-based combat (Omerta has enemies) and the turn banner
 ja2.click{ id = "tac.endturn" }
 ja2.wait(2000)

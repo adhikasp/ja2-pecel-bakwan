@@ -21,8 +21,9 @@ for _, sz in ipairs(sizes) do
 		ja2.screenshot(name .. "_" .. tag .. ".png")
 		for _, p in ipairs(ja2.layoutProblems()) do ja2.log(name .. " " .. tag .. ": " .. p) end
 	end
+	if vm().detail then ja2.key("`") ja2.waitIdle() end
 	shot("hud")
-	ja2.key("`") ja2.waitIdle()
+	if not vm().detail then ja2.key("`") ja2.waitIdle() end
 	shot("detail")
 	ja2.click({ id = "tac.inv.slot[5]" }, { button = "right" }) ja2.waitIdle()
 	if vm().desc then shot("itemdesc") ja2.click{ id = "tac.desc.done" } ja2.waitIdle() end
@@ -33,9 +34,24 @@ for _, sz in ipairs(sizes) do
 		ja2.click({ id = "tac.money.add100" }, { button = "right" }) ja2.waitIdle()
 		ja2.click{ id = "tac.desc.done" } ja2.waitIdle()
 	end
-	ja2.key("`") ja2.waitIdle()
+	if vm().detail then ja2.key("`") ja2.waitIdle() end
 	ja2.key("h") ja2.waitIdle()
 	shot("log")
 	ja2.key("h") ja2.waitIdle()
+	-- the popup menus: the action menu (a right click held on the terrain), the door menu and the pick-up menu
+	local function shotNow(name) ja2.screenshot(name .. "_" .. tag .. ".png") end
+	ja2.move(ja2.screenSize().w // 2, ja2.screenSize().h // 4)
+	ja2.mousedown("right")
+	ja2.wait(2500)
+	if vm().menu_open then shotNow("menu_action") end
+	ja2.mouseup("right")
+	ja2.wait(300)
+	if vm().menu_open then ja2.click{ id = "tac.menu.item[0]" } ja2.waitIdle() end
+	ja2.debug("doormenu")
+	ja2.waitIdle()
+	if vm().menu_open then shotNow("menu_door") ja2.key("escape") ja2.waitIdle() end
+	ja2.debug("pickupmenu")
+	ja2.waitIdle()
+	if vm().pick_open then shotNow("menu_pickup") ja2.key("escape") ja2.waitIdle() end
 end
 ja2.setUiScale(1)

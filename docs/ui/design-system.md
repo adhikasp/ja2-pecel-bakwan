@@ -12,7 +12,7 @@ runtime, so RML, RCSS and SVG edits need no recompile. Set `JA2_UI_DIR` to the s
 |---|---|
 | `tokens.rcss` | Design tokens (colour, type, spacing, sizes, radii, elevation, motion) |
 | `components.rcss` | Every component and its states, built only from tokens |
-| `icons/*.svg` | The icon set: 109 icons on a 24-unit grid |
+| `icons/*.svg` | The icon set: 114 icons on a 24-unit grid |
 | `fonts/` | Barlow, Barlow Condensed, Share Tech Mono, Fira Sans (fallback). Noto Sans SC is downloaded at configure time |
 | `gallery.rml`, `gallery.rcss` | The gallery screen |
 | `mocks/` | The Night Ops mocks from the style-direction step (literal values, kept for reference) |
@@ -104,7 +104,7 @@ The tokens page shows one line in every shipped language, plus a Russian heading
 
 ## Icons
 
-There are 109 icons in `assets/ui/icons/`. They are our own work: 24×24 viewBox, 2-unit strokes, round caps and
+There are 114 icons in `assets/ui/icons/`. They are our own work: 24×24 viewBox, 2-unit strokes, round caps and
 joins, `currentColor`. They are drawn at load time by `RasterizeSvg` (`src/spike/IconRaster.cc`) at 96 px, or at
 `icon-<name>@<px>`, with 4×4 anti-aliasing. The software renderer box-filters them when they are drawn smaller.
 Use them as `<img class="icon" src="icon-<name>"/>` and tint them with `image-color`. The rasterizer covers the SVG
@@ -116,8 +116,8 @@ stroke, dasharray, opacity, and rotate. Use only these features in new icons. `I
 
 | Group | Source in the game | Icons |
 |---|---|---|
-| Actions | cursors (`CUR_WALK/RUN/SWAT/PRON/LOOK/TALK/TARG/BST/TRW/PUNCH/STAB/WIRECUT/REPAIR/REMOTE/BOMB/EXIT/WAIT/KEY`), stance buttons (`STAND_ICON`, `CROUCH_ICON`), tactical/map bottom-bar buttons, message-box and list controls | end-turn, map, laptop, options, save, load, close, confirm, add, remove, search, filter, sort-asc/desc, chevrons, menu, more, drag, pause, play, fast-forward, stance-stand/crouch/prone, walk, run, sneak, look, talk, target, burst, throw, punch, stab, reload, climb, door, key, wire-cut, repair, remote, bomb, exit-sector, wait, inventory, trade |
-| Status | soldier state (life, breath, morale, bleeding, drunk, sleep: `SLEEPICON`, collapsed, dead), contract, level-up, message-box icons (`MSGBOXICONS`) | health, breath, morale, action-points, bleeding, drunk, asleep, fatigue, suppressed, wounded, unconscious, dead, contract, level-up, ok, info, warning, error, lock |
+| Actions | cursors (`CUR_WALK/RUN/SWAT/PRON/LOOK/TALK/TARG/BST/TRW/PUNCH/STAB/WIRECUT/REPAIR/REMOTE/BOMB/EXIT/WAIT/KEY`), stance buttons (`STAND_ICON`, `CROUCH_ICON`), tactical/map bottom-bar buttons, message-box and list controls | end-turn, map, laptop, options, save, load, close, confirm, add, remove, search, filter, sort-asc/desc, chevrons, menu, more, drag, pause, play, fast-forward, stance-stand/crouch/prone, walk, run, sneak, look, talk, target, burst, throw, punch, stab, reload, climb, door, key, lockpick, crowbar, door-explosive, wire-cut, repair, remote, bomb, exit-sector, wait, inventory, trade, swap-hands |
+| Status | soldier state (life, breath, morale, bleeding, drunk, sleep: `SLEEPICON`, collapsed, dead), contract, level-up, message-box icons (`MSGBOXICONS`) | health, breath, morale, action-points, bleeding, drunk, asleep, fatigue, suppressed, wounded, unconscious, dead, contract, level-up, mute, ok, info, warning, error, lock |
 | Assignments | `enum Assignments` (`src/game/Strategic/Assignments.h`): squads, ON_DUTY, DOCTOR, PATIENT, VEHICLE, IN_TRANSIT, REPAIR, TRAIN_SELF/TOWN/TEAMMATE/BY_OTHER, DEAD, POW, HOSPITAL | squad, on-duty, doctor, patient, vehicle, in-transit, repair, train-self, train-town, train-teammate, train-by-other, hospital, pow, dead |
 | Item categories | item class flags (`IC_GUN, IC_LAUNCHER, IC_BLADE, IC_THROWING_KNIFE, IC_PUNCH, IC_GRENADE, IC_BOMB, IC_AMMO, IC_ARMOUR, IC_MEDKIT, IC_KIT, IC_FACE, IC_KEY, IC_MONEY, IC_MISC`), camouflage kit | gun, launcher, blade, throwing-knife, punch, grenade, bomb, ammo, armour, medkit, toolkit, face-gear, camouflage, key, money, misc-item |
 | Map markers | map screen (`MILITIA`, `MINE_*`, `SAM`, `CHOPPER`/`HELICOP`, `PRISON`, `MERC_BETWEEN_SECTOR_ICONS`, `MERC_MVT_GREEN_ARROWS`, vehicles, sector inventory), towns, loyalty | town, sam-site, mine, militia, enemy, enemy-group, player-group, destination, waypoint, merc-moving, helicopter, airport, hospital, prison, vehicle, unexplored, loyalty, sector-inventory |

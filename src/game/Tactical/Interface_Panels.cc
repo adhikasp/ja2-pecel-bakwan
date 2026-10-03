@@ -3889,3 +3889,11 @@ void NativeSMMoneyClick()
 	if (!(r.uiFlags & MSYS_REGION_ENABLED) || !r.ButtonCallback) return;
 	r.ButtonCallback(&r, MSYS_CALLBACK_REASON_LBUTTON_UP);
 }
+
+// The native tactical HUD's mute button: the single-merc panel's mute button (SOLDIER_MUTE and the message it prints).
+void NativeSMMuteClick()
+{
+	GUIButtonRef const btn = iSMPanelButtons[MUTE_BUTTON];
+	if (!btn || !btn->Enabled()) return;
+	BtnMuteCallback(btn, MSYS_CALLBACK_REASON_POINTER_UP);
+}

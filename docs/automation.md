@@ -192,6 +192,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.setWorldRenderer(name)` / `ja2.worldRenderer()` | Switch the world renderer (`software`, `gpu`, `pipeline`; the latter two need the world as a layer: `--worldzoom`, or start with `JA2_WORLD_RENDERER`) / what is active and last-frame stats. |
 | `ja2.pick()` | What the mouse picks in tactical: `{grid, interactive, target}`. |
 | `ja2.debug("light", level, nightLights)`, `("item", grid, item)`, `("corpse", grid, dir)`, `("roof", grid)` | Renderer test scenes: ambient light, an item or a corpse on the ground, a room's roof taken off. |
+| `ja2.debug("doormenu", [grid])`, `("pickupmenu")` | Tactical menus directly: the door menu (the nearest door, or the one at `grid`) and the pick-up menu on a small pile of tools at the merc's feet. |
 
 Timeouts report the screen and, if one is open, the message box text, e.g.
 `timed out after 120000 ms waiting for screen MAP_SCREEN (screen:

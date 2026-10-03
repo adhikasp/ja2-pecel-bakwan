@@ -94,6 +94,15 @@ namespace
 		return p;
 	}
 
+	/** Keeps a popup of about wDp x hDp at (x, y) inside the view. */
+	void ClampPopup(float& x, float& y, float const wDp, float const hDp)
+	{
+		float const dp = std::max(0.01f, DpScale());
+		Rml::Vector2i const dim = Context()->GetDimensions();
+		x = std::clamp(x, 0.f, std::max(0.f, float(dim.x) - wDp * dp));
+		y = std::clamp(y, 0.f, std::max(0.f, float(dim.y) - hDp * dp));
+	}
+
 	/** Presses a legacy hotkey (down and up), as the keyboard would: the legacy handler runs with all its checks. */
 	void PressKey(SDL_Keycode const key, SDL_Keymod const mods = SDL_KMOD_NONE)
 	{
@@ -204,6 +213,34 @@ namespace
 		static void Describe(RowFields<KvRow>& f) { f("k", &KvRow::k)("v", &KvRow::v); }
 	};
 
+	/** One row of the action or door menu (Interface.h: NativeMenuView): item, group heading or separator. */
+	struct MenuItemRow
+	{
+		int id = -1, ap = -1;
+		std::string eid, kind, label, kbd, icon, title, why;
+		bool disabled = false;
+		static void Describe(RowFields<MenuItemRow>& f)
+		{
+			f("id", &MenuItemRow::id)("ap", &MenuItemRow::ap)("eid", &MenuItemRow::eid)("kind", &MenuItemRow::kind)
+			 ("label", &MenuItemRow::label)("kbd", &MenuItemRow::kbd)("icon", &MenuItemRow::icon)
+			 ("title", &MenuItemRow::title)("why", &MenuItemRow::why)("disabled", &MenuItemRow::disabled);
+		}
+	};
+
+	/** One row of the pick-up menu (Interface_Items.h: NativePickupView). */
+	struct PickRow
+	{
+		int slot = -1, item = 0, w = 0, h = 0, cond = 0;
+		std::string eid, name, count, title, src;
+		bool empty = true, sel = false, att = false;
+		static void Describe(RowFields<PickRow>& f)
+		{
+			f("slot", &PickRow::slot)("item", &PickRow::item)("w", &PickRow::w)("h", &PickRow::h)("cond", &PickRow::cond)
+			 ("eid", &PickRow::eid)("name", &PickRow::name)("count", &PickRow::count)("title", &PickRow::title)
+			 ("src", &PickRow::src)("empty", &PickRow::empty)("sel", &PickRow::sel)("att", &PickRow::att);
+		}
+	};
+
 	// ------------------------------------------------------------------ the view model
 	class TacticalViewModel final : public ViewModel
 	{
@@ -227,6 +264,7 @@ namespace
 		std::vector<OverRow> overlays;
 		// detail panel
 		bool detail = false;
+		bool dMute = false;
 		std::string dName, dFull, dFace, dVitHp, dEn, dMo, dMoney, dKeys, dWeight, dCamo, dArmour;
 		int dFw = 0, dFh = 0, dHpw = 0, dLostw = 0, dEnw = 0, dMow = 0;
 		std::vector<KvRow> attrs;
@@ -240,6 +278,17 @@ namespace
 		SlotRow xMag;
 		std::string mTotal, mRemaining, mRemoving;
 		bool m1000 = false, m100 = false, m10 = false;
+		// action and door menus (right click hold, or clicking a door)
+		bool menuOpen = false;
+		std::string menuTitle, menuSub;
+		int menuX = 0, menuY = 0;
+		std::vector<MenuItemRow> menu;
+		// pick-up menu (items on the ground)
+		bool pickOpen = false;
+		std::string pickTitle, pickSub, pickOk;
+		int pickX = 0, pickY = 0, pickPage = 0, pickPages = 0;
+		bool pickCanUp = false, pickCanDown = false, pickAll = false, pickEnabled = false;
+		std::vector<PickRow> pick;
 		// labels
 		std::string lEndTurn, lTurnBased, lMap, lDone, lUnload, lPros, lCons, lAttachments, lAmmo, lWeapon, lLog;
 
@@ -289,6 +338,17 @@ namespace
 			Command("money", [](Args const& a) { if (!a.empty()) NativeMoneyButton(std::atoi(a[0].c_str()), Right(a)); });
 			Command("log", [this](Args const&) { logOpen = !logOpen; if (logOpen) ReadLog(); Changed(); });
 			Command("log_filter", [this](Args const& a) { logFilter = a.empty() ? "all" : a[0]; ReadLog(); Changed(); });
+			// the action, door and pick-up menus press the legacy buttons (Interface.cc, Interface_Items.cc)
+			Command("menu_item", [](Args const& a) { if (!a.empty()) NativeMenuClick(INT16(std::atoi(a[0].c_str()))); });
+			Command("menu_cancel", [](Args const&) { NativeMenuCancel(); });
+			Command("pick_item", [](Args const& a) { if (!a.empty()) NativePickupClick(INT16(std::atoi(a[0].c_str()))); });
+			Command("pick_hover", [](Args const& a) { NativePickupHover(a.empty() ? INT16(-1) : INT16(std::atoi(a[0].c_str()))); });
+			Command("pick_all", [](Args const&) { NativePickupAll(); });
+			Command("pick_ok", [](Args const&) { NativePickupOK(); });
+			Command("pick_cancel", [](Args const&) { NativePickupCancel(); });
+			Command("pick_scroll", [](Args const& a) { if (!a.empty()) NativePickupScroll(INT16(std::atoi(a[0].c_str()))); });
+			Command("mute", [](Args const&) { NativeSMMuteClick(); });
+			Command("swap_hands", [](Args const&) { PressKey(SDLK_Q, SDL_KMOD_CTRL); });
 
 			lEndTurn = Str("tac.end_turn");
 			lTurnBased = Str("tac.turn_based");
@@ -318,6 +378,7 @@ namespace
 			f.Field("log_all", logAll); f.Field("log_combat", logCombat); f.Field("log_speech", logSpeech); f.Field("log_system", logSystem);
 			f.Rows("overlays", overlays);
 			f.Field("detail", detail);
+			f.Field("d_mute", dMute);
 			f.Field("d_name", dName); f.Field("d_full", dFull); f.Field("d_face", dFace); f.Field("d_fw", dFw); f.Field("d_fh", dFh);
 			f.Field("d_hp", dVitHp); f.Field("d_en", dEn); f.Field("d_mo", dMo);
 			f.Field("d_hpw", dHpw); f.Field("d_lostw", dLostw); f.Field("d_enw", dEnw); f.Field("d_mow", dMow);
@@ -333,6 +394,14 @@ namespace
 			f.Rows("x_stats", xStats); f.Rows("x_atts", xAtts);
 			f.Field("m_total", mTotal); f.Field("m_remaining", mRemaining); f.Field("m_removing", mRemoving);
 			f.Field("m_1000", m1000); f.Field("m_100", m100); f.Field("m_10", m10);
+			f.Field("menu_open", menuOpen); f.Field("menu_title", menuTitle); f.Field("menu_sub", menuSub);
+			f.Field("menu_x", menuX); f.Field("menu_y", menuY); f.Rows("menu", menu);
+			f.Field("pick_open", pickOpen); f.Field("pick_title", pickTitle); f.Field("pick_sub", pickSub);
+			f.Field("pick_ok", pickOk); f.Field("pick_x", pickX); f.Field("pick_y", pickY);
+			f.Field("pick_page", pickPage); f.Field("pick_pages", pickPages);
+			f.Field("pick_can_up", pickCanUp); f.Field("pick_can_down", pickCanDown); f.Field("pick_all", pickAll);
+			f.Field("pick_ok_enabled", pickEnabled);
+			f.Rows("pick", pick);
 			f.Field("l_end_turn", lEndTurn); f.Field("l_turn_based", lTurnBased); f.Field("l_map", lMap); f.Field("l_done", lDone);
 			f.Field("l_unload", lUnload); f.Field("l_pros", lPros); f.Field("l_cons", lCons); f.Field("l_attachments", lAttachments);
 			f.Field("l_ammo", lAmmo); f.Field("l_weapon", lWeapon); f.Field("l_log", lLog);
@@ -346,6 +415,7 @@ namespace
 			ReadOverlays();
 			ReadDetail();
 			ReadDesc();
+			ReadMenus();
 			if (logOpen) ReadLog();
 		}
 
@@ -607,10 +677,12 @@ namespace
 		void ReadDetail()
 		{
 			detail = gsCurInterfacePanel == SM_PANEL && gpSMCurrentMerc;
+			dMute = false;
 			body.clear(); hands.clear(); bigPockets.clear(); smallPockets.clear(); attrs.clear();
 			if (!detail) return;
 			SOLDIERTYPE const& s = *gpSMCurrentMerc;
 			dName = S(s.name);
+			dMute = (s.uiStatusFlags & SOLDIER_MUTE) != 0;
 			std::string full = s.ubProfile != NO_PROFILE ? S(GetProfile(s.ubProfile).zName) : dName;
 			dFull = full;
 			Pic const f = MakePic("sface-" + std::to_string(s.ubProfile != NO_PROFILE ? GetProfile(s.ubProfile).ubFaceIndex : 0), 2);
@@ -699,6 +771,118 @@ namespace
 				mRemaining = S(SPrintMoney(m.remaining));
 				mRemoving = S(SPrintMoney(m.removing));
 				m1000 = m.total >= 1000; m100 = m.total >= 100; m10 = m.total >= 10;
+			}
+		}
+
+		/** What a disabled menu row says; the codes come from Interface.cc. */
+		std::string WhyText(std::string const& code)
+		{
+			return code.empty() ? std::string() : Str("tac.door." + code);
+		}
+
+		void ReadMenus()
+		{
+			menu.clear();
+			pick.clear();
+			menuOpen = false;
+			pickOpen = false;
+
+			NativeMenuView m = NativeMovementMenuView();
+			if (!m.open) m = NativeDoorMenuView();
+			if (m.open)
+			{
+				menuOpen = true;
+				bool const door = m.kind == "door";
+				bool const showAp = (gTacticalStatus.uiFlags & INCOMBAT) != 0 && m.ap >= 0;
+				std::string const ap = showAp ? ST::format("{} {}", m.ap, Str("tac.ap")).to_std_string() : std::string();
+				menuTitle = door ? Str("tac.menu.door") : S(m.who);
+				menuSub = door ? (showAp ? S(m.who) + " · " + ap : std::string()) : ap;
+				int lastGroup = -1, seq = 0;
+				for (NativeMenuItem const& it : m.items)
+				{
+					if (it.group != lastGroup)
+					{
+						if (lastGroup != -1) // a separator between the groups (the approved wireframes)
+						{
+							MenuItemRow sep;
+							sep.kind = "sep";
+							sep.eid = "tac.menu.sep[" + std::to_string(seq++) + "]";
+							menu.push_back(sep);
+						}
+						if (!door && it.group <= 1) // the action menu names its groups
+						{
+							MenuItemRow head;
+							head.kind = "head";
+							head.label = Str(it.group == 0 ? "tac.menu.move" : "tac.menu.act");
+							head.eid = "tac.menu.head[" + std::to_string(seq++) + "]";
+							menu.push_back(head);
+						}
+						lastGroup = it.group;
+					}
+					MenuItemRow r;
+					r.kind = "item";
+					r.id = it.id;
+					r.eid = "tac.menu.item[" + std::to_string(it.id) + "]";
+					r.label = S(it.label);
+					r.kbd = S(it.kbd);
+					r.icon = S(it.icon);
+					r.title = S(it.title);
+					r.why = it.disabled ? WhyText(S(it.why)) : "";
+					r.ap = it.ap;
+					r.disabled = it.disabled;
+					menu.push_back(r);
+				}
+				// the action menu opens by the merc, the door menu by the door (the approved wireframes)
+				float const su = float(g_ui.m_uiScale);
+				float x = m.x * su + std::round((door ? 8.f : 70.f) * DpScale());
+				float y = m.y * su - std::round((door ? 24.f : 64.f) * DpScale());
+				int h = 56;
+				for (MenuItemRow const& r : menu) h += r.kind == "item" ? (r.why.empty() ? 40 : 60) : 20;
+				ClampPopup(x, y, 252, float(h));
+				menuX = int(x);
+				menuY = int(y);
+			}
+
+			NativePickupView const p = NativeItemPickupView();
+			if (p.open)
+			{
+				pickOpen = true;
+				pickTitle = Str("tac.pick.title");
+				pickSub = ST::format(Str("tac.pick.sub").c_str(), p.who, p.total).to_std_string();
+				int picked = 0;
+				for (NativePickupRow const& it : p.rows) if (it.sel) ++picked;
+				pickOk = ST::format(Str("tac.pick.take").c_str(), picked).to_std_string();
+				pickPage = p.page;
+				pickPages = p.pages;
+				pickCanUp = p.canUp;
+				pickCanDown = p.canDown;
+				pickAll = p.allSelected;
+				pickEnabled = p.okEnabled;
+				for (NativePickupRow const& it : p.rows)
+				{
+					PickRow r;
+					r.slot = it.slot;
+					r.eid = "tac.pick.item[" + std::to_string(it.slot) + "]";
+					r.empty = it.empty;
+					r.sel = it.sel;
+					r.att = it.att;
+					r.cond = it.cond;
+					r.name = S(it.name);
+					r.count = S(it.count);
+					r.title = S(it.title);
+					if (!it.empty)
+					{
+						Pic const pic = FitPic("nitem-" + std::to_string(it.item), 2, 88, 40);
+						r.src = pic.src; r.w = pic.w; r.h = pic.h;
+					}
+					pick.push_back(r);
+				}
+				float const su = float(g_ui.m_uiScale);
+				float x = p.x * su;
+				float y = p.y * su;
+				ClampPopup(x, y, 360, float(120 + 56 * int(p.rows.size())));
+				pickX = int(x);
+				pickY = int(y);
 			}
 		}
 	};

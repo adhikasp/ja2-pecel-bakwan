@@ -66,6 +66,7 @@ namespace NativeUI
 
 	/** The native tactical HUD (TacticalHud.cc): shown or hidden and refreshed once a frame (BeginFrame). */
 	void TacticalHudUpdate();
+
 	/** The mouse is over a part of the HUD that takes clicks (an element with class "hit"). */
 	bool TacticalHudWantsMouse();
 }

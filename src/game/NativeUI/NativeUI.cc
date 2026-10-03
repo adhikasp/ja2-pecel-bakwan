@@ -511,6 +511,18 @@ void BeginFrame()
 	g_rt.UpdateOverlays();
 }
 
+void CaptureFrame()
+{
+	// What BeginFrame does for a frame, without the game loop and without closing a loading screen: a capture must
+	// show the state as it is now, including one-frame draws (docs/ui/loadingscreen.md).
+	if (!g_rt.running) return;
+	ViewModel::UpdateAll();
+	g_rt.Sync();
+	nui::RmlClock().now = GetClock() / 1000.0;
+	TacticalHudUpdate();
+	g_rt.UpdateOverlays();
+}
+
 SDL_Rect Runtime::SoftwarePrepare()
 {
 	if (!running || gpu) return { 0, 0, 0, 0 };

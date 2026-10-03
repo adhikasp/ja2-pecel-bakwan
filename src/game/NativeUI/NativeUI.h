@@ -75,6 +75,10 @@ namespace NativeUI
 
 	/** Once per game loop, before input: keeps the size, scale and clock up to date. */
 	void BeginFrame();
+	/** What BeginFrame does without the game loop: the view models are refreshed and what they changed is laid out
+	 * and drawn, so a capture right after a driven command shows the current state. No game state moves (a loading
+	 * screen is captured where it is, not closed). */
+	void CaptureFrame();
 	/** A native screen or modal takes the mouse: legacy regions get nothing. */
 	bool CapturesMouse();
 	/** A mouse event from the input queue (only when CapturesMouse()). */

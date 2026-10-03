@@ -118,6 +118,7 @@ extern SOLDIERTYPE* gpSMCurrentMerc;
 
 /** The native tactical HUD's cash button (the single-merc panel's money region). */
 void NativeSMMoneyClick();
+void NativeSMMuteClick();
 extern GUIButtonRef iSMPanelButtons[NUM_SM_BUTTONS];
 extern GUIButtonRef iTEAMPanelButtons[NUM_TEAM_BUTTONS];
 extern GUIButtonRef giSMStealthButton;

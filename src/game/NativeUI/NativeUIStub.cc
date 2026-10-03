@@ -13,6 +13,7 @@ void  SetUserScale(float s) { g_scale = s; }
 float DpScale() { return 0; }
 Info GetInfo() { return {}; }
 void BeginFrame() {}
+void CaptureFrame() {}
 bool CapturesMouse() { return false; }
 void HandleMouseEvent(InputAtom const&) {}
 void MouseMoved(int, int) {}
