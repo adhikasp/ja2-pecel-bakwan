@@ -43,9 +43,6 @@ namespace
 		}
 	};
 
-	constexpr int DetailStock = 0, DetailDealerOffer = 1, DetailPlayerOffer = 2, DetailInventory = 3;
-	[[maybe_unused]] constexpr int kDetailStub = DetailStock + DetailDealerOffer + DetailPlayerOffer + DetailInventory;
-
 	class ShopKeeperViewModel final : public ViewModel
 	{
 	public:
