@@ -28,7 +28,12 @@ The design rationale is in [plan/headless-automation.md](plan/headless-automatio
   of game time and under 2 s of wall-clock time.
 - **Headless.** No window or renderer is created. The game still draws every
   frame into its CPU-side frame buffer, so screenshots and pixel reads are
-  exact. Pass `-show` (or `ja2ctl ... --show`) to watch in a window instead.
+  exact. Composing the finished picture (the dirty regions, then the native UI
+  layer blended over them) only happens when something reads it — a
+  screenshot, a pixel, the text on screen — so stepping a wait of thousands of
+  frames costs no pixel work at all, which is what keeps the resolution matrix
+  fast. Pass `-show` (or `ja2ctl ... --show`) to watch in a window instead; a
+  window presents every frame as it is stepped.
 - **Real sound timing without a device.** Sounds are consumed in step with
   virtual time, so speech, dialogue and "is the merc still talking" behave as
   in normal play.

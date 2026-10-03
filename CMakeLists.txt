@@ -427,8 +427,50 @@ if (WITH_UNITTESTS)
         # Resolution matrix: every tour at every supported resolution, with a
         # layout check (ja2.assertInsideScreen) and golden-screenshot compare.
         set(RESOLUTION_MATRIX 640x480 1280x720 1920x1080 2560x1080 3440x1440)
-        set(RESOLUTION_TESTS "")
+        # Longest tour first, so a parallel run fills its slots with the expensive tests instead of
+        # leaving one slot to grind through the last long test alone. This order is what ctest uses on
+        # a run with no cost data yet (a fresh build); later runs schedule by the measured cost from
+        # CTestCostData.txt themselves, which is the same order. The cost here is each script's total
+        # seconds over a full `ctest -L resolution` run, descending; scripts it does not know about
+        # keep the glob's order and follow.
+        set(RESOLUTION_HEAVY_FIRST
+            mapscreen_parity
+            mapscreen_states
+            saveload_parity
+            mapscreen_equivalence
+            menus_tour
+            options_parity
+            tactical_parity
+            new_game_to_tactical
+            video_switch
+            tactical_hud
+            tactical_move_merc
+            credits_parity
+            native_ui
+            mainmenu_parity
+            newgame_parity
+            laptop_tour
+            map_screen_tour
+            loadingscreen_parity
+            main_menu
+        )
+        set(RESOLUTION_SCRIPTS "")
+        foreach(n ${RESOLUTION_HEAVY_FIRST})
+            foreach(f ${E2E_SCRIPTS})
+                get_filename_component(fn ${f} NAME_WE)
+                if(fn STREQUAL n)
+                    list(APPEND RESOLUTION_SCRIPTS ${f})
+                endif()
+            endforeach()
+        endforeach()
         foreach(f ${E2E_SCRIPTS})
+            list(FIND RESOLUTION_SCRIPTS ${f} known)
+            if(known EQUAL -1)
+                list(APPEND RESOLUTION_SCRIPTS ${f})
+            endif()
+        endforeach()
+        set(RESOLUTION_TESTS "")
+        foreach(f ${RESOLUTION_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             get_filename_component(ext ${f} EXT)
             if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer)")

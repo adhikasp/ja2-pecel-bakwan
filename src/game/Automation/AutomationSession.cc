@@ -146,6 +146,9 @@ namespace
 
 	SDL_Surface const* FrameSurface()
 	{
+		// Reading the frame is what makes it exist: a driven session composes on demand, so bring
+		// ScreenBuffer up to date first (no-op when the current frame was already composed).
+		VideoComposePending();
 		SDL_Surface const* s = GetScreenBuffer();
 		if (!s) throw std::runtime_error("the video system is not initialised");
 		return s;
@@ -476,6 +479,9 @@ std::string MessageBoxText()
 
 std::vector<TextRegistry::VisibleText> Texts()
 {
+	// Compose before anything else: the cursor's area (what the text must be read around) is what the
+	// last present drew, so it has to be the current frame's.
+	VideoComposePending();
 	// the native UI's text first (it is on top), then what the legacy screen printed and is still visible
 	std::vector<TextRegistry::VisibleText> out;
 	for (NativeUI::TextInfo const& t : NativeUI::Texts())
@@ -492,6 +498,8 @@ std::vector<TextRegistry::VisibleText> Texts()
 
 std::vector<Element> Elements()
 {
+	// Same ordering as Texts(): the frame (and with it the cursor's area) is composed first.
+	VideoComposePending();
 	std::map<MOUSE_REGION const*, GUI_BUTTON const*> buttons;
 	for (GUI_BUTTON const* b : ButtonList)
 	{
