@@ -97,31 +97,36 @@ here may be dropped silently; a deliberate omission is recorded in §8 with a re
 
 ## 6. Native design (M2)
 
-The native screen is opaque and replaces the legacy blitter screen. Layout, 1920×1080 dp reference, built from
-the design-system components:
+The native screen is opaque and replaces the legacy blitter screen. Its arrangement follows the legacy trade
+screen: the dealer face, the page control, the totals and the buttons in the left column; "Merchandise in
+stock" and the two offer areas stacked in the main column; and the merc's inventory as the bottom strip (the
+legacy tactical inventory panel). Layout, 1920×1080 dp reference, built from the design-system components:
 
 ```
-┌──────────────────────────────────────────────────────────────────────────────────────┐
-│  [dealer face]  TONY  Buys and sells              Balance $N   Dealer's cash $N  [merc]│
-├──────────────────────────┬──────────────────────────────┬──────────────────────────────┤
-│  MERCHANDISE IN STOCK    │  DEALER'S OFFER              │  YOUR ITEMS                  │
-│  [page ‹ 1/3 ›]          │  [item][item]...             │  [item name  bar  $N]        │
-│  [item][item][item]      │  Total cost $N               │  ...                         │
-│  [item][item][item]      │  YOUR OFFER                  │                              │
-│  ...                     │  [item][item]...             │                              │
-│                          │  Total value $N              │                              │
-├──────────────────────────┴──────────────────────────────┴──────────────────────────────┤
-│  ITEM DETAIL: [art] NAME 85% — Price $N  Buys for $N — item stats                      │
-├────────────────────────────────────────────────────────────────────────────────────────┤
-│  hint                                            [Transaction] [Done]                   │
-└────────────────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────────────────┐
+│ [face] TONY            MERCHANDISE IN STOCK                                           │
+│        Buys and sells  ┌───────────────────────────────────────────────────────────┐  │
+│  PAGE 1/1 [▲][▼]       │ [stock][stock][stock][stock][stock]  (5 per row, up to 3)  │  │
+│                        └───────────────────────────────────────────────────────────┘  │
+│  ┌ TOTAL COST  $0  ┐   DEALER'S OFFER                            TOTAL COST  $0       │
+│  ┌ BALANCE    $N  ┐   [offer][offer][offer][offer][offer][offer] (6 per row)          │
+│  ┌ TOTAL VALUE $0 ┐   YOUR OFFER                                 TOTAL VALUE $0       │
+│  ┌ DEALER CASH $N ┐   [offer][offer][offer][offer][offer][offer] (6 per row)          │
+│  [TRANSACTION]                                                                        │
+│  [DONE]                                                                               │
+├───────────────────────────────────────────────────────┬───────────────────────────────┤
+│ [merc] BARRY  YOUR ITEMS                               │  ITEM DETAIL [art] NAME 85%   │
+│ [item][item][item][item][item][item] ...               │  Price $N  Buys for $N        │
+│                                                        │  — item stats                 │
+└───────────────────────────────────────────────────────┴───────────────────────────────┘
 ```
 
-- Three columns: the dealer's paged stock, the two offer areas with their totals, and the current merc's
-  inventory (what can be offered). The item detail bar is the comparison: name, condition, the dealer's asking
-  price and what he pays, plus the item stats.
-- Item cards use `item-<id>` art, a condition bar and the price; selected/repaired/jammed items are classed.
-- The dealer portrait is static (see §8); the dealer kind is an explicit label.
+- Stock cells: item picture, name, condition bar, quantity, attachment marker, unit price (or repair ETA for a
+  repairman), and the selected/repaired/jammed states.
+- Offer cells: the same, with the purchase/repair cost or the dealer's buying price.
+- The current merc's inventory is a bottom strip; a click offers the pocket (the legacy hatches it out).
+- The detail bar is the comparison: name, condition, the dealer's asking price and what he pays, plus the item
+  stats.
 - An `audit-skip`/`audit-over` scrim keeps the layout audit clean.
 
 ## 7. Wiring
