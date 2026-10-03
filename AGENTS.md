@@ -136,13 +136,7 @@ One public board: **JA2 Modernization Roadmap** — https://github.com/users/adh
 
 ### Milestones
 
-One per shippable increment — never per phase, never per PR:
-
-- `Native modern: front end + map + tactical` — Phases 0–5 and 8 (delivered)
-- `Native modern: laptop` — Phase 6
-- `Native modern: remaining screens` — Phase 7
-- `Native modern: HD art + legacy removal` — Phases 9 and 10
-- `AI, e2e and 1.13` — the tracks that are still `Placeholder` until their plan doc exists
+One per shippable increment — never per phase, never per PR. The list of milestones lives on GitHub, not in this file: read https://github.com/adhikasp/ja2-stracciatella/milestones (or `gh api repos/adhikasp/ja2-stracciatella/milestones`) for the current one, and open a new milestone there when a new shippable increment appears. A milestone for a track that is still `Placeholder` says so in its description and stays inactive until that track's plan doc exists.
 
 An issue and its PR carry the milestone of the increment they belong to; a milestone is closed when its last PR merges. Housekeeping under `Repo & CI` is not a shippable increment and carries no milestone.
 
