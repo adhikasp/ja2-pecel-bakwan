@@ -2,9 +2,9 @@
 
 > **Same game. Same rules. Same saves.** A presentation rebuilt for the monitor you actually own.
 
-This is a continuation of the venerable [JA2-Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella) project. Upstream made Jagged Alliance 2 run everywhere and fixed its bugs while keeping the 1999 look. This fork keeps all of that, then takes the next step: it *rebuilds the presentation* — every screen, the tactical HUD, the strategic map and the world renderer — natively for modern displays, and modernises the AI, the test harness and the tooling around it.
+This is a continuation of the venerable [JA2-Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella) project. Upstream made Jagged Alliance 2 run everywhere and fixed its bugs while keeping the 1999 look. This fork keeps all of that, then modernises the game itself — **every aspect of it**: presentation, gameplay, AI and the tooling around them.
 
-Gameplay rules, campaign data, mods and save games are untouched. Only the pixels change.
+The **native modern rebuild comes first** and is already shipping: every screen, the tactical HUD, the strategic map and the world renderer are being rebuilt for modern displays. The **AI**, the **gameplay** (starting with the features worth having from JA2 1.13) and the **test and automation harness** are the tracks that follow. The presentation rebuild changes nothing about the rules — campaign data, mods and save games stay as they are — and any gameplay change after it is deliberate, tracked and measured.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/adhikasp/ja2-stracciatella/github-ci.yml?branch=master&label=CI&logo=github)](https://github.com/adhikasp/ja2-stracciatella/actions/workflows/github-ci.yml)
 [![Discord](https://img.shields.io/badge/Discord-The%20Bear%27s%20Pit-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/GqrVZUM)
@@ -26,11 +26,13 @@ What this fork adds is the thing upstream deliberately leaves alone: **it makes 
 - **A native world renderer** — GPU tiles and sprites, smooth fractional zoom, and lighting/shadows as shaders, reproducing the original draw order exactly.
 - **The same game underneath.** Same numbers, campaign, saves and content data.
 
+This is a full modernization of Jagged Alliance 2 as a product, not a graphics mod. The native rebuild and the agent-driven automation harness are simply the first two pieces — chosen because they are what make everything that follows fast and verifiable.
+
 **Not goals:** pixel-identical 640x480 mode, hand-placed 640x480 coordinates, keeping the old art as the final look, or keeping the old screen code alive after migration.
 
 ## The roadmap
 
-The work is organised as four tracks, each with its own GitHub milestone and plan document. Together they are what this fork does that upstream does not.
+The work is organised as four tracks, each with its own GitHub milestone and plan document. Together they are what this fork does that upstream does not — graphics first, then the game behind it.
 
 ### 🎨 [Native Modern Graphic](https://github.com/adhikasp/ja2-stracciatella/milestone/9)
 
@@ -85,7 +87,7 @@ The redesign is presentation only. That promise is enforced, not just stated:
 
 ## How development works here
 
-This repository is developed **primarily by AI coding agents**, with a human owner setting direction. The owner approves the art direction and every screen's wireframes before implementation — style is a product decision. Everything else, from plan docs to implementation to tests, screenshots and pull requests, is largely written by agents under the rules in [AGENTS.md](AGENTS.md).
+This repository is developed **primarily by AI coding agents**, with a human owner setting direction. The owner approves the art direction and every screen's wireframes before implementation — style is a product decision. Everything else, from plan docs to implementation to tests, screenshots and pull requests, is largely written by agents under the rules in [AGENTS.md](AGENTS.md). That harness is what makes modernising the whole game — not just its pixels — practical: every change, in any track, is provable and reversible.
 
 To make that safe, the codebase is built to be **machine-verifiable** — an agent can prove a change works without a human at the keyboard:
 
