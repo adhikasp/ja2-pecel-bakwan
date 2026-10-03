@@ -10,7 +10,7 @@ for the full API.
 | `laptop_tour.lua` | New campaign; every laptop program, reading mail, A.I.M. |
 | `new_game_to_tactical.lua` | Hire a merc on A.I.M., land in Omerta, save/load round trip |
 | `tactical_move_merc.lua` | Select a merc and walk to a clicked tile and back |
-| `battle_smoke.lua` | A staged fight (3 mercs vs 10 enemies): fire, damage and the native tactical HUD (runs at 1920x1080, see [docs/plan/e2e-tactical-battles.md](../../docs/plan/e2e-tactical-battles.md)) |
+| `battle_smoke.lua` | A staged fight (3 decked-out mercs vs 10 enemies): fire, damage, the native tactical HUD and a win (runs at 1920x1080, see [docs/plan/e2e-tactical-battles.md](../../docs/plan/e2e-tactical-battles.md)) |
 | `map_screen_tour.lua` | Map screen: pause, inventory, options, laptop |
 | `video_switch.lua` | Runtime video changes (`ja2.setVideo`) through four modes on tactical, map and laptop |
 | `video_options.lua` | The Video options screen: change and apply resolution without a restart |

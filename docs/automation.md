@@ -198,7 +198,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.pick()` | What the mouse picks in tactical: `{grid, interactive, target}`. |
 | `ja2.debug("light", level, nightLights)`, `("item", grid, item)`, `("corpse", grid, dir)`, `("roof", grid)` | Renderer test scenes: ambient light, an item or a corpse on the ground, a room's roof taken off. |
 | `ja2.debug("doormenu", [grid])`, `("pickupmenu")` | Tactical menus directly: the door menu (the nearest door, or the one at `grid`) and the pick-up menu on a small pile of tools at the merc's feet. |
-| `ja2.debug("battle", spec)` | Stage a tactical fight in the loaded sector — enemies, gear, placement, combat — see [plan/e2e-tactical-battles.md](plan/e2e-tactical-battles.md). Fields: `enemies`, `class`, `weapon`, `enemy_weapon`, `armour`, `distance`, `clear`, `start`. |
+| `ja2.debug("battle", spec)` | Stage a tactical fight in the loaded sector — enemies, gear, skill points, placement, combat — see [plan/e2e-tactical-battles.md](plan/e2e-tactical-battles.md). Fields: `enemies` (count or `{count,class,weapon,distance,grids}`), `class`, `weapon`, `enemy_weapon`, `armour`, `distance`, `clear`, `start`, and `our` (per-merc `{name,weapon,armour,grid,items,stats}`). |
 | `ja2.debug("fire", gridNo)` | Order the selected merc to shoot at a tile through the real fire-weapon event. |
 
 Timeouts report the screen and, if one is open, the message box text, e.g.

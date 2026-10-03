@@ -13,17 +13,21 @@ local function tile_distance(a, b)
 	return math.sqrt((ax - bx) ^ 2 + (ay - by) ^ 2)
 end
 
--- Wait the game out, answering a modal box if one comes up. In combat the enemy
--- can offer to let the player surrender (a YES/NO box); decline and fight on.
--- Other boxes (there should be none) get their OK.
+-- Wait the game out, answering a modal box if one comes up. In combat the enemy can
+-- offer to let the player surrender, and at the start of a turn a wounded merc with a
+-- medkit is asked whether to apply first aid; decline both and fight on. Anything else
+-- gets its OK (or YES).
 function battle.settle(timeout)
 	ja2.waitIdle(timeout or 120000)
 	while ja2.state().messageBox do
-		local text = ja2.state().messageBoxText or ""
-		if text:find("Surrender", 1, true) then
+		if ja2.exists{ text = "NO", exact = true } then
 			ja2.click{ text = "NO", exact = true }
-		else
+		elseif ja2.exists{ text = "OK", exact = true } then
 			ja2.click{ text = "OK", exact = true }
+		elseif ja2.exists{ text = "YES", exact = true } then
+			ja2.click{ text = "YES", exact = true }
+		else
+			break -- no button we know; leave it (the caller will fail on the next wait)
 		end
 		ja2.waitIdle(timeout or 120000)
 	end

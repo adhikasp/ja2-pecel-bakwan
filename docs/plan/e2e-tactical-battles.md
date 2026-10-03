@@ -3,8 +3,9 @@
 > **Status: first slice implemented.** The plan below is the contract for the track; the
 > first tests built on it are:
 >
-> - `tests/e2e/battle_smoke.lua` — three mercs against ten enemies in the landed sector,
->   driven through the native tactical HUD.
+> - `tests/e2e/battle_smoke.lua` — three mercs, decked out with a chosen weapon, armour,
+>   items and skill points, against ten enemies in the landed sector, driven through the
+>   native tactical HUD to a win.
 > - `tests/e2e/lib/battle.lua` — the reusable fixtures and orders the scenarios share.
 > - `ja2.debug("battle", spec)` / `ja2.debug("fire", gridNo)` — the C++ harness in
 >   [`src/game/Automation/BattleScenario.cc`](../../src/game/Automation/BattleScenario.cc).
@@ -46,27 +47,40 @@ the loaded sector:
 
 1. **Clear** (default): remove the enemies already in the sector, as
    `ja2.debug("clearenemies")` does.
-2. **Equip**: every merc in the sector gets the requested gun (loaded) and spare
-   magazines, and optionally a kevlar vest, helmet and leggings.
-3. **Spawn**: `TacticalCreateEnemySoldier(class)` for each enemy, placed on free tiles a
-   given distance from the team's centre of mass, facing the team. Each enemy keeps the
-   kit the generator gave it, unless `enemy_weapon` overrides it.
-4. **Sighting**: `AllTeamsLookForAll(TRUE)` settles who sees whom.
+2. **Equip**: every merc in the sector gets a gun (loaded) with spare magazines, body
+   armour, extra items and chosen skill points — per merc via `our`, or the spec defaults.
+3. **Place**: mercs with an `our[i].grid` are moved there; enemies are placed on their
+   `grids` or, without them, on free tiles a given distance from the team's centre of mass.
+   Placement does not run sight, so it cannot start combat before the first turn is chosen.
+4. **Spawn**: `TacticalCreateEnemySoldier(class)` for each enemy. Each keeps the kit the
+   generator gave it, unless `enemy_weapon` overrides it.
 5. **Combat**: `EnterCombatMode(OUR_TEAM)` starts turn-based combat with the player's turn,
-   so a scenario can act immediately.
+   then `AllTeamsLookForAll(FALSE)` settles who sees whom, so a scenario can act immediately.
 
 The spec table:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `enemies` | `10` | how many enemies to spawn |
+| `enemies` | `10` | how many enemies to spawn, or a table `{ count, class, weapon, distance, grids = { grid, ... } }` |
 | `class` | `"administrator"` | `"administrator"`, `"army"` or `"elite"` |
-| `weapon` | `"MP5K"` | internal name (`weapons.json`) of the gun for our mercs |
+| `weapon` | `"MP5K"` | internal name (`weapons.json`) of our mercs' gun |
 | `enemy_weapon` | *(generated)* | internal name of a gun to give every enemy |
-| `armour` | `true` | give our mercs a kevlar vest, helmet and leggings |
+| `armour` | `"kevlar"` | `true`/`false`, `"kevlar"` or `"spectra"` for our mercs |
 | `distance` | `6` | tiles from the team to stand at |
 | `clear` | `true` | clear the sector's existing enemies first |
 | `start` | `true` | enter turn-based combat when staged |
+| `our` | — | per-merc setup, matched by `name` (or by position when unnamed) |
+
+Each `our` entry:
+
+| Field | Meaning |
+|---|---|
+| `name` | which merc (the name shown on the squad bar) |
+| `weapon` | internal name of the gun for this merc |
+| `armour` | `true`/`false`/`"kevlar"`/`"spectra"` |
+| `grid` | exact tile to stand on |
+| `items` | array of internal names to give (pockets fill up on their own) |
+| `stats` | skill points: `marksmanship`, `agility`, `dexterity`, `strength`, `leadership`, `wisdom`, `medical`, `mechanical`, `explosive`, `morale`, `level` (1..10), `health` (sets life and life max) |
 
 Item names are the original internal names, looked up through
 `GCM->getItemByName()`; an unknown name fails the scenario with the name in the message.
@@ -82,10 +96,10 @@ game state and what the HUD shows.
 
 ### Orders — `ja2.debug("fire", gridNo)`
 
-The selected merc is ordered to shoot at a tile through the real fire-weapon event
-(`SendBeginFireWeaponEvent`), the same call the UI makes when a shot is clicked. AP, ammo,
-jams, turning, bullets and death all run normally. `ja2.waitIdle()` then waits the shot
-out, because `NothingInFlight()` already treats `ubAttackBusyCount` as busy.
+The selected merc is ordered to shoot at a tile through `HandleItem` — the same entry the
+AI fires through (`AIMain.cc`) and the UI reaches when a shot is clicked. AP, ammo, jams,
+turning, bullets and death all run normally. `ja2.waitIdle()` then waits the shot out,
+because `NothingInFlight()` already treats `ubAttackBusyCount` as busy.
 
 `ja2.state().tactical.attackBusy` exposes the attack-busy count that `waitIdle()` watches,
 and each merc carries `finalDestination`. A merc who dies is removed from the map
@@ -100,9 +114,11 @@ The scenario pieces are small Lua steps (`tests/e2e/lib/battle.lua`):
 - `battle.select(i)` / `battle.card(i)` / `battle.selected()` — drive and read the native
   squad bar.
 - `battle.nearest(i)` — the enemy nearest to merc `i`.
-- `battle.fireAt(e)` — shoot enemy `e`, returning whether it was hit.
+- `battle.fireAt(e)` — shoot enemy `e`, returning whether the order fired and whether it hit.
 - `battle.endTurn()` — press the native End Turn button and wait out the enemy turn.
 - `battle.playTurn()` — each merc shoots the nearest enemy while he has AP, then End Turn.
+- `battle.settle()` — wait the game out, declining the in-combat surrender and first-aid
+  prompts so a scenario is not stopped by a modal box.
 
 ## Determinism and runtime
 
@@ -126,10 +142,11 @@ A scenario asserts from three sources, cheapest first:
    ammo, selected/done), the combat flag and turn, the message log (`cls == "combat"`).
 3. **Screenshots** for review (`shots.take`), never as the pass/fail signal.
 
-The first scenario asserts the shape of a fight: three mercs armed and with AP on the
-native bar; ten enemies staged; the mercs fire; ammo changes or an enemy falls; the enemy
-life total drops; the log records combat; the fight costs game time. Line of sight, cover
-choice, AP accounting and morale breaks are #64.
+The first scenario asserts the shape of a fight *and* its outcome: three mercs, decked out
+with a G11, spectra armour, a medkit and top skill points, on the native bar at 100 health;
+ten enemies staged; the mercs fire; ammo changes; the log records the fight; and after a
+few turns the enemies are wiped out, combat is over and all three mercs are still standing.
+Line of sight, cover choice, AP accounting and morale breaks are #64.
 
 ## Running
 
