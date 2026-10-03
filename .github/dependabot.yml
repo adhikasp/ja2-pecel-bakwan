@@ -10,7 +10,7 @@
 # cmake, so they are not managed by Dependabot and should not be.
 version: 2
 updates:
-  # GitHub Actions. Also keeps SHA-pinned actions (see jlumbroso/free-disk-space
+  # GitHub Actions. Also keeps SHA-pinned actions (see libsdl-org/setup-sdl
   # in github-ci.yml) from silently going stale, and surfaces new major versions
   # of the official actions the CI relies on.
   - package-ecosystem: github-actions
