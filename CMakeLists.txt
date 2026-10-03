@@ -254,9 +254,19 @@ add_dependencies(${JA2_BINARY} stracciatella)
 set_property(SOURCE ${CMAKE_SOURCE_DIR}/src/game/GameVersion.cc APPEND PROPERTY COMPILE_DEFINITIONS "GAME_VERSION=v${ja2-stracciatella_VERSION}")
 
 
+## Copy assets only when their content differs: these commands run after every relink (and
+## ja2-ui-assets on every build), where an unconditional copy_directory rewrites every file
+## (~10s of I/O per relink on Windows). copy_directory_if_different needs CMake >= 3.26, older
+## CMake keeps the previous behaviour.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.26)
+    set(JA2_COPY_ASSETS_COMMAND -E copy_directory_if_different)
+else()
+    set(JA2_COPY_ASSETS_COMMAND -E copy_directory)
+endif()
+
 macro(copy_assets_dir_to_ja2_binary_after_build DIR)
     add_custom_command(TARGET ${JA2_BINARY} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
+            COMMAND ${CMAKE_COMMAND} ${JA2_COPY_ASSETS_COMMAND}
             ${CMAKE_CURRENT_SOURCE_DIR}/assets/${DIR} "$<TARGET_FILE_DIR:${JA2_BINARY}>/${DIR}")
 endmacro()
 
@@ -268,7 +278,7 @@ if(WITH_NATIVE_UI)
     # (read at runtime, editable without a rebuild), copied on every build (not only when the binary relinks), so
     # RML/RCSS/SVG edits reach the build dir
     add_custom_target(ja2-ui-assets ALL
-        COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_CURRENT_SOURCE_DIR}/assets/ui" "${CMAKE_CURRENT_BINARY_DIR}/ui")
+        COMMAND ${CMAKE_COMMAND} ${JA2_COPY_ASSETS_COMMAND} "${CMAKE_CURRENT_SOURCE_DIR}/assets/ui" "${CMAKE_CURRENT_BINARY_DIR}/ui")
     add_dependencies(${JA2_BINARY} ja2-ui-assets)
 endif()
 
