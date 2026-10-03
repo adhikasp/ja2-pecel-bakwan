@@ -4,7 +4,7 @@ body { width: 100%; height: 100%; background-color: var(--c-void); }
 
 .g-head {
 	position: absolute; left: 0; top: 0; right: 0; height: 84dp; display: flex; flex-wrap: wrap; align-items: center;
-	padding: 0 var(--sp-7); background-color: var(--c-bg); border-bottom: var(--border) var(--c-line);
+	padding: 0 var(--sp-7); background-color: var(--c-bg); decorator: image(gen-brushed repeat); border-bottom: var(--border) var(--c-line);
 }
 .g-title { display: block; height: 46dp; line-height: 50dp; margin-right: var(--sp-5); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-text-strong); white-space: nowrap; }
 .g-brand { color: var(--c-accent); font-weight: bold; margin-right: var(--sp-2); }
@@ -16,7 +16,7 @@ body { width: 100%; height: 100%; background-color: var(--c-void); }
 .g-section:first-child { margin-top: 0; }
 .g-caption { display: block; margin: var(--sp-1) 0; font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--c-text-faint); white-space: nowrap; }
 .g-note { display: block; margin-top: var(--sp-2); font-size: var(--fs-sm); }
-.g-box { background-color: var(--c-panel); border: var(--border) var(--c-line); }
+.g-box { background-color: var(--c-panel); decorator: image(gen-mottle repeat); border: var(--border) var(--c-line); }
 
 /* state matrix */
 .g-matrix { display: block; }

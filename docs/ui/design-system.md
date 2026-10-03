@@ -1,9 +1,12 @@
-# Design system: Night Ops
+# Design system: Field Manual
 
 > **Status: Phase 1 output, for the owner to approve** (see *Done when* in
-> [native-modern-game.md](../plan/native-modern-game.md)). Direction B, Night Ops, was chosen in
-> [style-directions.md](style-directions.md). This page is the reference for every native screen: use these tokens and
-> components. If a screen needs something new, add it here and to the gallery. Do not build one-off styles.
+> [native-modern-game.md](../plan/native-modern-game.md)). Direction B was chosen in
+> [style-directions.md](style-directions.md) and shipped as *Night Ops* (cold flat green-black, no texture).
+> After review the art direction was corrected to the game's own chrome language — *Field Manual*: warm gunmetal
+> plates, mottled wear, brass bevels, engraved seams, inset recesses, cream and gold type, sampled from the original
+> `Interface.slf` art (see *Art direction* below). This page is the reference for every native screen: use these
+> tokens and components. If a screen needs something new, add it here and to the gallery. Do not build one-off styles.
 
 Everything lives in [`assets/ui/`](../../assets/ui/). It is copied next to the binary on every build and read at
 runtime, so RML, RCSS and SVG edits need no recompile. Set `JA2_UI_DIR` to the source folder to skip the copy.
@@ -15,7 +18,26 @@ runtime, so RML, RCSS and SVG edits need no recompile. Set `JA2_UI_DIR` to the s
 | `icons/*.svg` | The icon set: 114 icons on a 24-unit grid |
 | `fonts/` | Barlow, Barlow Condensed, Share Tech Mono, Fira Sans (fallback). Noto Sans SC is downloaded at configure time |
 | `gallery.rml`, `gallery.rcss` | The gallery screen |
-| `mocks/` | The Night Ops mocks from the style-direction step (literal values, kept for reference) |
+| `mocks/` | The style-direction mocks from the Phase 1 step (literal values, kept for reference) |
+
+## Art direction: Field Manual
+
+The first pass looked like a modern flat dashboard; the game's own UI art does not. Extracting the original chrome
+(`Interface.slf`, `Data.slf`, `Laptop.slf`) gives a very specific material language, and every surface in this design
+system reproduces it procedurally (no game art in the repository):
+
+| Original art (sampled) | In the design system |
+|---|---|
+| Mottled olive-brown plates (`PANELTEX` #332B18, panel faces #4A4231/#523931) | flat surface colours under the `gen-mottle` texture: fine grime, worn light patches, pits and flecks |
+| Brass/gold bevels lit from the top left (~#8B7547, the gold outlines of every JA2 frame) | `--c-bevel-hi` on top/left, `--c-bevel-lo` on bottom/right; **pressed states invert the bevel** (buttons, key caps, wells) |
+| Carved seams (dark line with a lit lip, everywhere on the bottom bar) | `gen-groove` on separators and panel heads |
+| Dark inset recesses with a gold hairline (portrait wells, item slots, the clock) | `--c-inset` + `--c-inset-line` on portraits, slots, inputs, the time clock |
+| Leather popup faces (`TACTPOPUPBACKGROUNDMAIN`) and brushed steel | `gen-leather` on modals, menus, tooltips; `gen-brushed` on bars and table heads |
+| Varnished board (map desk, laptop) | `gen-wood` (for the laptop and map desk screens) |
+| Cream/white body text, gold headings and gold numbers | `--c-text*` cream scale, brass `--c-accent`, amber `--c-select` for selection |
+
+Status colours stay Okabe-Ito and colour-blind safe (the chrome may be nostalgic; accessibility is not).
+
 
 ## Seeing it
 
@@ -51,9 +73,10 @@ unknown token logs an RmlUi warning, which fails the tests. **Never hard-code a 
 
 | Group | Tokens |
 |---|---|
-| Surfaces (dark → light) | `--c-void #0B0F0D` screen · `--c-bg #0E1310` page · `--c-panel #121815` · `--c-panel-2 #1A221E` · `--c-panel-3 #232D28` · `--c-line #2A3630` · `--c-line-2 #3E4F46` · `--c-scrim #05080699` |
-| Text | `--c-text-strong #EEF4EF` · `--c-text #D7E2D9` · `--c-text-dim #8FA096` · `--c-text-faint #5E6E65` (hints, disabled; large text only) · `--c-on-accent #0B0F0D` |
-| Interaction | `--c-accent #9BE564` (phosphor: primary, on, active tab) · `--c-accent-2/-3` hover/pressed · `--c-accent-soft` wash · `--c-select #F2B33D` (amber: *the selected thing* — merc, sector, item) · `--c-focus #56B4E9` (keyboard focus only) |
+| Surfaces (dark → light) | `--c-void #0A0704` screen · `--c-bg #150F08` page · `--c-panel #241A0E` · `--c-panel-2 #322515` · `--c-panel-3 #3E2F1B` · `--c-line #4E3B21` · `--c-line-2 #7A6136` · `--c-scrim #06040299` — all under `gen-mottle` wear |
+| Plate edges | `--c-bevel-hi #9A7E4C` (top/left light) · `--c-bevel-lo #0D0906` (bottom/right shade) · `--c-inset #100A05` (recessed wells) · `--c-inset-line #6B5530` (the gold hairline around a recess) |
+| Text | `--c-text-strong #F5EDDA` · `--c-text #DCCFB2` · `--c-text-dim #A8916B` · `--c-text-faint #6E5C3E` (hints, disabled; large text only) · `--c-on-accent #1B1206` |
+| Interaction | `--c-accent #D8B25E` (brass: primary, on, active tab) · `--c-accent-2/-3` hover/pressed · `--c-accent-soft` wash · `--c-select #F2C230` (amber gold: *the selected thing* — merc, sector, item) · `--c-focus #5BB8E8` (keyboard focus only) |
 | Status | `--c-ok #2BD4A0` · `--c-info #56B4E9` · `--c-warn #F0E442` · `--c-danger #FF6B3D`, each with a `-soft` wash |
 | Game stats | `--c-stat-hp` (= danger) · `--c-stat-hp-lost` · `--c-stat-breath` (= info) · `--c-stat-morale` · `--c-stat-xp` (= select) · `--c-stat-track` |
 
@@ -95,9 +118,9 @@ The tokens page shows one line in every shipped language, plus a Russian heading
   `--border 1`, `--focus-ring 2`.
 - **Radii** are squared, for a military look: `--r-0 0`, `--r-1 2` (controls, slots), `--r-2 4` (panels,
   popovers), `--r-round` (toggles, thumbs, badges).
-- **Elevation:** a flat HUD with no drop shadows. Each level is a lighter surface plus a stronger border
-  (`--e1-*` panel, `--e2-*` raised control, `--e3-*` menu/modal/tooltip). Modals add `--c-scrim`, and modals and
-  menus get a 2dp accent top edge.
+- **Elevation:** bevelled metal, no drop shadows. Each level is a lighter mottled surface plus a stronger bevelled
+  border (`--e1-*` panel, `--e2-*` raised control, `--e3-*` menu/modal/tooltip). Modals add `--c-scrim`, and modals and
+  menus get a 2dp brass top edge.
 - **Motion:** `--t-fast 0.08s` (hover, press), `--t-base 0.15s` (toggle, tab, focus), `--t-slow 0.30s` (modal,
   toast, panel), easing `cubic-out` (`--ease-in cubic-in` for exits). Motion runs on the game's virtual clock, so
   headless runs are deterministic.
@@ -159,14 +182,21 @@ RmlUi does not lay out bare text inside a flex container, so **every label in a 
 
 ## Rendering notes
 
-- UI images are generated. Icons are rasterized SVG, textures are procedural (`gen-grain`, `gen-hatch`, …), and
-  merc faces are decoded from the player's game data at runtime (`face-<n>`). No game art is in the repository.
+- UI images are generated. Icons are rasterized SVG, textures are procedural (`gen-mottle`, `gen-leather`,
+  `gen-brushed`, `gen-wood`, `gen-groove`, `gen-hatch`, `gen-grain`, `gen-topo`, …, see `GenerateProcedural` in
+  `src/nativeui/UiCore.cc`), and merc faces are decoded from the player's game data at runtime (`face-<n>`). No game
+  art is in the repository. The texture recipes are our own work informed by the original art, not copies of it.
+- **Surface language.** Plates: `background-color` of a surface token + `decorator: image(gen-mottle repeat)` + a
+  four-side `border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi)`. Pressed states
+  swap the bevel and drop the decorator. Recesses (portraits, item slots, inputs) invert it and use
+  `--c-inset`/`--c-inset-line`. Heads and bars use `gen-brushed`; modals, menus and tooltips use `gen-leather`;
+  separators use `gen-groove`.
 - On SDL's software renderer (headless screenshots, the game's frame buffer), the render interface rasterizes
   RmlUi geometry itself, because SDL's software `RenderGeometry` is not watertight. GPU renderers use
   `SDL_RenderGeometry`.
 - RmlUi limits we design around: there are no custom properties (hence the token preprocessor), no box shadows or
-  shaders on our render interface (hence flat elevation), gradients have two stops only, and bare text is not laid
-  out in flex containers.
+  shaders on our render interface (hence bevelled borders instead), `vertical-gradient`/`horizontal-gradient` have
+  two stops only, and bare text is not laid out in flex containers.
 
 ## Layout audit classes
 

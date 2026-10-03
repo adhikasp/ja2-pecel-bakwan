@@ -8,7 +8,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 /* page header: kicker + title left, actions right (same as credits) */
 .p3-head {
 	position: absolute; left: 0; top: 0; right: 0; height: 104dp; padding: 0 var(--sp-7);
-	display: flex; align-items: center; border-bottom: var(--border) var(--c-line); background-color: var(--c-bg);
+	display: flex; align-items: center; border-bottom: var(--border) var(--c-line); background-color: var(--c-bg); decorator: image(gen-brushed repeat);
 }
 .p3-heading { display: block; flex: 1 1 0; }
 .p3-kicker { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-accent); letter-spacing: 2dp; }
@@ -20,7 +20,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .p3-main { position: absolute; left: 0; top: 104dp; right: 0; bottom: 72dp; padding: var(--sp-5) var(--sp-7); display: flex; }
 .p3-foot {
 	position: absolute; left: 0; right: 0; bottom: 0; height: 72dp; padding: 0 var(--sp-7);
-	display: flex; align-items: center; border-top: var(--border) var(--c-line); background-color: var(--c-bg);
+	display: flex; align-items: center; border-top: var(--border) var(--c-line); background-color: var(--c-bg); decorator: image(gen-brushed repeat);
 }
 .p3-foot .btn { margin-left: var(--sp-3); }
 .p3-hints { display: flex; align-items: center; flex: 1 1 0; font-size: var(--fs-sm); color: var(--c-text-dim); }
@@ -29,7 +29,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 
 
 .section { display: block; margin-bottom: var(--sp-3); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-dim); letter-spacing: 1dp; }
-.panel { display: block; background-color: var(--c-panel); border: var(--border) var(--c-line); border-radius: var(--r-2); }
+.panel { display: block; background-color: var(--c-panel); decorator: image(gen-mottle repeat); border: var(--border) var(--c-line); border-radius: var(--r-2); }
 .pad { padding: var(--sp-4) var(--sp-5); }
 .wm-note {
 	position: absolute; right: var(--sp-4); bottom: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-2xs);
@@ -39,7 +39,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 /* =============================================================== main menu (mainmenu.rml) */
 /* the original art from the player's data, uplifted at runtime, covering the screen (aspect kept, cropped) */
 .mm-art { position: absolute; left: 0; top: 0; right: 0; bottom: 0; decorator: image(mainmenu-art cover center center); }
-.mm-scrim { position: absolute; left: 0; top: 0; bottom: 0; width: 72%; decorator: horizontal-gradient(#0B0F0DF2 #0B0F0D00); }
+.mm-scrim { position: absolute; left: 0; top: 0; bottom: 0; width: 72%; decorator: horizontal-gradient(#0A0704F2 #0A070400); }
 .mm-vignette { position: absolute; left: 0; top: 0; right: 0; bottom: 0; decorator: image(gen-vignette); }
 .mm-layout { position: absolute; left: 0; top: 0; right: 0; bottom: 0; padding: 88dp 96dp 24dp 120dp; display: flex; flex-direction: column; }
 .mm-brand { display: block; flex: 0 0 auto; }
@@ -50,7 +50,8 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 /* the menu sits on its own panel so that it reads over any part of the art */
 .mm-menu {
 	display: block; flex: 0 0 640dp; margin-right: var(--sp-6); padding: var(--sp-2) 0;
-	background-color: #0B0F0DD9; border-top: var(--border) var(--c-line-2); border-bottom: var(--border) var(--c-line-2);
+	background-color: #0A0704D9; decorator: image(gen-leather repeat);
+	border-top: var(--border) var(--c-line-2); border-bottom: var(--border) var(--c-line-2);
 }
 .mm-item {
 	display: flex; align-items: center; height: 68dp; padding: 0 var(--sp-5); border-left: 3dp #00000000;
@@ -74,7 +75,9 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .mm-spacer { display: block; flex: 1 1 0; }
 .mm-card {
 	display: block; flex: 0 1 520dp; min-width: 0; padding: var(--sp-5); box-sizing: border-box;
-	background-color: #121815F0; border: var(--border) var(--c-line); border-top: 2dp var(--c-select); border-radius: var(--r-2);
+	background-color: #241A0EF0; decorator: image(gen-mottle repeat);
+	border: var(--border) var(--c-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
+	border-top: 2dp var(--c-select); border-radius: var(--r-2);
 }
 .mm-card-head { display: flex; align-items: center; margin-bottom: var(--sp-3); }
 .mm-card-head .t { display: block; flex: 1 1 0; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-text-strong); }
@@ -85,7 +88,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .kv .v { display: block; flex: 1 1 0; min-width: 0; text-align: right; white-space: nowrap; overflow: hidden; font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text); }
 .mm-foot {
 	display: flex; flex: 0 0 36dp; align-items: center; padding: 0 var(--sp-3);
-	font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text); background-color: #0B0F0DD9; border-top: var(--border) var(--c-line);
+	font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text); background-color: #0A0704D9; border-top: var(--border) var(--c-line);
 }
 .mm-foot .ver { display: block; flex: 0 0 auto; margin-right: var(--sp-6); color: var(--c-text); }
 .mm-foot .copy { display: block; flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; color: var(--c-text-dim); }
@@ -209,7 +212,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 }
 .sl-thumb .cap {
 	position: absolute; left: 0; right: 0; bottom: 0; height: 32dp; padding: 0 var(--sp-3); display: flex; align-items: center;
-	background-color: #0B0F0DCC; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-dim);
+	background-color: #0A0704CC; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-dim);
 }
 .sl-dname { display: block; margin-top: var(--sp-4); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-select); }
 .sl-dfile { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-faint); margin-bottom: var(--sp-3); }
@@ -250,11 +253,11 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 
 /* =============================================================== loading screen */
 .ld-art { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--c-void); }
-.ld-shade { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; decorator: vertical-gradient(#0B0F0D00 #0B0F0DF5); }
+.ld-shade { position: absolute; left: 0; right: 0; bottom: 0; height: 46%; decorator: vertical-gradient(#0A070400 #0A0704F5); }
 .ld-top { position: absolute; left: 96dp; top: 64dp; display: flex; align-items: center; }
 .ld-chip {
 	display: flex; align-items: center; height: 36dp; padding: 0 var(--sp-3); margin-right: var(--sp-2);
-	background-color: #0B0F0DD8; border: var(--border) var(--c-line); font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text);
+	background-color: #0A0704D8; border: var(--border) var(--c-line); font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text);
 }
 .ld-chip .k { display: block; margin-right: var(--sp-2); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-dim); }
 .ld-bottom { position: absolute; left: 96dp; right: 96dp; bottom: 72dp; display: flex; align-items: flex-end; }
@@ -263,7 +266,7 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .ld-where .t { display: block; font-family: var(--font-display); font-weight: 700; font-size: 64dp; line-height: 68dp; color: var(--c-text-strong); text-transform: uppercase; }
 .ld-where .s { display: block; font-size: var(--fs-lg); color: var(--c-text-dim); }
 .ld-tip {
-	display: block; width: 560dp; padding: var(--sp-4) var(--sp-5); background-color: #121815E6; border: var(--border) var(--c-line);
+	display: block; width: 560dp; padding: var(--sp-4) var(--sp-5); background-color: #241A0EE6; border: var(--border) var(--c-line);
 	border-left: 3dp var(--c-select); border-radius: var(--r-2);
 }
 .ld-tip .h { display: flex; align-items: center; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-select); }

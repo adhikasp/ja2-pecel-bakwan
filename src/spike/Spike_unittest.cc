@@ -206,7 +206,7 @@ TEST(UiSpike, TokensExpand)
 	if (!SDL_GetPathInfo((spike::StyleDir() + "/tokens.rcss").c_str(), nullptr)) GTEST_SKIP();
 	spike::ResetRmlWarnings();
 	std::string const css = spike::ExpandTokens(".x { color: var(--c-accent); border: var(--border) var(--e2-line); }");
-	EXPECT_EQ(css, ".x { color: #9BE564; border: 1dp #3E4F46; }");
+	EXPECT_EQ(css, ".x { color: #D8B25E; border: 1dp #7A6136; }");
 	EXPECT_EQ(spike::RmlWarnings(), 0);
 	spike::ExpandTokens("var(--no-such-token)");
 	EXPECT_EQ(spike::RmlWarnings(), 1);
