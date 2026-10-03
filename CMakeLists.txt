@@ -35,6 +35,18 @@ set(LAUNCHER_BINARY "ja2-launcher")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# linker: lld links the monolithic ja2 binary (450+ objects, debug info) several times faster
+# than the default GNU ld. Only used when the toolchain actually ships it, so nothing changes on
+# machines without lld (set -DUSE_LLD=OFF to keep GNU ld).
+option(USE_LLD "Link with lld when the toolchain provides it" ON)
+if(USE_LLD AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+    find_program(LLD_PROGRAM "ld.lld")
+    if(LLD_PROGRAM)
+        message(STATUS "Linking with lld found at ${LLD_PROGRAM}")
+        add_link_options("-fuse-ld=lld")
+    endif()
+endif()
+
 ## Semantic Versioning
 # @see https://semver.org/
 #

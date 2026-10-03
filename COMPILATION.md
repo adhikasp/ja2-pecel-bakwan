@@ -2,7 +2,7 @@
 
 ## Dependencies
 
-- SDL3 >= `3.0.0` (version `3.4.14` is included in this repo for Windows and macOS).
+- SDL3 >= `3.0.0` (version `3.4.16` is included in this repo for Windows and macOS).
 - cmake
 - Rust and Cargo
 - Your systems compiler
@@ -25,6 +25,31 @@ directory (`_bin` is ignored by git). Cmake only needs to be executed once unles
 ```sh
 mkdir _bin && cd _bin
 ```
+
+## Faster builds
+
+Nothing below is required — each one is picked up automatically when the machine offers it.
+
+- **sccache** — with `sccache` on `PATH` when cmake runs, it becomes the compiler launcher and
+  Cargo's `RUSTC_WRAPPER` (`-DUSE_SCCACHE=OFF` to opt out). The cache is shared by *every* build
+  directory, so a second worktree, a branch switch or a reverted change reuses the objects instead
+  of recompiling them: `pacman -S mingw-w64-x86_64-sccache` (MSYS2), `brew install sccache`
+  (macOS), `cargo install sccache --locked` (elsewhere).
+- **lld** — `-DUSE_LLD=ON` (the default) links with `ld.lld` when the toolchain provides it, which
+  cuts the link of the monolithic `ja2` binary to a fraction of GNU ld's time. MSYS2:
+  `pacman -S mingw-w64-x86_64-lld`. Where `ld.lld` is absent the option is skipped silently.
+- **Ninja** — configure a *fresh* build directory with `-G Ninja` and build with `cmake --build .`
+  (append `--parallel` for a job count). Ninja does the scheduling itself and does not start a
+  shell per recipe line, which is what makes the MSYS Makefiles generator the slow choice on
+  Windows. MSYS2: `pacman -S mingw-w64-x86_64-ninja`. A build directory keeps the generator it was
+  configured with: switch by configuring a new one.
+- **Unity builds** — `-DCMAKE_UNITY_BUILD=ON` compiles batches of translation units together,
+  following the `UNITY_GROUP`s set in `src/**/CMakeLists.txt` (sources that must stay on their own
+  carry `SKIP_UNITY_BUILD_INCLUSION`). Many fewer translation units to build from scratch; the
+  price is that editing one file rebuilds its whole group.
+- **Dependency bumps** — a changed pin refreshes the downloaded sources for you
+  (`cmake/DepRefresh.cmake`), so bumping a dependency in an existing build directory rebuilds what
+  depends on it instead of silently linking the old objects against the new headers.
 
 ## Rust notes
 
@@ -132,6 +157,9 @@ mkdir _bin && cd _bin
 cmake .. "-GMSYS Makefiles" -DCPACK_GENERATOR=ZIP
 make package
 ```
+
+For faster iteration, configure a fresh build directory with `-G Ninja` instead and build with
+`cmake --build .` — see [Faster builds](#faster-builds).
 
 You now have a zip file with the game, including the dll dependencies.
 

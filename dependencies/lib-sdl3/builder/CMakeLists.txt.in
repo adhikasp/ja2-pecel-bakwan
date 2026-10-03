@@ -12,8 +12,8 @@ project(builder NONE)
 
 include(ExternalProject)
 externalproject_add(sdl3
-    URL "https://libsdl.org/release/SDL3-3.4.14.zip"
-    URL_MD5 "ab68cc8844c5f07837f615ad48760068"
+    URL "https://libsdl.org/release/SDL3-3.4.16.zip"
+    URL_MD5 "1532ca369da53f6c6c6a52cf5402ea40"
     CMAKE_ARGS
         "-G@CMAKE_GENERATOR@"
         "-C@CACHE_FILE@"

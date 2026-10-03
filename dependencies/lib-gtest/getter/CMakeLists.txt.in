@@ -12,8 +12,8 @@ project(getter NONE)
 
 include(ExternalProject)
 externalproject_add(get-gtest
-    URL "https://github.com/google/googletest/releases/download/v1.16.0/googletest-1.16.0.tar.gz"
-    URL_MD5 "9a75eb2ac97300cdb8b65b1a5833f411"
+    URL "https://github.com/google/googletest/releases/download/v1.18.0/googletest-1.18.0.tar.gz"
+    URL_MD5 "ae87634285dbe148a7abc6d19c4c05bd"
     CMAKE_ARGS
         "-G@CMAKE_GENERATOR@"
         SOURCE_DIR          "@SRC_DIR@"

@@ -39,8 +39,19 @@ configure_file(
 execute_process(COMMAND ${CMAKE_COMMAND}
     .
     "-G${CMAKE_GENERATOR}"
-    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/builder")
-execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/builder")
+    WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/builder"
+    RESULT_VARIABLE builder_result)
+if(NOT builder_result EQUAL 0)
+    message(FATAL_ERROR "configuring the string_theory builder failed: ${builder_result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/builder" RESULT_VARIABLE builder_result)
+if(NOT builder_result EQUAL 0)
+    message(FATAL_ERROR "building string_theory failed: ${builder_result}")
+endif()
+
+# the installed headers carry the archive's timestamps too
+include(DepRefresh)
+dep_refresh(string_theory "3.9" "${INSTALL_PREFIX}/include/*")
 
 # interface library
 include("${INSTALL_PREFIX}/lib/cmake/string_theory/string_theory-config.cmake")

@@ -6,13 +6,18 @@
 include(FetchContent)
 
 FetchContent_Declare(rmlui
-    URL https://codeload.github.com/mikke89/RmlUi/tar.gz/refs/tags/6.1
-    URL_HASH SHA256=B6088BF31858D31BFE657CAECF49FD12D5A34F9A37FA1C3061757410C4EB0089
+    URL https://codeload.github.com/mikke89/RmlUi/tar.gz/refs/tags/6.3
+    URL_HASH SHA256=d977298bb6147610e5984d5db85ddf284020d655a8713913f6982074f1dbdede
     SOURCE_SUBDIR do-not-add-subdirectory
     DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
 FetchContent_MakeAvailable(rmlui)
 set(RMLUI_SOURCE_DIR "${rmlui_SOURCE_DIR}" CACHE INTERNAL "RmlUi sources (the spikes embed its sample fonts)")
+
+# the sources carry the archive's timestamps: refresh them when the pin changes, or everything
+# compiled against the previous version (our headers included) stays stale
+include(DepRefresh)
+dep_refresh(rmlui "6.3" "${rmlui_SOURCE_DIR}/*")
 
 find_package(Freetype QUIET)
 if(NOT TARGET Freetype::Freetype)
@@ -57,7 +62,7 @@ file(GLOB RMLUI_CORE_SOURCES
     "${rmlui_SOURCE_DIR}/Source/Core/FontEngineDefault/*.cpp")
 add_library(ja2-rmlui STATIC ${RMLUI_CORE_SOURCES})
 target_include_directories(ja2-rmlui SYSTEM PUBLIC "${rmlui_SOURCE_DIR}/Include")
-target_compile_definitions(ja2-rmlui PUBLIC RMLUI_STATIC_LIB PRIVATE RMLUI_FONT_ENGINE_FREETYPE RMLUI_VERSION="6.1")
+target_compile_definitions(ja2-rmlui PUBLIC RMLUI_STATIC_LIB PRIVATE RMLUI_FONT_ENGINE_FREETYPE RMLUI_VERSION="6.3")
 target_compile_features(ja2-rmlui PUBLIC cxx_std_17)
 target_link_libraries(ja2-rmlui PRIVATE Freetype::Freetype)
 if(NOT MSVC)

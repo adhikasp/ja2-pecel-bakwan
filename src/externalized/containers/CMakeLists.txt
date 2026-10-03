@@ -14,6 +14,14 @@ set_property(
     PROPERTY UNITY_GROUP "externalized"
 )
 
+# Containers_unittests.cc and Views_unittests.cc each define their own global TestEntity, so one
+# of them has to stay out of the shared batch
+set_property(
+    SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/Views_unittests.cc
+    DIRECTORY ${CMAKE_SOURCE_DIR}
+    PROPERTY SKIP_UNITY_BUILD_INCLUSION ON
+)
+
 set(JA2_SOURCES
     ${JA2_SOURCES}
     ${LOCAL_JA2_HEADERS}
