@@ -1,6 +1,6 @@
 # Jagged Alliance 2 — Stracciatella, Reforged
 
-> **Same game. Same rules. Same saves.** A presentation rebuilt for the monitor you actually own.
+> **Same game. Same rules. Same saves.** Modernized from the pixels up — presentation, gameplay, AI and tooling.
 
 This is a continuation of the venerable [JA2-Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella) project. Upstream made Jagged Alliance 2 run everywhere and fixed its bugs while keeping the 1999 look. This fork keeps all of that, then modernises the game itself — **every aspect of it**: presentation, gameplay, AI and the tooling around them.
 
