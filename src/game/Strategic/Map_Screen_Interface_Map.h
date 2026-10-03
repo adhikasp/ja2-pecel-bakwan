@@ -4,6 +4,9 @@
 #include "JA2Types.h"
 #include "UILayout.h"
 
+#include <string>
+#include <vector>
+
 
 void InitMapScreenInterfaceMap();
 /** The rectangle of the sector map (it moves with the screen layout): call when the map screen is entered. */
@@ -183,5 +186,47 @@ extern SGPSector sSelMap;
 
 void    CreateDestroyMilitiaSectorButtons(void);
 BOOLEAN CanRedistributeMilitiaInSector(INT8 bClickedTownId);
+
+// ---- what the native militia redistribution panel draws (NativeUI/MapScreenNative.cc, docs/ui/mapscreen.md) ----
+// A read-only snapshot of the selected town's 3x3 militia map plus the commands the native panel sends. The
+// legacy panel keeps running underneath, so both UIs change the same SectorInfo / cursor counts.
+struct MilitiaCellInfo
+{
+	int         cell = 0;          // 0..8, the legacy sSectorMilitiaMapSector index
+	std::string code;              // the sector's short name (e.g. "A9")
+	int         green = 0, regular = 0, elite = 0;
+	bool        controlled = false; // show its counts
+	bool        allowable = false;  // ours and peaceful: can hold militia
+	bool        shaded = false;     // enemy controlled or hostiles present
+	bool        selected = false, highlighted = false;
+};
+
+struct MilitiaView
+{
+	bool                          active = false;
+	int                           town = 0;
+	std::string                   town_name;
+	bool                          can_auto = false;
+	int                           cursor_green = 0, cursor_regular = 0, cursor_elite = 0;
+	int                           selected_cell = -1;
+	int                           sel_green = 0, sel_regular = 0, sel_elite = 0;
+	std::vector<MilitiaCellInfo>  cells;
+};
+
+/** The militia redistribution panel now, or active == false when none is up. */
+MilitiaView GetMilitiaView();
+
+/** Selects (or toggles off) the 3x3 cell @a cell (MilitiaRegionClickCallbackPrimary). */
+void MilitiaSelectCell(int cell);
+/** Right-click on a cell: clears the selection (MilitiaRegionClickCallbackSecondary). */
+void MilitiaClearCell();
+/** Picks one @a type (0 green, 1 regular, 2 elite) up from the selected sector (right click). */
+void MilitiaPickUp(int type);
+/** Drops one @a type into the selected sector (left click). */
+void MilitiaDrop(int type);
+/** Evenly distributes the town's militia (Auto). */
+void MilitiaAuto();
+/** Closes the panel (Done). */
+void MilitiaDone();
 
 #endif

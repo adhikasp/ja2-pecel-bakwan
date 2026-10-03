@@ -116,6 +116,9 @@ static BOOLEAN gfBlinkHeader;
 static UINT32 guiNumInvolved;
 static UINT32 guiNumUninvolved;
 
+// The native pre-battle panel's tooltips (set once when the panel is built).
+static ST::string gPBAutoHelp, gPBEnterHelp, gPBRetreatHelp;
+
 //SAVE START
 
 //Using the ESC key in the PBI will get rid of the PBI and go back to mapscreen, but
@@ -488,6 +491,10 @@ void InitPreBattleInterface(GROUP* const battle_group, bool const persistent_pbi
 				gpStrategicString[STR_BP_RETREATSINGLE_FASTHELP];
 		}
 		iPBButton[2]->SetFastHelpText(retreat_help);
+
+		gPBAutoHelp    = autoresolve_help;
+		gPBEnterHelp   = gpStrategicString[STR_PB_GOTOSECTOR_FASTHELP];
+		gPBRetreatHelp = retreat_help;
 	}
 	else
 	{ /* Use the explicit encounter code to determine what gets disable and the
@@ -498,6 +505,8 @@ void InitPreBattleInterface(GROUP* const battle_group, bool const persistent_pbi
 		DisableButton(iPBButton[2]);
 		iPBButton[2]->SetFastHelpText(gzNonPersistantPBIText[0]);
 		iPBButton[1]->SetFastHelpText(gzNonPersistantPBIText[1]);
+		gPBEnterHelp   = gzNonPersistantPBIText[1];
+		gPBRetreatHelp = gzNonPersistantPBIText[0];
 		ST::string help;
 		switch (gubExplicitEnemyEncounterCode)
 		{
@@ -516,6 +525,7 @@ disable_set_help:
 				DisableButton(iPBButton[0]);
 set_help:
 				iPBButton[0]->SetFastHelpText(help);
+				gPBAutoHelp = help;
 		}
 	}
 
@@ -1109,6 +1119,91 @@ static ST::string GetSoldierConditionInfo(const SOLDIERTYPE& s)
 		s.bLife * 100 < s.bLifeMax * 67      ? pConditionStrings[COND_FAIR]       :
 		s.bLife * 100 < s.bLifeMax * 86      ? pConditionStrings[COND_GOOD]       :
 		pConditionStrings[COND_EXCELLENT];
+}
+
+
+// The native pre-battle panel's snapshot (NativeUI/MapScreenNative.cc, docs/ui/mapscreen.md). Read-only; the
+// commands still go through ActivatePreBattle*Action below, so both UIs run the same callbacks.
+PreBattleView GetPreBattleView()
+{
+	PreBattleView v;
+	v.active = gfPreBattleInterfaceActive != FALSE;
+	if (!v.active) return v;
+
+	v.persistent  = gfPersistantPBI != FALSE;
+	v.can_auto    = iPBButton[0] != nullptr && iPBButton[0]->Enabled();
+	v.can_enter   = iPBButton[1] != nullptr && iPBButton[1]->Enabled();
+	v.can_retreat = iPBButton[2] != nullptr && iPBButton[2]->Enabled();
+	v.auto_help    = gPBAutoHelp.to_std_string();
+	v.enter_help   = gPBEnterHelp.to_std_string();
+	v.retreat_help = gPBRetreatHelp.to_std_string();
+
+	if (!gfPersistantPBI)
+	{
+		v.header = gzNonPersistantPBIText[8].to_std_string();
+		v.blink  = true;
+	}
+	else
+	{
+		switch (gubEnemyEncounterCode)
+		{
+			case ENEMY_INVASION_CODE:         v.header = gpStrategicString[STR_PB_ENEMYINVASION_HEADER].to_std_string();        break;
+			case ENEMY_ENCOUNTER_CODE:        v.header = gpStrategicString[STR_PB_ENEMYENCOUNTER_HEADER].to_std_string();       break;
+			case ENEMY_AMBUSH_CODE:           v.header = gpStrategicString[STR_PB_ENEMYAMBUSH_HEADER].to_std_string();          v.blink = true; break;
+			case ENTERING_ENEMY_SECTOR_CODE:  v.header = gpStrategicString[STR_PB_ENTERINGENEMYSECTOR_HEADER].to_std_string(); break;
+			case CREATURE_ATTACK_CODE:        v.header = gpStrategicString[STR_PB_CREATUREATTACK_HEADER].to_std_string();       v.blink = true; break;
+			case BLOODCAT_AMBUSH_CODE:        v.header = gpStrategicString[STR_PB_BLOODCATAMBUSH_HEADER].to_std_string();       v.blink = true; break;
+			case ENTERING_BLOODCAT_LAIR_CODE: v.header = gpStrategicString[STR_PB_ENTERINGBLOODCATLAIR_HEADER].to_std_string(); break;
+			default: break;
+		}
+	}
+
+	v.sector      = GetSectorIDString(gubPBSector, TRUE).to_std_string();
+	v.enemy_label = (gubEnemyEncounterCode != CREATURE_ATTACK_CODE
+		? gpStrategicString[STR_PB_ENEMIES]
+		: (gubEnemyEncounterCode == BLOODCAT_AMBUSH_CODE || gubEnemyEncounterCode == ENTERING_BLOODCAT_LAIR_CODE
+			? gpStrategicString[STR_PB_BLOODCATS] : gpStrategicString[STR_PB_CREATURES])).to_std_string();
+	if (gubEnemyEncounterCode == CREATURE_ATTACK_CODE ||
+			gubEnemyEncounterCode == BLOODCAT_AMBUSH_CODE ||
+			gubEnemyEncounterCode == ENTERING_BLOODCAT_LAIR_CODE ||
+			WhatPlayerKnowsAboutEnemiesInSector(gubPBSector) != KNOWS_HOW_MANY)
+	{
+		v.enemy_count = "?";
+	}
+	else
+	{
+		v.enemy_count = std::to_string(NumEnemiesInSector(gubPBSector));
+	}
+	v.mercs   = int(guiNumInvolved);
+	v.militia = CountAllMilitiaInSector(gubPBSector);
+
+	CFOR_EACH_IN_TEAM(i, OUR_TEAM)
+	{
+		SOLDIERTYPE const& s = *i;
+		if (s.bLife == 0)                      continue;
+		if (s.uiStatusFlags & SOLDIER_VEHICLE) continue;
+		if (PlayerMercInvolvedInThisCombat(s))
+		{
+			PreBattleMercInfo m;
+			m.name       = s.name.to_std_string();
+			m.assignment = GetMapscreenMercAssignmentString(s).to_std_string();
+			m.condition  = GetSoldierConditionInfo(s).to_std_string();
+			m.hp         = ST::format("{}%", s.bLife * 100 / s.bLifeMax).to_std_string();
+			m.bp         = ST::format("{}%", s.bBreath).to_std_string();
+			v.involved.push_back(std::move(m));
+		}
+		else
+		{
+			PreBattleMercInfo m;
+			m.name        = s.name.to_std_string();
+			m.assignment  = GetMapscreenMercAssignmentString(s).to_std_string();
+			m.location    = GetMapscreenMercLocationString(s).to_std_string();
+			m.destination = GetMapscreenMercDestinationString(s).to_std_string();
+			m.departure   = GetMapscreenMercDepartureString(s, 0).to_std_string();
+			v.uninvolved.push_back(std::move(m));
+		}
+	}
+	return v;
 }
 
 

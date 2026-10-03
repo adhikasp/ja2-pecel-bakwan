@@ -3746,6 +3746,104 @@ static bool CanMilitiaAutoDistribute()
 }
 
 
+// The native militia redistribution panel (NativeUI/MapScreenNative.cc, docs/ui/mapscreen.md): a read-only
+// snapshot plus the actions the legacy regions/buttons would take.
+
+MilitiaView GetMilitiaView()
+{
+	MilitiaView v;
+	v.active = sSelectedMilitiaTown != 0;
+	if (!v.active) return v;
+
+	v.town       = sSelectedMilitiaTown;
+	v.town_name  = GCM->getTown(v.town)->name.to_std_string();
+	v.can_auto   = CanMilitiaAutoDistribute();
+	v.cursor_green   = sGreensOnCursor;
+	v.cursor_regular = sRegularsOnCursor;
+	v.cursor_elite   = sElitesOnCursor;
+	v.selected_cell  = sSectorMilitiaMapSector;
+
+	INT16 const base = GetBaseSectorForCurrentTown();
+	for (int i = 0; i < 9; ++i)
+	{
+		MilitiaCellInfo c;
+		c.cell = i;
+		INT16 const sector = base + i % MILITIA_BOX_ROWS + i / MILITIA_BOX_ROWS * 16;
+		SGPSector const sec(sector);
+		c.code = sec.AsShortString().to_std_string();
+
+		StrategicMapElement const& e = StrategicMap[sec.AsStrategicIndex()];
+		c.allowable  = IsThisMilitiaTownSectorAllowable(INT16(i));
+		c.controlled = e.bNameId != BLANK_SECTOR && !e.fEnemyControlled;
+		c.shaded     = e.bNameId != BLANK_SECTOR && (e.fEnemyControlled || NumHostilesInSector(sec) != 0);
+		c.selected    = sSectorMilitiaMapSector == i;
+		c.highlighted = sSectorMilitiaMapSectorOutline == i;
+		if (c.controlled)
+		{
+			SECTORINFO const& si = SectorInfo[sector];
+			c.green   = si.ubNumberOfCivsAtLevel[GREEN_MILITIA];
+			c.regular = si.ubNumberOfCivsAtLevel[REGULAR_MILITIA];
+			c.elite   = si.ubNumberOfCivsAtLevel[ELITE_MILITIA];
+		}
+		v.cells.push_back(std::move(c));
+	}
+
+	if (sSectorMilitiaMapSector >= 0)
+	{
+		INT16 const sector = base + sSectorMilitiaMapSector % MILITIA_BOX_ROWS + sSectorMilitiaMapSector / MILITIA_BOX_ROWS * 16;
+		SECTORINFO const& si = SectorInfo[sector];
+		v.sel_green   = si.ubNumberOfCivsAtLevel[GREEN_MILITIA];
+		v.sel_regular = si.ubNumberOfCivsAtLevel[REGULAR_MILITIA];
+		v.sel_elite   = si.ubNumberOfCivsAtLevel[ELITE_MILITIA];
+	}
+	return v;
+}
+
+void MilitiaSelectCell(int const cell)
+{
+	INT16 const value = INT16(cell);
+	sSectorMilitiaMapSector =
+		!IsThisMilitiaTownSectorAllowable(value) ? -1 :
+		sSectorMilitiaMapSector == value           ? -1 :
+		value;
+	fMapPanelDirty = TRUE;
+}
+
+void MilitiaClearCell()
+{
+	sSectorMilitiaMapSector = -1;
+	fMapPanelDirty = TRUE;
+}
+
+void MilitiaPickUp(int const type)
+{
+	if (sSectorMilitiaMapSector == -1) return;
+	INT16 const sector = GetBaseSectorForCurrentTown() + sSectorMilitiaMapSector % MILITIA_BOX_ROWS + sSectorMilitiaMapSector / MILITIA_BOX_ROWS * 16;
+	PickUpATownPersonFromSector(UINT8(type), UINT8(sector));
+	fMapPanelDirty = TRUE;
+}
+
+void MilitiaDrop(int const type)
+{
+	if (sSectorMilitiaMapSector == -1) return;
+	INT16 const sector = GetBaseSectorForCurrentTown() + sSectorMilitiaMapSector % MILITIA_BOX_ROWS + sSectorMilitiaMapSector / MILITIA_BOX_ROWS * 16;
+	DropAPersonInASector(UINT8(type), UINT8(sector));
+	fMapPanelDirty = TRUE;
+}
+
+void MilitiaAuto()
+{
+	HandleEveningOutOfTroopsAmongstSectors();
+	fMapPanelDirty = TRUE;
+}
+
+void MilitiaDone()
+{
+	sSelectedMilitiaTown = 0;
+	fMapPanelDirty = TRUE;
+}
+
+
 static void ShowItemsOnMap(void)
 {
 	ClipBlitsToMapViewRegion();

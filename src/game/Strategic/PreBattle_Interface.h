@@ -4,6 +4,9 @@
 #include "Types.h"
 #include "Strategic_Movement.h"
 
+#include <string>
+#include <vector>
+
 void InitPreBattleInterface(GROUP* battle_group, bool persistent_pbi);
 void KillPreBattleInterface(void);
 void RenderPreBattleInterface(void);
@@ -95,5 +98,32 @@ extern BOOLEAN gfUsePersistantPBI;
 extern BOOLEAN gfRenderPBInterface;
 
 void HandlePreBattleInterfaceStates(void);
+
+// ---- what the native pre-battle panel draws (NativeUI/MapScreenNative.cc, docs/ui/mapscreen.md) ---------
+// A read-only snapshot plus the commands the native buttons send, so the native and the legacy panel run the
+// same callbacks. The legacy pre-battle interface keeps running underneath (hotkeys a/e/r, transition, exit).
+struct PreBattleMercInfo
+{
+	std::string name, assignment, condition, hp, bp; // the involved mercs
+	std::string location, destination, departure;     // the uninvolved mercs (in place of condition/hp/bp)
+};
+
+struct PreBattleView
+{
+	bool        active = false;
+	bool        persistent = false;
+	bool        can_auto = true, can_enter = true, can_retreat = true;
+	bool        blink = false;
+	std::string header;
+	std::string sector;       // the battle sector's name
+	std::string enemy_label;  // "Enemies" / "Creatures" / "Bloodcats"
+	std::string enemy_count;  // the known number, or "?"
+	int         mercs = 0, militia = 0;
+	std::string auto_help, enter_help, retreat_help;
+	std::vector<PreBattleMercInfo> involved, uninvolved;
+};
+
+/** The pre-battle panel now, or active == false when none is up. */
+PreBattleView GetPreBattleView();
 
 #endif
