@@ -1,91 +1,140 @@
-# JA2-Stracciatella Continued
+# Jagged Alliance 2 — Stracciatella, Reforged
 
-[![GitHub CI](https://img.shields.io/github/actions/workflow/status/ja2-stracciatella/ja2-stracciatella/github-ci.yml?branch=master&label=GitHub%20CI&logo=github)](https://github.com/ja2-stracciatella/ja2-stracciatella/actions?query=workflow%3A%22GitHub+CI%22)
-[![AppVeyor](https://img.shields.io/appveyor/ci/ja2-stracciatella/ja2-stracciatella/master.svg?style=flat-square&logo=appveyor&label=AppVeyor)](https://ci.appveyor.com/project/ja2-stracciatella/ja2-stracciatella)
-[![Coverity Scan](https://img.shields.io/coverity/scan/8431.svg?style=flat-square&label=Coverity%20Scan)](https://scan.coverity.com/projects/ja2-stracciatella-ja2-stracciatella)
-[![Current Release](https://img.shields.io/github/downloads/ja2-stracciatella/ja2-stracciatella/v0.22.1/total)](https://github.com/ja2-stracciatella/ja2-stracciatella/releases/tag/v0.22.1)
+> **Same game. Same rules. Same saves.** A presentation rebuilt for the monitor you actually own.
 
-This is continuation of venerable JA2-Stracciatella project.
+This is a continuation of the venerable [JA2-Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella) project. Upstream made Jagged Alliance 2 run everywhere and fixed its bugs while keeping the 1999 look. This fork keeps all of that, then takes the next step: it *rebuilds the presentation* — every screen, the tactical HUD, the strategic map and the world renderer — natively for modern displays, and modernises the AI, the test harness and the tooling around it.
 
-The goal of the project is to make Jagged Alliance 2 available on a wide range of platforms, improve its stability, fix bugs and provide a stable platform for mod development.  At the moment the goal is mostly to fix bugs.
+Gameplay rules, campaign data, mods and save games are untouched. Only the pixels change.
 
-[Official Homepage: https://ja2-stracciatella.github.io](https://ja2-stracciatella.github.io)
+[![CI](https://img.shields.io/github/actions/workflow/status/adhikasp/ja2-stracciatella/github-ci.yml?branch=master&label=CI&logo=github)](https://github.com/adhikasp/ja2-stracciatella/actions/workflows/github-ci.yml)
+[![Discord](https://img.shields.io/badge/Discord-The%20Bear%27s%20Pit-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/GqrVZUM)
+[![Built by agents](https://img.shields.io/badge/built%20by-agents%20%F0%9F%A4%96-8957e5)](#how-development-works-here)
 
-To get in touch with the developers you can use the [#ja2-stracciatella Discord channel on The Bear's Pit](https://discord.com/invite/GqrVZUM).
+![The native main menu at 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/docs-readme-rewrite/main-menu.png)
+
+---
+
+## Why this fork exists
+
+Stracciatella's job is a portable, cleaned-up, bug-fixed JA2 that still looks like 1999. That project succeeded — and this fork is built on top of it, not instead of it. The engine work, the portability and the bug fixes all carry over.
+
+What this fork adds is the thing upstream deliberately leaves alone: **it makes JA2 look and feel like a game made for a 1440p/4K monitor today, not a 640x480 game blown up.**
+
+- **Native layouts**, redesigned for 16:9, 16:10 and 21:9 at a 1920x1080 reference, scaling with DPI from 1280x720 up to 4K and 32:9. No centred 640x480 box, no letterbox filler, no "classic coordinates".
+- **Native pixels** — outline fonts, vector and high-resolution art, fractional UI scaling (125%, 150%, …), because nothing is pixel-doubled.
+- **Modern UX**, where it does not change the rules: readable type, tooltips, hover states, scrolling lists, drag and drop, on-screen keyboard shortcuts.
+- **A native world renderer** — GPU tiles and sprites, smooth fractional zoom, and lighting/shadows as shaders, reproducing the original draw order exactly.
+- **The same game underneath.** Same numbers, campaign, saves and content data.
+
+**Not goals:** pixel-identical 640x480 mode, hand-placed 640x480 coordinates, keeping the old art as the final look, or keeping the old screen code alive after migration.
+
+## The roadmap
+
+The work is organised as four tracks, each with its own GitHub milestone and plan document. Together they are what this fork does that upstream does not.
+
+### 🎨 [Native Modern Graphic](https://github.com/adhikasp/ja2-stracciatella/milestone/9)
+
+The main event, and the one already shipping. Every screen is redesigned for modern displays and rebuilt on [RmlUi](https://github.com/mikke89/RmlUi) (MIT) with real layout, data binding and theming, on top of a GPU compositor.
+
+Highlights so far:
+
+- A **"Night Ops" design system**: tokens, open-licence fonts, 109 vector icons and a full component set, browsable in-game via `ja2.debug("gallery")`.
+- A **native UI runtime** with view models that read the existing game state and call the existing game functions, a per-screen `ui_mode` switch, and automation that targets element ids instead of pixel positions.
+- **Native front-end** (main menu, options, save/load, new game, loading), **strategic map screen** and **tactical HUD**.
+- A **GPU world renderer** (SDL_GPU) that matches the software renderer **pixel for pixel — 0.0000% diff — at 1x** in five test scenes on both D3D12 and Vulkan, with fractional zoom from 1x to 4x. Windows defaults to the GPU path with a software fallback.
+- **HD content art** generated on the player's machine from their own game files — derived art is never committed, so the repo stays clean to ship.
+
+**Status:** Phases 0–5 and 8 are merged. Phase 6 (laptop) is in flight; Phases 7, 9 and 10 are open. The full plan, including the per-screen method (audit → design → build → verify) and the parity contract that stops features getting lost, is in [docs/plan/native-modern-game.md](docs/plan/native-modern-game.md).
+
+### 🤖 [AI enhancement](https://github.com/adhikasp/ja2-stracciatella/milestone/6)
+
+Audit and spec the tactical and strategic AI layers, externalise the tunables to `src/externalized/` JSON so behaviour can be changed without a recompile, and build a metrics/evaluation harness so AI changes can be measured instead of argued about.
+
+### 🧪 [Better E2E](https://github.com/adhikasp/ja2-stracciatella/milestone/7)
+
+Deterministic end-to-end tests: tactical battles simulated on a headless virtual clock, a scenario corpus run as AI regression in CI, plus a campaign E2E track that scripts a whole play-through, world map and all, including save/load soak.
+
+### 🔧 [1.13 port](https://github.com/adhikasp/ja2-stracciatella/milestone/8)
+
+An inventory and shortlist of features from JA2 v1.13, each classified as externalized JSON / game code / native UI first, with a licensing and divergence check before anything is ported.
+
+The ordering across all four tracks lives on the [JA2 Modernization Roadmap](https://github.com/users/adhikasp/projects/1) board.
+
+## What it looks like now
+
+Every screenshot below is taken from the real game by the automated test harness, at 1920x1080.
+
+| Strategic map | Tactical HUD |
+|---|---|
+| ![Native strategic map screen](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/docs-readme-rewrite/strategic-map.png) | ![Native tactical HUD in a firefight](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/docs-readme-rewrite/tactical-hud.png) |
+| The full-screen strategic map with dockable side panels, time compression, a message log and sector intel. | The squad bar, per-merc AP/HP/breath/morale, and the native action bar and turn control. |
+
+| Inventory and merc detail | Route plotting |
+|---|---|
+| ![Native inventory and merc detail panel](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/docs-readme-rewrite/inventory.png) | ![Native route plotting on the strategic map](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/docs-readme-rewrite/route-plotting.png) |
+| Drag-and-drop inventory, attributes, attachments and slot-aware item pictures. | Native confirmation modals and shortcuts replace hand-placed popups. |
+
+## Same game underneath
+
+The redesign is presentation only. That promise is enforced, not just stated:
+
+- **Save games** load unchanged across the migration.
+- **Mods** keep working: `externalized/` JSON data is untouched, and UI mods become RML/RCSS overrides through the existing VFS layering.
+- **Localisation** goes through the existing string tables, with layout audits run per language.
+- **No game data ships here.** You need your own copy of Jagged Alliance 2; original art belongs to its rights holders.
+
+## How development works here
+
+This repository is developed **primarily by AI coding agents**, with a human owner setting direction. The owner approves the art direction and every screen's wireframes before implementation — style is a product decision. Everything else, from plan docs to implementation to tests, screenshots and pull requests, is largely written by agents under the rules in [AGENTS.md](AGENTS.md).
+
+To make that safe, the codebase is built to be **machine-verifiable** — an agent can prove a change works without a human at the keyboard:
+
+- The game runs **headless on a virtual clock** and is driven from the shell or by Lua scripts: `python tools/ja2ctl.py click "New Game"`, `ja2ctl shot`, `ja2ctl state`.
+- **Golden screenshots and layout audits** cover every screen at every reference resolution, so a regression shows up as an image diff, not a bug report.
+- **Deterministic tests** — unit tests plus `ctest -L e2e` — gate every change in CI.
+- **Issues are the unit of work**: one issue per slice, one PR that closes it, and every visual PR carries screenshot proof.
+
+If you want to see how the sausage is made, start with [AGENTS.md](AGENTS.md) and the automation guide in [docs/automation.md](docs/automation.md).
 
 ## How to start the game
 
-1. Install original Jagged Alliance 2 game on your computer.  Data files from the original game will be used by JA2-Stracciatella
-
-2. [Download JA2-Stracciatella](http://ja2-stracciatella.github.io/download/) or [compile](COMPILATION.md) it from the cloned git repository.
+1. Install the original **Jagged Alliance 2** on your computer. This project uses its data files and ships none of its own.
+2. [Compile](COMPILATION.md) it from this repository (or grab a build from CI, if one is available for your platform).
 
 ### With the optional launcher
 
-3. Start the launcher and use it to configure the game. It will automatically create the configuration file.
-
-4. Set “JA2 Data Directory” to point to the directory where the original game was installed during step 1. You can manually enter the directory or use the “...” button to browse your computer.
-
-5. If you haven't installed the English version of the original game, you have to select the correct “Game Version” i.e. localization. Note that the game supports two different Russian localizations: RUSSIAN for the “BUKA Agonia Vlasty” release and RUSSIAN_GOLD for the “Gold” release.
+3. Start the launcher and use it to configure the game. It creates the configuration file for you.
+4. Set **"JA2 Data Directory"** to the directory where the original game was installed in step 1.
+5. If you did not install the English version, select the correct **"Game Version"** (localization). Note the two Russian releases: `RUSSIAN` for "BUKA Agonia Vlasty" and `RUSSIAN_GOLD` for "Gold".
 
 ### Without the optional launcher
 
-3. Start the game the first time.  It will create the configuration file `%USERPROFILE%\Documents\JA2\ja2.json` on Windows or `~/.ja2/ja2.json` on Unix-like systems.
+3. Start the game once. It creates `%USERPROFILE%\Documents\JA2\ja2.json` on Windows, or `~/.ja2/ja2.json` on Unix-like systems.
+4. Edit `ja2.json` and set `game_dir` to the install directory from step 1, for example `D:\games\ja2\` or `/home/user/games/ja2-installed`.
+5. For a localized install, pass the version explicitly: `ja2.exe -resversion FRENCH`.
 
-4. Edit the configuration file and set parameter game_dir to point to the directory where the original game was installed during step 1.  For example, `D:\games\ja2\` (on Windows) or `/home/user/games/ja2-installed` (on Linux).
+Supported localizations: `DUTCH`, `ENGLISH`, `FRENCH`, `GERMAN`, `ITALIAN`, `POLISH`, `RUSSIAN`, `RUSSIAN_GOLD`. Run `ja2.exe -help` for the full list of options.
 
-5. If you installed not the English version of the original game, but one of the localized varieties (e.g. French or Russian), you need to start `ja2.exe` with parameter telling which version of the game you are using.  For example: `ja2.exe -resversion FRENCH`
+## Building from source
 
-Supported localizations are DUTCH, ENGLISH, FRENCH, GERMAN, ITALIAN, POLISH, RUSSIAN, RUSSIAN_GOLD. Use RUSSIAN for the “BUKA Agonia Vlasty” release and RUSSIAN_GOLD for the “Gold” release.
+See [COMPILATION.md](COMPILATION.md) for toolchains and IDE setup. The short version:
 
-If you downloaded a precompiled version of JA2-Stracciatella, the archive may contain a set of bat files for all supported localizations.
+- **macOS:** `cmake -S . -B build && cmake --build build -- -j$(sysctl -n hw.logicalcpu)`.
+- **Windows (MSYS2 MinGW64):** configure with the `MSYS Makefiles` generator into `_bin`, then `make -j$(nproc)`.
+- **Tests:** `./ja2 -unittests`, and `ctest -L e2e` from the build directory.
 
-Run `ja2.exe -help` for list of available options.
+Per-machine commands, the automation workflow and the repo layout are documented in [AGENTS.md](AGENTS.md).
 
-## Development
+## History of the project
 
-The project is developed on [github](https://github.com/ja2-stracciatella/ja2-stracciatella).  Pull requests with bug fixes are very welcome.
+The original project was run by Tron from 2006. He cleaned up the JA2 sources and made them portable — over *7000 commits* in the original SVN repository at `svn://tron.homeunix.org/ja2/trunk`. Work ceased in 2010. The [original project homepage](http://tron.homeunix.org/ja2) is gone; some history survives in the [JA2-Stracciatella Q&A](http://thepit.ja-galaxy-forum.com/index.php?t=msg&th=13222) and the [Wayback Machine](https://web.archive.org/web/20140204204243/http://tron.homeunix.org/ja2).
 
-### How to contribute
-
-The best way to contribute is to make a pull request with a bug fix.  Please see list of open issues [here](https://github.com/ja2-stracciatella/ja2-stracciatella/issues).
-
-The second best way is to file a bug report if you encounter a bug.
-
-### How to make a pull request
-
-1. Fork the project
-2. Create a branch (git checkout -b my_feature_branch)
-3. Commit your changes (git commit -am "description of your changes")
-4. Push to the branch (git push origin my_feature_branch)
-5. Create a pull request from your branch into master
-
-Please don't reformat the code for the sake of it, because it will make the merge process harder.  Instead use the following settings in your editor:
-
-- display tab as 8 spaces
-- indent with tabs
-
-If you add new code, please don't add spaces after opening or before closing parentheses.
-
-## History of the Project
-
-The original project was run by Tron since 2006.  He did an amazing job of
-cleaning up the JA2 sources and making them portable.  The work was massive too -
-there are over *7000 commits* in the original svn repository
-svn://tron.homeunix.org/ja2/trunk.  Unfortunately, the work on the project
-ceased in 2010.  The [original project homepage](http://tron.homeunix.org/ja2)
-is no longer available.  Some history can be found in [JA2-Stracciatella
-Q&A](http://thepit.ja-galaxy-forum.com/index.php?t=msg&th=13222), or the
-[Wayback Machine](https://web.archive.org/web/20140204204243/http://tron.homeunix.org/ja2)
+The community then revived the project at [ja2-stracciatella/ja2-stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella), which this fork continues.
 
 ## License
 
-Unless specified explicitly in the commit message, all changes since `commit 8287b98`
-are released to the public domain.  All libraries in `dependencies/lib-*`
-have their own licenses.
+Unless specified explicitly in the commit message, all changes since `commit 8287b98` are released to the public domain. All libraries in `dependencies/lib-*` have their own licenses.
 
-It is not known under which license Tron released his changes.  All we know,
-the source codes were publicly available in his svn repository.
+It is not known under which license Tron released his changes; all we know is that the source codes were publicly available in his SVN repository.
 
-The original Jagged Alliance source code was released by Strategy First Inc. in
-2004 under the Source Code License Agreement ("SFI-SCLA").  You can find the
-license in file *SFI Source Code license agreement.txt*.
+The original Jagged Alliance source code was released by Strategy First Inc. in 2004 under the Source Code License Agreement ("SFI-SCLA"). The license is in [SFI Source Code license agreement.txt](SFI%20Source%20Code%20license%20agreement.txt).
