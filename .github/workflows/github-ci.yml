@@ -7,6 +7,15 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened ]
 
+# A newer run of the same ref makes the in-flight one pointless: its result is
+# already stale, yet it would still burn the full 4-job matrix (~60 runner
+# minutes) to completion. Cancel it instead. The group is keyed on the ref, so
+# two different PRs, two different tags, or a tag and master never cancel each
+# other — only a re-push of an existing ref cancels its predecessor.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   ci-build:
     strategy:
@@ -33,20 +42,13 @@ jobs:
     name: ${{ matrix.cfg.name }}
     runs-on: ${{ matrix.cfg.os }}
     steps:
-    - name: Free Disk Space (Ubuntu)
-      uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0 — pinned to a full SHA because @main is a mutable ref
-      if: ${{ startsWith(matrix.cfg.os, 'ubuntu') }}
-      with:
-        preinstalled-runtimes: false
-        # No Android build runs here any more, so let the cleaner reclaim the
-        # Android runtime instead of preserving it for a job that is gone.
-        android: true
-        dotnet: true
-        haskell: true
-        large-packages: false
-        docker-images: true
-        swap-storage: true
-
+    # No "Free Disk Space" step — it was only ever needed by the Android build
+    # this fork dropped in #26, and it was not free: ~100 s of every job, a
+    # fifth of the Linux job, to reclaim space that never gets used. df at job
+    # start shows 86 GiB available of a 151 GiB disk, while the whole build —
+    # Debug tree, restored sccache + Rust caches, AppImage staging — needs
+    # single-digit GiB. If a run ever does exhaust the disk, narrow what gets
+    # cleaned rather than restoring a blanket wipe.
     - name: Context in env
       env:
         GITHUB_CONTEXT: ${{ toJson(github) }}
