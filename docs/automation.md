@@ -192,6 +192,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.setWorldRenderer(name)` / `ja2.worldRenderer()` | Switch the world renderer (`software`, `gpu`, `pipeline`; the latter two need the world as a layer: `--worldzoom`, or start with `JA2_WORLD_RENDERER`) / what is active and last-frame stats. |
 | `ja2.pick()` | What the mouse picks in tactical: `{grid, interactive, target}`. |
 | `ja2.debug("light", level, nightLights)`, `("item", grid, item)`, `("corpse", grid, dir)`, `("roof", grid)` | Renderer test scenes: ambient light, an item or a corpse on the ground, a room's roof taken off. |
+| `ja2.debug("doormenu", [grid])`, `("pickupmenu")` | Tactical menus directly: the door menu (the nearest door, or the one at `grid`) and the pick-up menu on a small pile of tools at the merc's feet. |
 
 Timeouts report the screen and, if one is open, the message box text, e.g.
 `timed out after 120000 ms waiting for screen MAP_SCREEN (screen:
@@ -202,7 +203,7 @@ MSG_BOX_SCREEN); a message box is open: "Surrender? YES NO"`.
 Screens and overlays redesigned for [native-modern-game.md](plan/native-modern-game.md) run on RmlUi over the legacy
 game (`src/game/NativeUI/`). Which UI a screen uses is its `ui_mode`, resolved when the screen is entered:
 `ja2.setUiMode(key)` override > `"ui_mode"` in `ja2.json` > the default. Keys: `credits`, `mainmenu`, `options`, `saveload`,
-`newgame`, `loadscreen` (default native), `msgbox`, `tooltip`, `toasts`, `cursor` (default legacy). The native UI needs a 1280x720 output: below that everything is legacy.
+`newgame`, `loadscreen`, `tactical` (default native), `msgbox`, `tooltip`, `toasts`, `cursor` (default legacy). The native UI needs a 1280x720 output: below that everything is legacy.
 
 Headless (and in every automation session) the native layer is drawn in software and blended into the frame, so
 screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas pixels as everything else.

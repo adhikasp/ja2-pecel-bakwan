@@ -17,6 +17,7 @@
 #include "HImage.h"
 #include "Input.h"
 #include "Interface.h"
+#include "NativeUI.h"
 #include "Interface_Control.h"
 #include "Interface_Cursors.h"
 #include "Interface_Items.h"
@@ -168,6 +169,68 @@ enum
 
 
 static GUIButtonRef iActionIcons[NUM_ICONS];
+
+// The native HUD's view of the movement and door menus (Interface.h: NativeMenuView), filled where the buttons above
+// are made: what it shows is what the buttons know. Row order and grouping are set when the menu pops up.
+static NativeMenuItem gMenuNativeItems[NUM_ICONS];
+static NativeMenuView gMenuNative;
+
+// "|Stand/Walk" -> label "Stand/Walk" and hotkey "S": in the legacy button strings a | marks the hotkey letter,
+// which is part of the label and also the key hint.
+static void SplitHotkey(const ST::string& text, ST::string& label, ST::string& kbd)
+{
+	std::string l, k;
+	std::string const t = text.to_std_string();
+	for (size_t i = 0; i < t.size(); ++i)
+	{
+		if (t[i] == '|')
+		{
+			if (++i < t.size()) { k += t[i]; l += t[i]; }
+			continue;
+		}
+		l += t[i];
+	}
+	// "Cancel (Esc)" already spells the key out inside the label: no separate hint
+	if (!k.empty() && l.find("(" + k + ")") != std::string::npos) k.clear();
+	label = l;
+	kbd = k;
+}
+
+// The design-system icon of each menu button (docs/ui/design-system.md); the action button follows the item in hand.
+static const char* NativeIconName(UINT const idx, UINT const gfx)
+{
+	switch (idx)
+	{
+		case WALK_ICON:           return "walk";
+		case SNEAK_ICON:          return "sneak";
+		case RUN_ICON:            return "run";
+		case CRAWL_ICON:          return "stance-prone";
+		case LOOK_ICON:           return "look";
+		case TALK_ICON:           return "talk";
+		case HAND_ICON:           return "pointer";
+		case OPEN_DOOR_ICON:      return "door";
+		case EXAMINE_DOOR_ICON:   return "search";
+		case LOCKPICK_DOOR_ICON:  return "lockpick";
+		case BOOT_DOOR_ICON:      return "punch";
+		case UNTRAP_DOOR_ICON:    return "wire-cut";
+		case USE_KEY_ICON:
+		case USE_KEYRING_ICON:    return "key";
+		case EXPLOSIVE_DOOR_ICON: return "door-explosive";
+		case USE_CROWBAR_ICON:    return "crowbar";
+		case CANCEL_ICON:         return "close";
+	}
+	switch (gfx)
+	{
+		case TARGETACTIONC_IMAGES:  return "gun";
+		case KNIFEACTIONC_IMAGES:   return "blade";
+		case PUNCHACTIONC_IMAGES:   return "punch";
+		case BOMBACTIONC_IMAGES:    return "bomb";
+		case AIDACTIONC_IMAGES:     return "medkit";
+		case TOOLKITACTIONC_IMAGES: return "toolkit";
+		case WIRECUTACTIONC_IMAGES: return "wire-cut";
+		default:                    return "more";
+	}
+}
 
 // GLOBAL INTERFACE SURFACES
 SGPVObject* guiDEAD;
@@ -411,6 +474,17 @@ static void MakeButtonMove(UINT const idx, UINT const gfx, INT16 const x, INT16 
 	btn->SetUserPtr(event);
 	btn->SetFastHelpText(help);
 	if (disabled) DisableButton(btn);
+
+	NativeMenuItem& n = gMenuNativeItems[idx];
+	n = NativeMenuItem{};
+	n.id = (INT16)idx;
+	n.icon = NativeIconName(idx, gfx);
+	SplitHotkey(help, n.label, n.kbd);
+	n.title = n.label;
+	n.ap = -1;
+	n.disabled = !btn->Enabled();
+	// the native HUD draws the menu itself; the buttons stay for its clicks only
+	if (NativeUI::TacticalHudActive()) HideButton(btn);
 }
 
 
@@ -529,6 +603,33 @@ void PopupMovementMenu(UI_EVENT* const ev)
 	MakeButtonMove(CRAWL_ICON, CRAWL_IMAGES, x + 40, y + 40, ev, pTacticalPopupButtonStrings[CRAWL_ICON],
 			!IsValidStance(s, ANIM_PRONE));
 
+	// the action costs what shooting or stabbing with the item in hand costs
+	if (action_image == TARGETACTIONC_IMAGES || action_image == KNIFEACTIONC_IMAGES)
+		gMenuNativeItems[ACTIONC_ICON].ap = BaseAPsToShootOrStab(DEFAULT_APS, DEFAULT_AIMSKILL, s->inv[HANDPOS]);
+
+	// the native HUD's rows: Move, then Act, then Cancel (docs/ui/tactical.md, the approved wireframes)
+	gMenuNative = NativeMenuView{};
+	gMenuNative.open = true;
+	gMenuNative.kind = "movement";
+	INT16 sx, sy;
+	GetSoldierScreenPos(s, &sx, &sy);
+	gMenuNative.x = g_ui.worldToUi(sx);
+	gMenuNative.y = g_ui.worldToUi(sy);
+	gMenuNative.who = s->name;
+	gMenuNative.ap = s->bActionPoints;
+	for (INT16 const i : { (INT16)WALK_ICON, (INT16)RUN_ICON, (INT16)SNEAK_ICON, (INT16)CRAWL_ICON })
+	{
+		gMenuNativeItems[i].group = 0;
+		gMenuNative.items.push_back(gMenuNativeItems[i]);
+	}
+	for (INT16 const i : { (INT16)ACTIONC_ICON, (INT16)LOOK_ICON, (INT16)TALK_ICON, (INT16)HAND_ICON })
+	{
+		gMenuNativeItems[i].group = 1;
+		gMenuNative.items.push_back(gMenuNativeItems[i]);
+	}
+	gMenuNativeItems[CANCEL_ICON].group = 2;
+	gMenuNative.items.push_back(gMenuNativeItems[CANCEL_ICON]);
+
 	gfInMovementMenu  = TRUE;
 	gfIgnoreScrolling = TRUE;
 }
@@ -565,6 +666,7 @@ void PopDownMovementMenu( )
 
 void RenderMovementMenu( )
 {
+	if (NativeUI::TacticalHudActive()) return; // the native HUD draws the menu itself
 	if ( gfInMovementMenu )
 	{
 		BltVideoObject(FRAME_BUFFER, guiBUTTONBORDER, 0, giMenuAnchorX, giMenuAnchorY);
@@ -1330,13 +1432,14 @@ void InitDoorOpenMenu(SOLDIERTYPE* const pSoldier, DOOR* const d, BOOLEAN const 
 static void BtnDoorMenuCallback(GUI_BUTTON* btn, UINT32 reason);
 
 
-static void MakeButtonDoor(UINT idx, UINT gfx, INT16 x, INT16 y, INT16 ap, INT16 bp, BOOLEAN disable, const ST::string& help)
+static void MakeButtonDoor(UINT idx, UINT gfx, INT16 x, INT16 y, INT16 ap, INT16 bp, BOOLEAN disable, const ST::string& help, const ST::string& missing)
 {
 	GUIButtonRef const btn = QuickCreateButton(iIconImages[gfx], x, y, MSYS_PRIORITY_HIGHEST - 1, BtnDoorMenuCallback);
 	iActionIcons[idx] = btn;
 	ST::string warnings{}, revealedMods{};
 	SOLDIERTYPE* const soldier = gOpenDoorMenu.pSoldier;
 	DOOR* const          pDoor = gOpenDoorMenu.pDoor;
+	ST::string why = missing; // why the native HUD shows the row disabled (NativeMenuItem::why)
 
 	if (gamepolicy(informative_tooltips)) {
 		switch (idx) {
@@ -1364,18 +1467,22 @@ static void MakeButtonDoor(UINT idx, UINT gfx, INT16 x, INT16 y, INT16 ap, INT16
 			if (pDoor->bPerceivedTrapped == DOOR_PROVED_TRAPPED) {
 				warnings += st_format_printf("\n" + TacticalStr[DOOR_LOCK_DESCRIPTION_STR], GetTrapName(*pDoor));
 				disable = true;
+				why = "examined";
 			} else if (pDoor->bPerceivedTrapped == DOOR_PROVED_UNTRAPPED) {
 				warnings += st_format_printf("\n" + TacticalStr[DOOR_LOCK_UNTRAPPED_STR], GetTrapName(*pDoor));
 				disable = true;
+				why = "examined";
 			}
 		}
 		if (idx == UNTRAP_DOOR_ICON) {
 			disable = pDoor->bPerceivedTrapped == DOOR_PROVED_UNTRAPPED;
+			why = disable ? "no_trap" : "";
 		}
 	}
 	if (soldier->bDesiredDirection & 1 && idx != OPEN_DOOR_ICON && idx != CANCEL_ICON) {
 		warnings += "\n" + *(GCM->getNewString(NS_DIAGONALITY_WARNING));
 		DisableButton(btn);
+		why = "diagonal";
 	}
 	if (ap == 0 || !(gTacticalStatus.uiFlags & INCOMBAT)) {
 		btn->SetFastHelpText(help+warnings+revealedMods);
@@ -1383,9 +1490,23 @@ static void MakeButtonDoor(UINT idx, UINT gfx, INT16 x, INT16 y, INT16 ap, INT16
 		ST::string zDisp = ST::format("{} ( {} )", help, ap);
 		btn->SetFastHelpText(zDisp+warnings+revealedMods);
 	}
-	if (disable || (ap != 0 && !EnoughPoints(soldier, ap, bp, false))) {
+	bool const notEnoughAp = ap != 0 && !EnoughPoints(soldier, ap, bp, false);
+	if (disable || notEnoughAp) {
 		DisableButton(btn);
+		if (why.empty() && notEnoughAp) why = "ap";
 	}
+
+	NativeMenuItem& n = gMenuNativeItems[idx];
+	n = NativeMenuItem{};
+	n.id = (INT16)idx;
+	n.icon = NativeIconName(idx, gfx);
+	SplitHotkey(help, n.label, n.kbd);
+	n.title = n.label + warnings + revealedMods;
+	n.ap = ap != 0 ? (INT16)ap : (INT16)-1;
+	n.disabled = !btn->Enabled();
+	n.why = n.disabled ? why : "";
+	// the native HUD draws the menu itself; the buttons stay for its clicks only
+	if (NativeUI::TacticalHudActive()) HideButton(btn);
 }
 
 
@@ -1408,34 +1529,55 @@ static void PopupDoorOpenMenu(BOOLEAN fClosingDoor)
 
 	d = d0 || !SoldierHasKey(*gOpenDoorMenu.pSoldier, ANYKEY);
 	MakeButtonDoor(USE_KEYRING_ICON, USE_KEYRING_IMAGES, dx + 20, dy, AP_UNLOCK_DOOR, BP_UNLOCK_DOOR, d,
-			pTacticalPopupButtonStrings[USE_KEYRING_ICON]);
+			pTacticalPopupButtonStrings[USE_KEYRING_ICON], d0 ? "no" : "key");
 
 	d = fClosingDoor || FindUsableObj(gOpenDoorMenu.pSoldier, CROWBAR) == NO_SLOT;
 	MakeButtonDoor(USE_CROWBAR_ICON, CROWBAR_DOOR_IMAGES, dx + 40, dy, AP_USE_CROWBAR, BP_USE_CROWBAR, d,
-			pTacticalPopupButtonStrings[USE_CROWBAR_ICON]);
+			pTacticalPopupButtonStrings[USE_CROWBAR_ICON], fClosingDoor ? "no" : "crowbar");
 
 	d = d0 || FindObj(gOpenDoorMenu.pSoldier, LOCKSMITHKIT) == NO_SLOT;
 	MakeButtonDoor(LOCKPICK_DOOR_ICON, LOCKPICK_DOOR_IMAGES, dx + 40, dy + 20, AP_PICKLOCK, BP_PICKLOCK, d,
-			pTacticalPopupButtonStrings[LOCKPICK_DOOR_ICON]);
+			pTacticalPopupButtonStrings[LOCKPICK_DOOR_ICON], d0 ? "no" : "lockpick");
 
 	d = d0 || FindObj(gOpenDoorMenu.pSoldier, SHAPED_CHARGE) == NO_SLOT;
 	MakeButtonDoor(EXPLOSIVE_DOOR_ICON, EXPLOSIVE_DOOR_IMAGES, dx + 40, dy + 40, AP_EXPLODE_DOOR, BP_EXPLODE_DOOR,
-			d, pTacticalPopupButtonStrings[EXPLOSIVE_DOOR_ICON]);
+			d, pTacticalPopupButtonStrings[EXPLOSIVE_DOOR_ICON], d0 ? "no" : "charge");
 
 	ST::string help = pTacticalPopupButtonStrings[fClosingDoor ? CANCEL_ICON + 1 : OPEN_DOOR_ICON];
-	MakeButtonDoor(OPEN_DOOR_ICON, OPEN_DOOR_IMAGES, dx, dy, doorAPs[gOpenDoorMenu.pSoldier->ubDoorHandleCode], BP_OPEN_DOOR, FALSE, help);
+	MakeButtonDoor(OPEN_DOOR_ICON, OPEN_DOOR_IMAGES, dx, dy, doorAPs[gOpenDoorMenu.pSoldier->ubDoorHandleCode], BP_OPEN_DOOR, FALSE, help, "");
 
 	MakeButtonDoor(EXAMINE_DOOR_ICON, EXAMINE_DOOR_IMAGES, dx, dy + 20, AP_EXAMINE_DOOR, BP_EXAMINE_DOOR, d0,
-			pTacticalPopupButtonStrings[EXAMINE_DOOR_ICON]);
+			pTacticalPopupButtonStrings[EXAMINE_DOOR_ICON], d0 ? "no" : "");
 
 	MakeButtonDoor(BOOT_DOOR_ICON, BOOT_DOOR_IMAGES, dx, dy + 40, AP_BOOT_DOOR, BP_BOOT_DOOR, d0,
-			pTacticalPopupButtonStrings[BOOT_DOOR_ICON]);
+			pTacticalPopupButtonStrings[BOOT_DOOR_ICON], d0 ? "no" : "");
 
 	MakeButtonDoor(UNTRAP_DOOR_ICON, UNTRAP_DOOR_ICON, dx + 20, dy + 40, AP_UNTRAP_DOOR, BP_UNTRAP_DOOR, d0,
-			pTacticalPopupButtonStrings[UNTRAP_DOOR_ICON]);
+			pTacticalPopupButtonStrings[UNTRAP_DOOR_ICON], d0 ? "no" : "");
 
 	MakeButtonDoor(CANCEL_ICON, CANCEL_IMAGES, dx + 20, dy + 20, 0, 0, FALSE,
-			pTacticalPopupButtonStrings[CANCEL_ICON]);
+			pTacticalPopupButtonStrings[CANCEL_ICON], "");
+
+	// the native HUD's rows: what to do with the door, then the tools, then Cancel (docs/ui/tactical.md)
+	gMenuNative = NativeMenuView{};
+	gMenuNative.open = true;
+	gMenuNative.kind = "door";
+	gMenuNative.x = gOpenDoorMenu.sX;
+	gMenuNative.y = gOpenDoorMenu.sY;
+	gMenuNative.who = gOpenDoorMenu.pSoldier->name;
+	gMenuNative.ap = gOpenDoorMenu.pSoldier->bActionPoints;
+	for (INT16 const i : { (INT16)OPEN_DOOR_ICON, (INT16)EXAMINE_DOOR_ICON, (INT16)UNTRAP_DOOR_ICON })
+	{
+		gMenuNativeItems[i].group = 0;
+		gMenuNative.items.push_back(gMenuNativeItems[i]);
+	}
+	for (INT16 const i : { (INT16)USE_KEYRING_ICON, (INT16)LOCKPICK_DOOR_ICON, (INT16)USE_CROWBAR_ICON, (INT16)BOOT_DOOR_ICON, (INT16)EXPLOSIVE_DOOR_ICON })
+	{
+		gMenuNativeItems[i].group = 1;
+		gMenuNative.items.push_back(gMenuNativeItems[i]);
+	}
+	gMenuNativeItems[CANCEL_ICON].group = 2;
+	gMenuNative.items.push_back(gMenuNativeItems[CANCEL_ICON]);
 
 	gfInOpenDoorMenu = TRUE;
 
@@ -1480,6 +1622,7 @@ void PopDownOpenDoorMenu( )
 
 void RenderOpenDoorMenu( )
 {
+	if (NativeUI::TacticalHudActive()) return; // the native HUD draws the menu itself
 	if ( gfInOpenDoorMenu )
 	{
 		BltVideoObject(FRAME_BUFFER, guiBUTTONBORDER, 0, gOpenDoorMenu.sX, gOpenDoorMenu.sY);
@@ -1509,6 +1652,38 @@ void CancelOpenDoorMenu( )
 {
 	// Signal end of event
 	gOpenDoorMenu.fMenuHandled = 2;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------
+// The native tactical HUD's view of the movement and door menus (src/game/NativeUI/TacticalHud.cc): it draws the
+// menus above itself and presses these buttons, so what it shows cannot drift from what the buttons do.
+
+NativeMenuView NativeMovementMenuView()
+{
+	if (!gfInMovementMenu || gMenuNative.kind != "movement") return {};
+	return gMenuNative;
+}
+
+NativeMenuView NativeDoorMenuView()
+{
+	if (!gfInOpenDoorMenu || gMenuNative.kind != "door") return {};
+	return gMenuNative;
+}
+
+void NativeMenuClick(INT16 const id)
+{
+	if (id < 0 || id >= NUM_ICONS) return;
+	GUIButtonRef const btn = iActionIcons[id];
+	if (!btn || !btn->Enabled()) return;
+	if (gfInMovementMenu)      BtnMovementCallback(btn, MSYS_CALLBACK_REASON_POINTER_UP);
+	else if (gfInOpenDoorMenu) BtnDoorMenuCallback(btn, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativeMenuCancel()
+{
+	if (gfInMovementMenu)      CancelMovementMenu();
+	else if (gfInOpenDoorMenu) CancelOpenDoorMenu();
 }
 
 
@@ -1927,6 +2102,13 @@ void HandleTopMessages(void)
 			break;
 	}
 
+	// the native HUD shows the turn banner itself, over the world
+	if (NativeUI::TacticalHudActive())
+	{
+		if (gsVIEWPORT_WINDOW_START_Y != 0) SetRenderFlags(RENDER_FLAG_FULL);
+		gsVIEWPORT_WINDOW_START_Y = 0;
+		return;
+	}
 	gsVIEWPORT_WINDOW_START_Y = 20;
 
 	if (gfTopMessageDirty ||

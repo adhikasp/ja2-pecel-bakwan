@@ -13,6 +13,7 @@ void  SetUserScale(float s) { g_scale = s; }
 float DpScale() { return 0; }
 Info GetInfo() { return {}; }
 void BeginFrame() {}
+void CaptureFrame() {}
 bool CapturesMouse() { return false; }
 void HandleMouseEvent(InputAtom const&) {}
 void MouseMoved(int, int) {}
@@ -40,6 +41,8 @@ void WriteSaveThumbnail(std::string const&) {}
 bool ShowLoadingScreen(int) { return false; }
 void LoadingStep(std::string const&) {}
 bool LoadingProgress(double) { return false; }
+bool TacticalHudActive() { return false; }
+void TacticalHudToggleLog() {}
 bool Focus(std::string const&) { return false; }
 std::string FocusedId() { return {}; }
 }

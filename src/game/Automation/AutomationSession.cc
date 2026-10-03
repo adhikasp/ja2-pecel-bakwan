@@ -761,7 +761,8 @@ void Screenshot(std::string const& path)
 		std::vector<uint8_t> out;
 		int ow = 0, oh = 0;
 		VideoRequestOutputCapture();
-		Step(1);
+		NativeUI::CaptureFrame();
+		RefreshScreen();
 		if (VideoTakeOutputCapture(out, ow, oh))
 		{
 			if (!stbi_write_png(path.c_str(), ow, oh, 3, out.data(), ow * 3)) throw std::runtime_error("could not write screenshot to " + path);
@@ -769,7 +770,12 @@ void Screenshot(std::string const& path)
 		}
 	}
 	{
-		// With layers the picture is the UI over the world, at the size of the window
+		// With layers the picture is the UI over the world, at the size of the window. Only the rendering runs, no
+		// game loop: a driven command can change the state while the game is idle (a paused door menu, a view model)
+		// and the picture must be of the game as it is now — while a one-frame draw (a loading screen) is captured
+		// where it is (it is gone with the next frame, docs/ui/loadingscreen.md).
+		NativeUI::CaptureFrame();
+		RefreshScreen();
 		std::vector<uint8_t> composed;
 		int cw = 0, ch = 0;
 		if (VideoComposeFrame(composed, cw, ch))

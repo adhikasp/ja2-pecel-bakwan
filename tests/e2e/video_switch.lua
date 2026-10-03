@@ -2,6 +2,8 @@
 -- world zoom on the tactical screen, the map screen and the laptop, through classic, widescreen, ultrawide and a
 -- layered mode (UI at 2x over a world at 1x). After every change every region and button must lie inside the
 -- new screen and the screen must be usable at its new size.
+-- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
+ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 

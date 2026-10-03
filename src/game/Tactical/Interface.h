@@ -7,6 +7,8 @@
 
 #include <string_theory/string>
 
+#include <vector>
+
 
 #define MAX_UICOMPOSITES		4
 
@@ -113,6 +115,33 @@ void RenderOpenDoorMenu(void);
 void InitDoorOpenMenu(SOLDIERTYPE* pSoldier, DOOR* d, BOOLEAN fClosingDoor);
 BOOLEAN HandleOpenDoorMenu(void);
 void CancelOpenDoorMenu(void);
+
+// The native tactical HUD (src/game/NativeUI/TacticalHud.cc) draws the movement and door menus itself. It reads the
+// menu the legacy code built (the same labels, AP costs and enable/disable rules) and clicks the legacy buttons, so
+// the two menus cannot drift apart.
+struct NativeMenuItem
+{
+	ST::string label, kbd, icon, title, why;
+	INT16 ap = -1;   // action point cost, -1 when the entry shows none
+	INT16 id = -1;   // the legacy button NativeMenuClick presses
+	INT16 group = 0; // rows the native HUD groups under one heading (or one separator)
+	bool disabled = false;
+};
+
+struct NativeMenuView
+{
+	bool open = false;
+	INT16 x = 0, y = 0; // where the menu goes, in UI pixels (the legacy anchor)
+	ST::string kind;    // "movement" or "door"
+	ST::string who;     // the merc the menu belongs to
+	INT16 ap = -1;      // his action points
+	std::vector<NativeMenuItem> items;
+};
+
+NativeMenuView NativeMovementMenuView();
+NativeMenuView NativeDoorMenuView();
+void NativeMenuClick(INT16 id);
+void NativeMenuCancel();
 
 void HandleInterfaceBackgrounds(void);
 

@@ -25,6 +25,7 @@
 #include "VObject_Blitters.h"
 #include "Faces.h"
 #include "Interface_Control.h"
+#include "NativeUI.h"
 #include "Interface_Items.h"
 #include "Interface_Dialogue.h"
 #include "Interactive_Tiles.h"
@@ -404,8 +405,11 @@ void RenderTopmostTacticalInterface()
 	RenderTopmostMultiPurposeLocator();
 	RenderAccumulatedBurstLocations();
 
+	// the native HUD draws the names, bars and damage numbers over the mercs itself
+	bool const nativeHud = NativeUI::TacticalHudActive();
 	FOR_EACH_MERC(i)
 	{
+		if (nativeHud) break;
 		SOLDIERTYPE& s = **i;
 		DrawSelectedUIAboveGuy(s);
 

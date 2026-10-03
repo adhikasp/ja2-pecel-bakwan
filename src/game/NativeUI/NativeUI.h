@@ -75,6 +75,10 @@ namespace NativeUI
 
 	/** Once per game loop, before input: keeps the size, scale and clock up to date. */
 	void BeginFrame();
+	/** What BeginFrame does without the game loop: the view models are refreshed and what they changed is laid out
+	 * and drawn, so a capture right after a driven command shows the current state. No game state moves (a loading
+	 * screen is captured where it is, not closed). */
+	void CaptureFrame();
 	/** A native screen or modal takes the mouse: legacy regions get nothing. */
 	bool CapturesMouse();
 	/** A mouse event from the input queue (only when CapturesMouse()). */
@@ -129,6 +133,13 @@ namespace NativeUI
 	void LoadingStep(std::string const& text);
 	/** Loading progress 0..1; false when the native loading screen is not showing. */
 	bool LoadingProgress(double fraction);
+
+	// ---- tactical HUD (Phase 5, docs/ui/tactical.md) ----------------------------------------------------------
+	/** The native tactical HUD is showing ("tactical" resolves to native on GAME_SCREEN): the legacy HUD keeps its
+	 * logic and regions but draws nothing the native one shows (names over mercs, message lines, turn banner). */
+	bool TacticalHudActive();
+	/** H: open or close the message log of the native HUD. */
+	void TacticalHudToggleLog();
 
 	// ---- change notification (view models, ViewModel.h) -------------------------------------------------------
 	enum Topic : uint32_t

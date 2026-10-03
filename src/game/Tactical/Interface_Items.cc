@@ -42,6 +42,7 @@
 #include "Interface_Items.h"
 #include "WordWrap.h"
 #include "Interface_Control.h"
+#include "NativeUI.h"
 #include "VObject_Blitters.h"
 #include "World_Items.h"
 #include "Points.h"
@@ -4391,6 +4392,16 @@ void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, 
 
 	DisableButton(menu.iOKButton);
 
+	// the native HUD draws the menu itself; the buttons stay for its clicks only
+	if (NativeUI::TacticalHudActive())
+	{
+		if (menu.iUpButton)   HideButton(menu.iUpButton);
+		if (menu.iDownButton) HideButton(menu.iDownButton);
+		HideButton(menu.iOKButton);
+		HideButton(menu.iAllButton);
+		HideButton(menu.iCancelButton);
+	}
+
 	// Create regions
 	INT16 const sCenX = sX;
 	INT16       sCenY = sY + ITEMPICK_GRAPHIC_Y;
@@ -4531,6 +4542,7 @@ void RenderItemPickupMenu()
 {
 	ST::string pStr;
 
+	if (NativeUI::TacticalHudActive()) return; // the native HUD draws the menu itself
 	if (!gfInItemPickupMenu) return;
 
 	ITEM_PICKUP_MENU_STRUCT& menu = gItemPickupMenu;
@@ -5320,4 +5332,233 @@ void ItemStackNativeClose()
 	if (!InItemStackPopup()) return;
 	DeleteItemStackPopup();
 	fTeamPanelDirty = TRUE;
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// The native tactical HUD: its slots and buttons click the legacy regions and buttons, which stay where the hidden
+// legacy panel is, so every rule of the legacy inventory applies unchanged.
+
+static void ClickRegion(MOUSE_REGION& r, bool const right)
+{
+	for (UINT32 const reason : { right ? MSYS_CALLBACK_REASON_RBUTTON_DWN : MSYS_CALLBACK_REASON_LBUTTON_DWN,
+		right ? MSYS_CALLBACK_REASON_RBUTTON_UP : MSYS_CALLBACK_REASON_LBUTTON_UP })
+	{
+		if (!(r.uiFlags & MSYS_REGION_ENABLED) || !r.ButtonCallback) return;
+		r.ButtonCallback(&r, reason);
+	}
+}
+
+void NativeInvSlotClick(int const slot, bool const right)
+{
+	if (slot < 0 || slot >= NUM_INV_SLOTS) return;
+	ClickRegion(gSMInvRegion[slot], right);
+}
+
+void NativeItemDescAttachmentClick(int const i, bool const right)
+{
+	if (!gfInItemDescBox || i < 0 || i >= MAX_ATTACHMENTS) return;
+	ClickRegion(gItemDescAttachmentRegions[i], right);
+}
+
+void NativeItemDescUnload()
+{
+	if (!gfInItemDescBox || !giItemDescAmmoButton) return;
+	ItemDescAmmoCallback(giItemDescAmmoButton, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativeItemDescDone()
+{
+	if (!gfInItemDescBox) return;
+	if (gpItemDescObject->usItem == MONEY) RemoveMoney();
+	DeleteItemDescriptionBox();
+}
+
+void NativeMoneyButton(int const which, bool const right)
+{
+	if (!gfInItemDescBox || which < 0 || which >= MAX_ATTACHMENTS || !guiMoneyButtonBtn[which]) return;
+	GUI_BUTTON* const b = guiMoneyButtonBtn[which];
+	if (!b->Enabled()) return;
+	if (right) BtnMoneyButtonCallbackSecondary(b, MSYS_CALLBACK_REASON_RBUTTON_UP);
+	else BtnMoneyButtonCallbackPrimary(b, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+NativeMoneySplit NativeMoneyState()
+{
+	return { gRemoveMoney.uiTotalAmount, gRemoveMoney.uiMoneyRemaining, gRemoveMoney.uiMoneyRemoving };
+}
+
+void NativeKeyRingClick() { ClickRegion(gKeyRingPanel, false); }
+
+// The pick-up menu: the native HUD draws the rows above and reaches the same regions and buttons.
+NativePickupView NativeItemPickupView()
+{
+	NativePickupView v;
+	if (!gfInItemPickupMenu) return v;
+	ITEM_PICKUP_MENU_STRUCT const& menu = gItemPickupMenu;
+	v.open = true;
+	v.x = menu.sX;
+	v.y = menu.sY;
+	v.who = menu.pSoldier ? menu.pSoldier->name : ST::string();
+	v.total = menu.ubTotalItems;
+	v.page = menu.bScrollPage;
+	v.pages = (INT16)((menu.ubTotalItems + NUM_PICKUP_SLOTS - 1) / NUM_PICKUP_SLOTS);
+	v.canUp = menu.bScrollPage > 0;
+	v.canDown = (INT32)(menu.bScrollPage + 1) * NUM_PICKUP_SLOTS < menu.ubTotalItems;
+	v.okEnabled = menu.iOKButton && menu.iOKButton->Enabled();
+	v.allSelected = menu.fAllSelected;
+	for (INT32 i = 0; i < menu.bNumSlotsPerPage; ++i)
+	{
+		NativePickupRow r;
+		r.slot = (INT16)i;
+		r.sel = menu.pfSelectedArray[i + menu.ubScrollAnchor] != 0;
+		INT32 const world_item = menu.items[i];
+		if (world_item != -1)
+		{
+			r.empty = false;
+			OBJECTTYPE const& o = GetWorldItem(world_item).o;
+			ItemModel const* const item = GCM->getItem(o.usItem);
+			r.item = (INT16)o.usItem;
+			r.cond = (INT16)o.bStatus[0];
+			if (item->getItemClass() == IC_MONEY)
+			{
+				r.name = item->getName();
+				r.count = SPrintMoney(o.uiMoneyAmount);
+			}
+			else
+			{
+				r.name = item->getShortName();
+				if (o.ubNumberOfObjects > 1) r.count = ST::format("×{}", o.ubNumberOfObjects);
+			}
+			if (!item->isAmmo() && !item->isKey()) r.title = ST::format("{}%", o.bStatus[0]);
+			r.att = ItemHasAttachments(o);
+		}
+		v.rows.push_back(r);
+	}
+	return v;
+}
+
+void NativePickupClick(INT16 const slot)
+{
+	if (!gfInItemPickupMenu || slot < 0 || slot >= gItemPickupMenu.bNumSlotsPerPage) return;
+	ClickRegion(gItemPickupMenu.Regions[slot], false);
+}
+
+void NativePickupHover(INT16 const slot)
+{
+	if (!gfInItemPickupMenu) return;
+	if (slot < 0 || slot >= gItemPickupMenu.bNumSlotsPerPage)
+		ItemPickMenuMouseMoveCallback(&gItemPickupMenu.Regions[0], MSYS_CALLBACK_REASON_LOST_MOUSE);
+	else
+		ItemPickMenuMouseMoveCallback(&gItemPickupMenu.Regions[slot], MSYS_CALLBACK_REASON_MOVE);
+}
+
+void NativePickupAll()
+{
+	if (gfInItemPickupMenu && gItemPickupMenu.iAllButton)
+		ItemPickupAll(gItemPickupMenu.iAllButton, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativePickupOK()
+{
+	if (gfInItemPickupMenu && gItemPickupMenu.iOKButton && gItemPickupMenu.iOKButton->Enabled())
+		ItemPickupOK(gItemPickupMenu.iOKButton, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativePickupCancel()
+{
+	if (gfInItemPickupMenu && gItemPickupMenu.iCancelButton)
+		ItemPickupCancel(gItemPickupMenu.iCancelButton, MSYS_CALLBACK_REASON_POINTER_UP);
+}
+
+void NativePickupScroll(INT16 const dir)
+{
+	if (!gfInItemPickupMenu) return;
+	INT32 const pages = (gItemPickupMenu.ubTotalItems + NUM_PICKUP_SLOTS - 1) / NUM_PICKUP_SLOTS;
+	INT32 const page  = gItemPickupMenu.bScrollPage + dir;
+	if (page < 0 || page >= pages) return;
+	SetupPickupPage((INT8)page);
+}
+
+SOLDIERTYPE* NativeItemDescSoldier() { return gfInItemDescBox ? gpItemDescSoldier : nullptr; }
+UINT8 NativeItemDescStatusIndex() { return gubItemDescStatusIndex; }
+
+NativeItemDescInfo NativeItemDescData()
+{
+	NativeItemDescInfo d;
+	if (!gfInItemDescBox || !gpItemDescObject) return d;
+	OBJECTTYPE const& obj  = *gpItemDescObject;
+	ItemModel  const* item = GCM->getItem(obj.usItem);
+	d.name = gzItemName;
+	d.desc = gzItemDesc;
+	d.weightUnit = GetWeightUnitString();
+	grams const objectWeight = Weight(obj);
+	d.weight = ST::format("{1.1f}", objectWeight / (gGameSettings.fOptions[TOPTION_USE_METRIC_SYSTEM] ? 1000.0 : 453.59237));
+	d.money = obj.usItem == MONEY || item->getItemClass() == IC_MONEY;
+	d.weapon = item->isWeapon();
+	d.gun = item->isGun();
+	d.ammo = item->isAmmo();
+	d.key = item->isKey();
+	d.attachmentsHatched = gfItemDescObjectIsAttachment;
+	if (OBJECTTYPE const* const p = gpItemPointer)
+	{
+		if (GCM->getItem(p->usItem)->getFlags() & ITEM_HIDDEN_ADDON || (
+			!ValidItemAttachment(&obj, p->usItem, FALSE) && !ValidMerge(p->usItem, obj.usItem) && !ValidLaunchable(p->usItem, obj.usItem)))
+		{
+			d.attachmentsHatched = true;
+		}
+	}
+	for (int i = 0; i < MAX_ATTACHMENTS; ++i)
+	{
+		d.attachments[i] = obj.usAttachItem[i];
+		d.attachmentStatus[i] = obj.bAttachStatus[i];
+	}
+	if (ITEM_PROS_AND_CONS(obj.usItem))
+	{
+		d.prosCons = true;
+		const WeaponModel* w = GCM->getWeapon(obj.usItem);
+		if (w->calibre) d.type += ST::format("{} ", w->calibre->getName());
+		d.type += ST::format("{}", WeaponType[w->ubWeaponType]);
+		ST::string const imprint = GetObjectImprint(obj);
+		if (!imprint.empty()) d.type += ST::format(" ({})", imprint);
+		ST::string pros, cons;
+		GenerateProsString(pros, obj, 10000);
+		GenerateConsString(cons, obj, 10000);
+		d.pros = pros;
+		d.cons = cons;
+	}
+	if (d.weapon)
+	{
+		d.statusLabel = gWeaponStatsDesc[1];
+		d.status = obj.bGunStatus;
+		const WeaponModel* w = GCM->getWeapon(obj.usItem);
+		if (item->getItemClass() & (IC_GUN | IC_LAUNCHER)) d.range = GunRange(obj) / 10;
+		if (!item->isLauncher() && obj.usItem != ROCKET_LAUNCHER) d.damage = w->ubImpact;
+		UINT8 const aps = BaseAPsToShootOrStab(DEFAULT_APS, DEFAULT_AIMSKILL, obj);
+		d.aps = aps;
+		if (w->ubShotsPerBurst > 0)
+		{
+			d.burstAps = aps + CalcAPsToBurst(DEFAULT_APS, obj);
+			d.burstShots = w->ubShotsPerBurst;
+		}
+		if (d.gun)
+		{
+			d.shotsLeft = obj.ubGunShotsLeft;
+			d.magSize = w->ubMagSize;
+			d.ammoItem = obj.usGunAmmoItem;
+		}
+	}
+	else if (!d.money)
+	{
+		d.statusLabel = d.ammo ? gWeaponStatsDesc[2] : gWeaponStatsDesc[1];
+		d.status = obj.bStatus[gubItemDescStatusIndex];
+		d.statusText = d.ammo ? ST::format("{}/{}", obj.ubShotsLeft[gubItemDescStatusIndex], item->asAmmo()->capacity) :
+			ST::format("{}%", obj.bStatus[gubItemDescStatusIndex]);
+		if (InKeyRingPopup() || d.key)
+		{
+			KEY const& key = KeyTable[obj.ubKeyID];
+			d.keySector = SGPSector(key.usSectorFound).AsShortString();
+			d.keyDate = ST::format("{}", key.usDateFound);
+		}
+	}
+	return d;
 }
