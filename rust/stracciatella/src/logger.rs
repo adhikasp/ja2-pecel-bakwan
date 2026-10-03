@@ -65,7 +65,7 @@ impl From<usize> for LogLevel {
             2 => LogLevel::Info,
             3 => LogLevel::Debug,
             4 => LogLevel::Trace,
-            _ => panic!("Unexpected log level: {}", other),
+            _ => panic!("Unexpected log level: {other}"),
         }
     }
 }
@@ -191,7 +191,7 @@ impl Logger {
             logger.log(
                 &Record::builder()
                     .metadata(metadata)
-                    .args(format_args!("{}", message))
+                    .args(format_args!("{message}"))
                     .build(),
             );
         }

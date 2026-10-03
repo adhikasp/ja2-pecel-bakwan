@@ -36,8 +36,7 @@ impl FromStr for UiScale {
         match s.parse::<u8>() {
             Ok(n) if (1..=MAX_UI_SCALE).contains(&n) => Ok(UiScale(n)),
             _ => Err(format!(
-                "UI scale must be auto or an integer between 1 and {}",
-                MAX_UI_SCALE
+                "UI scale must be auto or an integer between 1 and {MAX_UI_SCALE}"
             )),
         }
     }

@@ -24,9 +24,9 @@ pub enum Ja2JsonError {
 impl std::fmt::Display for Ja2JsonError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::CreatingFailed(e) => write!(f, "Error creating ja2.json config file: {}", e),
-            Self::ReadingFailed(e) => write!(f, "Error reading ja2.json config file: {}", e),
-            Self::ParsingFailed(e) => write!(f, "Error parsing ja2.json config file: {}", e),
+            Self::CreatingFailed(e) => write!(f, "Error creating ja2.json config file: {e}"),
+            Self::ReadingFailed(e) => write!(f, "Error reading ja2.json config file: {e}"),
+            Self::ParsingFailed(e) => write!(f, "Error parsing ja2.json config file: {e}"),
         }
     }
 }
@@ -196,12 +196,12 @@ impl Ja2Json {
         }
 
         let json = json::ser::to_string(&content)
-            .map_err(|x| format!("Error creating contents of ja2.json config file: {}", x))?;
+            .map_err(|x| format!("Error creating contents of ja2.json config file: {x}"))?;
         let mut f = File::create(&self.path)
-            .map_err(|s| format!("Error creating ja2.json config file: {}", s))?;
+            .map_err(|s| format!("Error creating ja2.json config file: {s}"))?;
 
         f.write_all(json.as_bytes())
-            .map_err(|s| format!("Error creating ja2.json config file: {}", s))
+            .map_err(|s| format!("Error creating ja2.json config file: {s}"))
     }
 
     /// Ensures that the JSON configuration file exists and write a default one if it doesn't

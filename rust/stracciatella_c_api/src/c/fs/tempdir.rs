@@ -35,7 +35,7 @@ pub extern "C" fn TempDir_create() -> *mut TempDir {
 
     match tempdir {
         Err(err) => {
-            remember_rust_error(format!("TempDir_create: {}", err));
+            remember_rust_error(format!("TempDir_create: {err}"));
             ptr::null_mut()
         }
         Ok(tempdir) => into_ptr(TempDir { inner: tempdir }),
@@ -50,7 +50,7 @@ pub extern "C" fn TempDir_destroy(tempdir: *mut TempDir) -> bool {
     forget_rust_error();
     let tempdir = from_ptr(tempdir);
     if let Err(err) = tempdir.inner.close() {
-        remember_rust_error(format!("TempDir_destroy: {}", err));
+        remember_rust_error(format!("TempDir_destroy: {err}"));
     }
     no_rust_error()
 }

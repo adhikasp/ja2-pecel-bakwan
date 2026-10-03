@@ -43,7 +43,7 @@ impl FromStr for VanillaVersion {
             "RUSSIAN" => Ok(VanillaVersion::RUSSIAN),
             "RUSSIAN_GOLD" => Ok(VanillaVersion::RUSSIAN_GOLD),
             "SIMPLIFIED_CHINESE" => Ok(VanillaVersion::SIMPLIFIED_CHINESE),
-            _ => Err(format!("Resource version {} is unknown", s)),
+            _ => Err(format!("Resource version {s} is unknown")),
         }
     }
 }

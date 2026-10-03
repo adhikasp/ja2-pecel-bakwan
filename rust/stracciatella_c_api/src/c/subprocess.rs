@@ -116,7 +116,7 @@ pub extern "C" fn Subprocess_new(program: *const c_char, args: *mut VecCString) 
     match cmd {
         Ok(cmd) => into_ptr(cmd),
         Err(e) => {
-            remember_rust_error(format!("{}", e));
+            remember_rust_error(format!("{e}"));
             std::ptr::null_mut()
         }
     }
@@ -181,7 +181,7 @@ pub unsafe extern "C" fn Subprocess_getExitCode(ptr: *mut SubProcess) -> i32 {
             i32::MIN
         }
         Err(e) => {
-            remember_rust_error(format!("Error communicating with subprocess: {}", e));
+            remember_rust_error(format!("Error communicating with subprocess: {e}"));
             i32::MIN
         }
     }

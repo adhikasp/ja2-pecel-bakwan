@@ -56,7 +56,7 @@ pub extern "C" fn File_open(path: *const c_char, options: u8) -> *mut VFile {
         .open(&path);
     match file_result {
         Err(err) => {
-            remember_rust_error(format!("File_open {:?} {:#02x}: {}", path, options, err));
+            remember_rust_error(format!("File_open {path:?} {options:#02x}: {err}"));
             ptr::null_mut()
         }
         Ok(file) => into_ptr(if is_write_or_append {
@@ -82,7 +82,7 @@ pub extern "C" fn File_len(file: *mut VFile) -> u64 {
     let file = unsafe_ref(file);
     match file.len() {
         Err(err) => {
-            remember_rust_error(format!("File_len: {}", err));
+            remember_rust_error(format!("File_len: {err}"));
             u64::MAX
         }
         Ok(len) => len,
@@ -105,7 +105,7 @@ pub unsafe extern "C" fn File_read(file: *mut VFile, buf: *mut u8, buf_len: usiz
     match file.read(buf) {
         Ok(n) => n,
         Err(err) => {
-            remember_rust_error(format!("File_read {}: {}", buf_len, err));
+            remember_rust_error(format!("File_read {buf_len}: {err}"));
             usize::MAX
         }
     }
@@ -126,7 +126,7 @@ pub unsafe extern "C" fn File_readToEnd(file: *mut VFile) -> *mut VecU8 {
     match file.read_to_end(&mut buf) {
         Ok(_) => into_ptr(VecU8::from(buf)),
         Err(err) => {
-            remember_rust_error(format!("File_readToEnd: {}", err));
+            remember_rust_error(format!("File_readToEnd: {err}"));
             ptr::null_mut()
         }
     }
@@ -142,7 +142,7 @@ pub extern "C" fn File_readExact(file: *mut VFile, buf: *mut u8, buf_len: usize)
     let buf = unsafe_slice_mut(buf, buf_len);
     while let Err(err) = file.read_exact(buf) {
         if err.kind() != io::ErrorKind::Interrupted {
-            remember_rust_error(format!("File_readExact {}: {}", buf_len, err));
+            remember_rust_error(format!("File_readExact {buf_len}: {err}"));
             break;
         }
     }
@@ -162,7 +162,7 @@ pub extern "C" fn File_write(file: *mut VFile, buf: *const u8, buf_len: usize) -
         match file.write(buf) {
             Err(err) => {
                 if err.kind() != io::ErrorKind::Interrupted {
-                    remember_rust_error(format!("File_write {}: {}", buf_len, err));
+                    remember_rust_error(format!("File_write {buf_len}: {err}"));
                     return usize::MAX;
                 }
             }
@@ -183,7 +183,7 @@ pub extern "C" fn File_writeAll(file: *mut VFile, buf: *const u8, buf_len: usize
         if err.kind() == io::ErrorKind::Interrupted {
             continue;
         }
-        remember_rust_error(format!("File_writeAll {}: {}", buf_len, err));
+        remember_rust_error(format!("File_writeAll {buf_len}: {err}"));
     }
     no_rust_error()
 }
@@ -199,7 +199,7 @@ pub extern "C" fn File_seekFromStart(file: *mut VFile, offset: u64) -> u64 {
     let file = unsafe_mut(file);
     match file.seek(io::SeekFrom::Start(offset)) {
         Err(err) => {
-            remember_rust_error(format!("File_seekFromStart {}: {}", offset, err));
+            remember_rust_error(format!("File_seekFromStart {offset}: {err}"));
             u64::MAX
         }
         Ok(position) => position,
@@ -217,7 +217,7 @@ pub extern "C" fn File_seekFromEnd(file: *mut VFile, offset: i64) -> u64 {
     let file = unsafe_mut(file);
     match file.seek(io::SeekFrom::End(offset)) {
         Err(err) => {
-            remember_rust_error(format!("File_seekFromEnd {}: {}", offset, err));
+            remember_rust_error(format!("File_seekFromEnd {offset}: {err}"));
             u64::MAX
         }
         Ok(position) => position,
@@ -235,7 +235,7 @@ pub extern "C" fn File_seekFromCurrent(file: *mut VFile, offset: i64) -> u64 {
     let file = unsafe_mut(file);
     match file.seek(io::SeekFrom::Current(offset)) {
         Err(err) => {
-            remember_rust_error(format!("File_seekFromCurrent {}: {}", offset, err));
+            remember_rust_error(format!("File_seekFromCurrent {offset}: {err}"));
             u64::MAX
         }
         Ok(position) => position,

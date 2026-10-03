@@ -47,7 +47,7 @@ fn main() {
 
     fs::write(&out_file, schemas_json).expect("failed to write schemas json");
 
-    println!("cargo:rustc-env=STRACCIATELLA_SCHEMAS={}", out_file)
+    println!("cargo:rustc-env=STRACCIATELLA_SCHEMAS={out_file}")
 }
 
 fn resolve_refs(value: &mut Value) {
@@ -62,8 +62,8 @@ fn resolve_refs(value: &mut Value) {
             let original_title = obj.get("title");
             let original_description = obj.get("description").and_then(|v| v.as_str());
             let link = link.as_str().expect("ref is not a string");
-            let link = format!("{}/{}", SCHEMA_DIR, link);
-            let link_unreadable = format!("schema {} not readable", link).to_string();
+            let link = format!("{SCHEMA_DIR}/{link}");
+            let link_unreadable = format!("schema {link} not readable").to_string();
             let schema = fs::read(&link).expect(&link_unreadable);
             let mut schema: Value =
                 yaml_serde::from_slice(&schema).expect("ref schema is not valid yaml");
@@ -77,7 +77,7 @@ fn resolve_refs(value: &mut Value) {
                 let type_title = schema.get("title").and_then(|v| v.as_str());
                 if let Some(type_description) = type_title {
                     let description: Value =
-                        format!("{}\n\nType: {}", original_description, type_description).into();
+                        format!("{original_description}\n\nType: {type_description}").into();
                     schema.insert("description".to_owned(), description);
                 } else {
                     schema.insert("description".to_owned(), original_description.into());

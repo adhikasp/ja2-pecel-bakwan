@@ -20,17 +20,15 @@ pub enum EngineOptionsError {
 impl std::fmt::Display for EngineOptionsError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            EngineOptionsError::Cli(e) => write!(f, "Error evaluating CLI arguments: {}", e),
-            EngineOptionsError::Ja2Json(e) => write!(f, "Error loading JSON configuration: {}", e),
+            EngineOptionsError::Cli(e) => write!(f, "Error evaluating CLI arguments: {e}"),
+            EngineOptionsError::Ja2Json(e) => write!(f, "Error loading JSON configuration: {e}"),
             EngineOptionsError::MissingGameDir => write!(
                 f,
                 "Vanilla game directory has to be set either in config file or per command line switch"
             ),
-            EngineOptionsError::CreatingDefaultSaveGameDirFailed(path, e) => write!(
-                f,
-                "Error creating default save game dir `{:?}`: {}",
-                path, e
-            ),
+            EngineOptionsError::CreatingDefaultSaveGameDirFailed(path, e) => {
+                write!(f, "Error creating default save game dir `{path:?}`: {e}")
+            }
         }
     }
 }

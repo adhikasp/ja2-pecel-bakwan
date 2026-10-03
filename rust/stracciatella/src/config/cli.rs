@@ -32,11 +32,11 @@ impl std::fmt::Display for CliError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::UnknownArguments(args) => write!(f, "Unknown arguments: `{}`.", args.join(" ")),
-            Self::GameDirDoesNotExist(dir) => write!(f, "The gamedir `{}` does not exist.", dir),
+            Self::GameDirDoesNotExist(dir) => write!(f, "The gamedir `{dir}` does not exist."),
             Self::InvalidValue(name, message) => {
-                write!(f, "Invalid value for argument `{}`: {}.", name, message)
+                write!(f, "Invalid value for argument `{name}`: {message}.")
             }
-            Self::ParsingFailed(e) => write!(f, "Parsing CLI arguments failed: {}", e),
+            Self::ParsingFailed(e) => write!(f, "Parsing CLI arguments failed: {e}"),
         }
     }
 }

@@ -56,7 +56,7 @@ pub trait VfsLayer: fmt::Debug + fmt::Display + Send + Sync {
         file_path: &Nfc,
         extension: &Nfc,
     ) -> io::Result<BTreeSet<Nfc>> {
-        let extension = Nfc::caseless(&format!(".{}", extension));
+        let extension = Nfc::caseless(&format!(".{extension}"));
         Ok(self
             .read_dir(file_path)?
             .into_iter()
@@ -105,7 +105,7 @@ impl Vfs {
     /// Adds a filesystem layer backed by a SLF file.
     /// The added layer will have lowest priority.
     pub fn add_slf(&mut self, file: Box<dyn VfsFile>) -> Result<Arc<dyn VfsLayer>, VfsInitError> {
-        let path = PathBuf::from(format!("{}", file));
+        let path = PathBuf::from(format!("{file}"));
         let slf_fs = SlfFs::new(file).map_err(|error| VfsInitError { path, error })?;
         self.entries.push(slf_fs.clone());
         Ok(slf_fs)
@@ -134,18 +134,18 @@ impl Vfs {
         let slf_paths = layer
             .read_dir_with_extension(&Nfc::caseless_path("/"), &Nfc::caseless("slf"))
             .map_err(|error| VfsInitError {
-                path: PathBuf::from(format!("Error listing SLF files in {}", layer)),
+                path: PathBuf::from(format!("Error listing SLF files in {layer}")),
                 error,
             })?;
         if required && slf_paths.is_empty() {
             return Err(VfsInitError {
-                path: PathBuf::from(format!("*.slf in {}", layer)),
+                path: PathBuf::from(format!("*.slf in {layer}")),
                 error: ErrorKind::NotFound.into(),
             });
         }
         for path in &slf_paths {
             self.add_slf(layer.open(path).map_err(|error| VfsInitError {
-                path: PathBuf::from(format!("{} in {}", path, layer)),
+                path: PathBuf::from(format!("{path} in {layer}")),
                 error,
             })?)?;
         }
@@ -160,7 +160,7 @@ impl Vfs {
         let editor_slf =
             map_not_found_to_option(externalized_layer.open(&Nfc::caseless_path(EDITOR_SLF_NAME)))
                 .map_err(|e| VfsInitError {
-                    path: PathBuf::from(format!("{} in {}", EDITOR_SLF_NAME, externalized_layer)),
+                    path: PathBuf::from(format!("{EDITOR_SLF_NAME} in {externalized_layer}")),
                     error: e,
                 })?;
 
@@ -338,7 +338,7 @@ impl Vfs {
             json::de::from_string(&content).map_err(|e| {
                 io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("failed to deserialize json: {}", e),
+                    format!("failed to deserialize json: {e}"),
                 )
             })?
         };
@@ -358,7 +358,7 @@ impl Vfs {
                 json::de::from_string(&content).map_err(|e| {
                     io::Error::new(
                         io::ErrorKind::InvalidData,
-                        format!("failed to deserialize json: {}", e),
+                        format!("failed to deserialize json: {e}"),
                     )
                 })?
             };
@@ -366,7 +366,7 @@ impl Vfs {
             json_patch::patch(&mut value, &patch_value).map_err(|e| {
                 io::Error::new(
                     io::ErrorKind::InvalidData,
-                    format!("failed to apply patch to json: {}", e),
+                    format!("failed to apply patch to json: {e}"),
                 )
             })?;
         }
@@ -433,7 +433,7 @@ impl fmt::Display for Vfs {
             if f.alternate() {
                 f.write_str("\n    ")?;
             }
-            write!(f, "{}, ", entry)?;
+            write!(f, "{entry}, ")?;
         }
         if f.alternate() {
             f.write_str("\n}")

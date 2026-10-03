@@ -97,8 +97,7 @@ impl StciColorDepthRgb {
             return Err(Error::new(
                 InvalidData,
                 format!(
-                    "only supporting RGB5650 color depth in rgb stci images, got RGB{}{}{}{} in header",
-                    red, green, blue, alpha
+                    "only supporting RGB5650 color depth in rgb stci images, got RGB{red}{green}{blue}{alpha} in header"
                 ),
             ));
         }

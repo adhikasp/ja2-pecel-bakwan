@@ -18,7 +18,7 @@ pub extern "C" fn ModManager_create(engine_options: *const EngineOptions) -> *mu
     match mod_manager {
         Ok(mod_manager) => into_ptr(mod_manager),
         Err(e) => {
-            remember_rust_error(format!("{}", e));
+            remember_rust_error(format!("{e}"));
             std::ptr::null_mut()
         }
     }

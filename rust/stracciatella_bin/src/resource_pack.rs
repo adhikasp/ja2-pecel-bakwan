@@ -126,7 +126,7 @@ fn subcommand_create(matches: &ArgMatches) {
             if path.exists() {
                 builder.with_path(&path, &path);
             } else {
-                graceful_error(&format!("Data dir not found in {:?}", gamedir));
+                graceful_error(&format!("Data dir not found in {gamedir:?}"));
             }
         }
     }
@@ -140,7 +140,7 @@ fn subcommand_create(matches: &ArgMatches) {
         while let Some(prop) = iter.next() {
             let value = iter.next().unwrap();
             if pack.get_property(prop).is_some() {
-                graceful_error(&format!("Property '{}' already exists", prop));
+                graceful_error(&format!("Property '{prop}' already exists"));
             }
             pack.set_property(prop, value);
         }
@@ -159,7 +159,7 @@ fn subcommand_create(matches: &ArgMatches) {
     if let Some(path) = matches.value_of_os("output") {
         graceful_unwrap("Writing to output", fs::write(path, json.as_str()));
     } else {
-        println!("{}", json);
+        println!("{json}");
     }
 }
 
@@ -168,7 +168,7 @@ fn graceful_unwrap<T, E: Debug>(desc: &str, result: Result<T, E>) -> T {
     match result {
         Ok(value) => value,
         Err(err) => {
-            eprintln!("{}: {:?}", desc, err);
+            eprintln!("{desc}: {err:?}");
             process::exit(1);
         }
     }
@@ -176,6 +176,6 @@ fn graceful_unwrap<T, E: Debug>(desc: &str, result: Result<T, E>) -> T {
 
 /// Prints an error to stderr and exits with 1.
 fn graceful_error(desc: &str) {
-    eprintln!("{}", desc);
+    eprintln!("{desc}");
     process::exit(1);
 }

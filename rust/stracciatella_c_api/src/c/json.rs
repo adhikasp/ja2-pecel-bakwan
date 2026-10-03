@@ -366,7 +366,7 @@ pub extern "C" fn RJsonArray_get(array: *const RJsonArray, idx: usize) -> *mut R
     let array = unsafe_ref(array);
     match array
         .get(idx)
-        .ok_or_else(|| format!("failed to get element at index {}", idx))
+        .ok_or_else(|| format!("failed to get element at index {idx}"))
     {
         Ok(val) => into_ptr(val),
         Err(e) => {
@@ -407,7 +407,7 @@ pub extern "C" fn RJsonObject_get(obj: *const RJsonObject, prop: *const c_char) 
     let prop = str_from_c_str_or_panic(unsafe_c_str(prop));
     match obj
         .get(prop)
-        .ok_or_else(|| format!("failed to get property {}", prop))
+        .ok_or_else(|| format!("failed to get property {prop}"))
     {
         Ok(val) => into_ptr(val),
         Err(e) => {

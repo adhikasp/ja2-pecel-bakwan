@@ -29,8 +29,7 @@ impl FromStr for WindowMode {
                 Ok(WindowMode::BorderlessDesktop)
             }
             _ => Err(format!(
-                "Window mode {} is unknown, use windowed, fullscreen or borderless",
-                s
+                "Window mode {s} is unknown, use windowed, fullscreen or borderless"
             )),
         }
     }

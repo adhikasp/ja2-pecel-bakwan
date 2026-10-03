@@ -29,7 +29,7 @@ pub extern "C" fn Path_decodeU8(path: *const c_char, buf: *mut u8, buf_len: usiz
     let vec_result = AnyPath::try_from(path).and_then(|x| x.decode_vec_u8());
     match vec_result {
         Err(err) => {
-            remember_rust_error(format!("Path_decodeU8 {:?} {}: {}", path, buf_len, err));
+            remember_rust_error(format!("Path_decodeU8 {path:?} {buf_len}: {err}"));
             usize::MAX
         }
         Ok(vec) => {

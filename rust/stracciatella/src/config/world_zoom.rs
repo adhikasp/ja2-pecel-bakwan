@@ -40,8 +40,7 @@ impl FromStr for WorldZoom {
         match s.parse::<u8>() {
             Ok(n) if (1..=MAX_WORLD_ZOOM).contains(&n) => Ok(WorldZoom(n)),
             _ => Err(format!(
-                "World zoom must be match_ui or an integer between 1 and {}",
-                MAX_WORLD_ZOOM
+                "World zoom must be match_ui or an integer between 1 and {MAX_WORLD_ZOOM}"
             )),
         }
     }

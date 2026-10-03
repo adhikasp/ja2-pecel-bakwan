@@ -20,7 +20,7 @@ pub extern "C" fn Fs_createDir(path: *const c_char) -> bool {
     forget_rust_error();
     let path = path_buf_from_c_str_or_panic(unsafe_c_str(path));
     if let Err(err) = fs::create_dir(&path) {
-        remember_rust_error(format!("Fs_createDir {:?}: {}", path, err));
+        remember_rust_error(format!("Fs_createDir {path:?}: {err}"));
     }
     no_rust_error()
 }
@@ -42,7 +42,7 @@ pub extern "C" fn Fs_freeSpace(path: *const c_char, bytes: *mut u64) -> bool {
     let bytes = unsafe_mut(bytes);
     let free_space = match fs::free_space(&path) {
         Err(err) => {
-            remember_rust_error(format!("Fs_freeSpace {:?}: {}", path, err));
+            remember_rust_error(format!("Fs_freeSpace {path:?}: {err}"));
             0
         }
         Ok(n) => n,
@@ -76,7 +76,7 @@ pub extern "C" fn Fs_findAllFilesInDir(
     let dir = path_buf_from_c_str_or_panic(unsafe_c_str(dir));
     match fs::find_all_files_in_dir(&dir, sort_results, recursive) {
         Err(err) => {
-            remember_rust_error(format!("Fs_findAllFilesInDir {:?}: {}", dir, err));
+            remember_rust_error(format!("Fs_findAllFilesInDir {dir:?}: {err}"));
             ptr::null_mut()
         }
         Ok(vec) => {
@@ -98,7 +98,7 @@ pub extern "C" fn Fs_findAllDirsInDir(
     let dir = path_buf_from_c_str_or_panic(unsafe_c_str(dir));
     match fs::find_all_dirs_in_dir(&dir, sort_results, recursive) {
         Err(err) => {
-            remember_rust_error(format!("Fs_findAllDirsInDir {:?}: {}", dir, err));
+            remember_rust_error(format!("Fs_findAllDirsInDir {dir:?}: {err}"));
             ptr::null_mut()
         }
         Ok(vec) => {
@@ -130,7 +130,7 @@ pub extern "C" fn Fs_modifiedSecs(path: *const c_char, modified_secs: *mut f64) 
     });
     match secs_result {
         Err(err) => {
-            remember_rust_error(format!("Fs_modifiedSecs {:?}: {}", path, err));
+            remember_rust_error(format!("Fs_modifiedSecs {path:?}: {err}"));
             *modified_secs = f64::MIN;
         }
         Ok(secs) => {
@@ -148,7 +148,7 @@ pub extern "C" fn Fs_removeFile(path: *const c_char) -> bool {
     forget_rust_error();
     let path = path_buf_from_c_str_or_panic(unsafe_c_str(path));
     if let Err(err) = fs::remove_file(&path) {
-        remember_rust_error(format!("Fs_removeFile {:?}: {}", path, err));
+        remember_rust_error(format!("Fs_removeFile {path:?}: {err}"));
     }
     no_rust_error()
 }
@@ -162,7 +162,7 @@ pub extern "C" fn Fs_rename(from: *const c_char, to: *const c_char) -> bool {
     let from = path_buf_from_c_str_or_panic(unsafe_c_str(from));
     let to = path_buf_from_c_str_or_panic(unsafe_c_str(to));
     if let Err(err) = fs::rename(&from, &to) {
-        remember_rust_error(format!("Fs_rename {:?} {:?}: {}", from, to, err));
+        remember_rust_error(format!("Fs_rename {from:?} {to:?}: {err}"));
     }
     no_rust_error()
 }
@@ -197,7 +197,7 @@ pub extern "C" fn Fs_getReadOnly(path: *const c_char, readonly: *mut bool) -> bo
         *readonly = x.permissions().readonly();
     });
     if let Err(err) = result {
-        remember_rust_error(format!("Fs_getReadOnly {:?} {}: {}", path, readonly, err));
+        remember_rust_error(format!("Fs_getReadOnly {path:?} {readonly}: {err}"));
     }
     no_rust_error()
 }
