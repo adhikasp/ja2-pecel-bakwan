@@ -10,7 +10,13 @@ unix-install-rustup () {
 }
 
 linux-install-sccache () {
-    local SCCACHE_VERSION="v0.5.4"
+    # v0.5.4 predates sccache's handling of GCC argument files (@file). CMake's
+    # Windows-GNU platform module always passes include paths via such a file,
+    # so the cross-compiled mingw64 job could not cache a single C++ object and
+    # recompiled all ~650 TUs every run. v0.18.0 expands response files before
+    # hashing, so the mingw64 job gets the same cache hits as native Linux.
+    # Bumping this means bumping the -sccache-vN cache key in github-ci.yml.
+    local SCCACHE_VERSION="v0.18.0"
     local SCCACHE_LINUX_PACKAGE="sccache-${SCCACHE_VERSION}-x86_64-unknown-linux-musl"
 
     curl -sSfL "https://github.com/mozilla/sccache/releases/download/${SCCACHE_VERSION}/${SCCACHE_LINUX_PACKAGE}.tar.gz" | sudo tar zx --strip-component=1 -C /usr/bin/
