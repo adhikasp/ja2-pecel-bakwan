@@ -95,7 +95,7 @@ Image-only widgets need `SetName(...)` in C++ to be clickable by label; new anim
 - **Log output is your debugger** — the game logs to `/var/folders/.../ja2.log`; tail it while the game runs.
 - **Don't touch `dependencies/`** — these are managed by cmake; changes get overwritten on reconfigure.
 
-## GitHub: remotes, projects, issues and milestones
+## GitHub: remotes, issues, projects and milestones
 
 ### Never touch upstream
 
@@ -108,26 +108,31 @@ Never push to it, never open a PR or an issue there, never comment there, never 
 
 | Layer | Answers | Holds |
 |---|---|---|
-| Project board | What are we doing, in what order? | every planned slice of work, across all tracks |
-| Issue | What is broken or undecided? | bugs and decisions that need a conversation |
-| Milestone | What ships together, by when? | a bundle of merged PRs plus a target date |
+| Issue | What is the work? What is broken or undecided? | one issue per slice of work — tasks, bugs and decisions alike |
+| Project board | In what order do those issues happen, across all tracks? | the same issues, with `Track` / `Kind` / `Status` set on them |
+| Milestone | What ships together, by when? | the issues and PRs of one shippable increment |
 | `docs/plan/`, `docs/ui/` | Why and how? | the plan, the M1 parity contract, the decisions |
 
-Nothing is tracked twice. The board is the single source of order; an issue is only a discussion thread hanging off a board item; a milestone only groups PRs that must land together.
-
-### The board
-
-One public board: **JA2 Modernization Roadmap** — https://github.com/users/adhikasp/projects/1, linked to this repository. A new track is a new value in the `Track` field, never a second board.
-
-- **`Track`** — `Modernize graphics` (leftover work from `docs/plan/native-modern-game.md`) · `Modernize AI` · `E2E tactical battles` · `E2E campaign` · `Port 1.13 features` · `Repo & CI`.
-- **`Kind`** — `Goal` (one objective statement per track) · `Task` (an actionable slice; its body is the definition of done and cites the plan, spec or PR) · `Placeholder` (a track we have claimed but not planned — its first task is always "write the plan doc", and nothing else under that track starts before that doc exists).
-- **`Status`** — `Backlog` → `Todo` → `In Progress` → `Done`, plus `Blocked` (the body says why).
-
-Routine: create the item → move it to `In Progress` when you start → open one PR per item, titled with the phase or slice, body linking the board item → `Done` when the PR merges.
+**The issue is the unit of work** and it lives in the repository, so the backlog is simply the issue list: https://github.com/adhikasp/ja2-stracciatella/issues. The board holds those issues — never its own copies (no draft items) — so nothing is ever tracked twice.
 
 ### Issues
 
-Bugs and decisions only. Features, phases and planned work are board items, never issues. Titles start with `bug: ` or `decision: `. Labels: exactly one kind (`bug`, `question`, `decision`) and at most one area (`tactical`, `mapscreen`, `laptop`, `nativeui`, `world-renderer`, `build`, `automation`). When an issue belongs to planned work, add it to the board (`gh project item-add`) so it shows up in the order of things.
+- **Open one for every slice of work**, planned or discovered. Planned work also goes onto the board (below).
+- **Title** — descriptive; prefixed `bug: ` or `decision: ` for those two kinds. Tasks and goals carry no prefix; the label already says what it is.
+- **Labels** — exactly one type: `task`, `bug`, `decision`, `question` or `goal`; plus at most one area: `tactical`, `mapscreen`, `laptop`, `nativeui`, `world-renderer`, `build`, `automation`.
+- **Body** — the definition of done, and the plan, spec or PR it comes from.
+- **Milestone** — the increment it ships in (below). A follow-up to an already delivered increment carries none.
+- **Board** — `gh project item-add 1 --owner adhikasp --url <issue url>`, then set `Track`, `Kind` and `Status`.
+
+Routine: create the issue → add it to the board → `In Progress` when you start → one PR that says `Closes #N`, carrying that issue's milestone and the screenshot proof below → `Done` when the PR merges.
+
+### The board
+
+One public board: **JA2 Modernization Roadmap** — https://github.com/users/adhikasp/projects/1, linked to this repository. It is an ordering view over the issues above, not a second backlog. A new track is a new value in the `Track` field, never a second board.
+
+- **`Track`** — `Modernize graphics` (leftover work from `docs/plan/native-modern-game.md`) · `Modernize AI` · `E2E tactical battles` · `E2E campaign` · `Port 1.13 features` · `Repo & CI`.
+- **`Kind`** — `Goal` (one objective statement per track) · `Task` (an actionable slice; its body is the definition of done and cites the plan, spec or PR) · `Placeholder` (a track we have claimed but not planned — its first issue is always "write the plan doc", and nothing else under that track starts before that doc exists).
+- **`Status`** — `Backlog` → `Todo` → `In Progress` → `Done`, plus `Blocked` (the issue body says why).
 
 ### Milestones
 
@@ -137,11 +142,11 @@ One per shippable increment — never per phase, never per PR:
 - `Native modern: laptop` — Phase 6
 - `Native modern: remaining screens` — Phase 7
 - `Native modern: HD art + legacy removal` — Phases 9 and 10
-- `AI, e2e and 1.13` — inactive until those `Placeholder` tracks get a plan doc
+- `AI, e2e and 1.13` — the tracks that are still `Placeholder` until their plan doc exists
 
-Every PR carries the milestone of the board item it closes; a milestone is closed when its last PR merges. Housekeeping under `Repo & CI` is not a shippable increment and carries no milestone.
+An issue and its PR carry the milestone of the increment they belong to; a milestone is closed when its last PR merges. Housekeeping under `Repo & CI` is not a shippable increment and carries no milestone.
 
-Plans stay in the repo: the board says *what* and *in what order*, `docs/plan/` keeps *why* and *how*, and the handover doc is refreshed when a phase lands.
+Plans stay in the repo: the issues and the board say *what* and *in what order*, `docs/plan/` keeps *why* and *how*, and the handover doc is refreshed when a phase lands.
 
 ## Every PR needs screenshot proof
 
