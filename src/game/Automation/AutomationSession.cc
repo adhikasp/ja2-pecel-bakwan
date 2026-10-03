@@ -219,7 +219,11 @@ namespace
 			if (gTacticalStatus.uiFlags & INCOMBAT && gTacticalStatus.ubCurrentTeam != OUR_TEAM) return false;
 			CFOR_EACH_IN_TEAM(s, OUR_TEAM)
 			{
-				if (s->bInSector && s->sGridNo != s->sFinalDestination) return false;
+				// A dead (or out-cold) merc is removed from the map: his gridno becomes
+				// NOWHERE but his final destination keeps the tile he fell on. He is not
+				// walking anywhere, so he must not count as "in flight".
+				if (!s->bInSector || s->bLife < OKLIFE) continue;
+				if (s->sGridNo != s->sFinalDestination) return false;
 			}
 		}
 		return true;
