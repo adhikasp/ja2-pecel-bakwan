@@ -133,18 +133,31 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v5
 
-    - name: Compiler cache (sccache)
-      uses: actions/cache@v5
+    # The -vN suffix tracks the sccache version installed by ci-setup.sh: bump it
+    # whenever that pin changes so a run never restores a cache written by a
+    # different sccache build. It is currently v2 (sccache v0.18.0).
+    #
+    # Both caches are only *restored* here; they are saved later, from the
+    # default branch only. A cache written by a pull request is scoped to that
+    # PR's merge ref, so no other run can ever read it: writing one per push
+    # just fills the repository's 10 GB cache budget without ever producing a
+    # hit (the budget was already exceeded, and 7.8 GB of it was unreusable
+    # per-PR sccache entries). The default branch is the shared seed every run
+    # restores from.
+    - name: Restore compiler cache (sccache)
+      id: sccache
+      uses: actions/cache/restore@v5
       with:
         path: |
           ~/.cache/sccache
-        key: ${{ matrix.cfg.target }}-sccache-v1-${{ github.ref }}-${{ github.sha }}
+        key: ${{ matrix.cfg.target }}-sccache-v2-${{ github.ref }}-${{ github.sha }}
         restore-keys: |
-          ${{ matrix.cfg.target }}-sccache-v1-${{ github.ref }}-
-          ${{ matrix.cfg.target }}-sccache-v1-refs/heads/master-
-          ${{ matrix.cfg.target }}-sccache-v1-
-    - name: Cache Rust deps and build output
-      uses: actions/cache@v5
+          ${{ matrix.cfg.target }}-sccache-v2-${{ github.ref }}-
+          ${{ matrix.cfg.target }}-sccache-v2-refs/heads/master-
+          ${{ matrix.cfg.target }}-sccache-v2-
+    - name: Restore Rust deps and build output
+      id: rust
+      uses: actions/cache/restore@v5
       with:
         path: |
           ~/.cargo/bin
@@ -183,6 +196,31 @@ jobs:
         CI_TARGET: ${{ matrix.cfg.target }}
         CI_REF: ${{ github.ref }}
         GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    # Saved after the build so the entries it just produced are included, and
+    # only from the default branch so PR runs never fill the cache budget with
+    # entries nothing can restore; see the restore steps above. The Rust key is
+    # content-addressed, so its save is skipped when it already hit exactly.
+    - name: Save compiler cache (sccache)
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      uses: actions/cache/save@v5
+      continue-on-error: true
+      with:
+        path: |
+          ~/.cache/sccache
+        key: ${{ steps.sccache.outputs.cache-primary-key }}
+    - name: Save Rust deps and build output
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.rust.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v5
+      continue-on-error: true
+      with:
+        path: |
+          ~/.cargo/bin
+          ~/.cargo/registry/index
+          ~/.cargo/registry/cache
+          ~/.cargo/git/db
+          ~/.rustup
+        key: ${{ steps.rust.outputs.cache-primary-key }}
 
     - name: Publish packages
       shell: bash
