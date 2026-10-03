@@ -33,6 +33,10 @@ typedef uint8_t         UINT8;
 typedef int8_t          INT8;
 typedef uint16_t        UINT16;
 typedef int16_t         INT16;
+// 64-bit. Deliberately NOT relying on the Windows `UINT64` from <basetsd.h>:
+// that only exists on Windows targets, so code using it breaks on Linux/macOS.
+// <cstdint>'s uint64_t is the same type on every target we build.
+typedef uint64_t        UINT64;
 // floats
 typedef float           FLOAT;
 typedef double          DOUBLE;

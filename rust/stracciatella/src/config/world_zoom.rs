@@ -31,7 +31,10 @@ impl FromStr for WorldZoom {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let s = s.trim();
-        if s.eq_ignore_ascii_case("match_ui") || s.eq_ignore_ascii_case("match") || s.eq_ignore_ascii_case("auto") {
+        if s.eq_ignore_ascii_case("match_ui")
+            || s.eq_ignore_ascii_case("match")
+            || s.eq_ignore_ascii_case("auto")
+        {
             return Ok(WorldZoom::MATCH_UI);
         }
         match s.parse::<u8>() {
