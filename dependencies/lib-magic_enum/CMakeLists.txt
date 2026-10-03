@@ -12,12 +12,12 @@ if (NOT LOCAL_MAGICENUM_LIB)
     message(STATUS "Using system magic_enum")
 
     # Try CMake config first (standard install via CMake)
-    find_package(magic_enum 0.9.7 CONFIG QUIET)
+    find_package(magic_enum 0.9.8 CONFIG QUIET)
 
     if(NOT magic_enum_FOUND)
         # Fallback to pkg-config (e.g., Meson installs)
         find_package(PkgConfig REQUIRED)
-        pkg_check_modules(magic_enum REQUIRED IMPORTED_TARGET magic_enum>=0.9.7)
+        pkg_check_modules(magic_enum REQUIRED IMPORTED_TARGET magic_enum>=0.9.8)
         target_link_libraries(${JA2_BINARY} PRIVATE PkgConfig::magic_enum)
         return()
     endif()
@@ -47,6 +47,9 @@ execute_process(COMMAND ${CMAKE_COMMAND} --build "${GETTER_DIR}" RESULT_VARIABLE
 if(NOT result EQUAL 0)
     message(FATAL_ERROR "Failed to build magic_enum getter: ${result}")
 endif()
+
+include(DepRefresh)
+dep_refresh(magic_enum "0.9.8" "${SRC_DIR}/*")
 
 if(NOT EXISTS "${SRC_DIR}/include/magic_enum/magic_enum.hpp")
     message(FATAL_ERROR "magic_enum headers not found at ${SRC_DIR}/include/magic_enum/magic_enum.hpp after extraction")

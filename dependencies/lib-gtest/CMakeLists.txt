@@ -12,8 +12,17 @@ configure_file(
 )
 
 # execute getter
-execute_process(COMMAND ${CMAKE_COMMAND} . "-G${CMAKE_GENERATOR}" "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}" WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/getter")
-execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/getter")
+execute_process(COMMAND ${CMAKE_COMMAND} . "-G${CMAKE_GENERATOR}" "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}" WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/getter" RESULT_VARIABLE getter_result)
+if(NOT getter_result EQUAL 0)
+    message(FATAL_ERROR "configuring the gtest getter failed: ${getter_result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/getter" RESULT_VARIABLE getter_result)
+if(NOT getter_result EQUAL 0)
+    message(FATAL_ERROR "downloading gtest failed: ${getter_result}")
+endif()
+
+include(DepRefresh)
+dep_refresh(gtest "1.18.0" "${SRC_DIR}/*")
 
 # library
 set(BUILD_GMOCK OFF CACHE INTERNAL "no gmock" FORCE)

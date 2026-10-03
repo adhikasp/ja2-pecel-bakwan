@@ -24,16 +24,18 @@ Game data is at `~/Workspace/ja2-gamedir/app`, configured in `~/.ja2/ja2.json`. 
 
 ## Windows (MSYS2 MinGW64)
 
-Toolchain lives in MSYS2 at `C:\msys64` (packages: `mingw-w64-x86_64-toolchain`, `-rust`, `-cmake`, `-sdl3`, `-fltk`, plus `base-devel` for the `make` the "MSYS Makefiles" generator needs). Build directory is **`_bin`** here, not `build`. Every command needs the MinGW64 environment, so run through a login shell with `MSYSTEM=MINGW64` set — plain PowerShell/cmd won't have `gcc`/`cmake`/`cargo` on PATH.
+Toolchain lives in MSYS2 at `C:\msys64` (packages: `mingw-w64-x86_64-toolchain`, `-rust`, `-cmake`, `-sdl3`, `-fltk`, plus `base-devel`. For the fast loop also install `mingw-w64-x86_64-sccache`, `-lld` and `-ninja` — cmake picks all three up by itself, see [Faster builds](COMPILATION.md#faster-builds)). Build directory is **`_bin`** here, not `build`. Every command needs the MinGW64 environment, so run through a login shell with `MSYSTEM=MINGW64` set — plain PowerShell/cmd won't have `gcc`/`cmake`/`cargo` on PATH.
 
 ### Daily build
 ```bash
-MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && make -j\$(nproc)"
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && cmake --build . --parallel \$(nproc)"
 ```
+`cmake --build` uses whatever generator `_bin` was configured with, so this line works for both generators.
 Reconfigure only if `CMakeLists.txt` changed:
 ```bash
 MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && cmake .. -G 'MSYS Makefiles' -DCPACK_GENERATOR=ZIP"
 ```
+A *fresh* `_bin` should be configured with `-G Ninja` instead (faster on Windows; a build directory can never change generator, so switch by configuring a new one).
 
 ### Test
 ```bash

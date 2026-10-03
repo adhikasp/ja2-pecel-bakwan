@@ -53,8 +53,17 @@ configure_file(
 )
 
 # execute getter
-execute_process(COMMAND ${CMAKE_COMMAND} . "-G${CMAKE_GENERATOR}" "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}" WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/getter")
-execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/getter")
+execute_process(COMMAND ${CMAKE_COMMAND} . "-G${CMAKE_GENERATOR}" "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}" WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/getter" RESULT_VARIABLE getter_result)
+if(NOT getter_result EQUAL 0)
+    message(FATAL_ERROR "configuring the miniaudio getter failed: ${getter_result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/getter" RESULT_VARIABLE getter_result)
+if(NOT getter_result EQUAL 0)
+    message(FATAL_ERROR "downloading miniaudio failed: ${getter_result}")
+endif()
+
+include(DepRefresh)
+dep_refresh(miniaudio "0.11.25" "${SRC_DIR}/*")
 
 set(MINIAUDIO_INCLUDE_DIRS ${SRC_DIR} PARENT_SCOPE)
 

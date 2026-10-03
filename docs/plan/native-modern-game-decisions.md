@@ -8,7 +8,7 @@ Reproduce with the commands in each section.
 
 | Question | Decision |
 |---|---|
-| UI toolkit | **RmlUi** (6.1, MIT), with our own SDL render interface and data models as the view-model layer |
+| UI toolkit | **RmlUi** (6.3, MIT), with our own SDL render interface and data models as the view-model layer |
 | Render path | **SDL_Renderer on its GPU drivers now; SDL_GPU (own pipelines) for the world renderer in Phase 8.** Headless screenshots: GPU render target + readback where a GPU exists, software renderer otherwise |
 | World renderer | Instances (sprite, shade LUT, depth, depth-test op) in the legacy submission order against a depth buffer reproduce the software renderer **pixel for pixel (0.0000 % diff)**; build it on SDL_GPU with a depth texture |
 | Assets | Tooling in `tools/assets/` (stdlib Python); 7,615 assets classified; derived art only in `~/.ja2-assets` |

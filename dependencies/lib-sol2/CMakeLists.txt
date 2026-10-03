@@ -26,22 +26,28 @@ configure_file(
     @ONLY
 )
 
-# copy patches to build dir
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/getter/gcc-15.patch"
-    "${CMAKE_CURRENT_BINARY_DIR}/getter/gcc-15.patch"
-    @ONLY
-)
-configure_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/getter/lua-55.patch"
-    "${CMAKE_CURRENT_BINARY_DIR}/getter/lua-55.patch"
-    COPYONLY
-    @ONLY
-)
-
 # execute getter
-execute_process(COMMAND ${CMAKE_COMMAND} . "-G${CMAKE_GENERATOR}" "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}" WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/getter")
-execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/getter")
+execute_process(COMMAND ${CMAKE_COMMAND} . "-G${CMAKE_GENERATOR}" "-DCMAKE_SYSTEM_VERSION=${CMAKE_SYSTEM_VERSION}" WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/getter" RESULT_VARIABLE getter_result)
+if(NOT getter_result EQUAL 0)
+    message(FATAL_ERROR "configuring the sol2 getter failed: ${getter_result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build "${CMAKE_CURRENT_BINARY_DIR}/getter" RESULT_VARIABLE getter_result)
+if(NOT getter_result EQUAL 0)
+    message(FATAL_ERROR "downloading sol2 failed: ${getter_result}")
+endif()
+
+# local fixes (gcc 15+, Lua 5.5); applies nothing when they are already in place
+execute_process(
+    COMMAND ${CMAKE_COMMAND} "-DSOL2_SRC=${SRC_DIR}" -P "${CMAKE_CURRENT_SOURCE_DIR}/apply-fixes.cmake"
+    RESULT_VARIABLE fix_result)
+if(NOT fix_result EQUAL 0)
+    message(FATAL_ERROR "applying the local sol2 fixes failed: ${fix_result}")
+endif()
+
+# the download carries the archive's timestamps: refresh it when the pin changes, or everything
+# compiled against the previous version stays stale
+include(DepRefresh)
+dep_refresh(sol2 "3.5.0-gcc15-lua55" "${SRC_DIR}/*")
 
 set(SOL_INCLUDE_DIR ${SRC_DIR}/include PARENT_SCOPE)
 
