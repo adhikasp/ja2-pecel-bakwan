@@ -549,3 +549,65 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .inv-foot > span { flex: 1 1 0; margin-right: var(--sp-3); }
 .inv-foot .btn { flex: 0 0 auto; white-space: nowrap; }
 .inv-foot .grow { display: none; }
+
+/* ================================================================ Phase 7 overlays: pre-battle, militia, help */
+/* blinking header (ambush / creature attack): a pulse, like the legacy flashing text */
+.modal-head.blink .title { color: var(--c-danger); }
+
+/* ---- pre-battle ---- */
+.pb-sector { display: flex; align-items: baseline; margin-bottom: var(--sp-3); }
+.pb-sector .k { display: block; width: 90dp; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase; color: var(--c-text-faint); }
+.pb-sector .v { display: block; font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-text-strong); }
+.pb-forces { display: flex; margin-bottom: var(--sp-3); }
+.pb-forces .force { padding: var(--sp-2) 0; }
+.pb-list { margin-bottom: var(--sp-3); max-height: 220dp; overflow-y: auto; border: var(--border) var(--c-line); border-radius: var(--r-1); }
+.pb-row { display: flex; align-items: center; height: 28dp; padding: 0 var(--sp-2); border-bottom: var(--border) var(--c-panel-2); }
+.pb-row span { display: block; flex: 1 1 0; overflow: hidden; white-space: nowrap; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.pb-row .nm { flex: 0 0 140dp; color: var(--c-text-strong); }
+.pb-row.head { height: 24dp; background-color: var(--c-panel); }
+.pb-row.head span { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase; color: var(--c-text-faint); }
+.pb .modal-foot { flex-wrap: wrap; }
+
+/* ---- militia redistribution ---- */
+.mil-body { display: flex; flex-wrap: wrap; }
+.mil-grid { display: flex; flex-wrap: wrap; width: 324dp; margin-right: var(--sp-4); }
+.mil-cell { position: relative; width: 104dp; height: 84dp; margin: 0 4dp 4dp 0; border: var(--border) var(--c-line-2); background-color: var(--c-bg); cursor: pointer; }
+.mil-cell .code { position: absolute; left: 4dp; top: 2dp; font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--c-text-faint); }
+.mil-cell .tot { position: absolute; right: 4dp; top: 2dp; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-strong); }
+.mil-cell .ranks { position: absolute; left: 4dp; bottom: 4dp; display: flex; }
+.mil-cell .ranks span { display: block; margin-right: 6dp; font-family: var(--font-mono); font-size: var(--fs-xs); }
+.mil-cell .ranks .g { color: var(--c-ok); }
+.mil-cell .ranks .r { color: var(--c-info); }
+.mil-cell .ranks .e { color: var(--c-select); }
+.mil-cell.sel { border: 2dp var(--c-accent); background-color: var(--c-accent-soft); }
+.mil-cell.hl { border-color: var(--c-select); }
+.mil-cell.empty { opacity: 0.45; }
+.mil-cell .shade { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: #0A070488; }
+.mil-side { display: block; flex: 1 1 0; min-width: 240dp; }
+.mil-rank { display: flex; align-items: center; height: 36dp; padding: 0 var(--sp-2); margin-bottom: var(--sp-1); border: var(--border) var(--c-line-2); border-left: 3dp var(--c-line-2); border-radius: var(--r-1); background-color: var(--c-bg); }
+.mil-rank .cap { display: block; flex: 1 1 0; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.mil-rank .n { display: block; margin-right: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-text-strong); }
+.mil-rank.g { border-left-color: var(--c-ok); }
+.mil-rank.r { border-left-color: var(--c-info); }
+.mil-rank.e { border-left-color: var(--c-select); }
+.mil-rank .icon-btn { width: 28dp; height: 28dp; }
+.mil-nosel { display: flex; align-items: center; padding: var(--sp-3); color: var(--c-text-dim); }
+.mil-nosel .icon.lg { width: 32dp; height: 32dp; margin-right: var(--sp-2); image-color: var(--c-text-faint); }
+.mil-pool { display: flex; align-items: center; width: 100%; margin-top: var(--sp-3); padding-top: var(--sp-2); border-top: var(--border) var(--c-line); }
+.mil-pool .sec-title { margin-right: var(--sp-3); }
+.mil-pool .p { display: block; margin-right: var(--sp-3); font-size: var(--fs-sm); color: var(--c-text-dim); }
+.mil-pool .p.g { color: var(--c-ok); }
+.mil-pool .p.r { color: var(--c-info); }
+.mil-pool .p.e { color: var(--c-select); }
+
+/* ---- help ---- */
+.help-body { display: block; }
+.help-pages { display: flex; flex-wrap: wrap; margin-bottom: var(--sp-2); }
+.help-page { display: block; height: 28dp; line-height: 28dp; padding: 0 var(--sp-3); margin: 0 var(--sp-1) var(--sp-1) 0; border: var(--border) var(--c-line-2); border-radius: var(--r-1); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); cursor: pointer; }
+.help-page.on { background-color: var(--c-accent-soft); border-color: var(--c-accent); color: var(--c-text-strong); }
+.help-text { display: block; height: 320dp; overflow-y: auto; padding: var(--sp-2) var(--sp-3); border: var(--border) var(--c-line); border-radius: var(--r-1); background-color: var(--c-bg); }
+.help-text p { display: block; margin: 0 0 var(--sp-3) 0; font-size: var(--fs-sm); line-height: 22dp; color: var(--c-text); }
+.help-again { display: flex; align-items: center; margin-top: var(--sp-3); cursor: pointer; }
+.help-again .chk { display: block; width: 16dp; height: 16dp; margin-right: var(--sp-2); border: var(--border) var(--c-line-2); border-radius: var(--r-1); background-color: var(--c-bg); }
+.help-again .chk.on { background-color: var(--c-accent); border-color: var(--c-accent); decorator: image(icon-confirm); image-color: var(--c-on-accent); }
+.help-again .t { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }

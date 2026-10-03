@@ -29,6 +29,9 @@
 #include "Strategic.h"
 #include "Map_Screen_Helicopter.h"
 #include "Map_Screen_Interface.h"
+#include "Map_Screen_Interface_Border.h"
+#include "Map_Screen_Interface_Map.h"
+#include "HelpScreen.h"
 #include "MapScreen.h"
 #include "Merc_Hiring.h"
 #include "Game_Clock.h"
@@ -661,6 +664,26 @@ namespace
 					// Fake an enemy encounter in the current sector on the map screen and open the pre-battle panel.
 					FakeEncounter();
 					InitPreBattleInterface(nullptr, false);
+				}
+				else if (what == "help")
+				{
+					// Test aid: open the map screen's help overlay (the first-visit help for the current state).
+					ShouldTheHelpScreenComeUp(HelpScreenDetermineWhichMapScreenHelpToShow(), TRUE);
+				}
+				else if (what == "militia")
+				{
+					// Test aid: give town a (default 1) some militia and open redistribution on it.
+					int const town = a && a->is<int>() ? a->as<int>() : 1;
+					for (int s = 0; s < 256; ++s)
+					{
+						if (GetTownIdForSector(SGPSector(s)) != town) continue;
+						SectorInfo[s].ubNumberOfCivsAtLevel[GREEN_MILITIA]   = 5;
+						SectorInfo[s].ubNumberOfCivsAtLevel[REGULAR_MILITIA] = 3;
+						SectorInfo[s].ubNumberOfCivsAtLevel[ELITE_MILITIA]   = 1;
+						StrategicMap[SGPSector(s).AsStrategicIndex()].fEnemyControlled = FALSE;
+					}
+					fShowMilitia = TRUE;
+					sSelectedMilitiaTown = INT16(town);
 				}
 				else if (what == "clearenemies")
 				{
