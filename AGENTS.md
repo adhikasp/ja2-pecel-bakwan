@@ -95,6 +95,54 @@ Image-only widgets need `SetName(...)` in C++ to be clickable by label; new anim
 - **Log output is your debugger** — the game logs to `/var/folders/.../ja2.log`; tail it while the game runs.
 - **Don't touch `dependencies/`** — these are managed by cmake; changes get overwritten on reconfigure.
 
+## GitHub: remotes, projects, issues and milestones
+
+### Never touch upstream
+
+- `origin` = **adhikasp/ja2-stracciatella** — our fork, the only copy we write to.
+- `upstream` = **ja2-stracciatella/ja2-stracciatella** — read-only.
+
+Never push to it, never open a PR or an issue there, never comment there, never add it to a project, never point a `gh` command at it. Repository commands carry `-R adhikasp/ja2-stracciatella`; project commands carry `--owner adhikasp`. Everything merges into this fork's `master`, which is protected — go through a PR, even for a docs-only change.
+
+### What goes where
+
+| Layer | Answers | Holds |
+|---|---|---|
+| Project board | What are we doing, in what order? | every planned slice of work, across all tracks |
+| Issue | What is broken or undecided? | bugs and decisions that need a conversation |
+| Milestone | What ships together, by when? | a bundle of merged PRs plus a target date |
+| `docs/plan/`, `docs/ui/` | Why and how? | the plan, the M1 parity contract, the decisions |
+
+Nothing is tracked twice. The board is the single source of order; an issue is only a discussion thread hanging off a board item; a milestone only groups PRs that must land together.
+
+### The board
+
+One public board: **JA2 Modernization Roadmap** — https://github.com/users/adhikasp/projects/1, linked to this repository. A new track is a new value in the `Track` field, never a second board.
+
+- **`Track`** — `Modernize graphics` (leftover work from `docs/plan/native-modern-game.md`) · `Modernize AI` · `E2E tactical battles` · `E2E campaign` · `Port 1.13 features` · `Repo & CI`.
+- **`Kind`** — `Goal` (one objective statement per track) · `Task` (an actionable slice; its body is the definition of done and cites the plan, spec or PR) · `Placeholder` (a track we have claimed but not planned — its first task is always "write the plan doc", and nothing else under that track starts before that doc exists).
+- **`Status`** — `Backlog` → `Todo` → `In Progress` → `Done`, plus `Blocked` (the body says why).
+
+Routine: create the item → move it to `In Progress` when you start → open one PR per item, titled with the phase or slice, body linking the board item → `Done` when the PR merges.
+
+### Issues
+
+Bugs and decisions only. Features, phases and planned work are board items, never issues. Titles start with `bug: ` or `decision: `. Labels: exactly one kind (`bug`, `question`, `decision`) and at most one area (`tactical`, `mapscreen`, `laptop`, `nativeui`, `world-renderer`, `build`, `automation`). When an issue belongs to planned work, add it to the board (`gh project item-add`) so it shows up in the order of things.
+
+### Milestones
+
+One per shippable increment — never per phase, never per PR:
+
+- `Native modern: front end + map + tactical` — Phases 0–5 and 8 (delivered)
+- `Native modern: laptop` — Phase 6
+- `Native modern: remaining screens` — Phase 7
+- `Native modern: HD art + legacy removal` — Phases 9 and 10
+- `AI, e2e and 1.13` — inactive until those `Placeholder` tracks get a plan doc
+
+Every PR carries the milestone of the board item it closes; a milestone is closed when its last PR merges. Housekeeping under `Repo & CI` is not a shippable increment and carries no milestone.
+
+Plans stay in the repo: the board says *what* and *in what order*, `docs/plan/` keeps *why* and *how*, and the handover doc is refreshed when a phase lands.
+
 ## Every PR needs screenshot proof
 
 A PR that changes anything the player can see (rendering, layout, UI, screens, video settings) must show screenshots of the result in its description. Passing tests is not enough. Golden images only prove a screen didn't *change*, not that it looks *right*.
