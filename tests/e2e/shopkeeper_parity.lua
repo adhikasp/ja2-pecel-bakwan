@@ -1,6 +1,6 @@
 -- Parity tour of the native shopkeeper / arms-dealer trade screen (docs/ui/shopkeeper.md, section 8), driven by the
 -- view model with the game state checked. Below 1280x720 the native UI cannot run: the legacy screen is used, so
--- only the mode is checked here.
+-- only the mode (and the legacy fallback itself) is checked here.
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
@@ -15,7 +15,12 @@ campaign.hireFromAim("Barry", "One Week", true)
 campaign.landInArulco()
 
 if not native then
+	-- The legacy fallback: open the same screen and prove the native UI is not running.
+	ja2.debug("shopkeeper")
+	ja2.waitScreen("SHOPKEEPER_SCREEN")
+	ja2.waitIdle()
 	ja2.expect(ja2.nativeUi().screen == "", "the shopkeeper is legacy below 1280x720")
+	shots.take("shopkeeper_legacy.png")
 	return
 end
 
