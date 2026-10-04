@@ -321,12 +321,50 @@ def generator_of(build_dir: Path):
     return None
 
 
+def cached_option(build_dir: Path, name: str):
+    """What cmake already cached for `name` here, or None if it never ran."""
+    try:
+        for line in (build_dir / "CMakeCache.txt").read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith(name + ":"):
+                return line.split("=", 1)[1].strip()
+    except OSError:
+        pass
+    return None
+
+
+def build_sdl_from_source(build_dir: Path) -> bool:
+    """Whether to configure with `-DBUILD_SDL_LIB=ON` (fetch and build SDL3).
+
+    Windows and macOS get a prebuilt SDL3 out of `dependencies/`, named by their
+    `cmake/toolchain-*.cmake`. Linux ships none: CI installs one with the
+    libsdl-org/setup-sdl action, so a plain Linux box - a fresh VM, a container,
+    an ARM cloud node - has no SDL3 and `find_package(SDL3)` fails the configure.
+    The repo can build it instead (`BUILD_SDL_LIB`, which is how the Android build
+    gets SDL), so do that rather than stopping: it is the same pinned 3.4.16 the
+    other platforms use.
+
+    An SDL3 that pkg-config already knows about is used as-is, and a build
+    directory that already has an opinion (the cache holds BUILD_SDL_LIB) keeps
+    it - so installing SDL3 later, or configuring with -DBUILD_SDL_LIB=OFF by
+    hand, still wins.
+    """
+    if IS_WINDOWS or sys.platform == "darwin":
+        return False
+    if cached_option(build_dir, "BUILD_SDL_LIB") is not None:
+        return False
+    return tool_run("pkg-config --exists sdl3", REPO).returncode != 0
+
+
 def configure(root: Path, build_dir: Path, quiet: bool = False):
     build_dir.mkdir(parents=True, exist_ok=True)
     ninja = tool_which("ninja")
     cmd = f"cmake -S '{posix(root)}' -B '{posix(build_dir)}'"
     if ninja:
         cmd += " -G Ninja"
+    if build_sdl_from_source(build_dir):
+        cmd += " -DBUILD_SDL_LIB=ON"
+        if not quiet:
+            log("no SDL3 installed; building the pinned one from source (-DBUILD_SDL_LIB=ON)")
     if not quiet:
         log(f"configure {build_dir} ({'Ninja' if ninja else 'default generator'}"
             f"{', sccache' if tool_which('sccache') else ''}{', lld' if tool_which('ld.lld') else ''})")
