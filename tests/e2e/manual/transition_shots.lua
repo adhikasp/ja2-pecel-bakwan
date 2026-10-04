@@ -12,17 +12,31 @@ local function shot(name)
 	ja2.screenshot(name .. suffix .. ".png")
 end
 
+local function toMapScreen()
+	ja2.key("m")
+	ja2.waitScreen("MAP_SCREEN")
+	campaign.dismissHelp()
+	ja2.waitIdle()
+end
+
 campaign.startWithMerc("Barry")
-ja2.key("m")
-ja2.waitScreen("MAP_SCREEN")
-campaign.dismissHelp()
-ja2.waitIdle()
+toMapScreen()
+
+-- the loading screen the transition hands over to (docs/ui/loadingscreen.md), over the map screen
+-- it loads over
+ja2.debug("loadscreen", 2)
+shot("loadscreen")
+ja2.step(2)
+
+-- The transition is drawn into the legacy layer, which the native map screen paints its map canvas
+-- over (a follow-up issue); show it in the mode it is visible in, legacy. ui_mode resolves at
+-- screen entry, so leave to tactical and come back to pick it up.
+ja2.click{id = "map.tactical"}
+ja2.waitScreen("GAME_SCREEN")
+ja2.setUiMode("mapscreen", "legacy")
+toMapScreen()
 
 for _, t in ipairs({ 0.0, 0.25, 0.5, 0.75, 1.0 }) do
 	ja2.debug("transition", t)
 	shot(string.format("transition_%03d", math.floor(t * 100)))
 end
-
--- the loading screen the transition hands over to (docs/ui/loadingscreen.md)
-ja2.debug("loadscreen", 2)
-shot("loadscreen")
