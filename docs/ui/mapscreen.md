@@ -182,9 +182,24 @@ The contract and move boxes are drawn as the approved card modals (prices and th
 squad and merc), the item description box and the stack popup as native modals, all from the legacy boxes' state with
 their clicks on the legacy lines and regions.
 
-Left to the legacy screen, which shows them and takes the mouse while they are up (`PassThrough`): the pre-battle
-panel, the help overlay and militia redistribution. They belong to **Phase 7** (remaining screens). Message boxes are
-native (Phase 2).
+**Pre-battle, militia redistribution and help (Phase 7)** are native modals over the map screen. The legacy screen
+still runs their state and input underneath (the pre-battle hotkeys `a`/`e`/`r`, the help screen's paging and pause,
+the militia pick-up/drop bookkeeping), but the native document draws the panel and takes the mouse:
+
+- **Pre-battle** (`map.pb`): the encounter header (blinking for ambushes and creature attacks), the battle sector, the
+  known enemy count (or "?"), the involved/merc and militia counts, the involved merc table (name, assignment,
+  condition, HP, BP) and the uninvolved table (name, assignment, location, destination, departure). The three buttons
+  call `ActivatePreBattleAutoresolveAction` / `EnterSectorAction` / `RetreatAction`; they are disabled and show the
+  legacy fast-help when the legacy buttons are (ambush, player-initiated attack, auto-start, no retreat).
+- **Militia redistribution** (`map.militia`): the selected town's 3x3 sector map with per-sector green/regular/elite
+  counts (shaded when enemy held or hostiles are present), the rank controls for the selected sector (left click drops
+  one, right click picks one up), the unassigned pool on the cursor, and Auto / Done. It opens from the legacy
+  right-click on a town sector with the militia filter on.
+- **Help** (`map.help`): the current help screen's title, subtitle, page buttons, wrapped paragraphs and the
+  "don't display again" check box, from the same `help.edt` records the legacy renderer uses.
+
+The item description box and the stack popup are native modals too. With these, nothing on the map screen is handed
+back to the legacy UI (`PassThrough` is always false); the legacy screen still owns the state they drive.
 
 **Message log.** Messages now carry the game minute and their kind (not saved: a loaded save's messages show under
 "Earlier"); the log groups by day, has All/Combat/Team/Money tabs (combat = the red messages, money = they name a sum,
@@ -228,7 +243,12 @@ would not fit. Ammo, clips and grenades therefore stay small.
 a merc in transit (dimmed, own group), the update box (Stop), the helicopter and arrival point in airspace mode, a dead
 merc (Dead group and assignment). The parity tour also covers the contract and move modals, the log's tabs, search
 and sector link, drag and drop, the item description, the stack popup, filters, search, sort and Stack & merge.
+
+`tests/e2e/mapscreen_overlays.lua` (with test aids `ja2.debug("help" | "prebattle" | "militia")`) tours the Phase 7
+overlays: the help title/paragraphs, the page buttons and close; the pre-battle header, forces and involved table with
+retreat disabled; and the militia 3x3 town map with sector selection, pick-up/drop and Auto/Done. Below 1280x720 the
+legacy screens run and the tour only checks that the legacy map screen is up.
 `MapScreenModel_unittest.cc` tests the view model's rules (team grouping, the box lines, the log, item art) on
 game-state fixtures.
 
-Not covered: militia redistribution, pre-battle and help (legacy, Phase 7).
+Not covered: auto-resolve (its own screen, Phase 7).

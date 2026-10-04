@@ -95,12 +95,17 @@ function campaign.landInArulco()
 	campaign.dismissHelp()
 end
 
--- Everything above: a fresh campaign with one merc standing in Omerta.
-function campaign.startWithMerc(name)
+-- Everything above: a fresh campaign with a team of mercs standing in Omerta.
+function campaign.startWithTeam(names, contract, equipment)
 	campaign.newGame()
-	campaign.hireFromAim(name or "Barry")
+	for _, name in ipairs(names) do campaign.hireFromAim(name, contract, equipment) end
 	campaign.landInArulco()
 	return ja2.state()
+end
+
+-- A fresh campaign with one merc standing in Omerta.
+function campaign.startWithMerc(name)
+	return campaign.startWithTeam{ name or "Barry" }
 end
 
 -- The first merc on the team, failing clearly if there is none.

@@ -3,6 +3,9 @@
 
 #include "Types.h"
 
+#include <string>
+#include <vector>
+
 //enum used for the different help screens that can come up
 enum HelpScreenID
 {
@@ -68,5 +71,33 @@ void InitHelpScreenSystem(void);
 void NewScreenSoResetHelpScreen(void);
 HelpScreenID HelpScreenDetermineWhichMapScreenHelpToShow();
 
+// ---- what the native help overlay draws (NativeUI/MapScreenNative.cc, docs/ui/mapscreen.md) -----------
+// A read-only snapshot plus the commands the native buttons send, so the native and the legacy screen run
+// exactly the same game code. The legacy help screen keeps running underneath (input, pausing, exit).
+struct HelpPageInfo
+{
+	std::string              button;      // the page button's label (empty when the screen has no buttons)
+	std::vector<std::string> paragraphs;  // the page's paragraphs, in order
+};
+
+struct HelpScreenView
+{
+	bool                     active = false;
+	int                      page = 0, page_count = 0;
+	bool                     force = false;    // fForceHelpScreenToComeUp: no "don't show again"
+	std::string              title, subtitle, footer;
+	std::vector<HelpPageInfo> pages;
+	bool                     dont_show = false; // the "don't show help again" toggle is checked
+};
+
+/** The help screen now, or active == false when none is up. */
+HelpScreenView GetHelpScreenView();
+
+/** The page button (ChangeToHelpScreenSubPage), clamped like the legacy callbacks. */
+void HelpScreenSelectPage(int page);
+/** Closes the help screen (the legacy Esc / exit button): acted on by HelpScreenHandler next frame. */
+void HelpScreenClose();
+/** Toggles the "don't show help again" check box (no-op when the toggle is hidden). */
+void HelpScreenToggleDontShow();
 
 #endif

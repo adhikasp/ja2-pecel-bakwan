@@ -288,6 +288,81 @@
 		</div>
 	</div>
 
+	<!-- ============================================================== Phase 7: pre-battle (legacy PassThrough) -->
+	<div class="scrim" data-if="pb_open"></div>
+	<div class="modal audit-over pb" id="map.pb" data-if="pb_open" style="left: 50%; top: 50%; width: 760dp; margin-left: -380dp; margin-top: -350dp;">
+		<div class="modal-head" data-class-blink="pb_blink"><img class="icon status" src="icon-warning"/><span class="title">{{pb_title}}</span></div>
+		<div class="modal-body">
+			<div class="pb-sector"><span class="k">{{l_pb_sector}}</span><span class="v">{{pb_sector}}</span></div>
+			<div class="pb-forces">
+				<div class="force e"><span class="n">{{pb_enemy}}</span><span class="l">{{pb_enemy_label}}</span></div>
+				<div class="force"><span class="n">{{pb_mercs}}</span><span class="l">{{l_mercs}}</span></div>
+				<div class="force g"><span class="n">{{pb_militia}}</span><span class="l">{{l_militia}}</span></div>
+			</div>
+			<span class="sec-title">{{l_pb_involved}}</span>
+			<div class="pb-list"><div class="pb-row head"><span class="nm"></span><span>{{l_col_assign}}</span><span>{{l_col_cond}}</span><span>HP</span><span>BP</span></div>
+				<div data-for="m : pb_involved" class="pb-row"><span class="nm">{{m.name}}</span><span>{{m.a}}</span><span>{{m.b}}</span><span>{{m.c}}</span><span>{{m.d}}</span></div>
+			</div>
+			<span class="sec-title" data-if="pb_uninvolved.size &gt; 0">{{l_pb_uninvolved}}</span>
+			<div class="pb-list" data-if="pb_uninvolved.size &gt; 0"><div class="pb-row head"><span class="nm"></span><span>{{l_col_assign}}</span><span>{{l_col_loc}}</span><span>{{l_col_dest}}</span><span>{{l_col_left}}</span></div>
+				<div data-for="m : pb_uninvolved" class="pb-row"><span class="nm">{{m.name}}</span><span>{{m.a}}</span><span>{{m.b}}</span><span>{{m.c}}</span><span>{{m.d}}</span></div>
+			</div>
+		</div>
+		<div class="modal-foot">
+			<button class="btn btn-danger" id="map.pb.auto" data-label="Auto Resolve" data-class-is-disabled="!pb_can_auto" data-attr-title="pb_auto_help" data-event-click="pb('auto')"><img class="icon" src="icon-play"/><span class="label">{{l_pb_auto}}</span><span class="kbd">A</span></button>
+			<button class="btn" id="map.pb.enter" data-label="Enter Sector" data-class-is-disabled="!pb_can_enter" data-attr-title="pb_enter_help" data-event-click="pb('enter')"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_pb_enter}}</span><span class="kbd">E</span></button>
+			<button class="btn" id="map.pb.retreat" data-label="Retreat" data-class-is-disabled="!pb_can_retreat" data-attr-title="pb_retreat_help" data-event-click="pb('retreat')"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_pb_retreat}}</span><span class="kbd">R</span></button>
+		</div>
+	</div>
+
+	<!-- ============================================================== Phase 7: militia redistribution (legacy PassThrough) -->
+	<div class="scrim" data-if="militia_open"></div>
+	<div class="modal audit-over militia" id="map.militia" data-if="militia_open" style="left: 50%; top: 50%; width: 660dp; margin-left: -330dp; margin-top: -300dp;">
+		<div class="modal-head"><img class="icon status" src="icon-militia"/><span class="title">{{militia_title}}</span></div>
+		<div class="modal-body mil-body">
+			<div class="mil-grid" id="map.militia.grid">
+				<div data-for="c : militia_cells" data-attr-class="c.cls" data-attr-id="'map.militia.cell[' + c.cell + ']'" data-event-click="militia_cell(c.cell)" data-attr-rclick="'militia_cell_r()'">
+					<span class="code">{{c.code}}</span>
+					<span class="tot" data-if="c.controlled">{{c.total}}</span>
+					<div class="ranks" data-if="c.controlled"><span class="g">{{c.green}}</span><span class="r">{{c.regular}}</span><span class="e">{{c.elite}}</span></div>
+					<div class="shade" data-if="c.shaded"></div>
+				</div>
+			</div>
+			<div class="mil-side">
+				<div data-if="militia_has_selection">
+					<span class="sec-title">{{l_militia}}</span>
+					<div class="mil-rank g"><span class="cap">{{l_militia_green}}</span><span class="n">{{militia_sel_green}}</span><button class="icon-btn" id="map.militia.rank.green" data-attr-title="'Add / remove'" data-event-click="militia_drop(0)" data-attr-rclick="'militia_pick(0)'"><img class="icon" src="icon-add"/></button></div>
+					<div class="mil-rank r"><span class="cap">{{l_militia_regular}}</span><span class="n">{{militia_sel_regular}}</span><button class="icon-btn" id="map.militia.rank.regular" data-attr-title="'Add / remove'" data-event-click="militia_drop(1)" data-attr-rclick="'militia_pick(1)'"><img class="icon" src="icon-add"/></button></div>
+					<div class="mil-rank e"><span class="cap">{{l_militia_elite}}</span><span class="n">{{militia_sel_elite}}</span><button class="icon-btn" id="map.militia.rank.elite" data-attr-title="'Add / remove'" data-event-click="militia_drop(2)" data-attr-rclick="'militia_pick(2)'"><img class="icon" src="icon-add"/></button></div>
+					<span class="hint-text">{{l_militia_hint}}</span>
+				</div>
+				<div class="mil-nosel" data-if="!militia_has_selection"><img class="icon lg" src="icon-militia"/><span class="hint-text">{{l_militia_pick}}</span></div>
+			</div>
+			<div class="mil-pool"><span class="sec-title">{{l_militia_unassigned}}</span>
+				<span class="p g">{{l_militia_green}} <b>{{militia_cursor_green}}</b></span>
+				<span class="p r">{{l_militia_regular}} <b>{{militia_cursor_regular}}</b></span>
+				<span class="p e">{{l_militia_elite}} <b>{{militia_cursor_elite}}</b></span>
+			</div>
+		</div>
+		<div class="modal-foot">
+			<button class="btn" id="map.militia.auto" data-label="Auto" data-class-is-disabled="!militia_can_auto" data-event-click="militia_auto"><img class="icon" src="icon-sort-desc"/><span class="label">{{l_militia_auto}}</span></button>
+			<button class="btn btn-primary" id="map.militia.done" data-label="Done" data-event-click="militia_done"><img class="icon" src="icon-confirm"/><span class="label">{{l_done}}</span></button>
+		</div>
+	</div>
+
+	<!-- ============================================================== Phase 7: help (legacy PassThrough) -->
+	<div class="scrim" data-if="help_open"></div>
+	<div class="modal audit-over help" id="map.help" data-if="help_open" style="left: 50%; top: 50%; width: 820dp; margin-left: -410dp; margin-top: -340dp;">
+		<div class="modal-head"><img class="icon status" src="icon-info"/><span class="title">{{help_title}}</span></div>
+		<div class="modal-body help-body">
+			<span class="lead">{{help_subtitle}}</span>
+			<div class="help-pages" data-if="help_multi"><span data-for="hp : help_pages" class="help-page" data-attr-id="'map.help.page[' + hp.i + ']'" data-class-on="hp.on" data-event-click="help_page(hp.i)">{{hp.label}}</span></div>
+			<div class="help-text scroll" id="map.help.text"><p data-for="pp : help_paras">{{pp.text}}</p></div>
+			<div class="help-again" data-if="!help_force" id="map.help.again" data-event-click="help_dont_show"><span class="chk" data-class-on="help_dont_show"></span><span class="t">{{help_footer}}</span></div>
+		</div>
+		<div class="modal-foot"><button class="btn btn-primary" id="map.help.close" data-label="Close" data-event-click="help_close"><img class="icon" src="icon-confirm"/><span class="label">{{l_close}}</span><span class="kbd">Esc</span></button></div>
+	</div>
+
 </div>
 </body>
 </rml>

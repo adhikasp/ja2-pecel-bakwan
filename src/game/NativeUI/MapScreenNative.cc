@@ -5,8 +5,8 @@
 // state through MapScreenViewModel. The player's pointer input is forwarded to the legacy screen's own handlers
 // (MapScreenBridge.h: the team list cells, the map, the popup box lines, the inventory slots), and the buttons send the
 // legacy hotkeys, so the native and the legacy UI run exactly the same game code. Legacy popups (the assignment,
-// squad, training, contract, move ... boxes) are mirrored as native menus; screens the native UI does not draw yet
-// (pre-battle, help, militia redistribution, item description, stack popup) pass the mouse through to the legacy one.
+// squad, training, contract, move ... boxes) are mirrored as native menus, as are the pre-battle panel, militia
+// redistribution and the help overlay (Phase 7); the legacy screens still run their state underneath.
 #include "MapScreenModel.h"
 #include "NativeImages.h"
 #include "NativeUIRuntime.h"
@@ -310,6 +310,49 @@ struct Category
 	static void Describe(RowFields<Category>& f) { f("key", &Category::key)("icon", &Category::icon)("label", &Category::label)("n", &Category::n)("on", &Category::on); }
 };
 
+// ---- Phase 7 overlays (pre-battle, militia redistribution, help): native replacements for the legacy map
+// screen panels that used to pass through the mouse. The game-side snapshots live in PreBattle_Interface.cc,
+// Map_Screen_Interface_Map.cc and HelpScreen.cc.
+struct HelpPageRow
+{
+	int i = 0;
+	std::string label;
+	bool on = false;
+	bool operator==(HelpPageRow const&) const = default;
+	static void Describe(RowFields<HelpPageRow>& f) { f("i", &HelpPageRow::i)("label", &HelpPageRow::label)("on", &HelpPageRow::on); }
+};
+
+struct HelpParaRow
+{
+	std::string text;
+	bool operator==(HelpParaRow const&) const = default;
+	static void Describe(RowFields<HelpParaRow>& f) { f("text", &HelpParaRow::text); }
+};
+
+/** A merc line: name + four columns (involved: assignment, condition, hp, bp; uninvolved: assignment, location, destination, departure). */
+struct PbMercRow
+{
+	std::string name, a, b, c, d;
+	bool operator==(PbMercRow const&) const = default;
+	static void Describe(RowFields<PbMercRow>& f) { f("name", &PbMercRow::name)("a", &PbMercRow::a)("b", &PbMercRow::b)("c", &PbMercRow::c)("d", &PbMercRow::d); }
+};
+
+struct MilitiaCellRow
+{
+	int cell = 0;
+	std::string code, cls;
+	int green = 0, regular = 0, elite = 0, total = 0;
+	bool controlled = false, shaded = false, selected = false, highlighted = false, allowable = false;
+	bool operator==(MilitiaCellRow const&) const = default;
+	static void Describe(RowFields<MilitiaCellRow>& f)
+	{
+		f("cell", &MilitiaCellRow::cell)("code", &MilitiaCellRow::code)("cls", &MilitiaCellRow::cls)
+		 ("green", &MilitiaCellRow::green)("regular", &MilitiaCellRow::regular)("elite", &MilitiaCellRow::elite)("total", &MilitiaCellRow::total)
+		 ("controlled", &MilitiaCellRow::controlled)("shaded", &MilitiaCellRow::shaded)("selected", &MilitiaCellRow::selected)
+		 ("highlighted", &MilitiaCellRow::highlighted)("allowable", &MilitiaCellRow::allowable);
+	}
+};
+
 // ------------------------------------------------------------------------------------------------------ view model
 class MapScreenViewModel final : public ViewModel
 {
@@ -425,6 +468,23 @@ public:
 		});
 		Command("dismiss", [this](Args const&) { CancelMessage(); Poke(); });
 		Command("update_end", [this](Args const& a) { EndUpdateBox(!a.empty() && a[0] == "1"); Poke(); });
+		// Phase 7 overlays: pre-battle, militia redistribution, help
+		Command("pb", [this](Args const& a) {
+			if (a.empty()) return;
+			if (a[0] == "auto") ActivatePreBattleAutoresolveAction();
+			else if (a[0] == "enter") ActivatePreBattleEnterSectorAction();
+			else if (a[0] == "retreat") ActivatePreBattleRetreatAction();
+			Poke();
+		});
+		Command("militia_cell",   [this](Args const& a) { if (!a.empty()) MilitiaSelectCell(std::atoi(a[0].c_str())); Poke(); });
+		Command("militia_cell_r", [this](Args const&) { MilitiaClearCell(); Poke(); });
+		Command("militia_pick",   [this](Args const& a) { if (!a.empty()) MilitiaPickUp(std::atoi(a[0].c_str())); Poke(); });
+		Command("militia_drop",   [this](Args const& a) { if (!a.empty()) MilitiaDrop(std::atoi(a[0].c_str())); Poke(); });
+		Command("militia_auto",   [this](Args const&) { MilitiaAuto(); Poke(); });
+		Command("militia_done",   [this](Args const&) { MilitiaDone(); Poke(); });
+		Command("help_page",      [this](Args const& a) { if (!a.empty()) HelpScreenSelectPage(std::atoi(a[0].c_str())); Poke(); });
+		Command("help_close",     [this](Args const&) { HelpScreenClose(); Poke(); });
+		Command("help_dont_show", [this](Args const&) { HelpScreenToggleDontShow(); Poke(); });
 		Labels();
 	}
 
@@ -440,7 +500,9 @@ public:
 			"green", "regular", "veteran", "enemy", "control", "loyalty", "training", "producing", "possible", "sam", "in_sector",
 			"sector_inv", "map_hint", "messages", "stop", "continue", "time_help", "open_gear", "pool_empty",
 			"log_all", "log_combat", "log_team", "log_money", "search", "search_items", "sort_type", "sort_name", "sort_cond", "stack",
-			"desc_cond", "desc_weight", "desc_ammo", "desc_attach", "desc_hint", "stack_hint", "move_all", "close" })
+			"desc_cond", "desc_weight", "desc_ammo", "desc_attach", "desc_hint", "stack_hint", "move_all", "close",
+			"pb_sector", "pb_involved", "pb_uninvolved", "pb_auto", "pb_enter", "pb_retreat",
+			"militia_unassigned", "militia_green", "militia_regular", "militia_elite", "militia_auto", "militia_hint", "militia_pick" })
 		{
 			labels[k] = Str(std::string("map.") + k);
 		}
@@ -482,6 +544,20 @@ public:
 		f.Field("pool_open", poolOpen); f.Field("gear_open", gearOpen); f.Field("gear_title", gearTitle); f.Rows("gear", gear);
 		f.Field("gear_weight", gearWeight); f.Field("gear_camo", gearCamo);
 		f.Field("pool_title", poolTitle); f.Rows("pool", pool); f.Rows("cats", cats); f.Field("category", category);
+		f.Field("pb_open", pbOpen); f.Field("pb_title", pbTitle); f.Field("pb_sector", pbSector);
+		f.Field("pb_enemy_label", pbEnemyLabel); f.Field("pb_enemy", pbEnemy); f.Field("pb_mercs", pbMercs); f.Field("pb_militia", pbMilitia);
+		f.Field("pb_can_auto", pbCanAuto); f.Field("pb_can_enter", pbCanEnter); f.Field("pb_can_retreat", pbCanRetreat); f.Field("pb_blink", pbBlink);
+		f.Field("pb_auto_help", pbAutoHelp); f.Field("pb_enter_help", pbEnterHelp); f.Field("pb_retreat_help", pbRetreatHelp);
+		f.Rows("pb_involved", pbInvolved); f.Rows("pb_uninvolved", pbUninvolved);
+		f.Field("militia_open", militiaOpen); f.Field("militia_title", militiaTitle); f.Field("militia_can_auto", militiaCanAuto);
+		f.Field("militia_cursor_green", militiaCursorGreen); f.Field("militia_cursor_regular", militiaCursorRegular); f.Field("militia_cursor_elite", militiaCursorElite);
+		f.Field("militia_sel_green", militiaSelGreen); f.Field("militia_sel_regular", militiaSelRegular); f.Field("militia_sel_elite", militiaSelElite);
+		f.Field("militia_selected", militiaSelected); f.Field("militia_has_selection", militiaHasSelection);
+		f.Rows("militia_cells", militiaCells);
+		f.Field("help_open", helpOpen); f.Field("help_title", helpTitle); f.Field("help_subtitle", helpSubtitle); f.Field("help_footer", helpFooter);
+		f.Field("help_page", helpPage); f.Field("help_page_count", helpPageCount); f.Field("help_dont_show", helpDontShow); f.Field("help_force", helpForce);
+		f.Field("help_multi", helpMulti);
+		f.Rows("help_pages", helpPages); f.Rows("help_paras", helpParas);
 		for (auto& [k, v] : labels) f.Field(("l_" + k).c_str(), v);
 	}
 
@@ -497,6 +573,7 @@ public:
 		ReadMenus();
 		ReadUpdate();
 		ReadInventory();
+		ReadOverlays();
 		if (Signature() != before) Changed();
 	}
 
@@ -565,6 +642,23 @@ public:
 	std::vector<PoolItem> pool;
 	std::vector<Category> cats;
 	std::map<std::string, std::string> labels;
+
+	// Phase 7 overlays (pre-battle, militia redistribution, help)
+	bool pbOpen = false, pbCanAuto = true, pbCanEnter = true, pbCanRetreat = true, pbBlink = false;
+	std::string pbTitle, pbSector, pbEnemyLabel, pbEnemy, pbAutoHelp, pbEnterHelp, pbRetreatHelp;
+	int pbMercs = 0, pbMilitia = 0;
+	std::vector<PbMercRow> pbInvolved, pbUninvolved;
+	bool militiaOpen = false, militiaCanAuto = false;
+	std::string militiaTitle;
+	int militiaCursorGreen = 0, militiaCursorRegular = 0, militiaCursorElite = 0;
+	int militiaSelGreen = 0, militiaSelRegular = 0, militiaSelElite = 0, militiaSelected = -1;
+	bool militiaHasSelection = false;
+	std::vector<MilitiaCellRow> militiaCells;
+	bool helpOpen = false, helpDontShow = false, helpForce = false, helpMulti = false;
+	std::string helpTitle, helpSubtitle, helpFooter;
+	int helpPage = 0, helpPageCount = 0;
+	std::vector<HelpPageRow> helpPages;
+	std::vector<HelpParaRow> helpParas;
 
 private:
 	std::string Signature()
@@ -1285,6 +1379,67 @@ private:
 			cats.push_back(k);
 		}
 	}
+
+	/** The Phase 7 overlays. Each game-side snapshot returns early when its panel is not up, so this is cheap. */
+	void ReadOverlays()
+	{
+		PreBattleView const pb = GetPreBattleView();
+		pbOpen = pb.active;
+		pbTitle = pb.header; pbSector = pb.sector;
+		pbEnemyLabel = pb.enemy_label; pbEnemy = pb.enemy_count;
+		pbMercs = pb.mercs; pbMilitia = pb.militia;
+		pbCanAuto = pb.can_auto; pbCanEnter = pb.can_enter; pbCanRetreat = pb.can_retreat; pbBlink = pb.blink;
+		pbAutoHelp = pb.auto_help; pbEnterHelp = pb.enter_help; pbRetreatHelp = pb.retreat_help;
+		pbInvolved.clear();
+		for (PreBattleMercInfo const& m : pb.involved)
+		{
+			PbMercRow r;
+			r.name = m.name; r.a = m.assignment; r.b = m.condition; r.c = m.hp; r.d = m.bp;
+			pbInvolved.push_back(std::move(r));
+		}
+		pbUninvolved.clear();
+		for (PreBattleMercInfo const& m : pb.uninvolved)
+		{
+			PbMercRow r;
+			r.name = m.name; r.a = m.assignment; r.b = m.location; r.c = m.destination; r.d = m.departure;
+			pbUninvolved.push_back(std::move(r));
+		}
+
+		MilitiaView const mv = GetMilitiaView();
+		militiaOpen = mv.active;
+		militiaTitle = mv.active ? Str("map.militia") + " - " + mv.town_name : "";
+		militiaCanAuto = mv.can_auto;
+		militiaCursorGreen = mv.cursor_green; militiaCursorRegular = mv.cursor_regular; militiaCursorElite = mv.cursor_elite;
+		militiaSelGreen = mv.sel_green; militiaSelRegular = mv.sel_regular; militiaSelElite = mv.sel_elite;
+		militiaSelected = mv.selected_cell;
+		militiaHasSelection = mv.selected_cell >= 0;
+		militiaCells.clear();
+		for (MilitiaCellInfo const& c : mv.cells)
+		{
+			MilitiaCellRow r;
+			r.cell = c.cell; r.code = c.code;
+			r.green = c.green; r.regular = c.regular; r.elite = c.elite; r.total = c.green + c.regular + c.elite;
+			r.controlled = c.controlled; r.shaded = c.shaded; r.selected = c.selected; r.highlighted = c.highlighted; r.allowable = c.allowable;
+			r.cls = std::string("mil-cell") + (c.selected ? " sel" : "") + (c.highlighted ? " hl" : "") + (c.controlled ? "" : " empty") + (c.shaded ? " shaded" : "");
+			militiaCells.push_back(std::move(r));
+		}
+
+		HelpScreenView const h = GetHelpScreenView();
+		helpOpen = h.active;
+		helpTitle = h.title; helpSubtitle = h.subtitle; helpFooter = h.footer;
+		helpPage = h.page; helpPageCount = h.page_count; helpDontShow = h.dont_show; helpForce = h.force;
+		helpMulti = h.page_count > 1;
+		helpPages.clear();
+		for (int i = 0; i < int(h.pages.size()); ++i)
+		{
+			HelpPageRow r;
+			r.i = i; r.label = h.pages[i].button; r.on = i == h.page;
+			helpPages.push_back(std::move(r));
+		}
+		helpParas.clear();
+		if (h.page >= 0 && h.page < int(h.pages.size()))
+			for (std::string const& p : h.pages[h.page].paragraphs) helpParas.push_back({ p });
+	}
 };
 
 // ------------------------------------------------------------------------------------------------------ screen
@@ -1431,10 +1586,9 @@ namespace
 	private:
 		bool WantsPassThrough() const
 		{
-			// what the native screen does not draw: the legacy screen shows it and takes the mouse
-			// (pre-battle, help and militia redistribution belong to Phase 7)
-			return gfPreBattleInterfaceActive || sSelectedMilitiaTown != 0 ||
-				(gHelpScreen.uiFlags & 0x00000001) != 0; // HELP_SCREEN_ACTIVE (HelpScreen.cc)
+			// nothing on the map screen is legacy-only any more: the pre-battle panel, militia redistribution and
+			// the help overlay are drawn natively (Phase 7, above the legacy screen, which still runs their state).
+			return false;
 		}
 
 		/** Items move by drag and drop (press on an item, release over a slot) and by click, click: a press picks the

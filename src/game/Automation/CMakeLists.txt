@@ -4,6 +4,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/AutomationLua.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/AutomationServer.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/AutomationSession.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/BattleScenario.cc
 )
 
 if (WITH_UNITTESTS)

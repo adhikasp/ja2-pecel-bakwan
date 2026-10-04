@@ -378,8 +378,8 @@ if (WITH_UNITTESTS)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
-            if(n MATCHES "^(tactical_layers|world_renderer)")
-                continue() # run below, with layers
+            if(n MATCHES "^(tactical_layers|world_renderer|battle_)")
+                continue() # run below, with layers or at a native resolution
             endif()
             add_test(
                 NAME e2e_${n}
@@ -420,6 +420,20 @@ if (WITH_UNITTESTS)
                 --res 2560x1440 --uiscale 2 --worldzoom 1 --timeout 600
                 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/tactical_layers_ui"
         )
+        # Battle e2e (docs/plan/e2e-tactical-battles.md): a staged fight driven through the
+        # native tactical HUD. The generic loop and the resolution matrix skip battle_*
+        # scripts; the native HUD needs 1280x720, and a battle is long.
+        foreach(f ${E2E_SCRIPTS})
+            get_filename_component(n ${f} NAME_WE)
+            if(NOT n MATCHES "^battle_")
+                continue()
+            endif()
+            add_test(
+                NAME e2e_${n}
+                COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${f}" --isolated
+                    --res 1920x1080 --timeout 900 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/${n}"
+            )
+        endforeach()
         foreach(check determinism sessions)
             add_test(
                 NAME e2e_${check}
@@ -483,7 +497,7 @@ if (WITH_UNITTESTS)
         foreach(f ${RESOLUTION_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             get_filename_component(ext ${f} EXT)
-            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer)")
+            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer|battle_)")
                 continue()
             endif()
             foreach(res ${RESOLUTION_MATRIX})

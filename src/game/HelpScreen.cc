@@ -30,6 +30,8 @@
 
 #include <string_theory/string>
 
+#include <algorithm>
+
 
 extern void PrintDate( void );
 extern void PrintNumberOnTeam( void );
@@ -1755,6 +1757,144 @@ static UINT16 RenderMapScreenHelpScreen(void)
 	}
 
 	return( usTotalNumberOfVerticalPixels );
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------
+// The native help overlay (NativeUI/MapScreenNative.cc, docs/ui/mapscreen.md): a read-only snapshot plus the mouse
+// commands. The legacy help screen keeps running underneath (input, pausing, exit), so both UIs share the state.
+
+namespace
+{
+	// The paragraph records and page-button record of each page, by help screen. Mirrors the legacy
+	// Render*HelpScreen functions and gHelpScreenBtnTextRecordNum.
+	struct HelpPageRecs { INT16 button; INT16 first; int count; };
+
+	std::vector<HelpPageRecs> HelpScreenPageRecs(HelpScreenID const screen)
+	{
+		switch (screen)
+		{
+			case HELP_SCREEN_LAPTOP: return {
+				{ HLP_TXT_LAPTOP_BUTTON_1, HLP_TXT_LAPTOP_OVERVIEW_P1, 2 },
+				{ HLP_TXT_LAPTOP_BUTTON_2, HLP_TXT_LAPTOP_EMAIL_P1, 1 },
+				{ HLP_TXT_LAPTOP_BUTTON_3, HLP_TXT_LAPTOP_WEB_P1, 1 },
+				{ HLP_TXT_LAPTOP_BUTTON_4, HLP_TXT_LAPTOP_FILES_P1, 1 },
+				{ HLP_TXT_LAPTOP_BUTTON_5, HLP_TXT_LAPTOP_HISTORY_P1, 1 },
+				{ HLP_TXT_LAPTOP_BUTTON_6, HLP_TXT_LAPTOP_PERSONNEL_P1, 1 },
+				{ HLP_TXT_LAPTOP_BUTTON_7, HLP_TXT_FINANCES_P1, 2 },
+				{ HLP_TXT_LAPTOP_BUTTON_8, HLP_TXT_MERC_STATS_P1, 15 },
+			};
+			case HELP_SCREEN_MAPSCREEN: return {
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_1, HLP_TXT_WELCOM_TO_ARULCO_OVERVIEW_P1, 3 },
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_2, HLP_TXT_WELCOM_TO_ARULCO_ASSNMNT_P1, 4 },
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_3, HLP_TXT_WELCOM_TO_ARULCO_DSTINATION_P1, 5 },
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_4, HLP_TXT_WELCOM_TO_ARULCO_MAP_P1, 3 },
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_5, HLP_TXT_WELCOM_TO_ARULCO_MILITIA_P1, 3 },
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_6, HLP_TXT_WELCOM_TO_ARULCO_AIRSPACE_P1, 2 },
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_7, HLP_TXT_WELCOM_TO_ARULCO_ITEMS_P1, 1 },
+				{ HLP_TXT_WELCOM_TO_ARULCO_BUTTON_8, HLP_TXT_WELCOM_TO_ARULCO_KEYBOARD_P1, 4 },
+			};
+			case HELP_SCREEN_MAPSCREEN_NO_ONE_HIRED:     return { { -1, HLP_TXT_MPSCRN_NO_1_HIRED_YET_P1, 2 } };
+			case HELP_SCREEN_MAPSCREEN_NOT_IN_ARULCO:    return { { -1, HLP_TXT_MPSCRN_NOT_IN_ARULCO_P1, 3 } };
+			case HELP_SCREEN_MAPSCREEN_SECTOR_INVENTORY: return { { -1, HLP_TXT_SECTOR_INVTRY_OVERVIEW_P1, 2 } };
+			case HELP_SCREEN_TACTICAL: return {
+				{ HLP_TXT_TACTICAL_BUTTON_1, HLP_TXT_TACTICAL_OVERVIEW_P1, 4 },
+				{ HLP_TXT_TACTICAL_BUTTON_2, HLP_TXT_TACTICAL_MOVEMENT_P1, 4 },
+				{ HLP_TXT_TACTICAL_BUTTON_3, HLP_TXT_TACTICAL_SIGHT_P1, 4 },
+				{ HLP_TXT_TACTICAL_BUTTON_4, HLP_TXT_TACTICAL_ATTACKING_P1, 3 },
+				{ HLP_TXT_TACTICAL_BUTTON_5, HLP_TXT_TACTICAL_ITEMS_P1, 4 },
+				{ HLP_TXT_TACTICAL_BUTTON_6, HLP_TXT_TACTICAL_KEYBOARD_P1, 8 },
+			};
+			default: return {};
+		}
+	}
+
+	INT16 HelpScreenTitleRec(HelpScreenID const screen)
+	{
+		switch (screen)
+		{
+			case HELP_SCREEN_LAPTOP:                     return HLP_TXT_LAPTOP_TITLE;
+			case HELP_SCREEN_MAPSCREEN:                  return HLP_TXT_WELCOM_TO_ARULCO_TITLE;
+			case HELP_SCREEN_TACTICAL:                   return HLP_TXT_TACTICAL_TITLE;
+			case HELP_SCREEN_MAPSCREEN_NO_ONE_HIRED:     return HLP_TXT_MPSCRN_NO_1_HIRED_YET_TITLE;
+			case HELP_SCREEN_MAPSCREEN_NOT_IN_ARULCO:    return HLP_TXT_MPSCRN_NOT_IN_ARULCO_TITLE;
+			case HELP_SCREEN_MAPSCREEN_SECTOR_INVENTORY: return HLP_TXT_SECTOR_INVTRY_TITLE;
+			default:                                     return -1;
+		}
+	}
+
+	/** Strips the legacy coded-text markers (TEXT_CODE_BOLD, CENTER, NEWCOLOR, DEFCOLOR, NEWLINE: U+00B1..U+00B5)
+	 * from a help record so the native overlay shows plain text. NEWCOLOR is followed by a colour code point. */
+	std::string CleanHelpText(std::string const& in)
+	{
+		std::string out;
+		out.reserve(in.size());
+		for (size_t i = 0; i < in.size();)
+		{
+			unsigned char const c = static_cast<unsigned char>(in[i]);
+			if (c == 0xC2 && i + 1 < in.size() && static_cast<unsigned char>(in[i + 1]) >= 0xB1 && static_cast<unsigned char>(in[i + 1]) <= 0xB5)
+			{
+				bool const new_color = static_cast<unsigned char>(in[i + 1]) == 0xB4;
+				i += 2;
+				if (new_color && i < in.size())
+				{
+					unsigned char const d = static_cast<unsigned char>(in[i]);
+					i += d >= 0xF0 ? 4 : d >= 0xE0 ? 3 : d >= 0xC0 ? 2 : 1;
+				}
+				continue;
+			}
+			out += in[i++];
+		}
+		return out;
+	}
+}
+
+HelpScreenView GetHelpScreenView()
+{
+	HelpScreenView v;
+	v.active = (gHelpScreen.uiFlags & HELP_SCREEN_ACTIVE) != 0;
+	if (!v.active) return v;
+
+	EDTFile helpFile{ EDTFile::HELP };
+	v.force = gHelpScreen.fForceHelpScreenToComeUp != FALSE;
+	v.subtitle = CleanHelpText(helpFile.at(HLP_TXT_CONSTANT_SUBTITLE).to_std_string());
+	v.footer = CleanHelpText(helpFile.at(HLP_TXT_CONSTANT_FOOTER).to_std_string());
+	INT16 const title = HelpScreenTitleRec(gHelpScreen.bCurrentHelpScreen);
+	if (title >= 0) v.title = CleanHelpText(helpFile.at(title).to_std_string());
+
+	std::vector<HelpPageRecs> const recs = HelpScreenPageRecs(gHelpScreen.bCurrentHelpScreen);
+	v.page_count = int(recs.size());
+	int page = gHelpScreen.bCurrentHelpScreenActiveSubPage < 0 ? 0 : gHelpScreen.bCurrentHelpScreenActiveSubPage;
+	if (v.page_count > 0) page = std::min(page, v.page_count - 1);
+	v.page = page;
+	for (HelpPageRecs const& r : recs)
+	{
+		HelpPageInfo p;
+		if (r.button >= 0) p.button = CleanHelpText(helpFile.at(r.button).to_std_string());
+		for (int i = 0; i < r.count; ++i) p.paragraphs.push_back(CleanHelpText(helpFile.at(r.first + i).to_std_string()));
+		v.pages.push_back(std::move(p));
+	}
+
+	v.dont_show = gHelpScreenDontShowHelpAgainToggle && (gHelpScreenDontShowHelpAgainToggle->uiFlags & BUTTON_CLICKED_ON) != 0;
+	return v;
+}
+
+void HelpScreenSelectPage(int const page)
+{
+	if (gHelpScreen.bNumberOfButtons == 0) return;
+	ChangeToHelpScreenSubPage(INT8(std::max(0, std::min(page, int(gHelpScreen.bNumberOfButtons) - 1))));
+}
+
+void HelpScreenClose()
+{
+	PrepareToExitHelpScreen();
+}
+
+void HelpScreenToggleDontShow()
+{
+	if (!gHelpScreenDontShowHelpAgainToggle) return;
+	gHelpScreenDontShowHelpAgainToggle->uiFlags ^= BUTTON_CLICKED_ON;
+	gHelpScreenDontShowHelpAgainToggle->uiFlags |= BUTTON_DIRTY;
 }
 
 
