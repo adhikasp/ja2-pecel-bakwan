@@ -1,0 +1,24 @@
+# Python tooling for this repository: ja2ctl, the asset tools and the e2e
+# harness. Most of it is standard library only; the golden-image resolution
+# tests need Pillow (PNG decode) and numpy (per-pixel compare).
+#
+# One-time setup, from the repo root:
+#
+#     uv sync
+#
+# That creates .venv/ with the versions pinned in uv.lock. `uv run python
+# tools/ja2ctl.py ...` uses it, and a fresh cmake configure picks it up for
+# ctest. See COMPILATION.md.
+[project]
+name = "ja2-stracciatella-tools"
+version = "0.0.0"
+description = "Python tooling for ja2-stracciatella: ja2ctl, asset tools, e2e harness"
+requires-python = ">=3.12"
+dependencies = [
+    "numpy",
+    "pillow",
+]
+
+[tool.uv]
+# The tools are run in place, not built or installed as a package.
+package = false

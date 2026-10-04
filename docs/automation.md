@@ -264,7 +264,8 @@ requests.
 ## Tests
 
 End-to-end tests live in [`tests/e2e/`](../tests/e2e/README.md) and run
-through CTest (they need the game data and Python 3):
+through CTest (they need the game data and the Python environment from
+`uv sync`):
 
 ```bash
 ctest -L e2e -j8 --output-on-failure      # in the build directory

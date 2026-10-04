@@ -22,12 +22,10 @@ Full-screen tactical shots (`landed.png`, `moved.png`) are stored only at
 640x480 and 1280x720: at wider sizes they are 4-10 MB each. At every resolution
 the tours still run and call `ja2.assertInsideScreen()`.
 
-## Optional acceleration
+## Comparison dependencies
 
-A shot that is byte-identical to its golden is settled without decoding. When
-the bytes differ, `check_resolution.py` decodes both PNGs and compares them
-pixel by pixel; if Pillow and numpy are importable they do both natively, which
-at 3440x1440 is roughly 30x faster than the pure-Python path (~0.7 s vs ~20 s
-per differing pair). Both are optional: without them the comparison still runs
-on the standard library alone, just slower. `pip install Pillow numpy` uses
-them the next time.
+`check_resolution.py` decodes PNGs with Pillow and compares pixels with numpy.
+Both are locked in the repo's `uv` environment (`pyproject.toml` / `uv.lock`):
+run `uv sync` once in the repo root and reconfigure cmake so `ctest` picks up
+`.venv` (see [COMPILATION.md](../../COMPILATION.md#python-tooling)). A shot
+whose bytes are already identical to its golden skips decoding entirely.

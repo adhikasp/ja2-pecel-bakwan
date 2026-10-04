@@ -17,10 +17,9 @@ shots.golden(); other screenshots are still taken (and layout-checked) but
 never compared. See tests/e2e/golden/README.md.
 
 When the shot is not byte-identical to its golden, the comparison decodes both
-PNGs. Pillow (PIL.Image) decodes them and numpy does the per-pixel compare when
-both are importable — the pure-Python decoder below is ~50x slower at
-widescreen sizes, so this is a large win on the fallback path. Neither is a hard
-dependency: without them the harness still runs, just slower.
+PNGs with Pillow and compares them per pixel with numpy. Both are project
+dependencies managed by uv: run `uv sync` once in the repo root and a fresh
+cmake configure picks `.venv` up for ctest (see COMPILATION.md).
 
 With --update, a script that cannot mark a golden image at this resolution
 marks none, see expected_goldens()) is skipped instead of run: it would cost
@@ -36,19 +35,15 @@ import struct
 import subprocess
 import sys
 import tempfile
-import zlib
 from pathlib import Path
 
-# Optional accelerators for the compare fallback. Neither is required: the pure-Python decoder and
-# compare loop below keep the harness runnable with only the standard library. See golden/README.md.
-try:
-    from PIL import Image as _Image
-except ImportError:
-    _Image = None
+# Project dependencies, installed into .venv by `uv sync` (pyproject.toml/uv.lock). ctest uses that
+# interpreter; a direct run needs it too, so fail with the fix instead of a bare ImportError.
 try:
     import numpy as _np
-except ImportError:
-    _np = None
+    from PIL import Image as _Image
+except ImportError as exc:
+    sys.exit(f"check_resolution: {exc.name} is missing; run `uv sync` in the repo root first")
 
 HERE = Path(__file__).resolve().parent
 JA2CTL = HERE.parent.parent / "tools" / "ja2ctl.py"
@@ -120,109 +115,32 @@ def png_size(path: Path):
 
 
 def read_png(path: Path):
-    """Decode an 8-bit RGB/RGBA non-interlaced PNG -> (w, h, channels, rows).
-
-    `rows` holds one bytes-like object per image row. Pillow is used when importable (it decodes
-    the same image ~50x faster than the pure-Python unfilter below); the stdlib decoder is the
-    fallback and keeps the harness runnable without it.
-    """
-    if _Image is not None:
-        with _Image.open(path) as im:
-            w, h = im.size
-            if im.mode not in ("RGB", "RGBA"):
-                raise ValueError(f"{path}: unsupported PNG (mode {im.mode})")
-            ch = 3 if im.mode == "RGB" else 4
-            raw = im.tobytes()
-        stride = w * ch
-        return w, h, ch, [raw[i:i + stride] for i in range(0, len(raw), stride)]
-    data = path.read_bytes()
-    if data[:8] != b"\x89PNG\r\n\x1a\n":
-        raise ValueError(f"{path} is not a PNG")
-    pos, idat, w = 8, b"", None
-    while pos < len(data):
-        n, typ = struct.unpack(">I4s", data[pos:pos + 8])
-        body = data[pos + 8:pos + 8 + n]
-        pos += 12 + n
-        if typ == b"IHDR":
-            w, h, depth, ctype, _, _, interlace = struct.unpack(">IIBBBBB", body)
-            if depth != 8 or ctype not in (2, 6) or interlace:
-                raise ValueError(f"{path}: unsupported PNG (depth {depth}, type {ctype})")
-            ch = 3 if ctype == 2 else 4
-        elif typ == b"IDAT":
-            idat += body
-    raw = zlib.decompress(idat)
-    stride = w * ch
-    rows, prev = [], bytearray(stride)
-    p = 0
-    for _ in range(h):
-        f = raw[p]
-        line = bytearray(raw[p + 1:p + 1 + stride])
-        p += 1 + stride
-        if f == 1:
-            for i in range(ch, stride):
-                line[i] = (line[i] + line[i - ch]) & 255
-        elif f == 2:
-            for i in range(stride):
-                line[i] = (line[i] + prev[i]) & 255
-        elif f == 3:
-            for i in range(stride):
-                a = line[i - ch] if i >= ch else 0
-                line[i] = (line[i] + ((a + prev[i]) >> 1)) & 255
-        elif f == 4:
-            for i in range(stride):
-                a = line[i - ch] if i >= ch else 0
-                b = prev[i]
-                c = prev[i - ch] if i >= ch else 0
-                pa, pb, pc = abs(b - c), abs(a - c), abs(a + b - 2 * c)
-                pr = a if pa <= pb and pa <= pc else (b if pb <= pc else c)
-                line[i] = (line[i] + pr) & 255
-        rows.append(line)
-        prev = line
-    return w, h, ch, rows
+    """Decode an 8-bit RGB/RGBA PNG -> (w, h, numpy array)."""
+    with _Image.open(path) as im:
+        if im.mode not in ("RGB", "RGBA"):
+            raise ValueError(f"{path}: unsupported PNG (mode {im.mode})")
+        return im.size[0], im.size[1], _np.asarray(im)
 
 
 def compare(a: Path, b: Path, tol: int):
     """Returns (differing_pixels, total_pixels) or None if sizes differ."""
     # The usual case is that the shot is the golden image bit for bit: the same build with the same
-    # encoder writes the same bytes. Decoding those costs seconds per widescreen PNG (the pure-Python
-    # unfilter runs over every pixel of both images), so settle it before reading a single one.
+    # encoder writes the same bytes. Decoding those costs the most on a mismatching widescreen PNG,
+    # so settle it before reading a single one.
     if a.read_bytes() == b.read_bytes():
         w, h = png_size(a)
         return 0, w * h
-    wa, ha, ca, ra = read_png(a)
-    wb, hb, cb, rb = read_png(b)
+    wa, ha, ra = read_png(a)
+    wb, hb, rb = read_png(b)
     if (wa, ha) != (wb, hb):
         return None
+    # R/G/B only (alpha is ignored); a channel counts as different only when off by more than tol.
+    bad = (_np.abs(ra[..., :3].astype(_np.int16) - rb[..., :3].astype(_np.int16)) > tol).any(axis=2)
     # The main menu prints the build's version string in the bottom-left corner: don't compare it.
     mask_x = 260 if "main_menu" in a.name else 0
-    if _np is not None:
-        return _compare_numpy(wa, ha, ca, ra, cb, rb, tol, mask_x)
-    bad = 0
-    for y, (la, lb) in enumerate(zip(ra, rb)):
-        if la == lb:
-            continue
-        masked = y >= ha - 16
-        for x in range(mask_x if masked else 0, wa):
-            pa, pb = x * ca, x * cb
-            if (abs(la[pa] - lb[pb]) > tol or abs(la[pa + 1] - lb[pb + 1]) > tol
-                    or abs(la[pa + 2] - lb[pb + 2]) > tol):
-                bad += 1
-    return bad, wa * ha
-
-
-def _compare_numpy(w, h, ca, ra, cb, rb, tol, mask_x):
-    """Per-pixel compare of two decoded images, vectorised with numpy.
-
-    Matches the stdlib loop in compare(): R/G/B only (alpha is ignored) and a channel counts as
-    different only when it is off by more than @a tol. @a mask_x blanks the bottom 16 rows up to
-    that x (the main-menu version string).
-    """
-    a = _np.frombuffer(b"".join(ra), dtype=_np.uint8).reshape(h, w, ca)[..., :3]
-    b = _np.frombuffer(b"".join(rb), dtype=_np.uint8).reshape(h, w, cb)[..., :3]
-    bad = (_np.abs(a.astype(_np.int16) - b.astype(_np.int16)) > tol).any(axis=2)
     if mask_x:
-        bad[max(h - 16, 0):, :mask_x] = False
-    return int(bad.sum()), w * h
+        bad[max(ha - 16, 0):, :mask_x] = False
+    return int(bad.sum()), wa * ha
 
 
 def main() -> int:
