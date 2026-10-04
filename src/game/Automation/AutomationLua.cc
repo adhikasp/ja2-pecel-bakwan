@@ -1,6 +1,7 @@
 #include "AutomationLua.h"
 #include "Automation.h"
 #include "AutomationSession.h"
+#include "BattleScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -316,7 +317,34 @@ namespace
 		sol::table tactical = L.create_table();
 		tactical["inCombat"]    = (gTacticalStatus.uiFlags & INCOMBAT) != 0;
 		tactical["currentTeam"] = gTacticalStatus.ubCurrentTeam;
+		tactical["ourTurn"]     = (gTacticalStatus.uiFlags & INCOMBAT) == 0 || gTacticalStatus.ubCurrentTeam == OUR_TEAM;
+		tactical["attackBusy"]  = gTacticalStatus.ubAttackBusyCount; // what waitIdle treats as mid-attack
 		tactical["enemyInSector"] = static_cast<bool>(gTacticalStatus.fEnemyInSector);
+		// Who is standing in the loaded sector on the other side, so a script can pick a
+		// target (the battle e2e track). Dead soldiers stay listed with dead = true.
+		sol::table enemies = L.create_table();
+		int e = 1;
+		CFOR_EACH_IN_TEAM(x, ENEMY_TEAM)
+		{
+			if (!x->bInSector) continue;
+			sol::table t = L.create_table();
+			t["name"]    = x->name.to_std_string();
+			t["class"]   = static_cast<int>(x->ubSoldierClass);
+			t["life"]    = static_cast<int>(x->bLife);
+			t["lifeMax"] = static_cast<int>(x->bLifeMax);
+			t["gridNo"]  = x->sGridNo;
+			t["dead"]    = x->bLife <= 0;
+			if (guiCurrentScreen == GAME_SCREEN && x->sGridNo != NOWHERE)
+			{
+				if (auto const p = GridClickPos(x->sGridNo, x->bLevel))
+				{
+					t["screenX"] = p->x;
+					t["screenY"] = p->y;
+				}
+			}
+			enemies[e++] = t;
+		}
+		tactical["enemies"] = enemies;
 		s["tactical"] = tactical;
 
 		sol::table mercs = L.create_table();
@@ -340,6 +368,7 @@ namespace
 			t["lifeMax"]  = static_cast<int>(m->bLifeMax);
 			t["inSector"] = m->bInSector != 0;
 			t["gridNo"]   = m->sGridNo;
+			t["finalDestination"] = m->sFinalDestination;
 			if (guiCurrentScreen == GAME_SCREEN && m->bInSector && m->sGridNo != NOWHERE)
 			{
 				// Where to click on this merc (the tile they stand on).
@@ -780,6 +809,18 @@ namespace
 					// Fake an enemy encounter in the current sector and go straight into auto resolve.
 					FakeEncounter();
 					EnterAutoResolveMode(gubPBSector);
+				}
+				else if (what == "battle")
+				{
+					// Stage a deterministic fight in the loaded sector (docs/plan/e2e-tactical-battles.md).
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"battle\", spec)");
+					StageBattle(a->as<sol::table>());
+				}
+				else if (what == "fire")
+				{
+					// Order the selected merc to shoot at a tile through the real fire-weapon event.
+					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"fire\", gridNo)");
+					FireAtGrid(GetSelectedMan(), static_cast<INT16>(a->as<int>()));
 				}
 				else if (what == "uispike_rml" || what == "uispike_inhouse")
 				{
