@@ -4,6 +4,8 @@
 #include "Logger.h"
 #include "HImage.h"
 #include "VObject.h"
+#include "ContentManager.h"
+#include "GameInstance.h"
 
 #include <string_theory/format>
 
@@ -94,7 +96,11 @@ SDL_Surface* ProvideGameImage(std::string const& name)
 {
 	if (name.rfind("face-", 0) == 0)
 	{
-		return LoadStiFrame(ST::format(FACESDIR "/bigfaces/{02d}.sti", std::atoi(name.c_str() + 5)).to_std_string(), 0);
+		// Player mercs have a bigfaces/NN.sti; many NPCs only have the legacy bNN.sti face.
+		int const n = std::atoi(name.c_str() + 5);
+		ST::string const bigface = ST::format(FACESDIR "/bigfaces/{02d}.sti", n);
+		if (GCM->doesGameResExists(bigface)) return LoadStiFrame(bigface.to_std_string(), 0);
+		return LoadStiFrame(ST::format(FACESDIR "/b{02d}.sti", n).to_std_string(), 0);
 	}
 	if (name.rfind("smface-", 0) == 0)
 	{

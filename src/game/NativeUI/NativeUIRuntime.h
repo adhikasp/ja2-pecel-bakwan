@@ -54,6 +54,7 @@ namespace NativeUI
 	std::unique_ptr<Screen> CreateNewGameScreen();
 	std::unique_ptr<Screen> CreateMapScreen();
 	std::unique_ptr<Screen> CreateAutoResolveScreen();
+	std::unique_ptr<Screen> CreateShopKeeperScreen();
 	/** The pre-game setup screen (FrontSetup.cc); @a engineOptions is the EngineOptions* RunSetup was given. */
 	std::unique_ptr<Screen> CreateSetupScreen(void* engineOptions);
 	/** Set by the setup screen's Restart / Quit commands; RunSetup stops its frame loop on them. */

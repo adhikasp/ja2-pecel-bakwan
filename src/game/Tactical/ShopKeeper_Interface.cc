@@ -12,6 +12,7 @@
 #include "MercPortrait.h"
 #include "MercProfile.h"
 #include "ShopKeeper_Interface.h"
+#include "ShopKeeperBridge.h"
 #include "Game_Clock.h"
 #include "Render_Dirty.h"
 #include "VObject.h"
@@ -6445,3 +6446,355 @@ static void HatchOutInvSlot(UINT16 usPosX, UINT16 usPosY)
 	DrawHatchOnInventory(FRAME_BUFFER, usPosX, usPosY, usSlotWidth, usSlotHeight);
 	InvalidateRegion(usPosX, usPosY, usPosX + usSlotWidth, usPosY + usSlotHeight);
 }
+
+
+// ===================================================================================================================
+// The read/command API the native shopkeeper screen uses (ShopKeeperBridge.h, NativeUI/ShopKeeperNative.cc). The
+// trade rules, the offer areas and every transaction stay here; the native UI only draws this snapshot and sends
+// the same commands the legacy mouse regions and buttons send.
+// ===================================================================================================================
+namespace ShopKeeperBridge
+{
+
+namespace
+{
+	std::string S(ST::string const& s) { return s.to_std_string(); }
+	std::string Money(UINT32 const v) { return S(SPrintMoney(static_cast<INT32>(v))); }
+
+	std::string ItemName(UINT16 const id) { return S(GCM->getItem(id)->getName()); }
+	std::string ItemArt(UINT16 const id) { return "item-" + std::to_string(id) + "@2"; }
+
+	/** The status the legacy slot bar shows: a gun's condition, an ammo stack's fill, otherwise status 0. */
+	int ConditionPct(UINT16 const id, OBJECTTYPE const& o)
+	{
+		switch (GCM->getItem(id)->getItemClass())
+		{
+			case IC_GUN: return std::clamp<int>(o.bGunStatus, 0, 100);
+			case IC_AMMO:
+			{
+				int const cap = GCM->getItem(id)->asAmmo()->capacity;
+				return cap > 0 ? std::clamp(o.bStatus[0] * 100 / cap, 0, 100) : 0;
+			}
+			default:
+			{
+				int s = o.bStatus[0];
+				if (s < 0) s = -s;
+				return std::clamp(s, 0, 100);
+			}
+		}
+	}
+
+	std::string OwnerFace(UINT8 const owner)
+	{
+		if (owner == NO_PROFILE) return {};
+		return "face-" + std::to_string(GetProfile(owner).ubFaceIndex);
+	}
+
+	std::string ItemOverlay(UINT8 const flags, OBJECTTYPE const& o, bool const player_area)
+	{
+		if (o.bGunAmmoStatus < 0) return "jammed";
+		if (player_area && (flags & ARMS_INV_ITEM_REPAIRED) != 0) return "repaired";
+		return {};
+	}
+
+	Slot MakeSlot(INVENTORY_IN_SLOT const& inv, int const index)
+	{
+		Slot s;
+		s.index = index;
+		s.active = inv.fActive;
+		s.item = inv.sItemIndex;
+		s.qty = inv.ItemObject.ubNumberOfObjects;
+		if (s.item != 0)
+		{
+			s.name = ItemName(inv.sItemIndex);
+			s.art = ItemArt(inv.sItemIndex);
+			s.condition = ConditionPct(inv.sItemIndex, inv.ItemObject);
+			s.has_attachments = ItemHasAttachments(inv.ItemObject);
+			s.owner_face = OwnerFace(inv.ubIdOfMercWhoOwnsTheItem);
+		}
+		return s;
+	}
+
+	// The comparison panel follows the last item the player pointed at.
+	int g_detail_source = Stock;
+	int g_detail_slot = -1;
+
+	OBJECTTYPE const* DetailObject(int const source, int const slot, UINT8* const flags)
+	{
+		*flags = 0;
+		switch (source)
+		{
+			case Stock:
+				if (gpTempDealersInventory && slot >= 0 && slot < static_cast<int>(gSelectArmsDealerInfo.uiNumDistinctInventoryItems) &&
+					gpTempDealersInventory[slot].sItemIndex != 0)
+				{
+					*flags = static_cast<UINT8>(gpTempDealersInventory[slot].uiFlags);
+					return &gpTempDealersInventory[slot].ItemObject;
+				}
+				break;
+			case DealerOffer:
+				if (slot >= 0 && slot < SKI_NUM_TRADING_INV_SLOTS && ArmsDealerOfferArea[slot].fActive)
+				{
+					*flags = static_cast<UINT8>(ArmsDealerOfferArea[slot].uiFlags);
+					return &ArmsDealerOfferArea[slot].ItemObject;
+				}
+				break;
+			case PlayerOffer:
+				if (slot >= 0 && slot < SKI_NUM_TRADING_INV_SLOTS && PlayersOfferArea[slot].fActive)
+				{
+					*flags = static_cast<UINT8>(PlayersOfferArea[slot].uiFlags);
+					return &PlayersOfferArea[slot].ItemObject;
+				}
+				break;
+			case Inventory:
+				if (gpSMCurrentMerc && slot >= 0 && slot < NUM_INV_SLOTS && gpSMCurrentMerc->inv[slot].usItem != NOTHING)
+				{
+					return &gpSMCurrentMerc->inv[slot];
+				}
+				break;
+		}
+		return nullptr;
+	}
+}
+
+View GetView()
+{
+	View v;
+	if (gbSelectedArmsDealerID < 0) return v;
+	const DealerModel* const dealer = GCM->getDealer(gbSelectedArmsDealerID);
+	if (!dealer) return v;
+
+	v.active     = true;
+	v.repairs    = DoesDealerDoRepairs(gbSelectedArmsDealerID) != FALSE;
+	v.dealer_name = S(GetProfile(dealer->profileID).zNickname);
+	v.dealer_face = "face-" + std::to_string(GetProfile(dealer->profileID).ubFaceIndex);
+	switch (dealer->type)
+	{
+		case ARMS_DEALER_BUYS_SELLS: v.dealer_kind = "buys_sells"; v.can_buy = v.can_sell = true; break;
+		case ARMS_DEALER_SELLS_ONLY: v.dealer_kind = "sells";      v.can_buy  = true;               break;
+		case ARMS_DEALER_BUYS_ONLY:  v.dealer_kind = "buys";                                       v.can_sell = true; break;
+		case ARMS_DEALER_REPAIRS:    v.dealer_kind = "repairs";                                        break;
+		default:                     v.dealer_kind = "";                                               break;
+	}
+	v.balance = Money(static_cast<UINT32>(std::max(0, LaptopSaveInfo.iCurrentBalance)));
+	v.cash    = Money(gArmsDealerStatus[gbSelectedArmsDealerID].uiArmsDealersCash);
+
+	if (gpSMCurrentMerc)
+	{
+		v.merc_name = S(GetProfile(gpSMCurrentMerc->ubProfile).zNickname);
+		v.merc_face = "face-" + std::to_string(GetProfile(gpSMCurrentMerc->ubProfile).ubFaceIndex);
+	}
+
+	v.page          = gSelectArmsDealerInfo.ubCurrentPage;
+	v.pages         = gSelectArmsDealerInfo.ubNumberOfPages;
+	v.can_page_up   = v.page > 1;
+	v.can_page_down = v.page < v.pages;
+
+	// ---- the dealer's stock (the current page) ----
+	if (gpTempDealersInventory)
+	{
+		UINT32 const first = gSelectArmsDealerInfo.ubFirstItemIndexOnPage;
+		for (int k = 0; k < SKI_NUM_ARMS_DEALERS_INV_SLOTS; ++k)
+		{
+			UINT32 const i = first + k;
+			if (i >= gSelectArmsDealerInfo.uiNumDistinctInventoryItems) break;
+			INVENTORY_IN_SLOT const& inv = gpTempDealersInventory[i];
+			if (inv.sItemIndex == 0) continue;
+			Slot s = MakeSlot(inv, static_cast<int>(i));
+			s.selected = (inv.uiFlags & ARMS_INV_ITEM_SELECTED) != 0;
+			s.repaired = (inv.uiFlags & ARMS_INV_ITEM_REPAIRED) != 0;
+			if (v.repairs)
+			{
+				s.price = S(BuildDoneWhenTimeString(gbSelectedArmsDealerID, inv.sItemIndex, inv.sSpecialItemElement));
+			}
+			else if (inv.ItemObject.ubNumberOfObjects > 0)
+			{
+				s.price = Money(CalcShopKeeperItemPrice(DEALER_SELLING, TRUE, inv.sItemIndex, dealer->sellingPrice, &inv.ItemObject));
+			}
+			v.stock.push_back(std::move(s));
+		}
+	}
+	v.has_stock = !v.stock.empty();
+
+	// ---- the two offer areas ----
+	for (int i = 0; i < SKI_NUM_TRADING_INV_SLOTS; ++i)
+	{
+		INVENTORY_IN_SLOT const& a = ArmsDealerOfferArea[i];
+		if (!a.fActive) continue;
+		Slot s = MakeSlot(a, i);
+		s.selected = (a.uiFlags & ARMS_INV_ITEM_SELECTED) != 0;
+		s.overlay  = ItemOverlay(static_cast<UINT8>(a.uiFlags), a.ItemObject, false);
+		s.price    = v.repairs
+			? Money(CalculateObjectItemRepairCost(gbSelectedArmsDealerID, &a.ItemObject))
+			: Money(CalcShopKeeperItemPrice(DEALER_SELLING, FALSE, a.sItemIndex, dealer->sellingPrice, &a.ItemObject));
+		v.dealer_offer.push_back(std::move(s));
+	}
+	v.has_dealer_offer = !v.dealer_offer.empty();
+
+	for (int i = 0; i < SKI_NUM_TRADING_INV_SLOTS; ++i)
+	{
+		INVENTORY_IN_SLOT const& o = PlayersOfferArea[i];
+		if (!o.fActive) continue;
+		Slot s = MakeSlot(o, i);
+		s.overlay = ItemOverlay(static_cast<UINT8>(o.uiFlags), o.ItemObject, true);
+		if ((o.uiFlags & ARMS_INV_PLAYERS_ITEM_HAS_VALUE) != 0) s.price = Money(o.uiItemPrice);
+		v.player_offer.push_back(std::move(s));
+	}
+	v.has_player_offer = !v.player_offer.empty();
+
+	// ---- the current merc's inventory (what can be offered) ----
+	if (gpSMCurrentMerc)
+	{
+		for (int pocket = 0; pocket < NUM_INV_SLOTS; ++pocket)
+		{
+			OBJECTTYPE const& o = gpSMCurrentMerc->inv[pocket];
+			if (o.usItem == NOTHING) continue;
+			Slot s;
+			s.index     = pocket;
+			s.active    = true;
+			s.item      = o.usItem;
+			s.qty       = o.ubNumberOfObjects;
+			s.name      = ItemName(o.usItem);
+			s.art       = ItemArt(o.usItem);
+			s.condition = ConditionPct(o.usItem, o);
+			s.has_attachments = ItemHasAttachments(o);
+			s.selected  = ShouldSoldierDisplayHatchOnItem(gpSMCurrentMerc->ubProfile, static_cast<INT16>(pocket)) != FALSE;
+			if (v.can_sell) s.price = Money(CalcShopKeeperItemPrice(DEALER_BUYING, FALSE, o.usItem, dealer->buyingPrice, &o));
+			v.inventory.push_back(std::move(s));
+		}
+	}
+	v.has_inventory = !v.inventory.empty();
+
+	v.total_cost  = Money(CalculateTotalArmsDealerCost());
+	v.total_value = Money(CalculateTotalPlayersValue());
+	v.can_transact = !gfUserHasRequestedToLeave &&
+		(CalculateTotalArmsDealerCost() > 0 || CalculateTotalPlayersValue() > 0 || IsMoneyTheOnlyItemInThePlayersOfferArea());
+
+	// ---- the comparison / detail panel ----
+	if (g_detail_slot >= 0)
+	{
+		UINT8 flags = 0;
+		if (OBJECTTYPE const* const obj = DetailObject(g_detail_source, g_detail_slot, &flags))
+		{
+			Detail& d = v.detail;
+			d.has = true;
+			d.source = g_detail_source;
+			d.name = ItemName(obj->usItem);
+			d.art = ItemArt(obj->usItem);
+			d.help = S(GetHelpTextForItem(*obj));
+			d.condition = std::to_string(ConditionPct(obj->usItem, *obj)) + "%";
+			d.condition_class = ConditionPct(obj->usItem, *obj) < 30 ? 2 : (ConditionPct(obj->usItem, *obj) < 70 ? 1 : 0);
+			d.overlay = ItemOverlay(flags, *obj, g_detail_source == PlayerOffer);
+			d.price = Money(CalcShopKeeperItemPrice(DEALER_SELLING, TRUE, obj->usItem, dealer->sellingPrice, obj));
+			d.value = Money(CalcShopKeeperItemPrice(DEALER_BUYING, FALSE, obj->usItem, dealer->buyingPrice, obj));
+		}
+	}
+	return v;
+}
+
+void PageUp()   { ShopInventoryPageUp();   gubSkiDirtyLevel = SKI_DIRTY_LEVEL2; }
+void PageDown() { ShopInventoryPageDown(); gubSkiDirtyLevel = SKI_DIRTY_LEVEL2; }
+
+void ClickStock(int const slot, bool const all)
+{
+	if (!gpTempDealersInventory) return;
+	if (DoesDealerDoRepairs(gbSelectedArmsDealerID)) return; // repairmen ignore clicks on their repair queue
+	if (slot < 0 || slot >= static_cast<int>(gSelectArmsDealerInfo.uiNumDistinctInventoryItems)) return;
+
+	INVENTORY_IN_SLOT& inv = gpTempDealersInventory[slot];
+	if (inv.ItemObject.ubNumberOfObjects == 0) return;
+
+	if ((inv.uiFlags & ARMS_INV_ITEM_SELECTED) == 0)
+	{
+		int const qty = inv.ItemObject.ubNumberOfObjects;
+		INT8 const loc = AddItemToArmsDealerOfferArea(&inv, static_cast<INT8>(slot));
+		if (loc == -1) return;
+
+		inv.uiFlags |= ARMS_INV_ITEM_SELECTED;
+		inv.ubLocationOfObject = ARMS_DEALER_OFFER_AREA;
+		inv.bSlotIdInOtherLocation = loc;
+		if (all) ArmsDealerOfferArea[loc].ItemObject.ubNumberOfObjects = qty;
+		inv.ItemObject.ubNumberOfObjects = all ? 0 : qty - 1;
+	}
+	else
+	{
+		int const move = all ? inv.ItemObject.ubNumberOfObjects : 1;
+		inv.ItemObject.ubNumberOfObjects -= move;
+		ArmsDealerOfferArea[inv.bSlotIdInOtherLocation].ItemObject.ubNumberOfObjects += move;
+	}
+	gubSkiDirtyLevel = SKI_DIRTY_LEVEL2;
+
+	// the detail follows the stock item the player just pointed at
+	g_detail_source = Stock;
+	g_detail_slot = slot;
+}
+
+void ClickDealerOffer(int const slot, bool const all)
+{
+	if (slot < 0 || slot >= SKI_NUM_TRADING_INV_SLOTS) return;
+	INVENTORY_IN_SLOT& a = ArmsDealerOfferArea[slot];
+	if (!a.fActive) return;
+
+	if (DoesDealerDoRepairs(gbSelectedArmsDealerID))
+	{
+		RemoveRepairItemFromDealersOfferArea(static_cast<INT8>(slot));
+	}
+	else if (all || a.ItemObject.ubNumberOfObjects == 1)
+	{
+		RemoveItemFromArmsDealerOfferArea(static_cast<INT8>(slot), TRUE);
+	}
+	else
+	{
+		a.ItemObject.ubNumberOfObjects--;
+		gpTempDealersInventory[a.bSlotIdInOtherLocation].ItemObject.ubNumberOfObjects++;
+	}
+	gubSkiDirtyLevel = SKI_DIRTY_LEVEL2;
+}
+
+void RemovePlayerOffer(int const slot)
+{
+	if (slot < 0 || slot >= SKI_NUM_TRADING_INV_SLOTS) return;
+	RemoveItemFromPlayersOfferArea(static_cast<INT8>(slot));
+	gubSkiDirtyLevel = SKI_DIRTY_LEVEL2;
+}
+
+void OfferItem(int const pocket)
+{
+	if (!gpSMCurrentMerc) return;
+	if (pocket < 0 || pocket >= NUM_INV_SLOTS) return;
+	if (gpSMCurrentMerc->inv[pocket].usItem == NOTHING) return;
+	if (ShouldSoldierDisplayHatchOnItem(gpSMCurrentMerc->ubProfile, static_cast<INT16>(pocket))) return;
+
+	// The legacy left click on a merc's slot copies one unit into the cursor and offers it to the dealer.
+	OBJECTTYPE obj;
+	GetObjFrom(&gpSMCurrentMerc->inv[pocket], 0, &obj);
+	OfferObjectToDealer(&obj, gpSMCurrentMerc->ubProfile, static_cast<INT8>(pocket));
+	gubSkiDirtyLevel = SKI_DIRTY_LEVEL2;
+
+	g_detail_source = Inventory;
+	g_detail_slot = pocket;
+}
+
+void SelectDetail(int const source, int const slot)
+{
+	g_detail_source = source;
+	g_detail_slot = slot;
+}
+
+void ClearDetail() { g_detail_slot = -1; }
+
+void Transact()
+{
+	if (!gfPerformTransactionInProgress)
+	{
+		ShutUpShopKeeper();
+		giShopKeepDialogueEventinProgress = -1;
+		PerformTransaction(0);
+	}
+	gubSkiDirtyLevel = SKI_DIRTY_LEVEL2;
+}
+
+void Done() { ExitSKIRequested(); }
+
+} // namespace ShopKeeperBridge
+

@@ -43,6 +43,7 @@ std::vector<ModeKey> const& ModeKeys()
 		{ "loadscreen", "the loading screen",                           UiMode::Native },
 		{ "mapscreen",  "the strategic map screen",                     UiMode::Native },
 		{ "autoresolve","the auto-resolve battle panel",                UiMode::Native },
+		{ "shopkeeper", "the arms-dealer trade screen",                 UiMode::Native },
 		{ "tactical",   "the tactical HUD (squad bar, inventory, item description, message log)", UiMode::Native },
 		{ "msgbox",  "message boxes (DoMessageBox and its wrappers)",    UiMode::Legacy },
 		{ "tooltip", "fast help of legacy screens",                      UiMode::Legacy },

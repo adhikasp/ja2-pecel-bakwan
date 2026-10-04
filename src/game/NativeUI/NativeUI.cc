@@ -74,6 +74,7 @@ namespace
 		{ GAME_INIT_OPTIONS_SCREEN, "newgame",  &CreateNewGameScreen },
 		{ MAP_SCREEN,               "mapscreen", &CreateMapScreen },
 		{ AUTORESOLVE_SCREEN,       "autoresolve", &CreateAutoResolveScreen },
+		{ SHOPKEEPER_SCREEN,        "shopkeeper",  &CreateShopKeeperScreen },
 	};
 
 	class Runtime final : public VideoOverlay

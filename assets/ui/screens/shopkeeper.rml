@@ -1,0 +1,136 @@
+<rml>
+<head>
+	<title>Shopkeeper</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="shopkeeper.rcss"/>
+</head>
+<!-- The native shopkeeper / arms-dealer trade screen (docs/ui/shopkeeper.md). View model: ShopKeeperViewModel
+     ("shopkeeper", src/game/NativeUI/ShopKeeperNative.cc). It owns SHOPKEEPER_SCREEN and calls the legacy
+     ShopKeeperScreenHandle every frame, so the trade rules and the offer areas are unchanged.
+     The layout follows the legacy trade screen: the dealer face, the page control, the totals and the buttons in
+     the left column; "Merchandise in stock" and the two offer areas stacked in the main column; and the merc's
+     inventory as the bottom strip (the legacy tactical inventory panel). -->
+<body class="sk">
+<div class="sk-root" id="sk" data-model="shopkeeper">
+
+	<div class="sk-frame" data-if="active">
+		<!-- =============================================================== the trade screen -->
+		<div class="sk-trade">
+
+			<!-- left column: dealer, page, totals, actions -->
+			<aside class="sk-side">
+				<div class="sk-dealer">
+					<img class="sk-face" data-attr-src="dealer_face"/>
+					<div class="sk-who">
+						<span class="t" id="sk.dealer">{{dealer_name}}</span>
+						<span class="s" id="sk.kind">{{dealer_kind}}</span>
+					</div>
+				</div>
+
+				<div class="sk-pagebar">
+					<span class="k">{{l_page}}</span>
+					<span class="v mono" id="sk.page">{{page_text}}</span>
+					<button class="icon-btn" id="sk.pageup" data-attr-data-label="l_page_up" data-class-is-disabled="!can_page_up" data-event-click="pageup" title="Previous page"><img class="icon" src="icon-chevron-up"/></button>
+					<button class="icon-btn" id="sk.pagedown" data-attr-data-label="l_page_down" data-class-is-disabled="!can_page_down" data-event-click="pagedown" title="Next page"><img class="icon" src="icon-chevron-down"/></button>
+				</div>
+
+				<div class="sk-totals">
+					<div class="sk-box" id="sk.totalcostbox"><span class="k">{{l_total_cost}}</span><span class="v mono" id="sk.totalcost">{{total_cost}}</span></div>
+					<div class="sk-box" id="sk.balancebox"><span class="k">{{l_balance}}</span><span class="v mono" id="sk.balance">{{balance}}</span></div>
+					<div class="sk-box" id="sk.totalvaluebox"><span class="k">{{l_total_value}}</span><span class="v mono" id="sk.totalvalue">{{total_value}}</span></div>
+					<div class="sk-box" id="sk.cashbox"><span class="k">{{l_cash}}</span><span class="v mono" id="sk.cash">{{cash}}</span></div>
+				</div>
+
+				<div class="sk-acts">
+					<button class="btn btn-primary" id="sk.transaction" data-attr-data-label="l_transaction" data-class-is-disabled="!can_transact" data-event-click="transaction" title="Complete the trade">
+						<span class="label" data-if="!repairs">{{l_transaction}}</span>
+						<span class="label" data-if="repairs">{{l_repair}}</span>
+					</button>
+					<button class="btn" id="sk.done" data-attr-data-label="l_done" data-event-click="done" title="Leave the shop"><span class="label">{{l_done}}</span></button>
+				</div>
+			</aside>
+
+			<!-- main column: stock, then the dealer's offer and the player's offer -->
+			<section class="sk-main">
+				<header class="sk-title" id="sk.stocktitle"><span class="t">{{l_merchandise}}</span></header>
+				<div class="sk-grid sk-stockgrid" id="sk.stockgrid">
+					<div class="sk-cell" data-for="s : stock" data-attr-id="'sk.stock[' + s.i + ']'" data-attr-class="'sk-cell ' + s.cls"
+						 data-attr-data-label="s.name" data-event-click="buy(s.i)" title="Click to buy">
+						<div class="sk-art"><img data-if="s.art != ''" data-attr-src="s.art"/></div>
+						<span class="sk-name">{{s.name}}</span>
+						<div class="sk-bar"><div class="fill" data-attr-class="'fill ' + s.condition_class" data-style-width="s.condition + '%'"></div></div>
+						<span class="sk-price mono" data-if="s.price != ''">{{s.price}}</span>
+						<span class="sk-qty mono" data-if="s.qty > 1">x{{s.qty}}</span>
+						<span class="sk-ov" data-if="s.overlay != ''">{{s.overlay}}</span>
+					</div>
+				</div>
+				<div class="sk-empty" data-if="!has_stock">{{l_no_items}}</div>
+
+				<header class="sk-title" id="sk.dealertitle"><span class="t">{{l_dealer_offer}}</span><span class="tot mono">{{l_total_cost}} <b id="sk.dealercost">{{total_cost}}</b></span></header>
+				<div class="sk-grid sk-offergrid" id="sk.dealergrid">
+					<div class="sk-cell trade" data-for="d : dealer_offer" data-attr-id="'sk.dealer[' + d.i + ']'" data-attr-class="'sk-cell trade ' + d.cls"
+						 data-attr-data-label="d.name" data-event-click="unbuy(d.i)" title="Click to take it back">
+						<div class="sk-art"><img data-if="d.art != ''" data-attr-src="d.art"/></div>
+						<span class="sk-name">{{d.name}}</span>
+						<div class="sk-bar"><div class="fill" data-attr-class="'fill ' + d.condition_class" data-style-width="d.condition + '%'"></div></div>
+						<span class="sk-price mono" data-if="d.price != ''">{{d.price}}</span>
+						<span class="sk-ov" data-if="d.overlay != ''">{{d.overlay}}</span>
+					</div>
+				</div>
+				<div class="sk-empty" data-if="!has_dealer_offer">{{l_no_items}}</div>
+
+				<header class="sk-title" id="sk.playertitle"><span class="t">{{l_your_offer}}</span><span class="tot mono">{{l_total_value}} <b id="sk.playervalue">{{total_value}}</b></span></header>
+				<div class="sk-grid sk-offergrid" id="sk.playergrid">
+					<div class="sk-cell trade" data-for="p : player_offer" data-attr-id="'sk.player[' + p.i + ']'" data-attr-class="'sk-cell trade ' + p.cls"
+						 data-attr-data-label="p.name" data-event-click="takeback(p.i)" title="Click to take it back">
+						<div class="sk-art"><img data-if="p.art != ''" data-attr-src="p.art"/></div>
+						<span class="sk-name">{{p.name}}</span>
+						<div class="sk-bar"><div class="fill" data-attr-class="'fill ' + p.condition_class" data-style-width="p.condition + '%'"></div></div>
+						<span class="sk-price mono" data-if="p.price != ''">{{p.price}}</span>
+						<span class="sk-ov" data-if="p.overlay != ''">{{p.overlay}}</span>
+					</div>
+				</div>
+				<div class="sk-empty" data-if="!has_player_offer">{{l_no_items}}</div>
+			</section>
+		</div>
+
+		<!-- =============================================================== your items (the legacy inventory panel) -->
+		<div class="sk-bottom">
+			<div class="sk-merc">
+				<img class="sk-face sm" data-attr-src="merc_face"/>
+				<span class="n">{{merc_name}}</span>
+				<span class="k">{{l_your_items}}</span>
+			</div>
+			<div class="sk-invgrid" id="sk.invgrid">
+				<div class="sk-cell inv" data-for="i : inventory" data-attr-id="'sk.inv[' + i.i + ']'" data-attr-class="'sk-cell inv ' + i.cls"
+					 data-attr-data-label="i.name" data-event-click="sell(i.i)" title="Click to offer it to the dealer">
+					<div class="sk-art"><img data-if="i.art != ''" data-attr-src="i.art"/></div>
+					<span class="sk-name">{{i.name}}</span>
+					<div class="sk-bar"><div class="fill" data-attr-class="'fill ' + i.condition_class" data-style-width="i.condition + '%'"></div></div>
+					<span class="sk-price mono" data-if="i.price != ''">{{i.price}}</span>
+				</div>
+			</div>
+			<div class="sk-empty" data-if="!has_inventory">{{l_no_items}}</div>
+
+			<!-- comparison / detail -->
+			<div class="sk-detail" data-if="detail_has" id="sk.detail">
+				<div class="sk-detail-art"><img data-attr-src="detail_art"/></div>
+				<div class="sk-detail-main">
+					<div class="sk-detail-head">
+						<span class="n" id="sk.detailname">{{detail_name}}</span>
+						<span class="c" data-attr-class="'c ' + detail_condition_class">{{detail_condition}}</span>
+						<span class="ov" data-if="detail_overlay != ''">{{detail_overlay}}</span>
+					</div>
+					<div class="sk-detail-cmp">
+						<span class="k">{{l_price}}</span><span class="v mono">{{detail_price}}</span>
+						<span class="k">{{l_value}}</span><span class="v mono">{{detail_value}}</span>
+					</div>
+					<div class="sk-help">{{detail_help}}</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+</body>
+</rml>
