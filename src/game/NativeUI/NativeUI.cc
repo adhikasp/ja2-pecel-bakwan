@@ -1093,7 +1093,9 @@ namespace
 		g_rt.overlays->PullToFront();
 		g_rt.dirtyFrames = std::max(g_rt.dirtyFrames, 1);
 		InvalidateScreen();
-		RefreshScreen();
+		// One frame per progress step while the load blocks (docs/ui/loadingscreen.md). Headless
+		// nothing can see it before the load is over: the frame is composed by the next read.
+		VideoPresentFrame();
 	}
 }
 

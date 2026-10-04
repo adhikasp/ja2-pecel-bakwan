@@ -250,7 +250,7 @@ static void FadeInFrameBufferRealFade(void)
 			FRAME_BUFFER->ShadowRectUsingLowPercentTable(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 		}
 
-		RefreshScreen();
+		VideoPresentFrame();
 
 		// Copy save buffer back
 		RestoreExternBackgroundRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);

@@ -51,6 +51,7 @@
 #include "Town_Militia.h"
 #include "UILayout.h"
 #include "Video.h"
+#include "Animation.h"
 #include "VObject.h"
 #include "VObject_Blitters.h"
 #include "VSurface.h"
@@ -59,6 +60,7 @@
 #include "WordWrap.h"
 #include <algorithm>
 #include <array>
+#include <chrono>
 #include <memory>
 #include <stdexcept>
 #include <string>
@@ -366,11 +368,31 @@ void EliminateAllEnemies(const SGPSector& ubSector)
 
 static void RenderAutoResolve(void);
 
+/* The auto-resolve transition: the panel zooms into place from the top left. Every frame draws
+ * over the interface and is undone again, so the end state is the interface either way. */
+static void DrawAutoResolveZoom(double const t, UINT16 x, UINT16 y, UINT16 w, UINT16 h)
+{
+	// The same millisecond quantisation the loop polled GetClock() with.
+	double const fEasingProgress = EaseInCubic(0, 1000, static_cast<UINT32>(t * 1000.0 + 0.5));
+
+	SGPBox const DstRect =
+	{
+		(UINT16)(x * fEasingProgress),
+		(UINT16)(y * fEasingProgress),
+		(UINT16)(std::max(w * fEasingProgress, 1.0)),
+		(UINT16)(std::max(h * fEasingProgress, 1.0))
+	};
+
+	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &gpAR->rect, &DstRect);
+	InvalidateScreen();
+	VideoPresentFrame();
+
+	//Restore the previous rect.
+	BlitBufferToBuffer(guiEXTRABUFFER, FRAME_BUFFER, DstRect.x, DstRect.y, DstRect.w, DstRect.h);
+}
+
 static void DoTransitionFromPreBattleInterfaceToAutoResolve(void)
 {
-	UINT32 uiStartTime = GetClock();
-	UINT32 uiEndTime = uiStartTime + 1000;
-
 	PauseTime( FALSE );
 
 	gpAR->fShowInterface = TRUE;
@@ -394,25 +416,10 @@ static void DoTransitionFromPreBattleInterfaceToAutoResolve(void)
 	BlitBufferToBuffer(guiEXTRABUFFER, FRAME_BUFFER, x, y, w, h);
 
 	PlayJA2SampleFromFile(SOUNDSDIR "/laptop power up (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
-	while( GetClock() <= uiEndTime )
+	sgp::RunAnimation(std::chrono::milliseconds{ 1000 }, [=](double t)
 	{
-		double fEasingProgress = EaseInCubic(uiStartTime, uiEndTime, GetClock());
-
-		SGPBox const DstRect =
-		{
-			(UINT16)(x * fEasingProgress),
-			(UINT16)(y * fEasingProgress),
-			(UINT16)(std::max(w * fEasingProgress, 1.0)),
-			(UINT16)(std::max(h * fEasingProgress, 1.0))
-		};
-
-		BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &gpAR->rect, &DstRect);
-		InvalidateScreen();
-		RefreshScreen();
-
-		//Restore the previous rect.
-		BlitBufferToBuffer(guiEXTRABUFFER, FRAME_BUFFER, DstRect.x, DstRect.y, DstRect.w, DstRect.h);
-	}
+		DrawAutoResolveZoom(t, x, y, w, h);
+	});
 }
 
 void EnterAutoResolveMode(const SGPSector& ubSector)

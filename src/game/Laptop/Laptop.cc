@@ -76,6 +76,8 @@
 #include "BobbyRShipments.h"
 #include "Dialogue_Control.h"
 #include "HelpScreen.h"
+#include "Animation.h"
+#include "Easings.h"
 #include "Cheats.h"
 #include "Video.h"
 #include "Debug.h"
@@ -89,6 +91,7 @@
 #include <string_theory/string>
 
 #include <algorithm>
+#include <chrono>
 #include <iterator>
 
 // laptop programs
@@ -1004,6 +1007,35 @@ static void ShowLights(void);
 static void UpdateStatusOfDisplayingBookMarks(void);
 
 
+/* The laptop "power up"/"power down" transition: the laptop image grows out of a small screen at
+ * (472, 424) to fill its area, or shrinks back into it (with the mapscreen restored underneath
+ * per frame while it shrinks). Derived from the progress alone, so a skipped run's end state
+ * (progress 1) is the frame the legacy loop drew last. */
+static void DrawLaptopPowerZoom(double const t, bool const poweringUp)
+{
+	double const eased = EaseInOutGravity(poweringUp ? t : 1.0 - t);
+	double const scale = eased < 0.99 ? 10000.0 / (100.0 - eased * 100.0) : 5333.0;
+
+	const UINT16 uWidth  = (UINT16)(12 * scale / 100);
+	const UINT16 uHeight = (UINT16)(9  * scale / 100);
+	const UINT16 uX      = (UINT16)(472 - (472 - 320) * scale / 5333);
+	const UINT16 uY      = (UINT16)(424 - (424 - 240) * scale / 5333);
+
+	SGPBox const Laptop = { STD_SCREEN_X, STD_SCREEN_Y, MAP_SCREEN_WIDTH, MAP_SCREEN_HEIGHT };
+	SGPBox const Box =
+	{
+		(UINT16)(STD_SCREEN_X + uX - uWidth / 2),
+		(UINT16)(STD_SCREEN_Y + uY - uHeight / 2),
+		uWidth, uHeight
+	};
+
+	if (!poweringUp) BltVideoSurface(FRAME_BUFFER, guiEXTRABUFFER, 0, 0, NULL);
+	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &Laptop, &Box);
+	InvalidateScreen();
+	VideoPresentFrame();
+}
+
+
 ScreenID LaptopScreenHandle()
 {
 	//User just changed modes.  This is determined by the button callbacks
@@ -1033,53 +1065,10 @@ ScreenID LaptopScreenHandle()
 
 		//Step 2:  The mapscreen image is in the EXTRABUFFER, and laptop is in the SAVEBUFFER
 		//         Start transitioning the screen.
-		SGPBox const DstRect = { STD_SCREEN_X, STD_SCREEN_Y, MAP_SCREEN_WIDTH, MAP_SCREEN_HEIGHT };
-		const UINT32 uiTimeRange = 1000;
-		INT32 iPercentage     = 0;
-		INT32 iRealPercentage = 0;
-		const UINT32 uiStartTime = GetClock();
 		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER,   0, 0, NULL);
 		BltVideoSurface(FRAME_BUFFER,  guiEXTRABUFFER, 0, 0, NULL);
 		PlayJA2SampleFromFile(SOUNDSDIR "/laptop power up (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
-		while (iRealPercentage < 100)
-		{
-			const UINT32 uiCurrTime = GetClock();
-			iPercentage = (uiCurrTime-uiStartTime) * 100 / uiTimeRange;
-			iPercentage = std::min(iPercentage, 100);
-
-			iRealPercentage = iPercentage;
-
-			//Factor the percentage so that it is modified by a gravity falling acceleration effect.
-			const INT32 iFactor = (iPercentage - 50) * 2;
-			if (iPercentage < 50)
-			{
-				iPercentage += iPercentage         * iFactor * 0.01 + 0.5;
-			}
-			else
-			{
-				iPercentage += (100 - iPercentage) * iFactor * 0.01 + 0.5;
-			}
-
-			INT32 iScalePercentage;
-			if (iPercentage < 99)
-			{
-				iScalePercentage = 10000 / (100 - iPercentage);
-			}
-			else
-			{
-				iScalePercentage = 5333;
-			}
-			const UINT16 uWidth  = 12 * iScalePercentage / 100;
-			const UINT16 uHeight =  9 * iScalePercentage / 100;
-			const UINT16 uX      = 472 - (472 - 320) * iScalePercentage / 5333;
-			const UINT16 uY      = 424 - (424 - 240) * iScalePercentage / 5333;
-
-			SGPBox const SrcRect2 = { (UINT16)(STD_SCREEN_X + uX - uWidth / 2), (UINT16)(STD_SCREEN_Y + uY - uHeight / 2), uWidth, uHeight };
-
-			BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &DstRect, &SrcRect2);
-			InvalidateScreen();
-			RefreshScreen();
-		}
+		sgp::RunAnimation(std::chrono::milliseconds{ 1000 }, [](double t) { DrawLaptopPowerZoom(t, true); });
 		fReDrawScreenFlag = TRUE;
 	}
 
@@ -1412,56 +1401,9 @@ static void LeaveLapTopScreen(void)
 
 			//Step 2:  The mapscreen image is in the EXTRABUFFER, and laptop is in the SAVEBUFFER
 			//         Start transitioning the screen.
-			SGPBox const SrcRect = { STD_SCREEN_X, STD_SCREEN_Y, MAP_SCREEN_WIDTH, MAP_SCREEN_HEIGHT };
-			const UINT32 uiTimeRange = 1000;
-			INT32 iPercentage     = 100;
-			INT32 iRealPercentage = 100;
-			const UINT32 uiStartTime = GetClock();
 			BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
 			PlayJA2SampleFromFile(SOUNDSDIR "/laptop power down (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
-			while (iRealPercentage > 0)
-			{
-				BltVideoSurface(FRAME_BUFFER, guiEXTRABUFFER, 0, 0, NULL);
-
-				const UINT32 uiCurrTime = GetClock();
-				iPercentage = (uiCurrTime-uiStartTime) * 100 / uiTimeRange;
-				iPercentage = std::min(iPercentage, 100);
-				iPercentage = 100 - iPercentage;
-
-				iRealPercentage = iPercentage;
-
-				//Factor the percentage so that it is modified by a gravity falling acceleration effect.
-				const INT32 iFactor = (iPercentage - 50) * 2;
-				if (iPercentage < 50)
-				{
-					iPercentage += iPercentage       * iFactor * 0.01 + 0.5;
-				}
-				else
-				{
-					iPercentage += (100-iPercentage) * iFactor * 0.01 + 0.5;
-				}
-
-				//Scaled laptop
-				INT32 iScalePercentage;
-				if (iPercentage < 99)
-				{
-					iScalePercentage = 10000 / (100-iPercentage);
-				}
-				else
-				{
-					iScalePercentage = 5333;
-				}
-				const UINT16 uWidth  = 12 * iScalePercentage / 100;
-				const UINT16 uHeight =  9 * iScalePercentage / 100;
-				const UINT16 uX = 472 - (472 - 320) * iScalePercentage / 5333;
-				const UINT16 uY = 424 - (424 - 240) * iScalePercentage / 5333;
-
-				SGPBox const DstRect = { (UINT16)(STD_SCREEN_X + uX - uWidth / 2), (UINT16)(STD_SCREEN_Y + uY - uHeight / 2), uWidth, uHeight };
-
-				BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &SrcRect, &DstRect);
-				InvalidateScreen();
-				RefreshScreen();
-			}
+			sgp::RunAnimation(std::chrono::milliseconds{ 1000 }, [](double t) { DrawLaptopPowerZoom(t, false); });
 		}
 	}
 }

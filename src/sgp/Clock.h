@@ -54,6 +54,10 @@ namespace Clock
 	 * move or that loop would never finish. */
 	void OnPresent();
 
+	/** How many presents happened since start-up (OnPresent calls, ticking or not). Lets a
+	 * modal animation tell whether its frame draw presented at all. */
+	uint64_t PresentCount();
+
 	/** Total virtual time elapsed and frames stepped (virtual mode only). */
 	uint64_t ElapsedMs();
 	uint64_t FrameCount();

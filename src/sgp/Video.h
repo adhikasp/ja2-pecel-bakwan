@@ -126,6 +126,17 @@ uint32_t VideoComposePixel(int uiX, int uiY);
  * a no-op when the frame is already current, and it does not tick the virtual clock. */
 void VideoComposePending();
 
+/** Number of full composes (RefreshScreen calls) since start-up. A headless driven session is composed
+ * on demand, so this is also the number of frames it actually rendered: automation guards read it to keep
+ * unobserved animations and loading screens from going back to per-frame software work. */
+uint64_t VideoComposeCount();
+
+/** Show this frame: present it to the window when there is one, and headless tick the virtual clock
+ * and leave the frame for the next read to compose (VideoComposePending), because nothing can see it
+ * in between. The "one frame per progress step" of a blocking load (docs/ui/loadingscreen.md) goes
+ * through here. */
+void VideoPresentFrame();
+
 /* ---- Overlay -------------------------------------------------------------------------------------
  * Something drawn over the finished frame at the output's own resolution: the native UI
  * (src/game/NativeUI). It draws either through the GPU renderer, after the frame is put on the window,

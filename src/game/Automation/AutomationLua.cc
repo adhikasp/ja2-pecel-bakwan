@@ -9,7 +9,10 @@
 #include "Game_Clock.h"
 #include "Input.h"
 #include "Isometric_Utils.h"
+#include "SysUtil.h"
 #include "UILayout.h"
+#include "Video.h"
+#include "VSurface.h"
 #include "VideoOptionsScreen.h"
 #include "GameLoop.h"
 #include "JAScreens.h"
@@ -563,6 +566,10 @@ namespace
 		});
 		ja2.set_function("wait", [](unsigned ms) { Guarded([&] { Session::Wait(ms); }); });
 		ja2.set_function("frame", [] { return Session::Frame(); });
+		// Full frames rendered since start-up (RefreshScreen calls): a headless session composes on
+		// demand, so automation guards read this to keep animations and loading screens from going
+		// back to rendering a frame per step for nobody (issue #159).
+		ja2.set_function("composes", [] { return VideoComposeCount(); });
 		ja2.set_function("time", [] { return Session::ElapsedMs(); });
 		ja2.set_function("waitUntil", [](sol::protected_function pred, sol::optional<unsigned> timeout, sol::optional<std::string> what) {
 			Guarded([&] {
@@ -806,7 +813,8 @@ namespace
 		// ja2.debug(what, [a]): open a piece of tactical UI directly, for layout tests that cannot
 		// easily reach it through play. what = "exitmenu" (a = direction), "placement", "quote"
 		// (a = quote number, spoken by the selected merc), "message" (a = text), "msgbox" (a = text),
-		// "loadscreen" (a = id), "prebattle" and "autoresolve" (fake a fight in the current sector),
+		// "loadscreen" (a = id), "transition" (a = progress 0..1 of the sector-load zoom), "prebattle"
+		// and "autoresolve" (fake a fight in the current sector),
 		// "doormenu" (a = the door's grid number, default: the nearest door), "pickupmenu" (a small
 		// pile of tools at the merc's feet and the pick-up menu on it).
 		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a, sol::optional<sol::object> b) {
@@ -849,6 +857,16 @@ namespace
 					DisplayLoadScreenWithID(a && a->is<int>() ? a->as<int>() : LOADINGSCREEN_DAYGENERIC);
 					CreateLoadingScreenProgressBar();
 					RenderProgressBar(0, 60);
+				}
+				else if (what == "transition")
+				{
+					// One frame of the sector-load transition at progress a (0..1). The transition
+					// blocks the game loop and is only drawn where someone can see it; this is how
+					// a tour looks at it (tests/e2e/manual/transition_shots.lua).
+					double const t = a ? a->as<double>() : 0.5;
+					if (t < 0.0 || t > 1.0) throw std::runtime_error("ja2.debug(\"transition\", t): progress must be 0..1");
+					BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL); // the frame it starts from
+					DrawSectorLoadTransitionFrame(t);
 				}
 				else if (what == "prebattle")
 				{

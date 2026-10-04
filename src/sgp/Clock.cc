@@ -13,6 +13,7 @@ namespace
 	// Start at one second so that code treating 0 as "unset" keeps working.
 	std::chrono::nanoseconds g_now{ std::chrono::seconds{1} };
 	uint64_t                 g_frames = 0;
+	uint64_t                 g_presents = 0;
 	bool                     g_inFrame = false;
 	unsigned                 g_presentsThisFrame = 0;
 	Clock::AdvanceListener   g_listener = nullptr;
@@ -105,12 +106,15 @@ void EndFrame()
 
 void OnPresent()
 {
+	++g_presents;
 	if (!g_virtual) return;
 	// The first present of a frame is the regular one; time for it is
 	// accounted for in EndFrame(). Any further presents come from a modal
 	// loop that animates by polling the clock.
 	if (!g_inFrame || g_presentsThisFrame++ > 0) Advance(g_quantum);
 }
+
+uint64_t PresentCount() { return g_presents; }
 
 uint64_t ElapsedMs()
 {
