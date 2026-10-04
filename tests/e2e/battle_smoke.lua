@@ -22,7 +22,8 @@ if not ja2.nativeUi().running or ja2.screenSize().w < 1280 then
 end
 
 -- Deck out the team: a G11, spectra armour, 100 health and top marksmanship, plus a
--- medkit each. Ten administrators with pistols stand five tiles away.
+-- medkit each. Ten administrators with pistols stand around the team; the team faces
+-- north and the smoke test takes the fight all the way to a win.
 local loadout = {
 	weapon = "G11",
 	armour = "spectra",
@@ -32,14 +33,20 @@ local loadout = {
 local t = battle.stage{
 	enemies = { count = 10, class = "administrator", weapon = "GLOCK_17", distance = 5 },
 	our = {
-		{ name = "Barry",   weapon = loadout.weapon, armour = loadout.armour, stats = loadout.stats, items = loadout.items },
-		{ name = "Grunty",  weapon = loadout.weapon, armour = loadout.armour, stats = loadout.stats, items = loadout.items },
-		{ name = "Grizzly", weapon = loadout.weapon, armour = loadout.armour, stats = loadout.stats, items = loadout.items },
+		{ name = "Barry",   grid = 4871, direction = 0, weapon = loadout.weapon, armour = loadout.armour, stats = loadout.stats, items = loadout.items },
+		{ name = "Grunty",  grid = 4711, direction = 0, weapon = loadout.weapon, armour = loadout.armour, stats = loadout.stats, items = loadout.items },
+		{ name = "Grizzly", grid = 5030, direction = 0, weapon = loadout.weapon, armour = loadout.armour, stats = loadout.stats, items = loadout.items },
 	},
 }
 ja2.expect(t.inCombat, "staging the battle starts turn-based combat")
 ja2.expect(#battle.mercs() == 3, "three mercs are in the sector, got " .. #battle.mercs())
 ja2.expect(#battle.enemies() == 10, "ten enemies stand in the sector, got " .. #battle.enemies())
+-- Pin-pointed positioning: the team stands exactly where the scenario put them.
+for _, m in ipairs({ { "Barry", 4871 }, { "Grunty", 4711 }, { "Grizzly", 5030 } }) do
+	ja2.expect(battle.merc(m[1]).gridNo == m[2], m[1] .. " stands on " .. m[2])
+end
+-- The enemy is in the open at the start, so the team has something to shoot at.
+ja2.expect(#battle.inSight() > 0, "the enemy is in line of sight at the start")
 
 -- The native squad bar shows the decked-out team, with AP and morale.
 local vm = ja2.viewModel("tactical")
@@ -61,6 +68,14 @@ for _, e in ipairs(battle.enemies()) do enemy_life_before = enemy_life_before + 
 local ammo = {}
 for i = 1, #battle.mercs() do ammo[i] = battle.card(i).ammo end
 
+-- Firing spends action points: take one shot from Barry and watch them drop.
+ja2.expect(battle.select(1), "Barry is selected before the first shot")
+local ap_before = battle.merc(1).ap
+local first_shot = battle.fireAt(battle.nearest(1))
+ja2.expect(first_shot.ordered, "the first shot was ordered")
+local ap_after = battle.merc(1).ap
+ja2.expect(ap_after < ap_before, ("firing spends AP (%d -> %d)"):format(ap_before, ap_after))
+
 local function alive_mercs()
 	local n = 0
 	for _, m in ipairs(battle.mercs()) do if m.life > 0 then n = n + 1 end end
@@ -70,7 +85,7 @@ end
 local shots_fired = 0
 local turns = 0
 local combat_lines = 0
-for _ = 1, 10 do
+for _ = 1, 15 do
 	if #battle.enemies() == 0 or not battle.tactical().ourTurn then break end
 	turns = turns + 1
 	shots_fired = shots_fired + battle.playTurn()

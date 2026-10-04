@@ -1,17 +1,20 @@
 # E2E tactical battles — design
 
-> **Status: first slice implemented.** The plan below is the contract for the track; the
-> first tests built on it are:
+> **Status: assertions implemented.** The plan below is the contract for the track; the
+> tests built on it are:
 >
 > - `tests/e2e/battle_smoke.lua` — three mercs, decked out with a chosen weapon, armour,
 >   items and skill points, against ten enemies in the landed sector, driven through the
->   native tactical HUD to a win.
+>   native tactical HUD to a win. It also checks that firing spends AP.
+> - `tests/e2e/battle_los.lua` — line of sight, cover and positioning: a pin-pointed,
+>   staggered enemy line the team can partly see and shoot; asserts what each side can see,
+>   the cover the building gives, that firing spends AP, whose morale moves, the casualties
+>   and the state the fight is left in (#64).
 > - `tests/e2e/lib/battle.lua` — the reusable fixtures and orders the scenarios share.
 > - `ja2.debug("battle", spec)` / `ja2.debug("fire", gridNo)` — the C++ harness in
 >   [`src/game/Automation/BattleScenario.cc`](../../src/game/Automation/BattleScenario.cc).
 >
-> Still to come: the scenario corpus in CI (#65), and assertions for line of sight, cover
-> and breaks (#64).
+> Still to come: the scenario corpus in CI (#65).
 
 ## Goal
 
@@ -50,10 +53,11 @@ the loaded sector:
 2. **Equip**: every merc in the sector gets a gun (loaded) with spare magazines, body
    armour, extra items and chosen skill points — per merc via `our`, or the spec defaults.
 3. **Place**: mercs with an `our[i].grid` are moved there; enemies are placed on their
-   `grids` or, without them, on free tiles a given distance from the team's centre of mass.
+   `grids`, on the `units` list's own grids, or, without either, on free tiles a given
+   distance from the team's centre of mass. `direction` (0..7) sets the facing.
    Placement does not run sight, so it cannot start combat before the first turn is chosen.
 4. **Spawn**: `TacticalCreateEnemySoldier(class)` for each enemy. Each keeps the kit the
-   generator gave it, unless `enemy_weapon` overrides it.
+   generator gave it, unless `enemy_weapon` (or a `units` entry's `weapon`) overrides it.
 5. **Combat**: `EnterCombatMode(OUR_TEAM)` starts turn-based combat with the player's turn,
    then `AllTeamsLookForAll(FALSE)` settles who sees whom, so a scenario can act immediately.
 
@@ -61,7 +65,7 @@ The spec table:
 
 | Field | Default | Meaning |
 |---|---|---|
-| `enemies` | `10` | how many enemies to spawn, or a table `{ count, class, weapon, distance, grids = { grid, ... } }` |
+| `enemies` | `10` | how many enemies to spawn, or a table `{ count, class, weapon, distance, grids = { grid, ... }, units = { { grid, class, weapon, direction }, ... } }` |
 | `class` | `"administrator"` | `"administrator"`, `"army"` or `"elite"` |
 | `weapon` | `"MP5K"` | internal name (`weapons.json`) of our mercs' gun |
 | `enemy_weapon` | *(generated)* | internal name of a gun to give every enemy |
@@ -71,6 +75,10 @@ The spec table:
 | `start` | `true` | enter turn-based combat when staged |
 | `our` | — | per-merc setup, matched by `name` (or by position when unnamed) |
 
+`enemies.units` spawns exactly those enemies, each on its own grid with its own class,
+gun and facing; it overrides `count`/`grids` and is how a scenario takes pin-point
+control of a staggered line.
+
 Each `our` entry:
 
 | Field | Meaning |
@@ -79,6 +87,7 @@ Each `our` entry:
 | `weapon` | internal name of the gun for this merc |
 | `armour` | `true`/`false`/`"kevlar"`/`"spectra"` |
 | `grid` | exact tile to stand on |
+| `direction` | facing, 0..7 (0 = north); omitted leaves the generated facing |
 | `items` | array of internal names to give (pockets fill up on their own) |
 | `stats` | skill points: `marksmanship`, `agility`, `dexterity`, `strength`, `leadership`, `wisdom`, `medical`, `mechanical`, `explosive`, `morale`, `level` (1..10), `health` (sets life and life max) |
 
@@ -87,10 +96,20 @@ Item names are the original internal names, looked up through
 
 ### Reading the fight
 
-`ja2.state().tactical` gained `ourTurn` and `enemies`: for every enemy in the sector, its
-`name`, `class`, `life`, `lifeMax`, `gridNo`, `dead` and (in tactical) `screenX`/`screenY`.
-Mercs already expose `life`, `lifeMax`, `inSector` and `gridNo`. Together with the native
-tactical view model (`ja2.viewModel("tactical")`: `combat`, `our_turn`, `can_end`,
+`ja2.state().tactical` gained `ourTurn`, `attackBusy` and `enemies`. For every enemy in the
+sector it gives `name`, `class`, `life`, `lifeMax`, `gridNo`, `dead`, `level`, `direction`,
+`stance`, `morale`, the AI's own `aimorale` verdict (0 = hopeless .. 4 = fearless, what the
+AI reads as whether it is close to breaking) and `ap`. Two fields describe vision:
+`known` (the player knows about him, so he is rendered) and `los` (some merc can currently
+trace an unobstructed line of sight to him within sight range), plus `cover` (the chance a
+shot from the nearest merc has to get through; lower is more cover). In tactical it also
+has `screenX`/`screenY`.
+
+Mercs gained `level`, `direction`, `stance`, `morale`, `ap` and `maxAp` on top of `life`,
+`lifeMax`, `inSector`, `gridNo` and `finalDestination`. `ja2.los(fromGrid, toGrid)`
+answers the tile-to-tile question directly (a wall or closed door blocks it), independent
+of who is looking. Together with the native tactical view model
+(`ja2.viewModel("tactical")`: `combat`, `our_turn`, `can_end`,
 `cards[i].{name,ap,hp,en,mo,ammo,sel,done}`, `lines`, `log`) a scenario can assert both
 game state and what the HUD shows.
 
@@ -98,8 +117,10 @@ game state and what the HUD shows.
 
 The selected merc is ordered to shoot at a tile through `HandleItem` — the same entry the
 AI fires through (`AIMain.cc`) and the UI reaches when a shot is clicked. AP, ammo, jams,
-turning, bullets and death all run normally. `ja2.waitIdle()` then waits the shot out,
-because `NothingInFlight()` already treats `ubAttackBusyCount` as busy.
+turning, bullets and death all run normally. `ja2.waitIdle()` waits the attack out, but the
+attack-busy count can clear while the bullet is still in the air, so `battle.waitShot()`
+also allows the flight time before the result is read back. Ordering a shot at a target off
+the merc's facing can merely turn him, so the helper orders it again once he faces it.
 
 `ja2.state().tactical.attackBusy` exposes the attack-busy count that `waitIdle()` watches,
 and each merc carries `finalDestination`. A merc who dies is removed from the map
@@ -110,15 +131,18 @@ longer counts a dead merc as still walking — otherwise a single casualty left 
 The scenario pieces are small Lua steps (`tests/e2e/lib/battle.lua`):
 
 - `battle.stage(spec)` — stage a fight and return the tactical state.
-- `battle.enemies()` / `battle.mercs()` — the living soldiers, state order.
+- `battle.enemies()` / `battle.mercs()` — the living soldiers, state order; `battle.byGrid(grid)`
+  and `battle.merc(name)` look one up by tile or name.
+- `battle.inSight()` — the living enemies the team currently has a line of sight to.
 - `battle.select(i)` / `battle.card(i)` / `battle.selected()` — drive and read the native
   squad bar.
-- `battle.nearest(i)` — the enemy nearest to merc `i`.
-- `battle.fireAt(e)` — shoot enemy `e`, returning whether the order fired and whether it hit.
+- `battle.nearest(i)` — the enemy nearest to merc `i`, preferring one he can see.
+- `battle.fireAt(index)` / `battle.fireAtGrid(grid)` — shoot an enemy or a tile, returning
+  whether the order fired and whether it hit.
 - `battle.endTurn()` — press the native End Turn button and wait out the enemy turn.
 - `battle.playTurn()` — each merc shoots the nearest enemy while he has AP, then End Turn.
-- `battle.settle()` — wait the game out, declining the in-combat surrender and first-aid
-  prompts so a scenario is not stopped by a modal box.
+- `battle.settle()` / `battle.waitShot()` — wait the game (or a shot) out, declining the
+  in-combat surrender and first-aid prompts so a scenario is not stopped by a modal box.
 
 ## Determinism and runtime
 
@@ -142,18 +166,29 @@ A scenario asserts from three sources, cheapest first:
    ammo, selected/done), the combat flag and turn, the message log (`cls == "combat"`).
 3. **Screenshots** for review (`shots.take`), never as the pass/fail signal.
 
-The first scenario asserts the shape of a fight *and* its outcome: three mercs, decked out
+`battle_smoke.lua` asserts the shape of a fight *and* its outcome: three mercs, decked out
 with a G11, spectra armour, a medkit and top skill points, on the native bar at 100 health;
-ten enemies staged; the mercs fire; ammo changes; the log records the fight; and after a
-few turns the enemies are wiped out, combat is over and all three mercs are still standing.
-Line of sight, cover choice, AP accounting and morale breaks are #64.
+ten enemies staged; the mercs fire; a shot spends AP; ammo changes; the log records the
+fight; and after a few turns the enemies are wiped out, combat is over and all three mercs
+are still standing.
+
+`battle_los.lua` is the #64 assertion set. Three mercs face a pin-pointed, staggered enemy
+line: three enemies in the open that the team can see, and two behind the east building that
+it cannot. It asserts the staged positions, line of sight (both per enemy via `los` and per
+tile via `ja2.los`), the cover the building gives (`cover`), that a shot spends AP, that the
+exposed line takes the casualties while the hidden line is untouched and still unseen, that
+the team's morale rises as it wins (with every enemy's AI morale verdict exposed), and the
+state the fight is left in — combat continues around the squad the team cannot reach. A
+forced HOPELESS break (morale is the input to the AI's flee/break decision) needs a way to
+stage a spent/outmatched enemy; `aimorale` is exposed for it.
 
 ## Running
 
 ```bash
 ctest -R e2e_battle -V --output-on-failure                 # from the build directory
 python tools/ja2ctl.py run tests/e2e/battle_smoke.lua --isolated --res 1920x1080
-python tools/ja2ctl.py run tests/e2e/battle_smoke.lua --isolated --res 1920x1080 --show
+python tools/ja2ctl.py run tests/e2e/battle_los.lua --isolated --res 1920x1080
+python tools/ja2ctl.py run tests/e2e/battle_los.lua --isolated --res 1920x1080 --show
 ```
 
 Battle scenarios run at 1920x1080: the native tactical HUD needs 1280x720, and the generic
@@ -166,5 +201,5 @@ Battle scenarios run at 1920x1080: the native tactical HUD needs 1280x720, and t
 | #61 | this plan doc |
 | #62 | scenario fixtures (`lib/battle.lua`) — **first cut landed here** |
 | #63 | deterministic harness (`ja2.debug("battle"/"fire")`) — **first cut landed here** |
-| #64 | assertions: LOS, cover, positioning, AP, morale and breaks, outcome |
+| #64 | assertions: LOS, cover, positioning, AP, morale and breaks, outcome — **landed here** (`battle_los.lua`) |
 | #65 | the scenario corpus wired into `ctest -L e2e` and run on every PR |

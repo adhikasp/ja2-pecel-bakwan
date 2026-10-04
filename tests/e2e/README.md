@@ -10,7 +10,8 @@ for the full API.
 | `laptop_tour.lua` | New campaign; every laptop program, reading mail, A.I.M. |
 | `new_game_to_tactical.lua` | Hire a merc on A.I.M., land in Omerta, save/load round trip |
 | `tactical_move_merc.lua` | Select a merc and walk to a clicked tile and back |
-| `battle_smoke.lua` | A staged fight (3 decked-out mercs vs 10 enemies): fire, damage, the native tactical HUD and a win (runs at 1920x1080, see [docs/plan/e2e-tactical-battles.md](../../docs/plan/e2e-tactical-battles.md)) |
+| `battle_smoke.lua` | A staged fight (3 decked-out mercs vs 10 enemies): fire, damage, AP, the native tactical HUD and a win (runs at 1920x1080, see [docs/plan/e2e-tactical-battles.md](../../docs/plan/e2e-tactical-battles.md)) |
+| `battle_los.lua` | A pin-pointed, staggered enemy line: line of sight, cover, positioning, AP, morale and casualties (#64) |
 | `campaign_state.lua` | Author a campaign state (day, money, towns, roster, quests) on the live globals, assert it and the status model, then save/load it (see [docs/plan/e2e-campaign-state.md](../../docs/plan/e2e-campaign-state.md)) |
 | `battle_campaign.lua` | Walk into a controlled town with townsfolk, then step into a tactical battle there (runs at 1920x1080) |
 | `map_screen_tour.lua` | Map screen: pause, inventory, options, laptop |
