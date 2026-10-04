@@ -5,11 +5,12 @@ A session is a headless game process (ja2 -serve) with its own home directory,
 log and saves. The game only advances while a command steps it, so you can take
 as long as you like between commands.
 
-    ja2ctl start                      # boot a session named "default"
+    ja2ctl start                      # boot this worktree's session
     ja2ctl text                       # what text is on screen?
     ja2ctl ui                         # what can be clicked?
     ja2ctl click "New Game"           # click by label (or: ja2ctl click 320 240)
     ja2ctl shot                       # save a screenshot, print its path
+    ja2ctl log                        # the session's game log
     ja2ctl stop
 
     ja2ctl -s alpha start --load SaveGame01   # several sessions side by side
@@ -21,6 +22,7 @@ Run `ja2ctl help` for all commands. Only the Python standard library is used.
 """
 
 import argparse
+import hashlib
 import json
 import re
 import os
@@ -74,13 +76,38 @@ def user_home() -> Path:
         raise
 
 
+def worktree_id() -> str:
+    """Id of the checkout this ja2ctl belongs to: the repo folder name plus a
+    short hash of its path. Two worktrees (or two clones) never collide."""
+    digest = hashlib.sha1(os.path.normcase(str(REPO)).encode("utf-8", "surrogateescape")).hexdigest()[:8]
+    name = re.sub(r"[^A-Za-z0-9._-]", "_", REPO.name) or "worktree"
+    return f"{name}-{digest}"
+
+
 def sessions_root() -> Path:
-    root = os.environ.get("JA2CTL_HOME")
-    return Path(root) if root else user_home() / ".ja2ctl" / "sessions"
+    """Where this worktree's sessions live. One root per worktree, so agents in
+    other worktrees can neither see, stop nor reuse our sessions. Override the
+    whole root with $JA2CTL_SESSIONS."""
+    root = os.environ.get("JA2CTL_SESSIONS")
+    return Path(root) if root else user_home() / ".ja2ctl" / "sessions" / worktree_id()
+
+
+def default_session_name() -> str:
+    """Also per worktree, so even a shared $JA2CTL_SESSIONS keeps worktrees apart.
+    Override with -s or $JA2CTL_SESSION."""
+    return os.environ.get("JA2CTL_SESSION") or worktree_id()
 
 
 def session_dir(name: str) -> Path:
     return sessions_root() / name
+
+
+def session_names() -> list:
+    """Session directories in this worktree's root (run logs are plain files)."""
+    root = sessions_root()
+    if not root.is_dir():
+        return []
+    return sorted(d.name for d in root.iterdir() if d.is_dir())
 
 
 def find_binary() -> Path:
@@ -184,6 +211,13 @@ def read_session(name: str) -> dict:
         raise SessionError(f'no running session "{name}" (start one with: ja2ctl -s {name} start)')
 
 
+def read_session_or_none(name: str):
+    try:
+        return read_session(name)
+    except SessionError:
+        return None
+
+
 def request(name: str, payload: dict, timeout: float = 600.0) -> dict:
     info = read_session(name)
     payload = dict(payload, id=1)
@@ -275,6 +309,8 @@ def format_state(s):
 def cmd_start(opts):
     name = opts.session
     d = session_dir(name)
+    for stale in reap_stale():
+        print(f'reaped stale session "{stale}"')
     try:
         read_session(name)
         request(name, {"lua": "return true"}, timeout=5)
@@ -287,7 +323,7 @@ def cmd_start(opts):
     prepare_home(home, opts.game_dir, opts.saves)
     load = stage_save(home, opts.saves, opts.load)
 
-    args = [str(find_binary()), "-serve", "0",
+    args = [str(find_binary()), "-serve", "0",   # 0 = the OS hands out a free port, never a fixed one
             "-session-file", str(d / "session.json"),
             "-home", str(home), "-log", str(d / "ja2.log"), "-out", str(d),
             # so that require("lib.campaign") works in `ja2ctl eval`
@@ -347,18 +383,81 @@ def wait_for_exit(pid: int, timeout: float) -> bool:
     return False
 
 
-def cmd_stop(opts):
-    names = [p.name for p in sessions_root().iterdir()] if opts.all and sessions_root().exists() else [opts.session]
-    for name in names:
+def pid_alive(pid) -> bool:
+    """Is process `pid` running? (A dead session's pid may be reused by an
+    unrelated process later; never kill a pid that is not answering for us.)"""
+    if not pid:
+        return False
+    if IS_WINDOWS:
+        import ctypes
+        from ctypes import wintypes
+        PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
+        ERROR_ACCESS_DENIED = 5
+        STILL_ACTIVE = 259
+        kernel32 = ctypes.windll.kernel32
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, int(pid))
+        if not handle:
+            return kernel32.GetLastError() == ERROR_ACCESS_DENIED
         try:
-            info = read_session(name)
-        except SessionError:
+            code = wintypes.DWORD()
+            return bool(kernel32.GetExitCodeProcess(handle, ctypes.byref(code))) and code.value == STILL_ACTIVE
+        finally:
+            kernel32.CloseHandle(handle)
+    try:
+        os.kill(int(pid), 0)
+    except OSError:
+        return False
+    return True
+
+
+def port_open(port) -> bool:
+    try:
+        with socket.create_connection(("127.0.0.1", int(port)), timeout=2):
+            return True
+    except OSError:
+        return False
+
+
+def reap_stale() -> list:
+    """Drop the registration of every session whose game process is gone, so
+    stale sessions never look running or block their name. Returns their names
+    (their directories stay behind: the log is worth keeping)."""
+    gone = []
+    for name in session_names():
+        info = read_session_or_none(name)
+        if info is None or pid_alive(info.get("pid")):
             continue
+        (session_dir(name) / "session.json").unlink(missing_ok=True)
+        gone.append(name)
+    return gone
+
+
+def cmd_stop(opts):
+    for stale in reap_stale():
+        print(f'reaped stale session "{stale}"')
+    names = session_names() if opts.all else [opts.session]
+    for name in names:
+        info = read_session_or_none(name)
+        if info is None:
+            if not opts.all:
+                print(f'"{name}" is not running')
+            continue
+        if not pid_alive(info.get("pid")):
+            (session_dir(name) / "session.json").unlink(missing_ok=True)
+            print(f'reaped stale session "{name}"')
+            continue
+        # Only force-kill a process that answers on its own session port; a pid
+        # of a long-dead session may have been reused by something unrelated.
+        ours = port_open(info["port"])
         try:
-            request(name, {"call": "shutdown"}, timeout=30)
+            request(name, {"call": "shutdown"}, timeout=10)
         except SessionError:
             pass
         if not wait_for_exit(info["pid"], 15):
+            if not ours:
+                print(f'"{name}" (pid {info["pid"]}) is alive but not serving port {info["port"]}; '
+                      f'leaving it alone', file=sys.stderr)
+                continue
             try:
                 os.kill(info["pid"], 9)
             except OSError:
@@ -371,15 +470,20 @@ def cmd_stop(opts):
 
 def cmd_list(opts):
     root = sessions_root()
-    if not root.exists():
+    names = session_names()
+    if not names:
+        print(f"no sessions in {root}")
         return 0
-    for d in sorted(root.iterdir()):
+    for name in names:
+        info = read_session_or_none(name)
+        if info is None:
+            print(f"{name:24} (not running)")
+            continue
         try:
-            info = read_session(d.name)
-            reply = request(d.name, {"lua": "return true"}, timeout=5)
-            print(f'{d.name:12} port {info["port"]:5}  {status_line(reply)}')
+            reply = request(name, {"lua": "return true"}, timeout=5)
+            print(f'{name:24} port {info["port"]:5}  {status_line(reply)}')
         except SessionError:
-            print(f"{d.name:12} (not running)")
+            print(f"{name:24} (not running)")
     return 0
 
 
@@ -392,9 +496,17 @@ def cmd_run(opts):
         scratch = tempfile.mkdtemp(prefix="ja2ctl-run-")
         home = scratch
     if home:
-        prepare_home(Path(home), opts.game_dir, opts.saves)
-        args += ["-home", str(Path(home).resolve()), "-log", str(Path(home).resolve() / "ja2.log")]
-    load = stage_save(Path(home) if home else default_ja2_home(), opts.saves, opts.load)
+        home = Path(home).resolve()
+        prepare_home(home, opts.game_dir, opts.saves)
+        log = home / "ja2.log"
+        args += ["-home", str(home), "-log", str(log)]
+    else:
+        # Never the shared ja2.log of the temp directory: every run gets a log of
+        # its own, next to this worktree's sessions.
+        sessions_root().mkdir(parents=True, exist_ok=True)
+        log = sessions_root() / f"run-{time.strftime('%Y%m%d-%H%M%S')}-{os.getpid()}.log"
+        args += ["-log", str(log)]
+    load = stage_save(home if home else default_ja2_home(), opts.saves, opts.load)
     if load:
         args += ["-load", load]
     if opts.out:
@@ -422,7 +534,28 @@ def cmd_run(opts):
             shutil.rmtree(scratch, ignore_errors=True)
         else:
             print(f"ja2ctl: home directory kept for inspection: {scratch}", file=sys.stderr)
+    elif home is None:
+        if code == 0 and not opts.keep:
+            Path(log).unlink(missing_ok=True)  # a passing run leaves no junk behind
+        else:
+            print(f"ja2ctl: log kept: {log}", file=sys.stderr)
+    elif code != 0:
+        print(f"ja2ctl: log: {log}", file=sys.stderr)
     return code
+
+
+def cmd_log(opts):
+    log = session_dir(opts.session) / "ja2.log"
+    if opts.path:
+        print(log)
+        return 0
+    if not log.exists():
+        raise SessionError(f'no log for "{opts.session}" yet ({log})')
+    lines = log.read_text(encoding="utf-8", errors="replace").splitlines()
+    if opts.lines:
+        lines = lines[-opts.lines:]
+    print("\n".join(lines))
+    return 0
 
 
 def locator_args(opts):
@@ -442,8 +575,8 @@ def locator_args(opts):
 def build_parser():
     p = argparse.ArgumentParser(prog="ja2ctl", description=__doc__.split("\n\n")[0],
                                 formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("-s", "--session", default=os.environ.get("JA2CTL_SESSION", "default"),
-                   help="session name (default: $JA2CTL_SESSION or 'default')")
+    p.add_argument("-s", "--session", default=os.environ.get("JA2CTL_SESSION") or default_session_name(),
+                   help="session name (default: $JA2CTL_SESSION, or derived from this worktree)")
     p.add_argument("--json", action="store_true", help="print the raw JSON reply")
     sub = p.add_subparsers(dest="cmd", metavar="COMMAND")
 
@@ -466,6 +599,9 @@ def build_parser():
     sp = sub.add_parser("stop", help="stop a session")
     sp.add_argument("--all", action="store_true")
     sub.add_parser("list", help="list sessions")
+    sp = sub.add_parser("log", help="the session's game log")
+    sp.add_argument("-n", "--lines", type=int, help="only the last N lines")
+    sp.add_argument("--path", action="store_true", help="print the log file's path instead of its content")
 
     sp = sub.add_parser("run", help="run a Lua script in a fresh one-shot game and exit with its result")
     sp.add_argument("script")
@@ -475,7 +611,7 @@ def build_parser():
     sp.add_argument("-v", "--verbose", action="store_true", help="show the game's full console log")
     sp.add_argument("--home", help="config/save directory (default: your normal JA2 home)")
     sp.add_argument("--isolated", action="store_true", help="use a fresh throwaway home directory")
-    sp.add_argument("--keep", action="store_true", help="with --isolated: keep the home directory afterwards")
+    sp.add_argument("--keep", action="store_true", help="keep what a passing run throws away: the --isolated home, the run's log")
 
     sub.add_parser("screen", help="current screen")
     sub.add_parser("state", help="game state summary")
@@ -575,6 +711,8 @@ def main(argv=None):
             return cmd_stop(opts)
         if cmd == "list":
             return cmd_list(opts)
+        if cmd == "log":
+            return cmd_log(opts)
         if cmd == "run":
             return cmd_run(opts)
 
