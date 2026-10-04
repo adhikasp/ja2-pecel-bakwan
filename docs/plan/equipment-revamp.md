@@ -2,8 +2,8 @@
 
 > Status: **active.** This is the *why*. The *what* and *how* live in the issues
 > linked below. Milestone:
-> [Tactical revamp signature systems](https://github.com/adhikasp/ja2-stracciatella/milestone/10).
-> Track goal: [#259](https://github.com/adhikasp/ja2-stracciatella/issues/259). Board Track: `Revamp gameplay`. Sibling doc: `docs/plan/revamp-gameplay.md`.
+> [Tactical revamp signature systems](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/10).
+> Track goal: [#259](https://github.com/adhikasp/ja2-pecel-bakwan/issues/259). Board Track: `Revamp gameplay`. Sibling doc: `docs/plan/revamp-gameplay.md`.
 
 ## Why
 
@@ -119,21 +119,21 @@ The build order follows the schema. Each issue lists what it depends on.
 
 ## Issues
 
-Existing, now rescoped here: [#96](https://github.com/adhikasp/ja2-stracciatella/issues/96)
-slots and LBE, [#97](https://github.com/adhikasp/ja2-stracciatella/issues/97) ammo,
-[#98](https://github.com/adhikasp/ja2-stracciatella/issues/98) condition,
-[#100](https://github.com/adhikasp/ja2-stracciatella/issues/100) weapons catalog,
-[#101](https://github.com/adhikasp/ja2-stracciatella/issues/101) armor and gear,
-[#102](https://github.com/adhikasp/ja2-stracciatella/issues/102) NCTH,
-[#108](https://github.com/adhikasp/ja2-stracciatella/issues/108) equipment-aware AI,
-[#140](https://github.com/adhikasp/ja2-stracciatella/issues/140) encumbrance,
-[#141](https://github.com/adhikasp/ja2-stracciatella/issues/141) readout UI,
-[#220](https://github.com/adhikasp/ja2-stracciatella/issues/220) armor as a choice.
-New issues: [#260](https://github.com/adhikasp/ja2-stracciatella/issues/260)
+Existing, now rescoped here: [#96](https://github.com/adhikasp/ja2-pecel-bakwan/issues/96)
+slots and LBE, [#97](https://github.com/adhikasp/ja2-pecel-bakwan/issues/97) ammo,
+[#98](https://github.com/adhikasp/ja2-pecel-bakwan/issues/98) condition,
+[#100](https://github.com/adhikasp/ja2-pecel-bakwan/issues/100) weapons catalog,
+[#101](https://github.com/adhikasp/ja2-pecel-bakwan/issues/101) armor and gear,
+[#102](https://github.com/adhikasp/ja2-pecel-bakwan/issues/102) NCTH,
+[#108](https://github.com/adhikasp/ja2-pecel-bakwan/issues/108) equipment-aware AI,
+[#140](https://github.com/adhikasp/ja2-pecel-bakwan/issues/140) encumbrance,
+[#141](https://github.com/adhikasp/ja2-pecel-bakwan/issues/141) readout UI,
+[#220](https://github.com/adhikasp/ja2-pecel-bakwan/issues/220) armor as a choice.
+New issues: [#260](https://github.com/adhikasp/ja2-pecel-bakwan/issues/260)
 damage resolution pipeline,
-[#261](https://github.com/adhikasp/ja2-stracciatella/issues/261) weapon roles and noise,
-[#262](https://github.com/adhikasp/ja2-stracciatella/issues/262) native loadout screen,
-[#263](https://github.com/adhikasp/ja2-stracciatella/issues/263) equipment e2e fixtures.
+[#261](https://github.com/adhikasp/ja2-pecel-bakwan/issues/261) weapon roles and noise,
+[#262](https://github.com/adhikasp/ja2-pecel-bakwan/issues/262) native loadout screen,
+[#263](https://github.com/adhikasp/ja2-pecel-bakwan/issues/263) equipment e2e fixtures.
 
 ## Out of scope
 

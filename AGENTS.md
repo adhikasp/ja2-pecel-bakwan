@@ -114,10 +114,10 @@ This fork is not a preservation project. It is a modern reimplementation of Jagg
 
 ### Never touch upstream
 
-- `origin` = **adhikasp/ja2-stracciatella** — our fork, the only copy we write to.
+- `origin` = **adhikasp/ja2-pecel-bakwan** — our fork, the only copy we write to.
 - `upstream` = **ja2-stracciatella/ja2-stracciatella** — read-only.
 
-Never push to it, never open a PR or an issue there, never comment there, never add it to a project, never point a `gh` command at it. Repository commands carry `-R adhikasp/ja2-stracciatella`; project commands carry `--owner adhikasp`. Everything merges into this fork's `master`, which is protected — go through a PR, even for a docs-only change.
+Never push to it, never open a PR or an issue there, never comment there, never add it to a project, never point a `gh` command at it. Repository commands carry `-R adhikasp/ja2-pecel-bakwan`; project commands carry `--owner adhikasp`. Everything merges into this fork's `master`, which is protected — go through a PR, even for a docs-only change.
 
 ### What goes where
 
@@ -128,7 +128,7 @@ Never push to it, never open a PR or an issue there, never comment there, never 
 | Milestone | What ships together, by when? | the issues and PRs of one shippable increment |
 | `docs/plan/`, `docs/ui/` | Why and how? | the plan, the M1 parity contract, the decisions |
 
-**The issue is the unit of work** and it lives in the repository, so the backlog is simply the issue list: https://github.com/adhikasp/ja2-stracciatella/issues. The board holds those issues — never its own copies (no draft items) — so nothing is ever tracked twice.
+**The issue is the unit of work** and it lives in the repository, so the backlog is simply the issue list: https://github.com/adhikasp/ja2-pecel-bakwan/issues. The board holds those issues — never its own copies (no draft items) — so nothing is ever tracked twice.
 
 ### Issues
 
@@ -152,7 +152,7 @@ One public board: **JA2 Modernization Roadmap** — https://github.com/users/adh
 
 ### Milestones
 
-One per shippable increment — never per phase, never per PR. The list of milestones lives on GitHub, not in this file: read https://github.com/adhikasp/ja2-stracciatella/milestones (or `gh api repos/adhikasp/ja2-stracciatella/milestones`) for the current one, and open a new milestone there when a new shippable increment appears. A milestone for a track that is still `Placeholder` says so in its description and stays inactive until that track's plan doc exists.
+One per shippable increment — never per phase, never per PR. The list of milestones lives on GitHub, not in this file: read https://github.com/adhikasp/ja2-pecel-bakwan/milestones (or `gh api repos/adhikasp/ja2-pecel-bakwan/milestones`) for the current one, and open a new milestone there when a new shippable increment appears. A milestone for a track that is still `Placeholder` says so in its description and stays inactive until that track's plan doc exists.
 
 An issue and its PR carry the milestone of the increment they belong to; a milestone is closed when its last PR merges. Housekeeping under `Repo & CI` is not a shippable increment and carries no milestone.
 
@@ -173,7 +173,7 @@ A PR that changes anything the player can see (rendering, layout, UI, screens, v
    cd ../pr-shots && git add . && git commit -m "Screenshots for <branch-name>" && git push origin pr-screenshots
    ```
    Embed them in the PR body with
-   `![map 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/<branch-name>/map_1920x1080.png)`.
+   `![map 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/<branch-name>/map_1920x1080.png)`.
    Give each one a short caption saying what to look at.
 5. **Reviewers open the images.** Don't merge a UI PR without doing so. If an image is missing or shows a problem, send the PR back.
 

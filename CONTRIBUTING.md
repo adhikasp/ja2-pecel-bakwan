@@ -4,11 +4,11 @@ That being said, the project has a defined scope: a modern reimplementation of J
 
 ### Where to start?
 
-Play the game and see what bothers you, what bug you hit, then report it and try to fix it. If you don't have an itch to scratch, we suggest looking at our bug tracker, for example the [help wanted](https://github.com/adhikasp/ja2-stracciatella/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) list.
+Play the game and see what bothers you, what bug you hit, then report it and try to fix it. If you don't have an itch to scratch, we suggest looking at our bug tracker, for example the [help wanted](https://github.com/adhikasp/ja2-pecel-bakwan/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) list.
 
 Instructions on building and IDE setup can be found in [COMPILATION](COMPILATION.md). Consider reading (or contributing to) our [docs](docs) directory. Code-specific documentation can be generated locally there.
 
-If you are not a developer, there are many other possibilities which do not require programming skills to help JA2 Pecel Bakwan to evolve. For example, you can help by retesting bug reports labelled with [retest](https://github.com/adhikasp/ja2-stracciatella/issues), help triage bugs, test solutions, research, create mods and more.
+If you are not a developer, there are many other possibilities which do not require programming skills to help JA2 Pecel Bakwan to evolve. For example, you can help by retesting bug reports labelled with [retest](https://github.com/adhikasp/ja2-pecel-bakwan/issues), help triage bugs, test solutions, research, create mods and more.
 
 ### Axioms of Style
 
