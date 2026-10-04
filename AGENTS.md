@@ -71,29 +71,46 @@ Ordinary UI work — labels, wiring, click handling, a screen's own logic — is
 |---|---|
 | `src/game/` | Core game logic (combat, AI, UI screens) |
 | `src/sgp/` | Platform layer — input, rendering, sound, file I/O |
-| `src/externalized/` | Moddable data loaded from JSON at runtime |
+| `src/externalized/` | C++ loaders (`*Model` classes, `DefaultContentManager`) for the original game's JSON data |
+| `assets/externalized/` | The original game's JSON data — frozen, see *Choosing a layer* |
+| `rust/` | Frozen infrastructure behind a C API: VFS, `.slf`/STCI formats, `ja2.json` config, JSON schemas, logger |
+| `tests/e2e/` | Lua scripts that drive the headless game, and their helpers (`lib/`) |
 | `src/launcher/` | *(removed)* — the launcher's features are the native setup screen (`src/game/NativeUI/FrontSetup.cc`) |
 | `dependencies/` | Vendored/downloaded libs (sol2, gtest, miniaudio) |
-| `build/externalized/` | JSON data files copied at build time — edit originals in `src/externalized/` |
 
-- Language: C++20 with Lua scripting via sol2.
-- The Rust component (`dependencies/lib-pecel-bakwan`) is a support library — most game code is C++.
+- Language: C++20 for the game. Lua (via sol2) drives and tests it; it holds no game rules.
 - `.slf` files are the original JA2 archive format; the VFS layer transparently reads them.
+
+## Choosing a layer
+
+We optimize for one thing: **a fast, agent-drivable feedback loop.** Modding and runtime tweakability are not goals.
+
+- **C++ is the game.** Every rule, mechanic, behavior and piece of new content goes here. A type error found by the compiler is cheaper than a runtime error found by driving the game to it, and one language keeps the whole call graph searchable.
+- **Lua is the driving and test language only** — `tests/e2e/`, `lib/campaign.lua`, `ja2ctl eval`. Never put game logic in Lua.
+- **Rust is frozen.** Don't add features to `rust/`; don't port it either. Touch it only when a change forces you to.
+- **JSON is frozen.** No new files in `assets/externalized/`. New data is compiled C++ tables with unit-tested invariants (like `src/game/Content/PeopleContent.cc`). When a system is revamped, move its JSON into C++ in the same piece of work.
+
+Every new system has the same shape:
+
+1. A core with no globals, covered by gtest.
+2. A thin adapter onto the legacy globals.
+3. An `Observable` at each decision point.
+4. A small Lua surface so `ja2ctl state`/`eval` can read its internals as data and set up its scenarios (extend `BattleScenario`/`CampaignScenario`) — asserting a result should never need a click path or a screenshot.
 
 ## Where to look for things
 
 - **Game screens** (main menu, tactical, map): `src/game/` — files named after the screen, e.g. `MapScreen.cc`, `TacticalView.cc`.
 - **Save/load**: `src/game/SaveLoadGame.cc`.
-- **Item/merc data**: JSON in `src/externalized/` — no recompile needed to tweak values.
-- **Lua hooks**: `src/game/scripting/` — moddable behavior without touching C++.
+- **Item/merc data**: original JSON in `assets/externalized/`, loaded by `src/externalized/`; compiled content in `src/game/Content/`.
+- **Automation and the Lua driving API**: `src/game/Automation/` (`AutomationLua.cc`, scenarios); NativeUI view models for tests in `src/game/NativeUI/ViewModelLua.cc`.
 
 ## Dev mindset
 
-- **Prefer `src/externalized/` JSON edits over C++ changes** when tweaking the data the original game shipped with — no recompile, hot-reloadable. New gameplay systems are native instead: see *Game design principles*.
 - **Native-first, no backward compatibility.** New gameplay and behavior are native C++ and the default. Do not add externalized rules, legacy fallbacks or compatibility shims; old saves, old behavior and old APIs are not a constraint.
-- **The VFS is layered** — files in `build/externalized/` override `.slf` archives. Use this for rapid iteration on assets.
-- **Unit tests are fast** — run `-unittests` before and after changes to catch regressions early.
-- **Log output is your debugger** — the game logs to `/var/folders/.../ja2.log`; tail it while the game runs.
+- **Keep the loop short.** Iterate on the gtest core first; drive the headless game only to prove integration. If a cycle (edit → build → test) gets slow, fix the build or the test surface rather than moving logic out of C++.
+- **The VFS is layered** — files in the build's `externalized/` override `.slf` archives. Use this for asset iteration.
+- **Unit tests are fast** — `python tools/dev.py test` before and after changes to catch regressions early.
+- **Log output is your debugger** — see *Platform notes* for the log path; tail it while the game runs.
 - **Don't touch `dependencies/`** — these are managed by cmake; changes get overwritten on reconfigure.
 
 ## Game design principles
@@ -101,14 +118,14 @@ Ordinary UI work — labels, wiring, click handling, a screen's own logic — is
 This fork is not a preservation project. It is a modern reimplementation of Jagged Alliance 2 with a richer tactical and strategic game. These principles are the tie-breaker for design decisions: when a plan or a PR conflicts with one, the plan changes.
 
 - **The revamp is the game.** New mechanics ship on by default. There is no vanilla mode, no byte-compatible save format and no obligation to preserve old behavior. We own the rules, the balance and the save format.
-- **Native-first.** Gameplay systems live in C++ in the engine; we do not externalize rules to runtime JSON. A small set of leaf tunables (bullet spread, loot drop %, wear rate, Queen aggression weights) are exposed as toggles, but the mechanics are always baked in. `src/externalized/` is for the data the original game shipped with, not for new rules.
+- **Native-first.** Gameplay systems live in C++ in the engine; we do not externalize rules or data to runtime JSON or Lua. Balance values are compiled constants; `assets/externalized/` only holds the original game's data until its system is revamped.
 - **Testable by construction.** Every system has a C++ unit-test surface and a deterministic `ja2ctl`/e2e driving surface. If a mechanic cannot be asserted headless, it is not done.
 - **Curate.** Take the design idea and ship a small, balanced set, not a catalog. Content is compiled, with unit-tested invariants.
 - **A rich tactical layer.** Equipment is a system (attachments, ammo, condition), combat is a simulation (NCTH, suppression, morale, stances, detection, vision/light), and the soldier is a character (traits, medical, encumbrance, covert ops, melee, breaching).
 - **A rich strategic layer.** The world is alive. A deed ledger tracks whether the player is the savior or the next dictator; towns, factions and NPCs react and remember; militia, facilities, the economy and the strategic sector inventory give the map teeth.
 - **The Queen has a mind.** A native emotional drive state and a native policy layer drive her strategic actions. An optional LLM layer provides her voice and turns the player's free text into a bounded intent set, but the LLM never writes game state; headless runs use a deterministic stub.
 - **Reimplement ideas, never port code.** Ideas from other JA2 projects are reimplemented natively; their code, UI and runtime data files are not imported.
-- **Moddability stays a feature.** The VFS layering and the Lua scripting API are the mod surface, within the native-first rules above.
+- **Agent-drivable, not moddable.** The game is built to be developed and played headless by an agent through `ja2ctl` and Lua. There is no mod surface to preserve: the Lua mod-scripting API (`src/externalized/scripting/`) and `assets/mods/` are slated for removal, and no new code may depend on them.
 
 ## GitHub: remotes, issues, projects and milestones
 
