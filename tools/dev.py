@@ -458,8 +458,7 @@ def cmd_test(args):
     binary = build_dir / JA2_EXE
     if not binary.exists():
         die(f"{binary} does not exist; run: python tools/dev.py build")
-    rest = args.args[1:] if args.args[:1] == ["--"] else args.args
-    argv = [str(binary), "-unittests"] + rest
+    argv = [str(binary), "-unittests"] + args.args
     log(" ".join(shlex.quote(a) for a in argv))
     sys.exit(subprocess.run(argv, cwd=str(build_dir), env=binary_env()).returncode)
 
@@ -468,20 +467,19 @@ def cmd_e2e(args):
     root = ensure_short_root(REPO)
     build_dir = build_dir_of(root)
     setup_if_needed(root, build_dir)
-    rest = args.args[1:] if args.args[:1] == ["--"] else args.args
     if not args.no_build:
         rc = build_binary(root, build_dir, args.jobs)
         if rc:
             sys.exit(rc)
-    if rest and (rest[0].endswith((".lua", ".txt")) or (REPO / rest[0]).exists()):
+    if args.args and (args.args[0].endswith((".lua", ".txt")) or (REPO / args.args[0]).exists()):
         # one script: tools/ja2ctl.py run <script> [--isolated] [--show] ...
-        argv = [sys.executable, str(REPO / "tools" / "ja2ctl.py"), "run"] + rest
+        argv = [sys.executable, str(REPO / "tools" / "ja2ctl.py"), "run"] + args.args
         log(" ".join(shlex.quote(a) for a in argv))
         sys.exit(subprocess.run(argv, cwd=str(REPO), env=binary_env()).returncode)
     with job_slots("e2e", args.jobs) as jobs:
         cmd = f"ctest -L e2e --output-on-failure --parallel {jobs}"
-        if rest:
-            cmd += " " + " ".join(shlex.quote(a) for a in rest)
+        if args.args:
+            cmd += " " + " ".join(shlex.quote(a) for a in args.args)
         log(cmd)
         sys.exit(tool_run(cmd, build_dir).returncode)
 
@@ -490,7 +488,6 @@ def cmd_run(args):
     root = ensure_short_root(REPO)
     build_dir = build_dir_of(root)
     setup_if_needed(root, build_dir)
-    rest = args.args[1:] if args.args[:1] == ["--"] else args.args
     if not args.no_build:
         rc = build_binary(root, build_dir, args.jobs)
         if rc:
@@ -498,8 +495,8 @@ def cmd_run(args):
     binary = build_dir / JA2_EXE
     if not binary.exists():
         die(f"{binary} does not exist; run: python tools/dev.py build")
-    default_res = [] if "-res" in rest else ["-res", "1280x720"]
-    argv = [str(binary)] + default_res + rest
+    default_res = [] if "-res" in args.args else ["-res", "1280x720"]
+    argv = [str(binary)] + default_res + args.args
     log(" ".join(shlex.quote(a) for a in argv))
     sys.exit(subprocess.run(argv, cwd=str(build_dir), env=binary_env()).returncode)
 
@@ -516,8 +513,13 @@ def bootstrap_auto():
     key = str(REPO)
     if time.time() - stamps.get(key, {}).get("time", 0) < 120:
         return  # this worktree was just bootstrapped (or is being, right now)
-    log_file = state / "logs" / f"bootstrap-{REPO.name}-{hashlib.sha1(key.encode()).hexdigest()[:8]}.log"
-    log_file.parent.mkdir(parents=True, exist_ok=True)
+    digest = hashlib.sha1(key.encode()).hexdigest()[:8]
+    logs = state / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    stamp = time.strftime("%Y%m%d-%H%M%S")
+    log_file = logs / f"bootstrap-{REPO.name}-{digest}-{stamp}.log"
+    for stale in sorted(logs.glob(f"bootstrap-{REPO.name}-{digest}-*.log"))[:-4]:
+        stale.unlink(missing_ok=True)  # keep the newest few, one file per run so they never interleave
     stamps[key] = {"time": time.time(), "log": str(log_file)}
     db.write_text(json.dumps(stamps, indent=2), encoding="utf-8")
     argv = [sys.executable, str(Path(__file__).resolve()), "bootstrap"]
@@ -568,6 +570,32 @@ def cmd_status(args):
 
 # --- command line -----------------------------------------------------------
 
+# dev.py's own flags for `test`, `e2e` and `run`; anything else is passed on to
+# the test binary, ctest, ja2ctl or ja2. Use `--` to hand over everything.
+DEV_FLAGS = ("-h", "--help", "--no-build", "-j", "--jobs", "--jobs=")
+
+
+def split_tail(tail):
+    """(dev.py tokens, child args) for the passthrough commands."""
+    dev, child = [], []
+    i = 0
+    while i < len(tail):
+        arg = tail[i]
+        if arg == "--":
+            child += tail[i + 1:]
+            break
+        if arg in ("-j", "--jobs") and i + 1 < len(tail):
+            dev += tail[i:i + 2]
+            i += 2
+            continue
+        if arg in DEV_FLAGS or arg.startswith("--jobs=") or re.fullmatch(r"-j\d+", arg):
+            dev.append(arg)
+        else:
+            child.append(arg)
+        i += 1
+    return dev, child
+
+
 def main():
     parser = argparse.ArgumentParser(
         prog="tools/dev.py",
@@ -575,41 +603,34 @@ def main():
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
-    def common(p, build_flags=True):
-        if build_flags:
-            p.add_argument("-j", "--jobs", type=int, default=None,
-                           help="parallel jobs (default: share this machine with the other agents; JA2_JOBS overrides)")
-            p.add_argument("--no-build", action="store_true", help="do not build first")
+    def common(p):
+        p.add_argument("-j", "--jobs", type=int, default=None,
+                       help="parallel jobs (default: share this machine with the other agents; JA2_JOBS overrides)")
+        p.add_argument("--no-build", action="store_true", help="do not build first")
 
     p = sub.add_parser("setup", help="make this worktree ready: build dir, uv sync, game_dir (idempotent)")
     p.add_argument("-q", "--quiet", action="store_true", help="only report problems")
     p.set_defaults(func=cmd_setup)
 
     p = sub.add_parser("build", help="build the game (job-capped across agents)")
-    common(p, build_flags=False)
     p.add_argument("-j", "--jobs", type=int, default=None,
                    help="parallel jobs (default: share this machine with the other agents; JA2_JOBS overrides)")
     p.add_argument("--target", help="build one cmake target")
     p.set_defaults(func=cmd_build)
 
-    p = sub.add_parser("test", help="build and run the C++ unit tests")
+    p = sub.add_parser("test", help="build and run the C++ unit tests (extra args go to the test binary)")
     common(p)
-    p.add_argument("args", nargs=argparse.REMAINDER, help="extra arguments for the test binary")
     p.set_defaults(func=cmd_test)
 
-    p = sub.add_parser("e2e", help="build and run the end-to-end tests (ctest -L e2e, or one ja2ctl script)")
+    p = sub.add_parser("e2e", help="build and run the e2e tests: ctest -L e2e, or one ja2ctl script")
     common(p)
-    p.add_argument("args", nargs=argparse.REMAINDER,
-                   help="a script to run once (tests/e2e/foo.lua), or arguments for ctest")
     p.set_defaults(func=cmd_e2e)
 
-    p = sub.add_parser("run", help="build and play the game")
+    p = sub.add_parser("run", help="build and play the game (default -res 1280x720)")
     common(p)
-    p.add_argument("args", nargs=argparse.REMAINDER, help="arguments for the ja2 binary (default: -res 1280x720)")
     p.set_defaults(func=cmd_run)
 
     p = sub.add_parser("bootstrap", help="setup + build: make this worktree ready to test")
-    common(p, build_flags=False)
     p.add_argument("-j", "--jobs", type=int, default=None, help="parallel jobs (JA2_JOBS overrides)")
     p.add_argument("--auto", action="store_true",
                    help="session-hook mode: bootstrap in the background, return immediately")
@@ -618,7 +639,13 @@ def main():
     p = sub.add_parser("status", help="show what dev.py sees: paths, tools, game_dir, build state")
     p.set_defaults(func=cmd_status)
 
-    args = parser.parse_args()
+    argv = sys.argv[1:]
+    if argv and argv[0] in {"test", "e2e", "run"}:
+        dev, child = split_tail(argv[1:])
+        args = parser.parse_args([argv[0]] + dev)
+        args.args = child
+    else:
+        args = parser.parse_args(argv)
     try:
         args.func(args)
     except KeyboardInterrupt:
