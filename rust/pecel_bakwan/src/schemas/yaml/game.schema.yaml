@@ -245,16 +245,23 @@ properties:
       Skips the `cannot sleep` popup when driving or when the merc is already rested.
 
       Vanilla setting: `false`
-  extra_attachments:
+  attachment_strict_mounts:
     type: boolean
-    title: Extra attachments
+    title: Strict attachment mounts
     description: |
-      Enables extra attachments:
-        
-        - boosters and break lights on leggings
-        - goggles on helmets
+      Attachments must match the mount kind of the slot they go into: a rifle
+      suppressor needs a muzzle thread and will not fit a shotgun's choke
+      thread. When false, anything fits any slot of the right role.
 
-      Vanilla setting: `false`
+      Default setting: `true`
+  weapon_slot_bonus:
+    type: integer
+    title: Weapon slot bonus
+    description: |
+      Leaf tunable: added to every gun platform's typed attachment slot count,
+      clamped to three through four slots.
+
+      Default setting: `0`
   pablo_wont_steal:
     type: boolean
     title: Pablo won't steal
@@ -595,7 +602,8 @@ required:
   - enemy_elite_maximum_level
   - gui_extras
   - skip_sleep_explanation
-  - extra_attachments
+  - attachment_strict_mounts
+  - weapon_slot_bonus
   - pablo_wont_steal
   - chance_to_hit_minimum
   - chance_to_hit_maximum

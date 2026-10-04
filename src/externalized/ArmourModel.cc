@@ -1,25 +1,12 @@
 #include "ArmourModel.h"
+#include "Equipment/AttachmentRules.h"
+#include "Equipment/EquipmentCatalog.h"
+#include "Equipment/Slots.h"
 #include "Exceptions.h"
 #include "GamePolicy.h"
 #include "Item_Types.h"
 #include "Weapons.h"
 #include <cstdint>
-#include <set>
-
-static std::set<UINT16> const platesCanBeAttached = {
-	FLAK_JACKET,
-	FLAK_JACKET_18,
-	FLAK_JACKET_Y,
-	KEVLAR_VEST,
-	KEVLAR_VEST_18,
-	KEVLAR_VEST_Y,
-	KEVLAR2_VEST,
-	KEVLAR2_VEST_18,
-	KEVLAR2_VEST_Y,
-	SPECTRA_VEST,
-	SPECTRA_VEST_18,
-	SPECTRA_VEST_Y
-};
 
 uint8_t deserializeArmourClass(const ST::string& armourClass) {
 	if (armourClass == "HELMET") return ARMOURCLASS_HELMET;
@@ -29,21 +16,6 @@ uint8_t deserializeArmourClass(const ST::string& armourClass) {
 	if (armourClass == "CREATURE") return ARMOURCLASS_MONST;
 	throw DataError(ST::format("Unknown armour class '{}'", armourClass));
 }
-
-// additional possible attachments if the extra_attachments game policy is set
-static std::set<UINT16> const g_helmets {STEEL_HELMET, KEVLAR_HELMET, KEVLAR_HELMET_18, KEVLAR_HELMET_Y, SPECTRA_HELMET, SPECTRA_HELMET_18, SPECTRA_HELMET_Y};
-static std::set<UINT16> const g_leggings {KEVLAR_LEGGINGS, KEVLAR_LEGGINGS_18, KEVLAR_LEGGINGS_Y, SPECTRA_LEGGINGS, SPECTRA_LEGGINGS_18, SPECTRA_LEGGINGS_Y};
-static std::map<UINT16, decltype(g_helmets) *> const g_attachments_mod
-{
-	{NIGHTGOGGLES, &g_helmets},
-	{UVGOGGLES, &g_helmets},
-	{SUNGOGGLES, &g_helmets},
-	{ROBOT_REMOTE_CONTROL, &g_helmets},
-
-	{BREAK_LIGHT, &g_leggings},
-	{REGEN_BOOSTER, &g_leggings},
-	{ADRENALINE_BOOSTER, &g_leggings}
-};
 
 ArmourModel::ArmourModel(
 			uint16_t itemIndex,
@@ -141,14 +113,13 @@ bool ArmourModel::isIgnoredForMaxProtection() const {
 }
 
 bool ArmourModel::canBeAttached(const GamePolicy* policy, const ItemModel* attachment) const {
-	auto attachmentAsArmour = attachment->asArmour();
-	if (attachmentAsArmour && attachmentAsArmour->getArmourClass() == ARMOURCLASS_PLATE) {
-		return platesCanBeAttached.find(this->itemIndex) != platesCanBeAttached.end();
-	}
-	if (policy->extra_attachments)
-	{
-		auto const it = g_attachments_mod.find(attachment->getItemIndex());
-		if (it != g_attachments_mod.end() && (*it->second).count(this->itemIndex) == 1) return true;
-	}
-	return false;
+	// Compatibility is by mount type: a plate goes in a plate pocket, goggles
+	// on an NVG mount. No per-item lists.
+	const Equipment::AttachmentDef* def = Equipment::AttachmentFor(attachment->getItemIndex());
+	if (def == nullptr) return false;
+
+	Equipment::SlotPolicy toggles = Equipment::TogglesFrom(policy);
+	Equipment::Platform host = Equipment::SlotsFor(*this, toggles);
+	uint16_t present[Equipment::MAX_HOST_SLOTS] = {};
+	return Equipment::CanAttach(host, *def, present, true, toggles).ok;
 }

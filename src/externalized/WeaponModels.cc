@@ -1,5 +1,8 @@
 #include "WeaponModels.h"
 #include "CalibreModel.h"
+#include "Equipment/AttachmentRules.h"
+#include "Equipment/EquipmentCatalog.h"
+#include "Equipment/Slots.h"
 #include "Exceptions.h"
 #include "ExplosiveCalibreModel.h"
 #include "ItemModel.h"
@@ -31,14 +34,6 @@ WeaponModel::WeaponModel(uint32_t itemClass, uint8_t weaponType, uint8_t cursor,
 	:ItemModel(itemIndex, std::move(internalName_), itemClass, itemIndex, (ItemCursor)cursor),
 	sound(NO_WEAPON_SOUND_STR),
 	burstSound(NO_WEAPON_SOUND_STR),
-	attachSilencer(false),
-	attachSniperScope(false),
-	attachLaserScope(false),
-	attachBipod(false),
-	attachDuckbill(false),
-	attachUnderGLauncher(false),
-	attachSpringAndBoltUpgrade(false),
-	attachGunBarrelExtender(false),
 	m_rateOfFire(0)
 {
 	ubWeaponType         = weaponType;
@@ -95,17 +90,6 @@ void addOptionalBool(JsonObject &obj, const char* key, bool val) {
 	}
 }
 
-void WeaponModel::serializeAttachments(JsonObject &obj) const
-{
-	addOptionalBool(obj, "attachment_Silencer",                 attachSilencer);
-	addOptionalBool(obj, "attachment_SniperScope",              attachSniperScope);
-	addOptionalBool(obj, "attachment_LaserScope",               attachLaserScope);
-	addOptionalBool(obj, "attachment_Bipod",                    attachBipod);
-	addOptionalBool(obj, "attachment_Duckbill",                 attachDuckbill);
-	addOptionalBool(obj, "attachment_UnderGLauncher",           attachUnderGLauncher);
-	addOptionalBool(obj, "attachment_SpringAndBoltUpgrade",     attachSpringAndBoltUpgrade);
-	addOptionalBool(obj, "attachment_GunBarrelExtender",        attachGunBarrelExtender);
-}
 
 ST::string readOptionalString(JsonObject &obj, const char* key, const ST::string &default_value) {
 	ST::string sound = obj.getOptionalString(key);
@@ -639,15 +623,6 @@ std::unique_ptr<WeaponModel> WeaponModel::deserialize(const JsonValue &json,
 	wep->bRepairEase      = obj.GetInt("bRepairEase");
 	wep->m_rateOfFire     = obj.GetInt("rateOfFire");
 
-	wep->attachSilencer               = obj.getOptionalBool("attachment_Silencer");
-	wep->attachSniperScope            = obj.getOptionalBool("attachment_SniperScope");
-	wep->attachLaserScope             = obj.getOptionalBool("attachment_LaserScope");
-	wep->attachBipod                  = obj.getOptionalBool("attachment_Bipod");
-	wep->attachDuckbill               = obj.getOptionalBool("attachment_Duckbill");
-	wep->attachUnderGLauncher         = obj.getOptionalBool("attachment_UnderGLauncher");
-	wep->attachSpringAndBoltUpgrade   = obj.getOptionalBool("attachment_SpringAndBoltUpgrade");
-	wep->attachGunBarrelExtender      = obj.getOptionalBool("attachment_GunBarrelExtender");
-
 	wep->fFlags |= ItemModel::deserializeFlags(obj);
 
 	ST::string replacement = obj.getOptionalString("standardReplacement");
@@ -690,15 +665,15 @@ bool WeaponModel::isSameMagCapacity(const MagazineModel *mag) const
 /** Check if the given attachment can be attached to the item. */
 bool WeaponModel::canBeAttached(const GamePolicy* policy, const ItemModel* attachment) const
 {
-	auto attachmentID = attachment->getItemIndex();
-	return (attachSilencer && (attachmentID == SILENCER))
-		|| (attachSniperScope && (attachmentID == SNIPERSCOPE))
-		|| (attachLaserScope && (attachmentID == LASERSCOPE))
-		|| (attachBipod && (attachmentID == BIPOD))
-		|| (attachDuckbill && (attachmentID == DUCKBILL))
-		|| (attachUnderGLauncher && (attachmentID == UNDER_GLAUNCHER))
-		|| (attachSpringAndBoltUpgrade && (attachmentID == SPRING_AND_BOLT_UPGRADE))
-		|| (attachGunBarrelExtender && (attachmentID == GUN_BARREL_EXTENDER));
+	// Compatibility is decided by the weapon platform's typed slots and the
+	// attachment's mount kind - never by a per-weapon whitelist.
+	const Equipment::AttachmentDef* def = Equipment::AttachmentFor(attachment->getItemIndex());
+	if (def == nullptr) return false;
+
+	Equipment::SlotPolicy toggles = Equipment::TogglesFrom(policy);
+	Equipment::Platform host = Equipment::GunPlatform(ubWeaponClass, toggles);
+	uint16_t present[Equipment::MAX_HOST_SLOTS] = {};
+	return Equipment::CanAttach(host, *def, present, true, toggles).ok;
 }
 
 /** Get standard replacement gun name. */
@@ -731,7 +706,6 @@ JsonValue NoWeapon::serialize() const
 	JsonObject obj;
 	WeaponModel::serializeTo(obj);
 	obj.set("usRange", usRange);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -787,7 +761,6 @@ JsonValue Pistol::serialize() const
 	obj.set("ubHitVolume",          ubHitVolume);
 	obj.set("sound",                sound);
 	obj.set("silencedSound",        silencedSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -854,7 +827,6 @@ JsonValue MPistol::serialize() const
 	obj.set("burstSound",           burstSound);
 	obj.set("silencedSound",        silencedSound);
 	obj.set("silencedBurstSound",   silencedBurstSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -920,7 +892,6 @@ JsonValue SMG::serialize() const
 	obj.set("burstSound",           burstSound);
 	obj.set("silencedSound",        silencedSound);
 	obj.set("silencedBurstSound",   silencedBurstSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -974,7 +945,6 @@ JsonValue SniperRifle::serialize() const
 	obj.set("ubHitVolume",          ubHitVolume);
 	obj.set("sound",                sound);
 	obj.set("silencedSound",        silencedSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1028,7 +998,6 @@ JsonValue Rifle::serialize() const
 	obj.set("ubHitVolume",          ubHitVolume);
 	obj.set("sound",                sound);
 	obj.set("silencedSound",        silencedSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1094,7 +1063,6 @@ JsonValue AssaultRifle::serialize() const
 	obj.set("burstSound",           burstSound);
 	obj.set("silencedSound",        silencedSound);
 	obj.set("silencedBurstSound",   silencedBurstSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1160,7 +1128,6 @@ JsonValue Shotgun::serialize() const
 	obj.set("burstSound",           burstSound);
 	obj.set("silencedSound",        silencedSound);
 	obj.set("silencedBurstSound",   silencedBurstSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1226,7 +1193,6 @@ JsonValue LMG::serialize() const
 	obj.set("burstSound",           burstSound);
 	obj.set("silencedSound",        silencedSound);
 	obj.set("silencedBurstSound",   silencedBurstSound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1261,7 +1227,6 @@ JsonValue Blade::serialize() const
 	obj.set("usRange",              usRange);
 	obj.set("ubAttackVolume",       ubAttackVolume);
 	obj.set("sound",                sound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1296,7 +1261,6 @@ JsonValue ThrowingBlade::serialize() const
 	obj.set("usRange",              usRange);
 	obj.set("ubAttackVolume",       ubAttackVolume);
 	obj.set("sound",                sound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1329,7 +1293,6 @@ JsonValue PunchWeapon::serialize() const
 	obj.set("ubDeadliness",         ubDeadliness);
 	obj.set("ubAttackVolume",       ubAttackVolume);
 	obj.set("sound",                sound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1372,7 +1335,6 @@ JsonValue Launcher::serialize() const
 	obj.set("ubAttackVolume",       ubAttackVolume);
 	obj.set("ubHitVolume",          ubHitVolume);
 	obj.set("sound",                sound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1414,7 +1376,6 @@ JsonValue LAW::serialize() const
 	obj.set("ubAttackVolume",       ubAttackVolume);
 	obj.set("ubHitVolume",          ubHitVolume);
 	obj.set("sound",                sound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1458,7 +1419,6 @@ JsonValue Cannon::serialize() const
 	obj.set("ubAttackVolume",       ubAttackVolume);
 	obj.set("ubHitVolume",          ubHitVolume);
 	obj.set("sound",                sound);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }
@@ -1506,7 +1466,6 @@ JsonValue MonsterSpit::serialize() const
 	obj.set("ubHitVolume",          ubHitVolume);
 	obj.set("sound",                sound);
 	obj.set("ubSmokeEffect",        usSmokeEffect);
-	serializeAttachments(obj);
 	serializeFlags(obj);
 	return obj.toValue();
 }

@@ -154,19 +154,37 @@ TEST(Items, ValidAttachment)
 	ASSERT_TRUE(cm->loadGameData());
 	auto const oldGCM = std::exchange(GCM, cm.release());
 
-	bool& extra_attachments = const_cast<GamePolicy *>(GCM->getGamePolicy())->extra_attachments;
+	auto id = [](char const* name) { return GCM->getItemByName(name)->getItemIndex(); };
+	UINT16 const SPAS15 = id("SPAS15");
+	UINT16 const M870   = id("M870");
 
-	extra_attachments = false;
+	// Non-mount combinations: the arming/merge table still answers these.
 	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::DETONATOR, ITEMDEFINE::HMX));
 	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::DETONATOR, ITEMDEFINE::TNT));
 	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::CHEWING_GUM, ITEMDEFINE::FUMBLE_PAK));
-	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::UVGOGGLES, ITEMDEFINE::SPECTRA_HELMET));;
-	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::SUNGOGGLES, ITEMDEFINE::SPECTRA_HELMET));;
-	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::ADRENALINE_BOOSTER, ITEMDEFINE::KEVLAR_LEGGINGS_Y));
-	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::AUTO_ROCKET_RIFLE, ITEMDEFINE::BRASS_KNUCKLES));
 	EXPECT_FALSE(ValidAttachment(0xf083, 0x8c12)); // Random junk crashes the old version of ValidAttachment
 
-	// Next test relies on a certain order of the vests
+	// Mount-based compatibility: slot roles and mount kinds decide, there is
+	// no per-weapon whitelist any more.
+	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::SILENCER, ITEMDEFINE::GLOCK_17));  // muzzle thread
+	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::SILENCER, ITEMDEFINE::G11));       // any platform with a muzzle slot
+	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::SNIPERSCOPE, ITEMDEFINE::G11));    // rail
+	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::BIPOD, ITEMDEFINE::MINIMI));       // underbarrel mount
+	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::SILENCER, SPAS15));               // choke thread, not muzzle thread
+	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::DUCKBILL, ITEMDEFINE::G11));      // and the other way round
+	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::SNIPERSCOPE, M870));              // shotguns have no optic slot
+	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::SILENCER, ITEMDEFINE::FIRSTAIDKIT)); // not a platform
+	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::AUTO_ROCKET_RIFLE, ITEMDEFINE::BRASS_KNUCKLES));
+
+	// Helmets take goggles on their NVG mount - by mount type, no toggle.
+	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::UVGOGGLES, ITEMDEFINE::SPECTRA_HELMET));
+	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::SUNGOGGLES, ITEMDEFINE::KEVLAR_HELMET_18));
+	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::NIGHTGOGGLES, ITEMDEFINE::STEEL_HELMET));
+	// Boosters no longer stick to leggings: pockets carry them.
+	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::ADRENALINE_BOOSTER, ITEMDEFINE::KEVLAR_LEGGINGS_Y));
+	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::SUNGOGGLES, ITEMDEFINE::SPECTRA_VEST));
+
+	// Every vest is a plate carrier
 	static_assert(ITEMDEFINE::SPECTRA_VEST_Y - ITEMDEFINE::FLAK_JACKET == 8);
 	int count = 0;
 	for (int i = ITEMDEFINE::FLAK_JACKET; i <= ITEMDEFINE::SPECTRA_VEST_Y; ++i)
@@ -174,18 +192,6 @@ TEST(Items, ValidAttachment)
 		if (ValidAttachment(ITEMDEFINE::CERAMIC_PLATES, i)) ++count;
 	}
 	EXPECT_EQ(count, 9);
-
-	extra_attachments = true;
-	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::DETONATOR, ITEMDEFINE::HMX));
-	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::DETONATOR, ITEMDEFINE::TNT));
-	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::CHEWING_GUM, ITEMDEFINE::FUMBLE_PAK));
-	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::UVGOGGLES, ITEMDEFINE::SPECTRA_HELMET));;
-	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::UVGOGGLES, ITEMDEFINE::KEVLAR_HELMET_18));;
-	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::SUNGOGGLES, ITEMDEFINE::SPECTRA_HELMET));;
-	EXPECT_TRUE(ValidAttachment(ITEMDEFINE::ADRENALINE_BOOSTER, ITEMDEFINE::KEVLAR_LEGGINGS_Y));
-	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::SUNGOGGLES, ITEMDEFINE::SPECTRA_VEST));;
-	EXPECT_FALSE(ValidAttachment(ITEMDEFINE::AUTO_ROCKET_RIFLE, ITEMDEFINE::BRASS_KNUCKLES));
-	EXPECT_FALSE(ValidAttachment(0xf083, 0x8c12));
 
 	delete GCM;
 	GCM = oldGCM;

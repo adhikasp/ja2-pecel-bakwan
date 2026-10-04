@@ -1,5 +1,6 @@
 add_and_include_subdirectory("Automation")
 add_and_include_subdirectory("Content")
+add_and_include_subdirectory("Equipment")
 add_and_include_subdirectory("NativeUI")
 add_and_include_subdirectory("Editor")
 add_and_include_subdirectory("Laptop")

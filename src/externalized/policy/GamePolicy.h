@@ -50,7 +50,8 @@ public:
 
 	bool gui_extras;                      /* graphical user interface cosmetic mod */
 	bool informative_tooltips;            /* Reveal modifiers in hover boxes */
-	bool extra_attachments;               // allow more item attachments options
+	bool attachment_strict_mounts;        // attachments must match the slot's mount kind
+	int16_t weapon_slot_bonus;            // leaf tunable: added to every gun platform's slot count
 	bool skip_sleep_explanation;          // skip annoying popups
 
 	bool extra_mousewheel_actions;        // Extra tactical mouse wheel bindings: look cursor on wheel click, aim level on wheel scroll

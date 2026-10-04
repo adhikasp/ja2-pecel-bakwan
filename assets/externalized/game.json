@@ -147,7 +147,8 @@
 
   //  Enables extra attachments: boosters and break lights on leggings, goggles on helmets.
   //  vanilla setting: false
-  "extra_attachments": false,
+  "attachment_strict_mounts": true,
+  "weapon_slot_bonus": 0,
 
   //  Packages at Drassen airport never get stolen, no need to bribe Pablo.
   //  vanilla_setting: false

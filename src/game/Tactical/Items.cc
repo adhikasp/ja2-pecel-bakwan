@@ -1,4 +1,7 @@
 #include "ArmourModel.h"
+#include "Equipment/AttachmentRules.h"
+#include "Equipment/EquipmentCatalog.h"
+#include "Equipment/Slots.h"
 #include "Font_Control.h"
 #include "Handle_Items.h"
 #include "Items.h"
@@ -629,11 +632,16 @@ bool ValidAttachment(UINT16 const attachment, UINT16 const item)
 {
 	auto * attachmentModel{ GCM->getItem(attachment, ItemSystem::nothrow) };
 	auto * itemModel{ GCM->getItem(item, ItemSystem::nothrow) };
-	if (attachmentModel && itemModel && itemModel->canBeAttached(GCM->getGamePolicy(), attachmentModel))
+	if (!attachmentModel || !itemModel) return false;
+
+	// Everything that mounts is decided by the typed slot schema: slot roles
+	// and mount kinds, never by a per-item whitelist.
+	if (Equipment::AttachmentFor(attachment) != nullptr)
 	{
-		return true;
+		return itemModel->canBeAttached(GCM->getGamePolicy(), attachmentModel);
 	}
 
+	// Non-mount combinations (detonators and other merge junk).
 	{
 		auto const it = g_attachments.find(attachment);
 		if (it != g_attachments.end() && it->second.count(item) == 1) return true;
@@ -645,8 +653,25 @@ bool ValidAttachment(UINT16 const attachment, UINT16 const item)
 
 BOOLEAN ValidItemAttachment(const OBJECTTYPE* const pObj, const UINT16 usAttachment, const BOOLEAN fAttemptingAttachment)
 {
-	BOOLEAN fSameItem = FALSE, fSimilarItems = FALSE;
-	UINT16  usSimilarItem = NOTHING;
+	// Typed attachments go through the slot schema: same-attachment and
+	// one-per-slot conflicts are structural, decided by the rules.
+	if (const Equipment::AttachmentDef* def = Equipment::AttachmentFor(usAttachment))
+	{
+		const ItemModel* hostModel = GCM->getItem(pObj->usItem, ItemSystem::nothrow);
+		Equipment::SlotPolicy const toggles = Equipment::TogglesFrom(GCM->getGamePolicy());
+		Equipment::Platform const host = hostModel != nullptr ? Equipment::SlotsFor(*hostModel, toggles) : Equipment::Platform{};
+		uint16_t present[Equipment::MAX_HOST_SLOTS] = {};
+		for (int i = 0; i < Equipment::MAX_HOST_SLOTS; ++i) present[i] = pObj->usAttachItem[i];
+
+		Equipment::AttachResult const result = Equipment::CanAttach(host, *def, present, true, toggles);
+		if (result.ok) return TRUE;
+
+		if (fAttemptingAttachment)
+		{
+			ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_ATTACH ], GCM->getItem(usAttachment)->getName(), GCM->getItem(pObj->usItem)->getName()));
+		}
+		return FALSE;
+	}
 
 	if ( !ValidAttachment( usAttachment, pObj->usItem ) )
 	{
@@ -666,56 +691,40 @@ BOOLEAN ValidItemAttachment(const OBJECTTYPE* const pObj, const UINT16 usAttachm
 			return( FALSE );
 		}
 	}
-	// special conditions go here
-	// can't have two of the same attachment on an item
+
+	// non-mount combos: can't have two of the same attachment on an item
 	if (FindAttachment( pObj, usAttachment ) != ITEM_NOT_FOUND)
 	{
-		fSameItem = TRUE;
+		if (fAttemptingAttachment)
+		{
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, g_langRes->Message[ STR_ATTACHMENT_ALREADY ] );
+		}
+		return FALSE;
 	}
 
-	// special code for items which won't attach if X is present
+	// arming rules: a bomb takes one detonator, timed or remote
 	switch( usAttachment )
 	{
-		case BIPOD:
-			if ( FindAttachment( pObj, UNDER_GLAUNCHER) != ITEM_NOT_FOUND )
-			{
-				fSimilarItems = TRUE;
-				usSimilarItem = UNDER_GLAUNCHER;
-			}
-			break;
-		case UNDER_GLAUNCHER:
-			if ( FindAttachment( pObj, BIPOD ) != ITEM_NOT_FOUND )
-			{
-				fSimilarItems = TRUE;
-				usSimilarItem = BIPOD;
-			}
-			break;
 		case DETONATOR:
 			if( FindAttachment( pObj, REMDETONATOR ) != ITEM_NOT_FOUND )
 			{
-				fSameItem = TRUE;
+				if (fAttemptingAttachment)
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_USE_TWO_ITEMS ], GCM->getItem(REMDETONATOR)->getName(), GCM->getItem(usAttachment)->getName()) );
+				}
+				return FALSE;
 			}
 			break;
 		case REMDETONATOR:
 			if( FindAttachment( pObj, DETONATOR ) != ITEM_NOT_FOUND )
 			{
-				fSameItem = TRUE;
+				if (fAttemptingAttachment)
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_USE_TWO_ITEMS ], GCM->getItem(DETONATOR)->getName(), GCM->getItem(usAttachment)->getName()) );
+				}
+				return FALSE;
 			}
 			break;
-	}
-
-	if (fAttemptingAttachment)
-	{
-		if (fSameItem)
-		{
-			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, g_langRes->Message[ STR_ATTACHMENT_ALREADY ] );
-			return( FALSE );
-		}
-		else if (fSimilarItems)
-		{
-			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_USE_TWO_ITEMS ], GCM->getItem(usSimilarItem)->getName(), GCM->getItem(usAttachment)->getName()) );
-			return( FALSE );
-		}
 	}
 
 	return( TRUE );
@@ -1535,8 +1544,19 @@ bool AttachObject(SOLDIERTYPE* const s, OBJECTTYPE* const pTargetObj, OBJECTTYPE
 		}
 		else
 		{
-			// try replacing if possible
-			attach_pos = FindAttachment(&target, attachment.usItem);
+			// A typed attachment takes the slot of its role - never a "first
+			// free position".
+			if (const Equipment::AttachmentDef* def = Equipment::AttachmentFor(attachment.usItem))
+			{
+				const ItemModel* hostModel = GCM->getItem(target.usItem, ItemSystem::nothrow);
+				Equipment::SlotPolicy const toggles = Equipment::TogglesFrom(GCM->getGamePolicy());
+				attach_pos = hostModel != nullptr ? static_cast<INT8>(Equipment::SlotsFor(*hostModel, toggles).IndexOf(def->role)) : NO_SLOT;
+			}
+			else
+			{
+				// try replacing if possible
+				attach_pos = FindAttachment(&target, attachment.usItem);
+			}
 		}
 
 		if (attach_pos == NO_SLOT)

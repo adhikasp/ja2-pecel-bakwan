@@ -351,7 +351,9 @@ void Soldier::switchHeadGear(int switchDirection)
 	{
 		// no optimal gear, but wearing something wrong
 		INT8 freeSlot = getFreePocket();
-		BOOLEAN canAttachToHelmet = gamepolicy(extra_attachments) && helmet->usItem != NONE;
+		// the helmet's NVG mount decides this - by mount type, not by toggle
+		BOOLEAN canAttachToHelmet = helmet->usItem != NONE
+			&& ValidItemAttachment(helmet, currentEyeGear->usItem, FALSE);
 		if (freeSlot != NO_SLOT)
 		{
 			// put in inventory

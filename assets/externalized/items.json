@@ -3582,5 +3582,95 @@
             "type": "P2ITEMS",
             "subIndex": 40
         }
+    },
+    {
+        "itemIndex": 341,
+        "internalName": "LBE_VEST",
+        "shortName": "LBE Vest",
+        "name": "Load-Bearing Vest",
+        "description": "A tactical vest with typed pockets: two utility pockets, one small pocket and one magazine pouch.",
+        "usItemClass": 268435456,
+        "ubClassIndex": 0,
+        "ubCursor": 0,
+        "inventoryGraphics": {
+            "small": {
+                "path": "interface/mdp1items.sti",
+                "subImageIndex": 66
+            },
+            "big": {
+                "path": "bigitems/p1item66.sti"
+            }
+        },
+        "ubWeight": 15,
+        "ubPerPocket": 0,
+        "usPrice": 200,
+        "ubCoolness": 1,
+        "bReliability": 0,
+        "bRepairEase": 0,
+        "bSinks": true,
+        "tileGraphic": {
+            "type": "P1ITEMS",
+            "subIndex": 67
+        }
+    },
+    {
+        "itemIndex": 342,
+        "internalName": "LBE_BELT",
+        "shortName": "Battle Belt",
+        "name": "Battle Belt",
+        "description": "A padded belt with two magazine pouches and two small pockets.",
+        "usItemClass": 268435456,
+        "ubClassIndex": 0,
+        "ubCursor": 0,
+        "inventoryGraphics": {
+            "small": {
+                "path": "interface/mdp2items.sti",
+                "subImageIndex": 21
+            },
+            "big": {
+                "path": "bigitems/p2item21.sti"
+            }
+        },
+        "ubWeight": 5,
+        "ubPerPocket": 0,
+        "usPrice": 100,
+        "ubCoolness": 1,
+        "bReliability": 0,
+        "bRepairEase": 0,
+        "bSinks": true,
+        "tileGraphic": {
+            "type": "P2ITEMS",
+            "subIndex": 22
+        }
+    },
+    {
+        "itemIndex": 343,
+        "internalName": "LBE_PACK",
+        "shortName": "Patrol Pack",
+        "name": "Patrol Pack",
+        "description": "A patrol pack with two large pockets and two utility pockets.",
+        "usItemClass": 268435456,
+        "ubClassIndex": 0,
+        "ubCursor": 0,
+        "inventoryGraphics": {
+            "small": {
+                "path": "interface/mdp1items.sti",
+                "subImageIndex": 86
+            },
+            "big": {
+                "path": "bigitems/p1item86.sti"
+            }
+        },
+        "ubWeight": 30,
+        "ubPerPocket": 0,
+        "usPrice": 300,
+        "ubCoolness": 1,
+        "bReliability": 0,
+        "bRepairEase": 0,
+        "bSinks": true,
+        "tileGraphic": {
+            "type": "P1ITEMS",
+            "subIndex": 87
+        }
     }
 ]
