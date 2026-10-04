@@ -26,38 +26,27 @@ Every screen is being redesigned for modern displays (16:9, 16:10, 21:9; 1280x72
 | ![Native inventory and merc detail panel](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/docs-readme-rewrite/inventory.png) | ![Native route plotting on the strategic map](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/docs-readme-rewrite/route-plotting.png) |
 | Drag-and-drop inventory, attributes, attachments, slot-aware item pictures. | Native confirmation modals and shortcuts replace hand-placed popups. |
 
-## The pitch
+## Where we are headed
 
-- **Native, not upscaled.** Screens are rebuilt on [RmlUi](https://github.com/mikke89/RmlUi) with a "Night Ops" design system: outline fonts, 109 vector icons, fractional DPI scaling. Main menu, options, save/load, new game, strategic map, tactical HUD, laptop, shopkeeper, pre-battle, auto-resolve and the setup screen are native today.
-- **A GPU world renderer.** SDL_GPU tiles and sprites with smooth zoom, matching the software renderer pixel for pixel (0.0000% diff at 1x on D3D12 and Vulkan).
-- **Equipment is a system; combat is a simulation.** Attachments, ammo, condition, NCTH, suppression and morale, stances and detection, medical, melee, breaching.
-- **The world remembers.** A deed ledger tracks whether you are the savior or the next dictator; towns, factions and NPCs react.
-- **The Queen has a mind.** A native emotional drive state and policy layer drive her strategic moves; an optional LLM gives her a voice and reads your free text into a bounded set of intents. The LLM never writes game state, and headless runs use a deterministic stub.
-- **Moddable.** VFS layering and the Lua scripting API stay the mod surface.
+The goal is a **modern Jagged Alliance 2 with a richer game underneath**: one that looks and plays like it was made for a 1440p/4K monitor today, with tactics and a strategic world that push back harder than the 1999 original. Four directions pull in the same line:
 
-## Roadmap
+- **A native, modern presentation.** Every screen is redesigned for widescreen and high DPI instead of stretching a 640x480 box, and the world is drawn by a GPU renderer.
+- **A rich tactical layer.** Equipment is a system (attachments, ammo, condition), combat is a simulation (aim, recoil, suppression, morale, stances, detection, light), and the soldier is a character (traits, medical, encumbrance, melee, breaching).
+- **A rich strategic layer.** A living world that remembers what you did: towns, factions and NPCs react to a deed ledger that says whether you are the savior or the next dictator, while militia, facilities, economy and sector inventory give the map teeth.
+- **An opponent with a mind.** The Queen gets an emotional drive state and a policy layer. An optional LLM gives her a voice and turns your free text into a bounded set of intents; it never writes game state.
 
-The work ships as milestones on GitHub, ordered across tracks on the [JA2 Modernization Roadmap](https://github.com/users/adhikasp/projects/1) board. Plans and decisions live in [docs/plan/](docs/plan) and [docs/ui/](docs/ui).
-
-| Track | Milestones | State |
-|---|---|---|
-| **Modernize graphics** | [Native Modern Graphic](https://github.com/adhikasp/ja2-stracciatella/milestone/9) | Foundations, design system, UI runtime, front end, map, HUD, GPU renderer, laptop, shopkeeper and pre-battle are merged. Left: remaining screens, HD content art, legacy removal. Plan: [native-modern-game.md](docs/plan/native-modern-game.md). |
-| **E2E: play the game in tests** | [Testable Gameplay](https://github.com/adhikasp/ja2-stracciatella/milestone/7) | Deterministic battle harness and save-compatible campaign state authoring landed. Next: assertions (LOS, cover, AP, morale), scenario corpus as AI regression in CI, full-arc campaign and save/load soak. |
-| **Modernize AI** | [AI enhancement](https://github.com/adhikasp/ja2-stracciatella/milestone/6) | Audit and plan; strategic patrols and garrisons, civilian AI, and enemy use of the new equipment systems. |
-| **1.13-inspired tactics** (ideas reimplemented, never ported code) | [Tactical revamp systems](https://github.com/adhikasp/ja2-stracciatella/milestone/10) · [Tactical depth](https://github.com/adhikasp/ja2-stracciatella/milestone/12) · [Combined arms](https://github.com/adhikasp/ja2-stracciatella/milestone/15) | Ammo, attachments, condition, traits/IMP; NCTH, suppression, explosives, medical, melee, mines, weather; tanks, artillery, air strikes. |
-| **Living world** | [NPCs](https://github.com/adhikasp/ja2-stracciatella/milestone/11) · [Reputation & alignment](https://github.com/adhikasp/ja2-stracciatella/milestone/14) · [Strategic management](https://github.com/adhikasp/ja2-stracciatella/milestone/16) | Named NPCs with memory, the deed ledger, militia, facilities, economy, merc lifecycle, sector inventory. |
-| **The Queen** | [Queen's Mind](https://github.com/adhikasp/ja2-stracciatella/milestone/13) | Drive state, policy layer, LLM voice behind a `Brain` interface, negotiation and psyops. |
-| **Content & tooling** | [Content & tooling](https://github.com/adhikasp/ja2-stracciatella/milestone/17) · [CI & Build tooling](https://github.com/adhikasp/ja2-stracciatella/milestone/18) | Map editor, mod API, localization, difficulty presets; faster builds and e2e. |
+What is being worked on right now, and in what order, is on the [issue tracker](https://github.com/adhikasp/ja2-stracciatella/issues), the [milestones](https://github.com/adhikasp/ja2-stracciatella/milestones) and the [JA2 Modernization Roadmap](https://github.com/users/adhikasp/projects/1) board. They change often; this README does not try to track them. The reasoning lives in [docs/plan/](docs/plan) and [docs/ui/](docs/ui).
 
 ## Design principles
 
 These break ties when a plan and a PR disagree (full text in [AGENTS.md](AGENTS.md#game-design-principles)):
 
-1. **The revamp is the game.** On by default, no vanilla mode, no save-format compatibility.
-2. **Native-first.** Rules live in C++, not runtime JSON. `src/externalized/` is for the data the original game shipped with.
-3. **Testable by construction.** Every system has a unit-test surface and a deterministic headless driving surface. If it cannot be asserted headless, it is not done.
-4. **Curate.** Ship a small, balanced set with unit-tested invariants, not a catalog.
-5. **Reimplement ideas, never port code.** Other JA2 projects inspire; their code and data are not imported.
+1. **The revamp is the game.** This is not a preservation project. New mechanics ship on by default, with no vanilla mode and no obligation to keep old saves or old behavior.
+2. **Native-first.** Gameplay systems are C++ in the engine, not runtime JSON rules. `src/externalized/` is for the data the original game shipped with; only a few leaf tunables are exposed as toggles.
+3. **Testable by construction.** Every system has a unit-test surface and a deterministic headless driving surface. If a mechanic cannot be asserted headless, it is not done.
+4. **Curate.** Take the design idea and ship a small, balanced set with unit-tested invariants, not a catalog.
+5. **Reimplement ideas, never port code.** Other JA2 projects (1.13 and friends) inspire; their code, UI and data files are not imported.
+6. **Moddable stays a feature.** VFS layering and the Lua scripting API remain the mod surface.
 
 ## How it's built: agents with a test harness
 
