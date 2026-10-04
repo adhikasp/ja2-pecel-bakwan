@@ -587,7 +587,7 @@ set(CPACK_PACKAGE_DESCRIPTION ${DESCRIPTION})
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "JA2 Pecel Bakwan")
 
 set(CPACK_DEBIAN_PACKAGE_SECTION "games")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/adhikasp/ja2-stracciatella")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/adhikasp/ja2-pecel-bakwan")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl3, libstdc++6, libgcc1, libc6")
 
 set(CPACK_BUNDLE_NAME "JA2 Pecel Bakwan")
@@ -600,7 +600,7 @@ set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
 set(CPACK_NSIS_MUI_FINISHPAGE_RUN "ja2.exe")
 set(CPACK_NSIS_DISPLAY_NAME "JA2 Pecel Bakwan")
 set(CPACK_NSIS_PACKAGE_NAME "JA2 Pecel Bakwan")
-set(CPACK_NSIS_URL_INFO_ABOUT "https://github.com/adhikasp/ja2-stracciatella")
+set(CPACK_NSIS_URL_INFO_ABOUT "https://github.com/adhikasp/ja2-pecel-bakwan")
 
 if(UNIX AND NOT MINGW AND NOT APPLE)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)

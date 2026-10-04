@@ -16,4 +16,4 @@ in the game's options screen.
 
 JA2 Pecel Bakwan is also available for Windows and Linux.
 
-WWW: https://github.com/adhikasp/ja2-stracciatella
+WWW: https://github.com/adhikasp/ja2-pecel-bakwan

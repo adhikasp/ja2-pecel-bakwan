@@ -2,7 +2,7 @@
 
 > Status: **active.** This is the *why*. The *what* and *how* live in the
 > milestones and issues linked below; the track goal is
-> [#203](https://github.com/adhikasp/ja2-stracciatella/issues/203). Board Track:
+> [#203](https://github.com/adhikasp/ja2-pecel-bakwan/issues/203). Board Track:
 > `Revamp gameplay`.
 
 ## Why
@@ -100,23 +100,23 @@ open questions; this doc does not repeat them.
 
 | | Milestone | One line |
 |---|---|---|
-| A | [Downed, not dead](https://github.com/adhikasp/ja2-stracciatella/milestone/19) | Forgiving defeat: downed, wounds, initiative hit chance, capture and rescue |
-| B | [Raids & ambushes](https://github.com/adhikasp/ja2-stracciatella/milestone/20) | Radio clock, enemy roles, ambush and depot raid, armor as a choice |
-| S | [Stealth & disguise](https://github.com/adhikasp/ja2-stracciatella/milestone/21) | Awareness, carried alarms, recon, previews, deterministic outcomes, disguise |
-| C | [Taking a town](https://github.com/adhikasp/ja2-stracciatella/milestone/22) | The readout, leads, contacts, fence, aftermath; one town three ways |
-| D | [Holding vs raiding](https://github.com/adhikasp/ja2-stracciatella/milestone/23) | Upkeep, visibility, fire brigade, abandonment, graceful loss, HQ |
+| A | [Downed, not dead](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/19) | Forgiving defeat: downed, wounds, initiative hit chance, capture and rescue |
+| B | [Raids & ambushes](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/20) | Radio clock, enemy roles, ambush and depot raid, armor as a choice |
+| S | [Stealth & disguise](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/21) | Awareness, carried alarms, recon, previews, deterministic outcomes, disguise |
+| C | [Taking a town](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/22) | The readout, leads, contacts, fence, aftermath; one town three ways |
+| D | [Holding vs raiding](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/23) | Upkeep, visibility, fire brigade, abandonment, graceful loss, HQ |
 
 ## Related
 
-- Queen's Mind: [#179](https://github.com/adhikasp/ja2-stracciatella/issues/179)
+- Queen's Mind: [#179](https://github.com/adhikasp/ja2-pecel-bakwan/issues/179)
   supplies her attention, belief store and levers that this track reads.
-- Living world: the deed ledger ([#113](https://github.com/adhikasp/ja2-stracciatella/issues/113)),
-  named NPCs ([#119](https://github.com/adhikasp/ja2-stracciatella/issues/119)),
-  militia and facilities ([#120](https://github.com/adhikasp/ja2-stracciatella/issues/120),
-  [#121](https://github.com/adhikasp/ja2-stracciatella/issues/121)).
+- Living world: the deed ledger ([#113](https://github.com/adhikasp/ja2-pecel-bakwan/issues/113)),
+  named NPCs ([#119](https://github.com/adhikasp/ja2-pecel-bakwan/issues/119)),
+  militia and facilities ([#120](https://github.com/adhikasp/ja2-pecel-bakwan/issues/120),
+  [#121](https://github.com/adhikasp/ja2-pecel-bakwan/issues/121)).
 - Tactical depth: stealth, suppression and NCTH
-  ([#104](https://github.com/adhikasp/ja2-stracciatella/issues/104),
-  [#103](https://github.com/adhikasp/ja2-stracciatella/issues/103),
-  [#102](https://github.com/adhikasp/ja2-stracciatella/issues/102)).
+  ([#104](https://github.com/adhikasp/ja2-pecel-bakwan/issues/104),
+  [#103](https://github.com/adhikasp/ja2-pecel-bakwan/issues/103),
+  [#102](https://github.com/adhikasp/ja2-pecel-bakwan/issues/102)).
 - The existing issues rescoped by this track carry an update section or a scope
   note pointing back to #203.
