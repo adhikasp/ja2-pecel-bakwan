@@ -168,7 +168,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.find(locator)`, `ja2.exists(locator)` | |
 | `ja2.pixel(x, y)`, `ja2.pixelIs(x, y, "#rrggbb", [tol])` | |
 | `ja2.screenshot(path)` | PNG; relative paths go to `-out`. Returns the full path. |
-| `ja2.state()` | `screen, frame, ms, idle, messageBox, messageBoxText, time{day,hour,minute,totalMinutes,totalSeconds,paused,compressed}, money, sector, laptopMode, tactical{inCombat,currentTeam,ourTurn,enemyInSector,attackBusy, enemies[{name,class,life,lifeMax,gridNo,dead,screenX,screenY}]}, mercs[{name,profile,sector,assignment,assignmentName,life,lifeMax,inSector,gridNo,finalDestination,screenX,screenY}]` |
+| `ja2.state()` | `screen, frame, ms, idle, messageBox, messageBoxText, time{day,hour,minute,totalMinutes,totalSeconds,paused,compressed}, money, sector, laptopMode, tactical{inCombat,currentTeam,ourTurn,enemyInSector,attackBusy, enemies[{name,class,life,lifeMax,gridNo,dead,screenX,screenY}], civilians[{name,profile,life,gridNo,dead}]}, mercs[{name,profile,sector,assignment,assignmentName,life,lifeMax,inSector,gridNo,finalDestination,screenX,screenY}]` |
 | `ja2.gridPos(gridNo, [level])` | Screen point to click to hit that tactical tile. |
 | `ja2.gridAt(x, y)` | Tactical tile under a screen point (or -1). |
 
@@ -200,6 +200,10 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.debug("doormenu", [grid])`, `("pickupmenu")` | Tactical menus directly: the door menu (the nearest door, or the one at `grid`) and the pick-up menu on a small pile of tools at the merc's feet. |
 | `ja2.debug("battle", spec)` | Stage a tactical fight in the loaded sector — enemies, gear, skill points, placement, combat — see [plan/e2e-tactical-battles.md](plan/e2e-tactical-battles.md). Fields: `enemies` (count or `{count,class,weapon,distance,grids}`), `class`, `weapon`, `enemy_weapon`, `armour`, `distance`, `clear`, `start`, and `our` (per-merc `{name,weapon,armour,grid,items,stats}`). |
 | `ja2.debug("fire", gridNo)` | Order the selected merc to shoot at a tile through the real fire-weapon event. |
+| `ja2.debug("campaign", spec)` | Author a whole campaign state on the live globals (money, clock, difficulty, towns, sectors, roster, gear, quests/facts), so a save taken after staging is a real save — see [plan/e2e-campaign-state.md](plan/e2e-campaign-state.md). |
+| `ja2.campaign()` | Read the campaign state back: `day, hour, minute, money, difficulty, towns, sectors, mercs, quests, facts`. |
+| `ja2.debug("entersector", spec)` | Move the team into `spec.sector` and load it in tactical (`clear_enemies`, optional `battle`); the caller waits for `GAME_SCREEN`. |
+| `ja2.debug("npcs", spec)` | Spawn townsfolk (`count`) or named NPCs (`profiles = {"TONY"}`) in the loaded sector; `ja2.state().tactical.civilians` lists them. |
 
 Timeouts report the screen and, if one is open, the message box text, e.g.
 `timed out after 120000 ms waiting for screen MAP_SCREEN (screen:
