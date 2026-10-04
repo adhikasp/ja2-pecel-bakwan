@@ -2,6 +2,13 @@ file(GLOB LOCAL_JA2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 set(LOCAL_JA2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/UiMode.cc ${CMAKE_CURRENT_SOURCE_DIR}/ViewModelLua.cc)
 set_property(SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/ViewModelLua.cc DIRECTORY ${CMAKE_SOURCE_DIR} PROPERTY SKIP_UNITY_BUILD_INCLUSION ON)
 
+# The screen models are pure (no RmlUi): the legacy screens use them too (Intro.cc's exit rules), so they build in
+# every configuration and their unit tests always run.
+list(APPEND LOCAL_JA2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/IntroModel.cc ${CMAKE_CURRENT_SOURCE_DIR}/EpilogueModel.cc)
+if (WITH_UNITTESTS)
+    list(APPEND LOCAL_JA2_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/IntroModel_unittest.cc ${CMAKE_CURRENT_SOURCE_DIR}/EpilogueModel_unittest.cc)
+endif()
+
 if (WITH_NATIVE_UI)
     set(NATIVE_UI_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/NativeUI.cc
@@ -9,6 +16,8 @@ if (WITH_NATIVE_UI)
         ${CMAKE_CURRENT_SOURCE_DIR}/ViewModel.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/GameViewModels.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/CreditsScreen.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/IntroNative.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/EpilogueNative.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/MockScreen.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/MockWorld.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/TacticalHud.cc

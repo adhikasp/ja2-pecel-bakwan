@@ -1,0 +1,44 @@
+/* The native intro/ending cinematic (intro.rml, docs/ui/intro.md). The video fills the layer below: everything
+ * here is the presentation around it — a fading hint bar, a scene track and the still card for a missing video.
+ * Tokens only: no hard-coded colours (assets/ui/tokens.rcss). */
+body.in { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: transparent; }
+
+/* anywhere: skip to the next scene (what the legacy background mouse region did) */
+.in-catch { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+/* a scene that cannot be played stands as a card (§S6) */
+.in-card {
+	position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+	display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--sp-3);
+	background-color: var(--c-void);
+}
+.in-card-count {
+	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-display);
+	text-transform: uppercase; letter-spacing: 6dp; color: var(--c-text-strong);
+}
+.in-card-note { font-size: var(--fs-md); color: var(--c-text-faint); text-transform: uppercase; letter-spacing: 2dp; }
+
+/* the hint bar: scene dots and position left, the skip hints right. It fades out while the player is idle
+ * (docs/ui/intro.md §6: fading hints) and comes back on the next mouse move or key. */
+.in-chrome {
+	position: absolute; left: var(--sp-4); right: var(--sp-4); bottom: var(--sp-5);
+	display: flex; align-items: center; justify-content: space-between;
+	padding: var(--sp-3) var(--sp-4); background-color: var(--c-scrim); border: var(--border) var(--c-line);
+	transition: opacity var(--t-slow) var(--ease);
+}
+.in-chrome.faded { opacity: 0; }
+#intro.compact .in-chrome { padding: var(--sp-2) var(--sp-3); }
+.in-scenes { display: flex; align-items: center; }
+.in-dot { display: block; width: 8dp; height: 8dp; margin-right: var(--sp-2); border-radius: 4dp; background-color: var(--c-line-2); }
+.in-dot.on { background-color: var(--c-accent); }
+.in-count { margin-left: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text); }
+.in-hint { font-size: var(--fs-sm); color: var(--c-text-dim); }
+#intro.compact .in-count, #intro.compact .in-hint { font-size: var(--fs-xs); }
+
+/* the scene's progress along the very bottom edge */
+.in-track { position: absolute; left: 0; right: 0; bottom: 0; height: 2dp; background-color: var(--c-line); }
+.in-track.off { display: none; }
+.in-track .fill { display: block; height: 2dp; background-color: var(--c-accent); }
+
+/* reduced motion: the bar appears and disappears at once */
+#intro.reduced .in-chrome { transition: none; }

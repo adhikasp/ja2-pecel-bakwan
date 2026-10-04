@@ -46,6 +46,7 @@
 #include "Map_Screen_Interface_Border.h"
 #include "Map_Screen_Interface_Map.h"
 #include "HelpScreen.h"
+#include "Intro.h"
 #include "MapScreen.h"
 #include "Merc_Hiring.h"
 #include "Game_Clock.h"
@@ -814,7 +815,8 @@ namespace
 		// easily reach it through play. what = "exitmenu" (a = direction), "placement", "quote"
 		// (a = quote number, spoken by the selected merc), "message" (a = text), "msgbox" (a = text),
 		// "loadscreen" (a = id), "transition" (a = progress 0..1 of the sector-load zoom), "prebattle"
-		// and "autoresolve" (fake a fight in the current sector),
+		// and "autoresolve" (fake a fight in the current sector), "intro" (a = "splash" | "beginning" |
+		// "ending", b = "still"), "epilogue" (the victory epilogue),
 		// "doormenu" (a = the door's grid number, default: the nearest door), "pickupmenu" (a small
 		// pile of tools at the merc's feet and the pick-up menu on it).
 		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a, sol::optional<sol::object> b) {
@@ -1019,6 +1021,26 @@ namespace
 						TeleportSoldier(*npc, beside != NOWHERE ? beside : merc->sGridNo, true);
 					}
 					EnterShopKeeperInterfaceScreen(dealer->profileID);
+				}
+				else if (what == "intro")
+				{
+					// Test aid: play the intro/ending cinematic (docs/ui/intro.md) in any mode from anywhere.
+					// a = "splash" | "beginning" | "ending" (default "ending"); b = "still" plays every scene
+					// as a still card instead of the videos (deterministic screenshots — the real flics are
+					// minutes long).
+					std::string const kind = a && a->is<std::string>() ? a->as<std::string>() : "ending";
+					if (kind == "splash")       SetIntroType(INTRO_SPLASH);
+					else if (kind == "beginning") SetIntroType(INTRO_BEGINING);
+					else if (kind == "ending")  SetIntroType(INTRO_ENDING);
+					else throw std::runtime_error("ja2.debug(\"intro\"): kind must be splash, beginning or ending");
+					SetIntroStillCards(b && b->is<std::string>() && b->as<std::string>() == "still");
+					SetSkipIntroVideos(false);
+					SetPendingNewScreen(INTRO_SCREEN);
+				}
+				else if (what == "epilogue")
+				{
+					// Test aid: the victory epilogue (docs/ui/epilogue.md) over the campaign state as it is now.
+					SetPendingNewScreen(EPILOGUE_SCREEN);
 				}
 				else if (what == "battle")
 				{

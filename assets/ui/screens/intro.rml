@@ -1,0 +1,32 @@
+<rml>
+<head>
+	<title>Intro</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="intro.rcss"/>
+</head>
+<!-- The native intro/ending cinematic (docs/ui/intro.md). The video plays in the layer underneath; this is the
+     presentation over it: the scene indicator, the skip hints and the still card when a video cannot be played.
+     View model: IntroViewModel ("intro"). -->
+<body class="in">
+<div id="intro" data-model="intro" data-event-mousedown="next">
+	<div class="in-catch"></div>
+
+	<div class="in-card" id="intro.card" data-if="card">
+		<span class="in-card-count">{{position}}</span>
+		<span class="in-card-note" data-if="card_note != ''">{{card_note}}</span>
+	</div>
+
+	<div class="in-chrome" id="intro.chrome" data-class-faded="!chrome">
+		<div class="in-scenes" id="intro.scenes">
+			<span class="in-dot" data-for="s : scenes" data-class-on="s.active"></span>
+			<span class="in-count">{{position}}</span>
+		</div>
+		<div class="in-hint">{{hint}}</div>
+	</div>
+
+	<div class="in-track" id="intro.track" data-class-off="progress < 0">
+		<div class="fill" id="intro.track-fill"></div>
+	</div>
+</div>
+</body>
+</rml>

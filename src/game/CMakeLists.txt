@@ -12,6 +12,7 @@ add_and_include_subdirectory("Utils")
 file(GLOB LOCAL_JA2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Credits.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Epilogue.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/UILayout.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Fade_Screen.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/GameInitOptionsScreen.cc
