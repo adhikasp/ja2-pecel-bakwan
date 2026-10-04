@@ -454,13 +454,13 @@ mod vfs {
     use std::path::{Path, PathBuf};
     use std::sync::Arc;
 
-    use serde_json::{Value, json};
     use pecel_bakwan::file_formats::slf::{SlfEntry, SlfEntryState, SlfHeader};
     use pecel_bakwan::fs;
     use pecel_bakwan::fs::{OpenOptions, TempDir};
     use pecel_bakwan::unicode::Nfc;
     use pecel_bakwan::vfs::dir::DirFs;
     use pecel_bakwan::vfs::{Vfs, VfsLayer};
+    use serde_json::{Value, json};
 
     fn read_file_data(vfs: &Vfs, path: &str) -> Vec<u8> {
         let mut file = vfs.open(&Nfc::caseless_path(path)).expect("open");
