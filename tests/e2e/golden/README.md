@@ -4,15 +4,17 @@
 (a pixel differs if any channel is off by more than 8/255; a shot fails if more
 than 0.05% of its pixels differ). Run through `ctest -L resolution`.
 
-For an ordinary UI change, run only 1080p (`ctest -L resolution -R 1920x1080`).
-Run the full matrix only when the change alters how the game renders — a new
-menu, a texture/asset, or the renderer itself. See [../README.md](../README.md#resolution-matrix).
+`ctest -L resolution` is the default sweep and runs only 1080p. Run the full
+matrix (`ctest -R resolution_`) only when the change alters how the game
+renders — a new menu, a texture/asset, or the renderer itself. See
+[../README.md](../README.md#resolution-matrix).
 
 Regenerate after an intentional visual change (from the build dir):
 
     python ../tests/e2e/check_resolution.py ../tests/e2e/laptop_tour.lua 1280x720 --update
 
-or set `JA2_UPDATE_GOLDEN=1` and run `ctest -L resolution`. Review the PNGs
+or set `JA2_UPDATE_GOLDEN=1` and run `ctest -R resolution_` (all resolutions) or
+`ctest -L resolution` (1080p only). Review the PNGs
 before committing.
 
 `--update` skips the (script, resolution) pairs that would register no golden

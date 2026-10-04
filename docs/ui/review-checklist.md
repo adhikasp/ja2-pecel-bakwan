@@ -39,7 +39,7 @@ Open each PNG (not a thumbnail) and check:
 - [ ] Keyboard shortcuts work and are shown in the UI (tooltips or labels)
 - [ ] The layout audit (`ja2.assertInsideScreen()` and its native extension) passes at every size above
 - [ ] Elements are addressable by id for automation (`ja2.ui`, `ja2.click{id=...}`)
-- [ ] `ctest -L e2e`, `ctest -L resolution` and `ja2 -unittests` pass; performance budget (UI ≤ 2 ms per frame at
+- [ ] `ctest -L e2e`, `ctest -R resolution_` and `ja2 -unittests` pass; performance budget (UI ≤ 2 ms per frame at
       4K on the GPU path) is measured and stated
 
 ## 4. The reviewer

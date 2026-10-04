@@ -471,12 +471,16 @@ if (WITH_UNITTESTS)
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>;JA2_WORLD_RENDERER=pipeline")
         # Resolution matrix: every tour at every supported resolution, with a
         # layout check (ja2.assertInsideScreen) and golden-screenshot compare.
+        # `ctest -L resolution` is the default sweep and runs 1080p only; the
+        # other resolutions are opt-in under the `matrix` label, or all of them
+        # by name with `ctest -R resolution_`.
         set(RESOLUTION_MATRIX 640x480 1280x720 1920x1080 2560x1080 3440x1440)
+        set(RESOLUTION_DEFAULT 1920x1080)
         # Longest tour first, so a parallel run fills its slots with the expensive tests instead of
         # leaving one slot to grind through the last long test alone. This order is what ctest uses on
         # a run with no cost data yet (a fresh build); later runs schedule by the measured cost from
         # CTestCostData.txt themselves, which is the same order. The cost here is each script's total
-        # seconds over a full `ctest -L resolution` run, descending; scripts it does not know about
+        # seconds over a full `ctest -R resolution_` run, descending; scripts it does not know about
         # keep the glob's order and follow.
         set(RESOLUTION_HEAVY_FIRST
             mapscreen_parity
@@ -531,10 +535,18 @@ if (WITH_UNITTESTS)
             endforeach()
         endforeach()
         set_tests_properties(${RESOLUTION_TESTS} PROPERTIES
-            LABELS resolution
             TIMEOUT 900
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>"
         )
+        # 1080p is the default sweep (`ctest -L resolution`); the other
+        # resolutions carry the `matrix` label so they are opt-in.
+        foreach(t ${RESOLUTION_TESTS})
+            if(t MATCHES "_${RESOLUTION_DEFAULT}$")
+                set_tests_properties(${t} PROPERTIES LABELS resolution)
+            else()
+                set_tests_properties(${t} PROPERTIES LABELS matrix)
+            endif()
+        endforeach()
         # the map screen tours are long (a campaign, every state) and render in software at 21:9
         foreach(t ${RESOLUTION_TESTS})
             if(t MATCHES "^resolution_mapscreen_")
@@ -543,6 +555,11 @@ if (WITH_UNITTESTS)
         endforeach()
         add_custom_target(run-${JA2_BINARY}-resolution
             COMMAND ctest -L resolution --output-on-failure
+            WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+            DEPENDS "${JA2_BINARY}"
+        )
+        add_custom_target(run-${JA2_BINARY}-resolution-full
+            COMMAND ctest -R resolution_ --output-on-failure
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
             DEPENDS "${JA2_BINARY}"
         )

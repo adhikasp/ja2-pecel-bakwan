@@ -69,13 +69,13 @@ Image-only widgets need `SetName(...)` in C++ to be clickable by label; new anim
 
 ### Golden / resolution suite
 
-`ctest -L resolution` is the comparator suite: every tour at 640x480, 1280x720, 1920x1080, 2560x1080 and 3440x1440, each checked for layout and compared with `tests/e2e/golden/<res>/`.
+`ctest -L resolution` is the comparator suite, and it defaults to **1080p only**: every tour at 1920x1080, checked for layout and compared with `tests/e2e/golden/1920x1080/`.
 
-For a UI change, **test 1080p only by default** — you do not need the full matrix in every resolution unless the change specifically alters how the game renders (for example adding a new menu, or updating a texture):
+For a UI change, this default is enough — you do not need the full matrix in every resolution unless the change specifically alters how the game renders (for example adding a new menu, or updating a texture):
 
 ```bash
-ctest -L resolution -R 1920x1080 --output-on-failure   # the default
-ctest -L resolution --output-on-failure                # full matrix: rendering changes only
+ctest -L resolution --output-on-failure       # the default: 1080p only
+ctest -R resolution_ --output-on-failure      # full matrix: 640x480, 1280x720, 1920x1080, 2560x1080, 3440x1440
 ```
 
 Ordinary UI work — labels, wiring, click handling, a screen's own logic — is not a rendering change and does not need the full sweep. Regenerate goldens with `JA2_UPDATE_GOLDEN=1` (or `check_resolution.py --update`); see `tests/e2e/golden/README.md`.
