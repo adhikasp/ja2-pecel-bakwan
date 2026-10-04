@@ -16,7 +16,7 @@ image saying what to look at. Cover the affected screens at 640x480 AND at
 least one widescreen size (1920x1080; add 2560x1080 or 3440x1440 when the
 layout depends on width). Embed them as:
 
-![map 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-stracciatella/pr-screenshots/<branch-name>/map_1920x1080.png)
+![map 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/<branch-name>/map_1920x1080.png)
 
 Use `python tools/ja2ctl.py shot` to capture them from the real build, and open
 every PNG before requesting review. Golden images prove a screen didn't

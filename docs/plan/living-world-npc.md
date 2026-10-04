@@ -8,7 +8,7 @@
 ## Why
 
 The people and quest content used to be split across four layers with no single
-source of truth and no headless way to read it ([#110 research comment](https://github.com/adhikasp/ja2-stracciatella/issues/110#issuecomment-5975427902)):
+source of truth and no headless way to read it ([#110 research comment](https://github.com/adhikasp/ja2-pecel-bakwan/issues/110#issuecomment-5975427902)):
 
 | Layer | Source | Covered |
 |---|---|---|
@@ -87,5 +87,5 @@ without a screenshot.
   `ApplyQuestTransition`; retire the raw calls.
 - Drive the quest state machine from the registry (givers/resolvers/stages)
   instead of the scattered fact checks.
-- Feed the `opinionSeed` and `homeSectors` into [#119](https://github.com/adhikasp/ja2-stracciatella/issues/119)
+- Feed the `opinionSeed` and `homeSectors` into [#119](https://github.com/adhikasp/ja2-pecel-bakwan/issues/119)
   (named NPCs with opinion and memory).
