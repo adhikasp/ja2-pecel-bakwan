@@ -24,6 +24,7 @@
 #include "Overhead.h"
 #include "QuestText.h"
 #include "Quests.h"
+#include "PeopleContent.h"
 #include "Render_Fun.h"
 #include "SaveLoadGame.h"
 #include "Scheduling.h"
@@ -1737,11 +1738,11 @@ void ConverseFull(UINT8 const ubNPC, UINT8 const ubMerc, Approach bApproach, UIN
 				}
 				if (pQuotePtr->ubEndQuest != NO_QUEST)
 				{
-					EndQuest(pQuotePtr->ubEndQuest, gWorldSector);
+					People::ApplyQuestTransition(pQuotePtr->ubEndQuest, People::QuestChange::End, gWorldSector);
 				}
 				if (pQuotePtr->ubStartQuest != NO_QUEST)
 				{
-					StartQuest(pQuotePtr->ubStartQuest, gWorldSector);
+					People::ApplyQuestTransition(pQuotePtr->ubStartQuest, People::QuestChange::Start, gWorldSector);
 				}
 
 				// Give item to merc?

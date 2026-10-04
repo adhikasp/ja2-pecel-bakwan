@@ -180,6 +180,8 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.load(name, [timeout])` | Loads through the game's own load path (main menu or in game) and waits until done. |
 | `ja2.save(name, [description])` | From the map screen or tactical. |
 | `ja2.quit()` | |
+| `ja2.game.npcs()` | The native people registry ([plan/living-world-npc.md](plan/living-world-npc.md)): `{id, name, kind, homeSectors, placedAtStart, quests[{id, name, role}]}` per named character. |
+| `ja2.game.quests()` | The native quest registry: `{id, name, title, status, selfResolving, givers[], resolvers[], dialogue[], prerequisites[], reward, reputationHook, deedHook, note}` per quest. `status` is the live `gubQuest` value (`NOT_STARTED`, `IN_PROGRESS`, `DONE`), so a script can assert a transition: `ja2ctl eval 'return ja2.game.quests()'`. |
 
 **Checks**
 
