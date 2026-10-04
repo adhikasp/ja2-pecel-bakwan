@@ -146,7 +146,7 @@ Routine: create the issue → add it to the board → `In Progress` when you sta
 
 One public board: **JA2 Modernization Roadmap** — https://github.com/users/adhikasp/projects/1, linked to this repository. It is an ordering view over the issues above, not a second backlog. A new track is a new value in the `Track` field, never a second board.
 
-- **`Track`** — `Modernize graphics` (leftover work from `docs/plan/native-modern-game.md`) · `Modernize AI` · `E2E tactical battles` · `E2E campaign` · `Port 1.13 features` · `Repo & CI`.
+- **`Track`** — `Modernize graphics` (leftover work from `docs/plan/native-modern-game.md`) · `Modernize AI` · `E2E tactical battles` · `E2E campaign` · `Port 1.13 features` · `Revamp gameplay` (design principles in `docs/plan/revamp-gameplay.md`) · `Repo & CI`.
 - **`Kind`** — `Goal` (one objective statement per track) · `Task` (an actionable slice; its body is the definition of done and cites the plan, spec or PR) · `Placeholder` (a track we have claimed but not planned — its first issue is always "write the plan doc", and nothing else under that track starts before that doc exists).
 - **`Status`** — `Backlog` → `Todo` → `In Progress` → `Done`, plus `Blocked` (the issue body says why).
 
