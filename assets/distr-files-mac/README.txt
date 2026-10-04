@@ -1,8 +1,8 @@
-JA2-Stracciatella binary package for Mac OS X
+JA2 Pecel Bakwan binary package for Mac OS X
 
 Extract zip archive with the game.
 
-JA2-Stracciatella can work with many versions of Jagged Alliance 2 data files.
+JA2 Pecel Bakwan can work with many versions of Jagged Alliance 2 data files.
 On the first start the game opens a setup screen where you configure the data
 directory and resource version.
 
@@ -14,6 +14,6 @@ The data directory shall contain:
 You can also configure additional options like the resolution of the game
 in the game's options screen.
 
-JA2-Stracciatella is also available for Windows and Linux.
+JA2 Pecel Bakwan is also available for Windows and Linux.
 
-WWW: https://ja2-stracciatella.github.io
+WWW: https://github.com/adhikasp/ja2-stracciatella

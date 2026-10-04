@@ -165,7 +165,7 @@ static void LoadSaveScreenEntry(void)
 	CreateFileDialog(iCurrentAction == ACTION_SAVE_MAP ? "Save Map (*.dat)" : "Load Map (*.dat)");
 
 	if (gCurrentDirectory == "") {
-		RustPointer<char> currentDirectory(EngineOptions_getStracciatellaHome());
+		RustPointer<char> currentDirectory(EngineOptions_getPecelBakwanHome());
 		ChangeDirectory(currentDirectory.get(), true);
 	} else {
 		ChangeDirectory(gCurrentDirectory, true);

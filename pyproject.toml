@@ -10,9 +10,9 @@
 # tools/ja2ctl.py ...` uses it, and a fresh cmake configure picks it up for
 # ctest. See COMPILATION.md.
 [project]
-name = "ja2-stracciatella-tools"
+name = "ja2-pecel-bakwan-tools"
 version = "0.0.0"
-description = "Python tooling for ja2-stracciatella: ja2ctl, asset tools, e2e harness"
+description = "Python tooling for ja2-pecel-bakwan: ja2ctl, asset tools, e2e harness"
 requires-python = ">=3.12"
 dependencies = [
     "numpy",

@@ -24,9 +24,9 @@
 -keepattributes *Annotation*, InnerClasses
 -dontnote kotlinx.serialization.SerializationKt
 -keep,includedescriptorclasses class com.yourcompany.yourpackage.**$$serializer { *; } # <-- change package name to your app's
--keepclassmembers class io.github.ja2stracciatella.**.* { # <-- change package name to your app's
+-keepclassmembers class io.github.adhikasp.pecelbakwan.**.* { # <-- change package name to your app's
     *** Companion;
 }
--keepclasseswithmembers class io.github.ja2stracciatella.**.* { # <-- change package name to your app's
+-keepclasseswithmembers class io.github.adhikasp.pecelbakwan.**.* { # <-- change package name to your app's
     kotlinx.serialization.KSerializer serializer(...);
 }

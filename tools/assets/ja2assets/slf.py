@@ -1,6 +1,6 @@
 """Reader for SLF archives (Sir-tech Library File), as the game reads them.
 
-Layout (see rust/stracciatella/src/file_formats/slf.rs and LibraryDatabase):
+Layout (see rust/pecel_bakwan/src/file_formats/slf.rs and LibraryDatabase):
   header, 532 bytes: name[256], path[256], int32 entry count (offset 512), int32 ok count,
                      uint16 sort, uint16 version, uint8 contains-subdirs, 3 pad, int32 reserved
   data

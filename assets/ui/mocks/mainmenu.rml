@@ -22,7 +22,7 @@
 	<div class="brand" id="brand">
 		<div class="kicker">Operation Arulco &#183; 1999</div>
 		<div class="title">Jagged Alliance 2</div>
-		<div class="subtitle">Stracciatella</div>
+		<div class="subtitle">Pecel Bakwan</div>
 		<div class="stamp">Top secret</div>
 	</div>
 
@@ -32,7 +32,7 @@
 		<div class="item" id="menu-new"><span class="idx">02</span><span class="label">New Game</span><span class="meta">Difficulty, iron man, sci-fi</span></div>
 		<div class="item" id="menu-load"><span class="idx">03</span><span class="label">Load Game</span><span class="meta">14 saves</span></div>
 		<div class="item" id="menu-options"><span class="idx">04</span><span class="label">Options</span><span class="meta">Video, audio, controls</span></div>
-		<div class="item" id="menu-credits"><span class="idx">05</span><span class="label">Credits</span><span class="meta">Sir-Tech and the Stracciatella team</span></div>
+		<div class="item" id="menu-credits"><span class="idx">05</span><span class="label">Credits</span><span class="meta">Sir-Tech and the Pecel Bakwan team</span></div>
 		<div class="item quit" id="menu-quit"><span class="idx">06</span><span class="label">Quit</span><span class="meta">Back to the desktop</span></div>
 	</div>
 

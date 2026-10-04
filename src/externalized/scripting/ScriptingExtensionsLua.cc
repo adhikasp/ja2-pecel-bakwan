@@ -54,7 +54,7 @@ static void RegisterLogger();
 static void RegisterListener(std::string observable, std::string luaFunctionName);
 static void UnregisterListener(std::string observable, std::string key);
 
-int StracciatellaLoadFileRequire(lua_State* L)
+int PecelBakwanLoadFileRequire(lua_State* L)
 {
 	ST::string path = sol::stack::get<std::string>(L);
 	SLOGD("Loading LUA script file: {}", path);
@@ -119,7 +119,7 @@ void InitScriptingEngine()
 		);
 
 		lua.clear_package_loaders();
-		lua.add_package_loader(StracciatellaLoadFileRequire);
+		lua.add_package_loader(PecelBakwanLoadFileRequire);
 
 		RegisterUserTypes();
 		RegisterGlobals();

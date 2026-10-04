@@ -1118,6 +1118,68 @@ dependencies = [
 ]
 
 [[package]]
+name = "pecel_bakwan"
+version = "0.1.0"
+dependencies = [
+ "bitflags 1.3.2",
+ "byteorder",
+ "caseless",
+ "digest",
+ "dirs",
+ "dunce",
+ "getopts",
+ "hex",
+ "jni 0.19.0",
+ "jni-sys",
+ "json-patch",
+ "json_comments",
+ "jsonschema",
+ "lazy_static",
+ "libc",
+ "log",
+ "lru",
+ "md-5",
+ "ndk",
+ "ndk-sys",
+ "rayon",
+ "regex",
+ "send_wrapper",
+ "serde",
+ "serde_json",
+ "simplelog",
+ "slug",
+ "tempfile",
+ "unicode-normalization",
+ "winapi",
+ "yaml_serde",
+]
+
+[[package]]
+name = "pecel_bakwan_bin"
+version = "0.1.0"
+dependencies = [
+ "clap 2.33.4",
+ "pecel_bakwan",
+ "serde_json",
+]
+
+[[package]]
+name = "pecel_bakwan_c_api"
+version = "0.1.0"
+dependencies = [
+ "byteorder",
+ "cbindgen",
+ "hex",
+ "jni 0.14.0",
+ "libc",
+ "log",
+ "pecel_bakwan",
+ "serde",
+ "serde_json",
+ "tempfile",
+]
+
+[[package]]
 name = "percent-encoding"
 version = "2.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1432,68 +1494,6 @@ name = "stable_deref_trait"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6ce2be8dc25455e1f91df71bfa12ad37d7af1092ae736f3a6cd0e37bc7810596"
-
-[[package]]
-name = "stracciatella"
-version = "0.1.0"
-dependencies = [
- "bitflags 1.3.2",
- "byteorder",
- "caseless",
- "digest",
- "dirs",
- "dunce",
- "getopts",
- "hex",
- "jni 0.19.0",
- "jni-sys",
- "json-patch",
- "json_comments",
- "jsonschema",
- "lazy_static",
- "libc",
- "log",
- "lru",
- "md-5",
- "ndk",
- "ndk-sys",
- "rayon",
- "regex",
- "send_wrapper",
- "serde",
- "serde_json",
- "simplelog",
- "slug",
- "tempfile",
- "unicode-normalization",
- "winapi",
- "yaml_serde",
-]
-
-[[package]]
-name = "stracciatella_bin"
-version = "0.1.0"
-dependencies = [
- "clap 2.33.4",
- "serde_json",
- "stracciatella",
-]
-
-[[package]]
-name = "stracciatella_c_api"
-version = "0.1.0"
-dependencies = [
- "byteorder",
- "cbindgen",
- "hex",
- "jni 0.14.0",
- "libc",
- "log",
- "serde",
- "serde_json",
- "stracciatella",
- "tempfile",
-]
 
 [[package]]
 name = "strsim"

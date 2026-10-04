@@ -110,17 +110,10 @@ public:
 	 * @param validation What happens with invalid character sequences. */
 	ST::string readUTF32(size_t numChars, ST::utf_validation_t validation = ST_DEFAULT_VALIDATION);
 
-	/** Read a string that is either UTF-32 or UTF-16 encoded.
-	 * @param numChars Number of `char32_t` characters to read.
-	 * @param stracLinuxFormat true if the data was written using the
-	   short-lived file format where string were UTF-32 encoded on Unix
-	   platforms or the current, Windows-like file format with UTF-16
-	   encoded strings.	*/
-	auto readString(size_t const numChars, bool const stracLinuxFormat)
+	/** Read a fixed-width string as stored in saved games and binary data: UTF-16.
+	 * @param numChars Number of `char16_t` characters to read. */
+	auto readString(size_t const numChars)
 	{
-		if (stracLinuxFormat) {
-			return readUTF32(numChars, ST_DEFAULT_VALIDATION);
-		}
 		return readUTF16(numChars, true, ST_DEFAULT_VALIDATION);
 	}
 

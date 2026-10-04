@@ -13,7 +13,7 @@ Verify the install with `doxygen --version`.
 
 ### Generating the full documentation
 
-Run this command from the `ja2-stracciatella/docs/cpp/` directory:
+Run this command from the `ja2-pecel-bakwan/docs/cpp/` directory:
 
 ```sh
 doxygen Doxyfile

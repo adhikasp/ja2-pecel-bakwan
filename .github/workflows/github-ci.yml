@@ -239,7 +239,7 @@ jobs:
         set -e
         set -x
         mkdir artifacts
-        for file in ci-build/ja2-stracciatella_*; do
+        for file in ci-build/ja2-pecel-bakwan_*; do
           cp "${file}" artifacts/
         done
     - name: Upload artifacts

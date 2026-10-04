@@ -417,7 +417,7 @@ int main(int argc, char* argv[])
 			}
 		}
 
-		RustPointer<char> configFolderPath(EngineOptions_getStracciatellaHome());
+		RustPointer<char> configFolderPath(EngineOptions_getPecelBakwanHome());
 		if (configFolderPath.get() == NULL) {
 			auto rustError = getRustError();
 			if (rustError != NULL) {
@@ -675,8 +675,8 @@ void TerminationHandler()
 	#ifdef __ANDROID__
 	// Pull out some methods from JNI to set error on NativeExceptionContainer
 	auto jniEnv = (JNIEnv*)SDL_GetAndroidJNIEnv();
-    jclass exceptionContainer = jniEnv->FindClass("io/github/ja2stracciatella/NativeExceptionContainer");
-    jfieldID singletonFieldId = jniEnv->GetStaticFieldID(exceptionContainer, "INSTANCE", "Lio/github/ja2stracciatella/NativeExceptionContainer;");
+    jclass exceptionContainer = jniEnv->FindClass("io/github/adhikasp/pecelbakwan/NativeExceptionContainer");
+    jfieldID singletonFieldId = jniEnv->GetStaticFieldID(exceptionContainer, "INSTANCE", "Lio/github/adhikasp/pecelbakwan/NativeExceptionContainer;");
     jobject exceptionContainerSingleton = jniEnv->GetStaticObjectField(exceptionContainer, singletonFieldId);
     jmethodID setAndroidExceptionMethodId = jniEnv->GetMethodID(exceptionContainer, "setException","(Ljava/lang/String;)V");
 	#endif

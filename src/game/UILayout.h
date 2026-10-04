@@ -11,7 +11,7 @@
 #define NUM_INVENTORY_SLOTS     (19)
 
 /* Following defines allow us to not change the old code too much.
- * It will help to preserve original Stracciatella codebase. */
+ * It will help to preserve the original Stracciatella codebase. */
 
 #define SCREEN_HEIGHT                   (g_ui.m_screenHeight)
 #define SCREEN_WIDTH                    (g_ui.m_screenWidth)

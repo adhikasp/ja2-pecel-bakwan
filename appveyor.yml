@@ -30,7 +30,7 @@ branches:
 matrix:
   fast_finish: true
 
-clone_folder: c:\projects\ja2-stracciatella
+clone_folder: c:\projects\ja2-pecel-bakwan
 clone_depth: 1
 
 cache:
@@ -97,7 +97,7 @@ before_build:
   - cmd: type CMakeCache.txt
 
 build_script:
-  - ps: cmake --build c:\projects\ja2-stracciatella\ci-build --target all --config ${env:BUILD_TYPE}
+  - ps: cmake --build c:\projects\ja2-pecel-bakwan\ci-build --target all --config ${env:BUILD_TYPE}
 
 test_script:
   - cmd: cmake --build . --target cargo-test
@@ -105,9 +105,9 @@ test_script:
 
 after_test:
   - cmd: sccache -s
-  - ps: cmake --build c:\projects\ja2-stracciatella\ci-build --target package
-  - ps: cd c:\projects\ja2-stracciatella
+  - ps: cmake --build c:\projects\ja2-pecel-bakwan\ci-build --target package
+  - ps: cd c:\projects\ja2-pecel-bakwan
   - cmd: bash .ci\ci-publish.sh
 
 artifacts:
-  - path: ci-build\ja2-stracciatella_*
+  - path: ci-build\ja2-pecel-bakwan_*

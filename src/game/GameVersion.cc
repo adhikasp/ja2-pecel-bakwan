@@ -2,7 +2,7 @@
 
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
-#define FULL_VERSION "Stracciatella " TOSTRING(GAME_VERSION)
+#define FULL_VERSION "Pecel Bakwan " TOSTRING(GAME_VERSION)
 
 //
 // Keeps track of the game version

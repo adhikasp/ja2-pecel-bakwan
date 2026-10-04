@@ -33,13 +33,13 @@ UINT32 SoldierProfileChecksum(MERCPROFILESTRUCT const& p)
 
 /**
 * Extract merc profile from the binary data. */
-void ExtractMercProfile(BYTE const* const Src, MERCPROFILESTRUCT& p, bool stracLinuxFormat, UINT32 *checksum, bool const isCorrectlyEncoded)
+void ExtractMercProfile(BYTE const* const Src, MERCPROFILESTRUCT& p, UINT32 *checksum, bool const isCorrectlyEncoded)
 {
 	DataReader S{Src};
 
 	if (isCorrectlyEncoded) {
-		p.zName = S.readString(NAME_LENGTH, stracLinuxFormat);
-		p.zNickname = S.readString(NICKNAME_LENGTH, stracLinuxFormat);
+		p.zName = S.readString(NAME_LENGTH);
+		p.zNickname = S.readString(NICKNAME_LENGTH);
 	}
 	else {
 		p.zName = S.readUTF16(NAME_LENGTH, false);
@@ -201,14 +201,7 @@ void ExtractMercProfile(BYTE const* const Src, MERCPROFILESTRUCT& p, bool stracL
 	EXTR_I32(S, p.iMercMercContractLength)
 	EXTR_U32(S, p.uiTotalCostToDate)
 	EXTR_SKIP(S, 4)
-	if(stracLinuxFormat)
-	{
-		Assert(S.getConsumed() == MERC_PROFILE_SIZE_STRAC_LINUX);
-	}
-	else
-	{
-		Assert(S.getConsumed() == MERC_PROFILE_SIZE);
-	}
+	Assert(S.getConsumed() == MERC_PROFILE_SIZE);
 }
 
 
@@ -216,8 +209,6 @@ void ExtractMercProfile(BYTE const* const Src, MERCPROFILESTRUCT& p, bool stracL
 * If saved checksum is not correct, exception will be thrown. */
 void ExtractImpProfileFromFile(SGPFile *hFile, INT32 *iProfileId, INT32 *iPortraitNumber, MERCPROFILESTRUCT& p)
 {
-	UINT32 fileSize = hFile->size();
-
 	// read in the profile
 	hFile->read(iProfileId, sizeof(INT32));
 
@@ -227,11 +218,9 @@ void ExtractImpProfileFromFile(SGPFile *hFile, INT32 *iProfileId, INT32 *iPortra
 	// read in the profile
 	// not checking the checksum
 	UINT32 checksum;
-	std::array<BYTE, std::max(MERC_PROFILE_SIZE, MERC_PROFILE_SIZE_STRAC_LINUX)> data;
-	bool const isOldUnixFormat{ fileSize >= MERC_PROFILE_SIZE_STRAC_LINUX };
-	hFile->read(data.data(),
-		isOldUnixFormat ? MERC_PROFILE_SIZE_STRAC_LINUX : MERC_PROFILE_SIZE);
-	ExtractMercProfile(data.data(), p, isOldUnixFormat, &checksum, true);
+	std::array<BYTE, MERC_PROFILE_SIZE> data;
+	hFile->read(data.data(), MERC_PROFILE_SIZE);
+	ExtractMercProfile(data.data(), p, &checksum, true);
 }
 
 

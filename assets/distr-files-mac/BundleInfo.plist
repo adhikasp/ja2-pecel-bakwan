@@ -5,15 +5,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
 	<key>CFBundleExecutable</key>
-	<string>JA2 Stracciatella</string>
+	<string>JA2 Pecel Bakwan</string>
 	<key>CFBundleIconFile</key>
-	<string>JA2 Stracciatella</string>
+	<string>JA2 Pecel Bakwan</string>
 	<key>CFBundleIdentifier</key>
-	<string>io.github.ja2-stracciatella</string>
+	<string>io.github.adhikasp.pecelbakwan</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>JA2 Stracciatella</string>
+	<string>JA2 Pecel Bakwan</string>
 	<key>CFBundleShortVersionString</key>
 	<string>0.16.1</string>
 	<key>CFBundleVersion</key>

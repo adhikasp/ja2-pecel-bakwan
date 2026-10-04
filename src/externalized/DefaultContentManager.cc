@@ -106,10 +106,10 @@ DefaultContentManager::DefaultContentManager(RustPointer<EngineOptions> engineOp
 
 	RustPointer<char> vanillaGameDir{EngineOptions_getVanillaGameDir(m_engineOptions.get())};
 
-	RustPointer<char> stracciatellaHome{EngineOptions_getStracciatellaHome()};
+	RustPointer<char> pecelBakwanHome{EngineOptions_getPecelBakwanHome()};
 	RustPointer<char> saveGameDir{EngineOptions_getSaveGameDir(m_engineOptions.get())};
 
-	m_userPrivateFiles = std::make_unique<DirFs>(stracciatellaHome.get());
+	m_userPrivateFiles = std::make_unique<DirFs>(pecelBakwanHome.get());
 	m_saveGameFiles = std::make_unique<DirFs>(saveGameDir.get());
 
 	m_gameVersion = EngineOptions_getResourceVersion(m_engineOptions.get());

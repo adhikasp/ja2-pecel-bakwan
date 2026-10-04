@@ -49,7 +49,7 @@ template<> ScreenID HandleScreen<MAPUTILITY_SCREEN>()
 
 	// Get the names (full path) of all map files in the user's home directory.
 	static auto const mapFiles{ FileMan::findFilesInDir(
-		RustPointer<char>{ EngineOptions_getStracciatellaHome() }.get(),
+		RustPointer<char>{ EngineOptions_getPecelBakwanHome() }.get(),
 		"dat", true, false) };
 
 	// Set the file iterator to the first file.

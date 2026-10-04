@@ -77,7 +77,7 @@ Ordinary UI work — labels, wiring, click handling, a screen's own logic — is
 | `build/externalized/` | JSON data files copied at build time — edit originals in `src/externalized/` |
 
 - Language: C++20 with Lua scripting via sol2.
-- The Rust component (`dependencies/lib-stracciatella`) is a support library — most game code is C++.
+- The Rust component (`dependencies/lib-pecel-bakwan`) is a support library — most game code is C++.
 - `.slf` files are the original JA2 archive format; the VFS layer transparently reads them.
 
 ## Where to look for things

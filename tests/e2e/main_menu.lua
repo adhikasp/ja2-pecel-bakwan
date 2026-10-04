@@ -3,7 +3,7 @@
 local shots = require("lib.shots")
 
 ja2.waitScreen("MAINMENU_SCREEN")
-ja2.expect(ja2.exists("Stracciatella"), "the version line is shown")
+ja2.expect(ja2.exists("Pecel Bakwan"), "the version line is shown")
 -- From 1280x720 up the native main menu runs; mainmenu_parity.lua covers it.
 if ja2.nativeUi().screen == "mainmenu" then return end
 

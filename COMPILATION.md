@@ -9,7 +9,7 @@
 
 ## Optional dependencies
 
-Stracciatella bundles a few other projects for development purposes. If you have them installed already,
+Pecel Bakwan bundles a few other projects for development purposes. If you have them installed already,
 the system version will be used. This holds for: gtest and string theory.
 
 ## Python tooling
@@ -138,11 +138,11 @@ Nothing below is required — each one is picked up automatically when the machi
 
 We suggest to install Rust and Cargo using [rustup](http://rustup.rs/). This way you will get the most recent version
 installed in your home directory. As rust is a rapidly developing language the binaries provided by your distribution
-might be too old to build ja2-stracciatella and its dependencies. When using rustup the correct version of rust should
+might be too old to build ja2-pecel-bakwan and its dependencies. When using rustup the correct version of rust should
 be automatically selected.
 
 If you don't want to use rustup, you can always look up the currently required version in the
-[min-rust-version file](https://github.com/ja2-stracciatella/ja2-stracciatella/blob/master/min-rust-version)
+[min-rust-version file](min-rust-version)
 
 ## Build on Linux or freeBSD
 
@@ -233,7 +233,7 @@ to build 32-bit:
 pacman -S mingw-w64-i686-toolchain mingw-w64-i686-rust mingw-w64-i686-cmake mingw-w64-i686-SDL3 mingw-w64-i686-fltk
 ```
 
-Get ja2-stracciatella, cd into it, and build the package:
+Get ja2-pecel-bakwan, cd into it, and build the package:
 
 ```sh
 mkdir _bin && cd _bin
@@ -278,7 +278,7 @@ If you are most familiar using Visual Studio for development you can generate a 
 
 Install Visual C++, CMake tools, MSBuild and Windows SDK with Visual Studio Installer.
 
-Then in Visual Studio's Developer Command Prompt, change to the ja2-stracciatella project directory, and generate the solution with CMake:
+Then in Visual Studio's Developer Command Prompt, change to the ja2-pecel-bakwan project directory, and generate the solution with CMake:
 
 ```sh
 mkdir _bin

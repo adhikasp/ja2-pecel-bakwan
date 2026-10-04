@@ -1,8 +1,10 @@
-# Jagged Alliance 2 — Stracciatella, Reforged
+# JA2 Pecel Bakwan
 
 > **JA2 rebuilt as the game it always wanted to be.** A native modern front end, a smarter Queen, deeper tactics, a living world — written by AI agents, proven by tests that play the game.
 
-This is a fork of [JA2-Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella). Upstream made Jagged Alliance 2 run everywhere and fixed its bugs while keeping the 1999 game intact. This fork starts from that foundation and goes the other way: **it is not a preservation project.** It is a modern reimplementation of JA2 with a richer tactical and strategic game, and the revamp *is* the game: new mechanics ship on by default, with no "vanilla mode" and no obligation to keep old saves loading.
+JA2 Pecel Bakwan (named after the Javanese street-food combo of vegetables in peanut sauce with a crispy fritter on top) is a fork of [JA2-Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella). Upstream made Jagged Alliance 2 run everywhere and fixed its bugs while keeping the 1999 game intact. This fork starts from that foundation and goes the other way: **it is not a preservation project.** It is a modern reimplementation of JA2 with a richer tactical and strategic game, and the revamp *is* the game: new mechanics ship on by default, with no "vanilla mode" and no obligation to keep old saves loading. It needs your own copy of Jagged Alliance 2 game data; the executable is still called `ja2`.
+
+> **Unofficial fan project.** Not affiliated with or endorsed by the owners of Jagged Alliance. No game data is included or distributed.
 
 [![CI](https://img.shields.io/github/actions/workflow/status/adhikasp/ja2-stracciatella/github-ci.yml?branch=master&label=CI&logo=github)](https://github.com/adhikasp/ja2-stracciatella/actions/workflows/github-ci.yml)
 [![Discord](https://img.shields.io/badge/Discord-The%20Bear%27s%20Pit-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/GqrVZUM)
@@ -89,11 +91,11 @@ Per-machine commands, the automation workflow and the repo layout are documented
 
 The original project was run by Tron from 2006. He cleaned up the JA2 sources and made them portable — over *7000 commits* in the original SVN repository at `svn://tron.homeunix.org/ja2/trunk`. Work ceased in 2010. The [original project homepage](http://tron.homeunix.org/ja2) is gone; some history survives in the [JA2-Stracciatella Q&A](http://thepit.ja-galaxy-forum.com/index.php?t=msg&th=13222) and the [Wayback Machine](https://web.archive.org/web/20140204204243/http://tron.homeunix.org/ja2).
 
-The community then revived the project at [ja2-stracciatella/ja2-stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella), which this fork continues.
+The community then revived the project at [ja2-stracciatella/ja2-stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella), which this fork continues under a new name, since it has diverged far from what upstream is for.
 
 ## License
 
-Unless specified explicitly in the commit message, all changes since `commit 8287b98` are released to the public domain. All libraries in `dependencies/lib-*` have their own licenses.
+This project is **non-commercial**, as the original source code license requires: do not sell it or distribute it for profit. Unless specified explicitly in the commit message, all changes since `commit 8287b98` are released to the public domain. All libraries in `dependencies/lib-*` have their own licenses.
 
 It is not known under which license Tron released his changes; all we know is that the source codes were publicly available in his SVN repository.
 

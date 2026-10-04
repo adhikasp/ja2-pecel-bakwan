@@ -29,7 +29,7 @@ if(SCCACHE_PROGRAM AND USE_SCCACHE)
     set(CMAKE_CXX_COMPILER_LAUNCHER "${SCCACHE_PROGRAM}" CACHE STRING "" FORCE)
 endif()
 
-project(ja2-stracciatella)
+project(ja2-pecel-bakwan)
 set(JA2_BINARY "ja2")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -63,9 +63,9 @@ file(READ "version" BASE_SEMVER_VERSION)
 string(STRIP "${BASE_SEMVER_VERSION}" BASE_SEMVER_VERSION)
 
 include(semver-functions)
-semver_set(ja2-stracciatella_VERSION "${BASE_SEMVER_VERSION}-git")
+semver_set(ja2-pecel-bakwan_VERSION "${BASE_SEMVER_VERSION}-git")
 if (VERSION_TAG)
-    semver_set_prerelease(ja2-stracciatella_VERSION_PRERELEASE "-${VERSION_TAG}")
+    semver_set_prerelease(ja2-pecel-bakwan_VERSION_PRERELEASE "-${VERSION_TAG}")
 endif()
 find_package(Git)
 if (GIT_FOUND)
@@ -77,14 +77,14 @@ if (GIT_FOUND)
         OUTPUT_STRIP_TRAILING_WHITESPACE
     )
     if (NOT failed)
-        list(APPEND ja2-stracciatella_VERSION_BUILDMETADATA "${hash}")
+        list(APPEND ja2-pecel-bakwan_VERSION_BUILDMETADATA "${hash}")
     endif()
 endif()
-semver_rebuild(ja2-stracciatella_VERSION)
-message(STATUS "ja2-stracciatella version: ${ja2-stracciatella_VERSION}")
+semver_rebuild(ja2-pecel-bakwan_VERSION)
+message(STATUS "ja2-pecel-bakwan version: ${ja2-pecel-bakwan_VERSION}")
 
 ## Meta Information
-set(CONTACT "JA2 Stracciatella Team <no-email@ja2-stracciatella.github.io>")
+set(CONTACT "JA2 Pecel Bakwan Team <no-email@users.noreply.github.com>")
 set(DESCRIPTION "An improved, cross-platform, stable Jagged Alliance 2 runtime.")
 
 ## Options
@@ -96,7 +96,7 @@ set(VERSION_TAG "" CACHE STRING "Build date for nightly versioning")
 set(EXTRA_DATA_DIR "" CACHE STRING "Directory for externalized data")
 set(INSTALL_LIB_DIR lib CACHE PATH "Installation directory for libraries")
 set(LOCAL_SDL_LIB "" CACHE STRING "Use local SDL library from this directory")
-# @see CARGO_BUILD_TARGET in dependencies/lib-stracciatella/CMakeLists.txt
+# @see CARGO_BUILD_TARGET in dependencies/lib-pecel-bakwan/CMakeLists.txt
 option(BUILD_SDL_LIB "Build SDL from source" OFF)
 option(LOCAL_GTEST_LIB "Build with local gtest lib" ON)
 option(LOCAL_SMACKER_LIB "Build with local smacker lib" ON)
@@ -164,7 +164,7 @@ endif()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
 
-set(GAME_VERSION "v${ja2-stracciatella_VERSION}")
+set(GAME_VERSION "v${ja2-pecel-bakwan_VERSION}")
 
 message(STATUS "Setting directory for libraries to: ${INSTALL_LIB_DIR}")
 add_definitions(-DINSTALL_LIB_DIR="${INSTALL_LIB_DIR}")
@@ -201,7 +201,7 @@ if(LOCAL_SMACKER_LIB)
 else()
     find_package(Smacker REQUIRED)
 endif()
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lib-stracciatella")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lib-pecel-bakwan")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lib-string_theory")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/dependencies/lib-miniaudio")
 
@@ -245,7 +245,7 @@ target_link_libraries(${JA2_BINARY} PRIVATE
     SDL3::SDL3-shared
     ${GTEST_LIBRARIES}
     smacker
-    ${STRACCIATELLA_LIBRARIES}
+    ${PECEL_BAKWAN_LIBRARIES}
     string_theory-internal
     lua
 )
@@ -260,8 +260,8 @@ if (ANDROID)
     target_link_libraries(${JA2_BINARY} PRIVATE android log)
 endif()
 
-add_dependencies(${JA2_BINARY} stracciatella)
-set_property(SOURCE ${CMAKE_SOURCE_DIR}/src/game/GameVersion.cc APPEND PROPERTY COMPILE_DEFINITIONS "GAME_VERSION=v${ja2-stracciatella_VERSION}")
+add_dependencies(${JA2_BINARY} pecel_bakwan)
+set_property(SOURCE ${CMAKE_SOURCE_DIR}/src/game/GameVersion.cc APPEND PROPERTY COMPILE_DEFINITIONS "GAME_VERSION=v${ja2-pecel-bakwan_VERSION}")
 
 
 ## Copy assets only when their content differs: these commands run after every relink (and
@@ -576,31 +576,31 @@ endif()
 
 ## Installing and Packaging
 
-set(CPACK_PACKAGE_VERSION_MAJOR ${ja2-stracciatella_VERSION_MAJOR})
-set(CPACK_PACKAGE_VERSION_MINOR ${ja2-stracciatella_VERSION_MINOR})
-set(CPACK_PACKAGE_VERSION_PATCH ${ja2-stracciatella_VERSION_PATCH})
-set(CPACK_PACKAGE_VERSION ${ja2-stracciatella_VERSION})
+set(CPACK_PACKAGE_VERSION_MAJOR ${ja2-pecel-bakwan_VERSION_MAJOR})
+set(CPACK_PACKAGE_VERSION_MINOR ${ja2-pecel-bakwan_VERSION_MINOR})
+set(CPACK_PACKAGE_VERSION_PATCH ${ja2-pecel-bakwan_VERSION_PATCH})
+set(CPACK_PACKAGE_VERSION ${ja2-pecel-bakwan_VERSION})
 
 set(CPACK_PACKAGE_CONTACT ${CONTACT})
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY ${DESCRIPTION})
 set(CPACK_PACKAGE_DESCRIPTION ${DESCRIPTION})
-set(CPACK_PACKAGE_INSTALL_DIRECTORY "JA2 Stracciatella")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "JA2 Pecel Bakwan")
 
 set(CPACK_DEBIAN_PACKAGE_SECTION "games")
-set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://ja2-stracciatella.github.io/")
+set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://github.com/adhikasp/ja2-stracciatella")
 set(CPACK_DEBIAN_PACKAGE_DEPENDS "libsdl3, libstdc++6, libgcc1, libc6")
 
-set(CPACK_BUNDLE_NAME "JA2 Stracciatella")
+set(CPACK_BUNDLE_NAME "JA2 Pecel Bakwan")
 set(CPACK_BUNDLE_ICON "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/logo.icns")
 set(CPACK_BUNDLE_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/assets/distr-files-mac/BundleInfo.plist")
 set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/assets/distr-files-mac/ja2-startup.sh")
 
-set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortcut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\JA2 Stracciatella.lnk' '$INSTDIR\\\\ja2.exe' '' '$INSTDIR\\\\logo.ico'")
+set(CPACK_NSIS_CREATE_ICONS_EXTRA "CreateShortcut '$SMPROGRAMS\\\\$STARTMENU_FOLDER\\\\JA2 Pecel Bakwan.lnk' '$INSTDIR\\\\ja2.exe' '' '$INSTDIR\\\\logo.ico'")
 set(CPACK_NSIS_EXECUTABLES_DIRECTORY ".")
 set(CPACK_NSIS_MUI_FINISHPAGE_RUN "ja2.exe")
-set(CPACK_NSIS_DISPLAY_NAME "JA2 Stracciatella")
-set(CPACK_NSIS_PACKAGE_NAME "JA2 Stracciatella")
-set(CPACK_NSIS_URL_INFO_ABOUT "https://ja2-stracciatella.github.io/")
+set(CPACK_NSIS_DISPLAY_NAME "JA2 Pecel Bakwan")
+set(CPACK_NSIS_PACKAGE_NAME "JA2 Pecel Bakwan")
+set(CPACK_NSIS_URL_INFO_ABOUT "https://github.com/adhikasp/ja2-stracciatella")
 
 if(UNIX AND NOT MINGW AND NOT APPLE)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -641,16 +641,16 @@ include(CPack)
 if (UNIX AND NOT MINGW AND NOT APPLE AND NOT ANDROID)
     install(TARGETS ${JA2_BINARY} RUNTIME DESTINATION bin)
     if(WITH_RUST_BINARIES)
-        install(PROGRAMS "${STRACCIATELLA_EXECUTABLES}" DESTINATION bin)
+        install(PROGRAMS "${PECEL_BAKWAN_EXECUTABLES}" DESTINATION bin)
     endif()
     install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/externalized assets/mods assets/unittests DESTINATION share/ja2)
     if(WITH_EDITOR_SLF)
         install(FILES "${EDITORSLF_FILE}" DESTINATION share/ja2/externalized)
     endif()
-    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/distr-files-linux/ja2-stracciatella.desktop DESTINATION share/applications)
+    install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/distr-files-linux/ja2-pecel-bakwan.desktop DESTINATION share/applications)
     install(
         FILES ${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/logo.svg
-        RENAME ja2-stracciatella.svg
+        RENAME ja2-pecel-bakwan.svg
         DESTINATION share/icons/hicolor/scalable/apps)
     install(DIRECTORY "assets/distr-files-linux/man6" TYPE MAN)
 elseif(ANDROID)
@@ -658,7 +658,7 @@ elseif(ANDROID)
 else()
     install(TARGETS ${JA2_BINARY} RUNTIME DESTINATION .)
     if(WITH_RUST_BINARIES)
-        install(PROGRAMS "${STRACCIATELLA_EXECUTABLES}" DESTINATION .)
+        install(PROGRAMS "${PECEL_BAKWAN_EXECUTABLES}" DESTINATION .)
     endif()
     install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/assets/externalized assets/mods assets/unittests DESTINATION .)
     if(WITH_EDITOR_SLF)

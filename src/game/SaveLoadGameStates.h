@@ -29,7 +29,7 @@ typedef std::map<ST::string, STORABLE_TYPE> StateTable;
  * State keys and type should still be pre-determined in code or
  * scripts for it to be usable.
  *
- * This is a Stracciatella-only feature and appends additional data to
+ * This is a Pecel Bakwan-only feature and appends additional data to
  * the end of the save file. The extra data are ignored if the game
  * is loaded in the original base game.
  */

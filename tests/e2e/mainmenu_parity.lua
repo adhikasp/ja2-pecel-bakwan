@@ -25,7 +25,7 @@ end
 
 -- I3/I4: version and copyright; S3: no saves in a fresh home
 local m = ja2.viewModel("mainmenu")
-ja2.expect(m.version:find("Stracciatella"), "the version label is shown: " .. m.version)
+ja2.expect(m.version:find("Pecel Bakwan"), "the version label is shown: " .. m.version)
 ja2.expect(m.copyright:find("Sir%-tech"), "the copyright line is shown")
 ja2.expect(not m.has_saves, "a fresh home has no saves")
 ja2.expect(not ja2.exists{id = "mainmenu.last"}, "no last-save card without saves")
