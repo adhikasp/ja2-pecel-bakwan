@@ -1,0 +1,74 @@
+/* The native victory epilogue (epilogue.rml, docs/ui/epilogue.md): the campaign's last page — the four stat cards,
+ * the war-effort bar and those who served. Tokens only: no hard-coded colours (assets/ui/tokens.rcss). */
+body.ep { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--c-void); }
+.ep-root {
+	position: absolute; left: 0; right: 0; top: 0; bottom: 0; overflow-y: auto;
+	display: flex; flex-direction: column; align-items: center;
+	padding: var(--sp-5) var(--sp-5);
+}
+/* auto margins, not justify-content: center: a centred flex child that does not fit is unreachable above the
+   scroll origin, which would hide the buttons at 150%+ UI scale (docs/ui/epilogue.md §7). */
+.ep-col { display: block; width: 1360dp; max-width: 100%; margin: auto 0; }
+.ep-bg { position: absolute; left: 0; right: 0; top: 0; bottom: 0; decorator: image(gen-mottle repeat); opacity: 0.25; }
+
+.ep-head { display: flex; flex-direction: column; align-items: center; gap: var(--sp-2); margin-bottom: var(--sp-5); }
+.ep-kicker {
+	font-family: var(--font-display); font-weight: 700; font-size: var(--fs-display);
+	text-transform: uppercase; letter-spacing: 8dp; color: var(--c-accent);
+}
+.ep-sub { font-size: var(--fs-md); color: var(--c-text-dim); letter-spacing: 1dp; }
+.ep-text {
+	display: block; max-width: 640dp; margin: 0 auto var(--sp-6);
+	text-align: center; font-size: var(--fs-md); line-height: 1.5; color: var(--c-text);
+}
+
+.ep-stats { display: flex; gap: var(--sp-4); margin-bottom: var(--sp-5); }
+.ep-stat {
+	display: flex; flex: 1 1 0; min-width: 0; flex-direction: column; align-items: center; gap: var(--sp-1);
+	padding: var(--sp-4) var(--sp-3);
+	background-color: var(--c-panel); border: var(--border) var(--c-line);
+}
+.ep-num { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-3xl); color: var(--c-text-strong); }
+.ep-stat .ep-label, .ep-row-head, .ep-effort .ep-label {
+	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xs);
+	text-transform: uppercase; letter-spacing: 2dp; color: var(--c-text-faint);
+}
+.ep-stat .ep-sub { font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--c-text-dim); }
+
+.ep-effort { display: flex; align-items: center; gap: var(--sp-3); width: 100%; margin: 0 auto var(--sp-6); }
+.ep-effort .bar { flex: 1 1 0; }
+.ep-pct { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text); }
+
+.ep-row { margin-bottom: var(--sp-4); }
+.ep-row-head { margin-bottom: var(--sp-2); }
+.ep-chips { display: flex; flex-wrap: wrap; gap: var(--sp-3); }
+.ep-chip {
+	display: flex; align-items: center; gap: var(--sp-2);
+	padding: var(--sp-2) var(--sp-3); background-color: var(--c-panel);
+	border: var(--border) var(--c-line);
+}
+.ep-face { display: block; width: 40dp; height: 40dp; overflow: hidden; background-color: var(--c-inset); border: var(--border) var(--c-inset-line); }
+.ep-face img { width: 100%; height: 100%; }
+.ep-name { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-strong); }
+.ep-badge {
+	font-family: var(--font-display); font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 1dp;
+	color: var(--c-danger); background-color: var(--c-danger-soft); padding: 1dp var(--sp-2);
+}
+.ep-chip .icon { image-color: var(--c-danger); }
+.ep-chip .tooltip { top: -64dp; left: 0; }
+.ep-chip.dead { background-color: var(--c-bg); border-color: var(--c-line); }
+.ep-chip.dead .ep-face img { image-color: #4E4234; }
+.ep-chip.dead .ep-name { color: var(--c-text-dim); }
+
+.ep-actions { display: flex; justify-content: center; gap: var(--sp-4); margin-top: var(--sp-6); }
+
+/* Narrow in dp (below 1500dp: small windows, UI scale 125%+): the page tightens up so the whole story and the
+ * buttons still fit without scrolling. Wide and tall sizes get the full-size page. */
+#epilogue.compact .ep-kicker { font-size: var(--fs-2xl); letter-spacing: 6dp; }
+#epilogue.compact .ep-text { margin-bottom: var(--sp-5); font-size: var(--fs-sm); }
+#epilogue.compact .ep-stat { padding: var(--sp-3) var(--sp-2); }
+#epilogue.compact .ep-num { font-size: var(--fs-2xl); }
+#epilogue.compact .ep-effort { margin-bottom: var(--sp-5); }
+#epilogue.compact .ep-row { margin-bottom: var(--sp-3); }
+#epilogue.compact .ep-face { width: 34dp; height: 34dp; }
+#epilogue.compact .ep-actions { margin-top: var(--sp-4); }

@@ -1,0 +1,65 @@
+<rml>
+<head>
+	<title>Victory epilogue</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="epilogue.rcss"/>
+</head>
+<!-- The native victory epilogue (docs/ui/epilogue.md): the campaign's last page before the credits.
+     View model: EpilogueViewModel ("epilogue"), read once when the screen opens. -->
+<body class="ep">
+<div id="epilogue" data-model="epilogue">
+	<div class="ep-bg"></div>
+	<div class="ep-root">
+	<div class="ep-col">
+		<div class="ep-head">
+			<span class="ep-kicker" id="epilogue.title">{{title}}</span>
+			<span class="ep-sub" id="epilogue.sub">{{sub}}</span>
+		</div>
+		<div class="ep-text" id="epilogue.text">{{text}}</div>
+
+		<div class="ep-stats">
+			<div class="ep-stat" data-for="s : stats" data-attr-id="'epilogue.stat.' + s.key">
+				<span class="ep-num">{{s.value}}</span>
+				<span class="ep-label">{{s.label}}</span>
+				<span class="ep-sub" data-if="s.sub != ''">{{s.sub}}</span>
+			</div>
+		</div>
+
+		<div class="ep-effort" id="epilogue.effort">
+			<span class="ep-label">{{effort_label}}</span>
+			<div class="bar thick"><div class="fill" id="epilogue.effort-fill"></div></div>
+			<span class="ep-pct">{{effort_pct}}</span>
+		</div>
+
+		<div class="ep-row" data-if="has_survivors">
+			<div class="ep-row-head">{{home_label}}</div>
+			<div class="ep-chips">
+				<div class="ep-chip has-tip" data-for="c : survivors" data-attr-id="'epilogue.chip.' + c.profile">
+					<span class="ep-face"><img data-attr-src="c.face"/></span>
+					<span class="ep-name">{{c.name}}</span>
+					<div class="tooltip"><div class="tip-title">{{c.name}}</div><div class="tip-text">{{c.fate}}</div></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="ep-row" data-if="has_fallen">
+			<div class="ep-row-head">{{fallen_label}}</div>
+			<div class="ep-chips">
+				<div class="ep-chip dead has-tip" data-for="c : fallen" data-attr-id="'epilogue.chip.' + c.profile">
+					<span class="ep-face"><img data-attr-src="c.face"/></span>
+					<span class="ep-name">{{c.name}}</span>
+					<img class="icon sm" src="icon-dead"/><span class="ep-badge">{{fallen_badge}}</span>
+					<div class="tooltip"><div class="tip-title">{{c.name}}</div><div class="tip-text">{{c.fate}}</div></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="ep-actions">
+			<button class="btn btn-primary" id="epilogue.continue" data-event-click="continue"><span class="label">{{continue_label}}</span><span class="kbd">Enter</span></button>
+			<button class="btn btn-ghost" id="epilogue.menu" data-event-click="menu"><span class="label">{{menu_label}}</span><span class="kbd">Esc</span></button>
+		</div>
+	</div>
+	</div>
+</div>
+</body>
+</rml>

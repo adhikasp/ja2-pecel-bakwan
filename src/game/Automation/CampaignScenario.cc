@@ -19,6 +19,7 @@
 #include "MercProfile.h"
 #include "Overhead.h"
 #include "Overhead_Types.h"
+#include "PeopleContent.h"
 #include "Quests.h"
 #include "Soldier_Add.h"
 #include "Soldier_Control.h"
@@ -29,6 +30,7 @@
 #include "Squads.h"
 #include "Strategic.h"
 #include "StrategicMap.h"
+#include "Strategic_Status.h"
 #include "Strategic_Town_Loyalty.h"
 #include "Tactical_Placement_GUI.h"
 #include "Text.h"
@@ -133,6 +135,19 @@ namespace
 			{
 				return p->getID();
 			}
+		}
+		// Not a hireable merc: any named profile will do — an NPC like Miguel or Skyrider, whose fate the ending
+		// cinematic's chain asks about (docs/ui/intro.md §S3).
+		for (int p = 0; p < NUM_PROFILES; ++p)
+		{
+			MERCPROFILESTRUCT const& m = gMercProfiles[p];
+			if (IEquals(m.zName.to_std_string(), name) || IEquals(m.zNickname.to_std_string(), name)) return ProfileID(p);
+		}
+		// The compiled people registry knows the named NPCs by their internal name ("MIGUEL", "SKYRIDER") even
+		// before a campaign has loaded the profiles.
+		for (People::NpcDef const& npc : People::NpcDefs())
+		{
+			if (IEquals(npc.name, name)) return npc.id;
 		}
 		throw std::runtime_error("unknown merc \"" + name + "\"");
 	}
@@ -298,6 +313,15 @@ namespace
 		if (name.empty()) throw std::runtime_error("ja2.debug(\"campaign\"): a merc needs a name");
 		ProfileID const pid = ProfileByName(name);
 
+		// A merc who did not come home (the victory epilogue's "the fallen", docs/ui/epilogue.md): what that page
+		// reads is the profile, so mark him without putting a soldier on the team.
+		if (Scenario::BoolField(e, "dead", false))
+		{
+			gMercProfiles[pid].ubMiscFlags |= PROFILE_MISC_FLAG_RECRUITED;
+			gMercProfiles[pid].bMercStatus = MERC_IS_DEAD;
+			return;
+		}
+
 		SGPSector sector = defaultSector;
 		sol::object const sectorObj = e["sector"];
 		if (sectorObj.is<std::string>()) sector = SectorFromString(sectorObj.as<std::string>());
@@ -319,6 +343,8 @@ namespace
 		s->sSector = sector;
 		s->fBetweenSectors = FALSE;
 		ApplyAssignment(*s, AssignmentFrom(Scenario::StrField(e, "assignment", "squad")));
+		// on your team: the flag the game sets when a merc is recruited (ChangeSoldierTeam, RecruitRPC)
+		gMercProfiles[pid].ubMiscFlags |= PROFILE_MISC_FLAG_RECRUITED;
 
 		int const days = Scenario::IntField(e, "contract_days_left", 7);
 		s->iTotalContractLength = days;
@@ -436,6 +462,23 @@ void StageCampaign(sol::table const& spec)
 				gubFact[Scenario::ResolveFact(key.as<std::string>())] = value.as<bool>() ? TRUE : FALSE;
 			}
 		}
+	}
+
+	// 6b. kills: the enemy dead by rank (the victory epilogue reads them, docs/ui/epilogue.md)
+	sol::object const killsObj = spec["kills"];
+	if (killsObj.is<sol::table>())
+	{
+		sol::table const k = killsObj.as<sol::table>();
+		struct { char const* key; int rank; } const ranks[] = {
+			{ "admins", ENEMY_RANK_ADMIN }, { "troops", ENEMY_RANK_TROOP }, { "elites", ENEMY_RANK_ELITE },
+		};
+		for (auto const& r : ranks)
+		{
+			int const n = Scenario::IntField(k, r.key, -1);
+			if (n >= 0) gStrategicStatus.usEnemiesKilled[ENEMY_KILLED_TOTAL][r.rank] = UINT16(std::clamp(n, 0, 65535));
+		}
+		int const player = Scenario::IntField(k, "player", -1);
+		if (player >= 0) gStrategicStatus.usPlayerKills = UINT16(std::clamp(player, 0, 65535));
 	}
 
 	// 7. reconcile the roster with the profiles, then rebuild the map-screen list

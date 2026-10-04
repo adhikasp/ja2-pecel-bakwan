@@ -29,6 +29,7 @@ enum ScreenID
 	QUEST_DEBUG_SCREEN,
 	VIDEO_OPTIONS_SCREEN,
 	UI_SPIKE_SCREEN, // Phase 0 UI toolkit spike (UiSpikeScreen.h)
+	EPILOGUE_SCREEN, // the victory epilogue at the end of the campaign (docs/ui/epilogue.md)
 	MAX_SCREENS,
 
 	NO_PENDING_SCREEN = 0xFFFF

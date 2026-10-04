@@ -46,6 +46,8 @@ std::vector<ModeKey> const& ModeKeys()
 		{ "shopkeeper", "the arms-dealer trade screen",                 UiMode::Native },
 		{ "tactical",   "the tactical HUD (squad bar, inventory, item description, message log)", UiMode::Native },
 		{ "laptop",     "the laptop (e-mail, web sites, finances, ...)", UiMode::Native },
+		{ "intro",      "the intro/ending cinematic (splash, opening, ending)", UiMode::Native },
+		{ "epilogue",   "the victory epilogue at the end of the campaign", UiMode::Native },
 		{ "msgbox",  "message boxes (DoMessageBox and its wrappers)",    UiMode::Legacy },
 		{ "tooltip", "fast help of legacy screens",                      UiMode::Legacy },
 		{ "toasts",  "screen messages shown as toasts",                  UiMode::Legacy },

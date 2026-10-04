@@ -7,6 +7,7 @@
 //
 //------------------------------------------------------------------------------
 
+#include <algorithm>
 #include <cmath>
 #include <vector>
 
@@ -34,6 +35,7 @@ struct SMKFLIC
 	UINT32 top;
 	UINT32 start_tick;
 	UINT32 frame_no;
+	unsigned long total_frames;
 	double milliseconds_per_frame;
 	signed char status;
 };
@@ -97,6 +99,7 @@ void SmkInitialize(void)
 			*sound = NO_SAMPLE;
 		}
 		sf->flags = 0;
+		sf->total_frames = 0;
 	}
 }
 
@@ -151,12 +154,13 @@ SMKFLIC* SmkPlayFlic(const char* const filename, const UINT32 left, const UINT32
 		}
 	}
 
-	// get play speed
-	// the video is too slow using microsecond resolution, speed it up by rounding down to milliseconds
+	// get play speed and length (the frame count is what the native intro screen's progress track shows)
 	double microseconds_per_frame;
-	status = smk_info_all(sf->smacker, nullptr, nullptr, &microseconds_per_frame);
+	unsigned long frame_count = 0;
+	status = smk_info_all(sf->smacker, nullptr, &frame_count, &microseconds_per_frame);
 	Assert(status == 0);
 	sf->milliseconds_per_frame = microseconds_per_frame / 1000.0;
+	sf->total_frames = frame_count;
 
 
 	// Start playing
@@ -255,6 +259,13 @@ static SMKFLIC* SmkGetFreeFlic(void)
 		if (!(sf->flags & SMK_FLIC_OPEN)) return sf;
 	}
 	return nullptr;
+}
+
+
+double SmkProgress(SMKFLIC* const sf)
+{
+	if (!sf || sf->total_frames == 0) return -1.0;
+	return std::min(1.0, double(sf->frame_no) / double(sf->total_frames));
 }
 
 

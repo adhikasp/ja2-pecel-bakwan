@@ -1,5 +1,6 @@
 #include "Auto_Resolve.h"
 #include "EditScreen.h"
+#include "Epilogue.h"
 #include "Fade_Screen.h"
 #include "GameScreen.h"
 #include "Intro.h"
@@ -48,7 +49,8 @@ Screens const GameScreens[] =
 	{ nullptr,              HandleScreen<CREDIT_SCREEN>, nullptr                  },
 	{ QuestDebugScreenInit, QuestDebugScreenHandle,      NULL                     },
 	{ NULL,                 VideoOptionsScreenHandle,    NULL                     },
-	{ nullptr,              UiSpikeScreenHandle,         nullptr                  }
+	{ nullptr,              UiSpikeScreenHandle,         nullptr                  },
+	{ nullptr,              EpilogueScreenHandle,        nullptr                  }
 };
 
 

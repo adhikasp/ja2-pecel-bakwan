@@ -82,10 +82,26 @@ static char const* const gpzSmackerFileNames[] =
 static INT8 gbIntroScreenMode = -1;
 
 static bool gfSkipIntroVideos = false;
+static bool gfIntroStillCards = false;
 
 void SetSkipIntroVideos(bool const skip)
 {
 	gfSkipIntroVideos = skip;
+}
+
+bool SkipIntroVideos(void)
+{
+	return gfSkipIntroVideos;
+}
+
+void SetIntroStillCards(bool const cards)
+{
+	gfIntroStillCards = cards;
+}
+
+bool IntroStillCards(void)
+{
+	return gfIntroStillCards;
 }
 
 
@@ -93,6 +109,14 @@ static void EnterIntroScreen(void);
 static void ExitIntroScreen(void);
 static void GetIntroScreenUserInput(void);
 static void HandleIntroScreen(void);
+
+
+NativeUI::IntroModel::Kind GetIntroKind(void)
+{
+	if (gbIntroScreenMode == INTRO_BEGINING) return NativeUI::IntroModel::Kind::Beginning;
+	if (gbIntroScreenMode == INTRO_SPLASH)   return NativeUI::IntroModel::Kind::Splash;
+	return NativeUI::IntroModel::Kind::Ending;
+}
 
 
 ScreenID IntroScreenHandle(void)
@@ -122,7 +146,6 @@ ScreenID IntroScreenHandle(void)
 
 
 static INT32 GetNextIntroVideo(UINT32 uiCurrentVideo);
-static void PrepareToExitIntroScreen(void);
 static void StartPlayingIntroFlic(INT32 iIndexOfFlicToPlay);
 static void BackgroundRegionCallback(MOUSE_REGION* region, UINT32 reason);
 
@@ -230,32 +253,22 @@ static void BackgroundRegionCallback(MOUSE_REGION* region, UINT32 reason) {
 static void DisplaySirtechSplashScreen(void);
 
 
-static void PrepareToExitIntroScreen(void)
+ScreenID PrepareToExitIntroScreen(void)
 {
-	//if its the intro at the begining of the game
-	if( gbIntroScreenMode == INTRO_BEGINING )
-	{
-		//go to the init screen
-		guiIntroExitScreen = INIT_SCREEN;
-	}
-	else if( gbIntroScreenMode == INTRO_SPLASH )
+	// The exit screen is the pure chain's rule (IntroModel, IntroModel_unittest.cc); the splash shows its logo on
+	// the way out and raises the flag the init screen waits for.
+	if( gbIntroScreenMode == INTRO_SPLASH )
 	{
 		//display a logo when exiting
 		DisplaySirtechSplashScreen();
 
 		gfDoneWithSplashScreen = TRUE;
-		guiIntroExitScreen = INIT_SCREEN;
 	}
-	else
-	{
-		//We want to reinitialize the game
-		ReStartingGame();
 
-//		guiIntroExitScreen = MAINMENU_SCREEN;
-		guiIntroExitScreen = CREDIT_SCREEN;
-	}
+	guiIntroExitScreen = NativeUI::IntroModel::ExitTarget(GetIntroKind());
 
 	gfIntroScreenExit = TRUE;
+	return guiIntroExitScreen;
 }
 
 

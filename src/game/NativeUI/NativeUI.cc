@@ -76,6 +76,8 @@ namespace
 		{ AUTORESOLVE_SCREEN,       "autoresolve", &CreateAutoResolveScreen },
 		{ SHOPKEEPER_SCREEN,        "shopkeeper",  &CreateShopKeeperScreen },
 		{ LAPTOP_SCREEN,            "laptop",   &CreateLaptopScreen },
+		{ INTRO_SCREEN,             "intro",    &CreateIntroScreen },
+		{ EPILOGUE_SCREEN,          "epilogue", &CreateEpilogueScreen },
 	};
 
 	class Runtime final : public VideoOverlay
@@ -477,7 +479,8 @@ bool Runtime::AnythingShown() const
 bool Runtime::NativeCursorShown() const
 {
 	if (!running) return false;
-	if (screen || (msgbox && msgbox->IsVisible())) return true;
+	if (screen) return screen->ShowsCursor();
+	if (msgbox && msgbox->IsVisible()) return true;
 	return ConfiguredMode("cursor") == UiMode::Native && GetCurrentCursorIndex() == CURSOR_NORMAL;
 }
 

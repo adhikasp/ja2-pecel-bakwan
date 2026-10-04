@@ -238,6 +238,17 @@ TEST(NativeUI, shopKeeperScreenIsNativeByDefault)
 	EXPECT_STREQ(ScreenKey(SHOPKEEPER_SCREEN), "shopkeeper");
 }
 
+TEST(NativeUI, introAndEpilogueScreensAreNativeByDefault)
+{
+	// the intro/ending cinematic and the victory epilogue (docs/ui/intro.md, docs/ui/epilogue.md)
+	EXPECT_TRUE(IsModeKey("intro"));
+	EXPECT_EQ(ConfiguredMode("intro"), UiMode::Native);
+	EXPECT_STREQ(ScreenKey(INTRO_SCREEN), "intro");
+	EXPECT_TRUE(IsModeKey("epilogue"));
+	EXPECT_EQ(ConfiguredMode("epilogue"), UiMode::Native);
+	EXPECT_STREQ(ScreenKey(EPILOGUE_SCREEN), "epilogue");
+}
+
 TEST(NativeUI, reducedMotionSetting)
 {
 	SetReducedMotion(true);

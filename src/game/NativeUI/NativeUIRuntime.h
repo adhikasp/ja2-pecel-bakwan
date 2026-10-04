@@ -44,6 +44,9 @@ namespace NativeUI
 		/** The legacy screen underneath is showing something the native screen does not draw (a legacy-only popup):
 		 * the runtime hides nothing but gives the mouse to the legacy regions, and the screen hides its document. */
 		virtual bool PassThrough() const { return false; }
+		/** Whether the native mouse pointer is drawn over the screen. The intro/ending cinematic says no: it is
+		 * pure picture until the player moves the mouse (docs/ui/intro.md §6). */
+		virtual bool ShowsCursor() const { return true; }
 	};
 
 	/** Native screen factories (NativeUI.cc keeps the table). */
@@ -56,6 +59,10 @@ namespace NativeUI
 	std::unique_ptr<Screen> CreateAutoResolveScreen();
 	std::unique_ptr<Screen> CreateShopKeeperScreen();
 	std::unique_ptr<Screen> CreateLaptopScreen();
+	/** The intro/ending cinematic (IntroNative.cc): the Smacker scene chain under a fading hint bar. */
+	std::unique_ptr<Screen> CreateIntroScreen();
+	/** The victory epilogue (EpilogueNative.cc): the campaign's last page before the credits. */
+	std::unique_ptr<Screen> CreateEpilogueScreen();
 	/** The pre-game setup screen (FrontSetup.cc); @a engineOptions is the EngineOptions* RunSetup was given. */
 	std::unique_ptr<Screen> CreateSetupScreen(void* engineOptions);
 	/** Set by the setup screen's Restart / Quit commands; RunSetup stops its frame loop on them. */

@@ -67,7 +67,9 @@ ja2.debug("campaign", {
     { name = "Barry", sector = "A9", assignment = "squad", contract_days_left = 7,
       weapon = "G11", armour = "spectra", health = 100,
       items = { "FIRSTAIDKIT", "CROWBAR" } },
+    { name = "Trevor", dead = true },    -- did not come home: the profile only (the victory epilogue's fallen)
   },
+  kills = { admins = 21, troops = 402, elites = 189, player = 300 },  -- gStrategicStatus's kill counters
   progress = {
     quests = { HELD_IN_ALMA = "done", KINGPIN_MONEY = "in_progress" },
     facts  = { FACT_PABLO_PUNISHED_BY_PLAYER = true },
