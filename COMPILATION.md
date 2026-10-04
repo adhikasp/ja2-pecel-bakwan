@@ -126,6 +126,12 @@ Nothing below is required — each one is picked up automatically when the machi
   shell per recipe line, which is what makes the MSYS Makefiles generator the slow choice on
   Windows. MSYS2: `pacman -S mingw-w64-x86_64-ninja`. A build directory keeps the generator it was
   configured with: switch by configuring a new one.
+- **Precompiled headers** — `ENABLE_PCH` (default `ON`) compiles the standard library once into a
+  `cmake_pch.hxx.gch` snapshot and compiles every translation unit against it instead of parsing
+  `<vector>`, `<map>`, `<string>` and friends again in each of them. The snapshot covers the standard
+  headers the codebase includes in bulk (`src/CMakeLists.txt`); `<iostream>` is deliberately absent
+  because libstdc++ puts a static `ios_base::Init` in it. Measured numbers and the toolchain/CI
+  interactions are in [Precompiled headers: measured](#precompiled-headers-measured) below.
 - **Unity builds** — `-DCMAKE_UNITY_BUILD=ON` compiles batches of translation units together,
   following the `UNITY_GROUP`s set in `src/**/CMakeLists.txt` (sources that must stay on their own
   carry `SKIP_UNITY_BUILD_INCLUSION`). Many fewer translation units to build from scratch; the
@@ -133,6 +139,59 @@ Nothing below is required — each one is picked up automatically when the machi
 - **Dependency bumps** — a changed pin refreshes the downloaded sources for you
   (`cmake/DepRefresh.cmake`), so bumping a dependency in an existing build directory rebuilds what
   depends on it instead of silently linking the old objects against the new headers.
+
+### Precompiled headers: measured
+
+Measured on Windows with the MSYS2 MinGW64 toolchain (GCC, `-O2 -g`, Ninja, sccache, 6-way
+parallelism on a 12-core machine), one *semantic* edit per run so every affected translation unit
+is a real compile — a comment-only change is a cache hit and measures nothing. Same edit with
+`ENABLE_PCH=OFF` and `ON`, wall clock:
+
+| Rebuild after a semantic edit in | TUs recompiled | `ENABLE_PCH=OFF` | `ENABLE_PCH=ON` | |
+| --- | --- | --- | --- | --- |
+| `src/game/Tactical/Soldier_Control.cc` (the per-TU cost, isolated compile) | 1 | 11.0 s | 9.7 s | −12 % |
+| `src/game/Tactical/Soldier_Control.h` | 216 | 5 min 47 s – 6 min 18 s | 4 min 48 s | −17…−24 % |
+| `src/sgp/Types.h` | 431 | 9 min 07 s – 9 min 17 s | 8 min 28 s – 8 min 37 s | −8 % |
+
+The isolated per-TU row is the precise figure (the same translation unit with and without the
+snapshot, interleaved back to back, so the machine's background load hits both equally). The
+cascade rows are wall clock on a machine shared with other builds and e2e runs and drift a few
+percent per hour, hence the ranges — `Types.h`, measured inside one 25-minute window, is the
+representative cascade number. Lighter translation units benefit more (their front-end share is
+bigger): the same comparison goes 8.3 s → 7.3 s on `StrategicMap.cc` (90 KB) and 4.8 s → 4.1 s on
+`Video.cc` (51 KB).
+
+Why the ceiling is where it is: `-ftime-report` on a typical translation unit splits roughly 40 %
+front end (parser, name lookup, template instantiation) and 60 % code generation, optimisation and
+debug info (`symout`, variable tracking) at `-O2 -g`. A snapshot only removes the standard
+library's share of the front end, so this is a free ~10 %, not a factor of two — and an edit in a
+*project* header still recompiles every translation unit that includes it, because the snapshot
+does not cover our own headers. For the bigger levers see sccache and unity builds above.
+
+What was tried and dropped: adding `<string_theory/string>` and `<string_theory/format>` (included
+by 247 and 126 TUs) to the snapshot measured no further gain. string_theory's cost is template
+instantiation at the point of use, which no snapshot can precompute.
+
+**sccache** — unaffected in both directions: a compile that uses the snapshot is still cacheable,
+still a cache hit after a revert, and still worth sharing across worktrees. The snapshot is part
+of the preprocessed output sccache hashes, so the first build after switching `ENABLE_PCH` or
+after editing the header list below recompiles everything once.
+
+**MSYS2/MinGW64** — works with the GCC in MSYS2. `-Winvalid-pch` is already in the compile flags,
+so a snapshot GCC refuses warns instead of silently costing time. The one trap: a tool that
+re-quotes a compile command (`-DINSTALL_LIB_DIR=\"lib\"` must keep its backslashes until GCC sees
+it) makes GCC reject the snapshot with `not used because 'INSTALL_LIB_DIR' defined as ...`; the
+build system passes the quoting correctly, hand-rolled tooling around `compile_commands.json` can
+trip over it.
+
+**CI and cross builds** — `ENABLE_PCH` is a plain `target_precompile_headers` on the one `ja2`
+target, so every build gets it: the Linux and mingw64 CI jobs, package builds, cross builds from
+Linux, macOS and Android. The snapshot is generated per build directory and per toolchain, so
+nothing is shared between platforms and nothing can leak across them.
+
+**Existing build directories** — the value in `CMakeCache.txt` wins over the new default, so a
+build directory configured before this keeps its setting. `cmake -B <dir> -DENABLE_PCH=ON` (or
+`=OFF`) switches one over; the next build recompiles everything once.
 
 ## Rust notes
 
@@ -312,6 +371,7 @@ cmake. The supported options are:
 | `EXTRA_DATA_DIR` | Directory to read externalized data from relative to binary location. Useful for creating installable packages that have a fixed data path. | `` |
 | `LOCAL_SDL_LIB` | Use SDL library from this directory. | `` |
 | `WITH_UNITTESTS` | Build with unit tests | `ON` |
+| `ENABLE_PCH` | Precompile the standard library; every translation unit compiles against the snapshot (see [Faster builds](#faster-builds)) | `ON` |
 | `WITH_FIXMES` | Build with fixme messages | `OFF` |
 | `WITH_MAEMO` | Build with right click mapped to F4 (menu button) | `OFF` |
 | `WITH_EDITOR_SLF` | Download the latest free editor.slf during build | `OFF` |

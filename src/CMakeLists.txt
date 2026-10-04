@@ -1,7 +1,7 @@
 message(STATUS "Entering src directory")
 
 option(ENABLE_ASSERTS "Assertion failures terminate the program (always enabled in Debug)" OFF)
-option(ENABLE_PCH "Use precompiled standard library headers during compilation" OFF)
+option(ENABLE_PCH "Use precompiled standard library headers during compilation" ON)
 option(WITH_ASAN "Build with address sanitizer" OFF)
 option(WITH_FIXMES "Build with fixme messages" OFF)
 option(WITH_MAEMO "Build with right click mapped to F4 (menu button)" OFF)
@@ -47,24 +47,66 @@ if (WITH_ASAN)
 endif()
 
 if(ENABLE_PCH)
+    # The standard library the codebase includes in bulk; every one of these is
+    # parsed by most translation units, so precompiling them cuts the per-TU
+    # parse cost. `<iostream>` is deliberately absent: libstdc++ puts a static
+    # `ios_base::Init` in it, which would then be constructed in every TU.
     target_precompile_headers(${JA2_BINARY} PRIVATE
         <algorithm>
         <array>
+        <atomic>
+        <bitset>
+        <cassert>
+        <cctype>
+        <cerrno>
+        <charconv>
         <chrono>
+        <climits>
         <cmath>
+        <cstdarg>
+        <cstddef>
+        <cstdint>
+        <cstdio>
+        <cstdlib>
+        <cstring>
+        <ctime>
+        <deque>
+        <exception>
+        <filesystem>
+        <forward_list>
+        <fstream>
         <functional>
+        <initializer_list>
+        <iterator>
+        <limits>
+        <locale>
         <map>
         <memory>
+        <mutex>
+        <new>
         <numeric>
         <optional>
+        <ostream>
+        <queue>
         <random>
+        <regex>
         <set>
         <span>
+        <sstream>
         <stdexcept>
         <stdint.h>
+        <stdio.h>
         <stdlib.h>
+        <string>
+        <string.h>
+        <string_view>
+        <thread>
+        <tuple>
         <type_traits>
+        <typeinfo>
+        <unordered_map>
         <utility>
+        <variant>
         <vector>
     )
 endif()
