@@ -11,18 +11,18 @@ MSYS2 MinGW64 environment itself, so no more `MSYSTEM=MINGW64 bash -lc ...`):
     python tools/dev.py run [args]  # play the game
 
 `setup` configures the build directory (`_bin` on Windows, `build` elsewhere)
-with Ninja, sccache and lld when the machine has them, runs `uv sync`, checks
-`game_dir`, and - on Windows - gives a long worktree path a short `subst`
-drive so the build cannot hit MAX_PATH. It is safe to run any number of times.
+with Ninja, sccache and lld when the machine has them, runs `uv sync` and
+checks `game_dir`. It is safe to run any number of times.
 
-Builds set `SCCACHE_BASEDIRS` to the worktree root, so sccache stops hashing
-absolute paths and every worktree shares one cache: build `master` once and a
-fresh worktree of the same code reuses those objects instead of recompiling
-the world.
-
-`build` and `e2e` take a machine-wide job semaphore, so several agents on one
-machine share the CPU instead of oversubscribing it (override with JA2_JOBS or
---jobs). A build directory is only ever built by one process at a time.
+Every worktree builds through the same machine-wide build path (a `subst`
+drive letter on Windows, a symlink elsewhere), so compile commands - and with
+them the compiler cache keys - are identical between worktrees: build `master`
+once and a fresh worktree of the same code reuses those objects in minutes
+instead of recompiling the world. The build path also keeps deep worktrees
+(agent worktrees!) far below Windows' MAX_PATH. Because the mapping is
+exclusive, builds and full e2e runs across worktrees take turns; `build` and
+`e2e` also cap parallel jobs through a machine-wide semaphore (override with
+JA2_JOBS or --jobs) and one process builds a build directory at a time.
 
 `bootstrap` is "setup + build". Agent sessions run `python tools/dev.py
 bootstrap --auto` on start (wired up in `.opencode/plugins/dev-bootstrap/` and
@@ -48,16 +48,15 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 IS_WINDOWS = os.name == "nt"
 BUILD_DIR_NAME = "_bin" if IS_WINDOWS else "build"
-# A build directory holds deep object paths (cargo's target/ tree is the worst
-# offender). Worktree roots longer than this get built through a `subst` drive.
-SHORT_PATH_AT = 40
 MSYS2_ROOT = Path(os.environ.get("MSYS2_ROOT", r"C:\msys64"))
 JA2_EXE = "ja2" + (".exe" if IS_WINDOWS else "")
 TOOL_WHICH = {}
-# The root every build path is spelled from (a subst drive on Windows); set by
-# ensure_short_root(). sccache hashes absolute paths, so it is also handed to
-# sccache as a basedir to make caches match across worktrees (see tool_run).
-BUILD_ROOT = None
+# Every worktree compiles through the same build path (a machine-wide `subst`
+# drive on Windows, a symlink elsewhere). Compile commands are then spelled
+# identically in every worktree, so the compiler cache is shared between them:
+# a build of master warms what a fresh worktree reuses. The path is exclusive,
+# so builds and full e2e runs across worktrees take turns (see build_path).
+SHARED_PATH_LETTERS = "WVUTSRQPONMLKJIHGFED"
 
 
 # --- small helpers ----------------------------------------------------------
@@ -91,7 +90,7 @@ def state_dir() -> Path:
     return user_home() / ".ja2-dev"
 
 
-# --- Windows: short paths for long worktrees --------------------------------
+# --- the shared build path --------------------------------------------------
 
 def subst_map() -> dict:
     """Currently mapped subst drives: {"W:": "C:\\target", ...}."""
@@ -115,56 +114,89 @@ def drive_used(letter: str) -> bool:
 
 
 def free_drive_letter() -> str | None:
-    for letter in reversed("EFGHIJKLMNOPQRSTUVWXYZ"):
+    for letter in SHARED_PATH_LETTERS:
         candidate = letter + ":"
         if not drive_used(candidate):
             return candidate
     return None
 
 
-def ensure_short_root(repo: Path) -> Path:
-    """A path to the worktree root that is short enough to build under.
-
-    On Windows a long worktree (agent worktrees live in deep directories) gets
-    a `subst` drive letter pointing at it, so source *and* build paths stay
-    well under MAX_PATH. The mapping is remembered in the state directory and
-    re-created when it is gone (a reboot drops it).
-    """
-    global BUILD_ROOT
-    result = repo
+def map_shared_path() -> Path:
+    """Point the machine-wide build path at this worktree and return it."""
+    state = state_dir()
+    state.mkdir(parents=True, exist_ok=True)
     if IS_WINDOWS:
-        real = str(repo)
-        if len(real) > SHORT_PATH_AT:
-            result = repo
-            for letter, target in subst_map().items():
-                if os.path.normcase(target.rstrip("\\/")) == os.path.normcase(real):
-                    result = Path(letter + "/")
-                    break
-            else:
-                state = state_dir()
-                state.mkdir(parents=True, exist_ok=True)
-                db = state / "drives.json"
-                try:
-                    recorded = json.loads(db.read_text(encoding="utf-8"))
-                except (OSError, ValueError):
-                    recorded = {}
-                letter = (recorded.get(real) or {}).get("letter")
-                if not letter or drive_used(letter):
-                    letter = free_drive_letter()
-                    if not letter:
-                        warn(f"no free drive letter for a short path; building under {real} (may hit MAX_PATH)")
-                        BUILD_ROOT = result
-                        return result
-                    recorded[real] = {"letter": letter, "target": real}
-                    db.write_text(json.dumps(recorded, indent=2), encoding="utf-8")
-                subst = shutil.which("subst") or str(Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "subst.exe")
-                if subprocess.run([subst, letter, real]).returncode == 0:
-                    log(f"short path {letter}\\ -> {real}")
-                    result = Path(letter + "/")
-                else:
-                    warn(f"`subst {letter} {real}` failed; building under {real} (may hit MAX_PATH)")
-    BUILD_ROOT = result
-    return result
+        db = state / "buildpath.json"
+        try:
+            letter = json.loads(db.read_text(encoding="utf-8")).get("letter")
+        except (OSError, ValueError):
+            letter = None
+        if not letter or not re.fullmatch(r"[A-Za-z]:", str(letter)):
+            letter = free_drive_letter()
+            if not letter:
+                warn("no free drive letter for the shared build path; building under the real path (no cache sharing)")
+                return REPO
+            db.write_text(json.dumps({"letter": letter}), encoding="utf-8")
+        letter = letter.upper()
+        subst = shutil.which("subst") or str(Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "subst.exe")
+        if os.path.normcase(subst_map().get(letter, "")) != os.path.normcase(str(REPO)):
+            subprocess.run([subst, letter, "/D"], capture_output=True)
+            if subprocess.run([subst, letter, str(REPO)]).returncode != 0:
+                warn(f"`subst {letter} {REPO}` failed; building under the real path (no cache sharing)")
+                return REPO
+            log(f"build path {letter}\\ -> {REPO}")
+        return Path(letter + "/")
+    link = state / "buildpath"
+    try:
+        if link.is_symlink() or link.exists():
+            if link.resolve() == REPO.resolve():
+                return link
+            link.unlink()
+        link.symlink_to(REPO, target_is_directory=True)
+    except OSError as exc:
+        warn(f"cannot maintain the shared build path symlink {link}: {exc}; using the real path (no cache sharing)")
+        return REPO
+    return link
+
+
+@contextlib.contextmanager
+def build_path():
+    """Map the shared build path onto this worktree; one holder at a time.
+
+    Every worktree compiles through the same path (a `subst` drive letter on
+    Windows, a symlink elsewhere), so compile commands - and with them the
+    compiler cache keys - are identical between worktrees and a build of one
+    tree warms every other tree of the same code. The mapping is exclusive, so
+    builds and full e2e runs across worktrees take turns on the machine.
+    """
+    lock = state_dir() / "buildpath.lock"
+    owner = json.dumps({"pid": os.getpid(), "target": str(REPO), "started": time.time()})
+    waiting = None
+    while True:
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            os.write(fd, owner.encode())
+            os.close(fd)
+            break
+        except FileExistsError:
+            try:
+                rec = json.loads(lock.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                rec = {}
+            if not pid_alive(rec.get("pid")):
+                lock.unlink(missing_ok=True)
+                continue
+            if waiting is None:
+                waiting = time.time()
+                log(f"waiting for the shared build path (pid {rec.get('pid')} holds it for {rec.get('target')}) ...")
+            elif time.time() - waiting > 60:
+                waiting = time.time()
+                log(f"still waiting for pid {rec.get('pid')} to release the build path ...")
+            time.sleep(2)
+    try:
+        yield map_shared_path()
+    finally:
+        lock.unlink(missing_ok=True)
 
 
 # --- the tool environment ---------------------------------------------------
@@ -186,28 +218,14 @@ def posix(path: Path) -> str:
     return (f"/{m.group(1).lower()}/{tail}" if m else tail).rstrip("/") or "/"
 
 
-def sccache_base_dirs(root: Path) -> str:
-    """Every spelling of the build root, for SCCACHE_BASEDIRS.
-
-    sccache hashes absolute paths, so without this every worktree is its own
-    cache island. With the build root stripped, all worktrees compile to the
-    same key and a build of master warms the cache every worktree reuses.
-    """
-    dirs = [str(root)]
-    if str(REPO) not in dirs:
-        dirs.append(str(REPO))
-    return (";" if IS_WINDOWS else ":").join(dirs)
-
-
 def tool_run(cmd: str, cwd: Path, capture: bool = False):
     """Run a build-tool command inside the tool environment (MSYS2 MinGW64)."""
-    base_dirs = sccache_base_dirs(BUILD_ROOT or REPO)
     if IS_WINDOWS:
         argv = [str(bash_exe()), "-lc", f"cd '{posix(cwd)}' && {cmd}"]
-        env = dict(os.environ, MSYSTEM="MINGW64", SCCACHE_BASEDIRS=base_dirs)
+        env = dict(os.environ, MSYSTEM="MINGW64")
     else:
         argv = ["/bin/bash", "-lc", f"cd {shlex.quote(str(cwd))} && {cmd}"]
-        env = dict(os.environ, SCCACHE_BASEDIRS=base_dirs)
+        env = None
     return subprocess.run(argv, env=env, capture_output=capture, text=True)
 
 
@@ -388,10 +406,6 @@ def check_game_dir(quiet: bool = False):
         log(f"game_dir: {game_dir}")
 
 
-def build_dir_of(root: Path) -> Path:
-    return root / BUILD_DIR_NAME
-
-
 def is_configured(build_dir: Path) -> bool:
     return (build_dir / "CMakeCache.txt").exists()
 
@@ -420,7 +434,8 @@ def configure(root: Path, build_dir: Path, quiet: bool = False):
             die("cmake configure failed; see the output above")
         stamp = build_dir / ".dev-setup.json"
         stamp.write_text(json.dumps({"generator": "Ninja" if ninja else "default",
-                                     "venv": venv_python() is not None, "time": time.time()}), encoding="utf-8")
+                                     "venv": venv_python() is not None,
+                                     "root": str(root), "time": time.time()}), encoding="utf-8")
 
 
 def stamp_stale(build_dir: Path) -> bool:
@@ -432,11 +447,22 @@ def stamp_stale(build_dir: Path) -> bool:
     return bool(stamp.get("venv")) != (venv_python() is not None)
 
 
+def configured_root(build_dir: Path):
+    try:
+        return json.loads((build_dir / ".dev-setup.json").read_text(encoding="utf-8")).get("root")
+    except (OSError, ValueError):
+        return None
+
+
 def setup(root: Path, build_dir: Path, quiet: bool = False):
-    if root != REPO:
-        log(f"long worktree path ({len(str(REPO))} chars): building through {root} -> {REPO}")
     check_game_dir(quiet)
     sync_venv(quiet)
+    if is_configured(build_dir) and configured_root(build_dir) != str(root):
+        # the build path changed (first run on the shared path, or a new letter):
+        # every path baked into the build files would change, so start it over
+        if not quiet:
+            log(f"{build_dir} was configured for {configured_root(build_dir)}; reconfiguring for {root}")
+        shutil.rmtree(build_dir, ignore_errors=True)
     if is_configured(build_dir) and not stamp_stale(build_dir):
         if not quiet:
             log(f"{build_dir} already configured ({generator_of(build_dir) or 'unknown generator'})")
@@ -445,7 +471,7 @@ def setup(root: Path, build_dir: Path, quiet: bool = False):
 
 
 def setup_if_needed(root: Path, build_dir: Path):
-    if not is_configured(build_dir) or stamp_stale(build_dir):
+    if not is_configured(build_dir) or stamp_stale(build_dir) or configured_root(build_dir) != str(root):
         setup(root, build_dir, quiet=True)
 
 
@@ -464,70 +490,71 @@ def build_binary(root: Path, build_dir: Path, jobs, target=None) -> int:
 
 
 def cmd_setup(args):
-    root = ensure_short_root(REPO)
-    setup(root, build_dir_of(root), quiet=args.quiet)
-    log(f"ready: {build_dir_of(root)} (run: python tools/dev.py build)")
+    with build_path() as root:
+        build_dir = root / BUILD_DIR_NAME
+        setup(root, build_dir, quiet=args.quiet)
+        log(f"ready: {build_dir} (run: python tools/dev.py build)")
 
 
 def cmd_build(args):
-    root = ensure_short_root(REPO)
-    build_dir = build_dir_of(root)
-    setup_if_needed(root, build_dir)
-    sys.exit(build_binary(root, build_dir, args.jobs, args.target))
+    with build_path() as root:
+        build_dir = root / BUILD_DIR_NAME
+        setup_if_needed(root, build_dir)
+        sys.exit(build_binary(root, build_dir, args.jobs, args.target))
 
 
 def cmd_test(args):
-    root = ensure_short_root(REPO)
-    build_dir = build_dir_of(root)
-    setup_if_needed(root, build_dir)
-    if not args.no_build:
-        rc = build_binary(root, build_dir, args.jobs)
-        if rc:
-            sys.exit(rc)
-    binary = build_dir / JA2_EXE
+    with build_path() as root:
+        build_dir = root / BUILD_DIR_NAME
+        setup_if_needed(root, build_dir)
+        if not args.no_build:
+            rc = build_binary(root, build_dir, args.jobs)
+            if rc:
+                sys.exit(rc)
+    binary = REPO / BUILD_DIR_NAME / JA2_EXE  # the real path: no build path needed to run
     if not binary.exists():
         die(f"{binary} does not exist; run: python tools/dev.py build")
     argv = [str(binary), "-unittests"] + args.args
     log(" ".join(shlex.quote(a) for a in argv))
-    sys.exit(subprocess.run(argv, cwd=str(build_dir), env=binary_env()).returncode)
+    sys.exit(subprocess.run(argv, cwd=str(REPO / BUILD_DIR_NAME), env=binary_env()).returncode)
 
 
 def cmd_e2e(args):
-    root = ensure_short_root(REPO)
-    build_dir = build_dir_of(root)
-    setup_if_needed(root, build_dir)
-    if not args.no_build:
-        rc = build_binary(root, build_dir, args.jobs)
-        if rc:
-            sys.exit(rc)
-    if args.args and (args.args[0].endswith((".lua", ".txt")) or (REPO / args.args[0]).exists()):
-        # one script: tools/ja2ctl.py run <script> [--isolated] [--show] ...
-        argv = [sys.executable, str(REPO / "tools" / "ja2ctl.py"), "run"] + args.args
-        log(" ".join(shlex.quote(a) for a in argv))
-        sys.exit(subprocess.run(argv, cwd=str(REPO), env=binary_env()).returncode)
-    with job_slots("e2e", args.jobs) as jobs:
-        cmd = f"ctest -L e2e --output-on-failure --parallel {jobs}"
-        if args.args:
-            cmd += " " + " ".join(shlex.quote(a) for a in args.args)
-        log(cmd)
-        sys.exit(tool_run(cmd, build_dir).returncode)
+    with build_path() as root:  # ctest's test commands bake the build path in, so hold it
+        build_dir = root / BUILD_DIR_NAME
+        setup_if_needed(root, build_dir)
+        if not args.no_build:
+            rc = build_binary(root, build_dir, args.jobs)
+            if rc:
+                sys.exit(rc)
+        if args.args and (args.args[0].endswith((".lua", ".txt")) or (REPO / args.args[0]).exists()):
+            # one script: tools/ja2ctl.py run <script> [--isolated] [--show] ...
+            argv = [sys.executable, str(REPO / "tools" / "ja2ctl.py"), "run"] + args.args
+            log(" ".join(shlex.quote(a) for a in argv))
+            sys.exit(subprocess.run(argv, cwd=str(REPO), env=binary_env()).returncode)
+        with job_slots("e2e", args.jobs) as jobs:
+            cmd = f"ctest -L e2e --output-on-failure --parallel {jobs}"
+            if args.args:
+                cmd += " " + " ".join(shlex.quote(a) for a in args.args)
+            log(cmd)
+            sys.exit(tool_run(cmd, build_dir).returncode)
 
 
 def cmd_run(args):
-    root = ensure_short_root(REPO)
-    build_dir = build_dir_of(root)
-    setup_if_needed(root, build_dir)
-    if not args.no_build:
-        rc = build_binary(root, build_dir, args.jobs)
-        if rc:
-            sys.exit(rc)
-    binary = build_dir / JA2_EXE
+    with build_path() as root:
+        build_dir = root / BUILD_DIR_NAME
+        setup_if_needed(root, build_dir)
+        if not args.no_build:
+            rc = build_binary(root, build_dir, args.jobs)
+            if rc:
+                sys.exit(rc)
+    binary = REPO / BUILD_DIR_NAME / JA2_EXE  # the game may run for hours; do not hold the build path
     if not binary.exists():
         die(f"{binary} does not exist; run: python tools/dev.py build")
     default_res = [] if "-res" in args.args else ["-res", "1280x720"]
     argv = [str(binary)] + default_res + args.args
     log(" ".join(shlex.quote(a) for a in argv))
-    sys.exit(subprocess.run(argv, cwd=str(build_dir), env=binary_env()).returncode)
+    sys.exit(subprocess.run(argv, cwd=str(REPO / BUILD_DIR_NAME), env=binary_env()).returncode)
 
 
 def bootstrap_auto():
@@ -567,17 +594,24 @@ def cmd_bootstrap(args):
     if args.auto:
         bootstrap_auto()
         return
-    root = ensure_short_root(REPO)
-    setup(root, build_dir_of(root))
-    sys.exit(build_binary(root, build_dir_of(root), args.jobs))
+    with build_path() as root:
+        build_dir = root / BUILD_DIR_NAME
+        setup(root, build_dir)
+        sys.exit(build_binary(root, build_dir, args.jobs))
 
 
 def cmd_status(args):
-    root = ensure_short_root(REPO)
-    build_dir = build_dir_of(root)
+    build_dir = REPO / BUILD_DIR_NAME  # the real path: the build path may point elsewhere right now
     print(f"worktree:   {REPO}")
-    if root != REPO:
-        print(f"short path: {root} (subst -> {REPO})")
+    if IS_WINDOWS:
+        try:
+            letter = json.loads((state_dir() / "buildpath.json").read_text(encoding="utf-8")).get("letter")
+        except (OSError, ValueError):
+            letter = None
+        target = subst_map().get((letter or "").upper(), "")
+        where = f"{letter} -> {target}" if target else f"{letter or '?'} (not mapped right now)"
+        owner = "this worktree" if os.path.normcase(target) == os.path.normcase(str(REPO)) else "another worktree"
+        print(f"build path: {where}   [{owner}]")
     print(f"build dir:  {build_dir}"
           + (f"  [{generator_of(build_dir)}]" if is_configured(build_dir) else "  [not configured yet]"))
     binary = build_dir / JA2_EXE
@@ -595,6 +629,14 @@ def cmd_status(args):
     check_game_dir()
     active = list((state_dir() / "active").glob("*.json"))
     print(f"{'active:':<12}{len(active)} build/test process(es) on this machine")
+    holder = "no"
+    try:
+        rec = json.loads((state_dir() / "buildpath.lock").read_text(encoding="utf-8"))
+        if pid_alive(rec.get("pid")):
+            holder = f"pid {rec.get('pid')} ({rec.get('target')})"
+    except (OSError, ValueError):
+        pass
+    print(f"{'in use by:':<12}{holder}")
 
 
 # --- command line -----------------------------------------------------------

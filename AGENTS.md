@@ -14,9 +14,9 @@ python tools/dev.py status    # what dev.py sees: paths, tools, build state
 ```
 
 - The build directory is `build` on macOS and `_bin` on Windows; the wrapper creates, configures and updates it (Ninja + sccache + lld when the machine has them, see [Faster builds](COMPILATION.md#faster-builds)).
-- **The compiler cache is shared between worktrees.** Builds set `SCCACHE_BASEDIRS` to their own root so sccache hashes paths relative to it: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects — its first build is minutes, not a full recompile. (Builds that bypass `tools/dev.py` do not share; the cache is path-keyed for them.)
-- Builds and e2e runs take a machine-wide job semaphore, so several agents on one machine share the CPU instead of starving each other. `JA2_JOBS` or `--jobs` overrides the computed count.
-- On Windows a long worktree path (agent worktrees live in deep directories) is built through a short `subst` drive automatically — no MAX_PATH trouble, no manual `subst`.
+- **The compiler cache is shared between worktrees.** Every worktree builds through the same machine-wide build path (a `subst` drive letter on Windows, a symlink elsewhere), so compile commands — and the cache keys — come out identical: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects, minutes instead of a full recompile. The mapping is exclusive, so builds and full e2e runs across worktrees take turns; builds that bypass `tools/dev.py` compile under their own path and share nothing.
+- Builds and e2e runs also take a machine-wide job semaphore, so several agents on one machine share the CPU instead of starving each other. `JA2_JOBS` or `--jobs` overrides the computed count.
+- The same build path keeps deep worktrees (agent worktrees live in deep directories) far below Windows' MAX_PATH — no manual `subst`.
 - `setup` also checks `game_dir` and warns about the `Data` trap below. Everything is idempotent: re-run `setup` after switching branches or moving a worktree.
 
 ### Worktree bootstrap runs itself

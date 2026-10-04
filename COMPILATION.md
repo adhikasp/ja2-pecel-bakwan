@@ -77,15 +77,22 @@ MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciat
 MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && ./ja2.exe -res 1280x720"
 ```
 
-**Long paths.** Agent worktrees live in deep directories and the build tree goes
-deeper still (cargo's `target/` is the worst offender), which is how a build
-runs into Windows' MAX_PATH limit. Map the worktree to a drive letter and do
-everything through that drive; `tools/dev.py setup` picks the letter and
-re-creates the mapping for you (a reboot drops it):
+**Long paths and cache sharing.** Agent worktrees live in deep directories and
+the build tree goes deeper still (cargo's `target/` is the worst offender),
+which is how a build runs into Windows' MAX_PATH limit — and sccache hashes
+absolute paths, so two checkouts at different paths are two cache islands. The
+wrapper solves both with one machine-wide build path: a drive letter that
+points at whichever worktree is being built. It is a `subst` mapping
+(re-created after a reboot), and it is exclusive, so builds and full e2e runs
+in different worktrees take turns. Compile commands then come out identical in
+every worktree and the compiler cache is shared between them.
+
+Doing it by hand, pick one free letter and keep compiling every checkout
+through it, or the cache will not be shared:
 
 ```sh
-subst W: C:\Workspace\ja2-stracciatella\.claude\worktrees\agent-123
-MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd /w && mkdir -p _bin && cd _bin && cmake .. -G Ninja && cmake --build . --parallel \$(nproc)"
+subst L: C:\Workspace\ja2-stracciatella\.claude\worktrees\agent-123
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd /l && mkdir -p _bin && cd _bin && cmake .. -G Ninja && cmake --build . --parallel \$(nproc)"
 ```
 
 ## General Notes
@@ -107,10 +114,10 @@ Nothing below is required — each one is picked up automatically when the machi
   directory, so a second worktree, a branch switch or a reverted change reuses the objects instead
   of recompiling them: `pacman -S mingw-w64-x86_64-sccache` (MSYS2), `brew install sccache`
   (macOS), `cargo install sccache --locked` (elsewhere).
-  sccache hashes absolute paths by default, which makes every worktree its own cache island —
-  set `SCCACHE_BASEDIRS` to the directory the build is spelled from (the worktree root, e.g.
-  `export SCCACHE_BASEDIRS="$PWD"`) to strip it from the cache key and share objects across
-  worktrees and checkouts. `tools/dev.py` sets this for you; builds that bypass it need it too.
+  sccache hashes absolute paths, so two checkouts at different paths are two cache islands. The
+  wrapper deals with that by compiling every worktree through one shared build path (below), which
+  makes the compile commands - and the cache keys - identical; a raw build shares the cache only
+  when it compiles the same tree at the same path as the build that warmed it.
 - **lld** — `-DUSE_LLD=ON` (the default) links with `ld.lld` when the toolchain provides it, which
   cuts the link of the monolithic `ja2` binary to a fraction of GNU ld's time. MSYS2:
   `pacman -S mingw-w64-x86_64-lld`. Where `ld.lld` is absent the option is skipped silently.
