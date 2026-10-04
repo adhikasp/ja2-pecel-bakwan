@@ -56,6 +56,23 @@ namespace
 		s.sFinalDestination = grid;
 	}
 
+	// Face an actor a given direction (0..7); -1 leaves the generated facing alone.
+	void FaceDirection(SOLDIERTYPE& s, int const direction)
+	{
+		if (direction < 0) return;
+		EVENT_SetSoldierDirection(&s, UINT16(direction));
+		EVENT_SetSoldierDesiredDirection(&s, UINT16(direction));
+	}
+
+	// One enemy to place: a grid, a class, an optional gun and facing.
+	struct EnemyUnit
+	{
+		GridNo grid = NOWHERE;
+		SoldierClass klass = SOLDIER_CLASS_ADMINISTRATOR;
+		UINT16 gun = NOTHING; // NOTHING keeps the kit the generator gave him
+		int direction = -1;   // -1 keeps the generated facing
+	};
+
 	// Find the per-merc setup entry, by name if the entries are named, else by position.
 	sol::object MercSetup(sol::object const& our, int const index, std::string const& name)
 	{
@@ -140,6 +157,7 @@ void StageBattle(sol::table const& spec)
 	std::string enemyClass = defaultClass;
 	std::string enemyWeapon = defaultEnemyWeapon;
 	std::vector<GridNo> enemyGrids;
+	std::vector<EnemyUnit> explicitUnits;
 	bool haveEnemyGrids = false;
 	if (enemiesObj.is<sol::table>())
 	{
@@ -159,6 +177,26 @@ void StageBattle(sol::table const& spec)
 				if (Scenario::AsInt(o, g)) enemyGrids.push_back(GridNo(g));
 			}
 			haveEnemyGrids = !enemyGrids.empty();
+		}
+		// `units`: an explicit enemy per entry, each with its own grid/class/gun/facing.
+		// They override `count`/`grids`; an entry without a grid falls back to a free tile.
+		sol::object const unitsObj = enemySpec["units"];
+		if (unitsObj.is<sol::table>())
+		{
+			sol::table const list = unitsObj.as<sol::table>();
+			for (int i = 1; i <= int(list.size()); ++i)
+			{
+				sol::object const o = list[i];
+				if (!o.is<sol::table>()) continue;
+				sol::table const u = o.as<sol::table>();
+				EnemyUnit unit;
+				unit.grid = GridNo(Scenario::IntField(u, "grid", NOWHERE));
+				unit.klass = ParseClass(Scenario::StrField(u, "class", enemyClass));
+				std::string const gun = Scenario::StrField(u, "weapon", enemyWeapon);
+				if (!gun.empty()) unit.gun = Scenario::ItemByName(gun);
+				unit.direction = Scenario::IntField(u, "direction", -1);
+				explicitUnits.push_back(unit);
+			}
 		}
 	}
 	SoldierClass const enemySoldierClass = ParseClass(enemyClass);
@@ -183,6 +221,7 @@ void StageBattle(sol::table const& spec)
 		std::string weapon = defaultWeapon;
 		std::string armour = defaultArmour;
 		GridNo grid = NOWHERE;
+		int direction = -1;
 		sol::object items = sol::nil, stats = sol::nil;
 		if (setup.is<sol::table>())
 		{
@@ -191,6 +230,7 @@ void StageBattle(sol::table const& spec)
 			sol::object const setupArmour = e["armour"];
 			armour = Scenario::ArmourLevel(setupArmour, armour);
 			grid   = GridNo(Scenario::IntField(e, "grid", grid));
+			direction = Scenario::IntField(e, "direction", direction);
 			items  = e["items"];
 			stats  = e["stats"];
 		}
@@ -208,6 +248,7 @@ void StageBattle(sol::table const& spec)
 			}
 		}
 		if (grid != NOWHERE) TeleportSoldier(*s, grid, true);
+		if (grid != NOWHERE || direction >= 0) FaceDirection(*s, direction);
 
 		anchorSum += s->sGridNo;
 		++anchorN;
@@ -215,31 +256,52 @@ void StageBattle(sol::table const& spec)
 	if (anchorN == 0) throw std::runtime_error("ja2.debug(\"battle\"): no merc is in the sector");
 	GridNo const anchor = INT16(anchorSum / anchorN);
 
-	// Spawn and place the enemies.
+	// Spawn and place the enemies. An explicit `units` list wins; otherwise the count and
+	// grids/free tiles produce one default enemy each.
 	UINT16 const enemyGun = enemyWeapon.empty() ? NOTHING : Scenario::ItemByName(enemyWeapon);
 	std::vector<GridNo> const tiles = haveEnemyGrids ? std::vector<GridNo>{} : FreeTilesAround(anchor, distance, distance + 6);
-	int spawned = 0;
-	for (int i = 0; i < enemies; ++i)
+	std::vector<EnemyUnit> units = explicitUnits;
+	if (units.empty())
 	{
-		GridNo grid = NOWHERE;
-		if (haveEnemyGrids)
+		for (int i = 0; i < enemies; ++i)
 		{
-			if (i >= int(enemyGrids.size())) break;
-			grid = enemyGrids[i];
+			GridNo grid = NOWHERE;
+			if (haveEnemyGrids)
+			{
+				if (i >= int(enemyGrids.size())) break;
+				grid = enemyGrids[i];
+			}
+			else
+			{
+				if (i >= int(tiles.size())) break;
+				grid = tiles[i];
+			}
+			EnemyUnit unit;
+			unit.grid = grid;
+			unit.klass = enemySoldierClass;
+			unit.gun = enemyGun;
+			units.push_back(unit);
 		}
-		else
+	}
+	int spawned = 0, free = 0;
+	for (EnemyUnit const& unit : units)
+	{
+		GridNo grid = unit.grid;
+		if (grid == NOWHERE)
 		{
-			if (i >= int(tiles.size())) break;
-			grid = tiles[i];
+			// an entry without a grid takes the next free tile
+			if (free >= int(tiles.size())) break;
+			grid = tiles[free++];
 		}
-		SOLDIERTYPE* const e = TacticalCreateEnemySoldier(enemySoldierClass);
+		SOLDIERTYPE* const e = TacticalCreateEnemySoldier(unit.klass);
 		if (!e) continue;
 		e->sSector = gWorldSector;
 		e->sInsertionGridNo = grid;
 		e->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO;
 		AddSoldierToSector(e);
 		PlaceActor(*e, grid);
-		if (enemyGun != NOTHING) Scenario::GiveGun(*e, enemyGun);
+		if (unit.gun != NOTHING) Scenario::GiveGun(*e, unit.gun);
+		FaceDirection(*e, unit.direction);
 		++spawned;
 	}
 	if (spawned == 0) throw std::runtime_error("ja2.debug(\"battle\"): could not place any enemy");

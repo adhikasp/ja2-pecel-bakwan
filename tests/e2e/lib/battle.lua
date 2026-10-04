@@ -33,6 +33,14 @@ function battle.settle(timeout)
 	end
 end
 
+-- After a shot is ordered the attack-busy count can clear while the bullet is still in the
+-- air, so wait the flight out before reading the result back.
+function battle.waitShot(timeout)
+	battle.settle(timeout or 120000)
+	ja2.step(30)
+	battle.settle(timeout or 120000)
+end
+
 -- Stage the fight. @a spec is what ja2.debug("battle") takes; returns the
 -- tactical state (inCombat, enemies, turn) right after combat starts.
 function battle.stage(spec)
@@ -53,6 +61,23 @@ function battle.enemies()
 	return out
 end
 
+-- The living enemy standing on @a grid, or nil.
+function battle.byGrid(grid)
+	for _, e in ipairs(battle.enemies()) do
+		if e.gridNo == grid then return e end
+	end
+	return nil
+end
+
+-- The living enemies the team currently has an unobstructed line of sight to.
+function battle.inSight()
+	local out = {}
+	for _, e in ipairs(battle.enemies()) do
+		if e.los then out[#out + 1] = e end
+	end
+	return out
+end
+
 -- The player's mercs in the sector.
 function battle.mercs()
 	local out = {}
@@ -60,6 +85,16 @@ function battle.mercs()
 		if m.inSector then out[#out + 1] = m end
 	end
 	return out
+end
+
+-- The state of the merc named @a name, or battle.mercs()[@a name] when it is a number.
+function battle.merc(name)
+	local list = battle.mercs()
+	if type(name) == "number" then return list[name] end
+	for _, m in ipairs(list) do
+		if m.name == name then return m end
+	end
+	return nil
 end
 
 -- The native squad card for merc @a i (1-based); fails if the native HUD is not running.
@@ -89,40 +124,55 @@ function battle.select(i)
 	return battle.selected() == i
 end
 
--- The index among battle.enemies() of the enemy nearest to merc @a i.
+-- The index among battle.enemies() of the enemy nearest to merc @a i, preferring one the
+-- team can actually see (so a turn is not spent firing at a tile with nobody in sight).
 function battle.nearest(i)
 	local merc = battle.mercs()[i]
 	ja2.expect(merc, "there is a merc " .. i)
 	local best, bestD = nil, math.huge
+	local fallback, fallbackD = nil, math.huge
 	for e, enemy in ipairs(battle.enemies()) do
 		local d = tile_distance(merc.gridNo, enemy.gridNo)
-		if d < bestD then best, bestD = e, d end
+		if enemy.los and d < bestD then best, bestD = e, d end
+		if d < fallbackD then fallback, fallbackD = e, d end
 	end
-	return best
+	return best or fallback
+end
+
+-- A shot can be split across two orders: the first turns the merc to face a target that
+-- is off his facing, the second actually fires. Order it again if the first only turned.
+local function fire_and_wait(grid, sel, ammo_before, before)
+	for _ = 1, 2 do
+		ja2.debug("fire", grid)
+		ja2.step(2) -- the order is queued as an event; step it in before waiting it out
+		battle.waitShot()
+		local after = battle.byGrid(grid)
+		local ammo_now = sel and battle.card(sel) and battle.card(sel).ammo or ""
+		if after == nil or after.life < before or ammo_now ~= ammo_before then
+			return { before = before, after = after and after.life or 0,
+				hit = after == nil or after.life < before, ordered = true }
+		end
+	end
+	return { before = before, after = before, hit = false, ordered = false }
 end
 
 -- Order the selected merc to shoot at enemy @a index (1-based in battle.enemies()).
 -- Waits out the shot; returns { before, after, hit, ordered } for that enemy's life.
--- ordered is false when the merc could not actually fire (no AP or no ammo).
 function battle.fireAt(index)
 	local enemy = battle.enemies()[index]
 	ja2.expect(enemy, "there is an enemy " .. index .. " to shoot at")
 	local sel = battle.selected()
-	local ammo_before = sel and battle.card(sel) and battle.card(sel).ammo or ""
-	local before = enemy.life
-	ja2.debug("fire", enemy.gridNo)
-	ja2.step(2) -- the order is queued as an event; step it in before waiting it out
-	battle.settle(120000)
-	local after
-	for _, e in ipairs(ja2.state().tactical.enemies) do
-		if e.gridNo == enemy.gridNo then after = e.life end
-	end
-	local ammo_after = sel and battle.card(sel) and battle.card(sel).ammo or ""
-	-- a missing entry means the enemy left the sector: he was killed
-	return {
-		before = before, after = after or 0, hit = after == nil or after < before,
-		ordered = ammo_after ~= ammo_before or (after ~= nil and after < before),
-	}
+	local ammo = sel and battle.card(sel) and battle.card(sel).ammo or ""
+	return fire_and_wait(enemy.gridNo, sel, ammo, enemy.life)
+end
+
+-- Order the selected merc to shoot at a tile (there may be no enemy on it). Waits the shot
+-- out; returns { before, after, hit, ordered } for the life of the enemy standing there.
+function battle.fireAtGrid(grid)
+	local enemy = battle.byGrid(grid)
+	local sel = battle.selected()
+	local ammo = sel and battle.card(sel) and battle.card(sel).ammo or ""
+	return fire_and_wait(grid, sel, ammo, enemy and enemy.life or 0)
 end
 
 -- Click the native End Turn button and wait out the enemy turn.

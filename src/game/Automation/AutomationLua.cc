@@ -60,6 +60,10 @@
 #include "WorldSpike.h"
 #include "WorldRender.h"
 #include "Interactive_Tiles.h"
+#include "LOS.h"
+#include "OppList.h"
+#include "Animation_Control.h"
+#include "AI.h"
 #include "Lighting.h"
 #include "Environment.h"
 #include "Rotting_Corpses.h"
@@ -332,7 +336,7 @@ namespace
 		// target (the battle e2e track). Dead soldiers stay listed with dead = true.
 		sol::table enemies = L.create_table();
 		int e = 1;
-		CFOR_EACH_IN_TEAM(x, ENEMY_TEAM)
+		FOR_EACH_IN_TEAM(x, ENEMY_TEAM)
 		{
 			if (!x->bInSector) continue;
 			sol::table t = L.create_table();
@@ -342,6 +346,30 @@ namespace
 			t["lifeMax"] = static_cast<int>(x->bLifeMax);
 			t["gridNo"]  = x->sGridNo;
 			t["dead"]    = x->bLife <= 0;
+			t["level"]     = static_cast<int>(x->bLevel);
+			t["direction"] = static_cast<int>(x->bDirection);
+			t["stance"]    = static_cast<int>(gAnimControl[x->usAnimState].ubEndHeight);
+			t["morale"]    = static_cast<int>(x->bMorale);
+			// The AI's own morale verdict (MORALE_HOPELESS..FEARLESS): its reading of the
+			// tactical balance, i.e. whether it is close to breaking. 0 = HOPELESS.
+			t["aimorale"]  = static_cast<int>(CalcMorale(x));
+			t["ap"]        = static_cast<int>(x->bActionPoints);
+			// Does the player know about him (what is rendered; may be a last-known position),
+			// and can any merc trace an unobstructed line of sight to him within sight range?
+			t["known"] = x->bVisible != FALSE;
+			bool los = false;
+			SOLDIERTYPE* nearest = nullptr;
+			INT32 nearestDist = 0;
+			FOR_EACH_IN_TEAM(m, OUR_TEAM)
+			{
+				if (!m->bInSector || m->bLife <= 0 || m->sGridNo == NOWHERE) continue;
+				if (SoldierToSoldierLineOfSightTest(m, x, static_cast<UINT8>(MaxDistanceVisible()), TRUE) != 0) los = true;
+				INT32 const d = SpacesAway(m->sGridNo, x->sGridNo);
+				if (!nearest || d < nearestDist) { nearest = m; nearestDist = d; }
+			}
+			t["los"] = los;
+			// Chance a shot from the nearest merc has to get through (0..100): lower = more cover.
+			if (nearest && x->bLife > 0) t["cover"] = static_cast<int>(AISoldierToSoldierChanceToGetThrough(nearest, x));
 			if (guiCurrentScreen == GAME_SCREEN && x->sGridNo != NOWHERE)
 			{
 				if (auto const p = GridClickPos(x->sGridNo, x->bLevel))
@@ -393,6 +421,12 @@ namespace
 			t["inSector"] = m->bInSector != 0;
 			t["gridNo"]   = m->sGridNo;
 			t["finalDestination"] = m->sFinalDestination;
+			t["level"]     = static_cast<int>(m->bLevel);
+			t["direction"] = static_cast<int>(m->bDirection);
+			t["stance"]    = static_cast<int>(gAnimControl[m->usAnimState].ubEndHeight);
+			t["morale"]    = static_cast<int>(m->bMorale);
+			t["ap"]        = static_cast<int>(m->bActionPoints);
+			t["maxAp"]     = static_cast<int>(m->bInitialActionPoints);
 			if (guiCurrentScreen == GAME_SCREEN && m->bInSector && m->sGridNo != NOWHERE)
 			{
 				// Where to click on this merc (the tile they stand on).
@@ -666,6 +700,18 @@ namespace
 		ja2.set_function("gridAt", [](int x, int y) {
 			return Guarded([&] {
 				return GridUnder(x, y);
+			});
+		});
+		// ja2.los(fromGrid, toGrid, [fromLevel], [toLevel]): is there an unobstructed line of
+		// sight between two tiles? A wall, a closed door or a building blocks it. Independent
+		// of distance and of who is looking; the battle scenarios use it to set up cover.
+		ja2.set_function("los", [](int fromGrid, int toGrid, sol::optional<int> fromLevel, sol::optional<int> toLevel) {
+			return Guarded([&] {
+				if (fromGrid < 0 || fromGrid >= WORLD_MAX) throw std::out_of_range("ja2.los: bad from grid");
+				if (toGrid < 0 || toGrid >= WORLD_MAX) throw std::out_of_range("ja2.los: bad to grid");
+				return LocationToLocationLineOfSightTest(
+					static_cast<INT16>(fromGrid), static_cast<INT8>(fromLevel.value_or(0)),
+					static_cast<INT16>(toGrid), static_cast<INT8>(toLevel.value_or(0)), 255, TRUE) != 0;
 			});
 		});
 
