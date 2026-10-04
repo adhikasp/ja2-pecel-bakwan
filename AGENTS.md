@@ -14,9 +14,9 @@ python tools/dev.py status    # what dev.py sees: paths, tools, build state
 ```
 
 - The build directory is `build` on macOS and `_bin` on Windows; the wrapper creates, configures and updates it (Ninja + sccache + lld when the machine has them, see [Faster builds](COMPILATION.md#faster-builds)).
-- **The compiler cache is shared between worktrees.** Every worktree builds through the same machine-wide build path (a `subst` drive letter on Windows, a symlink elsewhere), so compile commands — and the cache keys — come out identical: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects, minutes instead of a full recompile. The mapping is exclusive, so builds and full e2e runs across worktrees take turns; builds that bypass `tools/dev.py` compile under their own path and share nothing.
+- **The compiler cache is shared between worktrees.** `tools/dev.py` sets `SCCACHE_BASEDIR` to the worktree root, so sccache rewrites those paths to be relative before hashing and two checkouts at different absolute paths get the same key: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects, minutes instead of a full recompile. Worktrees build side by side — there is no shared build path to queue behind. Builds that bypass `tools/dev.py` do not set it and share nothing.
 - Builds and e2e runs also take a machine-wide job semaphore, so several agents on one machine share the CPU instead of starving each other. `JA2_JOBS` or `--jobs` overrides the computed count.
-- The same build path keeps deep worktrees (agent worktrees live in deep directories) far below Windows' MAX_PATH — no manual `subst`.
+- Deep worktrees (agent worktrees live in deep directories) stay well under Windows' MAX_PATH on their own: the deepest path this tree produces is ~212 characters, in cargo's `target/`, and Windows 10+ long-path support is on by default.
 - `setup` also checks `game_dir` and warns about the `Data` trap below. Everything is idempotent: re-run `setup` after switching branches or moving a worktree.
 
 ### Worktree bootstrap runs itself
