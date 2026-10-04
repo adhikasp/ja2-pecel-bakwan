@@ -12,6 +12,7 @@
 #include "VObject_Blitters.h"
 #include "VSurface.h"
 #include "Video.h"
+#include "VideoGpu.h"
 #include "WorldGpu.h"
 #include "Visualizer.h"
 #include "UILayout.h"
@@ -92,6 +93,21 @@ static sgp::GameClock::duration TimeBetweenRefreshScreens;
 static int32_t TargetFPS = 40;
 static VideoDisplaySettings CurrentSettings{ 0, 0, 0, WindowMode::BorderlessDesktop };
 static VideoOverlay* Overlay = nullptr;
+
+// Phase 2 follow-up: the SDL_GPU compositor. When VideoGpu is active there is no SDL_Renderer; the legacy
+// ScreenBuffer, the world and the native UI are composited and presented by VideoGpu.
+static float            Brightness = 1.0f;
+static SDL_GPUTexture*  GpuScreenTexture = nullptr;
+static int              GpuScreenW = 0, GpuScreenH = 0;
+static SDL_GPUTexture*  GpuWorldUpload = nullptr;
+static int              GpuWorldUploadW = 0, GpuWorldUploadH = 0;
+static SDL_GPUTexture*  GpuWorldCopy = nullptr;   // a sampled copy of the GPU world texture (D3D12 transition)
+static int              GpuWorldCopyW = 0, GpuWorldCopyH = 0;
+static std::vector<uint32_t> ScreenLayerLut;  // RGB565 -> RGBA8 with the transparent family as black + alpha
+static std::vector<uint32_t> ScreenOpaqueLut; // RGB565 -> opaque RGBA8
+static std::vector<uint32_t> WorldRgbaLut;    // RGB565 -> opaque RGBA8
+static bool             GpuCaptureWanted = false;
+static void PresentGpuFrame(SDL_Rect const& uiUpdate);
 
 // A driven session composes the frame only when something reads it (VideoComposePending): gComposePending
 // records that a stepped frame was left uncomposed, gComposeForRead marks the compose that follows a
@@ -182,6 +198,7 @@ void VideoToggleFullScreen(void)
 void VideoSetBrightness(float brightness)
 {
 	if (brightness < 0) return;
+	Brightness = brightness;
 
 	if (ScreenTexture)        SDL_SetTextureColorModFloat(ScreenTexture, brightness, brightness, brightness);
 	if (CanvasTexture)        SDL_SetTextureColorModFloat(CanvasTexture, brightness, brightness, brightness);
@@ -261,23 +278,31 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 	if (WantGpuDevice)
 	{
 		// One SDL_GPU device (the platform's default driver: D3D12, Vulkan or Metal; JA2_GPU_DRIVER picks another)
-		// shared by SDL's own GPU renderer and the world renderer
+		// shared by the presentation, the native UI and the world renderer
 		GpuDevice = SDL_CreateGPUDevice(WorldGpu::ShaderFormats(), false, std::getenv("JA2_GPU_DRIVER"));
-		if (GpuDevice) GameRenderer = SDL_CreateGPURenderer(GpuDevice, g_game_window);
-		if (!GameRenderer)
+		if (GpuDevice && VideoGpu::Init(GpuDevice, g_game_window))
 		{
-			SLOGW("No SDL_GPU renderer ({}), the world will be drawn in software", SDL_GetError());
-			if (GpuDevice) SDL_DestroyGPUDevice(GpuDevice);
-			GpuDevice = nullptr;
+			// the SDL_GPU compositor owns the window: no SDL_Renderer at all
 		}
-		else
+		else if (GpuDevice)
 		{
-			SLOGI("Renderer: SDL_GPU on {}", SDL_GetGPUDeviceDriver(GpuDevice));
+			// SDL's own GPU renderer instead (it wraps the world texture and the native UI draws through it)
+			GameRenderer = SDL_CreateGPURenderer(GpuDevice, g_game_window);
+			if (!GameRenderer)
+			{
+				SLOGW("No SDL_GPU renderer ({}), the world will be drawn in software", SDL_GetError());
+				SDL_DestroyGPUDevice(GpuDevice);
+				GpuDevice = nullptr;
+			}
+			else
+			{
+				SLOGI("Renderer: SDL_GPU on {}", SDL_GetGPUDeviceDriver(GpuDevice));
+			}
 		}
 	}
 #endif
-	if (!GameRenderer) GameRenderer = SDL_CreateRenderer(g_game_window, nullptr);
-	SDL_SetRenderLogicalPresentation(GameRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
+	if (!GameRenderer && !VideoGpu::Active()) GameRenderer = SDL_CreateRenderer(g_game_window, nullptr);
+	if (GameRenderer) SDL_SetRenderLogicalPresentation(GameRenderer, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_LOGICAL_PRESENTATION_LETTERBOX);
 
 	SurfaceUniquePtr windowIcon(SDL_CreateSurfaceFrom(
 			gWindowIconData.width,
@@ -311,6 +336,7 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 
 static void CreateTextures()
 {
+	if (!GameRenderer) return; // the SDL_GPU compositor keeps its own textures
 	if (Layered)
 	{
 		CreateLayerTextures();
@@ -371,6 +397,35 @@ static VideoLayout::Size WindowPixelSize()
 	int ph = 0;
 	if (g_game_window) SDL_GetWindowSizeInPixels(g_game_window, &pw, &ph);
 	return { pw, ph };
+}
+
+
+/** Where the logical canvas (SCREEN_WIDTH x SCREEN_HEIGHT) is placed in a window of size @a window, in pixels
+ * (the same letterbox / integer-scale rule the SDL_Renderer logical presentation used). */
+static SDL_FRect CanvasPresentationRectFor(VideoLayout::Size const window)
+{
+	if (window.w <= 0 || window.h <= 0) return { 0, 0, float(SCREEN_WIDTH), float(SCREEN_HEIGHT) };
+	auto const p = VideoLayout::ComputePresentation(window, { SCREEN_WIDTH, SCREEN_HEIGHT });
+	float scale;
+	if ((ScaleQuality == VideoScaleQuality::PERFECT || ScaleQuality == VideoScaleQuality::NEAR_PERFECT) && p.integerFit && p.k >= 1)
+		scale = float(p.k);
+	else
+		scale = std::min(float(window.w) / SCREEN_WIDTH, float(window.h) / SCREEN_HEIGHT);
+	float const w = SCREEN_WIDTH * scale, h = SCREEN_HEIGHT * scale;
+	return { (window.w - w) * 0.5f, (window.h - h) * 0.5f, w, h };
+}
+
+static SDL_FRect CanvasPresentationRectPixels() { return CanvasPresentationRectFor(WindowPixelSize()); }
+
+/** The same in window coordinates (points, what SDL mouse events carry), accounting for HiDPI. */
+static SDL_FRect CanvasPresentationRectPoints()
+{
+	int pw = 0, ph = 0, ww = 0, wh = 0;
+	if (g_game_window) { SDL_GetWindowSizeInPixels(g_game_window, &pw, &ph); SDL_GetWindowSize(g_game_window, &ww, &wh); }
+	SDL_FRect r = CanvasPresentationRectFor({ pw, ph });
+	if (pw > 0 && ww > 0) { float const d = float(pw) / ww; if (d > 0) { r.x /= d; r.w /= d; } }
+	if (ph > 0 && wh > 0) { float const d = float(ph) / wh; if (d > 0) { r.y /= d; r.h /= d; } }
+	return r;
 }
 
 
@@ -657,9 +712,14 @@ static void CreateSoftwareSurfaces()
 void VideoSetForceLayered(bool const on) { ForceLayers = on; }
 bool VideoForceLayered() { return ForceLayers; }
 void VideoRequestGpuDevice(bool const on) { WantGpuDevice = on; }
-SDL_GPUDevice* VideoGpuDevice() { return GameRenderer ? GpuDevice : nullptr; }
+SDL_GPUDevice* VideoGpuDevice() { return GpuDevice; }
 void VideoSetWorldRecorded(bool const on) { WorldRecorded = on; }
-bool VideoTakeWorldGpuPresented() { bool const p = WorldGpuPresented || !WorldGpuSdlTexture; WorldGpuPresented = false; return p; }
+bool VideoTakeWorldGpuPresented()
+{
+	bool const p = VideoGpu::Active() ? WorldGpuPresented : (WorldGpuPresented || !WorldGpuSdlTexture);
+	WorldGpuPresented = false;
+	return p;
+}
 void VideoSetPresentHook(void (*hook)()) { PresentHook = hook; }
 
 void VideoSetWorldGpuTexture(SDL_GPUTexture* const tex, int const w, int const h)
@@ -670,8 +730,9 @@ void VideoSetWorldGpuTexture(SDL_GPUTexture* const tex, int const w, int const h
 	WorldGpuTexture = tex;
 	WorldGpuW = w;
 	WorldGpuH = h;
-#if SDL_VERSION_ATLEAST(3, 4, 0)
+	// The SDL_GPU compositor samples the raw texture directly; only the SDL_Renderer path needs the SDL_Texture.
 	if (!tex || !GameRenderer || !GpuDevice) return;
+#if SDL_VERSION_ATLEAST(3, 4, 0)
 	SDL_PropertiesID const props = SDL_CreateProperties();
 	SDL_SetPointerProperty(props, SDL_PROP_TEXTURE_CREATE_GPU_TEXTURE_POINTER, tex);
 	SDL_SetNumberProperty(props, SDL_PROP_TEXTURE_CREATE_FORMAT_NUMBER, SDL_PIXELFORMAT_ABGR8888);
@@ -694,6 +755,17 @@ void ShutdownVideoManager(void)
 	VideoSetWorldGpuTexture(nullptr, 0, 0);
 	// ScreenBuffer SDL surface freed by its SGPVSurface wrapper.
 	ScreenBuffer = nullptr;
+
+	if (GpuDevice)
+	{
+		// the layer textures the compositor created outlive VideoGpu itself
+		if (GpuScreenTexture) SDL_ReleaseGPUTexture(GpuDevice, GpuScreenTexture);
+		if (GpuWorldUpload) SDL_ReleaseGPUTexture(GpuDevice, GpuWorldUpload);
+		if (GpuWorldCopy) SDL_ReleaseGPUTexture(GpuDevice, GpuWorldCopy);
+		GpuScreenTexture = GpuWorldUpload = GpuWorldCopy = nullptr;
+		GpuScreenW = GpuScreenH = GpuWorldUploadW = GpuWorldUploadH = GpuWorldCopyW = GpuWorldCopyH = 0;
+	}
+	VideoGpu::Shutdown();
 
 	if (ScreenTexture != NULL) {
 		SDL_DestroyTexture(ScreenTexture);
@@ -720,6 +792,12 @@ void ShutdownVideoManager(void)
 	if (GameRenderer != NULL) {
 		SDL_DestroyRenderer(GameRenderer);
 		GameRenderer = NULL;
+	}
+
+	if (GpuDevice != NULL) {
+		// Not destroyed: the world renderer holds a pointer to the shared device and may be re-used after a
+		// video restart (the setup screen). Like the old SDL_Renderer path it lives until process exit.
+		GpuDevice = NULL;
 	}
 
 	if (g_game_window != NULL) {
@@ -988,13 +1066,50 @@ void VideoSetOverlay(VideoOverlay* const overlay)
 VideoOutputMapping VideoGetOutputMapping()
 {
 	VideoOutputMapping m{ 1, 1, 0, 0, ScreenBuffer ? ScreenBuffer->w : SCREEN_WIDTH, ScreenBuffer ? ScreenBuffer->h : SCREEN_HEIGHT, false };
-	if (!GameRenderer || !g_game_window || !Overlay || !Overlay->UsesGpu()) return m;
+	if (!g_game_window || !Overlay || !Overlay->UsesGpu()) return m;
 	int pw = 0, ph = 0;
 	SDL_GetWindowSizeInPixels(g_game_window, &pw, &ph);
 	SDL_FRect r{};
-	if (!SDL_GetRenderLogicalPresentationRect(GameRenderer, &r) || r.w <= 0 || r.h <= 0) r = { 0, 0, float(pw), float(ph) };
+	if (VideoGpu::Active())
+	{
+		r = CanvasPresentationRectPixels();
+	}
+	else if (!GameRenderer || !SDL_GetRenderLogicalPresentationRect(GameRenderer, &r) || r.w <= 0 || r.h <= 0)
+	{
+		r = { 0, 0, float(pw), float(ph) };
+	}
 	m = { r.w / SCREEN_WIDTH, r.h / SCREEN_HEIGHT, r.x, r.y, pw, ph, true };
 	return m;
+}
+
+
+void VideoConvertEventToCanvas(SDL_Event& e)
+{
+	if (GameRenderer) { SDL_ConvertEventToRenderCoordinates(GameRenderer, &e); return; }
+	if (!g_game_window || !VideoGpu::Active()) return;
+	SDL_FRect const r = CanvasPresentationRectPoints();
+	if (r.w <= 0 || r.h <= 0) return;
+	auto const map = [&](float& x, float& y) {
+		x = (x - r.x) / r.w * SCREEN_WIDTH;
+		y = (y - r.y) / r.h * SCREEN_HEIGHT;
+	};
+	switch (e.type)
+	{
+		case SDL_EVENT_MOUSE_MOTION:        map(e.motion.x, e.motion.y); break;
+		case SDL_EVENT_MOUSE_BUTTON_DOWN:
+		case SDL_EVENT_MOUSE_BUTTON_UP:     map(e.button.x, e.button.y); break;
+		default: break;
+	}
+}
+
+
+void VideoCanvasToWindow(float const x, float const y, float& wx, float& wy)
+{
+	if (GameRenderer) { SDL_RenderCoordinatesToWindow(GameRenderer, x, y, &wx, &wy); return; }
+	if (!g_game_window || !VideoGpu::Active()) { wx = x; wy = y; return; }
+	SDL_FRect const r = CanvasPresentationRectPoints();
+	wx = r.x + x / SCREEN_WIDTH * r.w;
+	wy = r.y + y / SCREEN_HEIGHT * r.h;
 }
 
 
@@ -1029,6 +1144,7 @@ void VideoRequestOutputCapture()
 {
 	OutputCaptureWanted = true;
 	OutputCapture.clear();
+	if (VideoGpu::Active()) GpuCaptureWanted = true;
 }
 
 bool VideoTakeOutputCapture(std::vector<uint8_t>& rgb, int& w, int& h)
@@ -1044,7 +1160,7 @@ bool VideoTakeOutputCapture(std::vector<uint8_t>& rgb, int& w, int& h)
 /** GPU path: the overlay in window pixels, over whatever was presented. */
 static void RenderOverlayGpu()
 {
-	if (!Overlay || !Overlay->UsesGpu()) return;
+	if (!GameRenderer || !Overlay || !Overlay->UsesGpu()) return;
 	int lw = 0, lh = 0;
 	SDL_RendererLogicalPresentation mode = SDL_LOGICAL_PRESENTATION_DISABLED;
 	SDL_GetRenderLogicalPresentation(GameRenderer, &lw, &lh, &mode);
@@ -1306,6 +1422,114 @@ static void PresentLayers(SDL_Rect const& uiUpdate)
 }
 
 
+static void EnsureGpuLuts()
+{
+	if (ScreenLayerLut.size() == 65536) return;
+	ScreenLayerLut.resize(65536);
+	ScreenOpaqueLut.resize(65536);
+	WorldRgbaLut.resize(65536);
+	for (uint32_t p = 0; p < 65536; ++p)
+	{
+		uint32_t const r = (p >> 11) & 0x1f, g = (p >> 5) & 0x3f, b = p & 0x1f;
+		uint32_t const rr = r << 3 | r >> 2, gg = g << 2 | g >> 4, bb = b << 3 | b >> 2;
+		// R,G,B,A bytes on a little-endian machine
+		uint32_t const rgb = rr | (gg << 8) | (bb << 16);
+		ScreenOpaqueLut[p] = rgb | 0xFF000000u;
+		WorldRgbaLut[p] = rgb | 0xFF000000u;
+		ScreenLayerLut[p] = UiLayerIsTransparentFamily(uint16_t(p))
+			? uint32_t(UiLayerShadowAlpha(uint16_t(p))) << 24
+			: rgb | 0xFF000000u;
+	}
+}
+
+/** Turns an RGB565 surface into RGBA8 (R,G,B,A byte order), through @a lut. */
+static void RowsToRgba(SDL_Surface const* const src, std::vector<uint32_t> const& lut, std::vector<uint32_t>& out)
+{
+	out.resize(size_t(src->w) * src->h);
+	for (int y = 0; y < src->h; ++y)
+	{
+		auto const* row = reinterpret_cast<UINT16 const*>(static_cast<UINT8 const*>(src->pixels) + size_t(y) * src->pitch);
+		uint32_t* const dst = &out[size_t(y) * src->w];
+		for (int x = 0; x < src->w; ++x) dst[x] = lut[row[x]];
+	}
+}
+
+/** The SDL_GPU compositor: the world layer, the legacy UI (ScreenBuffer) and the native UI in one render pass on
+ * the swapchain, presented by SDL_GPU. */
+static void PresentGpuFrame(SDL_Rect const&)
+{
+	if (!VideoGpu::BeginFrame()) return;
+	EnsureGpuLuts();
+
+	static std::vector<uint32_t> ScreenPixels;
+	static std::vector<uint32_t> WorldPixels;
+
+	int const su = g_ui.m_uiScale;
+	SDL_FRect const R = CanvasPresentationRectPixels();
+	float const cs = R.w / float(SCREEN_WIDTH * su); // canvas pixel -> window pixel
+	float const b = std::clamp(Brightness, 0.0f, 1.0f);
+
+	SDL_GPUTexture* worldTex = nullptr;
+	int worldW = 0, worldH = 0;
+	if (Layered && WorldLayerShown)
+	{
+		if (WorldGpuTexture)
+		{
+			// A copy makes the compute-written texture sampleable on D3D12 (see CopyToSampled).
+			worldTex = VideoGpu::CopyToSampled(WorldGpuTexture, WorldGpuW, WorldGpuH, GpuWorldCopy, GpuWorldCopyW, GpuWorldCopyH);
+			worldW = WorldGpuW; worldH = WorldGpuH;
+		}
+		else if (WorldBuffer)
+		{
+			RowsToRgba(WorldBuffer, WorldRgbaLut, WorldPixels);
+			worldTex = VideoGpu::UploadRgba(GpuWorldUpload, GpuWorldUploadW, GpuWorldUploadH,
+				WorldPixels.data(), WorldBuffer->w, WorldBuffer->h);
+			worldW = WorldBuffer->w; worldH = WorldBuffer->h;
+		}
+	}
+
+	RowsToRgba(ScreenBuffer, Layered ? ScreenLayerLut : ScreenOpaqueLut, ScreenPixels);
+	SDL_GPUTexture* const screenTex = VideoGpu::UploadRgba(GpuScreenTexture, GpuScreenW, GpuScreenH,
+		ScreenPixels.data(), ScreenBuffer->w, ScreenBuffer->h);
+
+	VideoGpu::QuadReset();
+	if (worldTex)
+	{
+		WorldGpuPresented = true;
+		float const zw = float(g_ui.m_worldZoomQ) / VideoLayout::WORLD_ZOOM_STEPS;
+		VideoGpu::Quad(worldTex, R.x, R.y, worldW * zw * cs, worldH * zw * cs,
+			0, 0, 1, 1, b, b, b, 1.0f, true);
+	}
+	if (screenTex)
+		VideoGpu::Quad(screenTex, R.x, R.y, R.w, R.h,
+			0, 0, 1, 1, b, b, b, 1.0f, false);
+	VideoGpu::QuadUpload();
+
+	// The native UI records and uploads its triangles before the pass (it is all CPU there).
+	bool const overlayGpu = Overlay && Overlay->UsesGpu();
+	if (overlayGpu) Overlay->GpuFramePrepare(VideoGpu::Cmd());
+
+	bool const capture = GpuCaptureWanted;
+	VideoGpu::BeginPass(LETTERBOX_COLOR / 255.0f, LETTERBOX_COLOR / 255.0f, LETTERBOX_COLOR / 255.0f, capture);
+	VideoGpu::QuadDraw();
+	if (overlayGpu) Overlay->GpuFrameRender(VideoGpu::Pass(), VideoGpu::Width(), VideoGpu::Height());
+	VideoGpu::EndPass();
+	VideoGpu::Submit();
+
+	if (capture)
+	{
+		OutputCapture = VideoGpu::CaptureRgb();
+		OutputCaptureW = VideoGpu::CaptureWidth();
+		OutputCaptureH = VideoGpu::CaptureHeight();
+		VideoGpu::ClearCapture();
+		GpuCaptureWanted = false;
+		OutputCaptureWanted = false;
+	}
+
+	if (PresentHook) PresentHook();
+}
+
+
 void RefreshScreen(void)
 {
 	// Not initialised yet or already shut down?
@@ -1436,6 +1660,12 @@ void RefreshScreen(void)
 	gfForceFullScreenRefresh = FALSE;
 	guiDirtyRegionCount = 0;
 	guiDirtyRegionExCount = 0;
+
+	if (VideoGpu::Active())
+	{
+		PresentGpuFrame(ClipToSurface(ScreenTextureUpdateRect, ScreenBuffer));
+		return;
+	}
 
 	if (Layered)
 	{

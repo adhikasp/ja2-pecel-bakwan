@@ -1,9 +1,12 @@
-"""HLSL -> DXBC (cs_5_1) with the system's d3dcompiler_47.dll (Windows only): dxbc.py <in.hlsl> <out.dxbc>.
-Used by build.sh; SDL_GPU's D3D12 backend takes DXBC shader model 5.1."""
+"""HLSL -> DXBC with the system's d3dcompiler_47.dll (Windows only):
+dxbc.py <in.hlsl> <out.dxbc> [profile] [entry]. Profiles are shader model 5.1 (cs_5_1, vs_5_1, ps_5_1);
+the default is cs_5_1/main. Used by build.sh; SDL_GPU's D3D12 backend takes DXBC."""
 import ctypes
 import sys
 
 src, dst = sys.argv[1], sys.argv[2]
+profile = sys.argv[3] if len(sys.argv) > 3 else "cs_5_1"
+entry = sys.argv[4] if len(sys.argv) > 4 else "main"
 code = open(src, "rb").read()
 d3d = ctypes.WinDLL("d3dcompiler_47.dll")
 
@@ -25,7 +28,7 @@ def blob_bytes(blob):
 out = ctypes.c_void_p()
 err = ctypes.c_void_p()
 D3DCOMPILE_OPTIMIZATION_LEVEL3 = 1 << 15
-hr = d3d.D3DCompile(code, len(code), src.encode(), None, None, b"main", b"cs_5_1",
+hr = d3d.D3DCompile(code, len(code), src.encode(), None, None, entry.encode(), profile.encode(),
                     D3DCOMPILE_OPTIMIZATION_LEVEL3, 0, ctypes.byref(out), ctypes.byref(err))
 if hr != 0:
     msg = blob_bytes(err).decode(errors="replace") if err.value else ""

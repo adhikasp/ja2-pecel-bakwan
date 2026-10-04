@@ -29,7 +29,7 @@ Decisions and measured numbers are in [native-modern-game-decisions.md](native-m
 ## Known follow-ups from merged phases
 - World renderer: 4K at world zoom 1 while scrolling is 57 fps (worst case, cache off); needs strip-based cache reuse across camera moves. MSL shaders generated but never run on a Mac. No sub-tile camera / animated zoom.
 - Translations: new UI strings and the 40 loading tips need translator review (marked `_todo`).
-- Phase 2: game still uses SDL's default renderer, not SDL's GPU driver, for the UI.
+- Phase 2: the UI now shares SDL_GPU's one compositor and present path with the world (issue #50, `src/sgp/VideoGpu.cc` + `src/nativeui/UiGpu.cc`); the SDL_Renderer stays only for the headless/software path and the editor's debug overlays (FPS, Visualizer) are not drawn on the SDL_GPU path yet.
 
 ## Working rules (carry forward)
 - Owner approves the style and **every screen's wireframes individually** before implementation.

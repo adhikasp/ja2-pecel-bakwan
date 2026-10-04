@@ -117,6 +117,10 @@ void         SetImageProvider(ImageProvider);
 bool         HasImageProvider();
 SDL_Surface* ProvideImage(std::string const& name);
 
+/** Resolves a texture source name (the last path component) to straight-alpha RGBA32 (procedural, SVG icon, or
+ * host image). Returns false when unknown or missing. Used by the render interfaces. */
+bool ResolveTextureSource(Rml::String const& source, std::vector<unsigned char>& rgba, Rml::Vector2i& dimensions, bool& repeat);
+
 /** RmlUi warnings and errors logged since the last reset. */
 int  RmlWarnings();
 void ResetRmlWarnings();

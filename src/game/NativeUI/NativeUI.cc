@@ -20,7 +20,9 @@
 #include "SGP.h"
 #include "Timer.h"
 #include "UiCore.h"
+#include "UiGpu.h"
 #include "Video.h"
+#include "VideoGpu.h"
 #include "VideoOptionsScreen.h"
 #include "json/Json.h"
 
@@ -85,6 +87,7 @@ namespace
 		bool failed = false; // could not start: do not retry every frame
 		bool gpu = false;
 		std::unique_ptr<nui::SdlRenderInterface> ri;
+		std::unique_ptr<nui::SdlGpuRenderInterface> gpuRi; // the SDL_GPU compositor path
 		SDL_Surface* layer = nullptr;      // software path: premultiplied ARGB, output sized
 		Rml::Context* ctx = nullptr;
 		Rml::ElementDocument* overlays = nullptr;
@@ -125,6 +128,8 @@ namespace
 		void SoftwareCompose(SDL_Surface* dst, SDL_Rect const& area) override;
 		uint32_t SoftwarePixel(int x, int y) override;
 		void GpuRender(SDL_Renderer*) override;
+		void GpuFramePrepare(SDL_GPUCommandBuffer*) override;
+		void GpuFrameRender(SDL_GPURenderPass*, int w, int h) override;
 		bool HidesLegacyCursor() override { return running && NativeCursorShown(); }
 
 		bool AnythingShown() const;
@@ -139,11 +144,14 @@ namespace
 
 	bool WantsGpu()
 	{
-		if (!GameRenderer || sgp::IsHeadless()) return false;
+		if (sgp::IsHeadless()) return false;
 		char const* env = std::getenv("JA2_NATIVE_UI_RENDERER");
 		std::string const want = env ? env : "";
-		if (want == "gpu") return true; // also in a --show automation session: screenshots then read the window back
-		return want != "software" && !Automation::GetOptions().Active();
+		if (want == "software") return false;   // force the software layer in a window too
+		if (want == "gpu") return VideoGpu::Active() || GameRenderer != nullptr;
+		if (VideoGpu::Active() && !Automation::GetOptions().Active()) return true; // the one SDL_GPU compositor
+		if (!GameRenderer) return false;
+		return !Automation::GetOptions().Active();
 	}
 
 	/** Output size the native UI would get now. */
@@ -308,7 +316,16 @@ bool Start()
 		OutputSize(g_rt.w, g_rt.h);
 		if (g_rt.gpu)
 		{
-			g_rt.ri = std::make_unique<nui::SdlRenderInterface>(GameRenderer);
+			if (VideoGpu::Active())
+			{
+				VideoGpu::Resources const& r = VideoGpu::GetResources();
+				g_rt.gpuRi = std::make_unique<nui::SdlGpuRenderInterface>(
+					nui::GpuPipeline{ r.device, r.pipeline, r.samplerNearest, r.samplerLinear, r.white });
+			}
+			else
+			{
+				g_rt.ri = std::make_unique<nui::SdlRenderInterface>(GameRenderer);
+			}
 		}
 		else
 		{
@@ -317,7 +334,7 @@ bool Start()
 			SDL_FillSurfaceRect(g_rt.layer, nullptr, 0);
 			g_rt.ri = std::make_unique<nui::SdlRenderInterface>(g_rt.layer);
 		}
-		g_rt.ctx = Rml::CreateContext("native", { g_rt.w, g_rt.h }, g_rt.ri.get());
+		g_rt.ctx = Rml::CreateContext("native", { g_rt.w, g_rt.h }, g_rt.gpuRi ? static_cast<Rml::RenderInterface*>(g_rt.gpuRi.get()) : static_cast<Rml::RenderInterface*>(g_rt.ri.get()));
 		if (!g_rt.ctx) throw std::runtime_error("RmlUi: CreateContext failed");
 		g_rt.dp = ComputeDp(g_rt.w, g_rt.h, g_rt.userScale);
 		g_rt.ctx->SetDensityIndependentPixelRatio(g_rt.dp);
@@ -601,10 +618,29 @@ uint32_t Runtime::SoftwarePixel(int const x, int const y)
 
 void Runtime::GpuRender(SDL_Renderer*)
 {
-	if (!running || !gpu || !AnythingShown()) return;
+	if (!running || !gpu || !AnythingShown() || !ri) return;
 	nui::RmlClock().now = GetClock() / 1000.0;
 	ctx->Update();
 	ctx->Render();
+}
+
+void Runtime::GpuFramePrepare(SDL_GPUCommandBuffer* cmd)
+{
+	if (!running || !gpuRi || !cmd) return;
+	nui::RmlClock().now = GetClock() / 1000.0;
+	gpuRi->Prepare(w, h);
+	if (AnythingShown())
+	{
+		ctx->Update();
+		ctx->Render();
+	}
+	gpuRi->Upload(cmd);
+}
+
+void Runtime::GpuFrameRender(SDL_GPURenderPass* pass, int, int)
+{
+	if (!running || !gpuRi) return;
+	gpuRi->Draw(pass);
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1254,7 +1290,9 @@ Info GetInfo()
 	i.running = g_rt.running;
 	i.userScale = g_rt.userScale;
 	if (!g_rt.running) return i;
-	i.renderer = g_rt.gpu ? std::string("gpu (") + SDL_GetRendererName(GameRenderer) + ")" : "software";
+	i.renderer = !g_rt.gpu ? "software"
+		: g_rt.gpuRi ? "gpu (SDL_GPU compositor)"
+		: std::string("gpu (") + (GameRenderer ? SDL_GetRendererName(GameRenderer) : "?") + ")";
 	i.width = g_rt.w;
 	i.height = g_rt.h;
 	i.dp = g_rt.dp;
