@@ -290,12 +290,30 @@ try
 		s->uiAnimSubFlags |= SUB_ANIM_BIGGUYTHREATENSTANCE;
 	}
 
+	// Everyone wears basic load-bearing gear unless the create struct already
+	// chose something: the vest, belt and pack provide the merc's pockets.
+	if (s->ubSoldierClass != SOLDIER_CLASS_CREATURE)
+	{
+		static const struct { INT8 slot; UINT16 item; } BASIC_LBE[] = {
+			{ LBE_VESTPOS, LBE_VEST },
+			{ LBE_BELTPOS, LBE_BELT },
+			{ LBE_PACKPOS, LBE_PACK },
+		};
+		for (auto const& lbe : BASIC_LBE)
+		{
+			if (s->inv[lbe.slot].usItem == NOTHING)
+			{
+				CreateItem(lbe.item, 100, &s->inv[lbe.slot]);
+			}
+		}
+	}
+
 	// For inventory, look for any face class items that may be located in the big
 	// pockets and if found, move that item to a face slot and clear the pocket!
 	if (team_id != OUR_TEAM)
 	{
 		bool second_face_item = false;
-		for (INT32 i = BIGPOCK1POS; i <= BIGPOCK4POS; ++i)
+		for (INT32 i = POCK1POS; i <= POCK4POS; ++i)
 		{
 			OBJECTTYPE& o = s->inv[i];
 			if (!(GCM->getItem(o.usItem)->isFace())) continue;
@@ -2032,7 +2050,7 @@ static void CopyProfileItems(SOLDIERTYPE& s, SOLDIERCREATE_STRUCT const& c)
 
 		for (UINT32 money_left = p.uiMoney; money_left > 0;)
 		{
-			INT8 const slot_id = FindEmptySlotWithin(&s, BIGPOCK1POS, SMALLPOCK8POS);
+			INT8 const slot_id = FindEmptySlotWithin(&s, POCK1POS, POCK12POS);
 			if (slot_id == NO_SLOT) break;
 			OBJECTTYPE* const slot = &s.inv[slot_id];
 

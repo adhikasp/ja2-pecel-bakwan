@@ -1832,7 +1832,7 @@ static BOOLEAN BulletHitMerc(BULLET* pBullet, STRUCTURE* pStructure, BOOLEAN fIn
 		// Place knife on guy....
 
 		// See if they have room ( and make sure it's not in hand pos?
-		bSlot = FindEmptySlotWithin(&tgt, BIGPOCK1POS, SMALLPOCK8POS );
+		bSlot = FindEmptySlotWithin(&tgt, POCK1POS, POCK12POS );
 		if (bSlot == NO_SLOT)
 		{
 			// Add item

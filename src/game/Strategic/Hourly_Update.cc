@@ -243,7 +243,7 @@ static void HourlyLarryUpdate(void)
 						usCashAmount = GCM->getItem(ALCOHOL)->getPrice();
 						AddTransactionToPlayersBook ( TRANSFER_FUNDS_TO_MERC, pSoldier->ubProfile, GetWorldTotalMin() , -( usCashAmount ) );
 						// give Larry some booze and set slot etc values appropriately
-						bBoozeSlot = FindEmptySlotWithin( pSoldier, HANDPOS, SMALLPOCK8POS );
+						bBoozeSlot = FindEmptySlotWithin( pSoldier, HANDPOS, POCK12POS );
 						if ( bBoozeSlot != NO_SLOT )
 						{
 							// give Larry booze here
@@ -274,7 +274,7 @@ static void HourlyLarryUpdate(void)
 					usCashAmount = GCM->getItem(ALCOHOL)->getPrice();
 					AddTransactionToPlayersBook ( TRANSFER_FUNDS_TO_MERC, pSoldier->ubProfile, GetWorldTotalMin() , -( usCashAmount ) );
 					// give Larry some booze and set slot etc values appropriately
-					bBoozeSlot = FindEmptySlotWithin( pSoldier, HANDPOS, SMALLPOCK8POS );
+					bBoozeSlot = FindEmptySlotWithin( pSoldier, HANDPOS, POCK12POS );
 					if ( bBoozeSlot != NO_SLOT )
 					{
 						// give Larry booze here

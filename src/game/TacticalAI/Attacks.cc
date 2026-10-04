@@ -1583,7 +1583,7 @@ INT8 CanNPCAttack(SOLDIERTYPE *pSoldier)
 			if ( (GCM->getItem(pSoldier->inv[ HANDPOS ].usItem)->getItemClass() == IC_GUN) && !(GCM->getItem(pSoldier->inv[ HANDPOS ].usItem)->isTwoHanded() ) )
 			{
 				// look for another pistol/SMG if available
-				bWeaponIn = FindAIUsableObjClassWithin( pSoldier, IC_WEAPON, BIGPOCK1POS, SMALLPOCK8POS );
+				bWeaponIn = FindAIUsableObjClassWithin( pSoldier, IC_WEAPON, POCK1POS, POCK12POS );
 				if (bWeaponIn != NO_SLOT && (GCM->getItem(pSoldier->inv[ bWeaponIn ].usItem)->getItemClass() == IC_GUN) && !(GCM->getItem(pSoldier->inv[ bWeaponIn ].usItem)->isTwoHanded() ) )
 				{
 					RearrangePocket( pSoldier, SECONDHANDPOS, bWeaponIn, FOREVER );

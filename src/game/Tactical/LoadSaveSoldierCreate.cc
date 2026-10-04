@@ -93,7 +93,7 @@ static void ExtractSoldierCreate(const BYTE* const data, SOLDIERCREATE_STRUCT* c
 	EXTR_I8(d, c->bUseGivenVehicleID)
 	EXTR_BOOL(d, c->fHasKeys)
 	EXTR_SKIP(d, 117)
-	Assert(d.getConsumed() == 1040);
+	Assert(d.getConsumed() == 1148);
 }
 
 
@@ -167,7 +167,7 @@ static void InjectSoldierCreate(BYTE* const data, const SOLDIERCREATE_STRUCT* co
 	INJ_I8(d, c->bUseGivenVehicleID)
 	INJ_BOOL(d, c->fHasKeys)
 	INJ_SKIP(d, 117)
-	Assert(d.getConsumed() == 1040);
+	Assert(d.getConsumed() == 1148);
 }
 
 

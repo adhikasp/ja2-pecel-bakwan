@@ -2021,7 +2021,7 @@ bool FindBetterSpotForItem(SOLDIERTYPE& s, INT8 const slot)
 {
 	/* Look for a place in the slots to put an item in a hand or armour position,
 	 * and move it there. */
-	if (slot >= BIGPOCK1POS) return false;
+	if (slot >= POCK1POS) return false;
 
 	UINT16 const item = s.inv[slot].usItem;
 	if (item == NOTHING) return true; // That's just fine
@@ -2029,13 +2029,13 @@ bool FindBetterSpotForItem(SOLDIERTYPE& s, INT8 const slot)
 	INT8 new_slot;
 	if (GCM->getItem(item)->getPerPocket() != 0)
 	{ // Try a small pocket first
-		new_slot = FindEmptySlotWithin(&s, SMALLPOCK1POS, SMALLPOCK8POS);
+		new_slot = FindEmptySlotWithin(&s, POCK5POS, POCK12POS);
 		if (new_slot == NO_SLOT) goto try_big_pocket;
 	}
 	else
 	{ // Look for a big pocket
 try_big_pocket:
-		new_slot = FindEmptySlotWithin(&s, BIGPOCK1POS, BIGPOCK4POS);
+		new_slot = FindEmptySlotWithin(&s, POCK1POS, POCK4POS);
 		if (new_slot == NO_SLOT) return false;
 	}
 

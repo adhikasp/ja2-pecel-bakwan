@@ -268,7 +268,7 @@ namespace
 		std::string dName, dFull, dFace, dVitHp, dEn, dMo, dMoney, dKeys, dWeight, dCamo, dArmour;
 		int dFw = 0, dFh = 0, dHpw = 0, dLostw = 0, dEnw = 0, dMow = 0;
 		std::vector<KvRow> attrs;
-		std::vector<SlotRow> body, hands, bigPockets, smallPockets;
+		std::vector<SlotRow> body, hands, lbe, bigPockets, smallPockets;
 		// item description
 		bool desc = false, descMoney = false, descGun = false, descWeapon = false, descProsCons = false, descHatched = false;
 		std::string xName, xType, xText, xPic, xStatusLabel, xStatus, xWeight, xPros, xCons, xAmmo, xAmmoType, xKey;
@@ -384,7 +384,7 @@ namespace
 			f.Field("d_hpw", dHpw); f.Field("d_lostw", dLostw); f.Field("d_enw", dEnw); f.Field("d_mow", dMow);
 			f.Field("d_money", dMoney); f.Field("d_keys", dKeys); f.Field("d_weight", dWeight); f.Field("d_camo", dCamo); f.Field("d_armour", dArmour);
 			f.Rows("attrs", attrs);
-			f.Rows("body", body); f.Rows("hands", hands); f.Rows("big", bigPockets); f.Rows("small", smallPockets);
+			f.Rows("body", body); f.Rows("hands", hands); f.Rows("lbe", lbe); f.Rows("big", bigPockets); f.Rows("small", smallPockets);
 			f.Field("desc", desc); f.Field("desc_money", descMoney); f.Field("desc_gun", descGun); f.Field("desc_weapon", descWeapon);
 			f.Field("desc_pros_cons", descProsCons); f.Field("desc_hatched", descHatched);
 			f.Field("x_name", xName); f.Field("x_type", xType); f.Field("x_text", xText); f.Field("x_pic", xPic);
@@ -678,7 +678,7 @@ namespace
 		{
 			detail = gsCurInterfacePanel == SM_PANEL && gpSMCurrentMerc;
 			dMute = false;
-			body.clear(); hands.clear(); bigPockets.clear(); smallPockets.clear(); attrs.clear();
+			body.clear(); hands.clear(); lbe.clear(); bigPockets.clear(); smallPockets.clear(); attrs.clear();
 			if (!detail) return;
 			SOLDIERTYPE const& s = *gpSMCurrentMerc;
 			dName = S(s.name);
@@ -711,8 +711,11 @@ namespace
 			body.push_back(MakeSlot(s, LEGPOS, false, "armour", Str("tac.slot.legs")));
 			hands.push_back(MakeSlot(s, HANDPOS, true, "gun", Str("tac.slot.hand")));
 			hands.push_back(MakeSlot(s, SECONDHANDPOS, true, "gun", Str("tac.slot.offhand")));
-			for (int p = BIGPOCK1POS; p <= BIGPOCK4POS; ++p) bigPockets.push_back(MakeSlot(s, p, true, "inventory", ""));
-			for (int p = SMALLPOCK1POS; p <= SMALLPOCK8POS; ++p) smallPockets.push_back(MakeSlot(s, p, false, "inventory", ""));
+			lbe.push_back(MakeSlot(s, LBE_VESTPOS, false, "inventory", Str("tac.slot.lbe_vest")));
+			lbe.push_back(MakeSlot(s, LBE_BELTPOS, false, "inventory", Str("tac.slot.lbe_belt")));
+			lbe.push_back(MakeSlot(s, LBE_PACKPOS, false, "inventory", Str("tac.slot.lbe_pack")));
+			for (int p = POCK1POS; p <= POCK4POS; ++p) bigPockets.push_back(MakeSlot(s, p, true, "inventory", ""));
+			for (int p = POCK5POS; p <= POCK12POS; ++p) smallPockets.push_back(MakeSlot(s, p, false, "inventory", ""));
 		}
 
 		void ReadDesc()

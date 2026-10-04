@@ -1677,7 +1677,7 @@ BOOLEAN AddDeadArmsDealerItemsToWorld(SOLDIERTYPE const* const pSoldier)
 				// drop all the perfect items first
 
 				// drop stackable items like ammo in stacks of whatever will fit into a large pocket instead of one at a time
-				ubHowManyMaxAtATime = ItemSlotLimit( usItemIndex, BIGPOCK1POS );
+				ubHowManyMaxAtATime = ItemSlotLimit( usItemIndex, POCK1POS );
 				if ( ubHowManyMaxAtATime < 1 )
 				{
 					ubHowManyMaxAtATime = 1;
@@ -2323,7 +2323,7 @@ BOOLEAN DealerItemIsSafeToStack( UINT16 usItemIndex )
 	}
 
 	/*
-	if ( ItemSlotLimit( usItemIndex, BIGPOCK1POS ) > 1 )
+	if ( ItemSlotLimit( usItemIndex, POCK1POS ) > 1 )
 	{
 		return( TRUE );
 	}*/

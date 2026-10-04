@@ -107,6 +107,14 @@
 			</div>
 			<div class="pockets" id="tac.inv.pockets">
 				<div class="grid">
+					<div class="slot" data-for="s : lbe" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+						<span class="lbl">{{s.label}}</span>
+					</div>
+				</div>
+				<div class="grid">
 					<div class="slot big" data-for="s : big" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
 						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
 						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>

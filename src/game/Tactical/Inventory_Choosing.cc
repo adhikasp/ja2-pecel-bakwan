@@ -1201,7 +1201,7 @@ static void ChooseFaceGearForSoldierCreateStruct(SOLDIERCREATE_STRUCT* pp)
 
 	//Look for any face item in the big pocket positions (the only place they can be added in the editor)
 	//If any are found, then don't assign any
-	for( i = BIGPOCK1POS; i < BIGPOCK4POS; i++ )
+	for( i = POCK1POS; i < POCK4POS; i++ )
 	{
 		if( GCM->getItem(pp->Inv[ i ].usItem)->getItemClass() == IC_FACE )
 		{
@@ -1450,7 +1450,7 @@ static BOOLEAN PlaceObjectInSoldierCreateStruct(SOLDIERCREATE_STRUCT* pp, OBJECT
 	{
 		//ubPerPocket == 0 will only fit in large pockets.
 		pObject->ubNumberOfObjects = 1;
-		for( i = BIGPOCK1POS; i <= BIGPOCK4POS; i++ )
+		for( i = POCK1POS; i <= POCK4POS; i++ )
 		{
 			if( !(pp->Inv[ i ].usItem) && !(pp->Inv[ i ].fFlags & OBJECT_NO_OVERWRITE) )
 			{
@@ -1464,7 +1464,7 @@ static BOOLEAN PlaceObjectInSoldierCreateStruct(SOLDIERCREATE_STRUCT* pp, OBJECT
 	{
 		pObject->ubNumberOfObjects = (UINT8) std::min(GCM->getItem(pObject->usItem )->getPerPocket(), pObject->ubNumberOfObjects);
 		//try to get it into a small pocket first
-		for( i = SMALLPOCK1POS; i <= SMALLPOCK8POS; i++ )
+		for( i = POCK5POS; i <= POCK12POS; i++ )
 		{
 			if( !(pp->Inv[ i ].usItem) && !(pp->Inv[ i ].fFlags & OBJECT_NO_OVERWRITE) )
 			{
@@ -1472,7 +1472,7 @@ static BOOLEAN PlaceObjectInSoldierCreateStruct(SOLDIERCREATE_STRUCT* pp, OBJECT
 				return TRUE;
 			}
 		}
-		for( i = BIGPOCK1POS; i <= BIGPOCK4POS; i++ )
+		for( i = POCK1POS; i <= POCK4POS; i++ )
 		{
 			//no space free in small pockets, so put it into a large pocket.
 			if( !(pp->Inv[ i ].usItem) && !(pp->Inv[ i ].fFlags & OBJECT_NO_OVERWRITE) )
@@ -1831,12 +1831,12 @@ void AssignCreatureInventory( SOLDIERTYPE *pSoldier )
 	// decide if the creature will drop any REAL bodyparts
 	if (Random(100) < uiChanceToDrop)
 	{
-		CreateItem( (UINT16)(fBloodcat ? BLOODCAT_CLAWS : CREATURE_PART_CLAWS), (INT8) (80 + Random(21)), &(pSoldier->inv[BIGPOCK1POS]) );
+		CreateItem( (UINT16)(fBloodcat ? BLOODCAT_CLAWS : CREATURE_PART_CLAWS), (INT8) (80 + Random(21)), &(pSoldier->inv[POCK1POS]) );
 	}
 
 	if (Random(100) < uiChanceToDrop)
 	{
-		CreateItem( (UINT16)(fBloodcat ? BLOODCAT_TEETH : CREATURE_PART_FLESH), (INT8) (80 + Random(21)), &(pSoldier->inv[BIGPOCK2POS]) );
+		CreateItem( (UINT16)(fBloodcat ? BLOODCAT_TEETH : CREATURE_PART_FLESH), (INT8) (80 + Random(21)), &(pSoldier->inv[POCK2POS]) );
 	}
 
 	// as requested by ATE, males are more likely to drop their "organs" (he actually suggested this, I'm serious!)
@@ -1848,7 +1848,7 @@ void AssignCreatureInventory( SOLDIERTYPE *pSoldier )
 
 	if (Random(100) < uiChanceToDrop)
 	{
-		CreateItem( (UINT16)(fBloodcat ? BLOODCAT_PELT : CREATURE_PART_ORGAN), (INT8) (80 + Random(21)), &(pSoldier->inv[BIGPOCK3POS]) );
+		CreateItem( (UINT16)(fBloodcat ? BLOODCAT_PELT : CREATURE_PART_ORGAN), (INT8) (80 + Random(21)), &(pSoldier->inv[POCK3POS]) );
 	}
 }
 

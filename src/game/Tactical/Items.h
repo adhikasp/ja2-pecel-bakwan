@@ -51,6 +51,12 @@ UINT16 RandomMagazine( UINT16 usItem, UINT8 ubPercentStandard );
 extern BOOLEAN ReloadGun( SOLDIERTYPE * pSoldier, OBJECTTYPE * pGun, OBJECTTYPE * pAmmo );
 
 UINT8 ItemSlotLimit( UINT16 usItem, INT8 bSlot );
+UINT8 ItemSlotLimit( const SOLDIERTYPE& s, UINT16 usItem, INT8 bSlot );
+
+// The typed pocket a pocket slot provides, from the worn LBE. False when the
+// slot's window has no pocket (no LBE worn there).
+namespace Equipment { enum class PocketKind : uint8_t; }
+bool GetPocketKind(const SOLDIERTYPE& s, INT8 bSlot, Equipment::PocketKind& out);
 
 // Function to put an item in a soldier profile
 // It's very primitive, just finds an empty place!

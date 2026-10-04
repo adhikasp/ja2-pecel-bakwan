@@ -546,7 +546,7 @@ void ExtractSoldierType(const BYTE* const data, SOLDIERTYPE* const s, UINT32 uiS
 	EXTR_I32(d, s->uiTimeSinceLastBleedGrunt)
 	EXTR_SOLDIER(d, s->next_to_previous_attacker)
 	EXTR_SKIP(d, 39)
-	Assert(d.getConsumed() == 2328);
+	Assert(d.getConsumed() == 2442);
 
 	if (checksum != MercChecksum(*s))
 	{
@@ -1051,5 +1051,5 @@ void InjectSoldierType(BYTE* const data, const SOLDIERTYPE* const s)
 	INJ_I32(d, s->uiTimeSinceLastBleedGrunt)
 	INJ_SOLDIER(d, s->next_to_previous_attacker)
 	INJ_SKIP(d, 39)
-	Assert(d.getConsumed() == 2328);
+	Assert(d.getConsumed() == 2442);
 }

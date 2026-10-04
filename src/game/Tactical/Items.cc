@@ -1,6 +1,8 @@
 #include "ArmourModel.h"
 #include "Equipment/AttachmentRules.h"
 #include "Equipment/EquipmentCatalog.h"
+#include "Equipment/Lbe.h"
+#include "Equipment/PocketRules.h"
 #include "Equipment/Slots.h"
 #include "Font_Control.h"
 #include "Handle_Items.h"
@@ -275,26 +277,51 @@ BOOLEAN WeaponInHand(const SOLDIERTYPE* const pSoldier)
 
 UINT8 ItemSlotLimit( UINT16 usItem, INT8 bSlot )
 {
-	UINT8 ubSlotLimit;
-
-	if ( bSlot < BIGPOCK1POS )
+	if ( bSlot < POCK1POS )
 	{
 		return( 1 );
 	}
-	else
+	return GCM->getItem(usItem)->getPerPocket();
+}
+
+
+// The typed pocket a pocket slot provides, from the worn load-bearing gear.
+// False when the window's LBE item is missing or has no such pocket.
+bool GetPocketKind(const SOLDIERTYPE& s, INT8 bSlot, Equipment::PocketKind& out)
+{
+	if (bSlot < POCK1POS || bSlot > POCK12POS) return false;
+	static const INT8 LBE_SLOT_OF_WINDOW[] = { LBE_VESTPOS, LBE_BELTPOS, LBE_PACKPOS };
+	int const window = (bSlot - POCK1POS) / LBE_WINDOW_SIZE;
+	int const index  = (bSlot - POCK1POS) % LBE_WINDOW_SIZE;
+	const Equipment::LbeDef* lbe = Equipment::LbeFor(s.inv[LBE_SLOT_OF_WINDOW[window]].usItem);
+	if (lbe == nullptr || index >= lbe->pocketCount) return false;
+	out = lbe->pockets[index];
+	return true;
+}
+
+
+UINT8 ItemSlotLimit( const SOLDIERTYPE& s, UINT16 usItem, INT8 bSlot )
+{
+	if ( bSlot < POCK1POS )
 	{
-		ubSlotLimit = GCM->getItem(usItem)->getPerPocket();
-		if (bSlot >= SMALLPOCK1POS && ubSlotLimit > 1)
-		{
-			ubSlotLimit /= 2;
-		}
-		return( ubSlotLimit );
+		return( 1 );
 	}
+
+	// No LBE worn means no pocket, and a small pocket holds half of what a
+	// full pocket holds.
+	Equipment::PocketKind kind;
+	if (!GetPocketKind(s, bSlot, kind)) return 0;
+	UINT8 ubSlotLimit = GCM->getItem(usItem)->getPerPocket();
+	if (kind == Equipment::PocketKind::Small && ubSlotLimit > 1)
+	{
+		ubSlotLimit /= 2;
+	}
+	return( ubSlotLimit );
 }
 
 UINT32 MoneySlotLimit( INT8 bSlot )
 {
-	if ( bSlot >= SMALLPOCK1POS )
+	if ( bSlot >= POCK5POS )
 	{
 		return( MAX_MONEY_PER_SLOT / 2 );
 	}
@@ -1767,13 +1794,15 @@ BOOLEAN CanItemFitInPosition(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, INT8 bPos,
 				if (pSoldier->inv[HANDPOS].usItem != NOTHING && pSoldier->inv[SECONDHANDPOS].usItem != NOTHING)
 				{
 					// two items in hands; try moving the second one so we can swap
-					if (GCM->getItem(pSoldier->inv[SECONDHANDPOS].usItem)->getPerPocket() == 0)
+					bNewPos = NO_SLOT;
+					for (INT8 bLoop = POCK1POS; bLoop <= POCK12POS; ++bLoop)
 					{
-						bNewPos = FindEmptySlotWithin( pSoldier, BIGPOCK1POS, BIGPOCK4POS );
-					}
-					else
-					{
-						bNewPos = FindEmptySlotWithin( pSoldier, BIGPOCK1POS, SMALLPOCK8POS );
+						if (pSoldier->inv[bLoop].ubNumberOfObjects == 0 &&
+							CanItemFitInPosition( pSoldier, &pSoldier->inv[SECONDHANDPOS], bLoop, FALSE ))
+						{
+							bNewPos = bLoop;
+							break;
+						}
 					}
 					if (bNewPos == NO_SLOT)
 					{
@@ -1827,12 +1856,47 @@ BOOLEAN CanItemFitInPosition(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, INT8 bPos,
 			{
 				return( FALSE );
 			}
+			break;
+		case LBE_VESTPOS:
+		case LBE_BELTPOS:
+		case LBE_PACKPOS:
+		{
+			// Load-bearing gear is worn in its own slot, one kind per slot.
+			Equipment::LbeKind const wanted =
+				bPos == LBE_VESTPOS ? Equipment::LbeKind::Vest :
+				bPos == LBE_BELTPOS ? Equipment::LbeKind::Belt : Equipment::LbeKind::Pack;
+			const Equipment::LbeDef* lbe = Equipment::LbeFor(pObj->usItem);
+			if (lbe == nullptr || lbe->kind != wanted)
+			{
+				return( FALSE );
+			}
+			break;
+		}
 		default:
+			if (bPos >= POCK1POS)
+			{
+				// Pocket windows: the worn LBE provides the pocket, and the
+				// pocket rules decide what fits in it.
+				Equipment::PocketKind kind;
+				if (!GetPocketKind(*pSoldier, bPos, kind))
+				{
+					return( FALSE );
+				}
+				Equipment::FitResult const fit = Equipment::CanFit(kind, Equipment::TraitsOf(*item), 0);
+				if (!fit.ok)
+				{
+					if (fDoingPlacement)
+					{
+						ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, ST::format("{} does not fit here: {}", item->getName(), Equipment::Describe(fit.reason)));
+					}
+					return( FALSE );
+				}
+			}
 			break;
 	}
 
-	ubSlotLimit = ItemSlotLimit( pObj->usItem, bPos );
-	if (ubSlotLimit == 0 && bPos >= SMALLPOCK1POS )
+	ubSlotLimit = ItemSlotLimit( *pSoldier, pObj->usItem, bPos );
+	if (ubSlotLimit == 0)
 	{
 		// doesn't fit!
 		return( FALSE );
@@ -1914,7 +1978,7 @@ BOOLEAN PlaceObject( SOLDIERTYPE * pSoldier, INT8 bPos, OBJECTTYPE * pObj )
 
 	if (item->isKey()) CollectKey(*pSoldier, *pObj);
 
-	int ubSlotLimit = ItemSlotLimit(pObj->usItem, bPos);
+	int ubSlotLimit = ItemSlotLimit(*pSoldier, pObj->usItem, bPos);
 
 	OBJECTTYPE * const pInSlot{ &pSoldier->inv[bPos] };
 
@@ -1988,7 +2052,7 @@ BOOLEAN PlaceObject( SOLDIERTYPE * pSoldier, INT8 bPos, OBJECTTYPE * pObj )
 					DeleteObj( pObj );
 				}
 			}
-			else if ( ubSlotLimit == 1 || (ubSlotLimit == 0 && bPos >= HANDPOS && bPos <= BIGPOCK4POS ) )
+			else if ( ubSlotLimit == 1 || (ubSlotLimit == 0 && bPos >= HANDPOS && bPos <= POCK4POS ) )
 			{
 				if (pObj->ubNumberOfObjects <= 1)
 				{
@@ -2204,12 +2268,13 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 
 	if (ubPerSlot == 0)
 	{
-		// Large object; look for an empty hand/large pocket and dump it in there
-		// FindObjWithin with 0 will search for empty slots!
+		// Large object; look for an empty hand/pocket and dump it in there
+		// FindObjWithin with 0 will search for empty slots! Placement itself
+		// is gated by the pocket rules, so every pocket is worth a try.
 		bSlot = HANDPOS;
 		while (1)
 		{
-			bSlot = FindEmptySlotWithin( pSoldier, bSlot, BIGPOCK4POS );
+			bSlot = FindEmptySlotWithin( pSoldier, bSlot, POCK12POS );
 			if (bSlot == ITEM_NOT_FOUND)
 			{
 				return( FALSE );
@@ -2243,14 +2308,14 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			bSlot = HANDPOS;
 			while( 1 )
 			{
-				bSlot = FindObjWithin( pSoldier, pObj->usItem, bSlot, SMALLPOCK8POS );
+				bSlot = FindObjWithin( pSoldier, pObj->usItem, bSlot, POCK12POS );
 				if (bSlot == ITEM_NOT_FOUND)
 				{
 					break;
 				}
 				if ( bSlot != bExcludeSlot )
 				{
-					if ( ( (GCM->getItem(pObj->usItem)->getItemClass() == IC_MONEY) && pSoldier->inv[ bSlot ].uiMoneyAmount < MoneySlotLimit( bSlot ) ) || (GCM->getItem(pObj->usItem)->getItemClass() != IC_MONEY && pSoldier->inv[bSlot].ubNumberOfObjects < ItemSlotLimit( pObj->usItem, bSlot ) ) )
+					if ( ( (GCM->getItem(pObj->usItem)->getItemClass() == IC_MONEY) && pSoldier->inv[ bSlot ].uiMoneyAmount < MoneySlotLimit( bSlot ) ) || (GCM->getItem(pObj->usItem)->getItemClass() != IC_MONEY && pSoldier->inv[bSlot].ubNumberOfObjects < ItemSlotLimit( *pSoldier, pObj->usItem, bSlot ) ) )
 					{
 						// NEW: If in SKI, don't auto-place anything into a stackable slot that's currently hatched out!  Such slots
 						// will disappear in their entirety if sold/moved, causing anything added through here to vanish also!
@@ -2268,11 +2333,12 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 				bSlot++;
 			}
 		}
-		// Search for empty slots to dump into, starting with small pockets
-		bSlot = SMALLPOCK1POS;
+		// Search for empty slots to dump into; the pocket rules decide which
+		// pockets can take the item.
+		bSlot = POCK1POS;
 		while( 1 )
 		{
-			bSlot = FindEmptySlotWithin( pSoldier, bSlot, SMALLPOCK8POS );
+			bSlot = FindEmptySlotWithin( pSoldier, bSlot, POCK12POS );
 			if (bSlot == ITEM_NOT_FOUND)
 			{
 				break;
@@ -2285,11 +2351,11 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			}
 			bSlot++;
 		}
-		// now check hands/large pockets
+		// now check hands/pockets
 		bSlot = HANDPOS;
 		while (1)
 		{
-			bSlot = FindEmptySlotWithin( pSoldier, bSlot, BIGPOCK4POS );
+			bSlot = FindEmptySlotWithin( pSoldier, bSlot, POCK12POS );
 			if (bSlot == ITEM_NOT_FOUND)
 			{
 				break;
@@ -2890,7 +2956,7 @@ BOOLEAN PlaceObjectInSoldierProfile( UINT8 ubProfile, OBJECTTYPE *pObject )
 		return( TRUE );
 	}
 
-	for (bLoop = BIGPOCK1POS; bLoop < SMALLPOCK8POS; bLoop++)
+	for (bLoop = POCK1POS; bLoop < POCK12POS; bLoop++)
 	{
 		if ( gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] == 0 && (pSoldier == NULL || pSoldier->inv[ bLoop ].usItem == NOTHING ) )
 		{

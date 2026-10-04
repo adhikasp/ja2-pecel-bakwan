@@ -3203,18 +3203,18 @@ void DebugSoldierPage4()
 		PrintItem(y += h, "HEAD2POS:",      &s->inv[HEAD2POS]);
 		PrintItem(y += h, "HANDPOS:",       &s->inv[HANDPOS]);
 		PrintItem(y += h, "SECONDHANDPOS:", &s->inv[SECONDHANDPOS]);
-		PrintItem(y += h, "BIGPOCK1POS:",   &s->inv[BIGPOCK1POS]);
-		PrintItem(y += h, "BIGPOCK2POS:",   &s->inv[BIGPOCK2POS]);
-		PrintItem(y += h, "BIGPOCK3POS:",   &s->inv[BIGPOCK3POS]);
-		PrintItem(y += h, "BIGPOCK4POS:",   &s->inv[BIGPOCK4POS]);
-		PrintItem(y += h, "SMALLPOCK1POS:", &s->inv[SMALLPOCK1POS]);
-		PrintItem(y += h, "SMALLPOCK2POS:", &s->inv[SMALLPOCK2POS]);
-		PrintItem(y += h, "SMALLPOCK3POS:", &s->inv[SMALLPOCK3POS]);
-		PrintItem(y += h, "SMALLPOCK4POS:", &s->inv[SMALLPOCK4POS]);
-		PrintItem(y += h, "SMALLPOCK5POS:", &s->inv[SMALLPOCK5POS]);
-		PrintItem(y += h, "SMALLPOCK6POS:", &s->inv[SMALLPOCK6POS]);
-		PrintItem(y += h, "SMALLPOCK7POS:", &s->inv[SMALLPOCK7POS]);
-		PrintItem(y += h, "SMALLPOCK8POS:", &s->inv[SMALLPOCK8POS]);
+		PrintItem(y += h, "POCK1POS:",   &s->inv[POCK1POS]);
+		PrintItem(y += h, "POCK2POS:",   &s->inv[POCK2POS]);
+		PrintItem(y += h, "POCK3POS:",   &s->inv[POCK3POS]);
+		PrintItem(y += h, "POCK4POS:",   &s->inv[POCK4POS]);
+		PrintItem(y += h, "POCK5POS:", &s->inv[POCK5POS]);
+		PrintItem(y += h, "POCK6POS:", &s->inv[POCK6POS]);
+		PrintItem(y += h, "POCK7POS:", &s->inv[POCK7POS]);
+		PrintItem(y += h, "POCK8POS:", &s->inv[POCK8POS]);
+		PrintItem(y += h, "POCK9POS:", &s->inv[POCK9POS]);
+		PrintItem(y += h, "POCK10POS:", &s->inv[POCK10POS]);
+		PrintItem(y += h, "POCK11POS:", &s->inv[POCK11POS]);
+		PrintItem(y += h, "POCK12POS:", &s->inv[POCK12POS]);
 	}
 	else
 	{
