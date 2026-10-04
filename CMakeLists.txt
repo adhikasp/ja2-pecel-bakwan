@@ -149,6 +149,24 @@ if(MSVC)
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT "ja2")
 endif()
 
+if(NOT MSVC)
+	# RelWithDebInfo defaults to `-O2 -g`. Measured on this tree, full DWARF costs
+	# ~30% of compile time and inflates objects ~75% (the sol2/Lua binding TUs are
+	# the worst: one is 31MB), and it is what makes ja2.exe hundreds of MB, which
+	# every link then writes. Nothing in the e2e or unit-test loop reads full
+	# symbols. `-g1` keeps line tables, so stack traces still report file:line.
+	# Use -DCMAKE_BUILD_TYPE=Debug when you need to step through the debugger.
+	foreach(_var
+		CMAKE_CXX_FLAGS_RELWITHDEBINFO
+		CMAKE_C_FLAGS_RELWITHDEBINFO
+	)
+		string(REGEX REPLACE "(^|[ \t])-g($|[ \t])" "\\1-g1\\2" _value "${${_var}}")
+		if(NOT "${${_var}}" STREQUAL "${_value}")
+			set_property(CACHE "${_var}" PROPERTY VALUE "${_value}")
+		endif()
+	endforeach()
+endif()
+
 ## Build
 
 # The main target
