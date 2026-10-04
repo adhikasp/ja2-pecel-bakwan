@@ -312,47 +312,55 @@ static std::string IconPixels(std::string const& icon, int size)
 	return cache[key] = out;
 }
 
-Rml::TextureHandle SdlRenderInterface::LoadTexture(Rml::Vector2i& dimensions, const Rml::String& source)
+/** Resolves a texture source name (the last path component of the URL) to straight-alpha RGBA32: the design
+ * system's procedural textures ("gen-...") and SVG icons ("icon-...@<px>"), or a host image (merc faces and
+ * other art from the player's game data). Returns false when the source is unknown or missing. */
+bool ResolveTextureSource(Rml::String const& source, std::vector<unsigned char>& rgba, Rml::Vector2i& dimensions, bool& repeat)
 {
 	// RmlUi joins the source with the document's path: our name is the last path component.
 	std::string const name = source.substr(source.find_last_of("/\\") + 1);
-	CpuTexture* tex = nullptr;
 	if (name.rfind("gen-", 0) == 0)
 	{
 		int w = 0, h = 0;
-		bool repeat = false;
-		std::vector<unsigned char> const pixels = GenerateProcedural(name.substr(4), w, h, repeat);
-		if (pixels.empty()) return {};
-		tex = MakeTexture(pixels.data(), w, h, repeat);
+		rgba = GenerateProcedural(name.substr(4), w, h, repeat);
 		dimensions = { w, h };
+		return !rgba.empty();
 	}
-	else if (name.rfind("icon-", 0) == 0)
+	if (name.rfind("icon-", 0) == 0)
 	{
 		// icon-<name> or icon-<name>@<px>: the design system's SVG icons, rasterized at load (default 96 px)
 		std::string icon = name.substr(5);
 		int size = 96;
 		if (size_t const at = icon.find('@'); at != std::string::npos) { size = std::clamp(std::atoi(icon.c_str() + at + 1), 8, 512); icon.resize(at); }
 		std::string const pixels = IconPixels(icon, size);
-		if (pixels.empty()) return {};
-		tex = MakeTexture(reinterpret_cast<unsigned char const*>(pixels.data()), size, size, false);
+		if (pixels.empty()) return false;
+		rgba.assign(pixels.begin(), pixels.end());
 		dimensions = { size, size };
+		repeat = false;
+		return true;
 	}
-	else
-	{
-		// host images: merc faces and other art from the player's game data
-		SDL_Surface* s = ProvideImage(name);
-		if (!s) return {};
-		SDL_Surface* rgba = SDL_ConvertSurface(s, SDL_PIXELFORMAT_RGBA32);
-		SDL_DestroySurface(s);
-		if (!rgba) return {};
-		std::vector<unsigned char> pixels(size_t(rgba->w) * rgba->h * 4);
-		for (int y = 0; y < rgba->h; ++y)
-			std::copy_n(static_cast<unsigned char const*>(rgba->pixels) + size_t(y) * rgba->pitch, size_t(rgba->w) * 4, &pixels[size_t(y) * rgba->w * 4]);
-		tex = MakeTexture(pixels.data(), rgba->w, rgba->h, false);
-		dimensions = { rgba->w, rgba->h };
-		SDL_DestroySurface(rgba);
-	}
-	return reinterpret_cast<Rml::TextureHandle>(tex);
+	// host images: merc faces and other art from the player's game data
+	SDL_Surface* s = ProvideImage(name);
+	if (!s) return false;
+	SDL_Surface* converted = SDL_ConvertSurface(s, SDL_PIXELFORMAT_RGBA32);
+	SDL_DestroySurface(s);
+	if (!converted) return false;
+	rgba.resize(size_t(converted->w) * converted->h * 4);
+	for (int y = 0; y < converted->h; ++y)
+		std::copy_n(static_cast<unsigned char const*>(converted->pixels) + size_t(y) * converted->pitch,
+			size_t(converted->w) * 4, &rgba[size_t(y) * converted->w * 4]);
+	dimensions = { converted->w, converted->h };
+	repeat = false;
+	SDL_DestroySurface(converted);
+	return true;
+}
+
+Rml::TextureHandle SdlRenderInterface::LoadTexture(Rml::Vector2i& dimensions, const Rml::String& source)
+{
+	std::vector<unsigned char> pixels;
+	bool repeat = false;
+	if (!ResolveTextureSource(source, pixels, dimensions, repeat)) return {};
+	return reinterpret_cast<Rml::TextureHandle>(MakeTexture(pixels.data(), dimensions.x, dimensions.y, repeat));
 }
 
 Rml::TextureHandle SdlRenderInterface::GenerateTexture(Rml::Span<const Rml::byte> src, Rml::Vector2i dim)

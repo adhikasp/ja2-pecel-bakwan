@@ -223,7 +223,7 @@ static void MainLoop()
 				case SDL_EVENT_FINGER_MOTION:
 				case SDL_EVENT_FINGER_DOWN:
 				case SDL_EVENT_FINGER_UP:
-					SDL_ConvertEventToRenderCoordinates(GameRenderer, &event);
+					VideoConvertEventToCanvas(event);
 					break;
 				default:
 					break;
@@ -461,10 +461,12 @@ int main(int argc, char* argv[])
 			WorldRendererKind const kind = setting.empty() ? WorldRendererDefault(sgp::IsHeadless() || automation.Active()) : ParseWorldRenderer(setting);
 			bool const editor = GameMode::getInstance()->isEditorMode();
 			WorldRendererConfigure(editor ? WorldRendererKind::Software : kind);
+			// The presentation is SDL_GPU in every window (Phase 2 follow-up): the UI, the legacy frame and the
+			// world share one compositor and one present path. Headless sessions keep the software path.
+			VideoRequestGpuDevice(!sgp::IsHeadless());
 			if (!editor && kind != WorldRendererKind::Software)
 			{
 				VideoSetForceLayered(true);
-				VideoRequestGpuDevice(kind == WorldRendererKind::Gpu && !sgp::IsHeadless());
 			}
 		}
 

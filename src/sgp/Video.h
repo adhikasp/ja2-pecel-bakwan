@@ -160,6 +160,10 @@ struct VideoOverlay
 	virtual uint32_t SoftwarePixel(int x, int y) = 0;
 	/** GPU path: draw onto the window in output pixels (the logical presentation is switched off meanwhile). */
 	virtual void GpuRender(SDL_Renderer*) = 0;
+	/** SDL_GPU compositor path: record the overlay and upload its geometry on @a cmd, before the render pass. */
+	virtual void GpuFramePrepare(SDL_GPUCommandBuffer*) {}
+	/** SDL_GPU compositor path: draw the recorded overlay into @a pass (a @a w x @a h pixel target). */
+	virtual void GpuFrameRender(SDL_GPURenderPass*, int w, int h) {}
 	/** The overlay draws the mouse cursor itself: the legacy one is not drawn. */
 	virtual bool HidesLegacyCursor() = 0;
 };
@@ -174,6 +178,11 @@ bool VideoTakeOutputCapture(std::vector<uint8_t>& rgb, int& w, int& h);
  * window's pixels, or the ScreenBuffer headless, where the mapping is the identity). */
 struct VideoOutputMapping { float sx, sy, ox, oy; int w, h; bool gpu; };
 VideoOutputMapping VideoGetOutputMapping();
+
+/** The window-to-canvas coordinate mapping the SDL_Renderer's logical presentation used to do. On the SDL_GPU
+ * presentation (no renderer) these do it with the letterbox arithmetic themselves. */
+void VideoConvertEventToCanvas(SDL_Event& e);
+void VideoCanvasToWindow(float x, float y, float& wx, float& wy);
 
 /* ---- Phase 8: the world drawn by a recording renderer (src/game/TileEngine/WorldRender.h) ---------------------
  * Set before InitializeVideoManager: */

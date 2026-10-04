@@ -74,6 +74,7 @@ set_target_properties(ja2-rmlui PROPERTIES UNITY_BUILD OFF)
 # Render interface, clock, tokens, fonts, icons: shared by the game, the spikes and the unit tests.
 add_library(ja2-nativeui-core STATIC
     UiCore.cc
+    UiGpu.cc
     IconRaster.cc)
 target_include_directories(ja2-nativeui-core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_features(ja2-nativeui-core PUBLIC cxx_std_20)
