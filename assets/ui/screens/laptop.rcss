@@ -351,7 +351,7 @@ span, div { display: block; }
 .fin-side { flex: 0 0 420dp; margin-left: var(--sp-5); }
 .fin-side .panel { margin-bottom: var(--sp-4); }
 .spark { display: flex; align-items: flex-end; height: 120dp; padding-top: var(--sp-2); }
-.spark .b { flex: 1 1 0; margin-right: 3dp; background-color: var(--c-info); }
+.spark .b { flex: 1 1 0; max-width: 28dp; margin-right: 3dp; background-color: var(--c-info); }
 .spark .b.neg { background-color: var(--c-danger); }
 
 /* ------------------------------------------------------------------ personnel */

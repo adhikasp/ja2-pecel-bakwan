@@ -71,6 +71,17 @@ function campaign.hireFromAim(name, contract, equipment)
 		-- a previous hire leaves the site on that merc's member page: go back to the grid first
 		ja2.click{id = "aim.nav.members"}
 		ja2.waitIdle()
+		-- the grid is sorted by price and scrolls; a merc below the fold is not clickable, so
+		-- scroll back to the top and down until their card is in view
+		local sz = ja2.screenSize()
+		local wx, wy = math.floor(sz.w * 0.62), math.floor(sz.h * 0.55)
+		ja2.wheel(60, wx, wy)
+		ja2.waitIdle()
+		for _ = 1, 40 do
+			if ja2.exists{text = name, exact = true} then break end
+			ja2.wheel(-3, wx, wy)
+			ja2.waitIdle()
+		end
 		ja2.click{text = name, exact = true}
 		ja2.waitIdle()
 		ja2.click{id = "aim.contact"}
