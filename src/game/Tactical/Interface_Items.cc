@@ -25,6 +25,7 @@
 #include "Handle_UI.h"
 #include "RenderWorld.h"
 #include "Cursors.h"
+#include "Equipment/Slots.h"
 #include "Font_Control.h"
 #include "Render_Dirty.h"
 #include "Interface_Panels.h"
@@ -5295,6 +5296,16 @@ ItemDescNativeView GetItemDescNativeView()
 		v.attachStatus[i]    = o.bAttachStatus[i];
 		v.attachEnabled[i]   = (gItemDescAttachmentRegions[i].uiFlags & MSYS_REGION_EXISTS) != 0;
 	}
+	// Typed slots: the platform says which roles the positions serve.
+	if (item)
+	{
+		Equipment::Platform const platform = Equipment::SlotsFor(*item);
+		v.attachSlots = platform.slotCount;
+		for (int i = 0; i < MAX_ATTACHMENTS; ++i)
+		{
+			v.attachRole[i] = i < platform.slotCount ? Equipment::RoleKey(platform.slots[i].role) : "";
+		}
+	}
 	return v;
 }
 
@@ -5514,6 +5525,15 @@ NativeItemDescInfo NativeItemDescData()
 	{
 		d.attachments[i] = obj.usAttachItem[i];
 		d.attachmentStatus[i] = obj.bAttachStatus[i];
+	}
+	// Typed slots: the platform says which roles the positions serve.
+	{
+		Equipment::Platform const platform = Equipment::SlotsFor(*item);
+		d.attachSlots = platform.slotCount;
+		for (int i = 0; i < MAX_ATTACHMENTS; ++i)
+		{
+			d.attachRole[i] = i < platform.slotCount ? Equipment::RoleKey(platform.slots[i].role) : "";
+		}
 	}
 	if (ITEM_PROS_AND_CONS(obj.usItem))
 	{

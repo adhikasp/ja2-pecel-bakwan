@@ -1248,7 +1248,10 @@ private:
 			descCond = d.item == MONEY ? S(SPrintMoney(INT32(d.money))) : std::to_string(d.status) + "%";
 			descWeight = item ? ST::format("{.1f} kg", item->getWeight() / 10.0).to_std_string() : "";
 			descAmmo = d.shotsLeft >= 0 ? std::to_string(d.shotsLeft) + " / " + std::to_string(d.magSize) : "";
-			for (int i = 0; i < 4; ++i)
+			// Typed slots: one row per slot the platform offers.
+			int attachCount = d.attachSlots;
+			for (int i = 0; i < 4; ++i) if (d.attachments[i] != NOTHING && i >= attachCount) attachCount = i + 1;
+			for (int i = 0; i < attachCount; ++i)
 			{
 				if (!d.attachEnabled[i]) continue;
 				DescAttachment at;

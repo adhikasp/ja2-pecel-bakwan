@@ -752,11 +752,17 @@ namespace
 				xAmmo = ST::format("{} / {}", d.shotsLeft, d.magSize).to_std_string();
 				xAmmoType = d.ammoItem != NOTHING ? S(GCM->getItem(d.ammoItem)->getShortName()) : "";
 			}
-			for (int i = 0; i < 4; ++i)
+			// Typed slots: one row per slot the platform offers, labelled by
+			// role ("optic", "muzzle", ...). Merge-style attachments on items
+			// without a platform still show their positions.
+			int slotCount = d.attachSlots;
+			for (int i = 0; i < 4; ++i) if (d.attachments[i] != NOTHING && i >= slotCount) slotCount = i + 1;
+			for (int i = 0; i < slotCount; ++i)
 			{
 				SlotRow r;
 				r.idx = i;
 				r.ghost = "add";
+				r.label = d.attachRole[i] != nullptr && d.attachRole[i][0] != '\0' ? Str("tac.slotrole." + std::string(d.attachRole[i])) : "";
 				if (d.attachments[i] != NOTHING)
 				{
 					r.empty = false;

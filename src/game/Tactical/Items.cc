@@ -281,7 +281,9 @@ UINT8 ItemSlotLimit( UINT16 usItem, INT8 bSlot )
 	{
 		return( 1 );
 	}
-	return GCM->getItem(usItem)->getPerPocket();
+	// A stack limit, not a fit rule: everything that fits at all stacks one.
+	UINT8 const ubSlotLimit = GCM->getItem(usItem)->getPerPocket();
+	return ubSlotLimit > 0 ? ubSlotLimit : 1;
 }
 
 
@@ -308,10 +310,11 @@ UINT8 ItemSlotLimit( const SOLDIERTYPE& s, UINT16 usItem, INT8 bSlot )
 	}
 
 	// No LBE worn means no pocket, and a small pocket holds half of what a
-	// full pocket holds.
+	// full pocket holds - but always at least one.
 	Equipment::PocketKind kind;
 	if (!GetPocketKind(s, bSlot, kind)) return 0;
 	UINT8 ubSlotLimit = GCM->getItem(usItem)->getPerPocket();
+	if (ubSlotLimit == 0) ubSlotLimit = 1;
 	if (kind == Equipment::PocketKind::Small && ubSlotLimit > 1)
 	{
 		ubSlotLimit /= 2;
@@ -2956,28 +2959,35 @@ BOOLEAN PlaceObjectInSoldierProfile( UINT8 ubProfile, OBJECTTYPE *pObject )
 		return( TRUE );
 	}
 
-	for (bLoop = POCK1POS; bLoop < POCK12POS; bLoop++)
+	// The first free pocket whose kind actually takes the item: a profile
+	// purchase (a gift, a shop, an NPC handover) follows the same pocket rules
+	// as a drag and drop.
+	for (bLoop = POCK1POS; bLoop <= POCK12POS; bLoop++)
 	{
-		if ( gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] == 0 && (pSoldier == NULL || pSoldier->inv[ bLoop ].usItem == NOTHING ) )
+		if ( gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] != 0 ) continue;
+		if ( pSoldier != NULL && pSoldier->inv[ bLoop ].usItem != NOTHING ) continue;
+		if ( GCM->getItem(usItem)->getItemClass() != IC_MONEY &&
+			!CanItemFitInPosition( pSoldier, pObject, bLoop, FALSE ) )
 		{
-
-			// CJC: Deal with money by putting money into # stored in profile
-			if ( GCM->getItem(usItem)->getItemClass() == IC_MONEY )
-			{
-				gMercProfiles[ ubProfile ].uiMoney += pObject->uiMoneyAmount;
-				// change any gold/silver to money
-				usItem = MONEY;
-			}
-			else
-			{
-				gMercProfiles[ ubProfile ].inv[ bLoop ] = usItem;
-				gMercProfiles[ ubProfile ].bInvStatus[ bLoop ] = bStatus;
-				gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] = pObject->ubNumberOfObjects;
-			}
-
-			fReturnVal = TRUE;
-			break;
+			continue;
 		}
+
+		// CJC: Deal with money by putting money into # stored in profile
+		if ( GCM->getItem(usItem)->getItemClass() == IC_MONEY )
+		{
+			gMercProfiles[ ubProfile ].uiMoney += pObject->uiMoneyAmount;
+			// change any gold/silver to money
+			usItem = MONEY;
+		}
+		else
+		{
+			gMercProfiles[ ubProfile ].inv[ bLoop ] = usItem;
+			gMercProfiles[ ubProfile ].bInvStatus[ bLoop ] = bStatus;
+			gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] = pObject->ubNumberOfObjects;
+		}
+
+		fReturnVal = TRUE;
+		break;
 	}
 
 	if ( fReturnVal )

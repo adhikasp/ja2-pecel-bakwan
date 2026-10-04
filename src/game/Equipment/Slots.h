@@ -84,4 +84,7 @@ SlotPolicy TogglesFrom(const GamePolicy* policy);
 const char* Describe(SlotRole role);
 const char* Describe(MountKind mount);
 
+// Stable key for UI strings ("optic", "side_rail", ...).
+const char* RoleKey(SlotRole role);
+
 }

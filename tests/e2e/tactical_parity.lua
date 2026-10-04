@@ -59,7 +59,7 @@ ja2.click({ id = "tac.inv.slot[5]" }, { button = "right" })
 ja2.waitIdle()
 ja2.expect(vm().desc, "right click on the hand slot opens the item description")
 ja2.expect(vm().x_name ~= "", "the description names the item")
-ja2.expect(#vm().x_atts == 4, "four attachment slots")
+ja2.expect(#vm().x_atts >= 3 and #vm().x_atts <= 4, "the weapon's typed attachment slots")
 shots.take("desc.png", "small")
 local before = vm().cards[1].ammo
 ja2.click{ id = "tac.desc.unload" }

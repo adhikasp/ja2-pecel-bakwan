@@ -161,6 +161,7 @@
 						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
 						<img class="ghost" data-if="s.empty" src="icon-add"/>
 						<div class="cond" data-if="!s.empty"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+						<span class="lbl">{{s.label}}</span>
 					</div>
 				</div>
 			</div>

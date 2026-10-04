@@ -4,6 +4,7 @@
 #include "JA2Types.h"
 
 #include <string>
+#include <vector>
 
 struct SOLDIERTYPE;
 
@@ -51,4 +52,18 @@ namespace Automation::Scenario
 
 	/** Skill points and life from a spec table. `health` sets both life and life max. */
 	void ApplyStats(SOLDIERTYPE& s, sol::table const& t);
+
+	// --- The equipment schema ---------------------------------------------
+
+	/** Typed attachments, worn LBE and pocket contents from a spec table:
+	 * `attachments` keyed by slot role ("optic", "muzzle", "underbarrel",
+	 * "side_rail", "plate", "nvg"), `lbe` keyed by "vest"/"belt"/"pack" and
+	 * `pockets` keyed by "POCK1".."POCK12" (a name or { item = , count = }).
+	 * Everything goes through the equipment rules; each refusal is reported in
+	 * `problems` instead of being silently ignored. */
+	void ApplyEquipment(SOLDIERTYPE& s, sol::table const& spec, std::vector<std::string>& problems);
+
+	/** The loadout a soldier carries, as item names: weapon, attachments keyed
+	 * by slot role, worn LBE keyed by kind and pocket contents keyed by pocket. */
+	sol::table LoadoutTable(sol::state_view L, SOLDIERTYPE const& s);
 }

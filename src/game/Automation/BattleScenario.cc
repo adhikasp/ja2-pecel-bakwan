@@ -255,6 +255,19 @@ void StageBattle(sol::table const& spec)
 				if (o.is<std::string>()) Scenario::GiveItem(*s, Scenario::ItemByName(o.as<std::string>()));
 			}
 		}
+		// The equipment schema: typed attachments, worn LBE and pocket contents,
+		// applied through the rules. A refusal fails the fixture loudly.
+		if (setup.is<sol::table>())
+		{
+			std::vector<std::string> problems;
+			Scenario::ApplyEquipment(*s, setup.as<sol::table>(), problems);
+			if (!problems.empty())
+			{
+				std::string msg = s->name.to_std_string() + "'s loadout: ";
+				for (size_t i = 0; i < problems.size(); ++i) msg += (i ? "; " : "") + problems[i];
+				throw std::runtime_error(msg);
+			}
+		}
 		if (grid != NOWHERE) TeleportSoldier(*s, grid, true);
 		if (grid != NOWHERE || direction >= 0) FaceDirection(*s, direction);
 

@@ -329,6 +329,7 @@ std::unique_ptr<MERCPROFILESTRUCT> MercProfile::deserializeStruct(const MERCPROF
 				slotIdx = Internals::getInventorySlotEnumFromString(jSlot.GetString("slot"));
 			}
 			ST::string itemName = jSlot.GetString("item");
+			if (slotIdx < 0 || slotIdx >= NUM_INV_SLOTS) continue; // no such slot: skip it
 			prof->inv[slotIdx] = contentManager->getItemByName(itemName)->getItemIndex();
 			prof->bInvNumber[slotIdx] = jSlot.getOptionalUInt("quantity", 1);
 			prof->bInvStatus[slotIdx] = jSlot.getOptionalUInt("status", 100);

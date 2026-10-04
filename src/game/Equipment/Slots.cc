@@ -153,4 +153,18 @@ const char* Describe(MountKind mount)
 	return "mount";
 }
 
+const char* RoleKey(SlotRole role)
+{
+	switch (role)
+	{
+		case SlotRole::Optic:       return "optic";
+		case SlotRole::Muzzle:      return "muzzle";
+		case SlotRole::Underbarrel: return "underbarrel";
+		case SlotRole::SideRail:    return "side_rail";
+		case SlotRole::Plate:       return "plate";
+		case SlotRole::Nvg:         return "nvg";
+	}
+	return "slot";
+}
+
 }
