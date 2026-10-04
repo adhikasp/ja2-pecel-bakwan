@@ -30,6 +30,8 @@
 #include "DealerModel.h"
 #include "GameInstance.h"
 #include "Soldier_Profile.h"
+#include "PeopleContent.h"
+#include "Quests.h"
 #include "Dialogue_Control.h"
 #include "Message.h"
 #include "Strategic_Exit_GUI.h"
@@ -408,6 +410,91 @@ namespace
 		return s;
 	}
 
+	// The compiled people & quest registry (PeopleContent.h), for `ja2.game.npcs()`
+	// and `ja2.game.quests()`. Definitions come from the registry; quests also carry
+	// the live status so an e2e script can assert a transition.
+	sol::table NpcListTable()
+	{
+		sol::table list = g_lua.create_table();
+		int i = 1;
+		for (People::NpcDef const& n : People::NpcDefs())
+		{
+			sol::table t = g_lua.create_table();
+			t["id"]           = static_cast<int>(n.id);
+			t["name"]         = n.name;
+			t["kind"]         = People::NpcKindName(n.kind);
+			t["homeSectors"]  = n.homeSectors;
+			t["placedAtStart"] = n.placedAtStart;
+			sol::table quests = g_lua.create_table();
+			int q = 1;
+			for (People::QuestLink const& l : n.quests)
+			{
+				sol::table lk = g_lua.create_table();
+				People::QuestDef const* const qd = People::FindQuest(l.quest);
+				lk["id"]   = static_cast<int>(l.quest);
+				lk["name"] = qd ? qd->name : "";
+				lk["role"] = People::QuestRoleName(l.role);
+				quests[q++] = lk;
+			}
+			t["quests"] = quests;
+			list[i++] = t;
+		}
+		return list;
+	}
+
+	const char* QuestStatusName(UINT8 status)
+	{
+		switch (status)
+		{
+			case QUESTNOTSTARTED: return "NOT_STARTED";
+			case QUESTINPROGRESS: return "IN_PROGRESS";
+			case QUESTDONE:       return "DONE";
+		}
+		return "UNKNOWN";
+	}
+
+	sol::table QuestListTable()
+	{
+		sol::table list = g_lua.create_table();
+		int i = 1;
+		for (People::QuestDef const& q : People::QuestDefs())
+		{
+			sol::table t = g_lua.create_table();
+			t["id"]            = static_cast<int>(q.id);
+			t["name"]          = q.name;
+			t["title"]         = q.title;
+			t["status"]        = QuestStatusName(q.id < MAX_QUESTS ? gubQuest[q.id] : QUESTNOTSTARTED);
+			t["selfResolving"] = q.selfResolving;
+			t["reward"]        = q.reward;
+			t["reputationHook"] = q.reputationHook;
+			t["deedHook"]      = q.deedHook;
+			t["note"]          = q.note;
+			auto profiles = [&](std::vector<ProfileID> const& ids, char const* key) {
+				sol::table names = g_lua.create_table();
+				int k = 1;
+				for (ProfileID id : ids) names[k++] = People::NpcName(id);
+				t[key] = names;
+			};
+			profiles(q.givers, "givers");
+			profiles(q.resolvers, "resolvers");
+			profiles(q.dialogue, "dialogue");
+			sol::table prereqs = g_lua.create_table();
+			int p = 1;
+			for (Quests id : q.prerequisites) prereqs[p++] = People::QuestTitle(id);
+			t["prerequisites"] = prereqs;
+			list[i++] = t;
+		}
+		return list;
+	}
+
+	sol::table GameTable()
+	{
+		sol::table game = g_lua.create_table();
+		game.set_function("npcs",   [] { return Guarded([] { return NpcListTable(); }); });
+		game.set_function("quests", [] { return Guarded([] { return QuestListTable(); }); });
+		return game;
+	}
+
 	// Turn the enemies standing in the loaded sector into a strategic encounter, as if we had walked into them.
 	void FakeEncounter()
 	{
@@ -434,6 +521,7 @@ namespace
 		for (size_t i = 0; i < opt.scriptArgs.size(); ++i) args[i + 1] = opt.scriptArgs[i];
 		ja2["args"]     = args;
 		ja2["headless"] = opt.Headless();
+		ja2["game"]     = GameTable();
 
 		// --- time ---
 		ja2.set_function("step", [](sol::optional<unsigned> frames) {
