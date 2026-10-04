@@ -29,6 +29,65 @@ interpreter up for `ctest`. Run the tools through it with
 `uv run python tools/ja2ctl.py ...`, or activate it (`source .venv/bin/activate`;
 on Windows `.venv\Scripts\activate`).
 
+## The raw commands behind `tools/dev.py`
+
+[`tools/dev.py`](tools/dev.py) is the one entry point for day-to-day work on
+macOS and Windows (see [AGENTS.md](AGENTS.md)); it runs everything below in the
+right environment and is safe to run repeatedly. Use the raw commands when you
+need something the wrapper does not cover.
+
+### macOS
+
+The build directory is `build`:
+
+```sh
+cmake -S . -B build -G Ninja            # once; drop "-G Ninja" if you have no ninja
+cmake --build build --parallel $(sysctl -n hw.logicalcpu)
+./build/ja2 -unittests
+./build/ja2 -res 1280x720
+```
+
+Incremental — `cmake --build` only recompiles what changed, and re-runs cmake
+itself when `CMakeLists.txt` changed.
+
+### Windows (MSYS2 MinGW64)
+
+The build directory is `_bin`, and every build command needs the MinGW64
+environment: run it through a login shell with `MSYSTEM=MINGW64` set, because
+plain PowerShell/cmd does not have `gcc`/`cmake`/`cargo` on `PATH`:
+
+```sh
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && cmake --build . --parallel \$(nproc)"
+```
+
+Configure a fresh build directory with Ninja (much faster than MSYS Makefiles;
+a build directory keeps the generator it was configured with, so switch by
+configuring a new one):
+
+```sh
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && cmake .. -G Ninja"
+```
+
+For a package build use the old generator: `cmake .. -G 'MSYS Makefiles' -DCPACK_GENERATOR=ZIP && make package`.
+
+Test and run:
+
+```sh
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && ./ja2.exe -unittests"
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && ./ja2.exe -res 1280x720"
+```
+
+**Long paths.** Agent worktrees live in deep directories and the build tree goes
+deeper still (cargo's `target/` is the worst offender), which is how a build
+runs into Windows' MAX_PATH limit. Map the worktree to a drive letter and do
+everything through that drive; `tools/dev.py setup` picks the letter and
+re-creates the mapping for you (a reboot drops it):
+
+```sh
+subst W: C:\Workspace\ja2-stracciatella\.claude\worktrees\agent-123
+MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd /w && mkdir -p _bin && cd _bin && cmake .. -G Ninja && cmake --build . --parallel \$(nproc)"
+```
+
 ## General Notes
 
 We use cmake as our build system, which is aimed at an out-of-source build. That means that you should call
