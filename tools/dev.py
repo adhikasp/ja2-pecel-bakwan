@@ -57,6 +57,13 @@ TOOL_WHICH = {}
 # a build of master warms what a fresh worktree reuses. The path is exclusive,
 # so builds and full e2e runs across worktrees take turns (see build_path).
 SHARED_PATH_LETTERS = "WVUTSRQPONMLKJIHGFED"
+# sccache's default cache ceiling is 10G, but one full build of this tree stores
+# several GB of objects plus preprocessed sources, and every worktree/branch adds
+# its own set. At 10G the LRU starts evicting and unchanged code rebuilds cold,
+# which is the single biggest cause of multi-minute builds. The disk has hundreds
+# of GB free, so let the cache be large enough to actually be a cache. Override
+# with SCCACHE_CACHE_SIZE in the environment.
+SCCACHE_CACHE_SIZE = "50G"
 
 
 # --- small helpers ----------------------------------------------------------
@@ -134,16 +141,19 @@ def map_shared_path() -> Path:
         if not letter or not re.fullmatch(r"[A-Za-z]:", str(letter)):
             letter = free_drive_letter()
             if not letter:
-                warn("no free drive letter for the shared build path; building under the real path (no cache sharing)")
-                return REPO
+                die("no free drive letter for the shared build path "
+                    f"({''.join(SHARED_PATH_LETTERS[:6])}... all in use); free one with `subst <letter>: /D`. "
+                    "Building under the real path would use a different cache namespace and cost a full cold build.")
             db.write_text(json.dumps({"letter": letter}), encoding="utf-8")
         letter = letter.upper()
         subst = shutil.which("subst") or str(Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "subst.exe")
         if os.path.normcase(subst_map().get(letter, "")) != os.path.normcase(str(REPO)):
             subprocess.run([subst, letter, "/D"], capture_output=True)
             if subprocess.run([subst, letter, str(REPO)]).returncode != 0:
-                warn(f"`subst {letter} {REPO}` failed; building under the real path (no cache sharing)")
-                return REPO
+                # Never silently fall back to the real path: the compiler cache is keyed
+                # on the path, so a different namespace means every TU recompiles cold.
+                die(f"`subst {letter} {REPO}` failed. Fix the mapping for {letter}: (or `subst {letter}: /D` to "
+                    "clear a stale one) so every worktree compiles through the same path and shares the cache.")
             log(f"build path {letter}\\ -> {REPO}")
         return Path(letter + "/")
     link = state / "buildpath"
@@ -223,6 +233,7 @@ def tool_run(cmd: str, cwd: Path, capture: bool = False):
     if IS_WINDOWS:
         argv = [str(bash_exe()), "-lc", f"cd '{posix(cwd)}' && {cmd}"]
         env = dict(os.environ, MSYSTEM="MINGW64")
+        env.setdefault("SCCACHE_CACHE_SIZE", SCCACHE_CACHE_SIZE)
     else:
         argv = ["/bin/bash", "-lc", f"cd {shlex.quote(str(cwd))} && {cmd}"]
         env = None

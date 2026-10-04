@@ -39,6 +39,13 @@ add_and_include_subdirectory(sgp)
 target_sources(${JA2_BINARY} PRIVATE ${JA2_SOURCES})
 
 set_target_properties(${JA2_BINARY} PROPERTIES
+    # The UNITY_GROUP properties set in the subdirectories below batch sources by
+    # area, so each unity TU stays coherent instead of one giant translation unit.
+    # That folds the grouped areas into 9 compiler invocations and parses their
+    # headers once per group instead of once per file, on top of the PCH. Sources
+    # with no UNITY_GROUP still compile per file, and src/nativeui opts out
+    # entirely with SKIP_UNITY_BUILD_INCLUSION.
+    UNITY_BUILD ON
     UNITY_BUILD_MODE "GROUP")
 
 if (WITH_ASAN)
