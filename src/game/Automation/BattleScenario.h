@@ -17,7 +17,11 @@ namespace Automation
 	 * turn-based combat. Recognised fields:
 	 *
 	 *   enemies       how many enemies to spawn (default 10), or a table:
-	 *                 { count, class, weapon, distance, grids = { grid, ... } }
+	 *                 { count, class, weapon, distance, grids = { grid, ... },
+	 *                   units = { { grid, class, weapon, direction }, ... } }
+	 *                 `units` spawns exactly those enemies, each on its own grid
+	 *                 with its own class, gun and facing, for pin-point, staggered
+	 *                 placements; it overrides `count`/`grids`.
 	 *   class         "administrator" (default), "army" or "elite"
 	 *   weapon        internal name of the gun to give our mercs (default "MP5K")
 	 *   enemy_weapon  internal name of a gun to give every enemy (default: their
@@ -30,7 +34,7 @@ namespace Automation
 	 *
 	 *   our           per-merc setup, matched by `name` (or by position when no
 	 *                 entry is named). Each entry:
-	 *                 { name, weapon, armour, grid,
+	 *                 { name, weapon, armour, grid, direction,
 	 *                   items  = { internalName, ... },
 	 *                   stats  = { marksmanship, agility, dexterity, strength,
 	 *                              leadership, wisdom, medical, mechanical,
@@ -38,8 +42,9 @@ namespace Automation
 	 *                              health = sets life and life max } }
 	 *
 	 * `grid` / `grids` place actors on exact tiles; otherwise the enemies go on
-	 * free tiles `distance` away from the team. Throws std::runtime_error with a
-	 * message the script sees. */
+	 * free tiles `distance` away from the team. `direction` is 0..7 (0 = north,
+	 * increasing clockwise, as the game uses it) and leaves the facing alone when
+	 * omitted. Throws std::runtime_error with a message the script sees. */
 	void StageBattle(sol::table const& spec);
 
 	/** Order @a soldier to fire at @a targetGridNo through the real fire-weapon
