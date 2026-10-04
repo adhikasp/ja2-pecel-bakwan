@@ -22,7 +22,7 @@ for the full API.
 | `native_ui.lua` | Native UI runtime on legacy screens: native message box (mouse, focus, shortcuts), toasts, UI scales, a view model |
 | `legacy_script.txt` | The old line-based `-uitest` format still works |
 | `check_determinism.py` | Same script and seed, twice: identical screenshots |
-| `check_sessions.py` | Two `ja2ctl` sessions side by side stay independent |
+| `check_sessions.py` | Concurrent `ja2ctl` sessions: worktree-scoped roots, names, logs and free ports |
 
 `lib/campaign.lua` has the shared steps (new game, hire from A.I.M., land,
 dismiss popups, and the campaign-state helpers `stage`, `at`, `assertState`,

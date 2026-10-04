@@ -66,7 +66,7 @@ Flags for the `ja2` binary (any other flag, such as `-res 1280x720` or
 | `-seed N` | Random seed (default 1). |
 | `-show` | Show a window instead of running headless. |
 | `-home DIR` | Use DIR instead of the normal config/save directory (same as `JA2_HOME=DIR`). |
-| `-log FILE` | Write the log to FILE. |
+| `-log FILE` | Write the log to FILE. Without it the game logs to `ja2.log` in the temp directory, shared by everything that runs; `ja2ctl` always passes its own. |
 | `-out DIR` | Where relative screenshot paths go. |
 | `-arg VALUE` | Passed to the script as `ja2.args[n]`. Repeatable. |
 | `-lua-path DIR` | Also look for `require()`d modules in DIR. Repeatable. |
@@ -88,16 +88,25 @@ output directory.
 to them. It finds the binary in `_bin/` or `build/` (or `$JA2_BIN`) and on
 Windows adds the MSYS2 MinGW runtime to `PATH` for the game.
 
-Each session lives in `~/.ja2ctl/sessions/<name>/` (override with
-`$JA2CTL_HOME`): its own home directory (a `ja2.json` pointing at the game
-data from your normal `ja2.json`), save games, log, and screenshots. Sessions
-are independent processes, so any number can run side by side. Pick one with
-`-s NAME` or `$JA2CTL_SESSION`.
+Each worktree gets sessions of its own: the session root and the default session
+name are derived from the checkout (`~/.ja2ctl/sessions/<worktree-id>/<name>`,
+where `<worktree-id>` is the repo folder name plus a short hash of its path), so
+two agents in two worktrees never see, stop or reuse each other's sessions.
+Override the root with `$JA2CTL_SESSIONS` and the name with `-s NAME` or
+`$JA2CTL_SESSION`.
+
+A session is a directory of its own: a home directory (a `ja2.json` pointing at
+the game data from your normal `ja2.json`), save games, screenshots, and its own
+`ja2.log` — `ja2ctl log` prints it, so nothing runs against a shared log file.
+Sessions are independent processes, each on a free port handed out by the OS
+(never a fixed one), so any number can run side by side. A session whose game
+process has died is reaped on the next `start` or `stop --all`.
 
 | Command | |
 |---|---|
 | `start [--load SAVE\|FILE.sav] [--seed N] [--show] [--res WxH] [--saves DIR]` | Start a session. `--load` also accepts a path to a `.sav` file. `--saves` shares a save directory. |
-| `stop [--all]`, `list` | |
+| `stop [--all]`, `list` | `--all` stops this worktree's sessions and reaps the dead ones. |
+| `log [-n N] [--path]` | The session's game log, last N lines, or just its path. Works after the session has stopped. |
 | `screen`, `state`, `ui [--all]`, `text` | Look. Native elements show as `native` with their `#id`. |
 | `audit` | Layout problems: legacy regions off screen and the native layout audit. |
 | `native`, `uimode KEY legacy\|native\|default`, `uiscale S`, `vm NAME` | The native UI: state, per-screen `ui_mode`, UI scale, a view model's fields. |
@@ -109,7 +118,7 @@ are independent processes, so any number can run side by side. Pick one with
 | `shot [PATH]`, `pixel X Y` | |
 | `saves`, `save NAME [DESC]`, `load NAME` | |
 | `eval LUA` | Run any Lua in the session; `return` a value to print it. |
-| `run SCRIPT [--isolated] [--load ..] [--out DIR] [--arg V]` | One-shot run without a session. `--isolated` uses a fresh throwaway home. |
+| `run SCRIPT [--isolated] [--load ..] [--out DIR] [--arg V]` | One-shot run without a session. `--isolated` uses a fresh throwaway home. Every run writes a log of its own (never the shared `ja2.log` of the temp directory); a failing run keeps it and prints the path. |
 
 Every reply ends with a status line such as
 `[MAP_SCREEN frame 545 t=9099ms idle]`. `--json` prints the raw reply.
