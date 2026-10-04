@@ -1032,7 +1032,7 @@ static void DrawLaptopPowerZoom(double const t, bool const poweringUp)
 	if (!poweringUp) BltVideoSurface(FRAME_BUFFER, guiEXTRABUFFER, 0, 0, NULL);
 	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &Laptop, &Box);
 	InvalidateScreen();
-	VideoPresentFrame();
+	RefreshScreen(); // the presented frame is the transition's end state: compose it here, as it is drawn
 }
 
 

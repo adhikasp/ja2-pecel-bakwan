@@ -229,7 +229,7 @@ void DrawSectorLoadTransitionFrame(double const t)
 	}
 
 	InvalidateScreen();
-	VideoPresentFrame();
+	RefreshScreen(); // the presented frame is the transition's end state: compose it here, as it is drawn
 }
 
 

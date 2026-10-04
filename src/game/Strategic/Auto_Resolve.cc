@@ -385,7 +385,7 @@ static void DrawAutoResolveZoom(double const t, UINT16 x, UINT16 y, UINT16 w, UI
 
 	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &gpAR->rect, &DstRect);
 	InvalidateScreen();
-	VideoPresentFrame();
+	RefreshScreen(); // the presented frame is the transition's end state: compose it here, as it is drawn
 
 	//Restore the previous rect.
 	BlitBufferToBuffer(guiEXTRABUFFER, FRAME_BUFFER, DstRect.x, DstRect.y, DstRect.w, DstRect.h);

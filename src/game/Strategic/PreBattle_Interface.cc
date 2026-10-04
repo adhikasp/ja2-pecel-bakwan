@@ -542,33 +542,38 @@ set_help:
 
 
 /* The pre-battle transition: the panel zooms from its sector's position on the map into its slot.
- * Every frame draws over the mapscreen and is undone again, so the end state is the mapscreen
- * whether the frames were drawn (someone watched) or skipped (a headless run). */
+ * Each frame draws the zoomed panel over the mapscreen and undoes it again in the frame buffer, but
+ * the frame it presents is the zoomed one: the transition ends showing the panel at full size, for
+ * the mapscreen's own render to take over. That presented frame is what a reader of the frame sees,
+ * so these draws present eagerly instead of deferring the compose.
+ *
+ * The rect math stays integer, as the legacy loop had it: the centre point lands on half pixels at
+ * the end of the zoom where the classic area starts at 0 (640x480, 1280x720). */
 static void DrawPreBattleZoom(double const t, INT16 sStartLeft, INT16 sStartTop, INT16 sEndLeft, INT16 sEndTop)
 {
-	double const p = EaseInOutGravity(t);
+	INT32 const eased = static_cast<INT32>(EaseInOutGravity(t) * 100.0 + 0.5);
 	constexpr INT32 iWidth  = 261;
 	constexpr INT32 iHeight = 359;
 
 	//Calculate the center point.
-	double const iLeft = sStartLeft - (sStartLeft - sEndLeft + 1) * p;
-	double const iTop  = sStartTop > sEndTop ?
-		sStartTop - (sStartTop - sEndTop + 1) * p :
-		sStartTop + (sEndTop - sStartTop + 1) * p;
+	INT32 const iLeft = sStartLeft - (sStartLeft - sEndLeft + 1) * eased / 100;
+	INT32 const iTop  = sStartTop > sEndTop ?
+		sStartTop - (sStartTop - sEndTop + 1) * eased / 100 :
+		sStartTop + (sEndTop - sStartTop + 1) * eased / 100;
 
 	SGPBox const PBIRect = { MAPLEFT_X, MAPTOP_Y, 261, 359 };
 	SGPBox const DstRect =
 	{
-		(UINT16)(iLeft - iWidth  * p / 2),
-		(UINT16)(iTop  - iHeight * p / 2),
-		(UINT16)std::max(1.0, iWidth  * p),
-		(UINT16)std::max(1.0, iHeight * p)
+		(UINT16)std::max(0, iLeft - iWidth  * eased / 200),
+		(UINT16)std::max(0, iTop  - iHeight * eased / 200),
+		(UINT16)std::max(1, iWidth  * eased / 100),
+		(UINT16)std::max(1, iHeight * eased / 100)
 	};
 
 	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &PBIRect, &DstRect);
 
 	InvalidateScreen();
-	VideoPresentFrame();
+	RefreshScreen();
 
 	//Restore the previous rect.
 	BlitBufferToBuffer(guiEXTRABUFFER, FRAME_BUFFER, DstRect.x, DstRect.y, DstRect.w + 1, DstRect.h + 1);
