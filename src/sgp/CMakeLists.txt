@@ -1,5 +1,6 @@
 file(GLOB LOCAL_JA2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 set(LOCAL_JA2_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Animation.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Button_Sound_Control.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Button_System.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Clock.cc
@@ -38,6 +39,7 @@ set(LOCAL_JA2_SOURCES
 if (WITH_UNITTESTS)
     set(LOCAL_JA2_SOURCES
         ${LOCAL_JA2_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/Animation_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FileMan_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveData_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Logger_unittest.cc

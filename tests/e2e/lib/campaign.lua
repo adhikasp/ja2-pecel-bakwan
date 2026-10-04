@@ -259,7 +259,13 @@ function campaign.enterSector(spec)
 	if type(spec) == "string" then spec = { sector = spec } end
 	ja2.expect(spec.sector, "enterSector needs a sector")
 	campaign.toMap()
+	local composes = ja2.composes()
 	ja2.debug("entersector", { sector = spec.sector, clear_enemies = spec.clear_enemies })
+	-- A headless load draws its transition and loading screen for nobody: the frames are composed
+	-- on demand (issue #159), so the load must not render one per animation or progress step.
+	local drawn = ja2.composes() - composes
+	ja2.expect(drawn <= 12, "a sector load composes a few frames, not one per animation step ("
+		.. drawn .. " composes)")
 	ja2.waitScreen("GAME_SCREEN", 600000)
 	campaign.dismissHelp()
 	ja2.waitIdle()

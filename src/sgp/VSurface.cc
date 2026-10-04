@@ -215,6 +215,12 @@ void SGPVSurface::ShadowRectUsingLowPercentTable(INT32 const x1, INT32 const y1,
 }
 
 
+void SGPVSurface::ShadowRectWithFactor(INT32 const x1, INT32 const y1, INT32 const x2, INT32 const y2, float const shadeFactor)
+{
+	InternalShadowVideoSurfaceRect(surface_.get(), x1, y1, x2, y2, std::clamp(shadeFactor, 0.0f, 1.0f));
+}
+
+
 SGPVSurface* AddVideoSurfaceFromFile(const char* const Filename)
 {
 	AutoSGPImage img(CreateImage(Filename, IMAGE_ALLIMAGEDATA));

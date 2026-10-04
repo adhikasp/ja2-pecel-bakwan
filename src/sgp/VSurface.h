@@ -54,6 +54,9 @@ class SGPVSurface
 
 		void ShadowRect(INT32 x1, INT32 y1, INT32 x2, INT32 y2);
 		void ShadowRectUsingLowPercentTable(INT32 x1, INT32 y1, INT32 x2, INT32 y2);
+		/** Darken a rectangle toward black: every channel multiplied by @a shadeFactor in [0, 1].
+		 * One call with a factor of 0.8^n is what n calls of ShadowRectUsingLowPercentTable() reach. */
+		void ShadowRectWithFactor(INT32 x1, INT32 y1, INT32 x2, INT32 y2, float shadeFactor);
 
 		/* Allow read access to the underlying SDL_Surface */
 		SDL_Surface const& GetSDLSurface() const noexcept { return *surface_; }

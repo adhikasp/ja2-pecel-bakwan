@@ -50,11 +50,14 @@
 #include "VObject.h"
 #include "Vehicles.h"
 #include "Video.h"
+#include "Animation.h"
+#include "Easings.h"
 #include "Debug.h"
 #include "ScreenIDs.h"
 #include "Render_Dirty.h"
 #include "VSurface.h"
 #include "UILayout.h"
+#include <chrono>
 #include <optional>
 #include <utility>
 #include <string_theory/format>
@@ -538,23 +541,51 @@ set_help:
 }
 
 
+/* The pre-battle transition: the panel zooms from its sector's position on the map into its slot.
+ * Each frame draws the zoomed panel over the mapscreen and undoes it again in the frame buffer, but
+ * the frame it presents is the zoomed one: the transition ends showing the panel at full size, for
+ * the mapscreen's own render to take over. That presented frame is what a reader of the frame sees,
+ * so these draws present eagerly instead of deferring the compose.
+ *
+ * The rect math stays integer, as the legacy loop had it: the centre point lands on half pixels at
+ * the end of the zoom where the classic area starts at 0 (640x480, 1280x720). */
+static void DrawPreBattleZoom(double const t, INT16 sStartLeft, INT16 sStartTop, INT16 sEndLeft, INT16 sEndTop)
+{
+	INT32 const eased = static_cast<INT32>(EaseInOutGravity(t) * 100.0 + 0.5);
+	constexpr INT32 iWidth  = 261;
+	constexpr INT32 iHeight = 359;
+
+	//Calculate the center point.
+	INT32 const iLeft = sStartLeft - (sStartLeft - sEndLeft + 1) * eased / 100;
+	INT32 const iTop  = sStartTop > sEndTop ?
+		sStartTop - (sStartTop - sEndTop + 1) * eased / 100 :
+		sStartTop + (sEndTop - sStartTop + 1) * eased / 100;
+
+	SGPBox const PBIRect = { MAPLEFT_X, MAPTOP_Y, 261, 359 };
+	SGPBox const DstRect =
+	{
+		(UINT16)std::max(0, iLeft - iWidth  * eased / 200),
+		(UINT16)std::max(0, iTop  - iHeight * eased / 200),
+		(UINT16)std::max(1, iWidth  * eased / 100),
+		(UINT16)std::max(1, iHeight * eased / 100)
+	};
+
+	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &PBIRect, &DstRect);
+
+	InvalidateScreen();
+	RefreshScreen();
+
+	//Restore the previous rect.
+	BlitBufferToBuffer(guiEXTRABUFFER, FRAME_BUFFER, DstRect.x, DstRect.y, DstRect.w + 1, DstRect.h + 1);
+}
+
+
 static void DoTransitionFromMapscreenToPreBattleInterface(void)
 {
-	UINT32 uiStartTime, uiCurrTime;
-	INT32 iPercentage, iFactor;
-	UINT32 uiTimeRange;
 	INT16 sStartLeft, sEndLeft, sStartTop, sEndTop;
-	INT32 iLeft, iTop, iWidth, iHeight;
 	BOOLEAN fEnterAutoResolveMode = FALSE;
 
 	PauseTime( FALSE );
-
-	iWidth = 261;
-	iHeight = 359;
-
-	uiTimeRange = 1000;
-	iPercentage = 0;
-	uiStartTime = GetClock();
 
 	GetScreenXYFromMapXY(gubPBSector, &sStartLeft, &sStartTop);
 	sStartLeft = MapCanvasToScreenX(sStartLeft + MAP_GRID_X / 2);
@@ -592,43 +623,10 @@ static void DoTransitionFromMapscreenToPreBattleInterface(void)
 	PlayJA2SampleFromFile(SOUNDSDIR "/laptop power up (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
 	InvalidateScreen();
 
-	SGPBox const PBIRect = { MAPLEFT_X, MAPTOP_Y, 261, 359 };
-	while( iPercentage < 100  )
+	sgp::RunAnimation(std::chrono::milliseconds{ 1000 }, [=](double t)
 	{
-		uiCurrTime = GetClock();
-		iPercentage = (uiCurrTime-uiStartTime) * 100 / uiTimeRange;
-		iPercentage = std::min(iPercentage, 100);
-
-		//Factor the percentage so that it is modified by a gravity falling acceleration effect.
-		iFactor = (iPercentage - 50) * 2;
-		if( iPercentage < 50 )
-			iPercentage = (UINT32)(iPercentage + iPercentage * iFactor * 0.01 + 0.5);
-		else
-			iPercentage = (UINT32)(iPercentage + (100-iPercentage) * iFactor * 0.01 + 0.05);
-
-		//Calculate the center point.
-		iLeft = sStartLeft - (sStartLeft-sEndLeft+1) * iPercentage / 100;
-		if( sStartTop > sEndTop )
-			iTop = sStartTop - (sStartTop-sEndTop+1) * iPercentage / 100;
-		else
-			iTop = sStartTop + (sEndTop-sStartTop+1) * iPercentage / 100;
-
-		SGPBox const DstRect =
-		{
-			(UINT16)(iLeft - iWidth  * iPercentage / 200),
-			(UINT16)(iTop  - iHeight * iPercentage / 200),
-			(UINT16)(std::max(1, iWidth  * iPercentage / 100)),
-			(UINT16)(std::max(1, iHeight * iPercentage / 100))
-		};
-
-		BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &PBIRect, &DstRect);
-
-		InvalidateScreen();
-		RefreshScreen();
-
-		//Restore the previous rect.
-		BlitBufferToBuffer(guiEXTRABUFFER, FRAME_BUFFER, DstRect.x, DstRect.y, DstRect.w + 1, DstRect.h + 1);
-	}
+		DrawPreBattleZoom(t, sStartLeft, sStartTop, sEndLeft, sEndTop);
+	});
 	BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
 }
 

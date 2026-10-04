@@ -131,5 +131,5 @@ void DisplayLoadScreenWithID(UINT8 const id)
 
 	gubLastLoadingScreenID = id;
 	InvalidateScreen();
-	RefreshScreen();
+	VideoPresentFrame();
 }

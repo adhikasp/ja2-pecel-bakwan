@@ -32,7 +32,13 @@ The design rationale is in [plan/headless-automation.md](plan/headless-automatio
   layer blended over them) only happens when something reads it — a
   screenshot, a pixel, the text on screen — so stepping a wait of thousands of
   frames costs no pixel work at all, which is what keeps the resolution matrix
-  fast. Pass `-show` (or `ja2ctl ... --show`) to watch in a window instead; a
+  fast. Animations follow the same rule: a transition that blocks the game loop
+  (the sector-load zoom, the pre-battle and laptop ones) draws nothing for a
+  headless run — its frames are rendered for nobody, since a read cannot happen
+  while it runs — and only its end state is drawn; a loading screen draws one
+  frame per progress step to a window and none to a headless run. Each frame is
+  still *counted*, so the animation costs exactly the game time it always did.
+  Pass `-show` (or `ja2ctl ... --show`) to watch in a window instead; a
   window presents every frame as it is stepped.
 - **Real sound timing without a device.** Sounds are consumed in step with
   virtual time, so speech, dialogue and "is the merc still talking" behave as
@@ -148,6 +154,7 @@ that can wait takes an optional timeout in milliseconds of game time.
 | `ja2.waitUntil(fn, [timeout], [what])` | Until `fn()` returns true. |
 | `ja2.waitPixel(x, y, "#rrggbb", [tol], [timeout])`, `ja2.waitStable(x, y, [timeout])` | Pixel-based waits. |
 | `ja2.frame()`, `ja2.time()` | Frames stepped, game milliseconds elapsed. |
+| `ja2.composes()` | Full frames rendered (composes) since start-up: a headless session composes on demand, so this is what a load or an animation is allowed to cost. |
 
 **Input.** Each call takes the frames a real user would take (move, press,
 release).
@@ -215,6 +222,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.debug("campaign", spec)` | Author a whole campaign state on the live globals (money, clock, difficulty, towns, sectors, roster, gear, quests/facts), so a save taken after staging is a real save — see [plan/e2e-campaign-state.md](plan/e2e-campaign-state.md). |
 | `ja2.campaign()` | Read the campaign state back: `day, hour, minute, money, difficulty, towns, sectors, mercs, quests, facts`. |
 | `ja2.debug("entersector", spec)` | Move the team into `spec.sector` and load it in tactical (`clear_enemies`, optional `battle`); the caller waits for `GAME_SCREEN`. |
+| `ja2.debug("transition", t)` | Draw one frame of the sector-load transition at progress `t` (0..1): it blocks the game loop and is only drawn where someone can see it, so this is how a tour looks at it. |
 | `ja2.debug("npcs", spec)` | Spawn townsfolk (`count`) or named NPCs (`profiles = {"TONY"}`) in the loaded sector; `ja2.state().tactical.civilians` lists them. |
 
 Timeouts report the screen and, if one is open, the message box text, e.g.

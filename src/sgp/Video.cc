@@ -98,6 +98,7 @@ static VideoOverlay* Overlay = nullptr;
 // driver read so that it does not tick the virtual clock.
 static bool gComposePending  = false;
 static bool gComposeForRead  = false;
+static uint64_t gComposeCount = 0; // RefreshScreen calls: full composes, the cost a headless run must not pay per frame
 static SDL_Rect     OverlayArea{ 0, 0, 0, 0 }; // what the software overlay covered last frame
 
 static void DeletePrimaryVideoSurfaces(void);
@@ -1090,6 +1091,9 @@ void VideoComposePending()
 }
 
 
+uint64_t VideoComposeCount() { return gComposeCount; }
+
+
 /* Clip an SDL Rect to the SDL_Surface. This was previously done automatically by SDL_BlitSurface */
 static SDL_Rect ClipToSurface(SDL_Rect const& rect, SDL_Surface const* const surface)
 {
@@ -1307,6 +1311,8 @@ void RefreshScreen(void)
 	// Not initialised yet or already shut down?
 	if (!ScreenBuffer) return;
 
+	++gComposeCount;
+
 	// The frame now shows the current state of the game.
 	gComposePending = false;
 
@@ -1500,6 +1506,27 @@ static bool DeferCompose()
 }
 
 
+void VideoPresentFrame()
+{
+	/* Headless and virtual: nothing can see this frame until a driver read composes it (reads
+	 * compose on demand, whatever the layers), and a read cannot happen while the blocking code
+	 * that drew it runs. Only tick the clock, exactly as the present would have.
+	 *
+	 * This is RefreshScreenCapped()'s deferral without its single-layer condition: that one keeps
+	 * *stepped* frames composing in a layered session, while the frames drawn mid-load or mid-
+	 * animation are never read in between whatever the layers. */
+	if (sgp::IsHeadless() && sgp::Clock::IsVirtual() && !OutputCaptureWanted
+		&& gsScrollXIncrement == 0 && gsScrollYIncrement == 0)
+	{
+		if (Overlay && !Overlay->UsesGpu()) Overlay->SoftwareTick();
+		sgp::Clock::OnPresent();
+		gComposePending = true;
+		return;
+	}
+	RefreshScreen();
+}
+
+
 // This is a semi-private function that is supposed to be called only
 // by GameLoop(). This is why is has external linkage but is not
 // declared in Video.h.
@@ -1511,12 +1538,7 @@ void RefreshScreenCapped()
 	{
 		// Nobody reads the frame between steps. The native UI still ticks (its input and animations run
 		// in SoftwareTick), and the frame is composed by the next VideoComposePending() a reader asks for.
-		if (Overlay && !Overlay->UsesGpu()) Overlay->SoftwareTick();
-		// ...but the present still has to account for itself: in a frame where a modal loop already
-		// presented, this present is what ticks virtual time, and dropping the tick would give a driver
-		// a few milliseconds less game time per modal frame than a session that presents every frame.
-		sgp::Clock::OnPresent();
-		gComposePending = true;
+		VideoPresentFrame();
 		return;
 	}
 

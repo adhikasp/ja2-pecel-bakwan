@@ -111,6 +111,11 @@ BOOLEAN HandlePotentialBringUpAutoresolveToFinishBattle(void);
 
 void BeginLoadScreen(void);
 
+/** One frame of the sector-load transition at progress t in [0, 1], drawn into the frame buffer
+ * and presented. The transition blocks the game loop and only draws where someone can see it, so
+ * automation shows it on demand (ja2.debug("transition", t)). */
+void DrawSectorLoadTransitionFrame(double t);
+
 void RemoveMercsInSector(void);
 
 void InitStrategicEngine(void);

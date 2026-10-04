@@ -4,6 +4,7 @@
 #include "AI.h"
 #include "Ambient_Control.h"
 #include "Animated_ProgressBar.h"
+#include "Animation.h"
 #include "Animation_Control.h"
 #include "Assignments.h"
 #include "Auto_Resolve.h"
@@ -18,6 +19,7 @@
 #include "Debug.h"
 #include "Dialogue_Control.h"
 #include "Directories.h"
+#include "Easings.h"
 #include "Enemy_Soldier_Save.h"
 #include "Environment.h"
 #include "Event_Pump.h"
@@ -113,6 +115,8 @@
 #include <string_theory/string>
 
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <iterator>
 #include <map>
 #include <stdexcept>
@@ -194,55 +198,54 @@ static UINT32 UndergroundTacticalTraversalTime(INT8 const exit_direction)
 }
 
 
+/* The sector-load transition: the map screen zooms into black before the loading screen takes over
+ * (the "psionic blast"). The zoom is toward the centre of the frame at every resolution; the legacy
+ * one was aimed with 640x480-absolute pixel offsets, which the native sizes do not have. Derived
+ * from the progress alone: RunAnimation() draws a skipped session's end state from it. */
+void DrawSectorLoadTransitionFrame(double const t)
+{
+	double const zoom = EaseInOutGravity(t);
+
+	// The frame grows toward the centre, down to a 15% crop of its start.
+	double const keep = 1.0 - 0.85 * zoom;
+	INT32 const w = std::max<INT32>(1, static_cast<INT32>(SCREEN_WIDTH  * keep + 0.5));
+	INT32 const h = std::max<INT32>(1, static_cast<INT32>(SCREEN_HEIGHT * keep + 0.5));
+	SGPBox const src =
+	{
+		(UINT16)((SCREEN_WIDTH  - w) / 2),
+		(UINT16)((SCREEN_HEIGHT - h) / 2),
+		(UINT16)w,
+		(UINT16)h
+	};
+	SGPBox const dst = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &src, &dst);
+
+	// ...and fades to black over the second half of the zoom, the way the legacy loop's shading
+	// piled up (0.8 per frame, some 85 frames worth of it by the end).
+	if (zoom > 0.5)
+	{
+		FRAME_BUFFER->ShadowRectWithFactor(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,
+			static_cast<float>(std::pow(0.8, 85.0 * (zoom - 0.5) * 2.0)));
+	}
+
+	InvalidateScreen();
+	RefreshScreen(); // the presented frame is the transition's end state: compose it here, as it is drawn
+}
+
+
 void BeginLoadScreen( )
 {
-	UINT32 uiStartTime, uiCurrTime;
-	INT32 iPercentage, iFactor;
-	UINT32 uiTimeRange;
-
 	SetCurrentCursorFromDatabase( VIDEO_NO_CURSOR );
 
 	if( guiCurrentScreen == MAP_SCREEN && !(gTacticalStatus.uiFlags & LOADING_SAVED_GAME) && !AreInMeanwhile() )
 	{
-		SGPBox const DstRect = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
-		uiTimeRange = 2000;
-		iPercentage = 0;
-		uiStartTime = GetClock();
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL); // the frame the transition starts from
 		PlayJA2SampleFromFile(SOUNDSDIR "/final psionic blast 01 (16-44).wav", HIGHVOLUME, 1, MIDDLEPAN);
-		while( iPercentage < 100  )
-		{
-			uiCurrTime = GetClock();
-			iPercentage = (uiCurrTime-uiStartTime) * 100 / uiTimeRange;
-			iPercentage = std::min(iPercentage, 100);
-
-			//Factor the percentage so that it is modified by a gravity falling acceleration effect.
-			iFactor = (iPercentage - 50) * 2;
-			if( iPercentage < 50 )
-				iPercentage = (UINT32)(iPercentage + iPercentage * iFactor * 0.01 + 0.5);
-			else
-				iPercentage = (UINT32)(iPercentage + (100-iPercentage) * iFactor * 0.01 + 0.05);
-
-			if( iPercentage > 50 )
-			{
-				guiSAVEBUFFER->ShadowRectUsingLowPercentTable(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-			}
-
-			SGPBox const SrcRect =
-			{
-				(UINT16) (536 * iPercentage / 100),
-				(UINT16) (367 * iPercentage / 100),
-				(UINT16) (SCREEN_WIDTH  - 541 * iPercentage / 100),
-				(UINT16) (SCREEN_HEIGHT - 406 * iPercentage / 100)
-			};
-			BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &SrcRect, &DstRect);
-			InvalidateScreen();
-			RefreshScreen();
-		}
+		sgp::RunAnimation(std::chrono::milliseconds{ 2000 }, DrawSectorLoadTransitionFrame);
 	}
 	FRAME_BUFFER->Fill(Get16BPPColor(FROMRGB(0, 0, 0)));
 	InvalidateScreen( );
-	RefreshScreen();
+	VideoPresentFrame();
 
 	//If we are loading a saved game, use the Loading screen we saved into the SavedGameHeader file
 	// ( which gets reloaded into gubLastLoadingScreenID )
