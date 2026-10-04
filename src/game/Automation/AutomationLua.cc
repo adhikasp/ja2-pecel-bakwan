@@ -2,6 +2,7 @@
 #include "Automation.h"
 #include "AutomationSession.h"
 #include "BattleScenario.h"
+#include "CampaignScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -352,6 +353,22 @@ namespace
 			enemies[e++] = t;
 		}
 		tactical["enemies"] = enemies;
+		// Friendlies who are not on the player's team: the townsfolk/NPCs a script spawns
+		// (ja2.debug("npcs")) and militia, so a town-entry test can assert who is there.
+		sol::table civilians = L.create_table();
+		int c = 1;
+		CFOR_EACH_IN_TEAM(x, CIV_TEAM)
+		{
+			if (!x->bInSector) continue;
+			sol::table t = L.create_table();
+			t["name"]    = x->name.to_std_string();
+			t["profile"] = static_cast<int>(x->ubProfile);
+			t["life"]    = static_cast<int>(x->bLife);
+			t["gridNo"]  = x->sGridNo;
+			t["dead"]    = x->bLife <= 0;
+			civilians[c++] = t;
+		}
+		tactical["civilians"] = civilians;
 		s["tactical"] = tactical;
 
 		sol::table mercs = L.create_table();
@@ -559,6 +576,10 @@ namespace
 			});
 		});
 		ja2.set_function("state", [] { return Guarded([] { return GameState(); }); });
+		// ja2.campaign(): the strategic state the campaign harness authors: clock, money,
+		// difficulty, towns (ownership/loyalty/militia), sector garrisons, the roster with
+		// gear, and quest/fact progress. See ja2.debug("campaign", spec).
+		ja2.set_function("campaign", [] { return Guarded([] { return CampaignState(g_lua); }); });
 		// {w, h, stdX, stdY}: the screen size and where the classic 640x480 area starts in it.
 		ja2.set_function("screenSize", [] {
 			sol::table t = g_lua.create_table();
@@ -858,6 +879,23 @@ namespace
 					// Order the selected merc to shoot at a tile through the real fire-weapon event.
 					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"fire\", gridNo)");
 					FireAtGrid(GetSelectedMan(), static_cast<INT16>(a->as<int>()));
+				}
+				else if (what == "campaign")
+				{
+					// Author a whole campaign state on the live globals (docs/plan/e2e-campaign-state.md).
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"campaign\", spec)");
+					StageCampaign(a->as<sol::table>());
+				}
+				else if (what == "entersector")
+				{
+					// Move the team into a sector and load it in tactical, for a world-map step.
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"entersector\", spec)");
+					EnterSector(a->as<sol::table>());
+				}
+				else if (what == "npcs")
+				{
+					// Spawn townsfolk / named NPCs in the loaded sector, near the team.
+					SpawnNpcs(a ? *a : sol::object(sol::nil));
 				}
 				else if (what == "uispike_rml" || what == "uispike_inhouse")
 				{
