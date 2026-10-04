@@ -27,13 +27,20 @@ fight, select a merc, shoot, end the turn) for the tactical battle e2e track.
 
 ## Running
 
-They need the original game data (`game_dir` in your `ja2.json`) and Python 3.
+They need the original game data (`game_dir` in your `ja2.json`) and the Python
+tooling environment. Install it once per checkout:
+
+```bash
+uv sync                        # creates .venv (Python 3.12+) with Pillow and numpy from uv.lock
+```
 
 ```bash
 ctest -L e2e -j8 --output-on-failure                                  # all, from the build directory
 python tools/ja2ctl.py run tests/e2e/laptop_tour.lua --isolated       # one, from the repo root
 python tools/ja2ctl.py run tests/e2e/laptop_tour.lua --isolated --show   # and watch it
 ```
+
+`ctest` uses `.venv` when it exists, so re-run `cmake` once after `uv sync`.
 
 `--isolated` gives every run a fresh home directory, so tests never see your
 saves or each other's. Screenshots go to `--out` (CTest uses

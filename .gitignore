@@ -17,3 +17,5 @@ TAGS
 /*/CMakeUserPresets.json
 docs-generated/
 __pycache__/
+# uv-managed Python environment (`uv sync`); uv.lock is committed
+/.venv/

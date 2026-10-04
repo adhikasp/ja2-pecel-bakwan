@@ -64,7 +64,7 @@ python tools/ja2ctl.py stop
 python tools/ja2ctl.py run tests/e2e/<name>.lua --isolated   # one-shot script run
 ctest -L e2e -j8 --output-on-failure          # all e2e tests, from the build dir (_bin on Windows)
 ```
-Tests and their shared helpers (`lib/campaign.lua`) live in `tests/e2e/`; see its README.
+Tests and their shared helpers (`lib/campaign.lua`) live in `tests/e2e/`; see its README. Run `uv sync` once per checkout — it creates `.venv/` with Pillow and numpy, which `ctest` picks up for the resolution/golden-image tests after a fresh cmake configure.
 Image-only widgets need `SetName(...)` in C++ to be clickable by label; new animations/loading states belong in `NothingInFlight()` in `src/game/Automation/AutomationSession.cc`.
 
 ## Codebase shape
