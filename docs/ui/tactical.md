@@ -173,7 +173,7 @@ new bindings). The pick-up row hover still runs the legacy "compatible ammo" hig
 
 ## 9. Parity tour
 
-`tests/e2e/tactical_parity.lua` (every resolution of `ctest -L resolution`; goldens at 1280x720: `hud`, `detail`,
+`tests/e2e/tactical_parity.lua` (every resolution of `ctest -R resolution_`; goldens at 1280x720: `hud`, `detail`,
 `desc`, `money`, `log`, `menu_action`, `menu_door`, `menu_pickup`):
 
 | Row | Covered by |

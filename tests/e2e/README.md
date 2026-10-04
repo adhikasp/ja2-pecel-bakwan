@@ -97,11 +97,11 @@ Things worth knowing:
 
 ## Resolution matrix
 
-`ctest -L resolution` runs every tour at 640x480, 1280x720, 1920x1080,
-2560x1080 and 3440x1440. For an ordinary UI change, run only 1080p
-(`ctest -L resolution -R 1920x1080`); reserve the full matrix for changes that
-alter how the game renders (a new menu, a texture/asset, the renderer itself).
-Scripts take screenshots with
+`ctest -L resolution` is the default sweep: every tour at 1920x1080. The other
+resolutions (640x480, 1280x720, 2560x1080, 3440x1440) are opt-in with
+`ctest -R resolution_` (or `ctest -L matrix`). Reserve the full matrix for
+changes that alter how the game renders (a new menu, a texture/asset, the
+renderer itself). Scripts take screenshots with
 `shots.take(name[, golden])` (`lib/shots.lua`), which first calls
 `ja2.assertInsideScreen()` (fails if any mouse region or button lies outside the
 screen) and can register the shot for comparison with `golden/<res>/`. See

@@ -87,7 +87,7 @@ The legacy screen plays no sound.
 
 ## 9. Parity tour
 
-`tests/e2e/credits_parity.lua` (every resolution of `ctest -L resolution`; goldens `credits_native.png`):
+`tests/e2e/credits_parity.lua` (every resolution of `ctest -R resolution_`; goldens `credits_native.png`):
 
 | Row | Covered by |
 |---|---|

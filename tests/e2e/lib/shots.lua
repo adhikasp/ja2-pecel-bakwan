@@ -1,4 +1,4 @@
--- Screenshots for the resolution matrix (ctest -L resolution).
+-- Screenshots for the resolution matrix (ctest -R resolution_).
 --
 -- shots.take(name)         layout-check the screen (every mouse region and
 --                          button must lie inside it), then screenshot.

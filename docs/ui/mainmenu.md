@@ -77,7 +77,7 @@ Button click sounds of the legacy buttons (keep one click sound); main menu musi
 
 ## 9. Parity tour
 
-`tests/e2e/mainmenu_parity.lua` (every resolution of `ctest -L resolution`; golden `mainmenu_native.png`):
+`tests/e2e/mainmenu_parity.lua` (every resolution of `ctest -R resolution_`; golden `mainmenu_native.png`):
 
 | Row | Covered by |
 |---|---|
