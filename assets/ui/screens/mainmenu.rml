@@ -13,9 +13,12 @@
 
 	<div class="mm-layout">
 		<div class="mm-brand">
-			<span class="mm-kicker">{{kicker}}</span>
-			<span class="mm-title">{{title}}</span>
-			<span class="mm-sub">{{subtitle}}</span>
+			<img class="mm-mark" id="mainmenu.logo" src="icon-brand-mark@256"/>
+			<div class="mm-words">
+				<span class="mm-kicker">{{kicker}}</span>
+				<span class="mm-title">{{title}} <span class="accent">{{title_accent}}</span></span>
+				<span class="mm-sub">{{subtitle}}</span>
+			</div>
 		</div>
 		<div class="mm-body">
 			<div class="mm-menu" id="mainmenu.menu">

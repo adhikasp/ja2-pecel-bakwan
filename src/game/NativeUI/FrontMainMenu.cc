@@ -112,6 +112,7 @@ void MainMenuViewModel::Refresh()
 {
 	kicker   = Str("mainmenu.kicker");
 	title    = Str("mainmenu.title");
+	title_accent = Str("mainmenu.title_accent");
 	subtitle = Str("mainmenu.subtitle");
 	version  = ST::format("{}", g_version_label).to_std_string();
 	copyright = gzCopyrightText.to_std_string();
@@ -151,7 +152,7 @@ void MainMenuViewModel::Describe(Fields& f)
 	f.Field("has_saves", hasSaves);
 	f.Field("save_count", saveCount);
 	f.Field("newest", newest);
-	f.Field("kicker", kicker); f.Field("title", title); f.Field("subtitle", subtitle);
+	f.Field("kicker", kicker); f.Field("title", title); f.Field("title_accent", title_accent); f.Field("subtitle", subtitle);
 	f.Field("version", version); f.Field("copyright", copyright);
 	f.Field("l_continue", lContinue); f.Field("l_new", lNew); f.Field("l_load", lLoad); f.Field("l_options", lOptions);
 	f.Field("l_credits", lCredits); f.Field("l_quit", lQuit); f.Field("l_last", lLast); f.Field("l_continue_loads", lContinueLoads);
