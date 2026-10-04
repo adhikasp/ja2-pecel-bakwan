@@ -15,6 +15,11 @@ with Ninja, sccache and lld when the machine has them, runs `uv sync`, checks
 `game_dir`, and - on Windows - gives a long worktree path a short `subst`
 drive so the build cannot hit MAX_PATH. It is safe to run any number of times.
 
+Builds set `SCCACHE_BASEDIRS` to the worktree root, so sccache stops hashing
+absolute paths and every worktree shares one cache: build `master` once and a
+fresh worktree of the same code reuses those objects instead of recompiling
+the world.
+
 `build` and `e2e` take a machine-wide job semaphore, so several agents on one
 machine share the CPU instead of oversubscribing it (override with JA2_JOBS or
 --jobs). A build directory is only ever built by one process at a time.
@@ -49,6 +54,10 @@ SHORT_PATH_AT = 40
 MSYS2_ROOT = Path(os.environ.get("MSYS2_ROOT", r"C:\msys64"))
 JA2_EXE = "ja2" + (".exe" if IS_WINDOWS else "")
 TOOL_WHICH = {}
+# The root every build path is spelled from (a subst drive on Windows); set by
+# ensure_short_root(). sccache hashes absolute paths, so it is also handed to
+# sccache as a basedir to make caches match across worktrees (see tool_run).
+BUILD_ROOT = None
 
 
 # --- small helpers ----------------------------------------------------------
@@ -121,35 +130,41 @@ def ensure_short_root(repo: Path) -> Path:
     well under MAX_PATH. The mapping is remembered in the state directory and
     re-created when it is gone (a reboot drops it).
     """
-    if not IS_WINDOWS:
-        return repo
-    real = str(repo)
-    if len(real) <= SHORT_PATH_AT:
-        return repo
-    for letter, target in subst_map().items():
-        if os.path.normcase(target.rstrip("\\/")) == os.path.normcase(real):
-            return Path(letter + "/")
-    state = state_dir()
-    state.mkdir(parents=True, exist_ok=True)
-    db = state / "drives.json"
-    try:
-        recorded = json.loads(db.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        recorded = {}
-    letter = (recorded.get(real) or {}).get("letter")
-    if not letter or drive_used(letter):
-        letter = free_drive_letter()
-        if not letter:
-            warn(f"no free drive letter for a short path; building under {real} (may hit MAX_PATH)")
-            return repo
-        recorded[real] = {"letter": letter, "target": real}
-        db.write_text(json.dumps(recorded, indent=2), encoding="utf-8")
-    subst = shutil.which("subst") or str(Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "subst.exe")
-    if subprocess.run([subst, letter, real]).returncode == 0:
-        log(f"short path {letter}\\ -> {real}")
-        return Path(letter + "/")
-    warn(f"`subst {letter} {real}` failed; building under {real} (may hit MAX_PATH)")
-    return repo
+    global BUILD_ROOT
+    result = repo
+    if IS_WINDOWS:
+        real = str(repo)
+        if len(real) > SHORT_PATH_AT:
+            result = repo
+            for letter, target in subst_map().items():
+                if os.path.normcase(target.rstrip("\\/")) == os.path.normcase(real):
+                    result = Path(letter + "/")
+                    break
+            else:
+                state = state_dir()
+                state.mkdir(parents=True, exist_ok=True)
+                db = state / "drives.json"
+                try:
+                    recorded = json.loads(db.read_text(encoding="utf-8"))
+                except (OSError, ValueError):
+                    recorded = {}
+                letter = (recorded.get(real) or {}).get("letter")
+                if not letter or drive_used(letter):
+                    letter = free_drive_letter()
+                    if not letter:
+                        warn(f"no free drive letter for a short path; building under {real} (may hit MAX_PATH)")
+                        BUILD_ROOT = result
+                        return result
+                    recorded[real] = {"letter": letter, "target": real}
+                    db.write_text(json.dumps(recorded, indent=2), encoding="utf-8")
+                subst = shutil.which("subst") or str(Path(os.environ.get("WINDIR", r"C:\Windows")) / "System32" / "subst.exe")
+                if subprocess.run([subst, letter, real]).returncode == 0:
+                    log(f"short path {letter}\\ -> {real}")
+                    result = Path(letter + "/")
+                else:
+                    warn(f"`subst {letter} {real}` failed; building under {real} (may hit MAX_PATH)")
+    BUILD_ROOT = result
+    return result
 
 
 # --- the tool environment ---------------------------------------------------
@@ -171,14 +186,28 @@ def posix(path: Path) -> str:
     return (f"/{m.group(1).lower()}/{tail}" if m else tail).rstrip("/") or "/"
 
 
+def sccache_base_dirs(root: Path) -> str:
+    """Every spelling of the build root, for SCCACHE_BASEDIRS.
+
+    sccache hashes absolute paths, so without this every worktree is its own
+    cache island. With the build root stripped, all worktrees compile to the
+    same key and a build of master warms the cache every worktree reuses.
+    """
+    dirs = [str(root)]
+    if str(REPO) not in dirs:
+        dirs.append(str(REPO))
+    return (";" if IS_WINDOWS else ":").join(dirs)
+
+
 def tool_run(cmd: str, cwd: Path, capture: bool = False):
     """Run a build-tool command inside the tool environment (MSYS2 MinGW64)."""
+    base_dirs = sccache_base_dirs(BUILD_ROOT or REPO)
     if IS_WINDOWS:
         argv = [str(bash_exe()), "-lc", f"cd '{posix(cwd)}' && {cmd}"]
-        env = dict(os.environ, MSYSTEM="MINGW64")
+        env = dict(os.environ, MSYSTEM="MINGW64", SCCACHE_BASEDIRS=base_dirs)
     else:
         argv = ["/bin/bash", "-lc", f"cd {shlex.quote(str(cwd))} && {cmd}"]
-        env = None
+        env = dict(os.environ, SCCACHE_BASEDIRS=base_dirs)
     return subprocess.run(argv, env=env, capture_output=capture, text=True)
 
 

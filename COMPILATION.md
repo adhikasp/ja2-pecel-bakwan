@@ -107,6 +107,10 @@ Nothing below is required — each one is picked up automatically when the machi
   directory, so a second worktree, a branch switch or a reverted change reuses the objects instead
   of recompiling them: `pacman -S mingw-w64-x86_64-sccache` (MSYS2), `brew install sccache`
   (macOS), `cargo install sccache --locked` (elsewhere).
+  sccache hashes absolute paths by default, which makes every worktree its own cache island —
+  set `SCCACHE_BASEDIRS` to the directory the build is spelled from (the worktree root, e.g.
+  `export SCCACHE_BASEDIRS="$PWD"`) to strip it from the cache key and share objects across
+  worktrees and checkouts. `tools/dev.py` sets this for you; builds that bypass it need it too.
 - **lld** — `-DUSE_LLD=ON` (the default) links with `ld.lld` when the toolchain provides it, which
   cuts the link of the monolithic `ja2` binary to a fraction of GNU ld's time. MSYS2:
   `pacman -S mingw-w64-x86_64-lld`. Where `ld.lld` is absent the option is skipped silently.
