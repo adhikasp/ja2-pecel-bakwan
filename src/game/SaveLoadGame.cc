@@ -552,14 +552,13 @@ BOOLEAN SaveGame(const ST::string& saveName, const ST::string& gameDesc)
 
 /** Parse binary data and fill SAVED_GAME_HEADER structure.
  * @param data Data to be parsed.
- * @param h Header structure to be filled.
- * @param stracLinuxFormat Flag, telling to use "Stracciatella Linux" format. */
-void ParseSavedGameHeader(const BYTE *data, SAVED_GAME_HEADER& h, bool stracLinuxFormat)
+ * @param h Header structure to be filled. */
+void ParseSavedGameHeader(const BYTE *data, SAVED_GAME_HEADER& h)
 {
 	DataReader d{data};
 	EXTR_U32(   d, h.uiSavedGameVersion);
 	EXTR_STR(   d, h.zGameVersionNumber, lengthof(h.zGameVersionNumber));
-	h.sSavedGameDesc = d.readString(SAVED_GAME_HEADER::SIZE_OF_SAVE_GAME_DESC, stracLinuxFormat);
+	h.sSavedGameDesc = d.readString(SAVED_GAME_HEADER::SIZE_OF_SAVE_GAME_DESC);
 	EXTR_SKIP(  d, 4)
 	EXTR_U32(   d, h.uiDay)
 	EXTR_U8(    d, h.ubHour)
@@ -612,30 +611,12 @@ bool isValidSavedGameHeader(SAVED_GAME_HEADER& h)
 }
 
 
-void ExtractSavedGameHeaderFromFile(HWFILE const f, SAVED_GAME_HEADER& h, bool *stracLinuxFormat)
+void ExtractSavedGameHeaderFromFile(HWFILE const f, SAVED_GAME_HEADER& h)
 {
-	// first try Strac Linux format
-	try
-	{
-		BYTE data[SAVED_GAME_HEADER::ON_DISK_SIZE_STRAC_LIN];
-		f->read(data, sizeof(data));
-		ParseSavedGameHeader(data, h, true);
-		if(isValidSavedGameHeader(h))
-		{
-			*stracLinuxFormat = true;
-			return;
-		}
-	}
-	catch (...) {}
-
-	{
-		// trying vanilla format
-		BYTE data[SAVED_GAME_HEADER::ON_DISK_SIZE];
-		f->seek(0, FILE_SEEK_FROM_START);
-		f->read(data, sizeof(data));
-		ParseSavedGameHeader(data, h, false);
-		*stracLinuxFormat = false;
-	}
+	BYTE data[SAVED_GAME_HEADER::ON_DISK_SIZE];
+	f->seek(0, FILE_SEEK_FROM_START);
+	f->read(data, sizeof(data));
+	ParseSavedGameHeader(data, h);
 }
 
 
@@ -644,9 +625,9 @@ static void LoadGeneralInfo(HWFILE, UINT32 savegame_version);
 static void LoadMeanwhileDefsFromSaveGameFile(HWFILE, UINT32 savegame_version);
 static void LoadOppListInfoFromSavedGame(HWFILE);
 static void LoadPreRandomNumbersFromSaveGameFile(HWFILE);
-static void LoadSavedMercProfiles(HWFILE, UINT32 savegame_version, bool stracLinuxFormat);
-static void LoadSoldierStructure(HWFILE, UINT32 savegame_version, bool stracLinuxFormat);
-static void LoadTacticalStatusFromSavedGame(HWFILE, bool stracLinuxFormat);
+static void LoadSavedMercProfiles(HWFILE, UINT32 savegame_version);
+static void LoadSoldierStructure(HWFILE, UINT32 savegame_version);
+static void LoadTacticalStatusFromSavedGame(HWFILE);
 static void LoadWatchedLocsFromSavedGame(HWFILE);
 static void TruncateStrategicGroupSizes(void);
 static void UpdateMercMercContractInfo(void);
@@ -703,8 +684,7 @@ void LoadSavedGame(const ST::string &saveName)
 	AutoSGPFile f(GCM->saveGameFiles()->openForReading(savegameFilename));
 
 	SAVED_GAME_HEADER SaveGameHeader;
-	bool stracLinuxFormat;
-	ExtractSavedGameHeaderFromFile(f, SaveGameHeader, &stracLinuxFormat);
+	ExtractSavedGameHeaderFromFile(f, SaveGameHeader);
 
 	CalcJA2EncryptionSet(SaveGameHeader);
 
@@ -722,7 +702,7 @@ void LoadSavedGame(const ST::string &saveName)
 #endif
 
 	//Load the gtactical status structure plus the current sector x,y,z
-	LoadTacticalStatusFromSavedGame(f, stracLinuxFormat);
+	LoadTacticalStatusFromSavedGame(f);
 
 	//This gets reset by the above function
 	gTacticalStatus.uiFlags |= LOADING_SAVED_GAME;
@@ -785,10 +765,10 @@ void LoadSavedGame(const ST::string &saveName)
 	LoadLaptopInfoFromSavedGame(f);
 
 	BAR(0, "Merc Profiles...");
-	LoadSavedMercProfiles(f, version, stracLinuxFormat);
+	LoadSavedMercProfiles(f, version);
 
 	BAR(30, "Soldier Structure...");
-	LoadSoldierStructure(f, version, stracLinuxFormat);
+	LoadSoldierStructure(f, version);
 
 	BAR(1, "Finances Data File...");
 	LoadFilesFromSavedGame(FINANCES_DATA_FILE, f);
@@ -824,7 +804,7 @@ void LoadSavedGame(const ST::string &saveName)
 	LoadOppListInfoFromSavedGame(f);
 
 	BAR(1, "MapScreen Messages...");
-	LoadMapScreenMessagesFromSaveGameFile(f, stracLinuxFormat);
+	LoadMapScreenMessagesFromSaveGameFile(f);
 
 	BAR(1, "NPC Info...");
 	LoadNPCInfoFromSavedGameFile(f, version);
@@ -1322,7 +1302,7 @@ void SaveIMPPlayerProfiles()
 	}
 }
 
-static void LoadSavedMercProfiles(HWFILE const f, UINT32 const savegame_version, bool stracLinuxFormat)
+static void LoadSavedMercProfiles(HWFILE const f, UINT32 const savegame_version)
 {
 	/* Saves written before the profiles were extended hold the vanilla ones
 	 * only. The slots past them are not in the file, so they are set up as a
@@ -1345,10 +1325,9 @@ static void LoadSavedMercProfiles(HWFILE const f, UINT32 const savegame_version,
 	{
 		MERCPROFILESTRUCT& profile = gMercProfiles[i];
 		UINT32 checksum;
-		std::array<BYTE, std::max(MERC_PROFILE_SIZE_STRAC_LINUX, MERC_PROFILE_SIZE)> data;
-		UINT32 dataSize = stracLinuxFormat ? MERC_PROFILE_SIZE_STRAC_LINUX : MERC_PROFILE_SIZE;
-		reader(f, data.data(), dataSize);
-		ExtractMercProfile(data.data(), profile, stracLinuxFormat, &checksum, true);
+		std::array<BYTE, MERC_PROFILE_SIZE> data;
+		reader(f, data.data(), MERC_PROFILE_SIZE);
+		ExtractMercProfile(data.data(), profile, &checksum, true);
 		if (checksum != SoldierProfileChecksum(profile))
 		{
 			throw std::runtime_error("Merc profile checksum mismatch");
@@ -1409,7 +1388,7 @@ static void SaveSoldierStructure(HWFILE const f)
 }
 
 
-static void LoadSoldierStructure(HWFILE const f, UINT32 savegame_version, bool stracLinuxFormat)
+static void LoadSoldierStructure(HWFILE const f, UINT32 savegame_version)
 {
 	// Loop through all the soldier and delete them all
 	TrashAllSoldiers();
@@ -1430,18 +1409,9 @@ static void LoadSoldierStructure(HWFILE const f, UINT32 savegame_version, bool s
 
 		//Read in the saved soldier info into a Temp structure
 		SOLDIERTYPE SavedSoldierInfo;
-		if(stracLinuxFormat)
-		{
-			BYTE Data[2352];
-			reader(f, Data, sizeof(Data));
-			ExtractSoldierType(Data, &SavedSoldierInfo, stracLinuxFormat, savegame_version);
-		}
-		else
-		{
-			BYTE Data[2328];
-			reader(f, Data, sizeof(Data));
-			ExtractSoldierType(Data, &SavedSoldierInfo, stracLinuxFormat, savegame_version);
-		}
+		BYTE Data[2328];
+		reader(f, Data, sizeof(Data));
+		ExtractSoldierType(Data, &SavedSoldierInfo, savegame_version);
 
 		SOLDIERTYPE* const s = TacticalCreateSoldierFromExisting(&SavedSoldierInfo);
 		Assert(s->ubID == i);
@@ -1620,9 +1590,9 @@ static void SaveTacticalStatusToSavedGame(HWFILE const f)
 }
 
 
-static void LoadTacticalStatusFromSavedGame(HWFILE const f, bool stracLinuxFormat)
+static void LoadTacticalStatusFromSavedGame(HWFILE const f)
 {
-	ExtractTacticalStatusTypeFromFile(f, stracLinuxFormat);
+	ExtractTacticalStatusTypeFromFile(f);
 
 	// Load the current sector location
 	BYTE data[5];
@@ -2550,10 +2520,9 @@ static void CalcJA2EncryptionSet(SAVED_GAME_HEADER const& h)
 }
 
 SaveGameInfo::SaveGameInfo(ST::string name_, HWFILE file) : saveName(std::move(name_)) {
-	bool stracciatellaFormat = false;
 	auto savedGameHeader = SAVED_GAME_HEADER{};
 	file->seek(0, FileSeekMode::FILE_SEEK_FROM_START);
-	ExtractSavedGameHeaderFromFile(file, savedGameHeader, &stracciatellaFormat);
+	ExtractSavedGameHeaderFromFile(file, savedGameHeader);
 
 	this->savedGameHeader = savedGameHeader;
 	if (savedGameHeader.uiSavedGameVersion >= 102) {
@@ -2649,7 +2618,7 @@ TEST(SaveLoadGameTest, mercProfilesFromCurrentSave)
 
 	AutoSGPFile f(cm->tempFiles()->openForReading("profiles-105.dat"));
 	UINT32 const written = f->size();
-	LoadSavedMercProfiles(f, 105, false);
+	LoadSavedMercProfiles(f, 105);
 
 	EXPECT_EQ(static_cast<UINT32>(f->pos()), written);
 	for (UINT32 i = 0; i != NUM_PROFILES; ++i)
@@ -2676,7 +2645,7 @@ TEST(SaveLoadGameTest, mercProfilesFromOlderSave)
 
 	AutoSGPFile f(cm->tempFiles()->openForReading("profiles-104.dat"));
 	UINT32 const written = f->size();
-	LoadSavedMercProfiles(f, 104, false);
+	LoadSavedMercProfiles(f, 104);
 
 	// The save is read to its end and no further.
 	EXPECT_EQ(static_cast<UINT32>(f->pos()), written);

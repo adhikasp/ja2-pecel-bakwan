@@ -4,7 +4,7 @@
  * @defgroup modding Modding
  */
 
-/*! \page scripting_guide Scripting in JA2 Stracciatella
+/*! \page scripting_guide Scripting in JA2 Pecel Bakwan
  * \ingroup funclib-general
  *
  * # Extending mods by Lua scripting

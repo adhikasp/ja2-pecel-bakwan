@@ -56,9 +56,9 @@ linux-set-gcc-version () {
 }
 
 linux-setup-android-signing-keys () {
-    mkdir $HOME/.stracciatella-android-signing-keys
+    mkdir $HOME/.pecel-bakwan-android-signing-keys
 
-    echo -n "$ANDROID_KEYSTORE_FILE" | base64 -d > $HOME/.stracciatella-android-signing-keys/keystore.jks
+    echo -n "$ANDROID_KEYSTORE_FILE" | base64 -d > $HOME/.pecel-bakwan-android-signing-keys/keystore.jks
 }
 
 macOS-install-via-brew () {

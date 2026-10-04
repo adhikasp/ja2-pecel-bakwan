@@ -24,8 +24,7 @@ UINT32 NumProfilesInSavedGame(UINT32 savegame_version);
 struct SAVED_GAME_HEADER
 {
 	static constexpr size_t GAME_VERSION_LENGTH{ 16 };
-	static constexpr size_t ON_DISK_SIZE{ 432 }; // Size of SAVED_GAME_HEADER on disk in Vanilla and Stracciatella Windows
-	static constexpr size_t ON_DISK_SIZE_STRAC_LIN{ 688 }; // Size of SAVED_GAME_HEADER on disk in Stracciatella Linux
+	static constexpr size_t ON_DISK_SIZE{ 432 }; // Size of SAVED_GAME_HEADER on disk
 	static constexpr size_t SIZE_OF_SAVE_GAME_DESC{ 128 }; // Number of UTF-16 characters reserved for the description string
 
 	UINT32	uiSavedGameVersion;
@@ -61,18 +60,16 @@ struct SAVED_GAME_HEADER
 
 /** Parse binary data and fill SAVED_GAME_HEADER structure.
  * @param data Data to be parsed.
- * @param h Header structure to be filled.
- * @param stracLinuxFormat Flag, telling to use "Stracciatella Linux" format. */
-extern void ParseSavedGameHeader(const BYTE *data, SAVED_GAME_HEADER& h, bool stracLinuxFormat);
+ * @param h Header structure to be filled. */
+extern void ParseSavedGameHeader(const BYTE *data, SAVED_GAME_HEADER& h);
 
 /** @brief Check if SAVED_GAME_HEADER structure contains valid data.
  * This function does the basic check. */
 extern bool isValidSavedGameHeader(SAVED_GAME_HEADER& h);
 
 
-/** @brief Extract saved game header from a file.
- * Return \a stracLinuxFormat = true, when the file is in "Stracciatella Linux" format. */
-void ExtractSavedGameHeaderFromFile(HWFILE, SAVED_GAME_HEADER&, bool *stracLinuxFormat);
+/** @brief Extract saved game header from a file. */
+void ExtractSavedGameHeaderFromFile(HWFILE, SAVED_GAME_HEADER&);
 
 
 extern ScreenID guiScreenToGotoAfterLoadingSavedGame;

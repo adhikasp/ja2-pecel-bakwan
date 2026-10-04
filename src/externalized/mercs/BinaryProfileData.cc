@@ -38,7 +38,7 @@ BinaryProfileData BinaryProfileData::deserialize(SGPFile* profilesFile) {
 		JA2EncryptedFileRead(profilesFile, data, sizeof(data));
 		auto prof = std::make_unique<MERCPROFILESTRUCT>();
 		UINT32 checksum;
-		ExtractMercProfile(data, *prof, false, &checksum, isCorrectlyEncoded);
+		ExtractMercProfile(data, *prof, &checksum, isCorrectlyEncoded);
 		// not checking the checksum
 		binData.profiles[profileID] = std::move(prof);
 	}

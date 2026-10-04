@@ -41,7 +41,7 @@ fi
 cd ci-build
 
 echo "## publish ##"
-for file in ja2-stracciatella_*; do
+for file in ja2-pecel-bakwan_*; do
   echo "$file"
   if [[ "$file" == *".AppImage" ]]; then
     export PATH=$PATH:$HOME/linuxdeploy

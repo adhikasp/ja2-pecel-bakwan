@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""dev.py - one entry point for building, testing and running ja2-stracciatella.
+"""dev.py - one entry point for building, testing and running ja2-pecel-bakwan.
 
 The same commands work on macOS and Windows (on Windows this shells into the
 MSYS2 MinGW64 environment itself, so no more `MSYSTEM=MINGW64 bash -lc ...`):
@@ -670,7 +670,7 @@ def split_tail(tail):
 def main():
     parser = argparse.ArgumentParser(
         prog="tools/dev.py",
-        description="one entry point for building, testing and running ja2-stracciatella (macOS and Windows)",
+        description="one entry point for building, testing and running ja2-pecel-bakwan (macOS and Windows)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 

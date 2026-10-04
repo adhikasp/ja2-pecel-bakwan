@@ -161,7 +161,7 @@ to the Rust CLI in `engine_options.rs` so `--help` lists them):
 |---|---|
 | `--headless` | HeadlessHost |
 | `--seed N` | deterministic RNG |
-| `--home DIR` | override Stracciatella home (config, settings, default save dir) |
+| `--home DIR` | override Pecel Bakwan home (config, settings, default save dir) |
 | `--save-dir DIR` | override save dir (already exists in ja2.json; expose on CLI) |
 | `--log FILE` | per-session log path |
 | `--load NAME\|PATH` | after `InitializeGame()`, skip intro/menu, call `LoadSavedGame()` and go to `guiScreenToGotoAfterLoadingSavedGame` — the same path [SaveLoadScreen.cc:1184](../../src/game/SaveLoadScreen.cc) takes |

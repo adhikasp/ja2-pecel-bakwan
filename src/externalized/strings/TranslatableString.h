@@ -4,7 +4,7 @@
 #include "GameRes.h"
 #include "Json.h"
 #include "SGPFile.h"
-#include "stracciatella.h"
+#include "pecel_bakwan.h"
 #include <cstdint>
 #include <map>
 #include <string_theory/st_format.h>

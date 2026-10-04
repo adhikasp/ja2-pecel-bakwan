@@ -48,7 +48,7 @@ void ClearDisplayedListOfTacticalStrings( void );
 // clear ALL strings in the tactical Message Queue
 void ClearTacticalMessageQueue( void );
 
-void LoadMapScreenMessagesFromSaveGameFile(HWFILE, bool stracLinuxFormat);
+void LoadMapScreenMessagesFromSaveGameFile(HWFILE);
 void SaveMapScreenMessagesToSaveGameFile(HWFILE);
 
 // The map screen message list, oldest first, one entry per message (wrapped lines joined), with its font colour, the

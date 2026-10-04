@@ -1,14 +1,14 @@
-[JA2 Stracciatella](https://ja2-stracciatella.github.io/) is a community driven open source project that welcomes all. It has a few maintainers, who keep the big picture in mind, and a long list of contributors. The code can be forked, poked, twisted and hacked. It can be customized, extended, and collaboratively developed. You are invited to do so and join us!
+JA2 Pecel Bakwan is an open source project that welcomes contributions. The code can be forked, poked, twisted and hacked. It can be customized, extended, and collaboratively developed. You are invited to do so and join us!
 
-That being said, not all contributions are welcome, since the project has a defined scope: a portable, cleaned-up JA2 with a limited set of (chocolate) additions. Large gameplay changes as seen in the 1.13 mod are therefore scoffed upon.
+That being said, the project has a defined scope: a modern reimplementation of JA2 with a richer tactical and strategic game. Read the [game design principles](AGENTS.md#game-design-principles) before proposing a change; they break ties when a plan and a PR disagree.
 
 ### Where to start?
 
-Play the game and see what bothers you, what bug you hit, then report it and try to fix it. If you don't have an itch to scratch, we suggest looking at our bug tracker, for example the [help wanted](https://github.com/ja2-stracciatella/ja2-stracciatella/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) list.
+Play the game and see what bothers you, what bug you hit, then report it and try to fix it. If you don't have an itch to scratch, we suggest looking at our bug tracker, for example the [help wanted](https://github.com/adhikasp/ja2-stracciatella/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22) list.
 
-Instructions on building and IDE setup can be found in [COMPILATION](https://github.com/ja2-stracciatella/ja2-stracciatella/blob/master/COMPILATION.md). Consider reading (or contributing to) our [docs](https://github.com/ja2-stracciatella/ja2-stracciatella/tree/master/docs) directory. Code-specific documentation can be generated locally there.
+Instructions on building and IDE setup can be found in [COMPILATION](COMPILATION.md). Consider reading (or contributing to) our [docs](docs) directory. Code-specific documentation can be generated locally there.
 
-If you are not a developer, there are many other possibilities which do not require programming skills to help JA2 Stracciatella to evolve. For example, you can help by retesting bug reports labelled with [retest](https://github.com/ja2-stracciatella/ja2-stracciatella/issues?q=is%3Aopen+is%3Aissue+label%3Aretest), help triage bugs, test solutions, research, create mods and more.
+If you are not a developer, there are many other possibilities which do not require programming skills to help JA2 Pecel Bakwan to evolve. For example, you can help by retesting bug reports labelled with [retest](https://github.com/adhikasp/ja2-stracciatella/issues), help triage bugs, test solutions, research, create mods and more.
 
 ### Axioms of Style
 
@@ -40,4 +40,4 @@ All of this makes reviewing and bisecting for regressions easier.
 0. The master branch is considered protected, meaning changes are expected to go in through PRs.
 1. Merge a PR only after it has at least one other approval and it builds successfully on all buildbots (or the failures are known to be unrelated).
 2. Squash merge only if the history is a mess or it makes more sense (eg. the whitespace sync PR).
-3. For release planning check the milestones and the [checklist](https://github.com/ja2-stracciatella/ja2-stracciatella/blob/master/docs/Release-checklist.md)
+3. For release planning check the milestones and the [checklist](docs/Release-checklist.md)

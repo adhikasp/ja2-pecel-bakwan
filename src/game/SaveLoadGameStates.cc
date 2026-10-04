@@ -31,7 +31,7 @@ void LoadStatesFromSaveFile(HWFILE const hFile, SavedGameStates &states)
 	states.Deserialize(buff);
 }
 
-const ST::string MODS_KEY = "stracciatella:mods";
+const ST::string MODS_KEY = "pecel_bakwan:mods";
 
 void ResetGameStates()
 {

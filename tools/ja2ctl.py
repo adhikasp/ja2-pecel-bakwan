@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""ja2ctl - drive JA2 Stracciatella sessions from the command line.
+"""ja2ctl - drive JA2 Pecel Bakwan sessions from the command line.
 
 A session is a headless game process (ja2 -serve) with its own home directory,
 log and saves. The game only advances while a command steps it, so you can take

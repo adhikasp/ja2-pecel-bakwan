@@ -8,11 +8,10 @@
 #include "SGPFile.h"
 
 
-void ExtractTacticalStatusTypeFromFile(HWFILE const f, bool stracLinuxFormat)
+void ExtractTacticalStatusTypeFromFile(HWFILE const f)
 {
-	UINT32 dataSize = stracLinuxFormat ? TACTICAL_STATUS_TYPE_SIZE_STRAC_LINUX : TACTICAL_STATUS_TYPE_SIZE;
-	std::vector<BYTE> data(dataSize);
-	f->read(data.data(), dataSize);
+	std::vector<BYTE> data(TACTICAL_STATUS_TYPE_SIZE);
+	f->read(data.data(), TACTICAL_STATUS_TYPE_SIZE);
 
 	TacticalStatusType* const s = &gTacticalStatus;
 	DataReader d{data.data()};
@@ -64,19 +63,8 @@ void ExtractTacticalStatusTypeFromFile(HWFILE const f, bool stracLinuxFormat)
 	EXTR_U16(d, s->usTactialTurnLimitCounter)
 	EXTR_BOOL(d, s->fInTopMessage)
 	EXTR_U8(d, s->ubTopMessageType)
-	if(stracLinuxFormat)
-	{
-		EXTR_SKIP(d, 82);
-	}
-	else
-	{
-		EXTR_SKIP(d, 40);
-	}
+	EXTR_SKIP(d, 40);
 	EXTR_U16(d, s->usTactialTurnLimitMax)
-	if(stracLinuxFormat)
-	{
-		EXTR_SKIP(d, 2);
-	}
 	EXTR_U32(d, s->uiTactialTurnLimitClock)
 	EXTR_BOOL(d, s->fTactialTurnLimitStartedBeep)
 	EXTR_I8(d, s->bBoxingState)
@@ -133,7 +121,7 @@ void ExtractTacticalStatusTypeFromFile(HWFILE const f, bool stracLinuxFormat)
 	EXTR_U16(d, s->sCreatureTenseQuoteDelay)
 	EXTR_SKIP(d, 2)
 	EXTR_U32(d, s->uiCreatureTenseQuoteLastUpdate)
-	Assert(d.getConsumed() == dataSize);
+	Assert(d.getConsumed() == TACTICAL_STATUS_TYPE_SIZE);
 
 	if (!GameMode::getInstance()->debugging())
 	{

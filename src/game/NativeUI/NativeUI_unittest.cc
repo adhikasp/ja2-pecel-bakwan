@@ -134,16 +134,14 @@ TEST(NativeUI, saveSlotViewModelFromSaveFixtures)
 {
 	struct Case { char const* file; char const* when; char const* sector; int mercs; char const* money; char const* difficulty; };
 	Case const cases[] = {
-		{ "unittests/saves/strac-win/SaveGame09.sav",       "Day 2, 09:51", "D15", 6, "$13,030", "easy" },
-		{ "unittests/saves/strac-linux/SaveGame01.sav",     "Day 1, 01:00", "A9",  1, "$42,000", "easy" },
+		{ "unittests/saves/native/SaveGame09.sav",       "Day 2, 09:51", "D15", 6, "$13,030", "easy" },
 		{ "unittests/saves/vanilla-russian/SaveGame06.sav", "Day 1, 01:00", "A9",  1, "$32,000", "medium" },
 	};
 	for (Case const& c : cases)
 	{
 		SAVED_GAME_HEADER header;
-		bool stracLinux = false;
 		AutoSGPFile f(OpenTestResourceForReading(c.file));
-		ExtractSavedGameHeaderFromFile(f, header, &stracLinux);
+		ExtractSavedGameHeaderFromFile(f, header);
 		SaveSlotViewModel vm;
 		vm.Load("SaveGame", header);
 		Value const v = vm.Snapshot();

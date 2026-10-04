@@ -8,18 +8,18 @@ android {
 
 
     defaultConfig {
-        applicationId "io.github.ja2stracciatella"
+        applicationId "io.github.adhikasp.pecelbakwan"
         minSdkVersion 21
         targetSdkVersion 26
 
         // Version name is the semver version
         String version = file('../../version').text.trim()
-        logger.info('Stracciatella Version Name: "{}".', version)
+        logger.info('Pecel Bakwan Version Name: "{}".', version)
         // Version code is build from semver
         // pad each semver part to 3 characters -> join -> parse as int
         // Example: 0.17.1 -> [ "000", "017", "001" ] -> "000017001" -> 17001
         Integer versionCodeFromVersion = version.split('\\.').collect({ it.padLeft(3, '0') }).join('').toInteger()
-        logger.info('Stracciatella Version Code: "{}".', versionCodeFromVersion)
+        logger.info('Pecel Bakwan Version Code: "{}".', versionCodeFromVersion)
 
         versionName version
         versionCode versionCodeFromVersion
@@ -50,7 +50,7 @@ android {
 
     signingConfigs {
         release {
-            storeFile file("${System.getenv("HOME")}/.stracciatella-android-signing-keys/keystore.jks")
+            storeFile file("${System.getenv("HOME")}/.pecel-bakwan-android-signing-keys/keystore.jks")
             storePassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
             keyAlias "stracciatella-signing-key"
             keyPassword System.getenv("ANDROID_KEYSTORE_PASSWORD")
@@ -78,7 +78,7 @@ android {
             }
         }
     }
-    namespace 'io.github.ja2stracciatella'
+    namespace 'io.github.adhikasp.pecelbakwan'
     lint {
         disable 'NewApi', 'ExpiredTargetSdkVersion'
     }

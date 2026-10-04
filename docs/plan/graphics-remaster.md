@@ -47,7 +47,7 @@ and rebalancing. Phase 6 lists these as follow-ups so that the earlier phases do
   today. The whole frame (world and UI together) is scaled by a single factor that SDL picks
   from the window size. The scroll optimisation in `RefreshScreen()` shifts the framebuffer
   in place and redraws only the exposed strips.
-- **Scaling modes** (`rust/stracciatella/src/config/scaling_quality.rs`): `LINEAR`,
+- **Scaling modes** (`rust/pecel_bakwan/src/config/scaling_quality.rs`): `LINEAR`,
   `NEAR_PERFECT` (nearest up to 4x, then linear down) and `PERFECT` (integer scale only).
 - **Resolution** (`rust/.../config/resolution.rs`) defaults to `640x480`. It is read once in
   `src/sgp/SGP.cc:426` → `g_ui.setScreenSize()` → `g_ui.recalculatePositions()` →
@@ -192,11 +192,11 @@ together). It fixes most of the "tiny on 4K" complaint on its own, while touchin
 game code.
 
 **Config (Rust + C API + launcher)**
-- `rust/stracciatella/src/config/`: add `ui_scale: Auto | 1..=4` and
+- `rust/pecel_bakwan/src/config/`: add `ui_scale: Auto | 1..=4` and
   `window_mode: Windowed | Fullscreen | BorderlessDesktop`. Let `resolution` accept `"auto"`
   (desktop size), which becomes the new default for fresh installs. Keep `640x480`
   available as "Classic".
-- Expose these through `rust/stracciatella_c_api/src/c/config.rs` and the CLI (`-uiscale N`,
+- Expose these through `rust/pecel_bakwan_c_api/src/c/config.rs` and the CLI (`-uiscale N`,
   `-window-mode`).
 - Launcher (`src/launcher/StracciatellaLauncher.fl`, `Launcher.cc`): add a resolution list
   from `SDL_GetFullscreenDisplayModes`, a UI-scale dropdown, and a window-mode radio.

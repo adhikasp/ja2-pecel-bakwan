@@ -2,7 +2,7 @@
 #define STRINGS_LOCALIZATION_H
 
 #include "SGPFile.h"
-#include "stracciatella.h"
+#include "pecel_bakwan.h"
 #include <string_theory/string>
 #include <array>
 #include <cstdint>

@@ -151,8 +151,8 @@ BOOLEAN		gfSaveGame=TRUE;
 static BOOLEAN gfSaveLoadScreenButtonsCreated = FALSE;
 
 static SGPVObject* guiSlgBackGroundImage;
-static SGPVObject* guiSlgAddonsStracciatella;
-static SGPVObject* guiSlgScrollbarStracciatella;
+static SGPVObject* guiSlgAddons;
+static SGPVObject* guiSlgScrollbar;
 
 static BOOLEAN gfUserInTextInputMode = FALSE;
 static UINT8   gubSaveGameNextPass   = 0;
@@ -404,8 +404,8 @@ static void EnterSaveLoadScreen()
 
 	// Load main background and add ons graphic
 	guiSlgBackGroundImage = AddVideoObjectFromFile(INTERFACEDIR "/loadscreen.sti");
-	guiSlgAddonsStracciatella = AddVideoObjectFromFile("sti/interface/save-load-addons.sti");
-	guiSlgScrollbarStracciatella = AddVideoObjectFromFile("sti/interface/scroll-bar.sti");
+	guiSlgAddons = AddVideoObjectFromFile("sti/interface/save-load-addons.sti");
+	guiSlgScrollbar = AddVideoObjectFromFile("sti/interface/scroll-bar.sti");
 
 	guiSlgScrollUpBtn = QuickCreateButtonImg("sti/interface/scroll-bar.sti", SLG_SCROLL_UP_GRAPHICS_NUMBER_UP, SLG_SCROLL_UP_GRAPHICS_NUMBER_DOWN, SLG_SCROLLBAR_POS_X, SLG_SCROLLBAR_POS_Y, MSYS_PRIORITY_HIGH, BtnScrollUpCallback);
 	guiSlgScrollUpBtn->SetFastHelpText("Scroll up");
@@ -518,8 +518,8 @@ static void ExitSaveLoadScreen(void)
 
 	DeleteVideoObject(guiSlgBackGroundImage);
 	RemoveVObject(MLG_LOADSAVEHEADER);
-	DeleteVideoObject(guiSlgAddonsStracciatella);
-	DeleteVideoObject(guiSlgScrollbarStracciatella);
+	DeleteVideoObject(guiSlgAddons);
+	DeleteVideoObject(guiSlgScrollbar);
 
 	//Destroy the text fields ( if created )
 	DestroySaveLoadTextInputBoxes();
@@ -580,10 +580,10 @@ static void RenderScrollBar(void) {
 	clippingRect.set(SLG_SCROLLBAR_POS_X, SLG_SCROLLBAR_INNER_POS_Y, SLG_SCROLLBAR_POS_X + SLG_SCROLLBAR_WIDTH, SLG_SCROLLBAR_INNER_POS_Y + SLG_SCROLLBAR_INNER_HEIGHT);
 	SGPRect const previousClippingRect = SetClippingRect(clippingRect);
 
-	auto tileHeight = guiSlgScrollbarStracciatella->SubregionProperties(SLG_SCROLL_BAR_INNER_GRAPHICS_NUMBER).usHeight;
+	auto tileHeight = guiSlgScrollbar->SubregionProperties(SLG_SCROLL_BAR_INNER_GRAPHICS_NUMBER).usHeight;
 	auto repetitions = uint32_t(ceil(double(SLG_SCROLLBAR_INNER_HEIGHT) / double(tileHeight)));
 	for (uint32_t i = 0; i < repetitions; i++) {
-		BltVideoObject(FRAME_BUFFER, guiSlgScrollbarStracciatella, SLG_SCROLL_BAR_INNER_GRAPHICS_NUMBER, SLG_SCROLLBAR_POS_X, SLG_SCROLLBAR_INNER_POS_Y + i * tileHeight);
+		BltVideoObject(FRAME_BUFFER, guiSlgScrollbar, SLG_SCROLL_BAR_INNER_GRAPHICS_NUMBER, SLG_SCROLLBAR_POS_X, SLG_SCROLLBAR_INNER_POS_Y + i * tileHeight);
 	}
 	SetClippingRect(previousClippingRect);
 
@@ -593,7 +593,7 @@ static void RenderScrollBar(void) {
 	auto indicatorPosition = int(round(double_t(maxYPos) * double_t(currentTop) / double_t(maxTop)));
 	indicatorPosition = std::clamp(indicatorPosition, 0, maxYPos);
 
-	BltVideoObject(FRAME_BUFFER, guiSlgScrollbarStracciatella, SLG_SCROLL_BAR_INDICATOR_GRAPHICS_NUMBER, SLG_SCROLLBAR_POS_X + 2, SLG_SCROLLBAR_INNER_POS_Y + indicatorPosition + 1);
+	BltVideoObject(FRAME_BUFFER, guiSlgScrollbar, SLG_SCROLL_BAR_INDICATOR_GRAPHICS_NUMBER, SLG_SCROLLBAR_POS_X + 2, SLG_SCROLLBAR_INNER_POS_Y + indicatorPosition + 1);
 }
 
 
@@ -843,7 +843,7 @@ static BOOLEAN DisplaySaveGameEntry(const std::vector<SaveGameInfo>::iterator& e
 	// Background
 	UINT16 const gfx = isSelected ?
 		SLG_SELECTED_SLOT_GRAPHICS_NUMBER : SLG_UNSELECTED_SLOT_GRAPHICS_NUMBER;
-	BltVideoObject(FRAME_BUFFER, guiSlgAddonsStracciatella, gfx, bx, by);
+	BltVideoObject(FRAME_BUFFER, guiSlgAddons, gfx, bx, by);
 
 	SGPFont  font = SAVE_LOAD_NORMAL_FONT;
 	UINT8 foreground;
@@ -970,7 +970,7 @@ static BOOLEAN DisplaySaveGameEntry(const std::vector<SaveGameInfo>::iterator& e
 				if (isSelected) {
 					gfx = SLG_SKULL_SELECTED_GRAPHICS_NUMBER;
 				}
-				BltVideoObject(FRAME_BUFFER, guiSlgAddonsStracciatella, gfx, x + SLG_SAVE_GAME_SKULL_X, y + SLG_SAVE_GAME_SKULL_Y);
+				BltVideoObject(FRAME_BUFFER, guiSlgAddons, gfx, x + SLG_SAVE_GAME_SKULL_X, y + SLG_SAVE_GAME_SKULL_Y);
 		}
 	}
 

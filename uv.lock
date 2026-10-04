@@ -3,7 +3,7 @@ revision = 3
 requires-python = ">=3.12"
 
 [[package]]
-name = "ja2-stracciatella-tools"
+name = "ja2-pecel-bakwan-tools"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [

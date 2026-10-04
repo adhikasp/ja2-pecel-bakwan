@@ -180,7 +180,7 @@ static BOOLEAN gfTitleBarSurfaceAlreadyActive = FALSE;
 // Mode values
 LaptopMode        guiCurrentLaptopMode;
 LaptopMode        guiPreviousLaptopMode;
-// Used to prevent double free problems. Fixes Stracciatella issue #68:
+// Used to prevent double free problems. Fixes upstream Stracciatella issue #68:
 LaptopMode        guiLastExitedLaptopMode = LAPTOP_MODE_NONE;
 static LaptopMode guiCurrentWWWMode = LAPTOP_MODE_NONE;
 INT32  giCurrentSubPage;

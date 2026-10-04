@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 
-BUNDLE="`echo "$0" | sed -e 's/\/Contents\/MacOS\/JA2 Stracciatella//'`"
+BUNDLE="`echo "$0" | sed -e 's/\/Contents\/MacOS\/JA2 Pecel Bakwan//'`"
 RESOURCES="$BUNDLE/Contents/Resources"
 
 echo "running $0"

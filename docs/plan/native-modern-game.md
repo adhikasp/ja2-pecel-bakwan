@@ -356,7 +356,7 @@ if it is still needed as a fallback (decide then).
 
 ## Licensing and distribution
 
-The original art belongs to the JA2 rights holders. Stracciatella ships no game data.
+The original art belongs to the JA2 rights holders. Pecel Bakwan ships no game data.
 - **In the repo:** engine code, tools, the design system, open-licence fonts, and **newly created**
   UI art and icons (our own work).
 - **Decided: derived content (upscaled or repainted originals) is never committed to this repo.**

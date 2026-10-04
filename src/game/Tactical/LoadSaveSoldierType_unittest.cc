@@ -177,7 +177,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, RoundTripSerialization)
 	
 	// Extract the soldier data
 	SOLDIERTYPE extractedSoldier;
-	ExtractSoldierType(buffer.get(), &extractedSoldier, false, 103);
+	ExtractSoldierType(buffer.get(), &extractedSoldier, 103);
 	
 	// Verify basic identification
 	EXPECT_EQ(extractedSoldier.ubID, testSoldier.ubID);
@@ -268,7 +268,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, DifferentSideValues)
 		InjectSoldierType(buffer.get(), &testSoldier);
 		
 		SOLDIERTYPE extractedSoldier;
-		ExtractSoldierType(buffer.get(), &extractedSoldier, false, 0);
+		ExtractSoldierType(buffer.get(), &extractedSoldier, 0);
 		
 		EXPECT_EQ(extractedSoldier.bSide, side);
 	});
@@ -290,7 +290,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, DifferentTeamValues)
 		InjectSoldierType(buffer.get(), &testSoldier);
 		
 		SOLDIERTYPE extractedSoldier;
-		ExtractSoldierType(buffer.get(), &extractedSoldier, false, 0);
+		ExtractSoldierType(buffer.get(), &extractedSoldier, 0);
 		
 		EXPECT_EQ(extractedSoldier.bTeam, team);
 	}
@@ -313,7 +313,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, DifferentSoldierClassValues)
 		InjectSoldierType(buffer.get(), &testSoldier);
 		
 		SOLDIERTYPE extractedSoldier;
-		ExtractSoldierType(buffer.get(), &extractedSoldier, false, 0);
+		ExtractSoldierType(buffer.get(), &extractedSoldier, 0);
 		
 		EXPECT_EQ(extractedSoldier.ubSoldierClass, soldierClass);
 	}
@@ -334,7 +334,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, StringFields)
 	InjectSoldierType(buffer.get(), &testSoldier);
 	
 	SOLDIERTYPE extractedSoldier;
-	ExtractSoldierType(buffer.get(), &extractedSoldier, false, 0);
+	ExtractSoldierType(buffer.get(), &extractedSoldier, 0);
 	
 	EXPECT_EQ(extractedSoldier.name, testSoldier.name);
 	EXPECT_EQ(extractedSoldier.HeadPal, testSoldier.HeadPal);
@@ -359,7 +359,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, PathingData)
 	InjectSoldierType(buffer.get(), &testSoldier);
 	
 	SOLDIERTYPE extractedSoldier;
-	ExtractSoldierType(buffer.get(), &extractedSoldier, false, 0);
+	ExtractSoldierType(buffer.get(), &extractedSoldier, 0);
 	
 	EXPECT_EQ(extractedSoldier.ubPathDataSize, 5);
 	EXPECT_EQ(extractedSoldier.ubPathIndex, 2);
@@ -379,7 +379,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, InventorySlots)
 	InjectSoldierType(buffer.get(), &testSoldier);
 	
 	SOLDIERTYPE extractedSoldier;
-	ExtractSoldierType(buffer.get(), &extractedSoldier, false, 0);
+	ExtractSoldierType(buffer.get(), &extractedSoldier, 0);
 	
 	// Verify that all inventory slots are empty (as initialized)
 	for (int i = 0; i < NUM_INV_SLOTS; i++)
@@ -414,7 +414,7 @@ TEST_F(LoadSaveSoldierTypeTestImpl, ContractInformation)
 	InjectSoldierType(buffer.get(), &testSoldier);
 	
 	SOLDIERTYPE extractedSoldier;
-	ExtractSoldierType(buffer.get(), &extractedSoldier, false, 0);
+	ExtractSoldierType(buffer.get(), &extractedSoldier, 0);
 	
 	EXPECT_EQ(extractedSoldier.iTotalContractLength, testSoldier.iTotalContractLength);
 	EXPECT_EQ(extractedSoldier.iEndofContractTime, testSoldier.iEndofContractTime);

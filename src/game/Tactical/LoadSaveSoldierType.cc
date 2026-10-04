@@ -38,7 +38,7 @@ static UINT32 MercChecksum(SOLDIERTYPE const& s)
 }
 
 
-void ExtractSoldierType(const BYTE* const data, SOLDIERTYPE* const s, bool stracLinuxFormat, UINT32 uiSavedGameVersion)
+void ExtractSoldierType(const BYTE* const data, SOLDIERTYPE* const s, UINT32 uiSavedGameVersion)
 {
 	UINT16 usPathingData[ MAX_PATH_LIST_SIZE ];
 	UINT16 usPathDataSize;
@@ -89,25 +89,13 @@ void ExtractSoldierType(const BYTE* const data, SOLDIERTYPE* const s, bool strac
 	EXTR_U8(d, s->ubAttackingHand)
 	EXTR_SKIP(d, 2)
 	EXTR_I16(d, s->sWeightCarriedAtTurnStart)
-	if(stracLinuxFormat)
-	{
-		EXTR_SKIP(d, 2)
-		s->name = d.readUTF32(SOLDIERTYPE_NAME_LENGTH);
-	}
-	else
-	{
-		s->name = d.readUTF16(SOLDIERTYPE_NAME_LENGTH);
-	}
+	s->name = d.readUTF16(SOLDIERTYPE_NAME_LENGTH);
 	EXTR_I8(d, s->bVisible)
 	EXTR_I8(d, s->bActive)
 	EXTR_I8(d, s->bTeam)
 	EXTR_U8(d, s->ubGroupID)
 	EXTR_BOOL(d, s->fBetweenSectors)
 	EXTR_U8(d, s->ubMovementNoiseHeard)
-	if(stracLinuxFormat)
-	{
-		EXTR_SKIP(d, 2)
-	}
 	EXTR_FLOAT(d, s->dXPos)
 	EXTR_FLOAT(d, s->dYPos)
 	EXTR_SKIP(d, 8)
@@ -558,14 +546,7 @@ void ExtractSoldierType(const BYTE* const data, SOLDIERTYPE* const s, bool strac
 	EXTR_I32(d, s->uiTimeSinceLastBleedGrunt)
 	EXTR_SOLDIER(d, s->next_to_previous_attacker)
 	EXTR_SKIP(d, 39)
-	if(stracLinuxFormat)
-	{
-		Assert(d.getConsumed() == 2352);
-	}
-	else
-	{
-		Assert(d.getConsumed() == 2328);
-	}
+	Assert(d.getConsumed() == 2328);
 
 	if (checksum != MercChecksum(*s))
 	{

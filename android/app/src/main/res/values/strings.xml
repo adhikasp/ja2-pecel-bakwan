@@ -1,6 +1,6 @@
 <resources>
-    <string name="app_name">JA2 Stracciatella</string>
-    <string name="title_activity_launcher">Jagged Alliance 2 Stracciatella</string>
+    <string name="app_name">JA2 Pecel Bakwan</string>
+    <string name="title_activity_launcher">Jagged Alliance 2 Pecel Bakwan</string>
     <string name="floating_action_button_start_text">Start the game</string>
     <string name="tab_text_data">Data</string>
     <string name="tab_text_settings">Settings</string>
@@ -8,7 +8,7 @@
     <string name="select_directory_button_label">Choose</string>
     <string name="game_dir_title_text">Original Jagged Alliance 2 Game Directory</string>
     <string name="game_dir_info_text">
-        Jagged Alliance 2 Stracciatella to run needs a copy the original game files.
+        Jagged Alliance 2 Pecel Bakwan to run needs a copy the original game files.
         Copy them to your Android device and select the directory here.
         This directory should contain e.g. the .exe files and a Data directory.
     </string>
@@ -30,7 +30,7 @@
     <string name="resolution_auto_button">Detect</string>
     <string name="logs_description_text">The logs of your latest run of the game are shown below. In case of any issues, you can check the logs for errors. If you create a bug report, please include the logs.</string>
     <string name="logs_copy_to_clipboard_button">Copy all logs to clipboard</string>
-    <string name="logs_copied_to_clipboard_name">JA2 Stracciatella logs</string>
+    <string name="logs_copied_to_clipboard_name">JA2 Pecel Bakwan logs</string>
     <string name="logs_copied_to_clipboard_toast">Copied logs to clipboard</string>
     <string name="debug_mode_info_title_text">Debug Mode</string>
     <string name="debug_mode_info_text">In case you run into issues, you can enable debug mode. This will result in more logs being written in order to be able to debug issues.</string>
@@ -41,5 +41,5 @@
     <string name="common_mistakes_no_data_dir_found_title">Incorrect game directory detected</string>
     <string name="common_mistakes_no_data_dir_found_description">The Data directory was not found within game directory. This means the chosen directory does not contain a Jagged Alliance 2 installation.</string>
     <string name="common_mistakes_one_dot_thirteen_detected_title">Modified game directory detected</string>
-    <string name="common_mistakes_one_dot_thirteen_detected_description">We detected that the game directory contains the 1.13 patch. JA2 Stracciatella will not work properly with the modified files. Please use a clean installation of Jagged Alliance 2.</string>
+    <string name="common_mistakes_one_dot_thirteen_detected_description">We detected that the game directory contains the 1.13 patch. JA2 Pecel Bakwan will not work properly with the modified files. Please use a clean installation of Jagged Alliance 2.</string>
 </resources>

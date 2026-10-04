@@ -1864,7 +1864,7 @@ try
 
 				// Always use windows format because here we are loading a map
 				// file, not a user save
-				ExtractSoldierCreateFromFile(f, &priority, false);
+				ExtractSoldierCreateFromFile(f, &priority);
 
 				if (priority.ubProfile != NO_PROFILE)
 					++pTeam->ubProfile;
@@ -2374,7 +2374,7 @@ void LoadWorldFromSGPFile(SGPFile *f)
 	{
 		SetRelativeStartAndEndPercentage(0, 86, 87, "Loading placements...");
 		RenderProgressBar(0, 0);
-		LoadSoldiersFromMap(f, false);
+		LoadSoldiersFromMap(f);
 	}
 	if (uiFlags & MAP_EXITGRIDS_SAVED)
 	{

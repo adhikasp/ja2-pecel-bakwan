@@ -1,9 +1,9 @@
 [workspace]
 resolver = "2"
 members = [
-    "stracciatella",
-    "stracciatella_bin",
-    "stracciatella_c_api",
+    "pecel_bakwan",
+    "pecel_bakwan_bin",
+    "pecel_bakwan_c_api",
 ]
 
 [profile.dev]

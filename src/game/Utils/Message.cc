@@ -485,7 +485,7 @@ static void PlayNewMessageSound(void)
 }
 
 
-static std::shared_ptr<ScrollStringSt> ExtractScrollStringFromFile(HWFILE const f, bool stracLinuxFormat)
+static std::shared_ptr<ScrollStringSt> ExtractScrollStringFromFile(HWFILE const f)
 {
 	UINT32 size;
 	f->read(&size, sizeof(size));
@@ -496,16 +496,8 @@ static std::shared_ptr<ScrollStringSt> ExtractScrollStringFromFile(HWFILE const 
 		SGP::Buffer<uint8_t> data(size);
 		f->read(data, size);
 		DataReader reader(data);
-		if(stracLinuxFormat)
-		{
-			size_t const len = size / 4;
-			s->pString = reader.readUTF32(len);
-		}
-		else
-		{
-			size_t const len = size / 2;
-			s->pString = reader.readUTF16(len);
-		}
+		size_t const len = size / 2;
+		s->pString = reader.readUTF16(len);
 	}
 
 	BYTE data[28];
@@ -570,7 +562,7 @@ void SaveMapScreenMessagesToSaveGameFile(HWFILE const hFile)
 }
 
 
-void LoadMapScreenMessagesFromSaveGameFile(HWFILE const hFile, bool stracLinuxFormat)
+void LoadMapScreenMessagesFromSaveGameFile(HWFILE const hFile)
 {
 	// clear tactical message queue
 	ClearTacticalMessageQueue();
@@ -591,7 +583,7 @@ void LoadMapScreenMessagesFromSaveGameFile(HWFILE const hFile, bool stracLinuxFo
 	//Loopthrough all the messages
 	for (auto& i : gMapScreenMessageList)
 	{
-		i = ExtractScrollStringFromFile(hFile, stracLinuxFormat);
+		i = ExtractScrollStringFromFile(hFile);
 	}
 
 	// this will set a valid value for gubFirstMapscreenMessageIndex, which isn't being saved/restored
