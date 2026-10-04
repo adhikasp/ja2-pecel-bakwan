@@ -14,6 +14,7 @@
 #include "OppList.h"
 #include "Overhead.h"
 #include "Overhead_Types.h"
+#include "Random.h"
 #include "Soldier_Add.h"
 #include "Soldier_Control.h"
 #include "Soldier_Create.h"
@@ -244,6 +245,13 @@ void StageBattle(sol::table const& spec)
 		throw std::runtime_error("ja2.debug(\"battle\"): needs the tactical screen");
 	if (!gWorldSector.IsValid())
 		throw std::runtime_error("ja2.debug(\"battle\"): no sector is loaded");
+
+	// Reset to the seeded state (SetRandomSeed was called at startup), so the scenario is
+	// self-contained: the same spec and seed produce the same fight however the team was
+	// assembled and whatever drew random numbers before this point. The plan's contract is
+	// "the same scenario and seed produce the same outcome", and this makes that true
+	// regardless of which screens ran earlier (e.g. the native vs legacy laptop).
+	InitializeRandom();
 
 	bool const clear  = BoolField(spec, "clear", true);
 	bool const start  = BoolField(spec, "start", true);
