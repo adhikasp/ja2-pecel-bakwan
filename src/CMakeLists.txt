@@ -2,6 +2,7 @@ message(STATUS "Entering src directory")
 
 option(ENABLE_ASSERTS "Assertion failures terminate the program (always enabled in Debug)" OFF)
 option(ENABLE_PCH "Use precompiled standard library headers during compilation" ON)
+option(ENABLE_UNITY_BUILD "Batch sources into per-area unity translation units (faster cold builds on few-core machines, much slower single-file edits)" OFF)
 option(WITH_ASAN "Build with address sanitizer" OFF)
 option(WITH_FIXMES "Build with fixme messages" OFF)
 option(WITH_MAEMO "Build with right click mapped to F4 (menu button)" OFF)
@@ -38,15 +39,30 @@ add_and_include_subdirectory(sgp)
 
 target_sources(${JA2_BINARY} PRIVATE ${JA2_SOURCES})
 
-set_target_properties(${JA2_BINARY} PROPERTIES
+if(ENABLE_UNITY_BUILD)
     # The UNITY_GROUP properties set in the subdirectories below batch sources by
     # area, so each unity TU stays coherent instead of one giant translation unit.
     # That folds the grouped areas into 9 compiler invocations and parses their
-    # headers once per group instead of once per file, on top of the PCH. Sources
-    # with no UNITY_GROUP still compile per file, and src/nativeui opts out
-    # entirely with SKIP_UNITY_BUILD_INCLUSION.
-    UNITY_BUILD ON
-    UNITY_BUILD_MODE "GROUP")
+    # headers once per group instead of once per file.
+    #
+    # This is OFF by default because it trades the wrong end of the distribution
+    # for a machine with many cores. A unity group is one un-parallelisable
+    # translation unit, so the work it removes is paid back in lost parallelism,
+    # and it makes the most common edit - one file - rebuild the whole group.
+    # Measured on Windows/MSYS2 GCC 16, Ninja, 12 hardware threads, per area:
+    #
+    #   group          unity (1 TU)   per file (total CPU -> wall @ -j12)
+    #   Tactical (67)      53.3s              263s -> 21.9s   (unity 2.4x slower)
+    #   sgp (43)           28.7s              121s -> 10.1s   (unity 2.9x slower)
+    #
+    # and for a single-file edit: 50.1s (unity) vs ~4s (per file) in Tactical,
+    # 23.1s vs ~3s in sgp. It also wrecks compiler-cache granularity - one 53s
+    # cache entry covers 67 files, so editing any one of them invalidates all of
+    # it. Turn it on for a release/CI build or on a machine with few cores.
+    set_target_properties(${JA2_BINARY} PROPERTIES
+        UNITY_BUILD ON
+        UNITY_BUILD_MODE "GROUP")
+endif()
 
 if (WITH_ASAN)
     target_compile_options(${JA2_BINARY} PRIVATE -fsanitize=address)

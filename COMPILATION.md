@@ -77,23 +77,11 @@ MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciat
 MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciatella/_bin' && ./ja2.exe -res 1280x720"
 ```
 
-**Long paths and cache sharing.** Agent worktrees live in deep directories and
-the build tree goes deeper still (cargo's `target/` is the worst offender),
-which is how a build runs into Windows' MAX_PATH limit — and sccache hashes
-absolute paths, so two checkouts at different paths are two cache islands. The
-wrapper solves both with one machine-wide build path: a drive letter that
-points at whichever worktree is being built. It is a `subst` mapping
-(re-created after a reboot), and it is exclusive, so builds and full e2e runs
-in different worktrees take turns. Compile commands then come out identical in
-every worktree and the compiler cache is shared between them.
-
-Doing it by hand, pick one free letter and keep compiling every checkout
-through it, or the cache will not be shared:
-
-```sh
-subst L: C:\Workspace\ja2-stracciatella\.claude\worktrees\agent-123
-MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd /l && mkdir -p _bin && cd _bin && cmake .. -G Ninja && cmake --build . --parallel \$(nproc)"
-```
+**Long paths.** Agent worktrees live in deep directories and the build tree goes
+deeper still (cargo's `target/` is the worst offender). The deepest path this
+tree actually produces is ~212 characters, in cargo's fingerprint directories,
+which Windows 10+ long-path support handles without help — so builds run at
+their real path and no `subst` is needed.
 
 ## General Notes
 
@@ -114,10 +102,23 @@ Nothing below is required — each one is picked up automatically when the machi
   directory, so a second worktree, a branch switch or a reverted change reuses the objects instead
   of recompiling them: `pacman -S mingw-w64-x86_64-sccache` (MSYS2), `brew install sccache`
   (macOS), `cargo install sccache --locked` (elsewhere).
-  sccache hashes absolute paths, so two checkouts at different paths are two cache islands. The
-  wrapper deals with that by compiling every worktree through one shared build path (below), which
-  makes the compile commands - and the cache keys - identical; a raw build shares the cache only
-  when it compiles the same tree at the same path as the build that warmed it.
+  **Cache sharing across worktrees** — sccache hashes absolute paths, so naively two checkouts at
+  different paths are two cache islands and the second worktree recompiles the world.
+  `SCCACHE_BASEDIR` fixes this: sccache rewrites paths under that directory to be *relative*
+  before hashing, so checkouts at different absolute paths produce the same key.
+  `tools/dev.py` sets it to the worktree root, which covers every source file and every generated
+  header under `_bin`. Measured here, one translation unit compiled from two different roots:
+
+  | | result |
+  | --- | --- |
+  | no `SCCACHE_BASEDIR`, root A then root B | 6.41 s MISS, then 6.36 s **MISS** |
+  | `SCCACHE_BASEDIR=<root>` per checkout | 6.41 s MISS, then 0.09 s **HIT** |
+
+  This is what lets worktrees build side by side with a shared cache. The previous design pinned
+  every worktree to one machine-wide `subst` drive under an exclusive lock, which produced the
+  same sharing but serialised the machine behind it: on a 9-worktree box a **0.8 s** no-op build
+  spent **215 s** waiting for the lock. If you build outside `tools/dev.py`, set
+  `SCCACHE_BASEDIR` to your checkout root or you get a private cache island.
 - **lld** — `-DUSE_LLD=ON` (the default) links with `ld.lld` when the toolchain provides it, which
   cuts the link of the monolithic `ja2` binary to a fraction of GNU ld's time. MSYS2:
   `pacman -S mingw-w64-x86_64-lld`. Where `ld.lld` is absent the option is skipped silently.
@@ -132,10 +133,21 @@ Nothing below is required — each one is picked up automatically when the machi
   headers the codebase includes in bulk (`src/CMakeLists.txt`); `<iostream>` is deliberately absent
   because libstdc++ puts a static `ios_base::Init` in it. Measured numbers and the toolchain/CI
   interactions are in [Precompiled headers: measured](#precompiled-headers-measured) below.
-- **Unity builds** — `-DCMAKE_UNITY_BUILD=ON` compiles batches of translation units together,
-  following the `UNITY_GROUP`s set in `src/**/CMakeLists.txt` (sources that must stay on their own
-  carry `SKIP_UNITY_BUILD_INCLUSION`). Many fewer translation units to build from scratch; the
-  price is that editing one file rebuilds its whole group.
+- **Unity builds** — `-DENABLE_UNITY_BUILD=ON` (default `OFF`) compiles batches of translation
+  units together, following the `UNITY_GROUP`s set in `src/**/CMakeLists.txt` (sources that must
+  stay on their own carry `SKIP_UNITY_BUILD_INCLUSION`). It cuts total work but is a **net loss
+  on a many-core machine**, because a group is one un-parallelisable translation unit: it pays
+  back in lost parallelism more than it saves, and it makes the commonest edit — one file —
+  rebuild the whole group. Measured here (Windows/MSYS2 GCC 16, Ninja, 12 threads), same group
+  built both ways:
+
+  | group | unity (1 TU) | per file (CPU → wall @ -j12) | single-file edit |
+  | --- | --- | --- | --- |
+  | `Tactical` (67 files) | 53.3 s | 263 s → **21.9 s** | 50.1 s vs ~4 s |
+  | `sgp` (43 files) | 28.7 s | 121 s → **10.1 s** | 23.1 s vs ~3 s |
+
+  It also wrecks cache granularity: one 53 s cache entry covers 67 files, so editing any one of
+  them invalidates all of it. Enable it for a release/CI build, or on a machine with few cores.
 - **Dependency bumps** — a changed pin refreshes the downloaded sources for you
   (`cmake/DepRefresh.cmake`), so bumping a dependency in an existing build directory rebuilds what
   depends on it instead of silently linking the old objects against the new headers.
@@ -143,7 +155,7 @@ Nothing below is required — each one is picked up automatically when the machi
 ### Precompiled headers: measured
 
 Measured on Windows with the MSYS2 MinGW64 toolchain (GCC, `-O2 -g`, Ninja, sccache, 6-way
-parallelism on a 12-core machine), one *semantic* edit per run so every affected translation unit
+parallelism on a 12-thread machine), one *semantic* edit per run so every affected translation unit
 is a real compile — a comment-only change is a cache hit and measures nothing. Same edit with
 `ENABLE_PCH=OFF` and `ON`, wall clock:
 
@@ -152,6 +164,21 @@ is a real compile — a comment-only change is a cache hit and measures nothing.
 | `src/game/Tactical/Soldier_Control.cc` (the per-TU cost, isolated compile) | 1 | 11.0 s | 9.7 s | −12 % |
 | `src/game/Tactical/Soldier_Control.h` | 216 | 5 min 47 s – 6 min 18 s | 4 min 48 s | −17…−24 % |
 | `src/sgp/Types.h` | 431 | 9 min 07 s – 9 min 17 s | 8 min 28 s – 8 min 37 s | −8 % |
+
+> **Re-measured later, on GCC 16.1, the snapshot no longer pays for itself.** Interleaving the two
+> variants on the real build path, best of 3 each, the snapshot came out **2.4 %–13.5 % *slower***
+> on 4 of 4 translation units:
+>
+> | TU | with PCH | without PCH | |
+> | --- | --- | --- | --- |
+> | `Strategic_AI.cc` | 5.76 s | 5.61 s | +2.7 % |
+> | `MapScreen.cc` | 7.73 s | 7.48 s | +3.4 % |
+> | `SoundMan.cc` | 21.83 s | 21.31 s | +2.4 % |
+> | `FrontMainMenu.cc` | 6.12 s | 5.39 s | +13.5 % |
+>
+> The numbers above and these disagree, and the difference is the compiler: GCC 16 parses these
+> headers fast enough that loading the snapshot costs more than re-parsing. The switch is still
+> `ENABLE_PCH`; re-measure before trusting either table on a toolchain you have not tried.
 
 The isolated per-TU row is the precise figure (the same translation unit with and without the
 snapshot, interleaved back to back, so the machine's background load hits both equally). The
@@ -372,6 +399,7 @@ cmake. The supported options are:
 | `LOCAL_SDL_LIB` | Use SDL library from this directory. | `` |
 | `WITH_UNITTESTS` | Build with unit tests | `ON` |
 | `ENABLE_PCH` | Precompile the standard library; every translation unit compiles against the snapshot (see [Faster builds](#faster-builds)) | `ON` |
+| `ENABLE_UNITY_BUILD` | Batch sources into per-area unity translation units. Cuts total work but is a net loss on a many-core machine — see [Faster builds](#faster-builds) | `OFF` |
 | `WITH_FIXMES` | Build with fixme messages | `OFF` |
 | `WITH_MAEMO` | Build with right click mapped to F4 (menu button) | `OFF` |
 | `WITH_EDITOR_SLF` | Download the latest free editor.slf during build | `OFF` |
