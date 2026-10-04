@@ -42,7 +42,9 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .mm-scrim { position: absolute; left: 0; top: 0; bottom: 0; width: 72%; decorator: horizontal-gradient(#0A0704F2 #0A070400); }
 .mm-vignette { position: absolute; left: 0; top: 0; right: 0; bottom: 0; decorator: image(gen-vignette); }
 .mm-layout { position: absolute; left: 0; top: 0; right: 0; bottom: 0; padding: 88dp 96dp 24dp 120dp; display: flex; flex-direction: column; }
-.mm-brand { display: block; flex: 0 0 auto; }
+.mm-brand { display: flex; flex: 0 0 auto; align-items: center; }
+.mm-mark { flex: 0 0 auto; width: 168dp; height: 168dp; margin-right: var(--sp-5); image-color: var(--c-accent); }
+.mm-words { display: block; flex: 1 1 auto; }
 .mm-kicker { display: block; font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-accent); text-transform: uppercase; }
 .mm-title { display: block; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-display); line-height: 104dp; margin-top: var(--sp-2); color: var(--c-text-strong); text-transform: uppercase; }
 .mm-sub { display: block; font-family: var(--font-display); font-weight: 500; font-size: 30dp; color: var(--c-text-dim); text-transform: uppercase; }
@@ -98,6 +100,8 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 #mainmenu.compact .mm-menu { flex-basis: 560dp; }
 #mainmenu.compact .mm-item .meta { display: none; }
 #mainmenu.compact .mm-title { font-size: 80dp; line-height: 84dp; }
+#mainmenu.compact .mm-mark { width: 128dp; height: 128dp; }
+.mm-title .accent { color: var(--c-accent); }
 
 /* =============================================================== options */
 .op-nav { display: block; flex: 0 0 280dp; margin-right: var(--sp-6); }

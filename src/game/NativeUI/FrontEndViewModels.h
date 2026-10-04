@@ -43,7 +43,7 @@ namespace NativeUI
 		bool hasSaves = false;
 		int  saveCount = 0;
 		std::string newest; // save name Continue loads
-		std::string kicker, title, subtitle, version, copyright;
+		std::string kicker, title, title_accent, subtitle, version, copyright;
 		std::string lContinue, lNew, lLoad, lOptions, lCredits, lQuit, lLast, lContinueLoads, lTime, lSector, lTeam, lBalance, lGame,
 			lChoose, lSelect, lQuitHint;
 		std::string continueMeta, newMeta, loadMeta, optionsMeta, creditsMeta, quitMeta;

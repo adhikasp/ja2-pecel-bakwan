@@ -1,5 +1,7 @@
 # JA2 Pecel Bakwan
 
+<p align="center"><img src="assets/icons/banner.svg" alt="JA2 Pecel Bakwan" width="880"></p>
+
 > **JA2 rebuilt as the game it always wanted to be.** A native modern front end, a smarter Queen, deeper tactics, a living world — written by AI agents, proven by tests that play the game.
 
 JA2 Pecel Bakwan (named after the Javanese street-food combo of vegetables in peanut sauce with a crispy fritter on top) is a fork of [JA2-Stracciatella](https://github.com/ja2-stracciatella/ja2-stracciatella). Upstream made Jagged Alliance 2 run everywhere and fixed its bugs while keeping the 1999 game intact. This fork starts from that foundation and goes the other way: **it is not a preservation project.** It is a modern reimplementation of JA2 with a richer tactical and strategic game, and the revamp *is* the game: new mechanics ship on by default, with no "vanilla mode" and no obligation to keep old saves loading. It needs your own copy of Jagged Alliance 2 game data; the executable is still called `ja2`.
@@ -10,7 +12,7 @@ JA2 Pecel Bakwan (named after the Javanese street-food combo of vegetables in pe
 [![Discord](https://img.shields.io/badge/Discord-The%20Bear%27s%20Pit-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/GqrVZUM)
 [![Built by agents](https://img.shields.io/badge/built%20by-agents%20%F0%9F%A4%96-8957e5)](#how-its-built-agents-with-a-test-harness)
 
-![The native main menu at 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-rewrite/main-menu.png)
+![The native main menu at 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/logo-pecel-bakwan/mainmenu_1920x1080.png)
 
 ---
 
