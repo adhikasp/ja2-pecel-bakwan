@@ -2,6 +2,7 @@
 #include "Automation.h"
 #include "AutomationSession.h"
 #include "BattleScenario.h"
+#include "CampaignScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -29,6 +30,8 @@
 #include "DealerModel.h"
 #include "GameInstance.h"
 #include "Soldier_Profile.h"
+#include "PeopleContent.h"
+#include "Quests.h"
 #include "Dialogue_Control.h"
 #include "Message.h"
 #include "Strategic_Exit_GUI.h"
@@ -352,6 +355,22 @@ namespace
 			enemies[e++] = t;
 		}
 		tactical["enemies"] = enemies;
+		// Friendlies who are not on the player's team: the townsfolk/NPCs a script spawns
+		// (ja2.debug("npcs")) and militia, so a town-entry test can assert who is there.
+		sol::table civilians = L.create_table();
+		int c = 1;
+		CFOR_EACH_IN_TEAM(x, CIV_TEAM)
+		{
+			if (!x->bInSector) continue;
+			sol::table t = L.create_table();
+			t["name"]    = x->name.to_std_string();
+			t["profile"] = static_cast<int>(x->ubProfile);
+			t["life"]    = static_cast<int>(x->bLife);
+			t["gridNo"]  = x->sGridNo;
+			t["dead"]    = x->bLife <= 0;
+			civilians[c++] = t;
+		}
+		tactical["civilians"] = civilians;
 		s["tactical"] = tactical;
 
 		sol::table mercs = L.create_table();
@@ -391,6 +410,91 @@ namespace
 		return s;
 	}
 
+	// The compiled people & quest registry (PeopleContent.h), for `ja2.game.npcs()`
+	// and `ja2.game.quests()`. Definitions come from the registry; quests also carry
+	// the live status so an e2e script can assert a transition.
+	sol::table NpcListTable()
+	{
+		sol::table list = g_lua.create_table();
+		int i = 1;
+		for (People::NpcDef const& n : People::NpcDefs())
+		{
+			sol::table t = g_lua.create_table();
+			t["id"]           = static_cast<int>(n.id);
+			t["name"]         = n.name;
+			t["kind"]         = People::NpcKindName(n.kind);
+			t["homeSectors"]  = n.homeSectors;
+			t["placedAtStart"] = n.placedAtStart;
+			sol::table quests = g_lua.create_table();
+			int q = 1;
+			for (People::QuestLink const& l : n.quests)
+			{
+				sol::table lk = g_lua.create_table();
+				People::QuestDef const* const qd = People::FindQuest(l.quest);
+				lk["id"]   = static_cast<int>(l.quest);
+				lk["name"] = qd ? qd->name : "";
+				lk["role"] = People::QuestRoleName(l.role);
+				quests[q++] = lk;
+			}
+			t["quests"] = quests;
+			list[i++] = t;
+		}
+		return list;
+	}
+
+	const char* QuestStatusName(UINT8 status)
+	{
+		switch (status)
+		{
+			case QUESTNOTSTARTED: return "NOT_STARTED";
+			case QUESTINPROGRESS: return "IN_PROGRESS";
+			case QUESTDONE:       return "DONE";
+		}
+		return "UNKNOWN";
+	}
+
+	sol::table QuestListTable()
+	{
+		sol::table list = g_lua.create_table();
+		int i = 1;
+		for (People::QuestDef const& q : People::QuestDefs())
+		{
+			sol::table t = g_lua.create_table();
+			t["id"]            = static_cast<int>(q.id);
+			t["name"]          = q.name;
+			t["title"]         = q.title;
+			t["status"]        = QuestStatusName(q.id < MAX_QUESTS ? gubQuest[q.id] : QUESTNOTSTARTED);
+			t["selfResolving"] = q.selfResolving;
+			t["reward"]        = q.reward;
+			t["reputationHook"] = q.reputationHook;
+			t["deedHook"]      = q.deedHook;
+			t["note"]          = q.note;
+			auto profiles = [&](std::vector<ProfileID> const& ids, char const* key) {
+				sol::table names = g_lua.create_table();
+				int k = 1;
+				for (ProfileID id : ids) names[k++] = People::NpcName(id);
+				t[key] = names;
+			};
+			profiles(q.givers, "givers");
+			profiles(q.resolvers, "resolvers");
+			profiles(q.dialogue, "dialogue");
+			sol::table prereqs = g_lua.create_table();
+			int p = 1;
+			for (Quests id : q.prerequisites) prereqs[p++] = People::QuestTitle(id);
+			t["prerequisites"] = prereqs;
+			list[i++] = t;
+		}
+		return list;
+	}
+
+	sol::table GameTable()
+	{
+		sol::table game = g_lua.create_table();
+		game.set_function("npcs",   [] { return Guarded([] { return NpcListTable(); }); });
+		game.set_function("quests", [] { return Guarded([] { return QuestListTable(); }); });
+		return game;
+	}
+
 	// Turn the enemies standing in the loaded sector into a strategic encounter, as if we had walked into them.
 	void FakeEncounter()
 	{
@@ -417,6 +521,7 @@ namespace
 		for (size_t i = 0; i < opt.scriptArgs.size(); ++i) args[i + 1] = opt.scriptArgs[i];
 		ja2["args"]     = args;
 		ja2["headless"] = opt.Headless();
+		ja2["game"]     = GameTable();
 
 		// --- time ---
 		ja2.set_function("step", [](sol::optional<unsigned> frames) {
@@ -559,6 +664,10 @@ namespace
 			});
 		});
 		ja2.set_function("state", [] { return Guarded([] { return GameState(); }); });
+		// ja2.campaign(): the strategic state the campaign harness authors: clock, money,
+		// difficulty, towns (ownership/loyalty/militia), sector garrisons, the roster with
+		// gear, and quest/fact progress. See ja2.debug("campaign", spec).
+		ja2.set_function("campaign", [] { return Guarded([] { return CampaignState(g_lua); }); });
 		// {w, h, stdX, stdY}: the screen size and where the classic 640x480 area starts in it.
 		ja2.set_function("screenSize", [] {
 			sol::table t = g_lua.create_table();
@@ -858,6 +967,23 @@ namespace
 					// Order the selected merc to shoot at a tile through the real fire-weapon event.
 					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"fire\", gridNo)");
 					FireAtGrid(GetSelectedMan(), static_cast<INT16>(a->as<int>()));
+				}
+				else if (what == "campaign")
+				{
+					// Author a whole campaign state on the live globals (docs/plan/e2e-campaign-state.md).
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"campaign\", spec)");
+					StageCampaign(a->as<sol::table>());
+				}
+				else if (what == "entersector")
+				{
+					// Move the team into a sector and load it in tactical, for a world-map step.
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"entersector\", spec)");
+					EnterSector(a->as<sol::table>());
+				}
+				else if (what == "npcs")
+				{
+					// Spawn townsfolk / named NPCs in the loaded sector, near the team.
+					SpawnNpcs(a ? *a : sol::object(sol::nil));
 				}
 				else if (what == "uispike_rml" || what == "uispike_inhouse")
 				{

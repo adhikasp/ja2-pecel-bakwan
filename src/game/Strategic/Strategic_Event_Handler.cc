@@ -8,6 +8,7 @@
 #include "Tactical_Save.h"
 #include "StrategicMap.h"
 #include "Quests.h"
+#include "PeopleContent.h"
 #include "Soldier_Profile.h"
 #include "Game_Event_Hook.h"
 #include "Game_Clock.h"
@@ -587,7 +588,7 @@ void HandleNPCSystemEvent( UINT32 uiEvent )
 						// KP knows money is gone, hasn't told player, if this event is called then the 2
 						// days are up... send email
 						AddEmail( KING_PIN_LETTER, KING_PIN_LETTER_LENGTH, KING_PIN, GetWorldTotalMin() );
-						StartQuest(QUEST_KINGPIN_MONEY, SGPSector(5, MAP_ROW_D));
+						People::ApplyQuestTransition(QUEST_KINGPIN_MONEY, People::QuestChange::Start, SGPSector(5, MAP_ROW_D));
 						// add event to send terrorists two days from now
 						AddFutureDayStrategicEvent( EVENT_SET_BY_NPC_SYSTEM, Random( 120 ), FACT_KINGPIN_KNOWS_MONEY_GONE, 2 );
 					}
@@ -620,7 +621,7 @@ void HandleNPCSystemEvent( UINT32 uiEvent )
 			case NPC_ACTION_TRIGGER_END_OF_FOOD_QUEST:
 				if ( gMercProfiles[ FATHER ].bMercStatus != MERC_IS_DEAD )
 				{
-					EndQuest(QUEST_FOOD_ROUTE, SGPSector(10, MAP_ROW_A));
+					People::ApplyQuestTransition(QUEST_FOOD_ROUTE, People::QuestChange::End, SGPSector(10, MAP_ROW_A));
 					SetFactTrue( FACT_FOOD_QUEST_OVER );
 				}
 				break;

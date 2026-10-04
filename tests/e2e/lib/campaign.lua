@@ -162,4 +162,139 @@ function campaign.firstMerc()
 	return m
 end
 
+-- --- Campaign state authoring (docs/plan/e2e-campaign-state.md) --------------
+-- A test states a milestone instead of replaying the UI to get there:
+--   campaign.stage{ day = 12, money = 120000, towns = { Drassen = { owned = true, loyalty = 70 } } }
+-- ja2.debug("campaign", spec) mutates the live globals, so a save taken after
+-- staging is a real save; ja2.campaign() reads the same state back.
+
+local QUEST_STATUS = { [0] = "not_started", [1] = "in_progress", [2] = "done" }
+
+-- Find a town in a ja2.campaign() state by name, case-insensitively (the state
+-- keys towns by their internal name, e.g. "DRASSEN").
+function campaign.town(state, name)
+	local want = tostring(name):lower()
+	for k, v in pairs(state.towns) do
+		if k:lower() == want or tostring(v.name):lower() == want then return v end
+	end
+	return nil
+end
+
+-- Leave the laptop for the map screen (save/load and sector entry need it).
+function campaign.toMap()
+	ja2.waitIdle()
+	if ja2.screen() == "LAPTOP_SCREEN" then
+		ja2.click("Shut Down")
+		ja2.waitScreen("MAP_SCREEN")
+		campaign.dismissHelp()
+	end
+	return ja2.screen()
+end
+
+-- Apply a campaign state through ja2.debug("campaign") and return ja2.campaign().
+-- With spec.save, also save the staged state under that name.
+function campaign.stage(spec)
+	ja2.debug("campaign", spec)
+	ja2.step(2)
+	if spec.save then
+		campaign.toMap()
+		ja2.save(spec.save)
+	end
+	return ja2.campaign()
+end
+
+-- Stage a state, then save and reload it, so every test starts from a real save
+-- (the checkpoint helper). Returns the reloaded ja2.campaign().
+function campaign.at(spec)
+	campaign.stage(spec)
+	campaign.toMap()
+	local name = spec.save or "campaign-checkpoint"
+	ja2.save(name)
+	ja2.load(name)
+	ja2.waitIdle()
+	return ja2.campaign()
+end
+
+-- Assert a milestone against ja2.campaign(): any of day, money, difficulty,
+-- mercs (a count), towns, sectors, quests and facts. Returns the state read.
+function campaign.assertState(expected)
+	local s = ja2.campaign()
+	local function eq(got, want, what)
+		ja2.expect(got == want, what .. ": expected " .. tostring(want) .. ", got " .. tostring(got))
+	end
+	if expected.day ~= nil then eq(s.day, expected.day, "day") end
+	if expected.money ~= nil then eq(s.money, expected.money, "money") end
+	if expected.difficulty ~= nil then eq(s.difficulty, expected.difficulty, "difficulty") end
+	if expected.mercs ~= nil then eq(#s.mercs, expected.mercs, "merc count") end
+	for name, want in pairs(expected.towns or {}) do
+		local got = campaign.town(s, name)
+		ja2.expect(got, "there is a town " .. name)
+		if want.owned ~= nil then eq(got.owned, want.owned, name .. " owned") end
+		if want.loyalty ~= nil then eq(got.loyalty, want.loyalty, name .. " loyalty") end
+		for level, n in pairs(want.militia or {}) do
+			eq(got.militia[level], n, name .. " " .. level .. " militia")
+		end
+	end
+	for id, want in pairs(expected.sectors or {}) do
+		local got = s.sectors[id]
+		ja2.expect(got, "there is a sector " .. id)
+		if want.enemy ~= nil then eq(got.enemy, want.enemy, id .. " enemy") end
+		for _, k in ipairs({ "admins", "troops", "elites" }) do
+			if want[k] ~= nil then eq(got[k], want[k], id .. " " .. k) end
+		end
+	end
+	for name, want in pairs(expected.quests or {}) do
+		local got = QUEST_STATUS[s.quests[name]] or s.quests[name]
+		eq(got, want, "quest " .. name)
+	end
+	for name, want in pairs(expected.facts or {}) do
+		eq(s.facts[name] == true, want == true, "fact " .. name)
+	end
+	return s
+end
+
+-- Load a sector in tactical for a world-map step (ja2.debug("entersector")).
+-- spec is "A9" or { sector, npcs, clear_enemies }; returns ja2.state().
+function campaign.enterSector(spec)
+	if type(spec) == "string" then spec = { sector = spec } end
+	ja2.expect(spec.sector, "enterSector needs a sector")
+	campaign.toMap()
+	ja2.debug("entersector", { sector = spec.sector, clear_enemies = spec.clear_enemies })
+	ja2.waitScreen("GAME_SCREEN", 600000)
+	campaign.dismissHelp()
+	ja2.waitIdle()
+	if spec.npcs then
+		ja2.debug("npcs", spec.npcs)
+		ja2.waitIdle()
+	end
+	return ja2.state()
+end
+
+-- Take a player-controlled town and walk into one of its sectors, with townsfolk.
+-- Returns ja2.state().
+function campaign.enterTown(name, opts)
+	opts = opts or {}
+	ja2.debug("campaign", { towns = { [name] = { owned = true, loyalty = opts.loyalty or 60 } } })
+	ja2.step(2)
+	local t = campaign.town(ja2.campaign(), name)
+	ja2.expect(t, "there is a town " .. name)
+	return campaign.enterSector{
+		sector = opts.sector or t.sectors[1],
+		npcs = opts.npcs == nil and 3 or opts.npcs,
+	}
+end
+
+-- Walk into a sector and stage a fight there (ja2.debug("entersector") then the
+-- battle harness). spec is a ja2.debug("battle") spec plus `sector`; returns the
+-- tactical state.
+function campaign.stepIntoBattle(spec)
+	spec = spec or {}
+	campaign.enterSector{ sector = spec.sector, clear_enemies = true }
+	local battle = require("lib.battle")
+	local b = {}
+	for k, v in pairs(spec) do b[k] = v end
+	b.sector = nil
+	return battle.stage(b)
+end
+
 return campaign

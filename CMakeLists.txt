@@ -342,7 +342,28 @@ if (WITH_UNITTESTS)
         WORKING_DIRECTORY "$<TARGET_FILE_DIR:${JA2_BINARY}>"
     )
 
+    # The golden-image resolution tests need Pillow and numpy, which `uv sync`
+    # installs into .venv/ from pyproject.toml/uv.lock. Prefer that interpreter
+    # over a system one; a system Python with `pip install Pillow numpy` works too.
+    set(JA2_VENV_PYTHON "${CMAKE_CURRENT_SOURCE_DIR}/.venv/bin/python")
+    if (WIN32)
+        set(JA2_VENV_PYTHON "${CMAKE_CURRENT_SOURCE_DIR}/.venv/Scripts/python.exe")
+    endif()
+    if (EXISTS "${JA2_VENV_PYTHON}")
+        set(Python3_EXECUTABLE "${JA2_VENV_PYTHON}")
+    endif()
     find_package(Python3 COMPONENTS Interpreter)
+
+    if (Python3_Interpreter_FOUND)
+        # Warn at configure time: the resolution matrix is long, and finding out
+        # about a missing dependency an hour in is unhelpful.
+        execute_process(COMMAND "${Python3_EXECUTABLE}" -c "import PIL, numpy"
+            RESULT_VARIABLE _ja2_pillow_numpy)
+        if (_ja2_pillow_numpy)
+            message(WARNING "Python at ${Python3_EXECUTABLE} has no Pillow/numpy, which the golden-image "
+                "resolution tests need: run `uv sync` in ${CMAKE_CURRENT_SOURCE_DIR} and re-run cmake")
+        endif()
+    endif()
 
     # Phase 0 spikes. "spike" tests need no game data and run in CI; "spike-gamedata" ones drive the real game.
     if (WITH_NATIVE_SPIKES)

@@ -59,6 +59,7 @@
 #include "PreBattle_Interface.h"
 #include "Queen_Command.h"
 #include "Quests.h"
+#include "PeopleContent.h"
 #include "RenderWorld.h"
 #include "Render_Fun.h"
 #include "SAM_Sites.h"
@@ -1503,7 +1504,7 @@ static void HandleStuffForNPCEscorted(UINT8 ubNPC)
 			SetFactTrue( FACT_SKYRIDER_EVER_ESCORTED );
 			if ( gubQuest[ QUEST_ESCORT_SKYRIDER ] == QUESTNOTSTARTED )
 			{
-				StartQuest(QUEST_ESCORT_SKYRIDER, gWorldSector);
+				People::ApplyQuestTransition(QUEST_ESCORT_SKYRIDER, People::QuestChange::Start, gWorldSector);
 			}
 			break;
 		case JOHN:
@@ -1519,7 +1520,7 @@ static void HandleStuffForNPCEscorted(UINT8 ubNPC)
 
 			if ( gubQuest[ QUEST_ESCORT_TOURISTS ] == QUESTNOTSTARTED )
 			{
-				StartQuest(QUEST_ESCORT_TOURISTS, gWorldSector);
+				People::ApplyQuestTransition(QUEST_ESCORT_TOURISTS, People::QuestChange::Start, gWorldSector);
 			}
 			break;
 		}
@@ -1537,7 +1538,7 @@ static void HandleStuffForNPCEscorted(UINT8 ubNPC)
 
 			if ( gubQuest[ QUEST_ESCORT_TOURISTS ] == QUESTNOTSTARTED )
 			{
-				StartQuest(QUEST_ESCORT_TOURISTS, gWorldSector);
+				People::ApplyQuestTransition(QUEST_ESCORT_TOURISTS, People::QuestChange::Start, gWorldSector);
 			}
 			break;
 		}
@@ -2783,7 +2784,7 @@ void HandleNPCDoAction( UINT8 ubTargetNPC, UINT16 usActionCode, UINT8 ubQuoteNum
 				break;
 
 			case NPC_ACTION_START_BLOODCAT_QUEST:
-				StartQuest(QUEST_BLOODCATS, gWorldSector);
+				People::ApplyQuestTransition(QUEST_BLOODCATS, People::QuestChange::Start, gWorldSector);
 				break;
 
 			case NPC_ACTION_START_MINE:

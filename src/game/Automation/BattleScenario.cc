@@ -1,4 +1,5 @@
 #include "BattleScenario.h"
+#include "ScenarioItems.h"
 
 #include "Auto_Resolve.h"
 #include "Campaign_Types.h"
@@ -37,135 +38,12 @@ namespace Automation
 
 namespace
 {
-	bool AsInt(sol::object const& o, int& out)
-	{
-		if (o.is<int>())        { out = o.as<int>();        return true; }
-		if (o.is<double>())     { out = int(o.as<double>()); return true; }
-		if (o.is<long long>())  { out = int(o.as<long long>()); return true; }
-		return false;
-	}
-
-	int IntField(sol::table const& spec, char const* const key, int const fallback)
-	{
-		sol::object const o = spec[key];
-		int v;
-		return AsInt(o, v) ? v : fallback;
-	}
-
-	bool BoolField(sol::table const& spec, char const* const key, bool const fallback)
-	{
-		sol::object const o = spec[key];
-		return o.is<bool>() ? o.as<bool>() : fallback;
-	}
-
-	std::string StrField(sol::table const& spec, char const* const key, std::string const& fallback)
-	{
-		sol::object const o = spec[key];
-		return o.is<std::string>() ? o.as<std::string>() : fallback;
-	}
-
-	/** "none" | "kevlar" | "spectra", from a bool (true = kevlar) or a string. */
-	std::string ArmourLevel(sol::object const& o, std::string const& fallback)
-	{
-		if (o.is<bool>())        return o.as<bool>() ? "kevlar" : "none";
-		if (o.is<std::string>()) return o.as<std::string>();
-		return fallback;
-	}
-
-	// An item's index from its original internal name (weapons.json, armours.json, ...).
-	UINT16 ItemByName(std::string const& name)
-	{
-		ItemModel const* const item = GCM->getItemByName(ST::string(name));
-		if (!item) throw std::runtime_error("unknown item \"" + name + "\"");
-		return item->getItemIndex();
-	}
-
 	SoldierClass ParseClass(std::string const& name)
 	{
 		if (name == "administrator" || name == "admin") return SOLDIER_CLASS_ADMINISTRATOR;
 		if (name == "army" || name == "troop" || name == "troops") return SOLDIER_CLASS_ARMY;
 		if (name == "elite") return SOLDIER_CLASS_ELITE;
 		throw std::runtime_error("unknown enemy class \"" + name + "\"");
-	}
-
-	void ClearSlot(SOLDIERTYPE& s, UINT8 const slot) { s.inv[slot] = OBJECTTYPE{}; }
-
-	void PutInSlot(SOLDIERTYPE& s, UINT8 const slot, UINT16 const item, UINT8 const count)
-	{
-		ClearSlot(s, slot);
-		OBJECTTYPE obj;
-		CreateItems(item, 100, count, &obj);
-		if (!PlaceObject(&s, slot, &obj))
-		{
-			// some kits refuse a slot; let the normal rules find room
-			AutoPlaceObject(&s, &obj, TRUE);
-		}
-	}
-
-	// A loaded gun in the hand and spare magazines in the pockets.
-	void GiveGun(SOLDIERTYPE& s, UINT16 const gun)
-	{
-		PutInSlot(s, HANDPOS, gun, 1);
-		OBJECTTYPE mag;
-		CreateItems(DefaultMagazine(gun), 100, 2, &mag);
-		AutoPlaceObject(&s, &mag, TRUE);
-	}
-
-	// Any item, into whatever pocket fits (a gun already in hand is not replaced).
-	void GiveItem(SOLDIERTYPE& s, UINT16 const item)
-	{
-		OBJECTTYPE obj;
-		CreateItems(item, 100, 1, &obj);
-		AutoPlaceObject(&s, &obj, TRUE);
-	}
-
-	void EquipArmour(SOLDIERTYPE& s, std::string const& level)
-	{
-		UINT16 vest = NOTHING, helmet = NOTHING, legs = NOTHING;
-		if (level == "spectra")
-		{
-			vest = ItemByName("SPECTRA_VEST"); helmet = ItemByName("SPECTRA_HELMET"); legs = ItemByName("SPECTRA_LEGGINGS");
-		}
-		else if (level != "none" && !level.empty())
-		{
-			vest = ItemByName("KEVLAR_VEST"); helmet = ItemByName("KEVLAR_HELMET"); legs = ItemByName("KEVLAR_LEGGINGS");
-		}
-		ClearSlot(s, VESTPOS); ClearSlot(s, HELMETPOS); ClearSlot(s, LEGPOS);
-		if (vest   != NOTHING) PutInSlot(s, VESTPOS,   vest,   1);
-		if (helmet != NOTHING) PutInSlot(s, HELMETPOS, helmet, 1);
-		if (legs   != NOTHING) PutInSlot(s, LEGPOS,    legs,   1);
-	}
-
-	// Skill points and life. `health` sets both life and life max (full health).
-	void ApplyStats(SOLDIERTYPE& s, sol::table const& t)
-	{
-		auto seti = [&](char const* const key, INT8& field, int const lo, int const hi) {
-			sol::object const o = t[key];
-			int v;
-			if (AsInt(o, v)) field = INT8(std::clamp(v, lo, hi));
-		};
-		seti("marksmanship", s.bMarksmanship, 1, 100);
-		seti("agility",      s.bAgility,      1, 100);
-		seti("dexterity",    s.bDexterity,    1, 100);
-		seti("strength",     s.bStrength,     1, 100);
-		seti("leadership",   s.bLeadership,   1, 100);
-		seti("wisdom",       s.bWisdom,       1, 100);
-		seti("medical",      s.bMedical,      0, 100);
-		seti("mechanical",   s.bMechanical,   0, 100);
-		seti("explosive",    s.bExplosive,    0, 100);
-		seti("morale",       s.bMorale,       0, 100);
-		seti("level",        s.bExpLevel,     1, 10);
-		sol::object const healthObj = t["health"];
-		int health;
-		if (AsInt(healthObj, health))
-		{
-			health = std::clamp(health, 1, 100);
-			s.bLifeMax = INT8(health);
-			s.bLife    = INT8(health);
-			s.bBleeding = 0;
-		}
-		s.bBreathMax = 100;
-		s.bBreath    = 100;
 	}
 
 	// Move an actor onto @a grid without running sight (placement must not start combat
@@ -253,15 +131,15 @@ void StageBattle(sol::table const& spec)
 	// regardless of which screens ran earlier (e.g. the native vs legacy laptop).
 	InitializeRandom();
 
-	bool const clear  = BoolField(spec, "clear", true);
-	bool const start  = BoolField(spec, "start", true);
-	int  distance = std::max(1, IntField(spec, "distance", 6));
-	int  const defaultEnemies = std::max(0, IntField(spec, "enemies", 10));
-	std::string const defaultWeapon = StrField(spec, "weapon", "MP5K");
+	bool const clear  = Scenario::BoolField(spec, "clear", true);
+	bool const start  = Scenario::BoolField(spec, "start", true);
+	int  distance = std::max(1, Scenario::IntField(spec, "distance", 6));
+	int  const defaultEnemies = std::max(0, Scenario::IntField(spec, "enemies", 10));
+	std::string const defaultWeapon = Scenario::StrField(spec, "weapon", "MP5K");
 	sol::object const armourObj = spec["armour"];
-	std::string const defaultArmour = ArmourLevel(armourObj, "kevlar");
-	std::string const defaultClass  = StrField(spec, "class", "administrator");
-	std::string const defaultEnemyWeapon = StrField(spec, "enemy_weapon", "");
+	std::string const defaultArmour = Scenario::ArmourLevel(armourObj, "kevlar");
+	std::string const defaultClass  = Scenario::StrField(spec, "class", "administrator");
+	std::string const defaultEnemyWeapon = Scenario::StrField(spec, "enemy_weapon", "");
 
 	// `enemies` may be a count or a table with its own setup.
 	sol::object const enemiesObj = spec["enemies"];
@@ -274,10 +152,10 @@ void StageBattle(sol::table const& spec)
 	if (enemiesObj.is<sol::table>())
 	{
 		enemySpec = enemiesObj.as<sol::table>();
-		enemies = std::max(0, IntField(enemySpec, "count", 10));
-		enemyClass = StrField(enemySpec, "class", defaultClass);
-		enemyWeapon = StrField(enemySpec, "weapon", defaultEnemyWeapon);
-		distance = std::max(1, IntField(enemySpec, "distance", distance));
+		enemies = std::max(0, Scenario::IntField(enemySpec, "count", 10));
+		enemyClass = Scenario::StrField(enemySpec, "class", defaultClass);
+		enemyWeapon = Scenario::StrField(enemySpec, "weapon", defaultEnemyWeapon);
+		distance = std::max(1, Scenario::IntField(enemySpec, "distance", distance));
 		sol::object const gridsObj = enemySpec["grids"];
 		if (gridsObj.is<sol::table>())
 		{
@@ -286,7 +164,7 @@ void StageBattle(sol::table const& spec)
 			{
 				sol::object const o = grids[i];
 				int g;
-				if (AsInt(o, g)) enemyGrids.push_back(GridNo(g));
+				if (Scenario::AsInt(o, g)) enemyGrids.push_back(GridNo(g));
 			}
 			haveEnemyGrids = !enemyGrids.empty();
 		}
@@ -317,24 +195,24 @@ void StageBattle(sol::table const& spec)
 		if (setup.is<sol::table>())
 		{
 			sol::table const e = setup.as<sol::table>();
-			weapon = StrField(e, "weapon", weapon);
+			weapon = Scenario::StrField(e, "weapon", weapon);
 			sol::object const setupArmour = e["armour"];
-			armour = ArmourLevel(setupArmour, armour);
-			grid   = GridNo(IntField(e, "grid", grid));
+			armour = Scenario::ArmourLevel(setupArmour, armour);
+			grid   = GridNo(Scenario::IntField(e, "grid", grid));
 			items  = e["items"];
 			stats  = e["stats"];
 		}
 
-		GiveGun(*s, ItemByName(weapon));
-		EquipArmour(*s, armour);
-		if (stats.is<sol::table>()) ApplyStats(*s, stats.as<sol::table>());
+		Scenario::GiveGun(*s, Scenario::ItemByName(weapon));
+		Scenario::EquipArmour(*s, armour);
+		if (stats.is<sol::table>()) Scenario::ApplyStats(*s, stats.as<sol::table>());
 		if (items.is<sol::table>())
 		{
 			sol::table const list = items.as<sol::table>();
 			for (int i = 1; i <= int(list.size()); ++i)
 			{
 				sol::object const o = list[i];
-				if (o.is<std::string>()) GiveItem(*s, ItemByName(o.as<std::string>()));
+				if (o.is<std::string>()) Scenario::GiveItem(*s, Scenario::ItemByName(o.as<std::string>()));
 			}
 		}
 		if (grid != NOWHERE) TeleportSoldier(*s, grid, true);
@@ -346,7 +224,7 @@ void StageBattle(sol::table const& spec)
 	GridNo const anchor = INT16(anchorSum / anchorN);
 
 	// Spawn and place the enemies.
-	UINT16 const enemyGun = enemyWeapon.empty() ? NOTHING : ItemByName(enemyWeapon);
+	UINT16 const enemyGun = enemyWeapon.empty() ? NOTHING : Scenario::ItemByName(enemyWeapon);
 	std::vector<GridNo> const tiles = haveEnemyGrids ? std::vector<GridNo>{} : FreeTilesAround(anchor, distance, distance + 6);
 	int spawned = 0;
 	for (int i = 0; i < enemies; ++i)
@@ -369,7 +247,7 @@ void StageBattle(sol::table const& spec)
 		e->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO;
 		AddSoldierToSector(e);
 		PlaceActor(*e, grid);
-		if (enemyGun != NOTHING) GiveGun(*e, enemyGun);
+		if (enemyGun != NOTHING) Scenario::GiveGun(*e, enemyGun);
 		++spawned;
 	}
 	if (spawned == 0) throw std::runtime_error("ja2.debug(\"battle\"): could not place any enemy");

@@ -233,6 +233,8 @@ API surface (sketch):
   `pixel(x,y)`, `messageBox()`.
 - `ja2.game` (read-mostly): `screen()`, `time()`, `balance()`, `sector()`, `mercs()`,
   `merc(name)`, `squad()`, `tacticalStatus()`, `laptopPage()`, `facts`, `quests`.
+  Implemented so far: `ja2.game.npcs()` and `ja2.game.quests()`, the native people
+  & quest registry (issue #156, [living-world-npc.md](living-world-npc.md)).
 - `ja2.save(name)`, `ja2.load(name)` — through the real save/load code.
 - `ja2.screenshot(path)`, `ja2.record{frames=dir}` (PNG sequence / pipe to ffmpeg), `ja2.expect`.
 - `ja2.cheat.*` (explicitly separate namespace): set money, teleport squad, spawn item, reveal

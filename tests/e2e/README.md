@@ -11,6 +11,8 @@ for the full API.
 | `new_game_to_tactical.lua` | Hire a merc on A.I.M., land in Omerta, save/load round trip |
 | `tactical_move_merc.lua` | Select a merc and walk to a clicked tile and back |
 | `battle_smoke.lua` | A staged fight (3 decked-out mercs vs 10 enemies): fire, damage, the native tactical HUD and a win (runs at 1920x1080, see [docs/plan/e2e-tactical-battles.md](../../docs/plan/e2e-tactical-battles.md)) |
+| `campaign_state.lua` | Author a campaign state (day, money, towns, roster, quests) on the live globals, assert it and the status model, then save/load it (see [docs/plan/e2e-campaign-state.md](../../docs/plan/e2e-campaign-state.md)) |
+| `battle_campaign.lua` | Walk into a controlled town with townsfolk, then step into a tactical battle there (runs at 1920x1080) |
 | `map_screen_tour.lua` | Map screen: pause, inventory, options, laptop |
 | `video_switch.lua` | Runtime video changes (`ja2.setVideo`) through four modes on tactical, map and laptop |
 | `video_options.lua` | The Video options screen: change and apply resolution without a restart |
@@ -22,18 +24,27 @@ for the full API.
 | `check_sessions.py` | Two `ja2ctl` sessions side by side stay independent |
 
 `lib/campaign.lua` has the shared steps (new game, hire from A.I.M., land,
-dismiss popups). `lib/battle.lua` has the battle fixtures and orders (stage a
-fight, select a merc, shoot, end the turn) for the tactical battle e2e track.
+dismiss popups, and the campaign-state helpers `stage`, `at`, `assertState`,
+`enterSector`, `enterTown`, `stepIntoBattle`). `lib/battle.lua` has the battle
+fixtures and orders (stage a fight, select a merc, shoot, end the turn) for the
+tactical battle e2e track.
 
 ## Running
 
-They need the original game data (`game_dir` in your `ja2.json`) and Python 3.
+They need the original game data (`game_dir` in your `ja2.json`) and the Python
+tooling environment. Install it once per checkout:
+
+```bash
+uv sync                        # creates .venv (Python 3.12+) with Pillow and numpy from uv.lock
+```
 
 ```bash
 ctest -L e2e -j8 --output-on-failure                                  # all, from the build directory
 python tools/ja2ctl.py run tests/e2e/laptop_tour.lua --isolated       # one, from the repo root
 python tools/ja2ctl.py run tests/e2e/laptop_tour.lua --isolated --show   # and watch it
 ```
+
+`ctest` uses `.venv` when it exists, so re-run `cmake` once after `uv sync`.
 
 `--isolated` gives every run a fresh home directory, so tests never see your
 saves or each other's. Screenshots go to `--out` (CTest uses

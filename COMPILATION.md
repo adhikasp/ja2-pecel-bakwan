@@ -12,6 +12,23 @@
 Stracciatella bundles a few other projects for development purposes. If you have them installed already,
 the system version will be used. This holds for: gtest and string theory.
 
+## Python tooling
+
+The e2e harness (`tools/ja2ctl.py`, `tests/e2e/`) and the asset tools
+(`tools/assets/`) are Python; everything except the golden-image resolution
+tests runs on the standard library alone. Those tests need Pillow (PNG decode)
+and numpy (per-pixel compare), managed by [uv](https://docs.astral.sh/uv/) and
+locked in `uv.lock`:
+
+```sh
+uv sync
+```
+
+This creates `.venv/` in the repo root; a fresh cmake configure picks that
+interpreter up for `ctest`. Run the tools through it with
+`uv run python tools/ja2ctl.py ...`, or activate it (`source .venv/bin/activate`;
+on Windows `.venv\Scripts\activate`).
+
 ## General Notes
 
 We use cmake as our build system, which is aimed at an out-of-source build. That means that you should call
