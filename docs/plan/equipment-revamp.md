@@ -3,7 +3,7 @@
 > Status: **active.** This is the *why*. The *what* and *how* live in the issues
 > linked below. Milestone:
 > [Tactical revamp signature systems](https://github.com/adhikasp/ja2-stracciatella/milestone/10).
-> Board Track: `Revamp gameplay`. Sibling doc: `docs/plan/revamp-gameplay.md`.
+> Track goal: [#259](https://github.com/adhikasp/ja2-stracciatella/issues/259). Board Track: `Revamp gameplay`. Sibling doc: `docs/plan/revamp-gameplay.md`.
 
 ## Why
 
@@ -109,12 +109,12 @@ The build order follows the schema. Each issue lists what it depends on.
 ```text
   #96  slots + LBE model ──┬──> #97  ammo and magazines ──┐
   (the schema)             │                              ├──> pipeline ──> #102 NCTH
-                           ├──> #101 armor and gear ──────┤    (new)         #220 armor choice
+                           ├──> #101 armor and gear ──────┤    (#260)         #220 armor choice
                            │                              │                  #98  condition
                            └──> #100 weapons + attachments┘
   #140 encumbrance ─> LBE weight          #103 suppression <─ noise / overheating
-  loadout UI (new) <─ #96   readout #141 <─ pipeline   AI #108 <─ #101, #97
-  equipment fixtures (new) gate every one of the above
+  loadout UI (#260) <─ #96   readout #141 <─ pipeline   AI #108 <─ #101, #97
+  equipment fixtures (#260) gate every one of the above
 ```
 
 ## Issues
@@ -129,7 +129,11 @@ slots and LBE, [#97](https://github.com/adhikasp/ja2-stracciatella/issues/97) am
 [#140](https://github.com/adhikasp/ja2-stracciatella/issues/140) encumbrance,
 [#141](https://github.com/adhikasp/ja2-stracciatella/issues/141) readout UI,
 [#220](https://github.com/adhikasp/ja2-stracciatella/issues/220) armor as a choice.
-New issues are listed on the track goal.
+New issues: [#260](https://github.com/adhikasp/ja2-stracciatella/issues/260)
+damage resolution pipeline,
+[#261](https://github.com/adhikasp/ja2-stracciatella/issues/261) weapon roles and noise,
+[#262](https://github.com/adhikasp/ja2-stracciatella/issues/262) native loadout screen,
+[#263](https://github.com/adhikasp/ja2-stracciatella/issues/263) equipment e2e fixtures.
 
 ## Out of scope
 
