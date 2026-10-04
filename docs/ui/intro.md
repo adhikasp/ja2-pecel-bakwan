@@ -80,7 +80,7 @@ game with `ja2.debug("mock", "phase7/intro_stage")`.
 │                                                                            │
 │                                                                            │
 │                                                                            │
-│  ● ● ○ ○   Scene 2 of 4        ·        Space / click — next scene · Esc — skip │
+│  ● ● ○ ○   Scene 2 of 4            Space / click — next scene · Esc — skip │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -88,8 +88,11 @@ game with `ja2.debug("mock", "phase7/intro_stage")`.
   fade-to-black scrim so it stays readable over any frame. A 2 dp progress track runs along the very bottom.
 - **Fading hints.** The whole bar fades out (`--t-slow`) 2 s after the last mouse move or key press and fades
   back in on the next one. Untouched, the screen is pure picture. (Reduced motion: the fade is instant.)
-- Nothing else is drawn: no cursor, no buttons, no branding. The videos carry their own audio and the screen
-  plays no music (`MUSIC_NONE`, unchanged).
+- **The pointer is part of the hint.** The mouse cursor is drawn with the bar and hidden with it
+  (`Screen::ShowsCursor()`), so an untouched presentation shows no pointer at all — the legacy player hid it for
+  the whole screen instead.
+- Nothing else is drawn: no buttons, no branding. The videos carry their own audio and the screen plays no music
+  (`MUSIC_NONE`, unchanged).
 
 **The still card (S6).** A scene whose video cannot be opened draws a black card in the native layer:
 the scene position in display type ("Scene 2 of 4") and one dim line ("video not available"), for 4 s or until
