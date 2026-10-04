@@ -112,13 +112,15 @@ def posix(path: Path) -> str:
 
 def tool_run(cmd: str, cwd: Path, capture: bool = False):
     """Run a build-tool command inside the tool environment (MSYS2 MinGW64)."""
+    # Always a dict we can add to: the non-Windows path used to pass env=None
+    # (plain inheritance), which cannot carry the SCCACHE_BASEDIR below.
+    env = dict(os.environ)
     if IS_WINDOWS:
         argv = [str(bash_exe()), "-lc", f"cd '{posix(cwd)}' && {cmd}"]
-        env = dict(os.environ, MSYSTEM="MINGW64")
+        env["MSYSTEM"] = "MINGW64"
         env.setdefault("SCCACHE_CACHE_SIZE", SCCACHE_CACHE_SIZE)
     else:
         argv = ["/bin/bash", "-lc", f"cd {shlex.quote(str(cwd))} && {cmd}"]
-        env = None
     # Share the compiler cache across worktrees without pinning them to one
     # build path: sccache rewrites paths under SCCACHE_BASEDIR to be relative
     # before hashing, so two checkouts at different absolute paths produce the
