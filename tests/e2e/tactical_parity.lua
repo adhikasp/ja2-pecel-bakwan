@@ -98,10 +98,26 @@ ja2.expect(vm().m_removing:find("100"), "+100 adds 100 to the amount (" .. vm().
 shots.take("money.png", "small")
 ja2.click{ id = "tac.desc.done" }
 ja2.waitIdle()
-for _, s in ipairs(vm().small) do
-	if s.empty then ja2.click(slot(s.idx)) break end
+-- The money is on the cursor now. The pockets are typed, so not every empty one takes
+-- it - the belt's magazine pockets refuse money - and the panel cannot be closed while
+-- the cursor holds something: offer it to the empty pockets until one takes it.
+local function occupied()
+	local n = 0
+	for _, group in ipairs({ vm().big, vm().small }) do
+		for _, s in ipairs(group) do if not s.empty then n = n + 1 end end
+	end
+	return n
 end
-ja2.waitIdle()
+local carried = occupied()
+for _, group in ipairs({ vm().big, vm().small }) do
+	for _, s in ipairs(group) do
+		if occupied() == carried and s.empty then
+			ja2.click(slot(s.idx))
+			ja2.waitIdle()
+		end
+	end
+end
+ja2.expect(occupied() > carried, "an empty pocket takes the money")
 ja2.expect(ja2.state().money == money - 100, "the account lost 100 (" .. money .. " -> " .. ja2.state().money .. ")")
 
 ja2.click{ id = "tac.detail.close" }

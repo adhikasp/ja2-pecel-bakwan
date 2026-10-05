@@ -273,9 +273,6 @@ void UILayout::recalculatePositions()
 	m_invSlotPositionTac[HEAD2POS            ].set(startX + 226, startInvY +  30);
 	m_invSlotPositionTac[HANDPOS             ].set(startX + 226, startInvY +  84);
 	m_invSlotPositionTac[SECONDHANDPOS       ].set(startX + 226, startInvY + 108);
-	m_invSlotPositionTac[LBE_VESTPOS      ].set(startX + 292, startInvY +   5);
-	m_invSlotPositionTac[LBE_BELTPOS      ].set(startX + 292, startInvY +  29);
-	m_invSlotPositionTac[LBE_PACKPOS      ].set(startX + 292, startInvY +  53);
 	m_invSlotPositionTac[POCK1POS         ].set(startX + 468, startInvY +   5);
 	m_invSlotPositionTac[POCK2POS         ].set(startX + 468, startInvY +  29);
 	m_invSlotPositionTac[POCK3POS         ].set(startX + 468, startInvY +  53);

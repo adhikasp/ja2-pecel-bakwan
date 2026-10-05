@@ -10,6 +10,7 @@
 
 #include <forward_list>
 #include <memory>
+#include <string_theory/string>
 
 
 // Struct for backgrounds
@@ -320,7 +321,8 @@ void UpdateSaveBuffer(void)
 
 void RestoreExternBackgroundRect(const INT16 sLeft, const INT16 sTop, const INT16 sWidth, const INT16 sHeight)
 {
-	Assert(0 <= sLeft && sLeft + sWidth <= SCREEN_WIDTH && 0 <= sTop && sTop + sHeight <= SCREEN_HEIGHT);
+	AssertMsg(0 <= sLeft && sLeft + sWidth <= SCREEN_WIDTH && 0 <= sTop && sTop + sHeight <= SCREEN_HEIGHT,
+		ST::format("({}, {}, {}x{}) is outside the {}x{} screen", sLeft, sTop, sWidth, sHeight, SCREEN_WIDTH, SCREEN_HEIGHT));
 
 	BlitBufferToBuffer(guiSAVEBUFFER, FRAME_BUFFER, sLeft, sTop, sWidth, sHeight);
 

@@ -168,9 +168,11 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .sys .row .icon-btn.last { margin-right: 0; }
 
 /* ------------------------------------------------------------------ merc detail + inventory panel */
-.detail { position: absolute; left: var(--sp-3); bottom: 164dp; width: 940dp; }
-.detail .body { display: flex; padding: var(--sp-3); }
-.detail .who { display: flex; align-items: center; height: 108dp; padding: 0 var(--sp-3); border-bottom: var(--border) var(--c-line); }
+/* The panel grows upwards from `bottom: 164dp`, so its height is its content's. The game caps the UI scale at
+ * screen height / 720, so the room above the bar is 556dp at any resolution: the content has to fit in that. */
+.detail { position: absolute; left: var(--sp-3); bottom: 164dp; width: 940dp; display: flex; flex-direction: column; }
+.detail .body { display: flex; flex: 1 1 auto; min-height: 0; padding: var(--sp-3); }
+.detail .who { display: flex; align-items: center; flex: 0 0 auto; height: 108dp; padding: 0 var(--sp-3); border-bottom: var(--border) var(--c-line); }
 .detail .who .face { display: flex; align-items: center; justify-content: center; width: 104dp; height: 92dp; background-color: var(--c-bg); border: var(--border) var(--c-line); margin-right: var(--sp-3); overflow: hidden; }
 .detail .who .names { display: block; flex: 1 1 0; }
 .detail .who .nm { display: block; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); line-height: 36dp; }
@@ -213,15 +215,17 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .doll .col { display: block; margin-right: var(--sp-2); }
 .doll .slot { margin-bottom: var(--sp-2); }
 .doll .cap { margin-bottom: var(--sp-1); }
-.pockets { display: block; flex: 1 1 0; }
-.pockets .grid { display: flex; flex-wrap: wrap; margin-bottom: var(--sp-2); }
-.pockets .grid .slot { margin: 0 var(--sp-2) var(--sp-2) 0; }
+/* the pocket grids are the only part that grows with what a merc carries: they scroll when the
+ * panel has run out of room (the worn LBE row, the four vest pockets and the eight pack/belt ones) */
+.pockets { display: block; flex: 1 1 0; min-height: 0; overflow-y: auto; }
+.pockets .grid { display: flex; flex-wrap: wrap; margin-bottom: var(--sp-1); }
+.pockets .grid .slot { margin: 0 var(--sp-2) var(--sp-1) 0; }
 .pockets .cap { margin-bottom: var(--sp-1); }
 .purse { display: flex; align-items: center; margin-top: var(--sp-1); }
 .purse .btn { height: 34dp; font-size: var(--fs-sm); margin-right: var(--sp-2); padding: 0 var(--sp-3); }
 .purse .btn .label { margin-left: 0; }
 .purse .btn .mono { margin-left: var(--sp-2); color: var(--c-select); font-size: var(--fs-md); text-transform: none; }
-.detail .foot { display: flex; align-items: center; height: 36dp; padding: 0 var(--sp-3); border-top: var(--border) var(--c-line); font-size: var(--fs-xs); color: var(--c-text-dim); }
+.detail .foot { display: flex; align-items: center; flex: 0 0 auto; height: 36dp; padding: 0 var(--sp-3); border-top: var(--border) var(--c-line); font-size: var(--fs-xs); color: var(--c-text-dim); }
 .detail .foot span { display: block; margin-right: var(--sp-2); }
 .detail .foot .kbd { margin-right: var(--sp-1); }
 .kv { display: flex; align-items: center; height: 22dp; }

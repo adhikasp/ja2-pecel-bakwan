@@ -216,33 +216,41 @@ ja2.waitIdle()
 ja2.expect(ja2.state().time.totalMinutes > t0, "time ran (" .. t0 .. " -> " .. ja2.state().time.totalMinutes .. ")")
 
 -- A14/A15: Ivan's gear and the sector inventory; move an item from his hand to a pocket and back
+--
+-- Slot ids on the gear panel: the worn gear is 0-6, the three worn LBE slots are 7-9 and
+-- the twelve typed pockets are 10-21. SLOT_BIG_POCKET is the pack's first pocket, a large
+-- one, so it takes whatever is in the hand; SLOT_POCK_FIRST is the first pocket of a window.
+local SLOT_HAND, SLOT_POCK_FIRST, SLOT_BIG_POCKET = 5, 10, 18
 ja2.click(id("map.team[" .. ivan .. "].name"))
 ja2.waitIdle()
 ja2.click(id("map.merc.inventory"))
 ja2.waitIdle()
 ja2.expect(vm().gear_open, "Ivan's gear is open")
 local hand
-for _, g in ipairs(vm().gear) do if g.pos == 5 then hand = g end end
+for _, g in ipairs(vm().gear) do if g.pos == SLOT_HAND then hand = g end end
 ja2.expect(hand and hand.art ~= "", "Ivan holds something")
 ja2.click(id("map.inv.openpool"))
 ja2.waitIdle()
 ja2.expect(vm().pool_title ~= "", "the sector inventory is open next to the gear")
--- drag and drop: press on the hand, release over a big pocket
+-- drag and drop: press on the hand, release over a pocket
 local function centre(i) local e = ja2.find(id(i)); return e.x + e.w // 2, e.y + e.h // 2 end
-local hx, hy = centre("map.inv.slot[5]")
-local px, py = centre("map.inv.slot[7]")
+-- the art name carries the scale it is drawn at ("item-9@2"), which differs between
+-- the hand and a pocket, so compare the item itself
+local function itemOf(art) return (art or ""):match("^(%a+%-?%d+)") or "" end
+local hx, hy = centre("map.inv.slot[" .. SLOT_HAND .. "]")
+local px, py = centre("map.inv.slot[" .. SLOT_BIG_POCKET .. "]")
 ja2.drag(hx, hy, px, py)
 ja2.waitIdle()
 local moved
-for _, g in ipairs(vm().gear) do if g.pos == 7 then moved = g end end
-ja2.expect(moved and moved.art == hand.art, "the item moved to a pocket")
+for _, g in ipairs(vm().gear) do if g.pos == SLOT_BIG_POCKET then moved = g end end
+ja2.expect(moved and itemOf(moved.art) == itemOf(hand.art), "the item moved to a pocket")
 shots.take("mapscreen_gear.png", true)
 -- and back by click, click
-ja2.click(id("map.inv.slot[7]"))
-ja2.click(id("map.inv.slot[5]"))
+ja2.click(id("map.inv.slot[" .. SLOT_BIG_POCKET .. "]"))
+ja2.click(id("map.inv.slot[" .. SLOT_HAND .. "]"))
 ja2.waitIdle()
 -- the item description (right-click a single item) with its art at a whole-number scale, and Done
-ja2.rclick(id("map.inv.slot[5]"))
+ja2.rclick(id("map.inv.slot[" .. SLOT_HAND .. "]"))
 ja2.waitIdle()
 ja2.expect(vm().desc_open and vm().desc_name ~= "", "the native item description opens")
 ja2.expect(vm().desc_art:find("@%d$"), "its picture is drawn at a whole-number scale (" .. vm().desc_art .. ")")
@@ -287,12 +295,15 @@ ja2.key("enter")
 ja2.waitIdle()
 ja2.click(id("map.inv.sort.name"))
 ja2.waitIdle()
--- the single clip of the other pocket goes to the sector too: two piles of the same clips, merged into one
-local single
-for _, g in ipairs(vm().gear) do if g.pos ~= stackPos and g.art ~= "" and g.count == "" and g.pos >= 11 then single = math.tointeger(g.pos) end end
-ja2.expect(single, "a single clip in another pocket")
-ja2.click(id("map.inv.slot[" .. single .. "]"))
-ja2.click(gx, gy)
+-- a second pile of the same clips: drag one more out of a pocket into the sector, so
+-- the stash holds two piles for Stack & merge to join
+local more
+for _, g in ipairs(vm().gear) do if g.pos >= SLOT_POCK_FIRST and g.count ~= "" then more = math.tointeger(g.pos) break end end
+ja2.expect(more, "a pocket with a stack of clips to drop as a second pile")
+-- the grid has been re-sorted since gx, gy was taken: aim at it again
+gx, gy = centre("map.inv.grid")
+local sx, sy = centre("map.inv.slot[" .. more .. "]")
+ja2.drag(sx, sy, gx, gy)
 ja2.waitIdle()
 ja2.expect(poolCount() == 2, "two piles in the sector (" .. poolCount() .. ")")
 local function total()
@@ -310,7 +321,7 @@ shots.take("mapscreen_pool.png", true)
 -- put them back
 while poolCount() > 0 do
 	local slot
-	for _, g in ipairs(vm().gear) do if g.pos >= 11 and g.art == "" then slot = math.tointeger(g.pos) break end end
+	for _, g in ipairs(vm().gear) do if g.pos >= SLOT_POCK_FIRST and g.art == "" then slot = math.tointeger(g.pos) break end end
 	ja2.click(id("map.inv.item[" .. math.tointeger(vm().pool[1].index) .. "]"))
 	ja2.click(id("map.inv.slot[" .. slot .. "]"))
 	ja2.waitIdle()

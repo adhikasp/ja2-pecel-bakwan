@@ -36,7 +36,7 @@
 | I6 | Assignment / squad not current, stance | `bAssignment`, `usAnimState` | text above the guy | sub line on the card; above-guy label kept |
 | I7 | Selected merc | `GetSelectedMan` | gold frame | amber card border + amber name in the world |
 | I8 | Attributes (AGI DEX STR LDR WIS LVL MRK EXP MEC MED), armour %, weight %, camo % | profile / soldier | single-merc panel | detail panel "Attributes" + weight/armour/camo |
-| I9 | 19 inventory slots: 2 face, helmet, vest, legs, 2 hands, 4 big, 8 small; status per item; stack counts; attachment marker | `inv[]` | single-merc panel | detail panel: Head / Body / Hands / Big / Small groups, condition bar, count, attachment marker |
+| I9 | 22 inventory slots: 2 face, helmet, vest, legs, 2 hands, 3 worn LBE (vest, belt, pack), 12 typed pockets (4 per LBE item); status per item; stack counts; attachment marker | `inv[]` | single-merc panel | detail panel: Head / Body / Hands / LBE / Pocket groups, condition bar, count, attachment marker |
 | I10 | Money carried, keys | `uiMoney` via money item, key ring | `$` button, key-ring button | Cash and Keys buttons with values |
 | I11 | Item description: big picture, name, class, description, status, weight, damage, range, AP (single, burst, reload), ammo left and type, 4 attachments, pros/cons; money amount for money | `Item[]`, `Weapon[]`, `GenerateProsString` | box over the panel | side panel next to the detail panel (stats grid, ammo block with Unload, 4 attachment slots with "fits" list) |
 | I12 | Above-guy: name, HP/energy bars, "(assignment)", "Squad n", reload/catch/pass prompts, GIVE, damage numbers | `DrawSelectedUIAboveGuy` | bitmap text over the merc | native labels anchored with `WorldToUi`; floating damage numbers |
@@ -149,7 +149,7 @@ The detail panel is open exactly when the legacy single-merc panel is (`, double
 |---|---|
 | Squad bar: cards (face, HP/lost, EN, MO, AP in combat, status icons, stance, hand item and ammo), squad tabs, select, details | I1–I7, A1–A2 |
 | Tools: stance, run, stealth, burst, look, talk, climb, roof level; End turn / Turn-based, Map, inventory, log, options | A4–A11 |
-| Detail panel: attributes, armour/weight/camo, vitals, all 19 slots (pick up / put down / description by click), cash, keys; mute (A12) and swap hands (A23) in the header | I8–I10, A12, A13, A16, A23 |
+| Detail panel: attributes, armour/weight/camo, vitals, all 22 slots including the worn LBE row and the 12 typed pockets (pick up / put down / description by click), cash, keys; mute (A12) and swap hands (A23) in the header | I8–I10, A12, A13, A16, A23 |
 | Item description: picture, text, stats, status, ammo + Unload, 4 attachments, pros/cons, keys; money split +1000/+100/+10 (right click takes back) | I11, A14, A15 |
 | Names, bars, assignment/catch/give prompts, health of others, damage numbers over the mercs | I12 |
 | Message lines; message log on **H** with filters (help moved to **Shift+H**) | I13 |
@@ -185,7 +185,7 @@ new bindings). The pick-up row hover still runs the legacy "compatible ammo" hig
 | A2, I8 | inventory button: the detail panel shows Ivan |
 | A14, I11 | right click on the hand slot: description with 4 attachment slots; Unload empties the gun; clicking the gun with the magazine reloads it |
 | A13 | an item moves from one small pocket to an empty one |
-| A15 | cash: +100, Done, put in a pocket: the account loses 100 |
+| A15 | cash: +100, Done, put in a pocket that takes it: the account loses 100 |
 | I13 | H opens and closes the log |
 | A18 | a right click held on the terrain: the action menu, titled with the merc; the Walk row closes it |
 | A19 | `ja2.debug("doormenu")`: the door menu, titled Door; a disabled action says why; Examine runs the legacy action |

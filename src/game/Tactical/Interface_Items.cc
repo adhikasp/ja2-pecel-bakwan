@@ -378,6 +378,15 @@ struct INV_REGIONS
 	INT16 h;
 };
 
+// The legacy paperdolls (the single-merc panel and the map screen's merc inventory) have no
+// room for the worn LBE row: every slot is accounted for and the body art fills the rest, so
+// the three worn LBE items are not drawn or clicked there. The native panels show them, and
+// the item description still lists what is worn.
+static bool LegacyPanelShowsSlot(INT32 const slot)
+{
+	return slot < LBE_VESTPOS || slot > LBE_PACKPOS;
+}
+
 // ARRAY FOR INV PANEL INTERFACE ITEM POSITIONS (sX,sY get set via InitInvSlotInterface() )
 static INV_REGIONS const gSMInvData[] =
 {
@@ -558,6 +567,15 @@ void InitInvSlotInterface(INV_REGION_DESC const* const pRegionDesc,
 		INT16       const  y = pRegionDesc[i].uY;
 		INV_REGIONS const& r = gSMInvData[i];
 		MOUSE_REGION&      m = gSMInvRegion[i];
+		// A slot the panel does not show gets an empty region: it cannot be clicked, and the
+		// layout audit has nothing to complain about (it skips zero-sized regions).
+		if (!LegacyPanelShowsSlot(i))
+		{
+			MSYS_DefineRegion(&m, 0, 0, 0, 0, MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR,
+				INVMoveCallback, INVClickCallback);
+			MSYS_SetRegionUserData(&m, 0, i);
+			continue;
+		}
 		MSYS_DefineRegion(&m, x, y, x + r.w, y + r.h,
 			MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR,
 			INVMoveCallback, INVClickCallback);
@@ -751,6 +769,7 @@ void HandleRenderInvSlots(SOLDIERTYPE const& s, DirtyLevel const dirty_level)
 
 	for (INT32 i = 0; i != NUM_INV_SLOTS; ++i)
 	{
+		if (!LegacyPanelShowsSlot(i)) continue;
 		INVRenderINVPanelItem(s, i, dirty_level);
 	}
 

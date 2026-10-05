@@ -20,10 +20,15 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 }
 
 /* ---------------------------------------------------------------- the trade screen */
-.sk-trade { display: flex; flex: 1 1 auto; min-height: 0; padding-bottom: var(--sp-3); border-bottom: var(--border) var(--c-line); }
+/* height: 0 with flex-grow is what makes a column flex item take only the room that is
+ * left over instead of its content's height: the trade area is the part that gives way,
+ * so the "your items" strip below it always fits inside the frame. */
+.sk-trade { display: flex; flex: 1 1 auto; height: 0; min-height: 0; padding-bottom: var(--sp-3); border-bottom: var(--border) var(--c-line); }
 
 /* ---- left column: dealer, page, totals, actions ---- */
-.sk-side { display: flex; flex-direction: column; flex: 0 0 240dp; padding-right: var(--sp-3); border-right: var(--border) var(--c-line); }
+/* The column is as tall as its boxes, so at a big UI scale it is the tallest thing in the
+ * trade area and pushes the "your items" strip off the bottom: it scrolls instead. */
+.sk-side { display: flex; flex-direction: column; flex: 0 0 240dp; min-height: 0; overflow-y: auto; padding-right: var(--sp-3); border-right: var(--border) var(--c-line); }
 .sk-dealer { display: flex; align-items: flex-start; }
 .sk-face { width: 72dp; height: 82dp; margin-right: var(--sp-3); border: var(--border) var(--c-line-2); background-color: var(--c-inset); }
 .sk-face.sm { width: 40dp; height: 46dp; margin: 0 var(--sp-2) 0 0; }
@@ -51,9 +56,12 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .sk-title .tot { display: block; margin-left: auto; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
 .sk-title .tot b { display: inline-block; margin-left: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-accent); }
 
-.sk-grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--sp-2); overflow-y: auto; }
-.sk-stockgrid { flex: 0 0 auto; margin: var(--sp-2) 0 var(--sp-3); }
-.sk-offergrid { flex: 0 0 auto; max-height: 96dp; margin: var(--sp-2) 0 var(--sp-3); }
+/* The stock grid wraps to as many rows as the dealer's stock needs, so it must be the
+ * part that gives way when the panel is short: without a shrink factor it keeps its
+ * content height and walks the "your items" strip off the bottom of the screen. */
+.sk-grid { display: flex; flex-wrap: wrap; align-content: flex-start; gap: var(--sp-2); overflow-y: auto; min-height: 0; }
+.sk-stockgrid { flex: 0 1 auto; margin: var(--sp-2) 0 var(--sp-3); }
+.sk-offergrid { flex: 0 1 auto; max-height: 96dp; margin: var(--sp-2) 0 var(--sp-3); }
 .sk-stockgrid .sk-cell { flex: 0 0 18.5%; }
 .sk-offergrid .sk-cell { flex: 0 0 15.5%; }
 

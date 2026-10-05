@@ -2,6 +2,7 @@
 
 #include "AttachmentRules.h"
 #include "EquipmentCatalog.h"
+#include "InventorySlots.h"
 #include "Item_Types.h"
 #include "Lbe.h"
 #include "PocketRules.h"
@@ -329,4 +330,32 @@ TEST(PocketRules, stackingIsCappedByTheStackLimit)
 	ItemTraits ammo = Item(ItemSize::Small, 4);
 	EXPECT_TRUE(CanFit(PocketKind::Small, ammo, 3).ok);
 	EXPECT_EQ(CanFit(PocketKind::Small, ammo, 4).reason, FitReject::StackFull);
+}
+
+// --- the frozen binary boundary --------------------------------------------
+
+TEST(InventorySlots, theBinaryFormatsCarryNineteenSlots)
+{
+	// prof.dat, the save games and the sector maps all came with nineteen
+	// inventory slots; they are frozen data, so the worn LBE slots must not
+	// grow them.
+	EXPECT_EQ(BINARY_INV_SLOTS, 19);
+	EXPECT_EQ(NUM_INV_SLOTS, BINARY_INV_SLOTS + NUM_LBE_SLOTS);
+}
+
+TEST(InventorySlots, binaryPocketsLandOnPocketsAndNeverOnWornLbe)
+{
+	// The worn gear keeps its index; the pockets shift up by the three worn LBE
+	// slots the revamp inserted in front of them.
+	for (int i = 0; i < LBE_VESTPOS; ++i)
+	{
+		EXPECT_EQ(BinaryInvSlotToSlot(i), i);
+	}
+	for (int i = LBE_VESTPOS; i < BINARY_INV_SLOTS; ++i)
+	{
+		int const slot = BinaryInvSlotToSlot(i);
+		EXPECT_GE(slot, POCK1POS);
+		EXPECT_LT(slot, NUM_INV_SLOTS);
+	}
+	EXPECT_EQ(BinaryInvSlotToSlot(BINARY_INV_SLOTS - 1), POCK12POS);
 }

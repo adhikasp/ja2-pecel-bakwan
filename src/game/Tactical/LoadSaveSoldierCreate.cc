@@ -8,6 +8,17 @@
 
 #include <string_theory/string>
 
+namespace
+{
+	// A soldier placement is stored as a fixed-size record, and those records
+	// live in the sector maps that ship with the game - frozen data we read out
+	// of the .slf archives and write back to the temp dir. The record therefore
+	// keeps the original 19 inventory slots (see BINARY_INV_SLOTS in
+	// InventorySlots.h): the three worn LBE slots have no room in it, and the
+	// basic load-bearing set is handed out when the soldier is created instead.
+	constexpr int SOLDIERCREATE_BINARY_SIZE = 1040;
+}
+
 
 UINT16 CalcSoldierCreateCheckSum(const SOLDIERCREATE_STRUCT* const s)
 {
@@ -69,9 +80,10 @@ static void ExtractSoldierCreate(const BYTE* const data, SOLDIERCREATE_STRUCT* c
 	EXTR_I8(d, c->bWisdom)
 	EXTR_I8(d, c->bMorale)
 	EXTR_I8(d, c->bAIMorale)
-	for (size_t i = 0; i < lengthof(c->Inv); i++)
+	for (int i = LBE_VESTPOS; i <= LBE_PACKPOS; ++i) c->Inv[i] = OBJECTTYPE{};
+	for (int i = 0; i < BINARY_INV_SLOTS; ++i)
 	{
-		ExtractObject(d, &c->Inv[i]);
+		ExtractObject(d, &c->Inv[BinaryInvSlotToSlot(i)]);
 	}
 	c->HeadPal = d.readUTF8(PaletteRepID_LENGTH, ST::substitute_invalid);
 	c->PantsPal = d.readUTF8(PaletteRepID_LENGTH, ST::substitute_invalid);
@@ -93,13 +105,13 @@ static void ExtractSoldierCreate(const BYTE* const data, SOLDIERCREATE_STRUCT* c
 	EXTR_I8(d, c->bUseGivenVehicleID)
 	EXTR_BOOL(d, c->fHasKeys)
 	EXTR_SKIP(d, 117)
-	Assert(d.getConsumed() == 1148);
+	Assert(d.getConsumed() == SOLDIERCREATE_BINARY_SIZE);
 }
 
 
 void ExtractSoldierCreateFromFile(HWFILE const f, SOLDIERCREATE_STRUCT* const c)
 {
-	BYTE data[1040];
+	BYTE data[SOLDIERCREATE_BINARY_SIZE];
 	f->read(data, sizeof(data));
 	ExtractSoldierCreate(data, c);
 }
@@ -143,9 +155,9 @@ static void InjectSoldierCreate(BYTE* const data, const SOLDIERCREATE_STRUCT* co
 	INJ_I8(d, c->bWisdom)
 	INJ_I8(d, c->bMorale)
 	INJ_I8(d, c->bAIMorale)
-	for (size_t i = 0; i < lengthof(c->Inv); i++)
+	for (int i = 0; i < BINARY_INV_SLOTS; ++i)
 	{
-		InjectObject(d, &c->Inv[i]);
+		InjectObject(d, &c->Inv[BinaryInvSlotToSlot(i)]);
 	}
 	d.writeUTF8(c->HeadPal, PaletteRepID_LENGTH);
 	d.writeUTF8(c->PantsPal, PaletteRepID_LENGTH);
@@ -167,13 +179,13 @@ static void InjectSoldierCreate(BYTE* const data, const SOLDIERCREATE_STRUCT* co
 	INJ_I8(d, c->bUseGivenVehicleID)
 	INJ_BOOL(d, c->fHasKeys)
 	INJ_SKIP(d, 117)
-	Assert(d.getConsumed() == 1148);
+	Assert(d.getConsumed() == SOLDIERCREATE_BINARY_SIZE);
 }
 
 
 void InjectSoldierCreateIntoFile(HWFILE const f, SOLDIERCREATE_STRUCT const* const c)
 {
-	BYTE data[1040];
+	BYTE data[SOLDIERCREATE_BINARY_SIZE];
 	InjectSoldierCreate(data, c);
 	f->write(data, sizeof(data));
 }
