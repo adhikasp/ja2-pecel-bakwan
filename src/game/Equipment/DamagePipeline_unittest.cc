@@ -2,6 +2,7 @@
 
 #include "DamagePipeline.h"
 
+#include <cstdio>
 #include <string>
 #include <vector>
 
