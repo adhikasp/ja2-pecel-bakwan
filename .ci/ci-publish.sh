@@ -41,6 +41,11 @@ fi
 cd ci-build
 
 echo "## publish ##"
+# nullglob: a sanitized Linux build packages nothing (ci-build.sh), so the
+# glob can match zero files. Without it bash hands the unexpanded pattern to
+# upload-artifact.sh, which then fails trying to upload a file that is not
+# there.
+shopt -s nullglob
 for file in ja2-pecel-bakwan_*; do
   echo "$file"
   if [[ "$file" == *".AppImage" ]]; then

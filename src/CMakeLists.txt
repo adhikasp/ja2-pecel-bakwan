@@ -3,9 +3,9 @@ message(STATUS "Entering src directory")
 option(ENABLE_ASSERTS "Assertion failures terminate the program (always enabled in Debug)" OFF)
 option(ENABLE_PCH "Use precompiled standard library headers during compilation" ON)
 option(ENABLE_UNITY_BUILD "Batch sources into per-area unity translation units (faster cold builds on few-core machines, much slower single-file edits)" OFF)
-option(WITH_ASAN "Build with address sanitizer" OFF)
 option(WITH_FIXMES "Build with fixme messages" OFF)
 option(WITH_MAEMO "Build with right click mapped to F4 (menu button)" OFF)
+set(WITH_SANITIZERS "" CACHE STRING "Semicolon-separated sanitizers to instrument the game with: address, undefined, thread. Linux and macOS only (see the FATAL_ERROR below)")
 
 function(add_warnings target)
     target_compile_options(${target} PRIVATE
@@ -64,9 +64,61 @@ if(ENABLE_UNITY_BUILD)
         UNITY_BUILD_MODE "GROUP")
 endif()
 
-if (WITH_ASAN)
-    target_compile_options(${JA2_BINARY} PRIVATE -fsanitize=address)
-    target_link_options(${JA2_BINARY} PRIVATE -fsanitize=address)
+if (WITH_SANITIZERS)
+    # Which sanitizers, as a set of -fsanitize=... flags. "address" and
+    # "undefined" are what CI runs; "thread" is available but not cheap and
+    # not in CI (see COMPILATION.md, "Sanitizers").
+    set(JA2_SANITIZER_FLAGS "")
+    foreach(sanitizer ${WITH_SANITIZERS})
+        string(TOLOWER "${sanitizer}" sanitizer)
+        if (NOT sanitizer MATCHES "^(address|undefined|thread)$")
+            message(FATAL_ERROR "Unknown sanitizer '${sanitizer}'. WITH_SANITIZERS takes "
+                "address, undefined and/or thread, e.g. -DWITH_SANITIZERS=\"address;undefined\"")
+        endif()
+        list(APPEND JA2_SANITIZER_FLAGS "-fsanitize=${sanitizer}")
+    endforeach()
+    list(REMOVE_DUPLICATES JA2_SANITIZER_FLAGS)
+
+    # The flags above compile everywhere and *link* almost nowhere, which is
+    # how WITH_ASAN used to fail: it configured cleanly, instrumented ~500
+    # translation units, and then died in the link step with
+    # `cannot find -lasan`, minutes into the build. Worse, a toolchain where
+    # the runtime is missing but something else satisfies the link can produce
+    # a binary with no instrumentation at all.
+    #
+    # So test the link at configure time instead of at the end of a long
+    # build. check_cxx_source_compiles compiles *and* links, which is exactly
+    # the thing that used to fail.
+    include(CheckCXXSourceCompiles)
+    unset(CMAKE_REQUIRED_LIBRARIES)
+    string(REPLACE ";" " " JA2_SANITIZER_FLAG_STRING "${JA2_SANITIZER_FLAGS}")
+    set(CMAKE_REQUIRED_FLAGS "${JA2_SANITIZER_FLAG_STRING}")
+    check_cxx_source_compiles("int main() { return 0; }" JA2_SANITIZERS_LINK)
+    unset(CMAKE_REQUIRED_FLAGS)
+    if (NOT JA2_SANITIZERS_LINK)
+        # MinGW-w64 has no sanitizer runtimes: MSYS2 keeps libasan/libubsan/libtsan in the
+        # separate `mingw-w64-*-gcc-libs` packages (not part of the toolchain this repo
+        # documents), and upstream MinGW-w64 does not ship ASan or UBSan at all. That is a
+        # property of the target, not of the configure step, so there is nothing to fall
+        # back to. MSVC has its own ASan (/fsanitize=address), which this flag does not
+        # select; it is untested here and stays off.
+        message(FATAL_ERROR "WITH_SANITIZERS=\"${WITH_SANITIZERS}\" cannot be linked with "
+            "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION} on ${CMAKE_SYSTEM_NAME}: "
+            "'${JA2_SANITIZER_FLAG_STRING}' compiles but does not link, so the sanitizer runtime "
+            "(e.g. -lasan) is missing. Sanitizers are supported on Linux and macOS only - on "
+            "Windows/MSYS2 MinGW64 the runtime lives in the separate mingw-w64-*-gcc-libs "
+            "packages, which are not installed, and upstream MinGW-w64 ships none. Configure "
+            "without WITH_SANITIZERS, or build this on Linux, where CI runs them (COMPILATION.md, "
+            "\"Sanitizers\").")
+    endif()
+
+    # Without frame pointers ASan's reports unwind through a bare stack scan and
+    # name no functions; Debug keeps them, other build types usually drop them.
+    target_compile_options(${JA2_BINARY} PRIVATE
+        ${JA2_SANITIZER_FLAGS}
+        -fno-omit-frame-pointer)
+    target_link_options(${JA2_BINARY} PRIVATE ${JA2_SANITIZER_FLAGS})
+    message(STATUS "Building with sanitizers: ${JA2_SANITIZER_FLAG_STRING}")
 endif()
 
 if(ENABLE_PCH)

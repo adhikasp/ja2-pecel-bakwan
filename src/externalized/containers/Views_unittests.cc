@@ -7,6 +7,14 @@
 #include <memory>
 #include <utility>
 
+// Internal linkage: Views_unittests.cc and Containers_unittests.cc both define a
+// TestEntity, and they are different types - this one carries an extra inView()
+// member and a virtual destructor, so it is 56 bytes where the other is 48. At
+// namespace scope they shared one name and one merged vtable, and ASan's
+// new-delete-type-mismatch check caught the destructor from one file running
+// against an object built by the other (Views_unittests.cc:13). An anonymous
+// namespace keeps each TU's copy to itself.
+namespace {
 class TestEntity : public Containers::NamedEntity<uint8_t> {
 	public:
 		TestEntity(uint8_t id, ST::string&& internalName, bool inView) : m_id(id), m_internalName(std::move(internalName)), m_inView(inView) {}
@@ -21,6 +29,7 @@ class TestEntity : public Containers::NamedEntity<uint8_t> {
 		ST::string m_internalName;
 		bool m_inView;
 };
+} // namespace
 
 TEST(Views, Indexed)
 {

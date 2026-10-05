@@ -45,6 +45,20 @@ export RUSTUP_INIT_ARGS="-y --no-modify-path --default-toolchain=$(cat ./min-rus
 if [[ "$CI_TARGET" == "linux" ]]; then
   export CONFIGURE_CMD="${CONFIGURE_CMD} -DCMAKE_INSTALL_PREFIX=AppDir/usr -DEXTRA_DATA_DIR=../share/ja2"
 
+  # Sanitizers on every Debug Linux build, i.e. every pull request and every
+  # push to master. There is one Linux build in the matrix and it already
+  # compiles Debug and runs the unit tests, so instrumenting it costs the
+  # test time but no extra build - a second, sanitized job would compile all
+  # ~500 translation units again for nothing (#288). Release and nightly
+  # builds are ReleaseWithDebInfo and published, so they stay uninstrumented.
+  if [[ "$BUILD_TYPE" == "Debug" ]]; then
+    # The ';' is escaped so the list stays one argument: cmake needs
+    # -DWITH_SANITIZERS=address;undefined, and $CONFIGURE_CMD is expanded
+    # unquoted, which would otherwise split the flag in two.
+    export CONFIGURE_CMD="${CONFIGURE_CMD} -DWITH_SANITIZERS=address"\;undefined
+    export SANITIZERS=true
+  fi
+
 elif [[ "$CI_TARGET" == "linux-mingw64" ]]; then
   # cross compiling
   export CONFIGURE_CMD="${CONFIGURE_CMD} -DCMAKE_TOOLCHAIN_FILE=./cmake/toolchain-mingw.cmake -DCPACK_GENERATOR=ZIP"
@@ -80,6 +94,18 @@ fi
 $BUILD_CMD $BUILD_TOOL_ARGS
 
 echo "## test ##"
+if [[ "${SANITIZERS:-false}" == "true" ]]; then
+  # A sanitizer report has to fail the job, not scroll past it.
+  #  - ASan already exits non-zero on any error; abort_on_error makes the report
+  #    end the process where it happened, and print_stacktrace names the frames.
+  #  - UBSan by default only *prints* and carries on, which is precisely the
+  #    failure mode that hides defects, so halt_on_error is what makes it fatal.
+  #  - LeakSanitizer is off: the game and its tests hold process-lifetime globals
+  #    by design and report at exit, which would fail every run for known, owned
+  #    allocations. -fsanitize=leak is its own piece of work (#288 follow-up).
+  export ASAN_OPTIONS="detect_leaks=0:abort_on_error=1:print_stacktrace=1"
+  export UBSAN_OPTIONS="halt_on_error=1:print_stacktrace=1"
+fi
 if [[ "$RUN_TESTS" == "true" ]]; then
   if [[ "$CI_TARGET" == "linux" ]]; then
     $BUILD_CMD --target install
@@ -95,7 +121,13 @@ if [[ "$RUN_TESTS" == "true" ]]; then
 fi
 
 if [[ "$CI_TARGET" == "linux" ]]; then
-  $BUILD_CMD --target package-appimage
+  if [[ "${SANITIZERS:-false}" == "true" ]]; then
+    # No AppImage from a sanitized build: it would have to bundle libasan and
+    # report leaks at exit, and its only purpose here is to run the tests.
+    echo "-- skipping package-appimage on a sanitized build --"
+  else
+    $BUILD_CMD --target package-appimage
+  fi
 elif [[ "$CI_TARGET" == "android" ]]; then
   cp ./outputs/apk/${ANDROID_BUILD_TYPE,,}/app-${ANDROID_BUILD_TYPE,,}.apk "./$PACKAGE_NAME"
 else

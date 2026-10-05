@@ -7,6 +7,10 @@
 #include <cstdint>
 #include <memory>
 
+// Internal linkage: Views_unittests.cc defines a different TestEntity (it adds
+// an inView() member), and two same-named types at namespace scope merge into one
+// vtable. ASan's new-delete-type-mismatch check found it; see the note there.
+namespace {
 class TestEntity : public Containers::NamedEntity<uint8_t> {
 	public:
 		TestEntity(uint8_t id, ST::string&& internalName) : m_id(id), m_internalName(std::move(internalName)) {}
@@ -18,6 +22,7 @@ class TestEntity : public Containers::NamedEntity<uint8_t> {
 		uint8_t m_id;
 		ST::string m_internalName;
 };
+} // namespace
 
 TEST(Containers, Indexed)
 {
