@@ -12,6 +12,9 @@ for the full API.
 | `tactical_move_merc.lua` | Select a merc and walk to a clicked tile and back |
 | `battle_smoke.lua` | A staged fight (3 decked-out mercs vs 10 enemies): fire, damage, AP, the native tactical HUD and a win (runs at 1920x1080, see [docs/plan/e2e-tactical-battles.md](../../docs/plan/e2e-tactical-battles.md)) |
 | `battle_los.lua` | A pin-pointed, staggered enemy line: line of sight, cover, positioning, AP, morale and casualties (#64) |
+| `loadout_spec.lua` | A loadout builds through the equipment rules, and the rules refuse a mount mismatch, an LBE item in a pocket and a medkit in a magazine pocket (#96) |
+| `loadout_matrix.lua` | The damage pipeline as a table: ammo type x armour tier x range through the range lane, plus noise, weapon and armour wear, and reproducibility (issue [#263](https://github.com/adhikasp/ja2-pecel-bakwan/issues/263)) |
+| `battle_loadout_arc.lua` | A whole loadout - weapon, attachments, ammo, LBE, pockets, armour - taken into a firefight and read back afterwards (runs at 1920x1080, #263) |
 | `campaign_state.lua` | Author a campaign state (day, money, towns, roster, quests) on the live globals, assert it and the status model, then save/load it (see [docs/plan/e2e-campaign-state.md](../../docs/plan/e2e-campaign-state.md)) |
 | `battle_campaign.lua` | Walk into a controlled town with townsfolk, then step into a tactical battle there (runs at 1920x1080) |
 | `map_screen_tour.lua` | Map screen: pause, inventory, options, laptop |
@@ -28,7 +31,79 @@ for the full API.
 dismiss popups, and the campaign-state helpers `stage`, `at`, `assertState`,
 `enterSector`, `enterTown`, `stepIntoBattle`). `lib/battle.lua` has the battle
 fixtures and orders (stage a fight, select a merc, shoot, end the turn) for the
-tactical battle e2e track.
+tactical battle e2e track. `lib/loadout.lua` has the equipment fixtures - see
+below.
+
+## Equipment fixtures
+
+The equipment revamp ([docs/plan/equipment-revamp.md](../../docs/plan/equipment-revamp.md))
+needs every equipment issue to assert against the same thing, so it is built once
+here rather than per issue. `lib/loadout.lua` is the front door; `loadout_matrix.lua`
+and `battle_loadout_arc.lua` are the tests that use it.
+
+A **gear table** is what a fixture writes once and every path builds from. Every key
+goes through the real equipment rules, so a refusal (an attachment that does not mount,
+an item that does not fit its pocket, a magazine of the wrong calibre) fails the
+fixture with the reason instead of quietly building something else:
+
+```lua
+loadout.rifle{
+	weapon      = "MINI14",       -- the platform in the hand
+	ammo        = "AMMO_AP",      -- the magazine in it, by ammo type or by magazine name
+	condition   = 100,            -- the weapon's condition, 1..100
+	armour      = "kevlar",       -- "none" | "kevlar" | "spectra"
+	attachments = { optic = "SNIPERSCOPE", muzzle = "SILENCER" },
+	lbe         = { vest = "LBE_VEST", belt = "LBE_BELT", pack = "LBE_PACK" },
+	pockets     = { POCK1 = "FIRSTAIDKIT", POCK10 = { item = "CANTEEN", count = 2 } },
+	stats       = { marksmanship = 100, health = 100 },
+}
+```
+
+- `loadout.read(name)` - the gear a merc is carrying, as `ja2.loadout()` reads it back,
+  with the armour flattened to plain names.
+- `loadout.stage(spec)` - a fight, with the gear on our mercs. `spec.gear` is the gear,
+  `spec.our` the per-merc overrides.
+- `loadout.lane(spec)` - a **range lane**: one shooter, one target at an exact distance,
+  a fixed seed, and `spec.shots` shots down it. Every shot is fired against a target
+  restored to full health and full-condition armour, so a run of N shots is N
+  measurements rather than a running total; the weapon keeps its condition, because its
+  wear is one of the things measured.
+- `loadout.matrix(spec)` - ammo type x armour tier x range, one lane per cell.
+
+A lane hands back what the pipeline decided for each shot, as data:
+
+```lua
+local lane = loadout.lane{ distance = 8, shots = 6, ammo = "AMMO_AP", armour = "spectra" }
+lane.shots[1].chanceToHit      -- the chance the roll was taken against
+lane.shots[1].roll             -- the roll itself
+lane.shots[1].hit              -- the roll connected
+lane.shots[1].impacted         -- a round arrived at all (separate decision from the roll)
+lane.shots[1].impactBeforeArmour -- the damage the round wanted to do
+lane.shots[1].armourProtection -- what the armour in the way absorbed
+lane.shots[1].damage           -- what got through
+lane.shots[1].penetrated       -- armour was in the way and the round got through anyway
+lane.shots[1].hitLocation      -- where it landed
+lane.shots[1].noiseVolume      -- what the shot's noise was
+lane.shots[1].wear             -- what it did to the weapon's condition
+```
+
+Plus `lane.summary` (shots, hits, impacts, damage, protection, penetrated, noise) and
+`lane.targetArmour` (what the dummy is left wearing). `loadout.meanDamage`,
+`loadout.meanProtection` and `loadout.hitLocations` read a cell.
+
+Three things about a lane are worth knowing, because they are properties of the game
+rather than of the fixture:
+
+- **It cannot measure closer than 8 tiles.** Inside the messy-death range one solid
+  torso hit ends a soldier outright, and the target is restored *between* shots, not
+  during them. The lane refuses a closer distance and says why.
+- **A shot does not always leave the barrel on the first order.** The game spends one
+  getting the shooter into position - turning to face the target, raising the gun -
+  exactly as it does for a player clicking a tile. `loadout.lane` orders again until
+  the shot registers, up to a bound, and says so if it never does.
+- **The seed fixes the rolls, not the whole world.** The same spec and seed give the
+  same sequence of trigger pulls, but a merc who has just hit something is a slightly
+  better shot next time, so a reproducibility check belongs early in a test.
 
 ## Running
 

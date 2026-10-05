@@ -4,6 +4,7 @@
 #include "BattleScenario.h"
 #include "ScenarioItems.h"
 #include "CampaignScenario.h"
+#include "RangeLane.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -721,6 +722,13 @@ namespace
 				return Scenario::LoadoutTable(g_lua, *found);
 			});
 		});
+		// ja2.lane(): the staged range lane and every shot fired down it - the roll, the
+		// damage, the armour that absorbed it, whether the round got through, how loud
+		// the shot was and what it did to the weapon's condition. The damage pipeline as
+		// data (issue #263, docs/plan/equipment-revamp.md).
+		ja2.set_function("lane", [] {
+			return Guarded([] { return LaneReport(g_lua); });
+		});
 		// ja2.campaign(): the strategic state the campaign harness authors: clock, money,
 		// difficulty, towns (ownership/loyalty/militia), sector garrisons, the roster with
 		// gear, and quest/fact progress. See ja2.debug("campaign", spec).
@@ -1062,6 +1070,21 @@ namespace
 					// Stage a deterministic fight in the loaded sector (docs/plan/e2e-tactical-battles.md).
 					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"battle\", spec)");
 					StageBattle(a->as<sol::table>());
+				}
+				else if (what == "lane")
+				{
+					// Stage a two-actor shooting lane at an exact distance with a fixed
+					// seed, and record what the damage pipeline decides for every shot
+					// (issue #263, docs/plan/equipment-revamp.md). The equipment fixtures
+					// all assert through this.
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"lane\", spec)");
+					StageRangeLane(g_lua, a->as<sol::table>());
+				}
+				else if (what == "laneShot")
+				{
+					// Order one shot down the staged lane, against a target restored to
+					// full health and full-condition armour.
+					FireLaneShot();
 				}
 				else if (what == "fire")
 				{

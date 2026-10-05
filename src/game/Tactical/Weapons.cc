@@ -76,6 +76,12 @@
 BOOLEAN gfNextFireJam      = FALSE;
 BOOLEAN gfNextShotKills    = FALSE;
 
+// The two halves of a shot, as data: see ShotFired / ShotImpact in Weapons.h. The
+// equipment e2e fixtures (issue #263) listen to these to assert what the damage
+// pipeline decided without a screenshot.
+Observable<ShotFired const&>  OnShotFired;
+Observable<ShotImpact const&> OnShotImpact;
+
 //GLOBALS
 
 // the amount of momentum reduction for the head, torso, and legs
@@ -580,7 +586,7 @@ static void UseGun(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 	FLOAT   dTargetZ;
 	UINT16  usItemNum;
 	BOOLEAN fBuckshot;
-	UINT8   ubVolume;
+	UINT8   ubVolume = 0; // the noise the shot makes; 0 for a thrown knife
 	INT8    bSilencerPos;
 	UINT8   ubDirection;
 	INT16   sNewGridNo;
@@ -869,10 +875,29 @@ static void UseGun(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 	// CJC: since jamming is no longer affected by reliability, increase chance of status going down for really unreliabile guns
 	uiDepreciateTest = BASIC_DEPRECIATE_CHANCE + 3 * GCM->getItem(usItemNum)->getReliability();
 
+	INT8 const condition_before = pSoldier->inv[ pSoldier->ubAttackingHand ].bStatus[0];
 	if ( !PreRandom( uiDepreciateTest ) && ( pSoldier->inv[ pSoldier->ubAttackingHand ].bStatus[0] > 1) )
 	{
 		pSoldier->inv[ pSoldier->ubAttackingHand ].bStatus[ 0 ]--;
 	}
+
+	// What this shot resolved to, for the equipment e2e fixtures (issue #263). The
+	// range lane reads the roll, the noise the suppressor left and the wear here; the
+	// matching ShotImpact carries the damage, some frames later.
+	ShotFired fired;
+	fired.shooter     = pSoldier;
+	fired.target      = WhoIsThere2(sTargetGridNo, pSoldier->bTargetLevel);
+	fired.targetGrid  = sTargetGridNo;
+	fired.distance    = static_cast<INT16>(PythSpacesAway(pSoldier->sGridNo, sTargetGridNo));
+	fired.weapon      = usItemNum;
+	fired.ammoType    = pSoldier->inv[ pSoldier->ubAttackingHand ].ubGunAmmoType;
+	fired.chanceToHit = uiHitChance;
+	fired.roll        = uiDiceRoll;
+	fired.hit         = fGonnaHit;
+	fired.noiseVolume = ubVolume;
+	fired.gunConditionBefore = condition_before;
+	fired.gunConditionAfter  = pSoldier->inv[ pSoldier->ubAttackingHand ].bStatus[0];
+	OnShotFired(fired);
 
 	// reduce monster smell (gunpowder smell)
 	if ( pSoldier->bMonsterSmell > 0 && Random( 2 ) == 0 )
@@ -2740,7 +2765,7 @@ INT32 TotalArmourProtection(SOLDIERTYPE& pTarget, const UINT8 ubHitLocation, con
 	return( iTotalProtection );
 }
 
-INT32 BulletImpact( SOLDIERTYPE *pFirer, SOLDIERTYPE * pTarget, UINT8 ubHitLocation, INT32 iOrigImpact, INT16 sHitBy, UINT8 * pubSpecial )
+static INT32 BulletImpactImpl( SOLDIERTYPE *pFirer, SOLDIERTYPE * pTarget, UINT8 ubHitLocation, INT32 iOrigImpact, INT16 sHitBy, UINT8 * pubSpecial, ShotImpact *const impact )
 {
 	INT32 iImpact, iFluke, iBonus, iImpactForCrits = 0;
 	INT8  bStatLoss;
@@ -2795,13 +2820,22 @@ INT32 BulletImpact( SOLDIERTYPE *pFirer, SOLDIERTYPE * pTarget, UINT8 ubHitLocat
 		}
 	}
 
+	// The damage the round wanted to do, before anything the target is wearing has a
+	// say: what the armour is subtracted from, and what the equipment e2e fixtures
+	// compare the protection against (issue #263).
+	if (impact != nullptr) impact->impactBeforeArmour = iOrigImpact;
+
 	if (pubSpecial && *pubSpecial == FIRE_WEAPON_BLINDED_BY_SPIT_SPECIAL)
 	{
 		iImpact = iOrigImpact;
+		if (impact != nullptr) impact->armourProtection = 0;
 	}
 	else
 	{
-		iImpact = iOrigImpact - TotalArmourProtection(*pTarget, ubHitLocation, iOrigImpact, ubAmmoType);
+		// The one place the pipeline resolves the round against what the target wears.
+		INT32 const protection = TotalArmourProtection(*pTarget, ubHitLocation, iOrigImpact, ubAmmoType);
+		if (impact != nullptr) impact->armourProtection = protection;
+		iImpact = iOrigImpact - protection;
 	}
 
 	// calc minimum damage
@@ -3113,6 +3147,31 @@ INT32 BulletImpact( SOLDIERTYPE *pFirer, SOLDIERTYPE * pTarget, UINT8 ubHitLocat
 	}
 
 	return( iImpact );
+}
+
+INT32 BulletImpact( SOLDIERTYPE *pFirer, SOLDIERTYPE * pTarget, UINT8 ubHitLocation, INT32 iOrigImpact, INT16 sHitBy, UINT8 * pubSpecial )
+{
+	// The round arriving on a soldier, as the pipeline resolved it. Reported
+	// through a wrapper so every exit path of the resolution is covered, including
+	// the ones that return early (a tank, a sleeping dart). The equipment e2e
+	// fixtures read this to assert the ammo x armour table (issue #263).
+	ShotImpact impact;
+	impact.shooter    = pFirer;
+	impact.target     = pTarget;
+	impact.targetGrid = pTarget->sGridNo;
+	impact.distance   = static_cast<INT16>(PythSpacesAway(pFirer->sGridNo, pTarget->sGridNo));
+	impact.hitLocation = ubHitLocation;
+	impact.impactBeforeArmour = iOrigImpact; // an early exit keeps this
+	impact.ammoType   = GCM->getItem(pFirer->usAttackingWeapon)->getItemClass() == IC_THROWING_KNIFE
+		? AMMO_KNIFE
+		: pFirer->inv[pFirer->ubAttackingHand].ubGunAmmoType;
+
+	INT32 const damage = BulletImpactImpl(pFirer, pTarget, ubHitLocation, iOrigImpact, sHitBy, pubSpecial, &impact);
+
+	impact.impactAfterArmour = damage;
+	impact.penetrated = (impact.armourProtection > 0 && damage > 0);
+	OnShotImpact(impact);
+	return damage;
 }
 
 
