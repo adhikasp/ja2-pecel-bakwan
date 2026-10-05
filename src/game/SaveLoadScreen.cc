@@ -1647,9 +1647,13 @@ ST::string SaveLoadNewFileName(ST::string const& description)
 	// gmtime, so the name is the same instant everywhere; with the wall clock frozen
 	// (automation) it is the same name on every machine, which is what lets a golden
 	// screenshot contain a save's filename.
+	//
+	// Spelled out rather than "%FT%TZ": those are C99 additions that MSVC's and mingw's
+	// strftime do not both implement, and on Windows the format silently produced an empty
+	// string, so a save there was named just after its description.
 	time_t const now = sgp::Clock::WallSeconds();
 	char buf[sizeof "2011-10-08T07:07:09Z"];
-	strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
+	strftime(buf, sizeof buf, "%Y-%m-%dT%H:%M:%SZ", gmtime(&now));
 	return FileMan::cleanBasename(ST::format("{}-{}", buf, description.to_lower()));
 }
 

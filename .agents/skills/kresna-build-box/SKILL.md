@@ -138,24 +138,23 @@ and `git checkout <branch>` then fails with "pathspec did not match". Use an exp
 git fetch origin <branch>:<branch> && git checkout <branch>
 ```
 
-## Known: 3 of 25 resolution goldens fail here
+## The resolution goldens pass on this box
 
-`ctest -L resolution` is **22/25** on this box. All three failures are native-UI (RmlUi)
-screens and are pure glyph antialiasing — Ubuntu's FreeType rasterises text marginally
-differently from the Windows/macOS FreeType that generated the goldens:
+`ctest -L resolution` is **27/27**. It used to be 22/25 here, and the three failures
+were long blamed on this box rendering text differently. They were not a FreeType or
+architecture difference — glyph rasterization is byte-identical everywhere. The pixels
+that differed were three strings of *text*: the version label (which carries
+`git rev-parse --short HEAD`), the save screen's wall-clock "Today HH:MM", and the
+save's UTC-stamped filename. Each is the build machine's business, not the game's.
 
-```
-mainmenu_parity_1920x1080  mainmenu_native.png     2148 px (0.104%) differ, limit 0.05%
-saveload_parity_1920x1080  mainmenu_lastsave.png   2144 px (0.103%) differ, limit 0.05%
-native_ui_1920x1080        msgbox_native.png       1918 px (0.092%) differ, limit 0.05%
-```
+`check_resolution.py` now pins all three (`-freeze-wall-clock`, `-version-label`), so the
+goldens are the same on every machine. If you see a resolution failure here, treat it as a
+real failure — do not regenerate goldens on this box to make it go away. See
+[tests/e2e/golden/README.md](../../../tests/e2e/golden/README.md#why-a-golden-image-is-portable).
 
-The underlying Lua scripts all **pass**; only the pixel comparison misses. The images have
-identical layout and identical glyphs in identical positions — only edge coverage differs.
-
-**This is not a regression and must not be "fixed" by regenerating goldens here** — that
-would replace the Windows/macOS reference with an ARM one. Expect these three; treat
-22/25 as green on this box. Verified in PR #278.
+**Do not regenerate goldens on this box anyway**, even when the change is legitimate:
+a regeneration here replaces the reference every other machine compares against with an
+ARM one. Generate on the local machine and verify here.
 
 ## Bringing it up from scratch
 
