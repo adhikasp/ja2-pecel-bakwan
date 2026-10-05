@@ -62,6 +62,8 @@ click("laptop.app.personnel"); ja2.expect(vm().roster_count == 0, "no team yet")
 click("laptop.app.web")
 ja2.expect(vm().site == "aim" and #vm().aim_members > 10, "A.I.M. members grid")
 click("aim.sort.price"); click("aim.sort.price")
+-- a new game can roll Barry "on assignment", which shows a status badge instead of Contact
+ja2.debug("aimavailable", "Barry"); ja2.step(1)
 ja2.click{text = "Barry", exact = true}; ja2.waitIdle()
 ja2.expect(vm().page == "member", "member page")
 click("aim.contact"); click("aim.hire.tohire")

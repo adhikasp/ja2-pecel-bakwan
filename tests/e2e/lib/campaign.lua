@@ -64,6 +64,12 @@ end
 -- In the laptop: hire an A.I.M. merc by the name shown under their portrait.
 -- With equipment = true the merc brings his A.I.M. gear ("Buy Equipment").
 function campaign.hireFromAim(name, contract, equipment)
+	-- A new game rolls a few A.I.M. mercs "on assignment" (5 * experience level percent), and
+	-- under the fixed automation seed the same mercs lose that roll every run - including the
+	-- ones these tests hire. An on-assignment merc has no Contact button, so put the roster
+	-- back before driving the UI: the hire walkthrough itself stays the real one.
+	ja2.debug("aimavailable", name)
+	ja2.step(1)
 	if campaign.nativeLaptop() then
 		-- the native laptop (docs/ui/laptop.md): the A.I.M. members grid, the member page, the docked hire panel
 		ja2.click{id = "laptop.app.web"}
