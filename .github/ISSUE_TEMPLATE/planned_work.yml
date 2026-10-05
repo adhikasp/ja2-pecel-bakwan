@@ -1,0 +1,96 @@
+name: Planned work
+description: A slice of work to file onto the roadmap
+title: "[Track/Kind] "
+labels: ["task"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        One issue per slice of work — **one thing only**. The **definition of
+        done** is what is true when this is finished.
+
+        After creating it, add it to the board and set the relations:
+
+        ```
+        gh project item-add 1 --owner adhikasp --url <issue url>
+        python tools/dev.py dep <issue number> --blocked-by "#96,#260" --blocking "#97"
+        ```
+  - type: textarea
+    id: definition_of_done
+    attributes:
+      label: Definition of done
+      description: What is true when this is finished, and how it is verified.
+      placeholder: |
+        - the native inventory model as engine types, unit-tested
+        - e2e loadout -> combat scenario driven from ja2ctl
+        - ctest -L e2e green
+    validations:
+      required: true
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      description: Exactly one type. The `task` label is added automatically — add the rest yourself.
+      options:
+        - Task — an actionable slice; its definition of done is above
+        - Bug — something is broken
+        - Decision — a choice that has to be made and recorded
+        - Question — something that needs answering before work can start
+        - Goal — one objective statement for a track
+    validations:
+      required: true
+  - type: input
+    id: milestone
+    attributes:
+      label: Milestone
+      description: >
+        The increment it ships in. Leave empty for a follow-up to a delivered
+        increment, and for housekeeping under `Repo & CI`, which is not a
+        shippable increment. Read the current list at
+        https://github.com/adhikasp/ja2-pecel-bakwan/milestones
+      placeholder: Tactical depth
+  - type: input
+    id: depends_on
+    attributes:
+      label: Depends on
+      description: >
+        Issue numbers this one waits for, e.g. `#96,#260`. Applied after
+        creation with `python tools/dev.py dep <this issue> --blocked-by <here>`.
+      placeholder: "#96, #260"
+  - type: input
+    id: blocks
+    attributes:
+      label: Blocks
+      description: >
+        Issue numbers that wait for this one, e.g. `#97,#98`. Applied with
+        `--blocking`. Leave empty if this is not a prerequisite for anything.
+      placeholder: "#97, #98"
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes and gates
+      description: >
+        The nuance the relations cannot carry, and the prose the page reads. Use
+        `**Gated by:** #263 (fixtures)` when the blocker is a fixture, a proof or
+        a decision rather than a work item.
+      placeholder: |
+        **Depends on:** #96, #260 (armor tiers are pipeline inputs). **Feeds:** #220, #108.
+        **Gated by:** #263 (deterministic fixtures before the table can be asserted headless)
+      value: |
+        **Depends on:**
+        **Gated by:**
+        **Feeds:**
+        **Unblocks:**
+  - type: checkboxes
+    id: labels
+    attributes:
+      label: Area label
+      description: At most one. The `task` label is already applied.
+      options:
+        - label: tactical
+        - label: mapscreen
+        - label: laptop
+        - label: nativeui
+        - label: world-renderer
+        - label: build
+        - label: automation

@@ -16,6 +16,10 @@ TAGS
 /build/
 /*/CMakeUserPresets.json
 docs-generated/
+# The roadmap page and its snapshot are generated output: `python tools/dev.py
+# roadmap` writes them, and the published copy lives on the docs-site branch.
+/docs/roadmap/roadmap.html
+/docs/roadmap/roadmap.json
 __pycache__/
 # uv-managed Python environment (`uv sync`); uv.lock is committed
 /.venv/

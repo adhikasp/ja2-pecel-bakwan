@@ -11,7 +11,11 @@ python tools/dev.py test      # C++ unit tests
 python tools/dev.py e2e [..]  # e2e tests: ctest -L e2e, or one script (tests/e2e/foo.lua --isolated)
 python tools/dev.py run [..]  # play the game (default -res 1280x720)
 python tools/dev.py status    # what dev.py sees: paths, tools, build state
+python tools/dev.py roadmap   # regenerate docs/roadmap/roadmap.html from the issues
+python tools/dev.py dep <n> --blocked-by "#1,#2"   # set an issue's dependency relations
 ```
+
+`roadmap` and `dep` are host-side and need no build: `roadmap` reads the GitHub issues through `gh` and writes the dependency view (see [The roadmap page](#the-roadmap-page)), `dep` sets an issue's native relations.
 
 - The build directory is `build` on macOS and `_bin` on Windows; the wrapper creates, configures and updates it (Ninja + sccache + lld when the machine has them, see [Faster builds](COMPILATION.md#faster-builds)).
 - **The compiler cache is shared between worktrees.** `tools/dev.py` sets `SCCACHE_BASEDIR` to the worktree root, so sccache rewrites those paths to be relative before hashing and two checkouts at different absolute paths get the same key: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects, minutes instead of a full recompile. Worktrees build side by side — there is no shared build path to queue behind. Builds that bypass `tools/dev.py` do not set it and share nothing.
@@ -155,9 +159,39 @@ Never push to it, never open a PR or an issue there, never comment there, never 
 - **Labels** — exactly one type: `task`, `bug`, `decision`, `question` or `goal`; plus at most one area: `tactical`, `mapscreen`, `laptop`, `nativeui`, `world-renderer`, `build`, `automation`.
 - **Body** — the definition of done, and the plan, spec or PR it comes from.
 - **Milestone** — the increment it ships in (below). A follow-up to an already delivered increment carries none.
+- **Dependencies** — native GitHub issue relations, which render in the issue sidebar and are what the roadmap page draws: `python tools/dev.py dep <issue> --blocked-by "#96,#260" --blocking "#97"`. Keep the prose lines too (below).
 - **Board** — `gh project item-add 1 --owner adhikasp --url <issue url>`, then set `Track`, `Kind` and `Status`.
 
 Routine: create the issue → add it to the board → `In Progress` when you start → one PR that says `Closes #N`, carrying that issue's milestone and the screenshot proof below → `Done` when the PR merges.
+
+### Dependencies between issues
+
+Edges are GitHub's **native issue relations** — `blockedBy` / `blocking` — set with `python tools/dev.py dep <issue> --blocked-by "#96,#260" --blocking "#97"` (idempotent: it reads the issue first and writes only the difference; `--prune` also drops relations missing from the lists, `--clear` drops them all). They render natively in GitHub's own issue sidebar, so declaring one improves the GitHub page too.
+
+The body keeps the prose, because one relation cannot carry the nuance: whether a blocker is a work item or a **gate** (a fixture, a proof, a decision), and why.
+
+| Write this in the body | It means | Native relation |
+|---|---|---|
+| `**Depends on:** #96, #260` | I cannot start until those land | `blockedBy: 96, 260` |
+| `**Gated by:** #263 (fixtures)` | a gate, not work | `blockedBy: 263` |
+| `**Feeds:** #220, #108` | those wait for me | `blocking: 220, 108` |
+| `**Unblocks:** #97, #98` | the same edge, other end | `blocking: 97, 98` |
+
+`## Builds on / depends on` sections of `#N` lists count as `Depends on`. A bare `#N` anywhere else stays prose — "Absorbed from #144" is not a live blocker — and the page shows those as a faint *mentions* count so the gaps stay visible. If the page and a relation ever disagree, the relation wins and `python tools/roadmap.py check` says where.
+
+### The roadmap page
+
+The backlog's shape lives in GitHub, but GitHub cannot draw it: milestones group by increment, the board groups by track, and neither shows the interdependency. **The roadmap page** is the dependency view — a generated view of the issues, never a second copy (if it and GitHub disagree, GitHub is right). Published at https://adhikasp.github.io/ja2-pecel-bakwan/roadmap/; regenerate locally with
+
+```bash
+python tools/dev.py roadmap        # refresh from GitHub, write docs/roadmap/roadmap.html
+python tools/dev.py roadmap --offline   # re-render from the snapshot of the last run
+python tools/roadmap.py check      # prose/relation drift and dependency cycles
+```
+
+The page and its snapshot are **gitignored generated output** — not in the repo, not in a PR. Only `docs/roadmap/README.md` is. Output is deterministic: same input, byte-identical file.
+
+Three linked views over the same graph: the **dependency DAG** (left to right by dependency depth, coloured by track), **milestone lanes** with the cross-milestone edges drawn over them, and the **critical path** with the issues whose delay costs the most. Filter by track / status / label / milestone, search, and a side panel with the issue's dependencies and body. The canvas owns the window — `f` and `d` fold the sidebars away, `1` `2` `3` switch view, `0` fits.
 
 ### The board
 

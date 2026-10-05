@@ -1,0 +1,71 @@
+name: Roadmap page
+
+# Publishes docs/roadmap/roadmap.html to GitHub Pages from the orphan `docs-site`
+# branch. The page is generated output, so it must not enter master's history and
+# must not need a PR to refresh - same reasoning as the pr-screenshots branch.
+# Pages is configured once for the repo (Source: docs-site / root); this workflow
+# only pushes. Nightly keeps the published page in step with the backlog,
+# workflow_dispatch publishes right after `python tools/dev.py roadmap` lands.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 4 * * *'
+
+permissions:
+  contents: write   # push the docs-site branch
+
+concurrency:
+  group: roadmap-page
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    env:
+      # A PAT if one is configured: the default GITHUB_TOKEN cannot read project
+      # boards, so without it the page builds with no Track/Kind/Status.
+      GH_TOKEN: ${{ secrets.GH_TOKEN != '' && secrets.GH_TOKEN || github.token }}
+    steps:
+    - name: Check out master
+      uses: actions/checkout@v5
+      with:
+        ref: master
+        persist-credentials: false
+
+    - name: Install Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+
+    - name: Generate the roadmap page
+      run: python tools/roadmap.py generate
+
+    - name: Publish to docs-site
+      run: |
+        set -eu
+        SITE=.docs-site
+        rm -rf "$SITE"
+        git config user.name  "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git fetch origin docs-site:refs/remotes/origin/docs-site || true
+        if git rev-parse --verify --quiet refs/remotes/origin/docs-site >/dev/null; then
+          # An orphan branch holding only the generated output: start a fresh root
+          # so the site is one commit per publish, never a merge with master.
+          git worktree add --detach "$SITE" refs/remotes/origin/docs-site
+          ( cd "$SITE" && git checkout --orphan docs-site && git rm -rf . -q )
+        else
+          git worktree add --detach "$SITE" HEAD
+          ( cd "$SITE" && git checkout --orphan docs-site && git rm -rf . -q )
+        fi
+        mkdir -p "$SITE/roadmap"
+        cp docs/roadmap/roadmap.html "$SITE/roadmap/index.html"
+        cp docs/roadmap/roadmap.json "$SITE/roadmap/roadmap.json"
+        cd "$SITE"
+        git add roadmap
+        if git diff --cached --quiet; then
+          echo "page is unchanged; nothing to publish"
+        else
+          git commit -m "Roadmap page from master $(git -C "$GITHUB_WORKSPACE" rev-parse --short HEAD)"
+          git push origin HEAD:docs-site
+        fi

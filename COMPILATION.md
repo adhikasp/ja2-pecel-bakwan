@@ -70,6 +70,20 @@ MSYSTEM=MINGW64 "/c/msys64/usr/bin/bash.exe" -lc "cd '/c/Workspace/ja2-stracciat
 
 For a package build use the old generator: `cmake .. -G 'MSYS Makefiles' -DCPACK_GENERATOR=ZIP && make package`.
 
+### Neither: the roadmap page
+
+`roadmap` and `dep` need no toolchain and no MSYS2 environment — they are host-side
+Python and `gh`, and they run the same on both platforms:
+
+```sh
+python tools/dev.py roadmap                                  # docs/roadmap/roadmap.html
+python tools/dev.py roadmap --offline                        # from the committed snapshot
+python tools/roadmap.py check                                # prose/relation drift, cycles
+python tools/dev.py dep 220 --blocked-by "#101,#260"          # native issue relations
+```
+
+See [The roadmap page](AGENTS.md#the-roadmap-page).
+
 Test and run:
 
 ```sh
