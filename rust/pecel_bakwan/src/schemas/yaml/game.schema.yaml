@@ -262,6 +262,25 @@ properties:
       clamped to three through four slots.
 
       Default setting: `0`
+  pipeline_wear_rate:
+    type: integer
+    title: Pipeline wear rate
+    description: |
+      Leaf tunable: percent, scales the condition points every shot costs the
+      weapon and the armour it hits. The damage pipeline's wear, not its
+      damage: a higher value wears gear out faster without changing what a
+      round does.
+
+      Default setting: `100`
+  pipeline_range_falloff:
+    type: integer
+    title: Pipeline range falloff
+    description: |
+      Leaf tunable: percent, scales how quickly a round loses delivery past the
+      weapon's effective range. Higher falls off faster, which costs both
+      damage and the chance to hit at distance.
+
+      Default setting: `100`
   pablo_wont_steal:
     type: boolean
     title: Pablo won't steal
@@ -604,6 +623,8 @@ required:
   - skip_sleep_explanation
   - attachment_strict_mounts
   - weapon_slot_bonus
+  - pipeline_wear_rate
+  - pipeline_range_falloff
   - pablo_wont_steal
   - chance_to_hit_minimum
   - chance_to_hit_maximum

@@ -52,6 +52,8 @@ public:
 	bool informative_tooltips;            /* Reveal modifiers in hover boxes */
 	bool attachment_strict_mounts;        // attachments must match the slot's mount kind
 	int16_t weapon_slot_bonus;            // leaf tunable: added to every gun platform's slot count
+	int16_t pipeline_wear_rate;           // leaf tunable: percent, scales the wear every shot applies
+	int16_t pipeline_range_falloff;       // leaf tunable: percent, scales the per-tile loss past the effective range
 	bool skip_sleep_explanation;          // skip annoying popups
 
 	bool extra_mousewheel_actions;        // Extra tactical mouse wheel bindings: look cursor on wheel click, aim level on wheel scroll

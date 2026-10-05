@@ -47,6 +47,8 @@ DefaultGamePolicy::DefaultGamePolicy(const JsonValue& json)
 	informative_tooltips = gp.getOptionalBool("informative_tooltips", false);
 	attachment_strict_mounts = gp.getOptionalBool("attachment_strict_mounts", true);
 	weapon_slot_bonus = gp.getOptionalInt("weapon_slot_bonus", 0);
+	pipeline_wear_rate = gp.getOptionalInt("pipeline_wear_rate", 100);
+	pipeline_range_falloff = gp.getOptionalInt("pipeline_range_falloff", 100);
 	skip_sleep_explanation = gp.getOptionalBool("skip_sleep_explanation");
 
 	pablo_wont_steal = gp.getOptionalBool("pablo_wont_steal");
