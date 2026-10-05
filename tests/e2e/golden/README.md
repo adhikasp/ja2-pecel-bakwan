@@ -28,6 +28,26 @@ Full-screen tactical shots (`landed.png`, `moved.png`) are stored only at
 640x480 and 1280x720: at wider sizes they are 4-10 MB each. At every resolution
 the tours still run and call `ja2.assertInsideScreen()`.
 
+## Why a golden image is portable
+
+A golden image is only comparable if the same tour produces the same pixels on
+every machine. Two things the UI shows are not a function of the game's state, so
+`check_resolution.py` pins both on every run (including `--update`):
+
+| Pinned | Value | Why |
+|---|---|---|
+| `-freeze-wall-clock` | `2026-01-15T12:00:00Z` | A save's filename (`SaveLoadNewFileName`) and its "Today HH:MM" label are wall-clock text. A frozen instant is formatted in **UTC**, because the same instant read in the build machine's timezone is a different string in Berlin than in Singapore. |
+| `-version-label` | `Pecel Bakwan golden` | `CMakeLists.txt` appends `git rev-parse --short HEAD` to the version. The sha is right for a bug report and useless here: the main menu, the message box and every other screen showing it would differ on every commit. |
+
+Both default to the real value when the flags are absent, so a normal run is
+unaffected. If you add a screen that shows the version, the travel is that the
+golden then depends on `GOLDEN_VERSION` in `check_resolution.py` — change that
+constant and regenerate the affected goldens.
+
+Text rasterization itself is portable and needs no pinning: the same glyph comes
+out byte-identical across FreeType 2.11–2.14, with subpixel hinting on or off,
+on x86-64 and aarch64.
+
 ## Comparison dependencies
 
 `check_resolution.py` decodes PNGs with Pillow and compares pixels with numpy.

@@ -17,6 +17,9 @@ namespace
 	bool                     g_inFrame = false;
 	unsigned                 g_presentsThisFrame = 0;
 	Clock::AdvanceListener   g_listener = nullptr;
+	// 0 means "not frozen": a frozen wall clock is only ever set to a real instant
+	// (see FreezeWall), so it can never collide with the sentinel.
+	std::time_t              g_wallFrozen = 0;
 
 	// Busy-wait guard: a loop polling the clock without presenting a frame
 	// would spin forever under virtual time. After this many reads without
@@ -68,6 +71,41 @@ void DisableVirtual()
 }
 
 std::chrono::nanoseconds Quantum() { return g_quantum; }
+
+std::time_t WallSeconds() { return g_wallFrozen ? g_wallFrozen : std::time(nullptr); }
+
+void FreezeWall(std::time_t const at)
+{
+	g_wallFrozen = at > 0 ? at : 0;
+	if (g_wallFrozen) SLOGI("Wall clock frozen at {}", static_cast<long long>(g_wallFrozen));
+}
+
+bool IsWallFrozen() { return g_wallFrozen != 0; }
+
+std::optional<std::time_t> WallSecondsFromUtc(int const year, int const month, int const day,
+	int const hour, int const minute, int const second)
+{
+	// days from 1970-01-01 to y-m-d, after Howard Hinnant's civil-calendar algorithm: pure integer
+	// arithmetic, so it does not consult the process timezone the way mktime/timegm do.
+	if (month < 1 || month > 12 || day < 1 || day > 31) return std::nullopt;
+	if (hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 60) return std::nullopt;
+
+	unsigned const m = unsigned(month);
+	bool const leap = (year % 4 == 0 && year % 100 != 0) || year % 400 == 0;
+	unsigned const len = m == 2 ? (leap ? 29u : 28u)
+		: (m == 4 || m == 6 || m == 9 || m == 11) ? 30u : 31u;
+	if (unsigned(day) > len) return std::nullopt;
+
+	int y = year;
+	y -= m <= 2;
+	int const era = (y >= 0 ? y : y - 399) / 400;
+	unsigned const yoe = unsigned(y - era * 400);
+	unsigned const doy = (153 * (m + (m > 2 ? -3 : 9)) + 2) / 5 + unsigned(day - 1);
+	unsigned const doe = yoe * 365 + yoe / 4 - yoe / 100 + doy;
+	std::time_t const days = std::time_t(era * 146097 + int(doe) - 719468);
+
+	return days * 86400 + hour * 3600 + minute * 60 + second;
+}
 
 uint32_t TicksMs()
 {

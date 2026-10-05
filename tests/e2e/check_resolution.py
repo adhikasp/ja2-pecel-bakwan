@@ -25,6 +25,13 @@ With --update, a script that cannot mark a golden image at this resolution
 marks none, see expected_goldens()) is skipped instead of run: it would cost
 minutes of tour to write nothing. The plain comparison run still runs it,
 because it still checks the layout.
+
+The tour runs with the wall clock pinned and the version label fixed (see
+GOLDEN_CLOCK / GOLDEN_VERSION below). Two things the UI shows are not a function
+of the game's state: the version label carries the build's commit sha, and a
+save's filename and "Today HH:MM" carry the machine's clock and timezone. Left
+alone they make a golden image depend on when and where it was taken, so the
+screens that show them would fail on every other machine and after every commit.
 """
 
 import argparse
@@ -48,6 +55,18 @@ except ImportError as exc:
 HERE = Path(__file__).resolve().parent
 JA2CTL = HERE.parent.parent / "tools" / "ja2ctl.py"
 GOLDEN = HERE / "golden"
+
+# What the tour runs with so a golden image is a function of the game's state alone. Both are
+# passed to every run, in --update mode too, so a regenerated golden carries the same fixed values
+# as the ones it replaces and stays comparable across machines.
+#
+# GOLDEN_CLOCK is a UTC instant: it names a save's filename and the "Today HH:MM" beside it, and
+# the game renders a frozen instant in UTC (see sgp::Clock::IsWallFrozen), so the machine's
+# timezone cannot change what it prints. 2026-01-15T12:00:00Z is an arbitrary but fixed choice.
+GOLDEN_CLOCK = "2026-01-15T12:00:00Z"
+# Without this the label is the build's `git rev-parse --short HEAD`, which would make the main
+# menu, the message box and every other screen showing it differ on every commit.
+GOLDEN_VERSION = "Pecel Bakwan golden"
 
 
 def _take_args(text: str, start: int):
@@ -122,6 +141,14 @@ def read_png(path: Path):
         return im.size[0], im.size[1], _np.asarray(im)
 
 
+# Nothing is masked. Whatever a shot shows has to be the same on every machine, so the
+# non-deterministic parts of the UI (the version label, the wall clock) are pinned at the
+# source instead — see GOLDEN_CLOCK / GOLDEN_VERSION. An earlier version of this file masked
+# the main menu's bottom-left corner for the version string; it never fired (the string sits
+# above the last 16 rows, and the test it keyed on did not match the shot's name), which is
+# how three goldens could drift for so long unnoticed.
+
+
 def compare(a: Path, b: Path, tol: int):
     """Returns (differing_pixels, total_pixels) or None if sizes differ."""
     # The usual case is that the shot is the golden image bit for bit: the same build with the same
@@ -136,10 +163,6 @@ def compare(a: Path, b: Path, tol: int):
         return None
     # R/G/B only (alpha is ignored); a channel counts as different only when off by more than tol.
     bad = (_np.abs(ra[..., :3].astype(_np.int16) - rb[..., :3].astype(_np.int16)) > tol).any(axis=2)
-    # The main menu prints the build's version string in the bottom-left corner: don't compare it.
-    mask_x = 260 if "main_menu" in a.name else 0
-    if mask_x:
-        bad[max(ha - 16, 0):, :mask_x] = False
     return int(bad.sum()), wa * ha
 
 
@@ -172,7 +195,8 @@ def main() -> int:
     (out / "golden.txt").unlink(missing_ok=True)
     try:
         cmd = [sys.executable, str(JA2CTL), "run", str(script), "--isolated", "--seed", "1",
-               "--res", opts.res, "--timeout", "2400", "--out", str(out), "--arg", "golden=1"]
+               "--res", opts.res, "--timeout", "2400", "--out", str(out), "--arg", "golden=1",
+               "--freeze-wall-clock", GOLDEN_CLOCK, "--version-label", GOLDEN_VERSION]
         code = subprocess.call(cmd)
         if code != 0:
             print(f"{name} @ {opts.res}: script failed with exit code {code}", file=sys.stderr)

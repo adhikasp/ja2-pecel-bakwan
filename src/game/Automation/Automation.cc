@@ -3,6 +3,7 @@
 #include "AutomationSession.h"
 
 #include "Clock.h"
+#include "GameVersion.h"
 #include "Headless.h"
 #include "Logger.h"
 #include "TextRegistry.h"
@@ -38,6 +39,31 @@ namespace
 #else
 		setenv(name, value.c_str(), 1);
 #endif
+	}
+
+	// -freeze-wall-clock takes either seconds since the epoch or an ISO-8601 UTC instant
+	// (2001-02-03T04:05:06Z). The ISO form is what a reader of the golden images wants to see;
+	// the numeric form is there because it is unambiguous and trivial to compute.
+	std::optional<std::time_t> ParseWallClock(std::string const& v)
+	{
+		if (v.empty()) return std::nullopt;
+		if (v.find_first_not_of("0123456789") == std::string::npos)
+		{
+			char* end = nullptr;
+			long long const n = std::strtoll(v.c_str(), &end, 10);
+			if (end == v.c_str() || *end != '\0' || n <= 0) return std::nullopt;
+			return std::time_t(n);
+		}
+
+		int y, mo, d, h, mi, s;
+		// sscanf cannot tell a trailing 'junk' from a missing field, so check the shape first:
+		// exactly the digits and separators below, and a trailing 'Z' for UTC.
+		if (std::sscanf(v.c_str(), "%4d-%2d-%2dT%2d:%2d:%2dZ", &y, &mo, &d, &h, &mi, &s) != 6) return std::nullopt;
+		char shape[32];
+		std::snprintf(shape, sizeof shape, "%04d-%02d-%02dT%02d:%02d:%02dZ", y, mo, d, h, mi, s);
+		if (v != shape) return std::nullopt;
+
+		return sgp::Clock::WallSecondsFromUtc(y, mo, d, h, mi, s);
 	}
 
 	void StartWatchdog(double const seconds)
@@ -147,6 +173,10 @@ char const* Usage()
 		"  -no-intro          skip the splash screen and intro videos\n"
 		"  -frame-ms MS       virtual time per frame (default 16.667)\n"
 		"  -timeout S         kill the session after S seconds of wall-clock time\n"
+		"  -freeze-wall-clock T   pin the wall clock so the run does not depend on when it ran:\n"
+		"                     seconds since the epoch, or an ISO-8601 UTC instant (2001-02-03T04:05:06Z).\n"
+		"                     Times shown to the player are then rendered in UTC.\n"
+		"  -version-label TEXT    version string the UI shows (default: this build's, commit sha included)\n"
 		"Exit codes: 0 passed, 1 test failed, 2 script/setup error, 3 game error, 4 timeout.\n";
 }
 
@@ -177,6 +207,18 @@ bool ParseCommandLine(int& argc, char** argv, Options& o, std::string& error)
 		else if (IsFlag(a, "home"))         { if (!value(o.home)) return false; }
 		else if (IsFlag(a, "log"))          { if (!value(o.logFile)) return false; }
 		else if (IsFlag(a, "out"))          { if (!value(o.outDir)) return false; }
+		else if (IsFlag(a, "version-label")) { if (!value(o.versionLabel)) return false; }
+		else if (IsFlag(a, "freeze-wall-clock"))
+		{
+			if (!value(v)) return false;
+			if (auto const t = ParseWallClock(v)) o.freezeWall = t;
+			else
+			{
+				error = "-freeze-wall-clock: not seconds since the epoch or an ISO-8601 UTC "
+					"instant (YYYY-MM-DDTHH:MM:SSZ): " + v;
+				return false;
+			}
+		}
 		else if (IsFlag(a, "show"))         { o.show = true; }
 		else if (IsFlag(a, "headless"))     { o.show = false; }
 		else if (IsFlag(a, "no-intro"))     { o.noIntro = true; }
@@ -202,10 +244,11 @@ bool ParseCommandLine(int& argc, char** argv, Options& o, std::string& error)
 	argv[dst] = nullptr;
 	argc = dst;
 
-	bool const needsDriver = !o.load.empty() || o.noIntro || !o.sessionFile.empty() || !o.scriptArgs.empty();
+	bool const needsDriver = !o.load.empty() || o.noIntro || !o.sessionFile.empty() || !o.scriptArgs.empty()
+		|| o.freezeWall.has_value() || !o.versionLabel.empty();
 	if (!o.Active() && needsDriver)
 	{
-		error = "-load, -no-intro, -arg and -session-file need -run or -serve";
+		error = "-load, -no-intro, -arg, -freeze-wall-clock, -version-label and -session-file need -run or -serve";
 		return false;
 	}
 	if (!o.runScript.empty() && !o.serve.empty())
@@ -233,6 +276,8 @@ void PreInit(Options const& o)
 	// JA2_REAL_CLOCK: keep the wall clock (frame-rate measurements in a real window; runs are not reproducible)
 	if (!std::getenv("JA2_REAL_CLOCK")) sgp::Clock::EnableVirtual(std::chrono::duration_cast<std::chrono::nanoseconds>(
 		std::chrono::duration<double, std::milli>(o.frameMs)));
+	if (o.freezeWall) sgp::Clock::FreezeWall(*o.freezeWall);
+	if (!o.versionLabel.empty()) SetVersionLabelOverride(o.versionLabel);
 	TextRegistry::SetEnabled(true);
 }
 

@@ -79,6 +79,12 @@ Flags for the `ja2` binary (any other flag, such as `-res 1280x720` or
 | `-no-intro` | Skip the splash screen and intro videos. |
 | `-frame-ms MS` | Game time per frame (default 16.667). |
 | `-timeout S` | Kill the process after S seconds of wall-clock time. |
+| `-freeze-wall-clock INSTANT` | Pin the **wall** clock (as opposed to `-frame-ms`, which pins game time): seconds since the epoch, or an ISO-8601 UTC instant like `2001-02-03T04:05:06Z`. For the time the UI *shows* — a save's filename, its "Today 19:47" — rather than time the engine measures. A frozen instant is always rendered in UTC, so the machine's timezone cannot change what is printed. |
+| `-version-label TEXT` | The version string the UI shows. The default is the build's, `git rev-parse --short HEAD` included, which is right for a bug report but makes any screen showing it differ per commit. |
+
+The last two exist so a run is reproducible on another machine; see
+[tests/e2e/golden/README.md](../tests/e2e/golden/README.md#why-a-golden-image-is-portable),
+which is what `check_resolution.py` passes them for.
 
 The driver takes over once the game is ready: at the main menu, or in the
 loaded save with `-load`.

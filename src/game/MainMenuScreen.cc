@@ -397,7 +397,7 @@ static void RenderMainMenu(void)
 
 void RenderGameVersion() {
 	SetFontAttributes(FONT10ARIAL, FONT_MCOLOR_WHITE);
-	MPrint(g_ui.m_versionPosition.iX, g_ui.m_versionPosition.iY, ST::format("{}", g_version_label));
+	MPrint(g_ui.m_versionPosition.iX, g_ui.m_versionPosition.iY, ST::format("{}", VersionLabel()));
 }
 
 void RenderCopyright() {
