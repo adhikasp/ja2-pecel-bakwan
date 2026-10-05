@@ -7,10 +7,13 @@
 
 #include "ContentManager.h"
 #include "GameInstance.h"
+#include "AmmoTypeModel.h"
 #include "Item_Types.h"
 #include "ItemModel.h"
 #include "Items.h"
+#include "MagazineModel.h"
 #include "Soldier_Control.h"
+#include "WeaponModels.h"
 
 #include <algorithm>
 #include <cmath>
@@ -193,8 +196,97 @@ namespace
 	}
 }
 
+// The magazine a fixture asked for: either a magazine item's own name
+// ("CLIP556_30_AP") or an ammo type's name ("AMMO_AP"), in which case a magazine of
+// that type for the weapon's own calibre is found. NOTHING when there is nothing by
+// that name, or the weapon has no magazine of that type.
+UINT16 MagazineFor(std::string const& name, UINT16 const gun)
+{
+	// A magazine name resolves as an item; anything else is taken as an ammo type.
+	if (ItemModel const* const item = GCM->items()->optionalByName(ST::string(name)))
+	{
+		return item->asAmmo() ? item->getItemIndex() : NOTHING;
+	}
+
+	WeaponModel const* const weapon = GCM->getWeapon(gun);
+	if (!weapon || !weapon->calibre) return NOTHING;
+
+	auto const* const ammoTypes = GCM->ammoTypes();
+	auto const* const magazines = GCM->magazines();
+	if (!ammoTypes || !magazines) return NOTHING;
+	AmmoTypeModel const* const ammoType = ammoTypes->optionalByName(ST::string(name));
+	if (!ammoType) return NOTHING;
+
+	// Strictly a magazine of this ammo type for this calibre, preferring the weapon's
+	// own magazine size. The game's own finder is lenient and substitutes another
+	// magazine, which would quietly give a fixture the wrong ammunition; here a
+	// weapon with no magazine for the type asked for is a refusal.
+	UINT16 fallback = NOTHING;
+	for (auto const& magazine : *magazines)
+	{
+		MagazineModel const& model = *magazine;
+		if (model.calibre != weapon->calibre) continue;
+		if (!model.ammoType || model.ammoType->index != ammoType->index) continue;
+		if (model.dontUseAsDefaultMagazine) continue;
+		if (model.capacity == weapon->ubMagSize) return model.getItemIndex();
+		if (fallback == NOTHING) fallback = model.getItemIndex();
+	}
+	return fallback;
+}
+
+// An ammo type's internal name ("AMMO_AP"), or "" for an index the content manager
+// does not know. The magazine a weapon is loaded with does not say what it holds --
+// CLIP9_30 and CLIP9_30_AP differ only in the suffix a fixture guessed -- so the
+// pipeline assertions read the type itself.
+std::string AmmoTypeName(UINT8 const index)
+{
+	auto const* const ammoTypes = GCM->ammoTypes();
+	if (!ammoTypes) return std::string();
+	AmmoTypeModel const* const ammoType = ammoTypes->optionalById(index);
+	return ammoType ? ammoType->getInternalName().to_std_string() : std::string();
+}
+
 void ApplyEquipment(SOLDIERTYPE& s, sol::table const& spec, std::vector<std::string>& problems)
 {
+	// The weapon's condition, so a fixture can hand over a neglected gun and watch
+	// the pipeline deal with it (and the lane can assert the wear it caused).
+	sol::object const conditionObj = spec["condition"];
+	int condition;
+	if (AsInt(conditionObj, condition) && s.inv[HANDPOS].usItem != NOTHING)
+	{
+		s.inv[HANDPOS].bStatus[0] = INT8(std::clamp(condition, 1, 100));
+	}
+
+	// The magazine in the gun, by its internal name, or by an ammo type when the
+	// fixture names the type ("AMMO_AP") and lets us find the magazine for the
+	// weapon's calibre and magazine size.
+	sol::object const ammoObj = spec["ammo"];
+	std::string ammoName = ammoObj.is<std::string>() ? ammoObj.as<std::string>() : "";
+	if (ammoObj.is<sol::table>()) ammoName = StrField(ammoObj.as<sol::table>(), "item", "");
+	if (!ammoName.empty())
+	{
+		if (s.inv[HANDPOS].usItem == NOTHING)
+		{
+			problems.push_back(ammoName + ": there is no weapon to load it into");
+		}
+		else
+		{
+			OBJECTTYPE& gun = s.inv[HANDPOS];
+			UINT16 const magazine = MagazineFor(ammoName, gun.usItem);
+			if (magazine == NOTHING)
+			{
+				problems.push_back(ammoName + ": no such magazine, or none for this weapon's calibre");
+			}
+			else
+			{
+				gun.usGunAmmoItem  = magazine;
+				gun.ubGunAmmoType  = GCM->getItem(magazine)->asAmmo()->ammoType->index;
+				gun.ubGunShotsLeft = GCM->getItem(magazine)->asAmmo()->capacity;
+				gun.bGunAmmoStatus = 100;
+			}
+		}
+	}
+
 	// Attachments, keyed by the slot role. They mount on the held gun - or on
 	// the worn armour for the plate and NVG mounts.
 	sol::object const attObj = spec["attachments"];
@@ -312,6 +404,13 @@ sol::table LoadoutTable(sol::state_view L, SOLDIERTYPE const& s)
 	sol::table t = L.create_table();
 	t["weapon"] = ItemName(s.inv[HANDPOS].usItem);
 
+	// What the gun is loaded with and what condition it is in: the two inputs a
+	// pipeline assertion reads back after a lane has been fired.
+	t["ammo"]     = ItemName(s.inv[HANDPOS].usGunAmmoItem);
+	t["ammoType"] = AmmoTypeName(s.inv[HANDPOS].ubGunAmmoType);
+	t["rounds"]   = static_cast<int>(s.inv[HANDPOS].ubGunShotsLeft);
+	t["condition"] = static_cast<int>(s.inv[HANDPOS].bGunStatus);
+
 	// Attachments keyed by slot role: the gun's typed slots, and the plate/NVG
 	// mounts of the worn armour.
 	sol::table atts = L.create_table();
@@ -345,6 +444,21 @@ sol::table LoadoutTable(sol::state_view L, SOLDIERTYPE const& s)
 		}
 	}
 	t["pockets"] = pockets;
+
+	// The armour in the way, by where it is worn, with its condition: the third
+	// input to the damage pipeline, read back the same way as the gun.
+	sol::table armour = L.create_table();
+	auto worn = [&](char const* const where, UINT8 const slot) {
+		if (s.inv[slot].usItem == NOTHING) return;
+		sol::table piece = L.create_table();
+		piece["item"] = ItemName(s.inv[slot].usItem);
+		piece["condition"] = static_cast<int>(s.inv[slot].bStatus[0]);
+		armour[where] = piece;
+	};
+	worn("vest", VESTPOS);
+	worn("helmet", HELMETPOS);
+	worn("legs", LEGPOS);
+	t["armour"] = armour;
 	return t;
 }
 

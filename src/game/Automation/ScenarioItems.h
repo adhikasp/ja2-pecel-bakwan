@@ -55,7 +55,20 @@ namespace Automation::Scenario
 
 	// --- The equipment schema ---------------------------------------------
 
-	/** Typed attachments, worn LBE and pocket contents from a spec table:
+	/** The magazine a fixture asked for, either by a magazine item's own internal
+	 * name ("CLIP556_30_AP") or by an ammo type's name ("AMMO_AP"). Named by type it
+	 * must be a magazine of that type for @a gun's calibre - the closest one to the
+	 * weapon's magazine size, preferring an exact match - never a substitute.
+	 * Returns NOTHING when there is nothing by that name, or the weapon has no
+	 * magazine of that type. */
+	UINT16 MagazineFor(std::string const& name, UINT16 gun);
+
+	/** An ammo type's internal name ("AMMO_AP") from the index a weapon is loaded
+	 * with, or "" when the content manager has no such type. */
+	std::string AmmoTypeName(UINT8 index);
+
+	/** A whole loadout from a spec table: the weapon's `condition`, the `ammo` in
+	 * its magazine well (a magazine name or an ammo type name), typed
 	 * `attachments` keyed by slot role ("optic", "muzzle", "underbarrel",
 	 * "side_rail", "plate", "nvg"), `lbe` keyed by "vest"/"belt"/"pack" and
 	 * `pockets` keyed by "POCK1".."POCK12" (a name or { item = , count = }).
@@ -63,7 +76,8 @@ namespace Automation::Scenario
 	 * `problems` instead of being silently ignored. */
 	void ApplyEquipment(SOLDIERTYPE& s, sol::table const& spec, std::vector<std::string>& problems);
 
-	/** The loadout a soldier carries, as item names: weapon, attachments keyed
-	 * by slot role, worn LBE keyed by kind and pocket contents keyed by pocket. */
+	/** The loadout a soldier carries, as data: weapon with its condition and the
+	 * magazine in it, attachments keyed by slot role, worn LBE keyed by kind,
+	 * pocket contents keyed by pocket, and the armour by where it is worn. */
 	sol::table LoadoutTable(sol::state_view L, SOLDIERTYPE const& s);
 }

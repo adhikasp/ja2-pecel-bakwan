@@ -1,10 +1,13 @@
 #ifndef __WEAPONS_H
 #define __WEAPONS_H
 
+#include "Isometric_Utils.h"
 #include "Item_Types.h"
 #include "JA2Types.h"
+#include "Observable.h"
 
 struct CalibreModel;
+struct SOLDIERTYPE;
 
 
 #define MAXCHANCETOHIT					(gamepolicy(chance_to_hit_maximum))
@@ -133,6 +136,59 @@ enum class FireWeaponResult
 {
 	FAILED, FIRED, FIREABLE, JAMMED, UNJAMMED
 };
+
+/** The first half of one shot: the trigger pull, as the pipeline decided it.
+ * Emitted from UseGun() for every round that leaves the barrel, hit or miss.
+ *
+ * This and ShotImpact are the observation points the equipment e2e fixtures read
+ * the damage pipeline through (issue #263, docs/plan/equipment-revamp.md): a
+ * range lane fires N shots and asserts these fields instead of a screenshot.
+ * Both are plain copies, so a listener can hold them after the shot is over;
+ * the pointers are the live soldiers and stay valid while they are in the
+ * sector. The two events pair up by shooter, in order: the impact follows its
+ * own shot some frames later, and a miss produces no impact at all. */
+struct ShotFired
+{
+	SOLDIERTYPE* shooter    = nullptr;
+	SOLDIERTYPE* target     = nullptr;  // null when there was nobody to shoot at
+	INT16        targetGrid = NOWHERE;
+	INT16        distance   = 0;         // tiles from shooter to target
+	UINT16       weapon     = NOTHING;
+	UINT8        ammoType   = AMMO_REGULAR;
+
+	UINT32       chanceToHit = 0;        // the chance the roll was taken against
+	UINT32       roll        = 0;        // PreRandom(100), the roll itself
+	BOOLEAN      hit         = FALSE;    // the roll connected
+
+	UINT8        noiseVolume = 0;        // what MakeNoise() was told, 0 when silent
+	INT8         gunConditionBefore = 0; // the weapon's condition, before and after wear
+	INT8         gunConditionAfter  = 0;
+};
+
+/** Fired once per round that leaves the barrel. See ShotFired. */
+extern Observable<ShotFired const&> OnShotFired;
+
+/** The second half of one shot: the round arriving, as the pipeline resolved it.
+ * Emitted from BulletImpact(), so it exists only for a round that hit somebody.
+ * `penetrated` says armour was in the way and the round got through anyway -
+ * the outcome the ammo and armour tables are read for. */
+struct ShotImpact
+{
+	SOLDIERTYPE* shooter    = nullptr;
+	SOLDIERTYPE* target     = nullptr;
+	INT16        targetGrid = NOWHERE;
+	INT16        distance   = 0;
+	UINT8        ammoType   = AMMO_REGULAR;
+	UINT8        hitLocation = 0;        // AIM_SHOT_*, where it landed
+
+	INT32        impactBeforeArmour = 0; // the damage the round wanted to do
+	INT32        armourProtection   = 0; // what the armour in the way absorbed
+	INT32        impactAfterArmour  = 0; // what got through, after every adjustment
+	BOOLEAN      penetrated    = FALSE;  // armour was in the way and the round got through
+};
+
+/** Fired once per round that hits somebody. See ShotImpact. */
+extern Observable<ShotImpact const&> OnShotImpact;
 
 //GLOBALS
 
