@@ -67,7 +67,7 @@ enum class AmmoType : uint8_t
 /** The armour tiers. `Unarmoured` is the tier nothing protects with, and it is
  *  a real row so "no armour" is a case of the table rather than a special case
  *  beside it. */
-enum class ArmorTier : uint8_t
+enum class ArmourTier : uint8_t
 {
 	Unarmoured,
 	Soft,
@@ -75,7 +75,7 @@ enum class ArmorTier : uint8_t
 };
 
 constexpr int NUM_AMMO_TYPES = 4;
-constexpr int NUM_ARMOR_TIERS = 3;
+constexpr int NUM_ARMOUR_TIERS = 3;
 
 /** A weapon platform, as the pipeline needs it. Content (#100) fills these in;
  *  the pipeline only reads them. */
@@ -102,9 +102,9 @@ struct AmmoProfile
 /** One armour tier's numbers. `threshold` is the penetration power a round
  *  needs to get through; `degradePercent` is the share of what it absorbed
  *  that comes off the armour's condition. */
-struct ArmorProfile
+struct ArmourProfile
 {
-	ArmorTier tier            = ArmorTier::Unarmoured;
+	ArmourTier tier            = ArmourTier::Unarmoured;
 	int16_t   protection      = 0; // damage it soaks at full condition
 	int16_t   threshold       = 0; // penetration power needed to get through
 	int16_t   degradePercent  = 0; // condition lost per point of damage absorbed
@@ -122,7 +122,7 @@ struct ArmorProfile
  *  - `bluntPercent` is the share of a *stopped* round's damage that still lands
  *    as bruising, scaled by how close the round came to the threshold. Zero for
  *    a plate: nothing bruises, or it is not a plate. */
-struct AmmoVersusArmor
+struct AmmoVersusArmour
 {
 	int16_t absorbPercent;
 	int16_t fleshPercent;
@@ -148,11 +148,11 @@ struct ShotInput
 {
 	WeaponProfile weapon;
 	AmmoProfile   ammo;
-	ArmorProfile  armor;
+	ArmourProfile  armour;
 
 	int16_t distance          = 8;  // tiles from the shooter to the target
 	int16_t weaponCondition   = 100; // 0..100
-	int16_t armorCondition    = 100; // 0..100, plate wear
+	int16_t armourCondition    = 100; // 0..100, plate wear
 	int16_t aimChance         = 70; // the shooter's chance before the equipment's share
 	uint8_t roll              = 0;  // the only random value in a shot, 0..99
 };
@@ -175,11 +175,11 @@ struct ShotResult
 	int16_t residual    = 0; // penetration - threshold: how far past, or short
 
 	int16_t wear        = 0; // condition points the shot cost the weapon
-	int16_t armorWear   = 0; // condition points the round cost the armour
+	int16_t armourWear   = 0; // condition points the round cost the armour
 	int16_t noise       = 0; // muzzle noise volume
 
 	int16_t weaponConditionAfter = 0;
-	int16_t armorConditionAfter  = 0;
+	int16_t armourConditionAfter  = 0;
 };
 
 /** Leaf tunables. The rules are compiled and fixed; only these move, and they
@@ -197,19 +197,19 @@ ShotResult ResolveShot(const ShotInput& in, const PipelineToggles& toggles = Pip
 
 /** The counter for one ammo type against one armour tier. The whole table,
  *  read one cell at a time. */
-AmmoVersusArmor CounterFor(AmmoType ammo, ArmorTier tier);
+AmmoVersusArmour CounterFor(AmmoType ammo, ArmourTier tier);
 
 /** The compiled ammunition table (#97 fills in the calibers and magazines;
  *  these four rows are the type-to-type relationships the pipeline needs). */
 AmmoProfile AmmoProfileFor(AmmoType type);
 
 /** The compiled armour tiers (#101 curates the items; these are the tiers). */
-ArmorProfile ArmorProfileFor(ArmorTier tier);
+ArmourProfile ArmourProfileFor(ArmourTier tier);
 
 /** Every ammo type and every tier, in table order, for a test that walks the
  *  whole matrix. */
 const AmmoType* AllAmmoTypes(size_t& count);
-const ArmorTier* AllArmorTiers(size_t& count);
+const ArmourTier* AllArmourTiers(size_t& count);
 
 /** Leaf tunables as the game policy carries them. Named apart from the other
  *  `TogglesFrom` in this namespace (the slot policy has one too) so a caller
@@ -217,7 +217,7 @@ const ArmorTier* AllArmorTiers(size_t& count);
 PipelineToggles PipelineTogglesFrom(const GamePolicy* policy);
 
 const char* Describe(AmmoType ammo);
-const char* Describe(ArmorTier tier);
+const char* Describe(ArmourTier tier);
 const char* Describe(ShotOutcome outcome);
 
 } // namespace Equipment

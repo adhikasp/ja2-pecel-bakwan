@@ -16,15 +16,15 @@ namespace
 	// diff in one readable block.
 	const WeaponProfile RIFLE{ 40, 50, 12, 50, 2 };
 
-	ShotInput Shot(AmmoType ammo, ArmorTier tier)
+	ShotInput Shot(AmmoType ammo, ArmourTier tier)
 	{
 		ShotInput in;
 		in.weapon           = RIFLE;
 		in.ammo             = AmmoProfileFor(ammo);
-		in.armor            = ArmorProfileFor(tier);
+		in.armour            = ArmourProfileFor(tier);
 		in.distance         = 8;
 		in.weaponCondition  = 100;
-		in.armorCondition   = 100;
+		in.armourCondition   = 100;
 		in.aimChance        = 70;
 		in.roll             = 0; // the lowest roll: measure the shot, not the roll
 		return in;
@@ -39,19 +39,19 @@ namespace
 		char line[256];
 		size_t ammoCount = 0, tierCount = 0;
 		const AmmoType*  ammoTypes  = AllAmmoTypes(ammoCount);
-		const ArmorTier* armorTiers = AllArmorTiers(tierCount);
+		const ArmourTier* ArmourTiers = AllArmourTiers(tierCount);
 		for (size_t a = 0; a < ammoCount; ++a)
 		{
 			for (size_t t = 0; t < tierCount; ++t)
 			{
-				ShotResult const r = ResolveShot(Shot(ammoTypes[a], armorTiers[t]));
+				ShotResult const r = ResolveShot(Shot(ammoTypes[a], ArmourTiers[t]));
 				snprintf(line, sizeof(line),
 					"%-11s %-12s chance %3d  impact %3d  absorbed %3d  damage %3d  "
 					"pen %3d  threshold %3d  residual %4d  wear %2d  armour %2d  noise %3d  %s\n",
-					Describe(ammoTypes[a]), Describe(armorTiers[t]),
+					Describe(ammoTypes[a]), Describe(ArmourTiers[t]),
 					int(r.chanceToHit), int(r.impact), int(r.absorbed), int(r.damage),
 					int(r.penetration), int(r.threshold), int(r.residual),
-					int(r.wear), int(r.armorWear), int(r.noise), Describe(r.outcome));
+					int(r.wear), int(r.armourWear), int(r.noise), Describe(r.outcome));
 				out += line;
 			}
 		}
@@ -72,7 +72,7 @@ namespace
 		{ 70, 95, 20, 90, 3 }, // machine gun
 	};
 
-	struct Cell { AmmoType ammo; ArmorTier tier; int distance; int weaponCond; int armorCond; };
+	struct Cell { AmmoType ammo; ArmourTier tier; int distance; int weaponCond; int armourCond; };
 
 	std::vector<Cell> EveryCell()
 	{
@@ -82,7 +82,7 @@ namespace
 		static const int ARMOUR[]      = { 1, 25, 50, 75, 100 };
 		size_t ammoCount = 0, tierCount = 0;
 		const AmmoType*  ammoTypes  = AllAmmoTypes(ammoCount);
-		const ArmorTier* armorTiers = AllArmorTiers(tierCount);
+		const ArmourTier* ArmourTiers = AllArmourTiers(tierCount);
 		for (size_t a = 0; a < ammoCount; ++a)
 		{
 			for (size_t t = 0; t < tierCount; ++t)
@@ -93,7 +93,7 @@ namespace
 					{
 						for (int ac : ARMOUR)
 						{
-							cells.push_back({ ammoTypes[a], armorTiers[t], d, c, ac });
+							cells.push_back({ ammoTypes[a], ArmourTiers[t], d, c, ac });
 						}
 					}
 				}
@@ -107,10 +107,10 @@ namespace
 		ShotInput in;
 		in.weapon          = weapon;
 		in.ammo            = AmmoProfileFor(cell.ammo);
-		in.armor           = ArmorProfileFor(cell.tier);
+		in.armour           = ArmourProfileFor(cell.tier);
 		in.distance        = cell.distance;
 		in.weaponCondition = cell.weaponCond;
-		in.armorCondition  = cell.armorCond;
+		in.armourCondition  = cell.armourCond;
 		in.aimChance       = 70;
 		in.roll            = 0;
 		return ResolveShot(in);
@@ -120,7 +120,7 @@ namespace
 	{
 		return std::string(Describe(c.ammo)) + " vs " + Describe(c.tier)
 			+ " at " + std::to_string(c.distance) + " tiles, weapon " + std::to_string(c.weaponCond)
-			+ ", armour " + std::to_string(c.armorCond);
+			+ ", armour " + std::to_string(c.armourCond);
 	}
 }
 
@@ -152,9 +152,9 @@ TEST(DamagePipeline, hollowPointIsTheCounterForTheUnarmoured)
 {
 	// The unarmoured target: hollow point does the most damage, and ball is the
 	// middle. This is the whole reason hollow point exists.
-	ShotResult const hp   = ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Unarmoured));
-	ShotResult const ball = ResolveShot(Shot(AmmoType::Ball,        ArmorTier::Unarmoured));
-	ShotResult const ap   = ResolveShot(Shot(AmmoType::Piercing,    ArmorTier::Unarmoured));
+	ShotResult const hp   = ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Unarmoured));
+	ShotResult const ball = ResolveShot(Shot(AmmoType::Ball,        ArmourTier::Unarmoured));
+	ShotResult const ap   = ResolveShot(Shot(AmmoType::Piercing,    ArmourTier::Unarmoured));
 	EXPECT_GT(hp.damage, ball.damage);
 	EXPECT_GT(hp.damage, ap.damage);
 	EXPECT_GT(ball.damage, ap.damage);
@@ -165,7 +165,7 @@ TEST(DamagePipeline, piercingIsTheCounterForArmour)
 	// Both tiers: against armour the armour absorbs less of a piercing round, so
 	// more of it arrives. The e2e fixtures assert the same relation through the
 	// real game; this asserts it in the table the real game reads.
-	for (ArmorTier tier : { ArmorTier::Soft, ArmorTier::Plate })
+	for (ArmourTier tier : { ArmourTier::Soft, ArmourTier::Plate })
 	{
 		ShotResult const ap   = ResolveShot(Shot(AmmoType::Piercing, tier));
 		ShotResult const ball = ResolveShot(Shot(AmmoType::Ball,    tier));
@@ -181,17 +181,17 @@ TEST(DamagePipeline, piercingUnderperformsOnFlesh)
 {
 	// The price of the counter: a piercing round carries a hard core, and a hard
 	// core does less to a man than a bullet designed to mushroom.
-	ShotResult const ap   = ResolveShot(Shot(AmmoType::Piercing,    ArmorTier::Unarmoured));
-	ShotResult const ball = ResolveShot(Shot(AmmoType::Ball,        ArmorTier::Unarmoured));
+	ShotResult const ap   = ResolveShot(Shot(AmmoType::Piercing,    ArmourTier::Unarmoured));
+	ShotResult const ball = ResolveShot(Shot(AmmoType::Ball,        ArmourTier::Unarmoured));
 	EXPECT_LT(ap.damage, ball.damage);
-	EXPECT_LT(ap.damage, ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Unarmoured)).damage);
+	EXPECT_LT(ap.damage, ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Unarmoured)).damage);
 }
 
 TEST(DamagePipeline, hollowPointIsStoppedByAPlate)
 {
 	// The hard version of the hollow-point mistake: against a plate it gets
 	// nothing through at all, where ball is also stopped but piercing is not.
-	ShotResult const hp = ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Plate));
+	ShotResult const hp = ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Plate));
 	EXPECT_EQ(hp.outcome, ShotOutcome::Stopped);
 	EXPECT_EQ(hp.damage, 0);
 	// It is stopped by the plate, not by a lack of trying: the round arrived.
@@ -201,14 +201,14 @@ TEST(DamagePipeline, hollowPointIsStoppedByAPlate)
 
 TEST(DamagePipeline, subsonicBuysQuietWithRangeAndDamage)
 {
-	ShotResult const quiet = ResolveShot(Shot(AmmoType::Subsonic, ArmorTier::Unarmoured));
-	ShotResult const ball  = ResolveShot(Shot(AmmoType::Ball,     ArmorTier::Unarmoured));
+	ShotResult const quiet = ResolveShot(Shot(AmmoType::Subsonic, ArmourTier::Unarmoured));
+	ShotResult const ball  = ResolveShot(Shot(AmmoType::Ball,     ArmourTier::Unarmoured));
 	EXPECT_LT(quiet.noise, ball.noise / 2);
 	EXPECT_LT(quiet.damage, ball.damage);
 	// And the range it pays for it with is the effective range, not the muzzle
 	// report: at twenty tiles a subsonic round has less left than at eight.
-	ShotInput far  = Shot(AmmoType::Subsonic, ArmorTier::Unarmoured);
-	ShotInput near = Shot(AmmoType::Subsonic, ArmorTier::Unarmoured);
+	ShotInput far  = Shot(AmmoType::Subsonic, ArmourTier::Unarmoured);
+	ShotInput near = Shot(AmmoType::Subsonic, ArmourTier::Unarmoured);
 	far.distance  = 20;
 	near.distance = 8;
 	EXPECT_LT(ResolveShot(far).impact, ResolveShot(near).impact);
@@ -222,19 +222,19 @@ TEST(DamagePipeline, everyStrengthHasACounterAndEveryCounterIsPaidFor)
 	// something and the worst answer to something else, in the table itself.
 	// The best answer at each tier: hollow point owns the unarmoured, piercing
 	// owns both tiers of armour.
-	EXPECT_GT(ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Unarmoured)).damage,
-	          ResolveShot(Shot(AmmoType::Piercing,     ArmorTier::Unarmoured)).damage);
-	EXPECT_GT(ResolveShot(Shot(AmmoType::Piercing, ArmorTier::Plate)).damage,
-	          ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Plate)).damage);
-	EXPECT_GT(ResolveShot(Shot(AmmoType::Piercing, ArmorTier::Soft)).damage,
-	          ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Soft)).damage);
+	EXPECT_GT(ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Unarmoured)).damage,
+	          ResolveShot(Shot(AmmoType::Piercing,     ArmourTier::Unarmoured)).damage);
+	EXPECT_GT(ResolveShot(Shot(AmmoType::Piercing, ArmourTier::Plate)).damage,
+	          ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Plate)).damage);
+	EXPECT_GT(ResolveShot(Shot(AmmoType::Piercing, ArmourTier::Soft)).damage,
+	          ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Soft)).damage);
 	// And every type's row of the counter table differs from ball's, or it is
 	// the baseline wearing a different name and the type is not a type. The
 	// unarmoured cell is the same by design (100% of the round to bare flesh
 	// for everyone); the comparison is per row, not per cell.
 	size_t ammoCount = 0, tierCount = 0;
 	AllAmmoTypes(ammoCount);
-	AllArmorTiers(tierCount);
+	AllArmourTiers(tierCount);
 	for (size_t a = 0; a < ammoCount; ++a)
 	{
 		AmmoType const ammo = static_cast<AmmoType>(a);
@@ -242,8 +242,8 @@ TEST(DamagePipeline, everyStrengthHasACounterAndEveryCounterIsPaidFor)
 		bool rowDiffers = false;
 		for (size_t t = 0; t < tierCount; ++t)
 		{
-			AmmoVersusArmor const cell = CounterFor(ammo, static_cast<ArmorTier>(t));
-			AmmoVersusArmor const base = CounterFor(AmmoType::Ball, static_cast<ArmorTier>(t));
+			AmmoVersusArmour const cell = CounterFor(ammo, static_cast<ArmourTier>(t));
+			AmmoVersusArmour const base = CounterFor(AmmoType::Ball, static_cast<ArmourTier>(t));
 			rowDiffers = rowDiffers
 				|| cell.absorbPercent != base.absorbPercent
 				|| cell.fleshPercent  != base.fleshPercent
@@ -271,17 +271,17 @@ TEST(DamagePipeline, piercingIsNeverWorseThanBallAgainstArmour)
 	{
 		for (const Cell& cell : EveryCell())
 		{
-			if (cell.tier == ArmorTier::Unarmoured) continue;
+			if (cell.tier == ArmourTier::Unarmoured) continue;
 			// A tier at nothing of its condition left is not armour any more;
 			// the invariant is about armour that is actually in the way.
-			if (ArmorProfileFor(cell.tier).threshold * cell.armorCond / 100 == 0) continue;
-			Cell const ball = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armorCond };
-			Cell const ap   = { AmmoType::Piercing, cell.tier, cell.distance, cell.weaponCond, cell.armorCond };
+			if (ArmourProfileFor(cell.tier).threshold * cell.armourCond / 100 == 0) continue;
+			Cell const ball = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armourCond };
+			Cell const ap   = { AmmoType::Piercing, cell.tier, cell.distance, cell.weaponCond, cell.armourCond };
 			ShotResult const apShot   = Resolve(ap, weapon);
 			ShotResult const ballShot = Resolve(ball, weapon);
 			EXPECT_LE(apShot.absorbed, ballShot.absorbed) << Where(cell);
 			EXPECT_GE(apShot.penetration, ballShot.penetration) << Where(cell);
-			if (cell.armorCond == 100)
+			if (cell.armourCond == 100)
 			{
 				EXPECT_GE(apShot.damage, ballShot.damage)
 					<< Where(cell) << ", " << weapon.damage << " damage platform";
@@ -297,10 +297,10 @@ TEST(DamagePipeline, hollowPointAbsorbsMoreThanBallAgainstArmour)
 	// worst of the three.
 	for (const Cell& cell : EveryCell())
 	{
-		if (cell.tier == ArmorTier::Unarmoured) continue;
-		if (ArmorProfileFor(cell.tier).threshold * cell.armorCond / 100 == 0) continue;
-		Cell const ball = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armorCond };
-		Cell const hp   = { AmmoType::HollowPoint, cell.tier, cell.distance, cell.weaponCond, cell.armorCond };
+		if (cell.tier == ArmourTier::Unarmoured) continue;
+		if (ArmourProfileFor(cell.tier).threshold * cell.armourCond / 100 == 0) continue;
+		Cell const ball = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armourCond };
+		Cell const hp   = { AmmoType::HollowPoint, cell.tier, cell.distance, cell.weaponCond, cell.armourCond };
 		ShotResult const hpShot   = Resolve(hp);
 		ShotResult const ballShot = Resolve(ball);
 		EXPECT_GE(hpShot.absorbed, ballShot.absorbed) << Where(cell);
@@ -314,9 +314,9 @@ TEST(DamagePipeline, hollowPointIsNeverBetterThanBallAgainstAPlate)
 	{
 		for (const Cell& cell : EveryCell())
 		{
-			if (cell.ammo != AmmoType::HollowPoint || cell.tier != ArmorTier::Plate) continue;
-			if (ArmorProfileFor(cell.tier).threshold * cell.armorCond / 100 == 0) continue;
-			Cell const baseline = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armorCond };
+			if (cell.ammo != AmmoType::HollowPoint || cell.tier != ArmourTier::Plate) continue;
+			if (ArmourProfileFor(cell.tier).threshold * cell.armourCond / 100 == 0) continue;
+			Cell const baseline = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armourCond };
 			EXPECT_LE(Resolve(cell, weapon).damage, Resolve(baseline, weapon).damage)
 				<< Where(cell) << ", " << weapon.damage << " damage platform";
 		}
@@ -329,8 +329,8 @@ TEST(DamagePipeline, hollowPointIsNeverWorseThanBallAgainstTheUnarmoured)
 	{
 		for (const Cell& cell : EveryCell())
 		{
-			if (cell.ammo != AmmoType::HollowPoint || cell.tier != ArmorTier::Unarmoured) continue;
-			Cell const baseline = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armorCond };
+			if (cell.ammo != AmmoType::HollowPoint || cell.tier != ArmourTier::Unarmoured) continue;
+			Cell const baseline = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armourCond };
 			EXPECT_GE(Resolve(cell, weapon).damage, Resolve(baseline, weapon).damage)
 				<< Where(cell) << ", " << weapon.damage << " damage platform";
 		}
@@ -343,8 +343,8 @@ TEST(DamagePipeline, piercingIsNeverBetterThanBallAgainstTheUnarmoured)
 	{
 		for (const Cell& cell : EveryCell())
 		{
-			if (cell.ammo != AmmoType::Piercing || cell.tier != ArmorTier::Unarmoured) continue;
-			Cell const baseline = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armorCond };
+			if (cell.ammo != AmmoType::Piercing || cell.tier != ArmourTier::Unarmoured) continue;
+			Cell const baseline = { AmmoType::Ball, cell.tier, cell.distance, cell.weaponCond, cell.armourCond };
 			EXPECT_LE(Resolve(cell, weapon).damage, Resolve(baseline, weapon).damage)
 				<< Where(cell) << ", " << weapon.damage << " damage platform";
 		}
@@ -371,13 +371,13 @@ TEST(DamagePipeline, moreArmourNeverHelpsTheTarget)
 					in.ammo            = AmmoProfileFor(ammoTypes[a]);
 					in.distance        = d;
 					in.weaponCondition = c;
-					in.armorCondition  = 100;
+					in.armourCondition  = 100;
 					in.roll            = 0;
-					in.armor.tier      = ArmorTier::Unarmoured;
+					in.armour.tier      = ArmourTier::Unarmoured;
 					int16_t const open = ResolveShot(in).damage;
-					in.armor = ArmorProfileFor(ArmorTier::Soft);
+					in.armour = ArmourProfileFor(ArmourTier::Soft);
 					int16_t const soft = ResolveShot(in).damage;
-					in.armor = ArmorProfileFor(ArmorTier::Plate);
+					in.armour = ArmourProfileFor(ArmourTier::Plate);
 					int16_t const plate = ResolveShot(in).damage;
 					// Armour helps the man wearing it, so more of it can only ever
 					// mean less damage reaching him. A pipeline where putting on a
@@ -394,8 +394,8 @@ TEST(DamagePipeline, moreArmourNeverHelpsTheTarget)
 
 TEST(DamagePipeline, rangeCostsDamageAndTheChanceToHit)
 {
-	ShotInput near = Shot(AmmoType::Ball, ArmorTier::Unarmoured);
-	ShotInput far  = Shot(AmmoType::Ball, ArmorTier::Unarmoured);
+	ShotInput near = Shot(AmmoType::Ball, ArmourTier::Unarmoured);
+	ShotInput far  = Shot(AmmoType::Ball, ArmourTier::Unarmoured);
 	far.distance = 30;
 	ShotResult const close = ResolveShot(near);
 	ShotResult const distant = ResolveShot(far);
@@ -411,7 +411,7 @@ TEST(DamagePipeline, rangeFallsOffAtTheWeaponsEffectiveRangeNotTheAmmoReport)
 	// The subsonic round's shorter range is its own, applied to the weapon's: at
 	// nine tiles the rifle has all of its range left and the subsonic round does
 	// not, because 12 tiles of rifle is 7.8 tiles of subsonic.
-	ShotInput in = Shot(AmmoType::Subsonic, ArmorTier::Unarmoured);
+	ShotInput in = Shot(AmmoType::Subsonic, ArmourTier::Unarmoured);
 	in.distance = 9;
 	ShotResult const quiet = ResolveShot(in);
 	in.ammo = AmmoProfileFor(AmmoType::Ball);
@@ -422,7 +422,7 @@ TEST(DamagePipeline, rangeFallsOffAtTheWeaponsEffectiveRangeNotTheAmmoReport)
 
 TEST(DamagePipeline, aWornWeaponDeliversLessAndCostsMore)
 {
-	ShotInput fresh = Shot(AmmoType::Ball, ArmorTier::Unarmoured);
+	ShotInput fresh = Shot(AmmoType::Ball, ArmourTier::Unarmoured);
 	fresh.weaponCondition = 100;
 	ShotInput worn = fresh;
 	worn.weaponCondition = 20;
@@ -444,10 +444,10 @@ TEST(DamagePipeline, wornArmourProtectsLessAndIsEasierToPunchThrough)
 	// same range through a plate that has been shot at: the chewed plate asks
 	// less, soaks less and lets it through. This is why shooting somebody's
 	// armour is a way to win a fight.
-	ShotInput intact = Shot(AmmoType::HollowPoint, ArmorTier::Plate);
-	intact.armorCondition = 100;
+	ShotInput intact = Shot(AmmoType::HollowPoint, ArmourTier::Plate);
+	intact.armourCondition = 100;
 	ShotInput chewed = intact;
-	chewed.armorCondition = 20;
+	chewed.armourCondition = 20;
 	ShotResult const whole = ResolveShot(intact);
 	ShotResult const battered = ResolveShot(chewed);
 	EXPECT_GT(whole.absorbed, battered.absorbed);
@@ -455,17 +455,17 @@ TEST(DamagePipeline, wornArmourProtectsLessAndIsEasierToPunchThrough)
 	EXPECT_EQ(whole.outcome, ShotOutcome::Stopped);
 	EXPECT_EQ(whole.damage, 0);
 	EXPECT_GT(battered.damage, 0);
-	EXPECT_EQ(battered.armorConditionAfter, 20 - battered.armorWear);
+	EXPECT_EQ(battered.armourConditionAfter, 20 - battered.armourWear);
 }
 
 TEST(DamagePipeline, armourDegradesByWhatItAbsorbed)
 {
 	// The wear on armour is what it stopped, at the tier's own rate, so a plate
 	// degrades faster than a vest and a round that gets stopped does the most.
-	ShotResult const stopped = ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Plate));
-	ShotResult const open    = ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Unarmoured));
-	EXPECT_GT(stopped.armorWear, open.armorWear);
-	EXPECT_EQ(stopped.armorWear, stopped.absorbed * ArmorProfileFor(ArmorTier::Plate).degradePercent / 100);
+	ShotResult const stopped = ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Plate));
+	ShotResult const open    = ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Unarmoured));
+	EXPECT_GT(stopped.armourWear, open.armourWear);
+	EXPECT_EQ(stopped.armourWear, stopped.absorbed * ArmourProfileFor(ArmourTier::Plate).degradePercent / 100);
 }
 
 TEST(DamagePipeline, aMissCostsTheShotButNotTheDamage)
@@ -473,7 +473,7 @@ TEST(DamagePipeline, aMissCostsTheShotButNotTheDamage)
 	// The roll is a separate decision from what the round does: a miss still
 	// leaves the barrel, so it still makes noise and still wears the gun, it
 	// just does no harm.
-	ShotInput in = Shot(AmmoType::Ball, ArmorTier::Soft);
+	ShotInput in = Shot(AmmoType::Ball, ArmourTier::Soft);
 	in.roll = 99;
 	ShotResult const missed = ResolveShot(in);
 	EXPECT_FALSE(missed.hit);
@@ -497,7 +497,7 @@ TEST(DamagePipeline, theResolutionIsPure)
 	// The property the whole track's testability rests on: the same loadout, the
 	// same range, the same roll resolves the same shot. No globals, no game
 	// state, no hidden dice.
-	ShotInput const in = Shot(AmmoType::Piercing, ArmorTier::Plate);
+	ShotInput const in = Shot(AmmoType::Piercing, ArmourTier::Plate);
 	ShotResult const first = ResolveShot(in);
 	for (int i = 0; i < 16; ++i)
 	{
@@ -513,10 +513,10 @@ TEST(DamagePipeline, theResolutionIsPure)
 		EXPECT_EQ(again.threshold, first.threshold);
 		EXPECT_EQ(again.residual, first.residual);
 		EXPECT_EQ(again.wear, first.wear);
-		EXPECT_EQ(again.armorWear, first.armorWear);
+		EXPECT_EQ(again.armourWear, first.armourWear);
 		EXPECT_EQ(again.noise, first.noise);
 		EXPECT_EQ(again.weaponConditionAfter, first.weaponConditionAfter);
-		EXPECT_EQ(again.armorConditionAfter, first.armorConditionAfter);
+		EXPECT_EQ(again.armourConditionAfter, first.armourConditionAfter);
 	}
 }
 
@@ -527,8 +527,8 @@ TEST(DamagePipeline, thereIsNoRicochet)
 	// results and nothing else, so a round either gets through or it does not.
 	// Named here rather than left to be inferred from arithmetic, because the
 	// rest of the track reads these names.
-	ShotResult const penetrated = ResolveShot(Shot(AmmoType::Piercing, ArmorTier::Plate));
-	ShotResult const stopped    = ResolveShot(Shot(AmmoType::HollowPoint, ArmorTier::Plate));
+	ShotResult const penetrated = ResolveShot(Shot(AmmoType::Piercing, ArmourTier::Plate));
+	ShotResult const stopped    = ResolveShot(Shot(AmmoType::HollowPoint, ArmourTier::Plate));
 	EXPECT_EQ(penetrated.outcome, ShotOutcome::Penetrated);
 	EXPECT_EQ(stopped.outcome, ShotOutcome::Stopped);
 	// Every outcome is named, and no two names collide: the track reads these
@@ -560,7 +560,7 @@ TEST(DamagePipeline, aStoppedRoundCanStillBruise)
 	// impact still hurt. A round that came close to the threshold bruises; one
 	// that never had a chance does not, and that difference is the tier's
 	// `bluntPercent` read as a number.
-	ShotInput near = Shot(AmmoType::HollowPoint, ArmorTier::Soft);
+	ShotInput near = Shot(AmmoType::HollowPoint, ArmourTier::Soft);
 	near.weapon.penetration = 29;  // 29 x 60% = 17: just under the vest's 18
 	ShotInput far = near;
 	far.weapon.penetration = 5;    // nowhere near it
@@ -582,14 +582,14 @@ TEST(DamagePipeline, aPlateNeverBruses)
 {
 	// Nothing bruised through a plate, or it is not a plate. A vest is the tier
 	// that bruises, and that is the difference between the two.
-	ShotInput near = Shot(AmmoType::HollowPoint, ArmorTier::Soft);
+	ShotInput near = Shot(AmmoType::HollowPoint, ArmourTier::Soft);
 	near.weapon.penetration = 29; // 29 x 60% = 17, just under the vest's 18
-	ShotInput plate = Shot(AmmoType::HollowPoint, ArmorTier::Plate);
+	ShotInput plate = Shot(AmmoType::HollowPoint, ArmourTier::Plate);
 	plate.weapon.penetration = 90; // 90 x 60% = 54, just under the plate's 55
 	EXPECT_EQ(ResolveShot(near).outcome, ShotOutcome::BluntTrauma);
 	EXPECT_EQ(ResolveShot(plate).outcome, ShotOutcome::Stopped);
-	EXPECT_EQ(CounterFor(AmmoType::HollowPoint, ArmorTier::Plate).bluntPercent, 0);
-	EXPECT_GT(CounterFor(AmmoType::HollowPoint, ArmorTier::Soft).bluntPercent, 0);
+	EXPECT_EQ(CounterFor(AmmoType::HollowPoint, ArmourTier::Plate).bluntPercent, 0);
+	EXPECT_GT(CounterFor(AmmoType::HollowPoint, ArmourTier::Soft).bluntPercent, 0);
 }
 
 // --- the residual, and the number a player reads ----------------------------
@@ -601,9 +601,9 @@ TEST(DamagePipeline, surplusPenetrationIsANumberThePlayerCanRead)
 	// it. It is reported, not banked as damage - the armour's subtraction is the
 	// whole of what the round loses, which is what keeps more armour from ever
 	// being worse.
-	ShotInput barely = Shot(AmmoType::Ball, ArmorTier::Soft);
+	ShotInput barely = Shot(AmmoType::Ball, ArmourTier::Soft);
 	barely.weapon.penetration = 19; // threshold 18: one point of surplus
-	ShotInput plenty = Shot(AmmoType::Ball, ArmorTier::Soft);
+	ShotInput plenty = Shot(AmmoType::Ball, ArmourTier::Soft);
 	plenty.weapon.penetration = 45;
 	ShotResult const grazed  = ResolveShot(barely);
 	ShotResult const through = ResolveShot(plenty);
@@ -622,16 +622,16 @@ TEST(DamagePipeline, aDestroyedLayerIsNoLayerAtAll)
 	// vest is exactly no vest rather than a vest that changes which round is
 	// best by existing. This is the one place the counter table is chosen by
 	// condition as well as tier.
-	ShotInput bare   = Shot(AmmoType::HollowPoint, ArmorTier::Unarmoured);
-	ShotInput ruined = Shot(AmmoType::HollowPoint, ArmorTier::Soft);
-	ruined.armorCondition = 0;
+	ShotInput bare   = Shot(AmmoType::HollowPoint, ArmourTier::Unarmoured);
+	ShotInput ruined = Shot(AmmoType::HollowPoint, ArmourTier::Soft);
+	ruined.armourCondition = 0;
 	ShotResult const open  = ResolveShot(bare);
 	ShotResult const gone  = ResolveShot(ruined);
 	EXPECT_EQ(gone.outcome, ShotOutcome::Unopposed);
 	EXPECT_EQ(gone.damage, open.damage);
 	EXPECT_EQ(gone.absorbed, 0);
 	EXPECT_EQ(gone.threshold, 0);
-	EXPECT_EQ(gone.armorWear, 0);
+	EXPECT_EQ(gone.armourWear, 0);
 }
 
 TEST(DamagePipeline, theReadoutHasEverythingAPlayerNeedsBeforeCommitting)
@@ -639,10 +639,10 @@ TEST(DamagePipeline, theReadoutHasEverythingAPlayerNeedsBeforeCommitting)
 	// Track rule 5, "readout before commit": one call, every number the
 	// comparison UI and the AI's target choice read, and none of them needing a
 	// second system to agree with.
-	ShotInput in = Shot(AmmoType::Piercing, ArmorTier::Plate);
+	ShotInput in = Shot(AmmoType::Piercing, ArmourTier::Plate);
 	in.distance = 14;
 	in.weaponCondition = 65;
-	in.armorCondition = 80;
+	in.armourCondition = 80;
 	ShotResult const r = ResolveShot(in);
 	EXPECT_GT(r.chanceToHit, 0);
 	EXPECT_LE(r.chanceToHit, 99);
@@ -653,7 +653,7 @@ TEST(DamagePipeline, theReadoutHasEverythingAPlayerNeedsBeforeCommitting)
 	EXPECT_GT(r.noise, 0);
 	EXPECT_GT(r.wear, 0);
 	EXPECT_EQ(r.weaponConditionAfter, 65 - r.wear);
-	EXPECT_EQ(r.armorConditionAfter, 80 - r.armorWear);
+	EXPECT_EQ(r.armourConditionAfter, 80 - r.armourWear);
 }
 
 // --- the compiled tables, and the toggles -----------------------------------
@@ -664,9 +664,9 @@ TEST(DamagePipeline, theTableIsTotal)
 	// tier has a profile. A hole here is a crash in a firefight, not a fallback.
 	size_t ammoCount = 0, tierCount = 0;
 	const AmmoType*  ammoTypes  = AllAmmoTypes(ammoCount);
-	const ArmorTier* armorTiers = AllArmorTiers(tierCount);
+	const ArmourTier* ArmourTiers = AllArmourTiers(tierCount);
 	ASSERT_EQ(ammoCount, size_t{ NUM_AMMO_TYPES });
-	ASSERT_EQ(tierCount, size_t{ NUM_ARMOR_TIERS });
+	ASSERT_EQ(tierCount, size_t{ NUM_ARMOUR_TIERS });
 	for (size_t a = 0; a < ammoCount; ++a)
 	{
 		AmmoProfile const ammo = AmmoProfileFor(ammoTypes[a]);
@@ -678,16 +678,16 @@ TEST(DamagePipeline, theTableIsTotal)
 		EXPECT_GT(ammo.wearPercent, 0);
 		for (size_t t = 0; t < tierCount; ++t)
 		{
-			AmmoVersusArmor const cell = CounterFor(ammoTypes[a], armorTiers[t]);
-			EXPECT_GE(cell.absorbPercent, 0) << Describe(ammoTypes[a]) << " vs " << Describe(armorTiers[t]);
-			EXPECT_GT(cell.fleshPercent, 0)  << Describe(ammoTypes[a]) << " vs " << Describe(armorTiers[t]);
-			EXPECT_GE(cell.bluntPercent, 0) << Describe(ammoTypes[a]) << " vs " << Describe(armorTiers[t]);
+			AmmoVersusArmour const cell = CounterFor(ammoTypes[a], ArmourTiers[t]);
+			EXPECT_GE(cell.absorbPercent, 0) << Describe(ammoTypes[a]) << " vs " << Describe(ArmourTiers[t]);
+			EXPECT_GT(cell.fleshPercent, 0)  << Describe(ammoTypes[a]) << " vs " << Describe(ArmourTiers[t]);
+			EXPECT_GE(cell.bluntPercent, 0) << Describe(ammoTypes[a]) << " vs " << Describe(ArmourTiers[t]);
 		}
 	}
 	for (size_t t = 0; t < tierCount; ++t)
 	{
-		ArmorProfile const tier = ArmorProfileFor(armorTiers[t]);
-		EXPECT_EQ(tier.tier, armorTiers[t]);
+		ArmourProfile const tier = ArmourProfileFor(ArmourTiers[t]);
+		EXPECT_EQ(tier.tier, ArmourTiers[t]);
 		EXPECT_GE(tier.protection, 0);
 		EXPECT_GE(tier.threshold, 0);
 		EXPECT_GE(tier.degradePercent, 0);
@@ -695,8 +695,8 @@ TEST(DamagePipeline, theTableIsTotal)
 	// Armour gets harder, and a harder tier is not a softer one.
 	for (size_t t = 1; t < tierCount; ++t)
 	{
-		EXPECT_GE(ArmorProfileFor(armorTiers[t]).protection, ArmorProfileFor(armorTiers[t - 1]).protection);
-		EXPECT_GE(ArmorProfileFor(armorTiers[t]).threshold,  ArmorProfileFor(armorTiers[t - 1]).threshold);
+		EXPECT_GE(ArmourProfileFor(ArmourTiers[t]).protection, ArmourProfileFor(ArmourTiers[t - 1]).protection);
+		EXPECT_GE(ArmourProfileFor(ArmourTiers[t]).threshold,  ArmourProfileFor(ArmourTiers[t - 1]).threshold);
 	}
 }
 
@@ -704,7 +704,7 @@ TEST(DamagePipeline, theLeafTunablesOnlyMoveWearAndFalloff)
 {
 	// Track rule 6: the rules are compiled, and only the leaf numbers move. A
 	// toggle that changed what a round did to a body would not be a leaf.
-	ShotInput const in = Shot(AmmoType::Ball, ArmorTier::Soft);
+	ShotInput const in = Shot(AmmoType::Ball, ArmourTier::Soft);
 	PipelineToggles fast;
 	fast.wearRate     = 300;
 	fast.rangeFalloff = 300;

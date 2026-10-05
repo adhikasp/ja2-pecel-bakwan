@@ -120,7 +120,7 @@ implementation answers them:
   vest is exactly no vest.
 
 The counter table is one explicit cell per ammo type per armour tier
-(`AmmoVersusArmor`), with a unit-tested golden table and the invariants: against
+(`AmmoVersusArmour`), with a unit-tested golden table and the invariants: against
 armour, AP always absorbs less and penetrates more than ball (at any armour
 condition) and never does less damage with the armour intact, while never
 beating ball on flesh; HP is never better than ball against a plate and is the

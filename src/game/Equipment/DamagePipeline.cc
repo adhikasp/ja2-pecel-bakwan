@@ -35,12 +35,12 @@ namespace
 	// a plate is protection against a rifle round, until it is shot enough times
 	// that its condition drops. Helmet and leggings are the same tiers at
 	// different coverage (#101 curates the items).
-	const ArmorProfile ARMOR[NUM_ARMOR_TIERS] =
+	const ArmourProfile ARMOUR[NUM_ARMOUR_TIERS] =
 	{
 		// tier            prot  thr  degrade
-		{ ArmorTier::Unarmoured,   0,  0,  0 },
-		{ ArmorTier::Soft,        20, 18,  2 },
-		{ ArmorTier::Plate,       60, 55,  6 },
+		{ ArmourTier::Unarmoured,   0,  0,  0 },
+		{ ArmourTier::Soft,        20, 18,  2 },
+		{ ArmourTier::Plate,       60, 55,  6 },
 	};
 
 	const AmmoType AMMO_ORDER[NUM_AMMO_TYPES] =
@@ -48,18 +48,18 @@ namespace
 		AmmoType::Ball, AmmoType::Piercing, AmmoType::HollowPoint, AmmoType::Subsonic,
 	};
 
-	const ArmorTier ARMOR_ORDER[NUM_ARMOR_TIERS] =
+	const ArmourTier ARMOUR_ORDER[NUM_ARMOUR_TIERS] =
 	{
-		ArmorTier::Unarmoured, ArmorTier::Soft, ArmorTier::Plate,
+		ArmourTier::Unarmoured, ArmourTier::Soft, ArmourTier::Plate,
 	};
 
 	// The counter table: one explicit cell per ammo type per armour tier, as
-	// (absorbPercent, fleshPercent, bluntPercent). See AmmoVersusArmor.
+	// (absorbPercent, fleshPercent, bluntPercent). See AmmoVersusArmour.
 	//
 	// This is the answer to "what is the counter for a plate?" and the reason
 	// the pipeline cannot be four systems: the armour tier and the ammo type do
 	// not have separate rules, they have one cell between them.
-	const AmmoVersusArmor COUNTER[NUM_AMMO_TYPES][NUM_ARMOR_TIERS] =
+	const AmmoVersusArmour COUNTER[NUM_AMMO_TYPES][NUM_ARMOUR_TIERS] =
 	{
 		//                     unarmoured      soft             plate
 		/* ball     */ { {   0, 100,  0 }, { 100,  90, 25 }, { 100, 100,  0 } },
@@ -91,10 +91,10 @@ namespace
 	}
 
 	int16_t Index(AmmoType ammo)  { return static_cast<int16_t>(ammo); }
-	int16_t Index(ArmorTier tier) { return static_cast<int16_t>(tier); }
+	int16_t Index(ArmourTier tier) { return static_cast<int16_t>(tier); }
 }
 
-AmmoVersusArmor CounterFor(AmmoType ammo, ArmorTier tier)
+AmmoVersusArmour CounterFor(AmmoType ammo, ArmourTier tier)
 {
 	return COUNTER[Index(ammo)][Index(tier)];
 }
@@ -104,9 +104,9 @@ AmmoProfile AmmoProfileFor(AmmoType type)
 	return AMMO[Index(type)];
 }
 
-ArmorProfile ArmorProfileFor(ArmorTier tier)
+ArmourProfile ArmourProfileFor(ArmourTier tier)
 {
-	return ARMOR[Index(tier)];
+	return ARMOUR[Index(tier)];
 }
 
 const AmmoType* AllAmmoTypes(size_t& count)
@@ -115,10 +115,10 @@ const AmmoType* AllAmmoTypes(size_t& count)
 	return AMMO_ORDER;
 }
 
-const ArmorTier* AllArmorTiers(size_t& count)
+const ArmourTier* AllArmourTiers(size_t& count)
 {
-	count = NUM_ARMOR_TIERS;
-	return ARMOR_ORDER;
+	count = NUM_ARMOUR_TIERS;
+	return ARMOUR_ORDER;
 }
 
 ShotResult ResolveShot(const ShotInput& in, const PipelineToggles& toggles)
@@ -154,16 +154,16 @@ ShotResult ResolveShot(const ShotInput& in, const PipelineToggles& toggles)
 	// Armour condition enters here and in the threshold below, and nowhere else:
 	// a worn plate both stops less and is easier to get through, which is what
 	// makes shooting somebody's armour a way to win the fight.
-	int16_t const armorFactor = Clamp(in.armorCondition, 0, 100);
+	int16_t const armourFactor = Clamp(in.armourCondition, 0, 100);
 	int16_t const protection  = static_cast<int16_t>(
-		static_cast<int32_t>(in.armor.protection) * armorFactor / 100);
+		static_cast<int32_t>(in.armour.protection) * armourFactor / 100);
 	int16_t const threshold   = static_cast<int16_t>(
-		static_cast<int32_t>(in.armor.threshold) * armorFactor / 100);
+		static_cast<int32_t>(in.armour.threshold) * armourFactor / 100);
 
 	// A tier worn to nothing is not armour any more: read the unarmoured cell, so
 	// a destroyed vest is exactly no vest rather than a vest with odd numbers.
-	AmmoVersusArmor const counter = CounterFor(in.ammo.type,
-		(threshold > 0) ? in.armor.tier : ArmorTier::Unarmoured);
+	AmmoVersusArmour const counter = CounterFor(in.ammo.type,
+		(threshold > 0) ? in.armour.tier : ArmourTier::Unarmoured);
 
 	out.absorbed = std::min(out.impact, static_cast<int16_t>(
 		static_cast<int32_t>(protection) * counter.absorbPercent / 100));
@@ -224,8 +224,8 @@ ShotResult ResolveShot(const ShotInput& in, const PipelineToggles& toggles)
 	out.wear = std::max<int16_t>(0, static_cast<int16_t>(
 		static_cast<int32_t>(in.weapon.wear) * in.ammo.wearPercent * (200 - in.weaponCondition)
 		* toggles.wearRate / 1000000));
-	out.armorWear = static_cast<int16_t>(
-		static_cast<int32_t>(out.absorbed) * in.armor.degradePercent / 100);
+	out.armourWear = static_cast<int16_t>(
+		static_cast<int32_t>(out.absorbed) * in.armour.degradePercent / 100);
 	out.noise     = static_cast<int16_t>(
 		static_cast<int32_t>(in.weapon.noise) * in.ammo.noisePercent / 100);
 
@@ -248,7 +248,7 @@ ShotResult ResolveShot(const ShotInput& in, const PipelineToggles& toggles)
 	}
 
 	out.weaponConditionAfter = Clamp(in.weaponCondition - out.wear, 0, 100);
-	out.armorConditionAfter  = Clamp(in.armorCondition - out.armorWear, 0, 100);
+	out.armourConditionAfter  = Clamp(in.armourCondition - out.armourWear, 0, 100);
 	return out;
 }
 
@@ -273,13 +273,13 @@ const char* Describe(AmmoType ammo)
 	return "ball";
 }
 
-const char* Describe(ArmorTier tier)
+const char* Describe(ArmourTier tier)
 {
 	switch (tier)
 	{
-		case ArmorTier::Unarmoured: return "no armour";
-		case ArmorTier::Soft:       return "soft armour";
-		case ArmorTier::Plate:      return "plate";
+		case ArmourTier::Unarmoured: return "no armour";
+		case ArmourTier::Soft:       return "soft armour";
+		case ArmourTier::Plate:      return "plate";
 	}
 	return "no armour";
 }
