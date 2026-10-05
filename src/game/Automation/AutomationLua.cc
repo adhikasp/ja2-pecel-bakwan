@@ -51,6 +51,7 @@
 #include "Intro.h"
 #include "MapScreen.h"
 #include "Merc_Hiring.h"
+#include "MercProfile.h"
 #include "Game_Clock.h"
 #include "Strategic_Movement.h"
 #include "PreBattle_Interface.h"
@@ -840,6 +841,8 @@ namespace
 		// "loadscreen" (a = id), "transition" (a = progress 0..1 of the sector-load zoom), "prebattle"
 		// and "autoresolve" (fake a fight in the current sector), "intro" (a = "splash" | "beginning" |
 		// "ending", b = "still"), "epilogue" (the victory epilogue),
+		// "aimavailable" (a = a merc's nickname, or nothing for the whole roster: A.I.M. mercs
+		// are contactable again, undoing the "on assignment" roll of a new game),
 		// "doormenu" (a = the door's grid number, default: the nearest door), "pickupmenu" (a small
 		// pile of tools at the merc's feet and the pick-up menu on it).
 		ja2.set_function("debug", [](std::string const& what, sol::optional<sol::object> a, sol::optional<sol::object> b) {
@@ -985,6 +988,32 @@ namespace
 					if (!found) throw std::runtime_error("no merc " + name);
 					found->bLife = 0;
 					StrategicHandlePlayerTeamMercDeath(*found);
+					ReBuildCharactersList();
+				}
+				else if (what == "aimavailable")
+				{
+					// Test aid: A.I.M. mercs are available to contact again. A new game puts a random
+					// few of them "on assignment" (chance 5 * experience level), and under the fixed
+					// automation seed that set is the same every run - including mercs a script wants
+					// to hire. An on-assignment merc shows a status badge instead of the member page's
+					// Contact button, so both the native and the legacy hire walkthrough stall there.
+					// a = a merc's nickname to clear, or nothing for the whole A.I.M./M.E.R.C. roster.
+					// Only "on assignment" is undone: a dead, hired or returning merc keeps its status.
+					std::string const want = a && a->is<std::string>() ? a->as<std::string>() : "";
+					bool found = false;
+					for (auto profile : GCM->listMercProfiles())
+					{
+						if (!profile->isAIMMerc() && !profile->isMERCMerc()) continue;
+						MERCPROFILESTRUCT& p = profile->getStruct();
+						if (!want.empty() && p.zNickname.to_std_string() != want) continue;
+						found = true;
+						// a merc who was not on assignment is left alone: asking for an available
+						// one is not an error, it is the common case.
+						if (p.bMercStatus != MERC_WORKING_ELSEWHERE) continue;
+						p.bMercStatus = MERC_OK;
+						p.uiDayBecomesAvailable = 0;
+					}
+					if (!found) throw std::runtime_error("no A.I.M. merc named " + want);
 					ReBuildCharactersList();
 				}
 				else if (what == "hiretransit")
