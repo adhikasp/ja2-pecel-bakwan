@@ -77,7 +77,7 @@ namespace
 	// Find the per-merc setup entry, by name if the entries are named, else by position.
 	sol::object MercSetup(sol::object const& our, int const index, std::string const& name)
 	{
-		if (!our.is<sol::table>()) return sol::nil;
+		if (!our.is<sol::table>()) return sol::lua_nil;
 		sol::table const table = our.as<sol::table>();
 		int const n = int(table.size());
 		auto entryName = [&](sol::object const& e) -> std::string {
@@ -94,9 +94,9 @@ namespace
 				sol::object const e = table[i];
 				if (entryName(e) == name) return e;
 			}
-			return sol::nil;
+			return sol::lua_nil;
 		}
-		return index <= n ? sol::object(table[index]) : sol::object(sol::nil);
+		return index <= n ? sol::object(table[index]) : sol::object(sol::lua_nil);
 	}
 
 	// Free, standable tiles a given distance from @a anchor, nearest to @a ideal first.
@@ -230,7 +230,7 @@ void StageBattle(sol::table const& spec)
 		std::string armour = defaultArmour;
 		GridNo grid = NOWHERE;
 		int direction = -1;
-		sol::object items = sol::nil, stats = sol::nil;
+		sol::object items = sol::lua_nil, stats = sol::lua_nil;
 		if (setup.is<sol::table>())
 		{
 			sol::table const e = setup.as<sol::table>();
