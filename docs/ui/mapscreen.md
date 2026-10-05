@@ -74,6 +74,7 @@
 | A13 | Remove dead merc | assignment menu on dead | `pRemoveMercStrings` | |
 | A14 | Merc inventory | Enter, right-click name, face | `RequestToggleMercInventoryPanel` | item drag, trash can, camo, prev/next merc |
 | A15 | Sector inventory | Ctrl+I (policy), item in cursor + click map, Items filter + click sector, town box "Inventory" | `OpenSectorInventory`, `ToggleSectorInventory` | pages, drop to merc, can't use during combat, only mercs in the sector |
+| A15b | Sector inventory mass operations: mark piles (all/none/invert), take the marked piles, drop all, load magazines, repair, stack & merge, sort | the panel's toolbar (`map.inv.markall`, `map.inv.marknone`, `map.inv.markinvert`, `map.inv.take`, `map.inv.drop`, `map.inv.load`, `map.inv.repair`, `map.inv.stack`, the sort segment) | `SectorStock` (`Strategic/SectorStock.cc`) over `Equipment::Stash` (`Equipment/Stash.h`) | no live merc in the sector for anything that needs one (`pool_locked`); `Load` and `Merge` need no merc; only what the squad can reach | the readout line (`pool_note`) says what the operation did |
 | A16 | Select sector / sector info | click / right-click sector | `ChangeSelectedMapSector`, `fShowTownInfo` | underground only if visited |
 | A17 | Militia redistribution | right-click selected town sector with Militia filter | `HandleMilitiaRedistributionClick` | pick up (right) / drop (left) by rank, Auto, Done; not with hostiles |
 | A18 | Filters | `w` towns, `m` mines, `t` teams, `z` militia, `a` airspace, `i` items (+ border buttons) | `Toggle*` | not while sector inventory is open |
@@ -163,7 +164,7 @@
 | Map rendering | original art (runtime, uplifted) + UI-drawn grid, fog, borders, markers | crisp at any size |
 | Control tint of explored sectors (new) | faint green/vermilion | at-a-glance control |
 | Militia counts always shown (legacy only with Z) | shown with Teams too | owner to confirm |
-| Sector inventory pages | scrolling grid with category filters, search, sort, "Stack & merge" | |
+| Sector inventory pages | scrolling grid with category filters, search, sort (type/name/condition/count), "Stack & merge" and the mass operations | |
 | Message log | one line + expandable panel with filters, search, jump to sector | |
 | Pan/zoom, legend, level switch | new | |
 
@@ -206,8 +207,21 @@ back to the legacy UI (`PassThrough` is always false); the legacy screen still o
 team = merc dialogue), a search field, and a link to the sector a message names.
 
 **Sector inventory.** Items move by drag and drop or click, click (through the legacy slots); category filters,
-search, sort by type/name/condition, and "Stack & merge" (new: like items stacked to the stash's per-pile limit,
-money in one pile, `MapBridge::StackAndMerge`).
+search, sort by type/name/condition/count, and "Stack & merge".
+
+**Sector inventory mass operations (issue #124).** The player spends hours moving, reloading, repairing and sorting
+crates of loot, so the panel has the bulk verbs. Mark piles with the tick on a pile (the toolbar's All / None /
+Invert work on everything reachable), then Take the marked piles onto the selected merc, or Drop all of what he
+carries back into the sector. Load fills every magazine in the sector from loose rounds and puts the fullest
+magazine into every gun lying there. Repair spends the selected merc's repair points (he needs a toolkit in hand),
+worst item first. The readout line under the grid says what the last operation did.
+
+The panel only draws it: the rules live in the pure core `src/game/Equipment/Stash.h` (`MergeStash`, `SortStash`,
+`FillMagazines`, `RepairStash`, `MoveMarked`), unit-tested in `Stash_unittest.cc`, and
+`src/game/Strategic/SectorStock.cc` is the adapter onto the sector's world items, the merc's repair points and the
+sector's temp item file. Sorting is stored, not a view: the order the panel opens in is the order the stash is kept
+in. The `ja2.stock()` / `ja2.stockOp(name)` / `ja2.debug("stock", spec)` automation surface runs the same
+operations, so `tests/e2e/sector_stock.lua` asserts them without a click.
 
 **Town names.** Mines, airspace and items hide the town names (they overlap); before, they stayed hidden after
 those views were turned off (the "Towns off after plotting" seen in the Phase 4 screenshots came from the tour's filter
@@ -220,7 +234,8 @@ would not fit. Ammo, clips and grenades therefore stay small.
 ## 10. Parity tour
 
 `tests/e2e/mapscreen_parity.lua` (goldens `mapscreen_default`, `_assignment`, `_contract`, `_plotting`, `_log`,
-`_gear`); `tests/e2e/mapscreen_equivalence.lua` (legacy vs native, same save, same actions, same state).
+`_gear`, `_pool`); `tests/e2e/mapscreen_equivalence.lua` (legacy vs native, same save, same actions, same state);
+`tests/e2e/sector_stock.lua` (the sector inventory's mass operations, golden `mapscreen_stock`).
 
 | Row | Covered by |
 |---|---|
@@ -236,6 +251,7 @@ would not fit. Ammo, clips and grenades therefore stay small.
 | A23, I28 | a message reaches the bar and the expanded log |
 | A22 | Space starts and stops the clock (state: time moved) |
 | A14, A15 | gear open (worn LBE row and 12 typed pockets), sector inventory open, the hand item moved to a pack pocket (state) and back, Done |
+| A15b | `sector_stock.lua`: staged stash, sort, mark, exit |
 | A24 | laptop and back, options and back, tactical |
 | layout | UI scale 150 % and 200 %: layout audit |
 

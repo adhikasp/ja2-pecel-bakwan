@@ -6,6 +6,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/LoadoutBuilder.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/PocketRules.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Slots.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stash.cc
 )
 
 if (WITH_UNITTESTS)
@@ -13,6 +14,7 @@ if (WITH_UNITTESTS)
         ${LOCAL_JA2_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/Equipment_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LoadoutBuilder_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/Stash_unittest.cc
     )
 endif()
 

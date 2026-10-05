@@ -5,6 +5,7 @@
 #include "ScenarioItems.h"
 #include "CampaignScenario.h"
 #include "RangeLane.h"
+#include "StockScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -734,6 +735,15 @@ namespace
 		// difficulty, towns (ownership/loyalty/militia), sector garrisons, the roster with
 		// gear, and quest/fact progress. See ja2.debug("campaign", spec).
 		ja2.set_function("campaign", [] { return Guarded([] { return CampaignState(g_lua); }); });
+		// ja2.stock(): the selected sector's stash as data - its piles (item name, count, condition,
+		// rounds, money, marked, reachable), the totals, the sort order and the last operation's
+		// report. Every mass operation on it is reachable without a click path:
+		//   ja2.stockOp("mark"|"markall"|"invert"|"sort"|"merge"|"load"|"repair"|"take"|"drop")
+		// and ja2.debug("stock", spec) stages items into the sector to set a scenario up.
+		ja2.set_function("stock", [] { return Guarded([] { return StockState(g_lua); }); });
+		ja2.set_function("stockOp", [](std::string const& op, sol::optional<std::string> arg) {
+			return Guarded([&] { return StockOp(g_lua, op, arg ? *arg : std::string()); });
+		});
 		// {w, h, stdX, stdY}: the screen size and where the classic 640x480 area starts in it.
 		ja2.set_function("screenSize", [] {
 			sol::table t = g_lua.create_table();
@@ -1126,6 +1136,14 @@ namespace
 					// Author a whole campaign state on the live globals (docs/plan/e2e-campaign-state.md).
 					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"campaign\", spec)");
 					StageCampaign(a->as<sol::table>());
+				}
+				else if (what == "stock")
+				{
+					// Stage items into the selected sector's stash, so a test can set a sector
+					// inventory scenario up: ja2.debug("stock", {items = {"Rifle", "5.56 AP"},
+					// count = {1, 6}, condition = {70, 100}}). See ja2.stock() and ja2.stockOp().
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"stock\", spec)");
+					StageStock(a->as<sol::table>());
 				}
 				else if (what == "entersector")
 				{

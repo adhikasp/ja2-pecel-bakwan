@@ -36,6 +36,10 @@ extern std::vector<WORLDITEM> pInventoryPoolList;
 // autoplace down object
 void AutoPlaceObjectInInventoryStash(OBJECTTYPE* pItemPtr);
 
+/** The sector inventory pool list was rewritten wholesale (a mass operation, SectorStock.cc): the
+ * panel re-pads its slot allocation and asks for a redraw. */
+void SectorInventoryPoolResized();
+
 // the current inventory item
 extern INT32 iCurrentlyHighLightedItem;
 extern BOOLEAN fFlashHighLightInventoryItemOnradarMap;
