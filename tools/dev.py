@@ -536,6 +536,77 @@ def cmd_bootstrap(args):
     sys.exit(build_binary(REPO, build_dir, args.jobs))
 
 
+ROADMAP_TOOL = Path(__file__).resolve().parent / "roadmap.py"
+
+
+def cmd_roadmap(args):
+    """Generate the dependency view over the issues (docs/roadmap/roadmap.html)."""
+    argv = [sys.executable, str(ROADMAP_TOOL), "generate"] + args.args
+    if args.offline:
+        argv.append("--offline")
+    log(" ".join(shlex.quote(a) for a in argv))
+    sys.exit(subprocess.run(argv, cwd=str(REPO)).returncode)
+
+
+def dep_numbers(raw: str):
+    """`#12, 34 #56` -> [12, 34, 56]; empty input -> [] (so `--clear` works)."""
+    return sorted({int(n) for n in re.findall(r"#?(\d+)", raw or "")})
+
+
+def cmd_dep(args):
+    """Set an issue's native dependency relations (`gh issue edit` under the hood).
+
+    Native relations are the source of truth for the graph; the prose lines stay
+    in the body as human-readable annotation. Idempotent: reading the issue
+    first means a re-run is a no-op, and only the difference is written.
+    """
+    if not shutil.which("gh"):
+        die("gh not found on PATH")
+    repo = f"{args.owner}/{args.repo}" if args.owner and args.repo else None
+    base = ["gh", "issue", "view", "-R", repo, str(args.issue),
+            "--json", "blockedBy,blocking,state,title"]
+    view = subprocess.run(base, capture_output=True, text=True)
+    try:
+        current = json.loads(view.stdout)
+    except ValueError:
+        die(f"could not read issue {args.issue}: {(view.stderr or view.stdout).strip()}")
+
+    # `--clear` wins over the lists: it drops every relation on the issue.
+    blocked_by = [] if args.clear else dep_numbers(args.blocked_by)
+    blocking = [] if args.clear else dep_numbers(args.blocking)
+    have_blocked = sorted(n["number"] for n in current.get("blockedBy", {}).get("nodes", []))
+    have_blocking = sorted(n["number"] for n in current.get("blocking", {}).get("nodes", []))
+    # Adding is implicit; removing needs `--prune` (or comes with `--clear`), so
+    # naming a subset never silently deletes the relations left out of it.
+    remove = args.prune or args.clear
+
+    def diff(want: list[int], have: list[int], add_flag: str, drop_flag: str) -> list[str]:
+        flags = []
+        add = [n for n in want if n not in have]
+        drop = [n for n in have if n not in want]
+        if add:
+            flags += [add_flag, ",".join(str(n) for n in add)]
+        if drop and remove:
+            flags += [drop_flag, ",".join(str(n) for n in drop)]
+        return flags
+
+    flags = diff(blocked_by, have_blocked, "--add-blocked-by", "--remove-blocked-by")
+    flags += diff(blocking, have_blocking, "--add-blocking", "--remove-blocking")
+
+    log(f"#{args.issue} {current.get('title', '')} ({current.get('state', '').lower()})")
+    log(f"  blocked by: {have_blocked or '-'} -> {blocked_by or '-'}")
+    log(f"  blocking:   {have_blocking or '-'} -> {blocking or '-'}")
+    if not flags:
+        log("  already up to date; nothing to do")
+        return
+    edit = ["gh", "issue", "edit", "-R", repo, str(args.issue)]
+    log("  " + " ".join(edit + flags))
+    rc = subprocess.run(edit + flags).returncode
+    if rc == 0:
+        log("  updated")
+    sys.exit(rc)
+
+
 def cmd_status(args):
     build_dir = REPO / BUILD_DIR_NAME
     print(f"worktree:   {REPO}")
@@ -629,6 +700,24 @@ def main():
 
     p = sub.add_parser("status", help="show what dev.py sees: paths, tools, game_dir, build state")
     p.set_defaults(func=cmd_status)
+
+    p = sub.add_parser("roadmap", help="generate docs/roadmap/roadmap.html: the dependency view over the issues")
+    p.add_argument("--offline", action="store_true", help="regenerate from the committed snapshot only")
+    p.add_argument("args", nargs="*", help="extra flags for tools/roadmap.py")
+    p.set_defaults(func=cmd_roadmap)
+
+    p = sub.add_parser("dep", help="set an issue's native dependency relations (the roadmap's edges)")
+    p.add_argument("issue", type=int, help="issue number")
+    p.add_argument("--blocked-by", default=None,
+                   help="issues this one waits for, e.g. '#96,#260'; replaces the list")
+    p.add_argument("--blocking", default=None,
+                   help="issues that wait for this one, e.g. '#97,#98'; replaces the list")
+    p.add_argument("--clear", action="store_true", help="drop every relation on the issue")
+    p.add_argument("--prune", action="store_true",
+                   help="also remove relations missing from the lists given above")
+    p.add_argument("--owner", default="adhikasp", help="repository owner")
+    p.add_argument("--repo", default="ja2-pecel-bakwan", help="repository name")
+    p.set_defaults(func=cmd_dep)
 
     argv = sys.argv[1:]
     if argv and argv[0] in {"test", "e2e", "run"}:
