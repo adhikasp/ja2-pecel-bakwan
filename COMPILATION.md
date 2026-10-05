@@ -388,6 +388,63 @@ __Note__: If you add, move or delete any files. Please make sure to reflect your
 rerun cmake and reload your XCode project before making any additional changes. Otherwise other build systems might fail
  when trying to build your changes.
 
+## Sanitizers
+
+The game can be instrumented with GCC/Clang sanitizers, which is how a lot of this
+codebase's legacy C-style memory handling gets caught. `-DWITH_SANITIZERS` takes a
+semicolon-separated list, so quote it in the shell:
+
+```sh
+cmake -DWITH_SANITIZERS="address;undefined" path/to/source
+```
+
+`address`, `undefined` and `thread` are accepted; anything else is a configure error.
+Sanitizers are also never applied to `rust/` — that code is frozen.
+
+### What CI does
+
+Every Debug **Linux** build — every pull request and every push to `master` — is
+compiled with `-DWITH_SANITIZERS=address;undefined` and then runs the C++ unit tests
+(`ja2 -unittests`) and the Phase 0 spike tests under it. The runtime options are set so a
+report cannot pass as a success:
+
+```sh
+ASAN_OPTIONS=detect_leaks=0:abort_on_error=1:print_stacktrace=1
+UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1
+```
+
+`halt_on_error` matters most for UBSan, which by default only prints a diagnostic and
+keeps going; without it a report would leave a zero exit code and the job would go green.
+`detect_leaks=0` disables LeakSanitizer: the game and its tests hold process-lifetime
+globals by design and report at exit, so leak detection would fail every run for
+allocations nobody is going to free. Turning it on is a deliberate, separate exercise, not
+a default.
+
+Release and nightly builds are `ReleaseWithDebInfo` and published, so they are *not*
+instrumented, and a sanitized build skips the AppImage packaging step entirely.
+
+### Windows: not supported, and it says so at configure time
+
+`-fsanitize=address` and friends are supported on Linux and macOS. On Windows they are not,
+and were never going to be:
+
+* **MSYS2 MinGW64** — `libasan`, `libubsan` and `libtsan` live in the separate
+  `mingw-w64-*-gcc-libs` packages, which are not part of the toolchain this project
+  documents installing. Without them the flag still *compiles* perfectly and then fails in
+  the linker with `cannot find -lasan`, minutes into a ~500-translation-unit build.
+* **MSVC** — it has its own ASan (`/fsanitize=address`), which this flag does not select and
+  which is not exercised here.
+
+So `WITH_SANITIZERS` does not accept a toolchain it cannot link. At configure time it
+compiles and links a one-line program with the same flags and, if that fails, stops with an
+error naming the compiler, the system and the missing runtime. That check is the whole
+point: the option used to claim to work everywhere and only revealed the problem at link
+time (or, worse, silently produced a binary with no instrumentation). The check lives in
+`src/CMakeLists.txt`.
+
+If you are on Windows and want sanitizer coverage, build on Linux (CI does it for every
+pull request) or use kresna, the off-site ARM64 Linux box.
+
 ## Additional Options
 
 If you want to configure the build differently, you can pass additional options to
@@ -402,6 +459,7 @@ cmake. The supported options are:
 | `ENABLE_UNITY_BUILD` | Batch sources into per-area unity translation units. Cuts total work but is a net loss on a many-core machine — see [Faster builds](#faster-builds) | `OFF` |
 | `WITH_FIXMES` | Build with fixme messages | `OFF` |
 | `WITH_MAEMO` | Build with right click mapped to F4 (menu button) | `OFF` |
+| `WITH_SANITIZERS` | Instrument the game with `address`, `undefined` and/or `thread`. Linux and macOS only, and the configure step checks that the runtime actually links — see [Sanitizers](#sanitizers) | `` |
 | `WITH_EDITOR_SLF` | Download the latest free editor.slf during build | `OFF` |
 
 Example:
