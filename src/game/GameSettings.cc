@@ -190,7 +190,7 @@ void InitGameOptions()
 void DisplayGameSettings( )
 {
 	//Display the version number
-	ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, ST::format("{}: {} ({})", pMessageStrings[MSG_VERSION], g_version_label, g_version_number));
+	ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, ST::format("{}: {} ({})", pMessageStrings[MSG_VERSION], VersionLabel(), g_version_number));
 
 	//Display the difficulty level
 	ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, ST::format("{}: {}", gzGIOScreenText[GIO_DIF_LEVEL_TEXT], gzGIOScreenText[gGameOptions.ubDifficultyLevel + GIO_EASY_TEXT - 1]));

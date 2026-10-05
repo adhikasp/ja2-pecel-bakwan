@@ -192,6 +192,10 @@ def game_args(opts) -> list:
         args += ["-uiscale", opts.uiscale]
     if getattr(opts, "worldzoom", None):
         args += ["-worldzoom", opts.worldzoom]
+    if getattr(opts, "freeze_wall_clock", None):
+        args += ["-freeze-wall-clock", opts.freeze_wall_clock]
+    if getattr(opts, "version_label", None):
+        args += ["-version-label", opts.version_label]
     if opts.timeout:
         args += ["-timeout", str(opts.timeout)]
     return args
@@ -588,6 +592,13 @@ def build_parser():
         sp.add_argument("--res", help="resolution, e.g. 1280x720")
         sp.add_argument("--uiscale", help="UI scale 1-4 (headless: only together with --worldzoom)")
         sp.add_argument("--worldzoom", help="world zoom 1-4 or match_ui: runs the world as a layer of its own (headless too)")
+        sp.add_argument("--freeze-wall-clock", dest="freeze_wall_clock",
+                        metavar="INSTANT",
+                        help="pin the wall clock so the run does not depend on when it ran: seconds "
+                             "since the epoch, or an ISO-8601 UTC instant (2001-02-03T04:05:06Z). "
+                             "Times shown to the player are then rendered in UTC.")
+        sp.add_argument("--version-label", metavar="TEXT",
+                        help="version string the UI shows (default: this build's, commit sha included)")
         sp.add_argument("--saves", help="save game directory to use (shared with other sessions)")
         sp.add_argument("--game-dir", help="JA2 data directory (default: from your ja2.json)")
         sp.add_argument("--timeout", type=float, help="kill the game after this many wall-clock seconds")

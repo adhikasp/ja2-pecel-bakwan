@@ -9,6 +9,7 @@
 #include "Font_Control.h"
 #include "Game_Clock.h"
 #include "Render_Dirty.h"
+#include "Clock.h"
 #include "Text_Input.h"
 #include "SaveLoadGame.h"
 #include "WordWrap.h"
@@ -692,14 +693,10 @@ static void DoSaveGame(const ST::string &saveName, const ST::string &saveDescrip
 
 
 static void SaveNewSave() {
-	time_t now;
-    time(&now);
-    char buf[sizeof "2011-10-08T07:07:09Z"];
-    strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
 	auto description = GetGameDescription();
 	// Building the filename from date and description should never lead to conflicts
 	// We need to sanitize the filename afterwards
-	auto filename = FileMan::cleanBasename(ST::format("{}-{}", buf, description.to_lower()));
+	auto filename = SaveLoadNewFileName(description);
 
 	DoSaveGame(filename, description);
 }
@@ -1647,8 +1644,10 @@ int SaveLoadCompatibility(SaveGameInfo const& save)
 
 ST::string SaveLoadNewFileName(ST::string const& description)
 {
-	time_t now;
-	time(&now);
+	// gmtime, so the name is the same instant everywhere; with the wall clock frozen
+	// (automation) it is the same name on every machine, which is what lets a golden
+	// screenshot contain a save's filename.
+	time_t const now = sgp::Clock::WallSeconds();
 	char buf[sizeof "2011-10-08T07:07:09Z"];
 	strftime(buf, sizeof buf, "%FT%TZ", gmtime(&now));
 	return FileMan::cleanBasename(ST::format("{}-{}", buf, description.to_lower()));

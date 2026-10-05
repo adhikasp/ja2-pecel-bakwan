@@ -207,6 +207,7 @@ TEST(NativeUI, creditRecordsParse)
 
 #include "FrontEndViewModels.h"
 #include "NativeImages.h"
+#include "Clock.h"
 
 #include <ctime>
 
@@ -267,6 +268,25 @@ TEST(NativeUI, savedAtIsRelativeToNow)
 	EXPECT_EQ(FormatSavedAt(now - 3 * 86400, now), "3 days ago");
 	EXPECT_EQ(FormatSavedAt(now - 30 * 86400, now).substr(0, 2), "31"); // 31 Aug 2026
 	EXPECT_EQ(FormatSavedAt(0, now), "");
+}
+
+// The whole point of freezing the wall clock: the same instant must render as the same string
+// whatever timezone the build machine is in. Local time would make every golden screenshot
+// depend on the machine's TZ setting.
+TEST(NativeUI, savedAtUnderAFrozenClockIsUTCAndTimezoneIndependent)
+{
+	std::optional<std::time_t> const at = sgp::Clock::WallSecondsFromUtc(2026, 1, 15, 12, 0, 0);
+	ASSERT_TRUE(at);
+	sgp::Clock::FreezeWall(*at);
+	double const now = double(*at);
+	EXPECT_TRUE(sgp::Clock::IsWallFrozen());
+	EXPECT_EQ(sgp::Clock::WallSeconds(), *at);
+	EXPECT_EQ(FormatSavedAt(now, now), "Today 12:00");
+	EXPECT_EQ(FormatSavedAt(now - 86400, now), "Yesterday 12:00");
+	EXPECT_EQ(FormatSavedAt(now - 3 * 86400, now), "3 days ago");
+	EXPECT_EQ(FormatSavedAt(now - 30 * 86400, now), "16 Dec 2025");
+	sgp::Clock::FreezeWall(0);
+	EXPECT_FALSE(sgp::Clock::IsWallFrozen());
 }
 
 TEST(NativeUI, upliftDoublesAndKeepsEdges)

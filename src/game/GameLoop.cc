@@ -59,7 +59,7 @@ void InitializeGame(void)
 
 	InitTacticalSave();
 
-	SLOGI("Version Label: {}", g_version_label);
+	SLOGI("Version Label: {}", VersionLabel());
 	SLOGI("Version #:     {}", g_version_number);
 
 	// Initialize Game Screens.

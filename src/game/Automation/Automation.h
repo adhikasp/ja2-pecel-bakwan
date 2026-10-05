@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <ctime>
 #include <optional>
 #include <string>
 #include <vector>
@@ -33,6 +34,13 @@ namespace Automation
 		double      frameMs = 1000.0 / 60;  // -frame-ms MS: virtual time per frame
 		std::string outDir;                 // -out DIR: where relative artifact paths go
 		double      timeoutS = 0;           // -timeout S: wall-clock watchdog (0 = none)
+
+		// Reproducibility. Two things the UI shows are not a function of the game's state: the
+		// version label carries the build's commit, and a save's filename and "Today HH:MM" carry
+		// the machine's clock and timezone. Left alone they make a golden screenshot depend on when
+		// and where it was taken, so a driven run can pin both.
+		std::optional<std::time_t> freezeWall;  // -freeze-wall-clock EPOCH|YYYY-MM-DDTHH:MM:SSZ
+		std::string versionLabel;               // -version-label TEXT
 
 		bool Active() const { return !runScript.empty() || !serve.empty(); }
 		uint32_t Seed() const { return seed.value_or(1); }

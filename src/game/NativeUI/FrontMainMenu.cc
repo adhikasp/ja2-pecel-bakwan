@@ -18,33 +18,62 @@
 #include "SGP.h"
 #include "Text.h"
 #include "Video.h"
+#include "Clock.h"
 
 #include <string_theory/format>
 
+#include <cmath>
 #include <ctime>
 #include <optional>
 
 namespace NativeUI
 {
 
+// Broken-down time to a day number, so the "Today"/"N days ago" wording counts
+// calendar days rather than elapsed 24-hour spans. std::mktime would do this too,
+// but only in the local timezone, and it reads the process TZ on every call.
+static int DayNumber(std::tm const& t)
+{
+	std::optional<std::time_t> const s = sgp::Clock::WallSecondsFromUtc(t.tm_year + 1900,
+		t.tm_mon + 1, t.tm_mday);
+	if (!s) return 0;
+	// floor division, so instants before 1970 land on the day they are on
+	return int(*s / 86400) - int(*s % 86400 < 0 ? 1 : 0);
+}
+
 std::string FormatSavedAt(double const modified, double const now)
 {
 	if (modified <= 0) return {};
 	time_t const t = time_t(modified), n = time_t(now);
 	std::tm lt{}, ln{};
+	// A frozen clock is how a driven run keeps its screenshots reproducible, and the same instant
+	// broken down in the build machine's timezone is not reproducible at all: "Today 19:47" in
+	// Berlin is "Today 03:47" the next day in Singapore. So a frozen instant is always shown in UTC.
+	bool const utc = sgp::Clock::IsWallFrozen();
+	if (utc)
+	{
 #ifdef _WIN32
-	localtime_s(&lt, &t);
-	localtime_s(&ln, &n);
+		gmtime_s(&lt, &t);
+		gmtime_s(&ln, &n);
 #else
-	localtime_r(&t, &lt);
-	localtime_r(&n, &ln);
+		gmtime_r(&t, &lt);
+		gmtime_r(&n, &ln);
 #endif
+	}
+	else
+	{
+#ifdef _WIN32
+		localtime_s(&lt, &t);
+		localtime_s(&ln, &n);
+#else
+		localtime_r(&t, &lt);
+		localtime_r(&n, &ln);
+#endif
+	}
 	char hm[16];
 	std::strftime(hm, sizeof hm, "%H:%M", &lt);
 	// calendar days between the two
-	std::tm a = lt, b = ln;
-	a.tm_hour = b.tm_hour = 12; a.tm_min = b.tm_min = a.tm_sec = b.tm_sec = 0;
-	int const days = int(std::lround(std::difftime(std::mktime(&b), std::mktime(&a)) / 86400.0));
+	int const days = DayNumber(ln) - DayNumber(lt);
 	if (days <= 0) return std::string("Today ") + hm;
 	if (days == 1) return std::string("Yesterday ") + hm;
 	if (days < 7) return std::to_string(days) + " days ago";
@@ -69,7 +98,12 @@ SaveRow MakeSaveRow(SaveGameInfo const& s, int const index)
 	r.balance = h.iCurrentBalance;
 	r.money   = FormatMoney(h.iCurrentBalance);
 	r.modified = SaveLoadModifiedTime(s.name());
-	r.saved   = FormatSavedAt(r.modified, double(std::time(nullptr)));
+	// "Today 19:47" is wall-clock text, and r.modified is a file's mtime: it is whatever
+	// clock the build machine had when the test wrote the save. Under a frozen clock the save
+	// was written at the frozen instant by definition, and both that instant and the
+	// comparison against it are fixed, so the label is too.
+	double const now = double(sgp::Clock::WallSeconds());
+	r.saved   = FormatSavedAt(sgp::Clock::IsWallFrozen() ? now : r.modified, now);
 	r.quick   = IsQuickSaveName(s.name());
 	r.autoSave = IsAutoSaveName(s.name());
 	GAME_OPTIONS const& o = h.sInitialGameOptions;
@@ -114,7 +148,7 @@ void MainMenuViewModel::Refresh()
 	title    = Str("mainmenu.title");
 	title_accent = Str("mainmenu.title_accent");
 	subtitle = Str("mainmenu.subtitle");
-	version  = ST::format("{}", g_version_label).to_std_string();
+	version  = VersionLabel();
 	copyright = gzCopyrightText.to_std_string();
 	lContinue = Str("mainmenu.continue"); lNew = Str("mainmenu.new"); lLoad = Str("mainmenu.load");
 	lOptions = Str("mainmenu.options"); lCredits = Str("mainmenu.credits"); lQuit = Str("mainmenu.quit");

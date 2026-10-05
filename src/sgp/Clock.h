@@ -2,6 +2,8 @@
 
 #include <chrono>
 #include <cstdint>
+#include <ctime>
+#include <optional>
 
 /** @file
  * The single source of time for the engine.
@@ -11,6 +13,11 @@
  * steps frames (or when a modal loop presents a frame), which makes runs
  * reproducible, lets them go as fast as the CPU allows, and keeps the world
  * frozen while an external controller is thinking.
+ *
+ * Virtual time covers time the engine *measures*. WallSeconds() covers the time
+ * it *shows*: the clock a save's filename is stamped with, the "Today 19:47"
+ * next to a save. Those are absolute instants, so virtual time cannot make them
+ * reproducible; FreezeWall() pins them instead.
  */
 namespace sgp
 {
@@ -38,6 +45,29 @@ namespace Clock
 
 	/** Milliseconds since start; what GetClock()/SDL_GetTicks() used to return. */
 	uint32_t TicksMs();
+
+	/** Wall-clock seconds since the Unix epoch: the time of day, which is what a
+	 * save's filename and a "Today 19:47" label are made of. Unaffected by virtual
+	 * time, because those are absolute instants rather than elapsed durations. */
+	std::time_t WallSeconds();
+
+	/** Pin WallSeconds() to @a seconds since the Unix epoch, so a driven run shows
+	 * the same clock no matter when or where it was started. Pass 0 to go back to
+	 * the real wall clock. See IsWallFrozen(). */
+	void FreezeWall(std::time_t at);
+
+	/** Whether WallSeconds() is pinned. Anything that formats an instant for the
+	 * player — a date, a time of day, a filename — must format a frozen instant in
+	 * UTC, because the same instant read in the build machine's timezone is a
+	 * different string in Berlin than in Singapore. */
+	bool IsWallFrozen();
+
+	/** Seconds since the Unix epoch for a UTC civil date and time: the portable counterpart of
+	 * timegm(), which Windows does not have and whose local-timezone relatives are exactly what
+	 * makes a frozen instant unreproducible. @a month is 1-12 and @a day is 1-31.
+	 * Empty when the date does not exist (month 13, 31 February). */
+	std::optional<std::time_t> WallSecondsFromUtc(int year, int month, int day,
+		int hour = 0, int minute = 0, int second = 0);
 
 	/** Virtual: advance time and return immediately. Real: sleep. */
 	void Sleep(std::chrono::milliseconds);
