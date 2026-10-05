@@ -1,3 +1,4 @@
+#include "Clock.h"
 #include "Directories.h"
 #include "Font.h"
 #include "GameLoop.h"
@@ -9,7 +10,6 @@
 #include "Font_Control.h"
 #include "Game_Clock.h"
 #include "Render_Dirty.h"
-#include "Clock.h"
 #include "Text_Input.h"
 #include "SaveLoadGame.h"
 #include "WordWrap.h"

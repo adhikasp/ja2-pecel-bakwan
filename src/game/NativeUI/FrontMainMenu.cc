@@ -1,5 +1,6 @@
 // The native main menu (docs/ui/mainmenu.md): the original art from the player's data (uplifted at runtime) behind
 // a typeset menu, with Continue (the legacy Alt+click "load the last save") and a card about the newest save.
+#include "Clock.h"
 #include "FrontEndViewModels.h"
 #include "NativeImages.h"
 #include "NativeUIRuntime.h"
@@ -18,7 +19,6 @@
 #include "SGP.h"
 #include "Text.h"
 #include "Video.h"
-#include "Clock.h"
 
 #include <string_theory/format>
 
