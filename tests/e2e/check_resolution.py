@@ -141,6 +141,14 @@ def read_png(path: Path):
         return im.size[0], im.size[1], _np.asarray(im)
 
 
+# Nothing is masked. Whatever a shot shows has to be the same on every machine, so the
+# non-deterministic parts of the UI (the version label, the wall clock) are pinned at the
+# source instead — see GOLDEN_CLOCK / GOLDEN_VERSION. An earlier version of this file masked
+# the main menu's bottom-left corner for the version string; it never fired (the string sits
+# above the last 16 rows, and the test it keyed on did not match the shot's name), which is
+# how three goldens could drift for so long unnoticed.
+
+
 def compare(a: Path, b: Path, tol: int):
     """Returns (differing_pixels, total_pixels) or None if sizes differ."""
     # The usual case is that the shot is the golden image bit for bit: the same build with the same
@@ -155,10 +163,6 @@ def compare(a: Path, b: Path, tol: int):
         return None
     # R/G/B only (alpha is ignored); a channel counts as different only when off by more than tol.
     bad = (_np.abs(ra[..., :3].astype(_np.int16) - rb[..., :3].astype(_np.int16)) > tol).any(axis=2)
-    # The main menu prints the build's version string in the bottom-left corner: don't compare it.
-    mask_x = 260 if "main_menu" in a.name else 0
-    if mask_x:
-        bad[max(ha - 16, 0):, :mask_x] = False
     return int(bad.sum()), wa * ha
 
 
