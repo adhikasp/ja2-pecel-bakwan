@@ -234,6 +234,45 @@ nothing is shared between platforms and nothing can leak across them.
 build directory configured before this keeps its setting. `cmake -B <dir> -DENABLE_PCH=ON` (or
 `=OFF`) switches one over; the next build recompiles everything once.
 
+## Compiler versions
+
+The minimum compiler is **GCC 14**, recorded in [`min-gcc-version`](min-gcc-version) and read by
+[`.ci/ci-setup.sh`](.ci/ci-setup.sh) — one pin with many consumers, the way
+[`min-rust-version`](min-rust-version) works. Newer is fine: nothing in the tree is
+version-gated (`git grep __GNUC__` finds nothing outside vendored dependencies), and the tree
+builds with both the pinned GCC 14 and the GCC 16.1 that MSYS2 ships.
+
+It was **GCC 10** until #289, and that made the CI compiler the oldest thing in the loop:
+`-std=c++23` first exists in GCC 11, so CI could not verify a standard bump was green, a defect
+that only reproduces on a modern compiler shipped silently, and a developer could build green
+locally and have CI disagree.
+
+| build | compiler |
+|---|---|
+| Linux CI, and the Coverity scan | the pin from `min-gcc-version`, installed with apt, made the default with `update-alternatives`, and asserted by `linux-assert-gcc-at-least` — a build that quietly got an older compiler fails instead of passing |
+| Windows (MSYS2 MinGW64) | MSYS2's `mingw-w64-x86_64-gcc`; GCC 16.1 is what the tree is developed on |
+| Windows (Visual Studio) | Visual C++, see [Generate Visual Studio Solution](#generate-visual-studio-solution) |
+| Windows, cross-built from Linux | the runner image's `mingw-w64`, currently **GCC 13.2** — see below |
+| macOS | Apple Clang |
+
+The mingw-w64 cross build cannot follow the pin: Ubuntu ships one mingw-w64 GCC per release and
+`ubuntu-24.04` has 13.2, so matching GCC 14 there means importing a third-party toolchain. Every
+CI setup step prints the compiler it ended up with (`gcc --version`,
+`x86_64-w64-mingw32-g++ --version`), so a build log always says which compiler produced it.
+
+To build with a GCC other than the system default (Debian and Ubuntu ship GCC 13 as `gcc`):
+
+```sh
+sudo apt-get install gcc-14 g++-14
+cmake -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 path/to/source
+```
+
+**What a Linux build needs at runtime.** The AppImage and the packages CI produces are built on
+`ubuntu-24.04`, so they want glibc 2.39 and `libstdc++6` 14. Neither is beyond the image's own
+baseline: GCC 14 is what `libstdc++6` 14.2 is built from, so the compiler bump adds no runtime
+dependency the image did not already have. The cost of the image bump is glibc, so test Linux
+packages on Ubuntu 24.04 or newer — see [Release checklist](docs/Release-checklist.md).
+
 ## Rust notes
 
 We suggest to install Rust and Cargo using [rustup](http://rustup.rs/). This way you will get the most recent version

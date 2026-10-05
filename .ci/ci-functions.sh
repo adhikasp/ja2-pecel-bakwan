@@ -55,6 +55,22 @@ linux-set-gcc-version () {
     sudo update-alternatives --set g++ "/usr/bin/g++-$1"
 }
 
+# Fail the job when the compiler in place is older than the pin. The pin is only worth
+# something if a build that quietly used something else fails instead: gcc/g++ are whatever
+# apt and update-alternatives left behind, so a runner image that dropped the package (or a
+# gcc shadowing it earlier on PATH) would otherwise turn min-gcc-version into a comment and
+# a green run would prove nothing. Newer is fine; only older is an error.
+linux-assert-gcc-at-least () {
+    local want="$1" have
+    have="$(gcc -dumpversion | cut -d. -f1)"
+    if [[ "$have" -lt "$want" ]]; then
+        echo "gcc $have is older than the required $want (see ./min-gcc-version)"
+        gcc --version
+        exit 1
+    fi
+    echo "gcc $have is at least the required $want"
+}
+
 linux-setup-android-signing-keys () {
     mkdir $HOME/.pecel-bakwan-android-signing-keys
 
