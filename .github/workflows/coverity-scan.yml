@@ -24,7 +24,10 @@ jobs:
         run: ${{ github.workspace }}/.ci/ci-setup.sh 2>&1
         env:
           CI_TARGET: linux
-          TARGET_GCC_MAJOR_VERSION: 13
+          # No TARGET_GCC_MAJOR_VERSION: the scan analyses the same compiler the build job
+          # does, from ./min-gcc-version. It used to pin 13 while github-ci.yml pinned 10,
+          # so the tree was tested at two unrelated versions at once (#289).
+          # TARGET_GCC_MAJOR_VERSION: 14
 
       - name: Download and install Coverity Build Tool
         run: |

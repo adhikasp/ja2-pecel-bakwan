@@ -93,10 +93,18 @@ jobs:
       fail-fast: false
       matrix:
         cfg:
+        # The image has to ship a compiler for the pin in ./min-gcc-version: GCC 14
+        # lives in noble's `universe` (gcc-14/g++-14, 14.2.0), which the runner images
+        # have enabled, and noble's default gcc-14 runtime is libstdc++6 14 — so an AppImage
+        # built here needs nothing the image does not already have. This job used to run on
+        # ubuntu-22.04 with GCC 10, the oldest thing in the loop, six major versions behind
+        # the MSYS2 GCC 16 the tree is developed on (#289).
         - name: Linux
-          os: ubuntu-22.04
+          os: ubuntu-24.04
           target: linux
 
+        # Cross build: its compiler is whatever this image ships (mingw-w64 13.2), which
+        # cannot track ./min-gcc-version; see .ci/ci-setup.sh.
         - name: Linux mingw64
           os: ubuntu-24.04
           target: linux-mingw64
@@ -185,7 +193,11 @@ jobs:
         echo "PATH=$PATH" >> $GITHUB_ENV
       env:
         CI_TARGET: ${{ matrix.cfg.target }}
-        TARGET_GCC_MAJOR_VERSION: 10
+        # No TARGET_GCC_MAJOR_VERSION here on purpose: the Linux job's compiler is the pin
+        # in ./min-gcc-version, read by ci-setup.sh, so the build job, the Coverity scan and
+        # the documentation cannot drift apart the way they did with a per-workflow GCC 10
+        # and a Coverity GCC 13. Set it here to try another GCC in a one-off run.
+        # TARGET_GCC_MAJOR_VERSION: 14
 
     - name: Build and run tests
       shell: bash

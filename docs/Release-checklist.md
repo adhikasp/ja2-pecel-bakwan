@@ -16,7 +16,8 @@
 - [ ] Mark the tag as a Github prerelease
 - [ ] Runtime tests of prerelease packages
   - [ ] Linux
-    - [ ] Ubuntu 20.04 x64
+    - [ ] Ubuntu 24.04 x64 or newer (CI builds the AppImage on `ubuntu-24.04`, so it needs
+          glibc 2.39 — see [COMPILATION.md](../COMPILATION.md#what-a-linux-build-needs-at-runtime))
   - [ ] Windows
   - [ ] OS X
 
