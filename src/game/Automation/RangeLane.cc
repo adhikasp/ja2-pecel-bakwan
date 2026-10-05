@@ -117,16 +117,18 @@ namespace
 		SLOGW("range lane: a round arrived with no shot to attach it to ({} damage)", impact.impactAfterArmour);
 	}
 
-	// Listen once; Observable replaces a listener with the same key.
-	struct ListenerInstaller
+	// Subscribe when the first lane is staged, not from a global constructor: the
+	// observables live in Weapons.cc, and installing from a static initialiser in
+	// this file would write into them before they are constructed if this
+	// translation unit happened to be initialised first.
+	void ListenOnce()
 	{
-		ListenerInstaller()
-		{
-			OnShotFired.addListener("automation:range-lane", RecordFired);
-			OnShotImpact.addListener("automation:range-lane", RecordImpact);
-		}
-	};
-	ListenerInstaller const g_installListeners;
+		static bool listening = false;
+		if (listening) return;
+		OnShotFired.addListener("automation:range-lane", RecordFired);
+		OnShotImpact.addListener("automation:range-lane", RecordImpact);
+		listening = true;
+	}
 
 	// A standable, visible tile exactly @a distance tiles from @a anchor with a clear
 	// line to it - the far end of a shooting lane. Ties are broken by grid number so
@@ -191,6 +193,7 @@ sol::table StageRangeLane(sol::state_view L, sol::table const& spec)
 	// Start from an empty lane before anything else: the recorder must not attribute
 	// anything to the lane that was here before, and every value read below is the new
 	// lane's rather than the last one's.
+	ListenOnce();
 	g_lane = Lane{};
 
 	int const distance = std::max(1, Scenario::IntField(spec, "distance", 8));
