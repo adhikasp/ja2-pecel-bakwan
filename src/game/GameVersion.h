@@ -33,6 +33,6 @@ void SetVersionLabelOverride(std::string label);
 //	you will invalidate the saved game file
 //
 
-constexpr UINT32 SAVE_GAME_VERSION = 105;
+constexpr UINT32 SAVE_GAME_VERSION = 106;
 
 #endif

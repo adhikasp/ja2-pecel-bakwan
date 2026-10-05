@@ -1248,7 +1248,10 @@ private:
 			descCond = d.item == MONEY ? S(SPrintMoney(INT32(d.money))) : std::to_string(d.status) + "%";
 			descWeight = item ? ST::format("{.1f} kg", item->getWeight() / 10.0).to_std_string() : "";
 			descAmmo = d.shotsLeft >= 0 ? std::to_string(d.shotsLeft) + " / " + std::to_string(d.magSize) : "";
-			for (int i = 0; i < 4; ++i)
+			// Typed slots: one row per slot the platform offers.
+			int attachCount = d.attachSlots;
+			for (int i = 0; i < 4; ++i) if (d.attachments[i] != NOTHING && i >= attachCount) attachCount = i + 1;
+			for (int i = 0; i < attachCount; ++i)
 			{
 				if (!d.attachEnabled[i]) continue;
 				DescAttachment at;
@@ -1302,7 +1305,8 @@ private:
 				{ HELMETPOS, 0, 0, 64, 64, "Head" }, { VESTPOS, 0, 72, 64, 64, "Vest" }, { LEGPOS, 0, 144, 64, 64, "Legs" },
 				{ HEAD1POS, 72, 0, 64, 64, "Face" }, { HEAD2POS, 72, 72, 64, 64, "Face" },
 				{ HANDPOS, 144, 0, 136, 64, "Hand" }, { SECONDHANDPOS, 144, 72, 136, 64, "Off hand" },
-				{ BIGPOCK1POS, 0, 224, 136, 64, "" }, { BIGPOCK2POS, 144, 224, 136, 64, "" }, { BIGPOCK3POS, 0, 296, 136, 64, "" }, { BIGPOCK4POS, 144, 296, 136, 64, "" },
+				{ LBE_VESTPOS, 288, 224, 64, 64, "LBE Vest" }, { LBE_BELTPOS, 288, 296, 64, 64, "Belt" }, { LBE_PACKPOS, 288, 368, 64, 64, "Pack" },
+				{ POCK1POS, 0, 224, 136, 64, "" }, { POCK2POS, 144, 224, 136, 64, "" }, { POCK3POS, 0, 296, 136, 64, "" }, { POCK4POS, 144, 296, 136, 64, "" },
 			};
 			auto addSlot = [&](int pos, int x, int y, int w, int h, char const* label) {
 				GearSlot g;
@@ -1323,7 +1327,7 @@ private:
 				gear.push_back(g);
 			};
 			for (Pos const& p : layout) addSlot(p.pos, p.x, p.y, p.w, p.h, p.label);
-			for (int i = 0; i < 8; ++i) addSlot(SMALLPOCK1POS + i, (i % 4) * 72, 368 + (i / 4) * 72, 64, 64, "");
+			for (int i = 0; i < 8; ++i) addSlot(POCK5POS + i, (i % 4) * 72, 368 + (i / 4) * 72, 64, 64, "");
 			gearWeight = std::to_string(CalculateCarriedWeight(s)) + "%";
 			gearCamo = std::to_string(s->bCamo) + "%";
 		}

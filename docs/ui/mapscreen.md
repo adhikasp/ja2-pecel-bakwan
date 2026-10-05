@@ -235,7 +235,7 @@ would not fit. Ammo, clips and grenades therefore stay small.
 | new | zoom in / fit; legend |
 | A23, I28 | a message reaches the bar and the expanded log |
 | A22 | Space starts and stops the clock (state: time moved) |
-| A14, A15 | gear open, sector inventory open, the hand item moved to a big pocket (state) and back, Done |
+| A14, A15 | gear open (worn LBE row and 12 typed pockets), sector inventory open, the hand item moved to a pack pocket (state) and back, Done |
 | A24 | laptop and back, options and back, tactical |
 | layout | UI scale 150 % and 200 %: layout audit |
 

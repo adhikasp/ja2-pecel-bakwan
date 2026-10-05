@@ -60,14 +60,6 @@ struct WeaponModel : public ItemModel
 	ST::string silencedSound;
 	ST::string silencedBurstSound;
 	ST::string standardReplacement;
-	bool attachSilencer;
-	bool attachSniperScope;
-	bool attachLaserScope;
-	bool attachBipod;
-	bool attachDuckbill;
-	bool attachUnderGLauncher;
-	bool attachSpringAndBoltUpgrade;
-	bool attachGunBarrelExtender;
 	int m_rateOfFire;
 
 	ST::string internalType;
@@ -91,8 +83,6 @@ struct WeaponModel : public ItemModel
 	SoundID  sLocknLoadSound;
 	UINT16   usSmokeEffect;    // item index of the smoke effect on ammo miss
 
-protected:
-	void serializeAttachments(JsonObject &obj) const;
 };
 
 struct NoWeapon : WeaponModel

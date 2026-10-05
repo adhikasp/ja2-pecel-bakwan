@@ -25,6 +25,7 @@
 #include "Handle_UI.h"
 #include "RenderWorld.h"
 #include "Cursors.h"
+#include "Equipment/Slots.h"
 #include "Font_Control.h"
 #include "Render_Dirty.h"
 #include "Interface_Panels.h"
@@ -377,6 +378,15 @@ struct INV_REGIONS
 	INT16 h;
 };
 
+// The legacy paperdolls (the single-merc panel and the map screen's merc inventory) have no
+// room for the worn LBE row: every slot is accounted for and the body art fills the rest, so
+// the three worn LBE items are not drawn or clicked there. The native panels show them, and
+// the item description still lists what is worn.
+static bool LegacyPanelShowsSlot(INT32 const slot)
+{
+	return slot < LBE_VESTPOS || slot > LBE_PACKPOS;
+}
+
 // ARRAY FOR INV PANEL INTERFACE ITEM POSITIONS (sX,sY get set via InitInvSlotInterface() )
 static INV_REGIONS const gSMInvData[] =
 {
@@ -388,18 +398,21 @@ static INV_REGIONS const gSMInvData[] =
 	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // HEAD2POS
 	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // HANDPOS,
 	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // SECONDHANDPOS
-	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // BIGPOCK1
-	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // BIGPOCK2
-	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // BIGPOCK3
-	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // BIGPOCK4
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // SMALLPOCK1
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // SMALLPOCK2
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // SMALLPOCK3
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // SMALLPOCK4
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // SMALLPOCK5
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // SMALLPOCK6
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // SMALLPOCK7
-	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  )  // SMALLPOCK8
+	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // LBE_VESTPOS
+	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // LBE_BELTPOS
+	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // LBE_PACKPOS
+	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // POCK1 (vest window)
+	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // POCK2
+	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // POCK3
+	M(BIG_INV_SLOT_WIDTH,  BIG_INV_SLOT_HEIGHT ), // POCK4
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // POCK5 (belt window)
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // POCK6
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // POCK7
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // POCK8
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // POCK9 (pack window)
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // POCK10
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  ), // POCK11
+	M(SM_INV_SLOT_WIDTH,   SM_INV_SLOT_HEIGHT  )  // POCK12
 #undef M
 };
 
@@ -554,6 +567,15 @@ void InitInvSlotInterface(INV_REGION_DESC const* const pRegionDesc,
 		INT16       const  y = pRegionDesc[i].uY;
 		INV_REGIONS const& r = gSMInvData[i];
 		MOUSE_REGION&      m = gSMInvRegion[i];
+		// A slot the panel does not show gets an empty region: it cannot be clicked, and the
+		// layout audit has nothing to complain about (it skips zero-sized regions).
+		if (!LegacyPanelShowsSlot(i))
+		{
+			MSYS_DefineRegion(&m, 0, 0, 0, 0, MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR,
+				INVMoveCallback, INVClickCallback);
+			MSYS_SetRegionUserData(&m, 0, i);
+			continue;
+		}
 		MSYS_DefineRegion(&m, x, y, x + r.w, y + r.h,
 			MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR,
 			INVMoveCallback, INVClickCallback);
@@ -747,6 +769,7 @@ void HandleRenderInvSlots(SOLDIERTYPE const& s, DirtyLevel const dirty_level)
 
 	for (INT32 i = 0; i != NUM_INV_SLOTS; ++i)
 	{
+		if (!LegacyPanelShowsSlot(i)) continue;
 		INVRenderINVPanelItem(s, i, dirty_level);
 	}
 
@@ -5292,6 +5315,16 @@ ItemDescNativeView GetItemDescNativeView()
 		v.attachStatus[i]    = o.bAttachStatus[i];
 		v.attachEnabled[i]   = (gItemDescAttachmentRegions[i].uiFlags & MSYS_REGION_EXISTS) != 0;
 	}
+	// Typed slots: the platform says which roles the positions serve.
+	if (item)
+	{
+		Equipment::Platform const platform = Equipment::SlotsFor(*item);
+		v.attachSlots = platform.slotCount;
+		for (int i = 0; i < MAX_ATTACHMENTS; ++i)
+		{
+			v.attachRole[i] = i < platform.slotCount ? Equipment::RoleKey(platform.slots[i].role) : "";
+		}
+	}
 	return v;
 }
 
@@ -5511,6 +5544,15 @@ NativeItemDescInfo NativeItemDescData()
 	{
 		d.attachments[i] = obj.usAttachItem[i];
 		d.attachmentStatus[i] = obj.bAttachStatus[i];
+	}
+	// Typed slots: the platform says which roles the positions serve.
+	{
+		Equipment::Platform const platform = Equipment::SlotsFor(*item);
+		d.attachSlots = platform.slotCount;
+		for (int i = 0; i < MAX_ATTACHMENTS; ++i)
+		{
+			d.attachRole[i] = i < platform.slotCount ? Equipment::RoleKey(platform.slots[i].role) : "";
+		}
 	}
 	if (ITEM_PROS_AND_CONS(obj.usItem))
 	{

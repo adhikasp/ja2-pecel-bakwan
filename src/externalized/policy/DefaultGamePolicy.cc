@@ -45,7 +45,8 @@ DefaultGamePolicy::DefaultGamePolicy(const JsonValue& json)
 
 	gui_extras = gp.getOptionalBool("gui_extras", true);
 	informative_tooltips = gp.getOptionalBool("informative_tooltips", false);
-	extra_attachments = gp.getOptionalBool("extra_attachments");
+	attachment_strict_mounts = gp.getOptionalBool("attachment_strict_mounts", true);
+	weapon_slot_bonus = gp.getOptionalInt("weapon_slot_bonus", 0);
 	skip_sleep_explanation = gp.getOptionalBool("skip_sleep_explanation");
 
 	pablo_wont_steal = gp.getOptionalBool("pablo_wont_steal");

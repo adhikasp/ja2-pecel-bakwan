@@ -7,15 +7,18 @@ enum:
     - HEAD2
     - HAND
     - SECONDHAND
-    - BIGPOCK1
-    - BIGPOCK2
-    - BIGPOCK3
-    - BIGPOCK4
-    - SMALLPOCK1
-    - SMALLPOCK2
-    - SMALLPOCK3
-    - SMALLPOCK4
-    - SMALLPOCK5
-    - SMALLPOCK6
-    - SMALLPOCK7
-    - SMALLPOCK8
+    - LBE_VEST
+    - LBE_BELT
+    - LBE_PACK
+    - POCK1
+    - POCK2
+    - POCK3
+    - POCK4
+    - POCK5
+    - POCK6
+    - POCK7
+    - POCK8
+    - POCK9
+    - POCK10
+    - POCK11
+    - POCK12

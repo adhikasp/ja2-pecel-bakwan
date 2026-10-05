@@ -56,7 +56,7 @@ void CreateSpecialItem(SOLDIERTYPE* const s, UINT16 item)
 	BOOLEAN fReturn = AutoPlaceObject(s, &o, FALSE);
 	if (!fReturn) {
 		// no space, so overwrite an existing item (can happen when importing IMPs)
-		s->inv[SMALLPOCK8POS] = o;
+		s->inv[POCK12POS] = o;
 	}
 }
 

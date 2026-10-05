@@ -229,18 +229,18 @@ int8_t Soldier::getFreeHeadSlot() const
 
 int8_t Soldier::getFreePocket() const
 {
-	if(mSoldier->inv[SMALLPOCK1POS].usItem == NONE)  return SMALLPOCK1POS;
-	if(mSoldier->inv[SMALLPOCK2POS].usItem == NONE)  return SMALLPOCK2POS;
-	if(mSoldier->inv[SMALLPOCK3POS].usItem == NONE)  return SMALLPOCK3POS;
-	if(mSoldier->inv[SMALLPOCK4POS].usItem == NONE)  return SMALLPOCK4POS;
-	if(mSoldier->inv[SMALLPOCK5POS].usItem == NONE)  return SMALLPOCK5POS;
-	if(mSoldier->inv[SMALLPOCK6POS].usItem == NONE)  return SMALLPOCK6POS;
-	if(mSoldier->inv[SMALLPOCK7POS].usItem == NONE)  return SMALLPOCK7POS;
-	if(mSoldier->inv[SMALLPOCK8POS].usItem == NONE)  return SMALLPOCK8POS;
-	if(mSoldier->inv[BIGPOCK1POS].usItem == NONE)    return BIGPOCK1POS;
-	if(mSoldier->inv[BIGPOCK2POS].usItem == NONE)    return BIGPOCK2POS;
-	if(mSoldier->inv[BIGPOCK3POS].usItem == NONE)    return BIGPOCK3POS;
-	if(mSoldier->inv[BIGPOCK4POS].usItem == NONE)    return BIGPOCK4POS;
+	if(mSoldier->inv[POCK5POS].usItem == NONE)  return POCK5POS;
+	if(mSoldier->inv[POCK6POS].usItem == NONE)  return POCK6POS;
+	if(mSoldier->inv[POCK7POS].usItem == NONE)  return POCK7POS;
+	if(mSoldier->inv[POCK8POS].usItem == NONE)  return POCK8POS;
+	if(mSoldier->inv[POCK9POS].usItem == NONE)  return POCK9POS;
+	if(mSoldier->inv[POCK10POS].usItem == NONE)  return POCK10POS;
+	if(mSoldier->inv[POCK11POS].usItem == NONE)  return POCK11POS;
+	if(mSoldier->inv[POCK12POS].usItem == NONE)  return POCK12POS;
+	if(mSoldier->inv[POCK1POS].usItem == NONE)    return POCK1POS;
+	if(mSoldier->inv[POCK2POS].usItem == NONE)    return POCK2POS;
+	if(mSoldier->inv[POCK3POS].usItem == NONE)    return POCK3POS;
+	if(mSoldier->inv[POCK4POS].usItem == NONE)    return POCK4POS;
 	return NO_SLOT;
 }
 
@@ -351,7 +351,9 @@ void Soldier::switchHeadGear(int switchDirection)
 	{
 		// no optimal gear, but wearing something wrong
 		INT8 freeSlot = getFreePocket();
-		BOOLEAN canAttachToHelmet = gamepolicy(extra_attachments) && helmet->usItem != NONE;
+		// the helmet's NVG mount decides this - by mount type, not by toggle
+		BOOLEAN canAttachToHelmet = helmet->usItem != NONE
+			&& ValidItemAttachment(helmet, currentEyeGear->usItem, FALSE);
 		if (freeSlot != NO_SLOT)
 		{
 			// put in inventory

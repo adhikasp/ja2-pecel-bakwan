@@ -119,6 +119,10 @@ struct ItemDescNativeView
 	UINT16 attachments[4]{};
 	INT8   attachStatus[4]{};
 	bool   attachEnabled[4]{};
+	// Typed slots: how many the platform offers and each slot's role key
+	// ("optic", "muzzle", ...), aligned with the attachment positions.
+	UINT8  attachSlots = 0;
+	const char* attachRole[4]{};
 };
 ItemDescNativeView GetItemDescNativeView();
 void ItemDescNativeAttachmentClick(int slot, bool right);
@@ -198,6 +202,10 @@ struct NativeItemDescInfo
 	UINT16 ammoItem = 0;
 	UINT16 attachments[4]{};
 	int  attachmentStatus[4]{};
+	// Typed slots: how many the platform offers and each slot's role key
+	// ("optic", "muzzle", ...), aligned with the attachment positions.
+	UINT8  attachSlots = 0;
+	const char* attachRole[4]{};
 	ST::string keySector, keyDate;
 };
 NativeItemDescInfo NativeItemDescData();

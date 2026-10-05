@@ -1,4 +1,9 @@
 #include "ArmourModel.h"
+#include "Equipment/AttachmentRules.h"
+#include "Equipment/EquipmentCatalog.h"
+#include "Equipment/Lbe.h"
+#include "Equipment/PocketRules.h"
+#include "Equipment/Slots.h"
 #include "Font_Control.h"
 #include "Handle_Items.h"
 #include "Items.h"
@@ -272,26 +277,54 @@ BOOLEAN WeaponInHand(const SOLDIERTYPE* const pSoldier)
 
 UINT8 ItemSlotLimit( UINT16 usItem, INT8 bSlot )
 {
-	UINT8 ubSlotLimit;
-
-	if ( bSlot < BIGPOCK1POS )
+	if ( bSlot < POCK1POS )
 	{
 		return( 1 );
 	}
-	else
+	// A stack limit, not a fit rule: everything that fits at all stacks one.
+	UINT8 const ubSlotLimit = GCM->getItem(usItem)->getPerPocket();
+	return ubSlotLimit > 0 ? ubSlotLimit : 1;
+}
+
+
+// The typed pocket a pocket slot provides, from the worn load-bearing gear.
+// False when the window's LBE item is missing or has no such pocket.
+bool GetPocketKind(const SOLDIERTYPE& s, INT8 bSlot, Equipment::PocketKind& out)
+{
+	if (bSlot < POCK1POS || bSlot > POCK12POS) return false;
+	static const INT8 LBE_SLOT_OF_WINDOW[] = { LBE_VESTPOS, LBE_BELTPOS, LBE_PACKPOS };
+	int const window = (bSlot - POCK1POS) / LBE_WINDOW_SIZE;
+	int const index  = (bSlot - POCK1POS) % LBE_WINDOW_SIZE;
+	const Equipment::LbeDef* lbe = Equipment::LbeFor(s.inv[LBE_SLOT_OF_WINDOW[window]].usItem);
+	if (lbe == nullptr || index >= lbe->pocketCount) return false;
+	out = lbe->pockets[index];
+	return true;
+}
+
+
+UINT8 ItemSlotLimit( const SOLDIERTYPE& s, UINT16 usItem, INT8 bSlot )
+{
+	if ( bSlot < POCK1POS )
 	{
-		ubSlotLimit = GCM->getItem(usItem)->getPerPocket();
-		if (bSlot >= SMALLPOCK1POS && ubSlotLimit > 1)
-		{
-			ubSlotLimit /= 2;
-		}
-		return( ubSlotLimit );
+		return( 1 );
 	}
+
+	// No LBE worn means no pocket, and a small pocket holds half of what a
+	// full pocket holds - but always at least one.
+	Equipment::PocketKind kind;
+	if (!GetPocketKind(s, bSlot, kind)) return 0;
+	UINT8 ubSlotLimit = GCM->getItem(usItem)->getPerPocket();
+	if (ubSlotLimit == 0) ubSlotLimit = 1;
+	if (kind == Equipment::PocketKind::Small && ubSlotLimit > 1)
+	{
+		ubSlotLimit /= 2;
+	}
+	return( ubSlotLimit );
 }
 
 UINT32 MoneySlotLimit( INT8 bSlot )
 {
-	if ( bSlot >= SMALLPOCK1POS )
+	if ( bSlot >= POCK5POS )
 	{
 		return( MAX_MONEY_PER_SLOT / 2 );
 	}
@@ -629,11 +662,16 @@ bool ValidAttachment(UINT16 const attachment, UINT16 const item)
 {
 	auto * attachmentModel{ GCM->getItem(attachment, ItemSystem::nothrow) };
 	auto * itemModel{ GCM->getItem(item, ItemSystem::nothrow) };
-	if (attachmentModel && itemModel && itemModel->canBeAttached(GCM->getGamePolicy(), attachmentModel))
+	if (!attachmentModel || !itemModel) return false;
+
+	// Everything that mounts is decided by the typed slot schema: slot roles
+	// and mount kinds, never by a per-item whitelist.
+	if (Equipment::AttachmentFor(attachment) != nullptr)
 	{
-		return true;
+		return itemModel->canBeAttached(GCM->getGamePolicy(), attachmentModel);
 	}
 
+	// Non-mount combinations (detonators and other merge junk).
 	{
 		auto const it = g_attachments.find(attachment);
 		if (it != g_attachments.end() && it->second.count(item) == 1) return true;
@@ -645,8 +683,25 @@ bool ValidAttachment(UINT16 const attachment, UINT16 const item)
 
 BOOLEAN ValidItemAttachment(const OBJECTTYPE* const pObj, const UINT16 usAttachment, const BOOLEAN fAttemptingAttachment)
 {
-	BOOLEAN fSameItem = FALSE, fSimilarItems = FALSE;
-	UINT16  usSimilarItem = NOTHING;
+	// Typed attachments go through the slot schema: same-attachment and
+	// one-per-slot conflicts are structural, decided by the rules.
+	if (const Equipment::AttachmentDef* def = Equipment::AttachmentFor(usAttachment))
+	{
+		const ItemModel* hostModel = GCM->getItem(pObj->usItem, ItemSystem::nothrow);
+		Equipment::SlotPolicy const toggles = Equipment::TogglesFrom(GCM->getGamePolicy());
+		Equipment::Platform const host = hostModel != nullptr ? Equipment::SlotsFor(*hostModel, toggles) : Equipment::Platform{};
+		uint16_t present[Equipment::MAX_HOST_SLOTS] = {};
+		for (int i = 0; i < Equipment::MAX_HOST_SLOTS; ++i) present[i] = pObj->usAttachItem[i];
+
+		Equipment::AttachResult const result = Equipment::CanAttach(host, *def, present, true, toggles);
+		if (result.ok) return TRUE;
+
+		if (fAttemptingAttachment)
+		{
+			ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_ATTACH ], GCM->getItem(usAttachment)->getName(), GCM->getItem(pObj->usItem)->getName()));
+		}
+		return FALSE;
+	}
 
 	if ( !ValidAttachment( usAttachment, pObj->usItem ) )
 	{
@@ -666,56 +721,40 @@ BOOLEAN ValidItemAttachment(const OBJECTTYPE* const pObj, const UINT16 usAttachm
 			return( FALSE );
 		}
 	}
-	// special conditions go here
-	// can't have two of the same attachment on an item
+
+	// non-mount combos: can't have two of the same attachment on an item
 	if (FindAttachment( pObj, usAttachment ) != ITEM_NOT_FOUND)
 	{
-		fSameItem = TRUE;
+		if (fAttemptingAttachment)
+		{
+			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, g_langRes->Message[ STR_ATTACHMENT_ALREADY ] );
+		}
+		return FALSE;
 	}
 
-	// special code for items which won't attach if X is present
+	// arming rules: a bomb takes one detonator, timed or remote
 	switch( usAttachment )
 	{
-		case BIPOD:
-			if ( FindAttachment( pObj, UNDER_GLAUNCHER) != ITEM_NOT_FOUND )
-			{
-				fSimilarItems = TRUE;
-				usSimilarItem = UNDER_GLAUNCHER;
-			}
-			break;
-		case UNDER_GLAUNCHER:
-			if ( FindAttachment( pObj, BIPOD ) != ITEM_NOT_FOUND )
-			{
-				fSimilarItems = TRUE;
-				usSimilarItem = BIPOD;
-			}
-			break;
 		case DETONATOR:
 			if( FindAttachment( pObj, REMDETONATOR ) != ITEM_NOT_FOUND )
 			{
-				fSameItem = TRUE;
+				if (fAttemptingAttachment)
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_USE_TWO_ITEMS ], GCM->getItem(REMDETONATOR)->getName(), GCM->getItem(usAttachment)->getName()) );
+				}
+				return FALSE;
 			}
 			break;
 		case REMDETONATOR:
 			if( FindAttachment( pObj, DETONATOR ) != ITEM_NOT_FOUND )
 			{
-				fSameItem = TRUE;
+				if (fAttemptingAttachment)
+				{
+					ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_USE_TWO_ITEMS ], GCM->getItem(DETONATOR)->getName(), GCM->getItem(usAttachment)->getName()) );
+				}
+				return FALSE;
 			}
 			break;
-	}
-
-	if (fAttemptingAttachment)
-	{
-		if (fSameItem)
-		{
-			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, g_langRes->Message[ STR_ATTACHMENT_ALREADY ] );
-			return( FALSE );
-		}
-		else if (fSimilarItems)
-		{
-			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, st_format_printf(g_langRes->Message[ STR_CANT_USE_TWO_ITEMS ], GCM->getItem(usSimilarItem)->getName(), GCM->getItem(usAttachment)->getName()) );
-			return( FALSE );
-		}
 	}
 
 	return( TRUE );
@@ -1535,8 +1574,19 @@ bool AttachObject(SOLDIERTYPE* const s, OBJECTTYPE* const pTargetObj, OBJECTTYPE
 		}
 		else
 		{
-			// try replacing if possible
-			attach_pos = FindAttachment(&target, attachment.usItem);
+			// A typed attachment takes the slot of its role - never a "first
+			// free position".
+			if (const Equipment::AttachmentDef* def = Equipment::AttachmentFor(attachment.usItem))
+			{
+				const ItemModel* hostModel = GCM->getItem(target.usItem, ItemSystem::nothrow);
+				Equipment::SlotPolicy const toggles = Equipment::TogglesFrom(GCM->getGamePolicy());
+				attach_pos = hostModel != nullptr ? static_cast<INT8>(Equipment::SlotsFor(*hostModel, toggles).IndexOf(def->role)) : NO_SLOT;
+			}
+			else
+			{
+				// try replacing if possible
+				attach_pos = FindAttachment(&target, attachment.usItem);
+			}
 		}
 
 		if (attach_pos == NO_SLOT)
@@ -1747,13 +1797,15 @@ BOOLEAN CanItemFitInPosition(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, INT8 bPos,
 				if (pSoldier->inv[HANDPOS].usItem != NOTHING && pSoldier->inv[SECONDHANDPOS].usItem != NOTHING)
 				{
 					// two items in hands; try moving the second one so we can swap
-					if (GCM->getItem(pSoldier->inv[SECONDHANDPOS].usItem)->getPerPocket() == 0)
+					bNewPos = NO_SLOT;
+					for (INT8 bLoop = POCK1POS; bLoop <= POCK12POS; ++bLoop)
 					{
-						bNewPos = FindEmptySlotWithin( pSoldier, BIGPOCK1POS, BIGPOCK4POS );
-					}
-					else
-					{
-						bNewPos = FindEmptySlotWithin( pSoldier, BIGPOCK1POS, SMALLPOCK8POS );
+						if (pSoldier->inv[bLoop].ubNumberOfObjects == 0 &&
+							CanItemFitInPosition( pSoldier, &pSoldier->inv[SECONDHANDPOS], bLoop, FALSE ))
+						{
+							bNewPos = bLoop;
+							break;
+						}
 					}
 					if (bNewPos == NO_SLOT)
 					{
@@ -1807,12 +1859,47 @@ BOOLEAN CanItemFitInPosition(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, INT8 bPos,
 			{
 				return( FALSE );
 			}
+			break;
+		case LBE_VESTPOS:
+		case LBE_BELTPOS:
+		case LBE_PACKPOS:
+		{
+			// Load-bearing gear is worn in its own slot, one kind per slot.
+			Equipment::LbeKind const wanted =
+				bPos == LBE_VESTPOS ? Equipment::LbeKind::Vest :
+				bPos == LBE_BELTPOS ? Equipment::LbeKind::Belt : Equipment::LbeKind::Pack;
+			const Equipment::LbeDef* lbe = Equipment::LbeFor(pObj->usItem);
+			if (lbe == nullptr || lbe->kind != wanted)
+			{
+				return( FALSE );
+			}
+			break;
+		}
 		default:
+			if (bPos >= POCK1POS)
+			{
+				// Pocket windows: the worn LBE provides the pocket, and the
+				// pocket rules decide what fits in it.
+				Equipment::PocketKind kind;
+				if (!GetPocketKind(*pSoldier, bPos, kind))
+				{
+					return( FALSE );
+				}
+				Equipment::FitResult const fit = Equipment::CanFit(kind, Equipment::TraitsOf(*item), 0);
+				if (!fit.ok)
+				{
+					if (fDoingPlacement)
+					{
+						ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, ST::format("{} does not fit here: {}", item->getName(), Equipment::Describe(fit.reason)));
+					}
+					return( FALSE );
+				}
+			}
 			break;
 	}
 
-	ubSlotLimit = ItemSlotLimit( pObj->usItem, bPos );
-	if (ubSlotLimit == 0 && bPos >= SMALLPOCK1POS )
+	ubSlotLimit = ItemSlotLimit( *pSoldier, pObj->usItem, bPos );
+	if (ubSlotLimit == 0)
 	{
 		// doesn't fit!
 		return( FALSE );
@@ -1894,7 +1981,7 @@ BOOLEAN PlaceObject( SOLDIERTYPE * pSoldier, INT8 bPos, OBJECTTYPE * pObj )
 
 	if (item->isKey()) CollectKey(*pSoldier, *pObj);
 
-	int ubSlotLimit = ItemSlotLimit(pObj->usItem, bPos);
+	int ubSlotLimit = ItemSlotLimit(*pSoldier, pObj->usItem, bPos);
 
 	OBJECTTYPE * const pInSlot{ &pSoldier->inv[bPos] };
 
@@ -1968,7 +2055,7 @@ BOOLEAN PlaceObject( SOLDIERTYPE * pSoldier, INT8 bPos, OBJECTTYPE * pObj )
 					DeleteObj( pObj );
 				}
 			}
-			else if ( ubSlotLimit == 1 || (ubSlotLimit == 0 && bPos >= HANDPOS && bPos <= BIGPOCK4POS ) )
+			else if ( ubSlotLimit == 1 || (ubSlotLimit == 0 && bPos >= HANDPOS && bPos <= POCK4POS ) )
 			{
 				if (pObj->ubNumberOfObjects <= 1)
 				{
@@ -2184,12 +2271,13 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 
 	if (ubPerSlot == 0)
 	{
-		// Large object; look for an empty hand/large pocket and dump it in there
-		// FindObjWithin with 0 will search for empty slots!
+		// Large object; look for an empty hand/pocket and dump it in there
+		// FindObjWithin with 0 will search for empty slots! Placement itself
+		// is gated by the pocket rules, so every pocket is worth a try.
 		bSlot = HANDPOS;
 		while (1)
 		{
-			bSlot = FindEmptySlotWithin( pSoldier, bSlot, BIGPOCK4POS );
+			bSlot = FindEmptySlotWithin( pSoldier, bSlot, POCK12POS );
 			if (bSlot == ITEM_NOT_FOUND)
 			{
 				return( FALSE );
@@ -2223,14 +2311,14 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			bSlot = HANDPOS;
 			while( 1 )
 			{
-				bSlot = FindObjWithin( pSoldier, pObj->usItem, bSlot, SMALLPOCK8POS );
+				bSlot = FindObjWithin( pSoldier, pObj->usItem, bSlot, POCK12POS );
 				if (bSlot == ITEM_NOT_FOUND)
 				{
 					break;
 				}
 				if ( bSlot != bExcludeSlot )
 				{
-					if ( ( (GCM->getItem(pObj->usItem)->getItemClass() == IC_MONEY) && pSoldier->inv[ bSlot ].uiMoneyAmount < MoneySlotLimit( bSlot ) ) || (GCM->getItem(pObj->usItem)->getItemClass() != IC_MONEY && pSoldier->inv[bSlot].ubNumberOfObjects < ItemSlotLimit( pObj->usItem, bSlot ) ) )
+					if ( ( (GCM->getItem(pObj->usItem)->getItemClass() == IC_MONEY) && pSoldier->inv[ bSlot ].uiMoneyAmount < MoneySlotLimit( bSlot ) ) || (GCM->getItem(pObj->usItem)->getItemClass() != IC_MONEY && pSoldier->inv[bSlot].ubNumberOfObjects < ItemSlotLimit( *pSoldier, pObj->usItem, bSlot ) ) )
 					{
 						// NEW: If in SKI, don't auto-place anything into a stackable slot that's currently hatched out!  Such slots
 						// will disappear in their entirety if sold/moved, causing anything added through here to vanish also!
@@ -2248,11 +2336,12 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 				bSlot++;
 			}
 		}
-		// Search for empty slots to dump into, starting with small pockets
-		bSlot = SMALLPOCK1POS;
+		// Search for empty slots to dump into; the pocket rules decide which
+		// pockets can take the item.
+		bSlot = POCK1POS;
 		while( 1 )
 		{
-			bSlot = FindEmptySlotWithin( pSoldier, bSlot, SMALLPOCK8POS );
+			bSlot = FindEmptySlotWithin( pSoldier, bSlot, POCK12POS );
 			if (bSlot == ITEM_NOT_FOUND)
 			{
 				break;
@@ -2265,11 +2354,11 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			}
 			bSlot++;
 		}
-		// now check hands/large pockets
+		// now check hands/pockets
 		bSlot = HANDPOS;
 		while (1)
 		{
-			bSlot = FindEmptySlotWithin( pSoldier, bSlot, BIGPOCK4POS );
+			bSlot = FindEmptySlotWithin( pSoldier, bSlot, POCK12POS );
 			if (bSlot == ITEM_NOT_FOUND)
 			{
 				break;
@@ -2870,28 +2959,35 @@ BOOLEAN PlaceObjectInSoldierProfile( UINT8 ubProfile, OBJECTTYPE *pObject )
 		return( TRUE );
 	}
 
-	for (bLoop = BIGPOCK1POS; bLoop < SMALLPOCK8POS; bLoop++)
+	// The first free pocket whose kind actually takes the item: a profile
+	// purchase (a gift, a shop, an NPC handover) follows the same pocket rules
+	// as a drag and drop.
+	for (bLoop = POCK1POS; bLoop <= POCK12POS; bLoop++)
 	{
-		if ( gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] == 0 && (pSoldier == NULL || pSoldier->inv[ bLoop ].usItem == NOTHING ) )
+		if ( gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] != 0 ) continue;
+		if ( pSoldier != NULL && pSoldier->inv[ bLoop ].usItem != NOTHING ) continue;
+		if ( GCM->getItem(usItem)->getItemClass() != IC_MONEY &&
+			!CanItemFitInPosition( pSoldier, pObject, bLoop, FALSE ) )
 		{
-
-			// CJC: Deal with money by putting money into # stored in profile
-			if ( GCM->getItem(usItem)->getItemClass() == IC_MONEY )
-			{
-				gMercProfiles[ ubProfile ].uiMoney += pObject->uiMoneyAmount;
-				// change any gold/silver to money
-				usItem = MONEY;
-			}
-			else
-			{
-				gMercProfiles[ ubProfile ].inv[ bLoop ] = usItem;
-				gMercProfiles[ ubProfile ].bInvStatus[ bLoop ] = bStatus;
-				gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] = pObject->ubNumberOfObjects;
-			}
-
-			fReturnVal = TRUE;
-			break;
+			continue;
 		}
+
+		// CJC: Deal with money by putting money into # stored in profile
+		if ( GCM->getItem(usItem)->getItemClass() == IC_MONEY )
+		{
+			gMercProfiles[ ubProfile ].uiMoney += pObject->uiMoneyAmount;
+			// change any gold/silver to money
+			usItem = MONEY;
+		}
+		else
+		{
+			gMercProfiles[ ubProfile ].inv[ bLoop ] = usItem;
+			gMercProfiles[ ubProfile ].bInvStatus[ bLoop ] = bStatus;
+			gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] = pObject->ubNumberOfObjects;
+		}
+
+		fReturnVal = TRUE;
+		break;
 	}
 
 	if ( fReturnVal )

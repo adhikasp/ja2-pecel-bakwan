@@ -1,5 +1,10 @@
 #include "ScenarioItems.h"
 
+#include "Equipment/AttachmentRules.h"
+#include "Equipment/EquipmentCatalog.h"
+#include "Equipment/Lbe.h"
+#include "Equipment/Slots.h"
+
 #include "ContentManager.h"
 #include "GameInstance.h"
 #include "Item_Types.h"
@@ -137,6 +142,210 @@ void ApplyStats(SOLDIERTYPE& s, sol::table const& t)
 	}
 	s.bBreathMax = 100;
 	s.bBreath    = 100;
+}
+
+// --- The equipment schema ---------------------------------------------------
+
+namespace
+{
+	bool RoleFromKey(std::string const& key, Equipment::SlotRole& out)
+	{
+		static const std::pair<char const*, Equipment::SlotRole> ROLES[] = {
+			{ "optic",       Equipment::SlotRole::Optic },
+			{ "muzzle",      Equipment::SlotRole::Muzzle },
+			{ "underbarrel", Equipment::SlotRole::Underbarrel },
+			{ "side_rail",   Equipment::SlotRole::SideRail },
+			{ "plate",       Equipment::SlotRole::Plate },
+			{ "nvg",         Equipment::SlotRole::Nvg },
+		};
+		for (auto const& r : ROLES)
+		{
+			if (key == r.first) { out = r.second; return true; }
+		}
+		return false;
+	}
+
+	bool LbeSlotFromKey(std::string const& key, UINT8& out)
+	{
+		if (key == "vest") { out = LBE_VESTPOS; return true; }
+		if (key == "belt") { out = LBE_BELTPOS; return true; }
+		if (key == "pack") { out = LBE_PACKPOS; return true; }
+		return false;
+	}
+
+	bool PocketFromKey(std::string const& key, UINT8& out)
+	{
+		if (key.rfind("POCK", 0) != 0) return false;
+		int const n = std::atoi(key.c_str() + 4);
+		if (n < 1 || n > 12) return false;
+		out = static_cast<UINT8>(POCK1POS + n - 1);
+		return true;
+	}
+
+	// Strict placement for fixtures: no fallback search, a refusal is a refusal.
+	bool PutInSlotStrict(SOLDIERTYPE& s, UINT8 const slot, UINT16 const item, UINT8 const count)
+	{
+		ClearSlot(s, slot);
+		OBJECTTYPE obj;
+		CreateItems(item, 100, count, &obj);
+		if (!PlaceObject(&s, slot, &obj)) return false;
+		return obj.ubNumberOfObjects == 0;
+	}
+}
+
+void ApplyEquipment(SOLDIERTYPE& s, sol::table const& spec, std::vector<std::string>& problems)
+{
+	// Attachments, keyed by the slot role. They mount on the held gun - or on
+	// the worn armour for the plate and NVG mounts.
+	sol::object const attObj = spec["attachments"];
+	if (attObj.is<sol::table>())
+	{
+		for (auto const& kv : attObj.as<sol::table>())
+		{
+			std::string const roleKey = kv.first.as<std::string>();
+			std::string const itemName = kv.second.as<std::string>();
+			Equipment::SlotRole role;
+			if (!RoleFromKey(roleKey, role))
+			{
+				problems.push_back(roleKey + ": unknown slot role");
+				continue;
+			}
+			UINT16 const attachItem = ItemByName(itemName);
+			OBJECTTYPE* host =
+				role == Equipment::SlotRole::Plate ? &s.inv[VESTPOS] :
+				role == Equipment::SlotRole::Nvg   ? &s.inv[HELMETPOS] : &s.inv[HANDPOS];
+			if (host->usItem == NOTHING)
+			{
+				problems.push_back(itemName + ": nothing to mount it on");
+				continue;
+			}
+			Equipment::AttachmentDef const* const def = Equipment::AttachmentFor(attachItem);
+			if (def == nullptr)
+			{
+				problems.push_back(itemName + ": does not mount on anything");
+				continue;
+			}
+			Equipment::SlotPolicy const toggles = Equipment::TogglesFrom(GCM->getGamePolicy());
+			Equipment::Platform const platform = Equipment::SlotsFor(*GCM->getItem(host->usItem), toggles);
+			int const index = platform.IndexOf(role);
+			if (index < 0)
+			{
+				problems.push_back(itemName + ": no " + roleKey + " slot on " + ItemName(host->usItem));
+				continue;
+			}
+			uint16_t present[Equipment::MAX_HOST_SLOTS] = {};
+			for (int i = 0; i < Equipment::MAX_HOST_SLOTS; ++i) present[i] = host->usAttachItem[i];
+			Equipment::AttachResult const result = Equipment::CanAttachAt(platform, index, *def, present, true, toggles);
+			if (!result.ok)
+			{
+				problems.push_back(itemName + ": " + Equipment::Describe(result.reason));
+				continue;
+			}
+			host->usAttachItem[index]  = attachItem;
+			host->bAttachStatus[index] = 100;
+		}
+	}
+
+	// Worn load-bearing gear, keyed by "vest", "belt" and "pack".
+	sol::object const lbeObj = spec["lbe"];
+	if (lbeObj.is<sol::table>())
+	{
+		for (auto const& kv : lbeObj.as<sol::table>())
+		{
+			std::string const kindKey = kv.first.as<std::string>();
+			std::string const itemName = kv.second.as<std::string>();
+			UINT8 slot;
+			if (!LbeSlotFromKey(kindKey, slot))
+			{
+				problems.push_back(kindKey + ": unknown LBE slot");
+				continue;
+			}
+			UINT16 const item = ItemByName(itemName);
+			Equipment::LbeDef const* const def = Equipment::LbeFor(item);
+			if (def == nullptr)
+			{
+				problems.push_back(itemName + ": not load-bearing gear");
+				continue;
+			}
+			if (!PutInSlotStrict(s, slot, item, 1))
+			{
+				problems.push_back(itemName + ": does not go in the " + kindKey + " slot");
+			}
+		}
+	}
+
+	// Pocket contents, keyed by "POCK1".."POCK12"; the worn LBE provides the
+	// pocket and the pocket rules decide what fits.
+	sol::object const pocketsObj = spec["pockets"];
+	if (pocketsObj.is<sol::table>())
+	{
+		for (auto const& kv : pocketsObj.as<sol::table>())
+		{
+			std::string const slotKey = kv.first.as<std::string>();
+			std::string itemName;
+			int count = 1;
+			if (kv.second.is<std::string>()) itemName = kv.second.as<std::string>();
+			else if (kv.second.is<sol::table>())
+			{
+				sol::table const e = kv.second.as<sol::table>();
+				itemName = StrField(e, "item", "");
+				count = IntField(e, "count", 1);
+			}
+			UINT8 slot;
+			if (!PocketFromKey(slotKey, slot))
+			{
+				problems.push_back(slotKey + ": unknown pocket");
+				continue;
+			}
+			if (itemName.empty()) continue;
+			UINT16 const item = ItemByName(itemName);
+			if (!PutInSlotStrict(s, slot, item, UINT8(std::clamp(count, 1, 8))))
+			{
+				problems.push_back(itemName + ": does not fit " + slotKey);
+			}
+		}
+	}
+}
+
+sol::table LoadoutTable(sol::state_view L, SOLDIERTYPE const& s)
+{
+	sol::table t = L.create_table();
+	t["weapon"] = ItemName(s.inv[HANDPOS].usItem);
+
+	// Attachments keyed by slot role: the gun's typed slots, and the plate/NVG
+	// mounts of the worn armour.
+	sol::table atts = L.create_table();
+	for (UINT8 const hostSlot : { UINT8(HANDPOS), UINT8(VESTPOS), UINT8(HELMETPOS) })
+	{
+		if (s.inv[hostSlot].usItem == NOTHING) continue;
+		Equipment::Platform const platform = Equipment::SlotsFor(*GCM->getItem(s.inv[hostSlot].usItem));
+		for (int i = 0; i < platform.slotCount; ++i)
+		{
+			if (s.inv[hostSlot].usAttachItem[i] != NOTHING)
+			{
+				atts[Equipment::RoleKey(platform.slots[i].role)] = ItemName(s.inv[hostSlot].usAttachItem[i]);
+			}
+		}
+	}
+	t["attachments"] = atts;
+
+	sol::table lbe = L.create_table();
+	if (s.inv[LBE_VESTPOS].usItem != NOTHING) lbe["vest"] = ItemName(s.inv[LBE_VESTPOS].usItem);
+	if (s.inv[LBE_BELTPOS].usItem != NOTHING) lbe["belt"] = ItemName(s.inv[LBE_BELTPOS].usItem);
+	if (s.inv[LBE_PACKPOS].usItem != NOTHING) lbe["pack"] = ItemName(s.inv[LBE_PACKPOS].usItem);
+	t["lbe"] = lbe;
+
+	sol::table pockets = L.create_table();
+	for (int n = 1; n <= 12; ++n)
+	{
+		UINT8 const slot = static_cast<UINT8>(POCK1POS + n - 1);
+		if (s.inv[slot].usItem != NOTHING)
+		{
+			pockets["POCK" + std::to_string(n)] = ItemName(s.inv[slot].usItem);
+		}
+	}
+	t["pockets"] = pockets;
+	return t;
 }
 
 }

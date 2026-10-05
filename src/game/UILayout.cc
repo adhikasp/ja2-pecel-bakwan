@@ -273,18 +273,18 @@ void UILayout::recalculatePositions()
 	m_invSlotPositionTac[HEAD2POS            ].set(startX + 226, startInvY +  30);
 	m_invSlotPositionTac[HANDPOS             ].set(startX + 226, startInvY +  84);
 	m_invSlotPositionTac[SECONDHANDPOS       ].set(startX + 226, startInvY + 108);
-	m_invSlotPositionTac[BIGPOCK1POS         ].set(startX + 468, startInvY +   5);
-	m_invSlotPositionTac[BIGPOCK2POS         ].set(startX + 468, startInvY +  29);
-	m_invSlotPositionTac[BIGPOCK3POS         ].set(startX + 468, startInvY +  53);
-	m_invSlotPositionTac[BIGPOCK4POS         ].set(startX + 468, startInvY +  77);
-	m_invSlotPositionTac[SMALLPOCK1POS       ].set(startX + 396, startInvY +   5);
-	m_invSlotPositionTac[SMALLPOCK2POS       ].set(startX + 396, startInvY +  29);
-	m_invSlotPositionTac[SMALLPOCK3POS       ].set(startX + 396, startInvY +  53);
-	m_invSlotPositionTac[SMALLPOCK4POS       ].set(startX + 396, startInvY +  77);
-	m_invSlotPositionTac[SMALLPOCK5POS       ].set(startX + 432, startInvY +   5);
-	m_invSlotPositionTac[SMALLPOCK6POS       ].set(startX + 432, startInvY +  29);
-	m_invSlotPositionTac[SMALLPOCK7POS       ].set(startX + 432, startInvY +  53);
-	m_invSlotPositionTac[SMALLPOCK8POS       ].set(startX + 432, startInvY +  77);
+	m_invSlotPositionTac[POCK1POS         ].set(startX + 468, startInvY +   5);
+	m_invSlotPositionTac[POCK2POS         ].set(startX + 468, startInvY +  29);
+	m_invSlotPositionTac[POCK3POS         ].set(startX + 468, startInvY +  53);
+	m_invSlotPositionTac[POCK4POS         ].set(startX + 468, startInvY +  77);
+	m_invSlotPositionTac[POCK5POS       ].set(startX + 396, startInvY +   5);
+	m_invSlotPositionTac[POCK6POS       ].set(startX + 396, startInvY +  29);
+	m_invSlotPositionTac[POCK7POS       ].set(startX + 396, startInvY +  53);
+	m_invSlotPositionTac[POCK8POS       ].set(startX + 396, startInvY +  77);
+	m_invSlotPositionTac[POCK9POS       ].set(startX + 432, startInvY +   5);
+	m_invSlotPositionTac[POCK10POS       ].set(startX + 432, startInvY +  29);
+	m_invSlotPositionTac[POCK11POS       ].set(startX + 432, startInvY +  53);
+	m_invSlotPositionTac[POCK12POS       ].set(startX + 432, startInvY +  77);
 
 	// map screen inventory position
 	m_invSlotPositionMap[HELMETPOS].set(m_mapLeftX + 204, m_mapTopY + 116);
@@ -294,18 +294,18 @@ void UILayout::recalculatePositions()
 	m_invSlotPositionMap[HEAD2POS].set(m_mapLeftX +  21, m_mapTopY + 140);
 	m_invSlotPositionMap[HANDPOS].set(m_mapLeftX +  21, m_mapTopY + 194);
 	m_invSlotPositionMap[SECONDHANDPOS].set(m_mapLeftX +  21, m_mapTopY + 218);
-	m_invSlotPositionMap[BIGPOCK1POS].set(m_mapLeftX +  98, m_mapTopY + 251);
-	m_invSlotPositionMap[BIGPOCK2POS].set(m_mapLeftX +  98, m_mapTopY + 275);
-	m_invSlotPositionMap[BIGPOCK3POS].set(m_mapLeftX +  98, m_mapTopY + 299);
-	m_invSlotPositionMap[BIGPOCK4POS].set(m_mapLeftX +  98, m_mapTopY + 323);
-	m_invSlotPositionMap[SMALLPOCK1POS].set(m_mapLeftX +  22, m_mapTopY + 251);
-	m_invSlotPositionMap[SMALLPOCK2POS].set(m_mapLeftX +  22, m_mapTopY + 275);
-	m_invSlotPositionMap[SMALLPOCK3POS].set(m_mapLeftX +  22, m_mapTopY + 299);
-	m_invSlotPositionMap[SMALLPOCK4POS].set(m_mapLeftX +  22, m_mapTopY + 323);
-	m_invSlotPositionMap[SMALLPOCK5POS].set(m_mapLeftX +  60, m_mapTopY + 251);
-	m_invSlotPositionMap[SMALLPOCK6POS].set(m_mapLeftX +  60, m_mapTopY + 275);
-	m_invSlotPositionMap[SMALLPOCK7POS].set(m_mapLeftX +  60, m_mapTopY + 299);
-	m_invSlotPositionMap[SMALLPOCK8POS].set(m_mapLeftX +  60, m_mapTopY + 323);
+	m_invSlotPositionMap[POCK1POS].set(m_mapLeftX +  98, m_mapTopY + 251);
+	m_invSlotPositionMap[POCK2POS].set(m_mapLeftX +  98, m_mapTopY + 275);
+	m_invSlotPositionMap[POCK3POS].set(m_mapLeftX +  98, m_mapTopY + 299);
+	m_invSlotPositionMap[POCK4POS].set(m_mapLeftX +  98, m_mapTopY + 323);
+	m_invSlotPositionMap[POCK5POS].set(m_mapLeftX +  22, m_mapTopY + 251);
+	m_invSlotPositionMap[POCK6POS].set(m_mapLeftX +  22, m_mapTopY + 275);
+	m_invSlotPositionMap[POCK7POS].set(m_mapLeftX +  22, m_mapTopY + 299);
+	m_invSlotPositionMap[POCK8POS].set(m_mapLeftX +  22, m_mapTopY + 323);
+	m_invSlotPositionMap[POCK9POS].set(m_mapLeftX +  60, m_mapTopY + 251);
+	m_invSlotPositionMap[POCK10POS].set(m_mapLeftX +  60, m_mapTopY + 275);
+	m_invSlotPositionMap[POCK11POS].set(m_mapLeftX +  60, m_mapTopY + 299);
+	m_invSlotPositionMap[POCK12POS].set(m_mapLeftX +  60, m_mapTopY + 323);
 
 	m_invCamoRegion.set(SM_BODYINV_X, SM_BODYINV_Y);
 

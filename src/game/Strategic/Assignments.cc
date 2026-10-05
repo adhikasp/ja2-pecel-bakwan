@@ -126,7 +126,7 @@ REPAIR_PASS_SLOTS_TYPE gRepairPassSlotList[ NUM_REPAIR_PASS_TYPES ] =
 {					// pass					# choices												slots repaired in this pass
 	{ /* hands and armor */  5, { HANDPOS, SECONDHANDPOS, VESTPOS, HELMETPOS, LEGPOS, -1, -1, -1, -1, -1, -1, -1 } },
 	{ /* headgear */         2, { HEAD1POS, HEAD2POS, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 } },
-	{ /* pockets */         12, { BIGPOCK1POS, BIGPOCK2POS, BIGPOCK3POS, BIGPOCK4POS, SMALLPOCK1POS, SMALLPOCK2POS, SMALLPOCK3POS, SMALLPOCK4POS, SMALLPOCK5POS, SMALLPOCK6POS, SMALLPOCK7POS, SMALLPOCK8POS } }
+	{ /* pockets */         12, { POCK1POS, POCK2POS, POCK3POS, POCK4POS, POCK5POS, POCK6POS, POCK7POS, POCK8POS, POCK9POS, POCK10POS, POCK11POS, POCK12POS } }
 };
 
 
@@ -386,7 +386,7 @@ static BOOLEAN CanCharacterDoctor(SOLDIERTYPE const* const pSoldier)
 	if (!BasicCanCharacterDoctor(pSoldier)) return FALSE;
 
 	// find med kit
-	for (bPocket = HANDPOS; bPocket <= SMALLPOCK8POS; bPocket++)
+	for (bPocket = HANDPOS; bPocket <= POCK12POS; bPocket++)
 	{
 		if (IsMedicalKitItem(&pSoldier->inv[bPocket]))
 		{
@@ -524,7 +524,7 @@ static BOOLEAN DoesCharacterHaveAnyItemsToRepair(SOLDIERTYPE const* const pSoldi
 			{
 				// okay, seems like a candidate!  Check if he has anything that needs unjamming or repairs
 
-				for (INT8 bPocket = HANDPOS; bPocket <= SMALLPOCK8POS; ++bPocket)
+				for (INT8 bPocket = HANDPOS; bPocket <= POCK12POS; ++bPocket)
 				{
 					// the object a weapon? and jammed?
 					if ( ( GCM->getItem(pOtherSoldier->inv[ bPocket ].usItem)->getItemClass() == IC_GUN ) && ( pOtherSoldier->inv[ bPocket ].bGunAmmoStatus < 0 ) )
@@ -1178,7 +1178,7 @@ static UINT16 ToolKitPoints(SOLDIERTYPE* pSoldier)
 	UINT8 ubPocket;
 
 	// add up kit points
-	for (ubPocket=HANDPOS; ubPocket <= SMALLPOCK8POS; ubPocket++)
+	for (ubPocket=HANDPOS; ubPocket <= POCK12POS; ubPocket++)
 	{
 		if( pSoldier -> inv[ ubPocket ].usItem == TOOLKIT )
 		{
@@ -1197,7 +1197,7 @@ static UINT16 TotalMedicalKitPoints(SOLDIERTYPE* pSoldier)
 	UINT16 usKitpts=0;
 
 	// add up kit points of all medkits
-	for (ubPocket = HANDPOS; ubPocket <= SMALLPOCK8POS; ubPocket++)
+	for (ubPocket = HANDPOS; ubPocket <= POCK12POS; ubPocket++)
 	{
 		if (IsMedicalKitItem(&pSoldier->inv[ubPocket]))
 		{
@@ -1462,7 +1462,7 @@ static UINT16 HealPatient(SOLDIERTYPE* pPatient, SOLDIERTYPE* pDoctor, UINT16 us
 		}
 
 		// go through doctor's pockets and heal, starting at with his in-hand item
-		for (bPocket = HANDPOS; bPocket <= SMALLPOCK8POS; bPocket++)
+		for (bPocket = HANDPOS; bPocket <= POCK12POS; bPocket++)
 		{
 			auto & o = pDoctor->inv[bPocket];
 			if (IsMedicalKitItem(&o))
@@ -1500,7 +1500,7 @@ static UINT16 HealPatient(SOLDIERTYPE* pPatient, SOLDIERTYPE* pDoctor, UINT16 us
 
 		// go through doctor's pockets and heal, starting at with his in-hand item
 		// the healing pts are based on what type of medkit is in his hand, so we HAVE to start there first!
-		for (bPocket = HANDPOS; bPocket <= SMALLPOCK8POS; bPocket++)
+		for (bPocket = HANDPOS; bPocket <= POCK12POS; bPocket++)
 		{
 			OBJECTTYPE& o = pDoctor->inv[bPocket];
 			if (IsMedicalKitItem(&o))
@@ -1545,7 +1545,7 @@ static UINT16 HealPatient(SOLDIERTYPE* pPatient, SOLDIERTYPE* pDoctor, UINT16 us
 
 		// go through doctor's pockets and heal, starting at with his in-hand item
 		// the healing pts are based on what type of medkit is in his hand, so we HAVE to start there first!
-		for (bPocket = HANDPOS; bPocket <= SMALLPOCK8POS; bPocket++)
+		for (bPocket = HANDPOS; bPocket <= POCK12POS; bPocket++)
 		{
 			OBJECTTYPE& o = pDoctor->inv[bPocket];
 			if (IsMedicalKitItem(&o))
@@ -1944,7 +1944,7 @@ static void HandleRepairBySoldier(SOLDIERTYPE& s)
 			if (i == 0)
 			{
 				start = SECONDHANDPOS;
-				end   = SMALLPOCK8POS;
+				end   = POCK12POS;
 			}
 			else
 			{
@@ -3477,7 +3477,7 @@ static void MakeSureToolKitIsInHand(SOLDIERTYPE* pSoldier)
 	if( pSoldier -> inv[ HANDPOS].usItem != TOOLKIT )
 	{
 		// run through rest of inventory looking for toolkits, swap the first one into hand if found
-		for (bPocket = SECONDHANDPOS; bPocket <= SMALLPOCK8POS; bPocket++)
+		for (bPocket = SECONDHANDPOS; bPocket <= POCK12POS; bPocket++)
 		{
 			if( pSoldier -> inv[ bPocket ].usItem == TOOLKIT )
 			{
@@ -3506,7 +3506,7 @@ static BOOLEAN MakeSureMedKitIsInHand(SOLDIERTYPE* pSoldier)
 	}
 
 	// run through rest of inventory looking for MEDICAL BAGS, swap the first one into hand if found
-	for (bPocket = SECONDHANDPOS; bPocket <= SMALLPOCK8POS; bPocket++)
+	for (bPocket = SECONDHANDPOS; bPocket <= POCK12POS; bPocket++)
 	{
 		if ( pSoldier -> inv[ bPocket ].usItem == MEDICKIT )
 		{
@@ -7140,7 +7140,7 @@ static BOOLEAN UnjamGunsOnSoldier(SOLDIERTYPE* pOwnerSoldier, SOLDIERTYPE* pRepa
 
 
 	// try to unjam everything before beginning any actual repairs.. successful unjamming costs 2 points per weapon
-	for (bPocket = HANDPOS; bPocket <= SMALLPOCK8POS; bPocket++)
+	for (bPocket = HANDPOS; bPocket <= POCK12POS; bPocket++)
 	{
 		// the object a weapon? and jammed?
 		if ( ( GCM->getItem(pOwnerSoldier->inv[ bPocket ].usItem)->getItemClass() == IC_GUN ) && ( pOwnerSoldier->inv[ bPocket ].bGunAmmoStatus < 0 ) )

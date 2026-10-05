@@ -1371,8 +1371,8 @@ static void SaveSoldierStructure(HWFILE const f)
 		if (!s.bActive) continue;
 
 		// Save the soldier structure
-		BYTE data[2328];
-		std::fill_n(data, 2328, 0);
+		BYTE data[SOLDIERTYPE_BINARY_SIZE];
+		std::fill_n(data, SOLDIERTYPE_BINARY_SIZE, 0);
 		InjectSoldierType(data, &s);
 		NewJA2EncryptedFileWrite(f, data, sizeof(data));
 
@@ -1409,7 +1409,7 @@ static void LoadSoldierStructure(HWFILE const f, UINT32 savegame_version)
 
 		//Read in the saved soldier info into a Temp structure
 		SOLDIERTYPE SavedSoldierInfo;
-		BYTE Data[2328];
+		BYTE Data[SOLDIERTYPE_BINARY_SIZE];
 		reader(f, Data, sizeof(Data));
 		ExtractSoldierType(Data, &SavedSoldierInfo, savegame_version);
 

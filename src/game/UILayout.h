@@ -1,6 +1,7 @@
 #ifndef _UI_LAYOUT_H_
 #define _UI_LAYOUT_H_
 
+#include "InventorySlots.h"
 #include "Types.h"
 #include "VideoLayout.h"
 
@@ -8,7 +9,9 @@
 // defines
 /////////////////////////////////////////////////////////////
 
-#define NUM_INVENTORY_SLOTS     (19)
+// The slot tables below are indexed by InvSlotPos, so their size is the slot
+// count and nothing else: a stale count here reads and writes past the arrays.
+#define NUM_INVENTORY_SLOTS     (NUM_INV_SLOTS)
 
 /* Following defines allow us to not change the old code too much.
  * It will help to preserve the original Stracciatella codebase. */

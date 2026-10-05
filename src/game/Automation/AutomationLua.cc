@@ -2,6 +2,7 @@
 #include "Automation.h"
 #include "AutomationSession.h"
 #include "BattleScenario.h"
+#include "ScenarioItems.h"
 #include "CampaignScenario.h"
 
 #include "Assignments.h"
@@ -706,6 +707,20 @@ namespace
 			});
 		});
 		ja2.set_function("state", [] { return Guarded([] { return GameState(); }); });
+		// ja2.loadout(name): the equipment schema a merc carries - the weapon, its
+		// typed attachments keyed by slot role, the worn LBE keyed by kind and the
+		// pocket contents keyed by pocket.
+		ja2.set_function("loadout", [](std::string const& name) {
+			return Guarded([&] {
+				SOLDIERTYPE* found = nullptr;
+				FOR_EACH_IN_TEAM(x, OUR_TEAM)
+				{
+					if (x->name.to_std_string() == name) { found = x; break; }
+				}
+				if (!found) throw std::runtime_error("no merc named \"" + name + "\"");
+				return Scenario::LoadoutTable(g_lua, *found);
+			});
+		});
 		// ja2.campaign(): the strategic state the campaign harness authors: clock, money,
 		// difficulty, towns (ownership/loyalty/militia), sector garrisons, the roster with
 		// gear, and quest/fact progress. See ja2.debug("campaign", spec).

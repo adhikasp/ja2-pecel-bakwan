@@ -74,18 +74,18 @@ UINT32 guiCurrentUniqueSoldierId = 1;
 
 UINT8 gubItemDroppableFlag[NUM_INV_SLOTS] =
 {
-	0x01,
-	0x02,
-	0x04,
+	0x01, // HELMETPOS
+	0x02, // VESTPOS
+	0x04, // LEGPOS
 	0,
 	0,
-	0x08,
+	0x08, // HANDPOS
 	0,
-	0x10,
-	0x20,
-	0x40,
-	0x80,
-	0,
+	0, 0, 0, // the three worn LBE slots
+	0x10, // POCK1
+	0x20, // POCK2
+	0x40, // POCK3
+	0x80, // POCK4
 	0,
 	0,
 	0,
@@ -120,6 +120,27 @@ void RandomizeNewSoldierStats( SOLDIERCREATE_STRUCT *pCreateStruct )
 
 
 static void CopyProfileItems(SOLDIERTYPE&, SOLDIERCREATE_STRUCT const&);
+
+// Everyone wears basic load-bearing gear unless something already chose it: the
+// vest, belt and pack provide the pockets a merc carries things in. It has to
+// happen before anything is placed, because a pocket only exists while its LBE
+// item is worn.
+static void EnsureBasicLoadBearingGear(SOLDIERTYPE& s)
+{
+	if (s.ubSoldierClass == SOLDIER_CLASS_CREATURE) return; // creatures have no pockets
+	static const struct { INT8 slot; UINT16 item; } BASIC_LBE[] = {
+		{ LBE_VESTPOS, LBE_VEST },
+		{ LBE_BELTPOS, LBE_BELT },
+		{ LBE_PACKPOS, LBE_PACK },
+	};
+	for (auto const& lbe : BASIC_LBE)
+	{
+		if (s.inv[lbe.slot].usItem == NOTHING)
+		{
+			CreateItem(lbe.item, 100, &s.inv[lbe.slot]);
+		}
+	}
+}
 static void InitSoldierStruct(SOLDIERTYPE&);
 static void TacticalCopySoldierFromCreateStruct(SOLDIERTYPE&, SOLDIERCREATE_STRUCT const&);
 static void TacticalCopySoldierFromProfile(SOLDIERTYPE&, SOLDIERCREATE_STRUCT const&);
@@ -200,6 +221,11 @@ try
 
 	// if WE_SEE_WHAT_MILITIA_SEES
 	if (team_id == MILITIA_TEAM) s->bVisible = 1;
+
+	// Everyone wears basic load-bearing gear unless the create struct already
+	// chose something: this has to run before any item is placed, because a
+	// pocket only exists while its LBE item is worn.
+	EnsureBasicLoadBearingGear(*s);
 
 	if (profile != NO_PROFILE)
 	{
@@ -295,7 +321,7 @@ try
 	if (team_id != OUR_TEAM)
 	{
 		bool second_face_item = false;
-		for (INT32 i = BIGPOCK1POS; i <= BIGPOCK4POS; ++i)
+		for (INT32 i = POCK1POS; i <= POCK4POS; ++i)
 		{
 			OBJECTTYPE& o = s->inv[i];
 			if (!(GCM->getItem(o.usItem)->isFace())) continue;
@@ -2032,7 +2058,7 @@ static void CopyProfileItems(SOLDIERTYPE& s, SOLDIERCREATE_STRUCT const& c)
 
 		for (UINT32 money_left = p.uiMoney; money_left > 0;)
 		{
-			INT8 const slot_id = FindEmptySlotWithin(&s, BIGPOCK1POS, SMALLPOCK8POS);
+			INT8 const slot_id = FindEmptySlotWithin(&s, POCK1POS, POCK12POS);
 			if (slot_id == NO_SLOT) break;
 			OBJECTTYPE* const slot = &s.inv[slot_id];
 
@@ -2047,6 +2073,7 @@ static void CopyProfileItems(SOLDIERTYPE& s, SOLDIERCREATE_STRUCT const& c)
 		// do some special coding to put stuff in the profile in better-looking
 		// spots
 		std::fill(std::begin(s.inv), std::end(s.inv), OBJECTTYPE{});
+		EnsureBasicLoadBearingGear(s); // the fill above clears it; pockets come with the gear
 		for (UINT32 i = 0; i != NUM_INV_SLOTS; ++i)
 		{
 			if (p.inv[i] == NOTHING) continue;

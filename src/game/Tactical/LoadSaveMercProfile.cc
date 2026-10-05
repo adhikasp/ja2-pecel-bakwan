@@ -7,6 +7,13 @@
 
 #include <array>
 
+namespace
+{
+	// The binary profile format (vanilla prof.dat and save games) carries 19
+	// inventory slots; see BINARY_INV_SLOTS in InventorySlots.h. The LBE slots
+	// have no binary form: they start empty and the basic loadout fills them.
+	constexpr int PROFILE_INV_BINARY_SLOTS = BINARY_INV_SLOTS;
+}
 
 /** Calculates soldier profile checksum. */
 UINT32 SoldierProfileChecksum(MERCPROFILESTRUCT const& p)
@@ -123,8 +130,18 @@ void ExtractMercProfile(BYTE const* const Src, MERCPROFILESTRUCT& p, UINT32 *che
 	EXTR_SKIP(S, 1)
 	EXTR_I8(S, p.bWisdom)
 	EXTR_SKIP(S, 2)
-	EXTR_U8A(S, p.bInvStatus, lengthof(p.bInvStatus))
-	EXTR_U8A(S, p.bInvNumber, lengthof(p.bInvNumber))
+	{
+		UINT8 bin[PROFILE_INV_BINARY_SLOTS];
+	EXTR_U8A(S, bin, PROFILE_INV_BINARY_SLOTS)
+		for (int i = 0; i < PROFILE_INV_BINARY_SLOTS; ++i) p.bInvStatus[BinaryInvSlotToSlot(i)] = bin[i];
+		for (int i = LBE_VESTPOS; i <= LBE_PACKPOS; ++i) p.bInvStatus[i] = 0;
+	}
+	{
+		UINT8 bin[PROFILE_INV_BINARY_SLOTS];
+	EXTR_U8A(S, bin, PROFILE_INV_BINARY_SLOTS)
+		for (int i = 0; i < PROFILE_INV_BINARY_SLOTS; ++i) p.bInvNumber[BinaryInvSlotToSlot(i)] = bin[i];
+		for (int i = LBE_VESTPOS; i <= LBE_PACKPOS; ++i) p.bInvNumber[i] = 0;
+	}
 	EXTR_U16A(S, p.usApproachFactor, lengthof(p.usApproachFactor))
 	EXTR_I8(S, p.bMainGunAttractiveness)
 	EXTR_I8(S, p.bAgility)
@@ -136,7 +153,12 @@ void ExtractMercProfile(BYTE const* const Src, MERCPROFILESTRUCT& p, UINT32 *che
 	EXTR_U8(S, p.ubInvUndroppable)
 	EXTR_U8A(S, p.ubRoomRangeStart, lengthof(p.ubRoomRangeStart))
 	EXTR_SKIP(S, 1)
-	EXTR_U16A(S, p.inv, lengthof(p.inv))
+	{
+		UINT16 bin[PROFILE_INV_BINARY_SLOTS];
+	EXTR_U16A(S, bin, PROFILE_INV_BINARY_SLOTS)
+		for (int i = 0; i < PROFILE_INV_BINARY_SLOTS; ++i) p.inv[BinaryInvSlotToSlot(i)] = bin[i];
+		for (int i = LBE_VESTPOS; i <= LBE_PACKPOS; ++i) p.inv[i] = 0;
+	}
 	EXTR_SKIP(S, 20)
 	EXTR_U16A(S, p.usStatChangeChances, lengthof(p.usStatChangeChances))
 	EXTR_U16A(S, p.usStatChangeSuccesses, lengthof(p.usStatChangeSuccesses))
@@ -308,8 +330,16 @@ void InjectMercProfile(BYTE* const Dst, MERCPROFILESTRUCT const& p)
 	INJ_SKIP(D, 1)
 	INJ_I8(D, p.bWisdom)
 	INJ_SKIP(D, 2)
-	INJ_U8A(D, p.bInvStatus, lengthof(p.bInvStatus))
-	INJ_U8A(D, p.bInvNumber, lengthof(p.bInvNumber))
+	{
+		UINT8 bin[PROFILE_INV_BINARY_SLOTS];
+		for (int i = 0; i < PROFILE_INV_BINARY_SLOTS; ++i) bin[i] = p.bInvStatus[BinaryInvSlotToSlot(i)];
+		INJ_U8A(D, bin, PROFILE_INV_BINARY_SLOTS)
+	}
+	{
+		UINT8 bin[PROFILE_INV_BINARY_SLOTS];
+		for (int i = 0; i < PROFILE_INV_BINARY_SLOTS; ++i) bin[i] = p.bInvNumber[BinaryInvSlotToSlot(i)];
+		INJ_U8A(D, bin, PROFILE_INV_BINARY_SLOTS)
+	}
 	INJ_U16A(D, p.usApproachFactor, lengthof(p.usApproachFactor))
 	INJ_I8(D, p.bMainGunAttractiveness)
 	INJ_I8(D, p.bAgility)
@@ -321,7 +351,11 @@ void InjectMercProfile(BYTE* const Dst, MERCPROFILESTRUCT const& p)
 	INJ_U8(D, p.ubInvUndroppable)
 	INJ_U8A(D, p.ubRoomRangeStart, lengthof(p.ubRoomRangeStart))
 	INJ_SKIP(D, 1)
-	INJ_U16A(D, p.inv, lengthof(p.inv))
+	{
+		UINT16 bin[PROFILE_INV_BINARY_SLOTS];
+		for (int i = 0; i < PROFILE_INV_BINARY_SLOTS; ++i) bin[i] = p.inv[BinaryInvSlotToSlot(i)];
+		INJ_U16A(D, bin, PROFILE_INV_BINARY_SLOTS)
+	}
 	INJ_SKIP(D, 20)
 	INJ_U16A(D, p.usStatChangeChances, lengthof(p.usStatChangeChances))
 	INJ_U16A(D, p.usStatChangeSuccesses, lengthof(p.usStatChangeSuccesses))
