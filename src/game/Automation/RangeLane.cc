@@ -238,7 +238,7 @@ sol::table StageRangeLane(sol::state_view L, sol::table const& spec)
 	// merc who is still bleeding from the last cell is not a controlled shooter.
 	sol::object const shooterStats = shooterTable["stats"];
 	sol::table stats = shooterStats.is<sol::table>() ? shooterStats.as<sol::table>() : sol::table(L.create_table());
-	if (stats["health"] == sol::nil) stats["health"] = 100;
+	if (stats["health"] == sol::lua_nil) stats["health"] = 100;
 	Scenario::ApplyStats(*shooter, stats);
 	shooter->bBleeding      = 0;
 	shooter->sDamage        = 0;
@@ -285,7 +285,7 @@ sol::table StageRangeLane(sol::state_view L, sol::table const& spec)
 	// which is how a fixture asks for a tougher dummy.
 	sol::object const targetStats = targetTable["stats"];
 	sol::table dummyStats = targetStats.is<sol::table>() ? targetStats.as<sol::table>() : sol::table(L.create_table());
-	if (dummyStats["health"] == sol::nil) dummyStats["health"] = 100;
+	if (dummyStats["health"] == sol::lua_nil) dummyStats["health"] = 100;
 	Scenario::ApplyStats(*target, dummyStats);
 	ApplyLoadout(*target, targetSpec, "range lane target");
 
