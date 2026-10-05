@@ -1084,7 +1084,7 @@ namespace
 				else if (what == "npcs")
 				{
 					// Spawn townsfolk / named NPCs in the loaded sector, near the team.
-					SpawnNpcs(a ? *a : sol::object(sol::nil));
+					SpawnNpcs(a ? *a : sol::object(sol::lua_nil));
 				}
 				else if (what == "uispike_rml" || what == "uispike_inhouse")
 				{

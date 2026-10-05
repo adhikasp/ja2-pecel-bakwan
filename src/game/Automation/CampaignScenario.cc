@@ -397,7 +397,7 @@ void StageCampaign(sol::table const& spec)
 	sol::object const moneyObj = spec["money"];
 	if (moneyObj.is<int>()) LaptopSaveInfo.iCurrentBalance = moneyObj.as<int>();
 	sol::object const difficultyObj = spec["difficulty"];
-	if (difficultyObj.valid() && difficultyObj != sol::nil)
+	if (difficultyObj.valid() && difficultyObj != sol::lua_nil)
 		gGameOptions.ubDifficultyLevel = UINT8(DifficultyFrom(difficultyObj));
 
 	// 3. towns
