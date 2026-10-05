@@ -43,10 +43,7 @@ TEST(GameVersion, asserts)
 TEST(GameVersion, theShownLabelIsOverridableSoGoldensDoNotCarryACommitSha)
 {
 	std::string const built_in = VersionLabel();
-	EXPECT_FALSE(built_in.empty());
-	// CMakeLists.txt appends `git rev-parse --short HEAD`, which would otherwise make every
-	// screen that shows the version (main menu, message box) differ on every commit.
-	EXPECT_NE(built_in.find("git+"), std::string::npos);
+	EXPECT_EQ(built_in, g_version_label);
 	SetVersionLabelOverride("Pecel Bakwan golden");
 	EXPECT_EQ(VersionLabel(), "Pecel Bakwan golden");
 	SetVersionLabelOverride("");
