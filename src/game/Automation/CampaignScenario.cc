@@ -10,11 +10,13 @@
 #include "GameInstance.h"
 #include "GameSettings.h"
 #include "Game_Clock.h"
+#include "Game_Events.h"
 #include "Isometric_Utils.h"
 #include "ItemModel.h"
 #include "Item_Types.h"
 #include "LaptopSave.h"
 #include "MapScreen.h"
+#include "Map_Screen_Interface.h"
 #include "Merc_Hiring.h"
 #include "MercProfile.h"
 #include "Overhead.h"
@@ -363,6 +365,21 @@ namespace
 			s->bLifeMax = INT8(std::clamp(health, 1, 100));
 			s->bLife    = s->bLifeMax;
 		}
+		// a wound, for the doctor/patient step: life below the max without lowering it
+		int const life = Scenario::IntField(e, "life", -1);
+		if (life >= 0) s->bLife = INT8(std::clamp(life, 1, int(s->bLifeMax)));
+		// rest: low breath for the sleep step. Both the current breath and the max (the fatigue a
+		// good night's sleep restores) are set; a merc is only allowed to sleep below 95 max breath.
+		int const energy = Scenario::IntField(e, "energy", -1);
+		if (energy >= 0)
+		{
+			s->bBreathMax = INT8(std::clamp(energy, BREATHMAX_ABSOLUTE_MINIMUM, 100));
+			s->bBreath    = s->bBreathMax;
+		}
+		// hold = "TOOLKIT": into his hand, whatever the pockets take - a repair or doctor step needs the
+		// kit in a known slot, and AutoPlaceObject can fail on a soldier carrying a full kit already
+		std::string const hold = Scenario::StrField(e, "hold", "");
+		if (!hold.empty()) Scenario::PutInSlot(*s, HANDPOS, Scenario::ItemByName(hold), 1);
 		sol::object const items = e["items"];
 		if (items.is<sol::table>())
 		{
@@ -370,7 +387,21 @@ namespace
 			for (int i = 1; i <= int(list.size()); ++i)
 			{
 				sol::object const o = list[i];
-				if (o.is<std::string>()) Scenario::GiveItem(*s, Scenario::ItemByName(o.as<std::string>()));
+				if (o.is<std::string>())
+				{
+					Scenario::GiveItem(*s, Scenario::ItemByName(o.as<std::string>()));
+				}
+				else if (o.is<sol::table>())
+				{
+					// { item = "TOOLKIT", count = 1, condition = 60 }: a stack or a neglected item,
+					// so a repair/condition test can stage what it needs
+					sol::table const it = o.as<sol::table>();
+					std::string const name = Scenario::StrField(it, "item", Scenario::StrField(it, "name", ""));
+					if (name.empty()) throw std::runtime_error("ja2.debug(\"campaign\"): an item table needs item = \"...\"");
+					int const count = std::clamp(Scenario::IntField(it, "count", 1), 1, 255);
+					int const condition = std::clamp(Scenario::IntField(it, "condition", 100), 1, 100);
+					Scenario::GiveItem(*s, Scenario::ItemByName(name), UINT8(count), UINT8(condition));
+				}
 			}
 		}
 	}
@@ -481,11 +512,40 @@ void StageCampaign(sol::table const& spec)
 		if (player >= 0) gStrategicStatus.usPlayerKills = UINT16(std::clamp(player, 0, 65535));
 	}
 
-	// 7. reconcile the roster with the profiles, then rebuild the map-screen list
+	// 7. rebase the strategic event queue on the staged clock. Staging jumps the clock (a new game
+	// starts on day 1), and every event scheduled before the staged "now" would otherwise fire at
+	// once when the clock next runs - replaying days of missed hourly updates (each of which
+	// fatigues every merc, so a staged squad starts exhausted). Periodic and daily events keep
+	// their cadence from the staged now; one-shot events that were missed are dropped: the spec
+	// states where the campaign is, it does not replay how it got there.
+	{
+		UINT32 const now = GetWorldTotalSeconds();
+		for (STRATEGICEVENT* e = gpEventList; e; e = e->next)
+		{
+			if (e->uiTimeStamp >= now) continue;
+			if (e->ubEventType == PERIODIC_EVENT || e->ubEventType == EVERYDAY_EVENT || e->ubEventType == RANGED_EVENT)
+				e->uiTimeStamp = now + e->uiTimeOffset;
+			else
+				e->ubFlags |= SEF_DELETION_PENDING;
+		}
+		DeletePendingStrategicEvents();
+	}
+
+	// 8. reconcile the roster with the profiles, then rebuild the map-screen list
 	FOR_EACH_IN_TEAM(s, OUR_TEAM)
 	{
 		if (!s->bActive || s->ubProfile >= NUM_PROFILES) continue;
 		gMercProfiles[s->ubProfile].sSector = s->sSector;
+	}
+	// A staged campaign is not a game that just started: in normal play the landing flow clears this flag,
+	// and until it is cleared the map screen ignores clicks (MapScreen.cc checks DidGameJustStart()).
+	gTacticalStatus.fDidGameJustStart = FALSE;
+	// Time compression is gated on having hired a merc ever (TellPlayerWhyHeCantCompressTime): a staged
+	// roster counts, or no world-map step that runs the clock would work.
+	gfAtLeastOneMercWasHired = FALSE;
+	FOR_EACH_IN_TEAM(s, OUR_TEAM)
+	{
+		if (s->bActive && s->bLife > 0) { gfAtLeastOneMercWasHired = TRUE; break; }
 	}
 	ReBuildCharactersList();
 }
@@ -553,11 +613,13 @@ sol::table CampaignState(sol::state& L)
 		t["name"]           = m->name.to_std_string();
 		t["profile"]        = int(m->ubProfile);
 		t["sector"]         = m->sSector.AsShortString().to_std_string();
+		t["betweenSectors"] = m->fBetweenSectors != 0;
 		t["assignment"]     = int(m->bAssignment);
 		if (m->bAssignment >= 0 && m->bAssignment <= ASSIGNMENT_EMPTY)
 			t["assignmentName"] = pAssignmentStrings[m->bAssignment].to_std_string();
 		t["life"]           = int(m->bLife);
 		t["lifeMax"]        = int(m->bLifeMax);
+		t["energy"]         = int(m->bBreath);
 		t["contractDaysLeft"] = int(m->iTotalContractLength);
 		sol::table items = L.create_table();
 		int ii = 1;
@@ -568,6 +630,7 @@ sol::table CampaignState(sol::state& L)
 			it["slot"]  = int(slot);
 			it["item"]  = Scenario::ItemName(m->inv[slot].usItem);
 			it["count"] = int(m->inv[slot].ubNumberOfObjects);
+			it["condition"] = int(m->inv[slot].bStatus[0]);
 			items[ii++] = it;
 		}
 		t["items"] = items;

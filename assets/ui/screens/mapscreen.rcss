@@ -64,7 +64,9 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .team .tr.plotting { background-color: var(--c-accent-soft); border-left: 2dp var(--c-accent); padding-left: 10dp; }
 .team .tr.dimmed { color: var(--c-text-faint); }
 .team .tr.dimmed .strong { color: var(--c-text-faint); }
-.c-st { flex: 0 0 22dp; }
+/* The sleep cell keeps its 22x22 hit area even when no icon is shown: an empty flex
+   cell has zero height, so the toggle would only be clickable once already asleep. */
+.c-st { flex: 0 0 22dp; height: 22dp; display: flex; align-items: center; justify-content: center; }
 .c-st .icon { width: 14dp; height: 14dp; image-color: var(--c-info); }
 .c-nm { flex: 1 1 0; }
 .c-as { flex: 0 0 116dp; display: flex; align-items: center; }

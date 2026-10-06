@@ -1,14 +1,23 @@
 # E2E campaign state — design
 
-> **Status: first slice implemented.** The plan below is the contract for the track; the
-> first tests built on it are:
+> **Status: two slices implemented.** The plan below is the contract for the track; the
+> tests built on it are:
 >
 > - `tests/e2e/campaign_state.lua` — author a non-default campaign state, assert it through
 >   `ja2.campaign()` and the status view model, save, reload and assert it again.
 > - `tests/e2e/battle_campaign.lua` — author a state, walk into a controlled town with
 >   townsfolk, then step into a tactical battle in the loaded sector.
+> - `tests/e2e/world_map_steps.lua` — the world-map steps: plot a path, move a squad
+>   between sectors, arrive, trigger an encounter and retreat from it, and board, fly and
+>   leave the helicopter, asserted through `ja2.state()` and the native map screen's
+>   element ids (issue [#69](https://github.com/adhikasp/ja2-pecel-bakwan/issues/69)).
+> - `tests/e2e/world_map_actions.lua` — the strategic actions around the map: split a
+>   squad, rest, doctor/patient, repair, train, and move an item between two mercs through
+>   the sector inventory, driven by the native element ids.
 > - `tests/e2e/lib/campaign.lua` — the shared steps (`stage`, `at`, `assertState`,
 >   `enterSector`, `enterTown`, `stepIntoBattle`).
+> - `tests/e2e/lib/worldmap.lua` — the world-map steps (`staged`, `plot`, `travel`,
+>   `waitLanded`, `assign`, `resume`, `runHours`).
 > - `ja2.debug("campaign", spec)`, `ja2.campaign()`, `ja2.debug("entersector", spec)` and
 >   `ja2.debug("npcs", spec)` — the C++ harness in
 >   [`src/game/Automation/CampaignScenario.cc`](../../src/game/Automation/CampaignScenario.cc).
@@ -67,6 +76,9 @@ ja2.debug("campaign", {
     { name = "Barry", sector = "A9", assignment = "squad", contract_days_left = 7,
       weapon = "G11", armour = "spectra", health = 100,
       items = { "FIRSTAIDKIT", "CROWBAR" } },
+    { name = "Ivan", sector = "A9", assignment = "patient", health = 100, life = 50,
+      energy = 40, hold = "MEDICKIT",     -- a wound, a tired man, a kit in the hand
+      items = { { item = "G11", condition = 60 } } },  -- a neglected rifle, for a repair step
     { name = "Trevor", dead = true },    -- did not come home: the profile only (the victory epilogue's fallen)
   },
   kills = { admins = 21, troops = 402, elites = 189, player = 300 },  -- gStrategicStatus's kill counters
@@ -92,6 +104,16 @@ Semantics:
 - Staging *replaces* the named dimensions, it does not add to them.
 - A merc who is not on the team yet is created from his profile (as `HireMerc` does), so
   `mercs` can build a roster from nothing.
+- Per-merc `life` is a wound below `health` (the max); `energy` sets both current and max
+  breath, so a merc is tired enough to sleep; `hold` puts an item in his hand, where a
+  doctor or repairman step needs its kit; an `items` entry may be a table
+  (`{ item, count, condition }`) for a stack or a neglected item.
+- Staging also **rebases the strategic event queue on the staged clock**: a new game starts
+  on day 1, and every event scheduled before the staged "now" would otherwise fire at once
+  when the clock next runs — replaying days of missed hourly updates, each of which
+  fatigues every merc to the floor. Periodic and daily events keep their cadence from the
+  staged now; one-shot events that were missed are dropped. The spec states where the
+  campaign is, it does not replay how it got there.
 
 ### Reading it back
 
@@ -124,6 +146,28 @@ pending, so the Lua helper waits for `GAME_SCREEN`. `ja2.debug("npcs", spec)` sp
 townsfolk (generic civilians) or named NPCs near the team once the sector is loaded.
 `ja2.state().tactical.civilians` lists them so a test can assert who is there.
 
+The map screen itself is driven through its element ids by `tests/e2e/lib/worldmap.lua`:
+`staged(spec)` lands a staged campaign on the map screen (the staged clock makes the map
+take input without the landing flow), `plot(name, sector)` plots and confirms a route,
+`waitLanded` runs the clock until the squad arrives, `assign(name, ...)` walks the
+assignment menus, `resume` keeps the clock at full compression (the map starts paused and
+events stop time), and `runHours(h)` runs the clock for h game hours, dismissing the boxes
+that pop up on the way.
+
+`ja2.state()` grew the readings those steps assert on:
+
+- `mercs[]`: `betweenSectors` (a strategic move is in progress), `path` (the plotted route
+  as sector codes), `energy` / `energyMax` (rest and fatigue) and `vehicle` (the vehicle a
+  merc is aboard).
+- `vehicles[]`: `name`, `sector`, `destination`, `betweenSectors`, `passengers`,
+  `helicopter` and `airborne` — the helicopter's flight as data.
+- `preBattle`: `active`, `sector`, `enemyCount`, `canEnter`, `canRetreat`, `canAuto` — the
+  encounter panel, so a test can trigger an encounter and retreat from it.
+
+`tests/e2e/world_map_steps.lua` tours them (plot, move, arrive, encounter, retreat,
+helicopter board/fly/leave); `tests/e2e/world_map_actions.lua` tours the strategic actions
+around them (split a squad, rest, doctor/patient, repair, train, inventory transfer).
+
 ## Definition of done
 
 - `ja2.debug("campaign", spec)` sets day/time, money, difficulty, town ownership + loyalty +
@@ -143,16 +187,19 @@ townsfolk (generic civilians) or named NPCs near the team once the sector is loa
 ctest -R e2e_campaign_state -V --output-on-failure         # from the build directory
 python tools/ja2ctl.py run tests/e2e/campaign_state.lua --isolated
 python tools/ja2ctl.py run tests/e2e/battle_campaign.lua --isolated --res 1920x1080
+python tools/ja2ctl.py run tests/e2e/world_map_steps.lua --isolated --res 1920x1080
+python tools/ja2ctl.py run tests/e2e/world_map_actions.lua --isolated --res 1920x1080
 ```
 
 `campaign_state.lua` runs at 640x480 and in the resolution matrix. `battle_campaign.lua`
 runs at 1920x1080 like the other `battle_*` scenarios: the native tactical HUD needs
-1280x720.
+1280x720. The two world-map tests run at 640x480 too, where the legacy map screen is up and
+only the staged state is checked; the resolution sweep covers their native path.
 
 ## Roadmap
 
 | Slice |
 | --- |
-| this state-authoring + assertion foundation |
-| world-map view steps (path plotting, squad movement, travel) |
+| state-authoring + assertion foundation |
+| world-map view steps (path plotting, squad movement, travel, encounters, the helicopter) and the strategic actions (squads, rest, doctor/patient, repair, train, inventory) — [#69](https://github.com/adhikasp/ja2-pecel-bakwan/issues/69) |
 | the full arc: hiring, first battle, economy, end game |

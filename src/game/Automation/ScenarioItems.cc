@@ -92,10 +92,10 @@ void GiveGun(SOLDIERTYPE& s, UINT16 const gun)
 	AutoPlaceObject(&s, &mag, TRUE);
 }
 
-void GiveItem(SOLDIERTYPE& s, UINT16 const item)
+void GiveItem(SOLDIERTYPE& s, UINT16 const item, UINT8 const count, UINT8 const condition)
 {
 	OBJECTTYPE obj;
-	CreateItems(item, 100, 1, &obj);
+	CreateItems(item, condition, count, &obj);
 	AutoPlaceObject(&s, &obj, TRUE);
 }
 

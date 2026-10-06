@@ -19,6 +19,8 @@ for the full API.
 | `battle_loadout_arc.lua` | A whole loadout - weapon, attachments, ammo, LBE, pockets, armour - taken into a firefight and read back afterwards (runs at 1920x1080, #263) |
 | `campaign_state.lua` | Author a campaign state (day, money, towns, roster, quests) on the live globals, assert it and the status model, then save/load it (see [docs/plan/e2e-campaign-state.md](../../docs/plan/e2e-campaign-state.md)) |
 | `battle_campaign.lua` | Walk into a controlled town with townsfolk, then step into a tactical battle there (runs at 1920x1080) |
+| `world_map_steps.lua` | The world-map steps: plot a path, move a squad between sectors and arrive, trigger an encounter and retreat from it, and board, fly and leave the helicopter (#69) |
+| `world_map_actions.lua` | The strategic actions: split a squad, rest, doctor/patient, repair, train, and move an item between two mercs through the sector inventory (#69) |
 | `map_screen_tour.lua` | Map screen: pause, inventory, options, laptop |
 | `video_switch.lua` | Runtime video changes (`ja2.setVideo`) through four modes on tactical, map and laptop |
 | `video_options.lua` | The Video options screen: change and apply resolution without a restart |
@@ -31,10 +33,12 @@ for the full API.
 
 `lib/campaign.lua` has the shared steps (new game, hire from A.I.M., land,
 dismiss popups, and the campaign-state helpers `stage`, `at`, `assertState`,
-`enterSector`, `enterTown`, `stepIntoBattle`). `lib/battle.lua` has the battle
-fixtures and orders (stage a fight, select a merc, shoot, end the turn, read the
-militia back) for the tactical battle e2e track. `lib/loadout.lua` has the
-equipment fixtures - see below.
+`enterSector`, `enterTown`, `stepIntoBattle`). `lib/worldmap.lua` has the
+world-map steps (`staged`, `plot`, `travel`, `waitLanded`, `assign`, `resume`,
+`runHours`) that the two `world_map_*.lua` tests drive. `lib/battle.lua` has the
+battle fixtures and orders (stage a fight, select a merc, shoot, end the turn,
+read the militia back) for the tactical battle e2e track. `lib/loadout.lua` has
+the equipment fixtures - see below.
 
 ## Equipment fixtures
 

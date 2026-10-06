@@ -45,7 +45,7 @@ namespace Automation::Scenario
 	void GiveGun(SOLDIERTYPE& s, UINT16 gun);
 
 	/** Any item, into whatever pocket fits (a gun already in hand is not replaced). */
-	void GiveItem(SOLDIERTYPE& s, UINT16 item);
+	void GiveItem(SOLDIERTYPE& s, UINT16 item, UINT8 count = 1, UINT8 condition = 100);
 
 	/** Body armour: "none", "kevlar" (or anything else) or "spectra". */
 	void EquipArmour(SOLDIERTYPE& s, std::string const& level);
