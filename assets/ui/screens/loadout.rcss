@@ -1,0 +1,152 @@
+/* The native loadout screen (issue #262, docs/plan/equipment-revamp.md). Components and tokens come
+ * from ../components.rcss and ../tokens.rcss; nothing here hard-codes a colour. Layout is flex, no
+ * coordinates, so it scales from 1280x720 dp up to 4K and 21:9. The slot chrome itself is the
+ * shared .slot component; only size, the pocket caption and the held/drop states are added here. */
+
+.lo-root {
+	display: flex; align-items: center; justify-content: center;
+	position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+	background-color: var(--c-void);
+}
+body.lo { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+.lo-panel {
+	display: flex; flex-direction: column;
+	width: 97%; max-width: 1720dp; height: 94%;
+	padding: var(--sp-4); box-sizing: border-box;
+	background-color: var(--e1-bg); decorator: image(gen-mottle repeat);
+	border: var(--border) var(--e1-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
+	border-radius: var(--r-2);
+}
+
+/* ---------------------------------------------------------------- header */
+.lo-head { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-2); border-bottom: var(--border) var(--c-line); }
+.lo-head .face {
+	display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+	width: 76dp; height: 68dp; margin-right: var(--sp-3);
+	background-color: var(--c-inset); border: var(--border) var(--c-inset-line); overflow: hidden;
+}
+.lo-head .who { display: block; flex: 0 0 260dp; min-width: 0; margin-right: var(--sp-3); }
+.lo-head .who .nm { display: block; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); line-height: var(--lh-tight); }
+.lo-head .who .sub { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+
+.lo-load { display: block; flex: 1 1 0; min-width: 0; margin-right: var(--sp-4); }
+.lo-load .line { display: flex; align-items: baseline; }
+.lo-load .line .k { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); margin-right: var(--sp-2); }
+.lo-load .line .v { font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text-strong); }
+.lo-load .line .pct { margin-left: auto; font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-select); }
+.lo-load .bar { height: 10dp; margin: 4dp 0; }
+.lo-load .band { display: flex; align-items: center; font-size: var(--fs-sm); }
+.lo-load .band .word { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); text-transform: uppercase; letter-spacing: 1dp; }
+.lo-load .band .note { color: var(--c-text-faint); font-size: var(--fs-xs); margin-left: var(--sp-2); }
+.lo-load .band.light .word { color: var(--c-ok); }
+.lo-load .band.loaded .word { color: var(--c-text); }
+.lo-load .band.heavy .word { color: var(--c-warn); }
+.lo-load .band.overloaded .word { color: var(--c-danger); }
+
+/* ---------------------------------------------------------------- the three columns */
+.lo-cols { display: flex; flex: 1 1 auto; min-height: 0; gap: var(--sp-3); padding: var(--sp-2) 0; }
+.lo-col { display: flex; flex-direction: column; min-height: 0; }
+.lo-col.body { flex: 0 0 296dp; }
+.lo-col.lbe  { flex: 0 0 470dp; overflow-y: auto; }
+.lo-col.gun  { flex: 1 1 0; min-width: 0; overflow-y: auto; }
+
+.cap { display: block; margin: var(--sp-2) 0 var(--sp-1) 0; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; letter-spacing: 1dp; color: var(--c-text-faint); }
+.cap:first-child { margin-top: 0; }
+.rowz { display: flex; flex-wrap: wrap; }
+.grow { flex: 1 1 auto; }
+
+/* ---------------------------------------------------------------- slots (the .slot component, sized) */
+.lo .slot { margin: 0 var(--sp-2) var(--sp-2) 0; overflow: hidden; flex: 0 0 auto; }
+.lo .slot.big { width: 136dp; }
+.lo .slot .item { display: flex; align-items: center; justify-content: center; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.lo .slot .item img.art { position: relative; left: 0; top: 0; image-color: #FFFFFF; }
+.lo .slot .ghost { left: 50%; top: 50%; margin-left: -14dp; margin-top: -14dp; }
+.lo .slot .lbl { position: absolute; left: 4dp; bottom: 2dp; font-family: var(--font-display); font-weight: 600; font-size: 10dp; text-transform: uppercase; color: var(--c-text-faint); }
+.lo .slot .count { color: var(--c-text-strong); }
+.lo .slot .cond { left: auto; right: 4dp; bottom: auto; top: 4dp; width: 3dp; height: 22dp; }
+.lo .slot .cond .fill { left: 0; right: 0; top: auto; bottom: 0; }
+.lo .slot .att { position: absolute; left: 4dp; top: 3dp; width: 12dp; height: 12dp; image-color: var(--c-accent); }
+.lo .slot .pkind { position: absolute; right: 3dp; bottom: 2dp; font-family: var(--font-display); font-weight: 600; font-size: 9dp; text-transform: uppercase; color: var(--c-text-faint); }
+.lo .slot.is-disabled { background-color: var(--c-bg); border-color: var(--c-panel-2); }
+.lo .slot.is-disabled .ghost { image-color: var(--c-panel-2); }
+.lo .slot.held { border: 2dp var(--c-select); background-color: var(--c-select-soft); }
+.lo .slot.drop-ok { border: 2dp var(--c-accent); background-color: var(--c-accent-soft); }
+.lo .slot.drop-bad { border: 2dp var(--c-danger); background-color: var(--c-danger-soft); }
+
+/* ---------------------------------------------------------------- the LBE windows */
+.lbe-win {
+	display: flex; align-items: flex-start; flex: 0 0 auto;
+	padding: var(--sp-2); margin-bottom: var(--sp-2);
+	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1);
+}
+.lbe-win .worn { display: block; flex: 0 0 auto; margin-right: var(--sp-3); }
+.lbe-win .worn .cap, .lbe-win .pk .cap { margin-top: 0; }
+.lbe-win .pk { display: block; flex: 1 1 0; min-width: 0; }
+.lbe-win .pk-row { display: flex; }
+.lbe-win .slot { margin-bottom: 0; }
+
+/* ---------------------------------------------------------------- the weapon platform */
+.gun-head { display: flex; align-items: center; flex: 0 0 auto; }
+.gun-head .gun-pic {
+	display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+	width: 320dp; height: 72dp; margin-right: var(--sp-3);
+	background-color: var(--c-inset); border: var(--border) var(--c-inset-line); overflow: hidden;
+}
+.gun-head .gun-pic img { max-width: 100%; max-height: 100%; }
+.gun-head .gun-meta { display: block; flex: 1 1 0; min-width: 0; }
+.gun-head .gun-meta .nm { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-text-strong); }
+.gun-head .gun-meta .sub { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.gun-head .gun-meta .line { display: flex; align-items: center; margin-top: var(--sp-1); }
+.gun-head .gun-meta .line .k { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); margin-right: var(--sp-2); }
+.gun-head .gun-meta .line .bar { flex: 0 0 140dp; }
+
+.gun-slots { flex: 0 0 auto; }
+.gslot-row { display: flex; align-items: center; height: 68dp; }
+.gslot-row .role { display: block; flex: 0 0 96dp; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-dim); }
+.gslot-row .slot { width: 60dp; height: 60dp; margin-right: var(--sp-3); }
+.gslot-row .nm { display: block; font-size: var(--fs-md); color: var(--c-text); }
+.gslot-row .mount { display: block; font-size: var(--fs-sm); color: var(--c-text-faint); }
+.gslot-row:hover .role { color: var(--c-text-strong); }
+
+.quick { display: block; flex: 0 0 auto; margin-top: var(--sp-2); }
+.quick .qrow { display: flex; gap: var(--sp-2); }
+.quick .btn { flex: 1 1 0; }
+
+.readout { display: block; flex: 0 0 auto; margin-top: var(--sp-3); padding-top: var(--sp-2); border-top: var(--border) var(--c-line); }
+.rhead { display: flex; align-items: center; }
+.rhead .cap { margin: 0; }
+.rhead .seg { display: flex; margin-left: var(--sp-3); border: var(--border) var(--c-line-2); border-radius: var(--r-1); }
+.rhead .seg-b {
+	display: block; height: 24dp; line-height: 24dp; padding: 0 var(--sp-3);
+	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase;
+	color: var(--c-text-dim); border-left: var(--border) var(--c-line); cursor: pointer;
+}
+.rhead .seg-b:first-child { border-left-width: 0dp; }
+.rhead .seg-b:hover { color: var(--c-text-strong); }
+.rhead .seg-b.on { background-color: var(--c-accent-soft); color: var(--c-text-strong); }
+.rstats { display: flex; align-items: baseline; margin: 4dp 0; }
+.rstats .k { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); margin-right: var(--sp-1); }
+.rstats .v { font-size: var(--fs-md); color: var(--c-text-strong); margin-right: var(--sp-4); }
+.rtable { display: block; }
+.rrow { display: flex; align-items: center; height: 22dp; border-bottom: var(--border) var(--c-panel-2); }
+.rrow.head { border-bottom: var(--border) var(--c-line); }
+.rrow.head .c { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.rrow.far { opacity: 0.55; }
+.rrow .c { display: block; flex: 1 1 0; text-align: right; font-size: var(--fs-sm); color: var(--c-text); }
+.rrow .c.dist { flex: 0 0 56dp; text-align: left; color: var(--c-text-dim); }
+.rrow .c.good { color: var(--c-ok); }
+.rrow .c.bad { color: var(--c-danger); }
+
+.nogun { display: block; margin: var(--sp-5) 0; font-size: var(--fs-md); color: var(--c-text-dim); text-align: center; }
+
+/* ---------------------------------------------------------------- footer and the drag ghost */
+.lo-foot { display: flex; align-items: center; flex: 0 0 auto; padding-top: var(--sp-2); border-top: var(--border) var(--c-line); }
+.lo-foot .hint { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.lo-foot .hint.ok { color: var(--c-ok); }
+.lo-foot .hint.warn { color: var(--c-danger); }
+.lo-foot .legend { display: block; font-size: var(--fs-xs); color: var(--c-text-faint); }
+
+.lo-ghost { display: flex; align-items: center; position: fixed; pointer-events: none; }
+.lo-ghost img { margin-right: var(--sp-2); }
+.lo-ghost span { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-select); }

@@ -63,7 +63,7 @@
 	<div class="detail hud hit" id="tac.detail" data-if="detail">
 		<div class="who">
 			<div class="face"><img class="pic" data-attr-src="d_face" data-style-width="d_fw + 'px'" data-style-height="d_fh + 'px'"/></div>
-			<div class="names"><span class="nm" id="tac.detail.name">{{d_name}}</span><span class="full">{{d_full}}</span></div>
+			<div class="names"><span class="nm" id="tac.detail.name">{{d_name}}</span><span class="full">{{d_full}}</span><button class="btn" id="tac.detail.loadout" data-attr-data-label="l_loadout" data-event-click="loadout"><img class="icon" src="icon-inventory"/><span class="label">{{l_loadout}}</span></button></div>
 			<div class="vit">
 				<div class="stat"><span class="k">HP</span><span class="bar hp"><span class="fill" data-style-width="d_hpw + '%'"></span><span class="lost" data-style-width="d_lostw + '%'"></span></span><span class="v">{{d_hp}}</span></div>
 				<div class="stat"><span class="k">EN</span><span class="bar breath"><span class="fill" data-style-width="d_enw + '%'"></span></span><span class="v">{{d_en}}</span></div>

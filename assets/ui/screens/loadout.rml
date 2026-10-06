@@ -1,0 +1,245 @@
+<rml>
+<head>
+	<title>Loadout</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="loadout.rcss"/>
+</head>
+<!-- The native loadout screen (issue #262, docs/plan/equipment-revamp.md). View model: the
+     LoadoutViewModel ("loadout", src/game/NativeUI/LoadoutScreen.cc). It is an overlay opened from
+     the tactical detail panel and the map screen's gear panel; every slot is a drop target, and the
+     reasons a drop is refused are the equipment rules' own (Equipment/PocketRules.cc,
+     AttachmentRules.cc). -->
+<body class="lo">
+<div class="lo-root" id="lo" data-model="loadout">
+
+	<div class="lo-panel">
+		<!-- =============================================================== header: who, and the live load -->
+		<div class="lo-head">
+			<div class="face"><img data-if="face != ''" data-attr-src="face" data-style-width="face_w + 'px'" data-style-height="face_h + 'px'"/></div>
+			<div class="who">
+				<span class="nm" id="lo.merc">{{merc}}</span>
+				<span class="sub" id="lo.context">{{context}}</span>
+			</div>
+			<div class="lo-load" id="lo.load">
+				<div class="line">
+					<span class="k">{{l_weight}}</span>
+					<span class="v" id="lo.weight.text">{{weight_text}} / {{weight_cap_text}}</span>
+					<span class="pct" id="lo.weight.pct">{{weight_pct}}%</span>
+				</div>
+				<div class="bar thick"><div class="fill" data-style-width="weight_bar + '%'"></div></div>
+				<div class="band" data-attr-class="'band ' + band_key" id="lo.band">
+					<span class="word" id="lo.band.word">{{band_label}}</span>
+					<span class="grow"></span>
+					<span class="note">{{l_band_hint}}</span>
+				</div>
+			</div>
+			<button class="btn" id="lo.close" data-attr-data-label="l_close" data-event-click="close"><span class="label">{{l_close}}</span></button>
+		</div>
+
+		<!-- =============================================================== the paperdoll, the LBE windows and the weapon -->
+		<div class="lo-cols">
+
+			<!-- body: face, helmet, armour, hands -->
+			<div class="lo-col body" id="lo.body">
+				<span class="cap">{{l_head}}</span>
+				<div class="rowz">
+					<div class="slot" data-for="s : head" data-attr-id="'lo.slot[' + s.pos + ']'" data-attr-dnd="s.key" data-attr-title="s.title"
+						 data-class-is-disabled="s.disabled" data-class-held="s.held" data-class-drop-ok="s.ok" data-class-drop-bad="s.bad">
+						<div class="item" data-if="!s.empty"><img class="art" data-attr-src="s.art" data-attr-style="s.art_style"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<div class="cond" data-if="s.cond >= 0" data-class-worn="s.worn"><div class="fill" data-style-width="s.cond + '%'"></div></div>
+						<img class="att" data-if="s.att" src="icon-add"/>
+						<span class="lbl">{{s.label}}</span>
+					</div>
+				</div>
+				<span class="cap">{{l_body}}</span>
+				<div class="rowz">
+					<div class="slot" data-for="s : torso" data-attr-id="'lo.slot[' + s.pos + ']'" data-attr-dnd="s.key" data-attr-title="s.title"
+						 data-class-is-disabled="s.disabled" data-class-held="s.held" data-class-drop-ok="s.ok" data-class-drop-bad="s.bad">
+						<div class="item" data-if="!s.empty"><img class="art" data-attr-src="s.art" data-attr-style="s.art_style"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<div class="cond" data-if="s.cond >= 0" data-class-worn="s.worn"><div class="fill" data-style-width="s.cond + '%'"></div></div>
+						<img class="att" data-if="s.att" src="icon-add"/>
+						<span class="lbl">{{s.label}}</span>
+					</div>
+				</div>
+				<span class="cap">{{l_hands}}</span>
+				<div class="rowz">
+					<div class="slot big" data-for="s : hands" data-attr-id="'lo.slot[' + s.pos + ']'" data-attr-dnd="s.key" data-attr-title="s.title"
+						 data-class-is-disabled="s.disabled" data-class-held="s.held" data-class-drop-ok="s.ok" data-class-drop-bad="s.bad">
+						<div class="item" data-if="!s.empty"><img class="art" data-attr-src="s.art" data-attr-style="s.art_style"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<div class="cond" data-if="s.cond >= 0" data-class-worn="s.worn"><div class="fill" data-style-width="s.cond + '%'"></div></div>
+						<span class="lbl">{{s.label}}</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- the three LBE windows, each with the pockets its item provides -->
+			<div class="lo-col lbe" id="lo.lbe">
+				<span class="cap">{{l_lbe}}</span>
+
+				<div class="lbe-win" id="lo.lbe.vest">
+					<div class="worn" data-for="w : lbe" data-if="w.window == 'vest'">
+						<span class="cap">{{w.label}}</span>
+						<div class="slot" data-attr-id="'lo.slot[' + w.pos + ']'" data-attr-dnd="w.key" data-attr-title="w.title"
+							 data-class-held="w.held" data-class-drop-ok="w.ok" data-class-drop-bad="w.bad">
+							<div class="item" data-if="!w.empty"><img class="art" data-attr-src="w.art" data-attr-style="w.art_style"/></div>
+							<img class="ghost" data-if="w.empty" data-attr-src="'icon-' + w.ghost"/>
+							<div class="cond" data-if="w.cond >= 0" data-class-worn="w.worn"><div class="fill" data-style-width="w.cond + '%'"></div></div>
+							<img class="att" data-if="w.att" src="icon-add"/>
+						</div>
+					</div>
+					<div class="pk">
+						<span class="cap">{{l_pockets}}</span>
+						<div class="pk-row">
+							<div class="slot" data-for="p : pockets" data-if="p.window == 'vest'" data-attr-id="'lo.pocket[' + p.pos + ']'" data-attr-dnd="p.key" data-attr-title="p.title"
+								 data-class-is-disabled="p.disabled" data-class-held="p.held" data-class-drop-ok="p.ok" data-class-drop-bad="p.bad">
+								<div class="item" data-if="!p.empty"><img class="art" data-attr-src="p.art" data-attr-style="p.art_style"/></div>
+								<img class="ghost" data-if="p.empty" data-attr-src="'icon-' + p.ghost"/>
+								<span class="count" data-if="p.count != ''">{{p.count}}</span>
+								<div class="cond" data-if="p.cond >= 0" data-class-worn="p.worn"><div class="fill" data-style-width="p.cond + '%'"></div></div>
+								<span class="pkind" data-if="p.pocket_kind != ''">{{p.pocket_kind}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="lbe-win" id="lo.lbe.belt">
+					<div class="worn" data-for="w : lbe" data-if="w.window == 'belt'">
+						<span class="cap">{{w.label}}</span>
+						<div class="slot" data-attr-id="'lo.slot[' + w.pos + ']'" data-attr-dnd="w.key" data-attr-title="w.title"
+							 data-class-held="w.held" data-class-drop-ok="w.ok" data-class-drop-bad="w.bad">
+							<div class="item" data-if="!w.empty"><img class="art" data-attr-src="w.art" data-attr-style="w.art_style"/></div>
+							<img class="ghost" data-if="w.empty" data-attr-src="'icon-' + w.ghost"/>
+							<div class="cond" data-if="w.cond >= 0" data-class-worn="w.worn"><div class="fill" data-style-width="w.cond + '%'"></div></div>
+							<img class="att" data-if="w.att" src="icon-add"/>
+						</div>
+					</div>
+					<div class="pk">
+						<span class="cap">{{l_pockets}}</span>
+						<div class="pk-row">
+							<div class="slot" data-for="p : pockets" data-if="p.window == 'belt'" data-attr-id="'lo.pocket[' + p.pos + ']'" data-attr-dnd="p.key" data-attr-title="p.title"
+								 data-class-is-disabled="p.disabled" data-class-held="p.held" data-class-drop-ok="p.ok" data-class-drop-bad="p.bad">
+								<div class="item" data-if="!p.empty"><img class="art" data-attr-src="p.art" data-attr-style="p.art_style"/></div>
+								<img class="ghost" data-if="p.empty" data-attr-src="'icon-' + p.ghost"/>
+								<span class="count" data-if="p.count != ''">{{p.count}}</span>
+								<div class="cond" data-if="p.cond >= 0" data-class-worn="p.worn"><div class="fill" data-style-width="p.cond + '%'"></div></div>
+								<span class="pkind" data-if="p.pocket_kind != ''">{{p.pocket_kind}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="lbe-win" id="lo.lbe.pack">
+					<div class="worn" data-for="w : lbe" data-if="w.window == 'pack'">
+						<span class="cap">{{w.label}}</span>
+						<div class="slot" data-attr-id="'lo.slot[' + w.pos + ']'" data-attr-dnd="w.key" data-attr-title="w.title"
+							 data-class-held="w.held" data-class-drop-ok="w.ok" data-class-drop-bad="w.bad">
+							<div class="item" data-if="!w.empty"><img class="art" data-attr-src="w.art" data-attr-style="w.art_style"/></div>
+							<img class="ghost" data-if="w.empty" data-attr-src="'icon-' + w.ghost"/>
+							<div class="cond" data-if="w.cond >= 0" data-class-worn="w.worn"><div class="fill" data-style-width="w.cond + '%'"></div></div>
+							<img class="att" data-if="w.att" src="icon-add"/>
+						</div>
+					</div>
+					<div class="pk">
+						<span class="cap">{{l_pockets}}</span>
+						<div class="pk-row">
+							<div class="slot" data-for="p : pockets" data-if="p.window == 'pack'" data-attr-id="'lo.pocket[' + p.pos + ']'" data-attr-dnd="p.key" data-attr-title="p.title"
+								 data-class-is-disabled="p.disabled" data-class-held="p.held" data-class-drop-ok="p.ok" data-class-drop-bad="p.bad">
+								<div class="item" data-if="!p.empty"><img class="art" data-attr-src="p.art" data-attr-style="p.art_style"/></div>
+								<img class="ghost" data-if="p.empty" data-attr-src="'icon-' + p.ghost"/>
+								<span class="count" data-if="p.count != ''">{{p.count}}</span>
+								<div class="cond" data-if="p.cond >= 0" data-class-worn="p.worn"><div class="fill" data-style-width="p.cond + '%'"></div></div>
+								<span class="pkind" data-if="p.pocket_kind != ''">{{p.pocket_kind}}</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- the weapon platform in hand: its picture, its typed slots, the quick actions and the readout -->
+			<div class="lo-col gun" id="lo.gun">
+				<div class="gun-head" data-if="has_gun" id="lo.gun.head">
+					<div class="gun-pic"><img data-attr-src="gun_pic" data-attr-style="'width: ' + gun_pw + 'px; height: ' + gun_ph + 'px;'"/></div>
+					<div class="gun-meta">
+						<span class="nm" id="lo.gun.name">{{gun_name}}</span>
+						<span class="sub" id="lo.gun.sub">{{gun_host_label}} - {{gun_ammo}} {{gun_rounds}}/{{gun_cap}}</span>
+						<div class="line"><span class="k">{{l_condition}}</span><div class="bar ok"><div class="fill" data-style-width="gun_cond + '%'"></div></div></div>
+					</div>
+				</div>
+
+				<div class="gun-slots" data-if="has_gun" id="lo.gun.slots">
+					<span class="cap">{{l_slots}}</span>
+					<div class="gslot-row" data-for="g : gun_slots" data-attr-dnd="g.key" data-attr-title="g.title" data-attr-id="'lo.att[' + g.i + ']'">
+						<span class="role">{{g.role_label}}</span>
+						<div class="slot sm" data-class-held="g.held" data-class-drop-ok="g.ok" data-class-drop-bad="g.bad">
+							<div class="item" data-if="!g.empty"><img class="art" data-attr-src="g.art" data-attr-style="g.art_style"/></div>
+							<img class="ghost" data-if="g.empty" src="icon-add"/>
+							<div class="cond" data-if="g.cond >= 0"><div class="fill" data-style-width="g.cond + '%'"></div></div>
+						</div>
+						<span class="nm" data-if="!g.empty">{{g.name}}</span>
+						<span class="mount" data-if="g.empty">{{g.mount_label}}</span>
+					</div>
+				</div>
+
+				<div class="quick" data-if="has_gun" id="lo.quick">
+					<span class="cap">{{l_magazine}}</span>
+					<div class="qrow">
+						<button class="btn btn-sm" id="lo.q.mag" data-class-is-disabled="!can_mag" data-attr-data-label="l_swap_mag" data-event-click="quick('mag')"><img class="icon" src="icon-reload"/><span class="label">{{l_swap_mag}}</span></button>
+						<button class="btn btn-sm" id="lo.q.ammo" data-class-is-disabled="!can_ammo" data-attr-data-label="l_swap_ammo" data-event-click="quick('ammo')"><span class="label">{{l_swap_ammo}}</span></button>
+						<button class="btn btn-sm" id="lo.q.mags" data-class-is-disabled="!can_mags" data-attr-data-label="l_fill_mags" data-event-click="quick('mags')"><span class="label">{{l_fill_mags}}</span></button>
+					</div>
+				</div>
+
+				<div class="readout" data-if="has_gun" id="lo.readout">
+					<div class="rhead">
+						<span class="cap">{{l_ballistics}}</span>
+						<div class="seg" id="lo.tier">
+							<span class="seg-b" id="lo.tier.none" data-class-on="tier == 'none'" data-event-click="tier('none')">{{l_tier_none}}</span>
+							<span class="seg-b" id="lo.tier.soft" data-class-on="tier == 'soft'" data-event-click="tier('soft')">{{l_tier_soft}}</span>
+							<span class="seg-b" id="lo.tier.plate" data-class-on="tier == 'plate'" data-event-click="tier('plate')">{{l_tier_plate}}</span>
+						</div>
+						<span class="grow"></span>
+						<button class="btn btn-sm" id="lo.compare" data-attr-data-label="l_compare" data-event-click="compare"><span class="label">{{l_compare}}</span></button>
+					</div>
+					<div class="rstats">
+						<span class="k">{{l_range}}</span><span class="v mono" id="lo.range">{{readout_range}}</span>
+						<span class="k">{{l_noise}}</span><span class="v mono" id="lo.noise">{{readout_noise}}</span>
+						<span class="k">{{l_condition}}</span><span class="v mono" id="lo.cond">{{readout_cond}}</span>
+					</div>
+					<div class="rtable">
+						<div class="rrow head"><span class="c dist">{{l_dist}}</span><span class="c">{{l_hit}}</span><span class="c">{{l_dmg}}</span><span class="c">{{l_thru}}</span></div>
+						<div class="rrow" data-for="b : bands" data-attr-id="'lo.band[' + b.distance + ']'" data-class-far="!b.in_range">
+							<span class="c dist mono">{{b.distance}}</span>
+							<span class="c mono">{{b.hit}}</span>
+							<span class="c mono">{{b.dmg}}</span>
+							<span class="c mono" data-class-good="b.through_cls == 'good'" data-class-bad="b.through_cls == 'bad'">{{b.through}}</span>
+						</div>
+					</div>
+				</div>
+
+				<div class="nogun" data-if="!has_gun" id="lo.nogun">{{l_no_gun}}</div>
+			</div>
+		</div>
+
+		<!-- =============================================================== the hint line and the legend -->
+		<div class="lo-foot">
+			<span class="hint" id="lo.hint" data-class-ok="hint_cls == 'ok'" data-class-warn="hint_cls == 'warn'">{{hint}}</span>
+			<span class="grow"></span>
+			<span class="legend">{{l_legend}}</span>
+		</div>
+	</div>
+
+	<!-- the item following the mouse while it is held -->
+	<div class="lo-ghost" data-if="held" id="lo.ghost" data-style-left="ghost_x + 'dp'" data-style-top="ghost_y + 'dp'">
+		<img data-attr-src="held_pic" data-attr-style="'width: ' + held_pw + 'px; height: ' + held_ph + 'px;'"/>
+		<span>{{held_name}}</span>
+	</div>
+
+</div>
+</body>
+</rml>

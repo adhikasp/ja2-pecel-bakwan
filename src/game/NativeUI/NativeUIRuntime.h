@@ -85,6 +85,9 @@ namespace NativeUI
 	/** The weapon readout overlay (WeaponReadout.cc): refreshed once a frame while it is open (BeginFrame). */
 	void WeaponReadoutUpdate();
 
+	/** The native loadout screen (LoadoutScreen.cc): refreshed once a frame while it is open (BeginFrame). */
+	void LoadoutUpdate();
+
 	/** The mouse is over a part of the HUD that takes clicks (an element with class "hit"). */
 	bool TacticalHudWantsMouse();
 }

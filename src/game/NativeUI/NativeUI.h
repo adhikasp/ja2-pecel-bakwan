@@ -153,6 +153,13 @@ namespace NativeUI
 	void CloseWeaponReadout();
 	bool WeaponReadoutActive();
 
+	// ---- loadout (issue #262, docs/plan/equipment-revamp.md) ----------------------------------------------------
+	/** The native loadout screen: the merc paperdoll, the LBE pockets, the weapon platform with
+	 *  its typed slots and the live load readout, opened over the tactical HUD or the map screen. */
+	void OpenLoadout();
+	void CloseLoadout();
+	bool LoadoutActive();
+
 	// ---- change notification (view models, ViewModel.h) -------------------------------------------------------
 	enum Topic : uint32_t
 	{

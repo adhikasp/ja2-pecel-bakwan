@@ -290,7 +290,7 @@ namespace
 		bool pickCanUp = false, pickCanDown = false, pickAll = false, pickEnabled = false;
 		std::vector<PickRow> pick;
 		// labels
-		std::string lEndTurn, lTurnBased, lMap, lDone, lUnload, lPros, lCons, lAttachments, lAmmo, lWeapon, lLog;
+		std::string lEndTurn, lTurnBased, lMap, lDone, lUnload, lPros, lCons, lAttachments, lAmmo, lWeapon, lLog, lLoadout;
 
 		std::string signature;
 
@@ -350,6 +350,7 @@ namespace
 			Command("mute", [](Args const&) { NativeSMMuteClick(); });
 			Command("swap_hands", [](Args const&) { PressKey(SDLK_Q, SDL_KMOD_CTRL); });
 			Command("readout", [](Args const&) { OpenWeaponReadout(); });
+			Command("loadout", [](Args const&) { OpenLoadout(); });
 
 			lEndTurn = Str("tac.end_turn");
 			lTurnBased = Str("tac.turn_based");
@@ -362,6 +363,7 @@ namespace
 			lAmmo = Str("tac.ammo");
 			lWeapon = Str("tac.weapon");
 			lLog = Str("tac.log");
+			lLoadout = Str("tac.loadout");
 		}
 
 		void Describe(Fields& f) override
@@ -405,7 +407,7 @@ namespace
 			f.Rows("pick", pick);
 			f.Field("l_end_turn", lEndTurn); f.Field("l_turn_based", lTurnBased); f.Field("l_map", lMap); f.Field("l_done", lDone);
 			f.Field("l_unload", lUnload); f.Field("l_pros", lPros); f.Field("l_cons", lCons); f.Field("l_attachments", lAttachments);
-			f.Field("l_ammo", lAmmo); f.Field("l_weapon", lWeapon); f.Field("l_log", lLog);
+			f.Field("l_ammo", lAmmo); f.Field("l_weapon", lWeapon); f.Field("l_log", lLog); f.Field("l_loadout", lLoadout);
 		}
 
 		void Refresh() override

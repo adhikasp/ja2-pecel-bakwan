@@ -22,6 +22,7 @@ if (WITH_NATIVE_UI)
         ${CMAKE_CURRENT_SOURCE_DIR}/MockWorld.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/TacticalHud.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/WeaponReadout.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/LoadoutScreen.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LaptopImages.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LaptopScreen.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LaptopSites.cc

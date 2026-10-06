@@ -208,7 +208,9 @@ back to the legacy UI (`PassThrough` is always false); the legacy screen still o
 team = merc dialogue), a search field, and a link to the sector a message names.
 
 **Sector inventory.** Items move by drag and drop or click, click (through the legacy slots); category filters,
-search, sort by type/name/condition/count, and "Stack & merge".
+search, sort by type/name/condition/count, and "Stack & merge". The gear panel's **Loadout** button opens the
+dedicated loadout screen for the selected merc ([loadout.md](loadout.md)), with the LBE windows, the weapon
+platform's typed slots and the weight readout.
 
 **Sector inventory mass operations (issue #124).** The player spends hours moving, reloading, repairing and sorting
 crates of loot, so the panel has the bulk verbs. Mark piles with the tick on a pile (the toolbar's All / None /

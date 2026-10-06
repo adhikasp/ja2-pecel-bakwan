@@ -330,7 +330,11 @@ Report Remember(Equipment::StashReport const& r)
 
 SOLDIERTYPE* MercHere()
 {
-	SOLDIERTYPE* const s = GetSelectedInfoChar();
+	// The gear panel's merc when the map screen has one selected, else the selected
+	// merc of whatever screen is running (the tactical one): the sector checks below
+	// are what keeps an operation to the sector it was asked for, so the loadout
+	// screen can offer the same stash actions from tactical.
+	SOLDIERTYPE* const s = GetSelectedInfoChar() ? GetSelectedInfoChar() : GetSelectedMan();
 	if (!s) return nullptr;
 	if (s->sSector.x != sSelMap.x || s->sSector.y != sSelMap.y
 	 || s->sSector.z != iCurrentMapSectorZ || s->fBetweenSectors)

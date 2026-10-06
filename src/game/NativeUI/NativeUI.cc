@@ -491,6 +491,7 @@ bool Runtime::AnythingShown() const
 	if (screen || (msgbox && msgbox->IsVisible()) || !toasts.empty() || tipShown || NativeCursorShown()) return true;
 	if (TacticalHudActive()) return true;
 	if (WeaponReadoutActive()) return true;
+	if (LoadoutActive()) return true;
 	return false;
 }
 
@@ -500,6 +501,7 @@ bool Runtime::NativeCursorShown() const
 	if (screen) return screen->ShowsCursor();
 	if (msgbox && msgbox->IsVisible()) return true;
 	if (WeaponReadoutActive()) return true;
+	if (LoadoutActive()) return true;
 	return ConfiguredMode("cursor") == UiMode::Native && GetCurrentCursorIndex() == CURSOR_NORMAL;
 }
 
@@ -540,6 +542,7 @@ void BeginFrame()
 	CloseLoadingScreen(); // a load happens within one frame: its screen is gone in the next
 	TacticalHudUpdate();
 	WeaponReadoutUpdate();
+	LoadoutUpdate();
 	g_rt.UpdateOverlays();
 }
 
@@ -553,6 +556,7 @@ void CaptureFrame()
 	nui::RmlClock().now = GetClock() / 1000.0;
 	TacticalHudUpdate();
 	WeaponReadoutUpdate();
+	LoadoutUpdate();
 	g_rt.UpdateOverlays();
 }
 
@@ -655,7 +659,7 @@ void Runtime::GpuFrameRender(SDL_GPURenderPass* pass, int, int)
 
 bool CapturesMouse()
 {
-	return g_rt.running && ((g_rt.screen && !g_rt.screen->PassThrough()) || (g_rt.msgbox && g_rt.msgbox->IsVisible()) || TacticalHudWantsMouse() || WeaponReadoutActive());
+	return g_rt.running && ((g_rt.screen && !g_rt.screen->PassThrough()) || (g_rt.msgbox && g_rt.msgbox->IsVisible()) || TacticalHudWantsMouse() || WeaponReadoutActive() || LoadoutActive());
 }
 
 void MouseMoved(int const canvasX, int const canvasY)

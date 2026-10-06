@@ -2924,7 +2924,17 @@ BOOLEAN RemoveAttachment( OBJECTTYPE * pObj, INT8 bAttachPos, OBJECTTYPE * pNewO
 		}
 	}
 
-	RenumberAttachments( pObj );
+	// Compacting attachment positions is the legacy rule for items with no typed
+	// platform (bombs and merges: the positions are just 4 boxes). On a platform
+	// position i *is* the role slot (Slots.h: "slot i of the platform is
+	// attachment position i"), so removing one attachment must leave the others
+	// where they are - renumbering would slide the muzzle device into the optic.
+	ItemModel const* const hostModel = GCM->getItem(pObj->usItem, ItemSystem::nothrow);
+	Equipment::SlotPolicy const toggles = Equipment::TogglesFrom(GCM->getGamePolicy());
+	if (!hostModel || Equipment::SlotsFor(*hostModel, toggles).slotCount == 0)
+	{
+		RenumberAttachments( pObj );
+	}
 
 	return( TRUE );
 }

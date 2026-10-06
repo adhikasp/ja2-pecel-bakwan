@@ -47,6 +47,9 @@ void TacticalHudToggleLog() {}
 void OpenWeaponReadout() {}
 void CloseWeaponReadout() {}
 bool WeaponReadoutActive() { return false; }
+void OpenLoadout() {}
+void CloseLoadout() {}
+bool LoadoutActive() { return false; }
 bool Focus(std::string const&) { return false; }
 std::string FocusedId() { return {}; }
 }

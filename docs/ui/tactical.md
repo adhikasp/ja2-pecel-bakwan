@@ -150,7 +150,7 @@ The detail panel is open exactly when the legacy single-merc panel is (`, double
 |---|---|
 | Squad bar: cards (face, HP/lost, EN, MO, AP in combat, status icons, stance, hand item and ammo), squad tabs, select, details | I1–I7, A1–A2 |
 | Tools: stance, run, stealth, burst, look, talk, climb, roof level; End turn / Turn-based, Map, inventory, log, options | A4–A11 |
-| Detail panel: attributes, armour/weight/camo, vitals, all 22 slots including the worn LBE row and the 12 typed pockets (pick up / put down / description by click), cash, keys; mute (A12) and swap hands (A23) in the header | I8–I10, A12, A13, A16, A23 |
+| Detail panel: attributes, armour/weight/camo, vitals, all 22 slots including the worn LBE row and the 12 typed pockets (pick up / put down / description by click), cash, keys; mute (A12) and swap hands (A23) in the header, and the loadout screen button ([loadout.md](loadout.md)) | I8–I10, A12, A13, A16, A23 |
 | Item description: picture, text, stats, status, ammo + Unload, 4 attachments, pros/cons, keys; money split +1000/+100/+10 (right click takes back) | I11, A14, A15 |
 | Names, bars, assignment/catch/give prompts, health of others, damage numbers over the mercs | I12 |
 | Message lines; message log on **H** with filters (help moved to **Shift+H**) | I13 |
@@ -162,7 +162,9 @@ Gaps, still legacy or not done in this PR:
 - The sector-exit menu and the NPC talk panel: the legacy ones (they draw over the world and work).
   The stack and key-ring popups open where the legacy panel is: the native HUD hides itself while they are open.
 - Overhead map and placement: legacy. The sector card has no radar picture yet.
-- Inventory uses the legacy click-to-pick, click-to-put model; no RmlUi drag and drop, no "drop on a card to give".
+- The detail panel's inventory stays click-to-pick, click-to-put; the dedicated loadout screen
+  (`docs/ui/loadout.md`, the inventory button in the panel header) has real drag and drop, the LBE
+  windows and the weapon platform. There is no "drop on a card to give" yet.
 - The hit chance / AP chip at the target and the path cost of the wireframes are not done.
 - Legacy/native equivalence is by construction (the native controls run the legacy handlers); there is no save-dump
   comparison test yet.
