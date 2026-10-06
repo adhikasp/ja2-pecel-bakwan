@@ -30,6 +30,7 @@
 		<div class="money" id="map.balance" data-attr-title="l_balance"><span class="k">{{l_balance}}</span><span class="v">{{money}} <span class="inc">{{income}}</span></span></div>
 		<button class="btn" id="map.laptop" data-label="Laptop" data-event-click="exit('laptop')"><img class="icon" src="icon-laptop"/><span class="label">{{l_laptop}}</span><span class="badge info" data-if="new_mail">!</span><span class="kbd">L</span></button>
 		<button class="btn" id="map.tactical" data-label="Tactical" data-class-is-disabled="!can_tactical" data-event-click="exit('tactical')"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_tactical}}</span><span class="kbd">Esc</span></button>
+		<button class="icon-btn" id="map.ballistics" data-label="Ballistics" title="Range &amp; ballistics" data-event-click="ballistics"><img class="icon" src="icon-chart"/></button>
 		<button class="icon-btn" id="map.options" data-label="Options" title="Options (O)" data-event-click="exit('options')"><img class="icon" src="icon-options"/></button>
 		<button class="icon-btn" id="map.menu" data-label="Menu" title="Save, load, help, game settings" data-class-on="menu_open" data-event-click="menu"><img class="icon" src="icon-menu"/></button>
 	</div>

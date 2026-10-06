@@ -437,6 +437,7 @@ public:
 			Poke();
 		});
 		Command("menu", [this](Args const&) { menuOpen = !menuOpen; Poke(); });
+		Command("ballistics", [](Args const&) { OpenWeaponReadout(); });
 		Command("level", [this](Args const& a) { if (!a.empty()) JumpToLevel(std::atoi(a[0].c_str())); Poke(); });
 		Command("zoom", [this](Args const& a) {
 			int const d = a.empty() ? 0 : std::atoi(a[0].c_str());

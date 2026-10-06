@@ -44,6 +44,9 @@ void LoadingStep(std::string const&) {}
 bool LoadingProgress(double) { return false; }
 bool TacticalHudActive() { return false; }
 void TacticalHudToggleLog() {}
+void OpenWeaponReadout() {}
+void CloseWeaponReadout() {}
+bool WeaponReadoutActive() { return false; }
 bool Focus(std::string const&) { return false; }
 std::string FocusedId() { return {}; }
 }

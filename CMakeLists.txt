@@ -417,7 +417,7 @@ if (WITH_UNITTESTS)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
-            if(n MATCHES "^(tactical_layers|world_renderer|battle_)")
+            if(n MATCHES "^(tactical_layers|world_renderer|battle_|weapon_readout)")
                 continue() # run below, with layers or at a native resolution
             endif()
             add_test(
@@ -473,6 +473,14 @@ if (WITH_UNITTESTS)
                     --res 1920x1080 --timeout 900 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/${n}"
             )
         endforeach()
+        # The native readout (issue #141) needs 1280x720 and up: run it once at a native
+        # resolution for the e2e suite; the resolution sweep below also covers its layout
+        # and golden at every resolution.
+        add_test(
+            NAME e2e_weapon_readout
+            COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/weapon_readout.lua" --isolated
+                --res 1920x1080 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/weapon_readout"
+        )
         foreach(check determinism sessions)
             add_test(
                 NAME e2e_${check}

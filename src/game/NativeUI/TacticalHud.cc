@@ -349,6 +349,7 @@ namespace
 			Command("pick_scroll", [](Args const& a) { if (!a.empty()) NativePickupScroll(INT16(std::atoi(a[0].c_str()))); });
 			Command("mute", [](Args const&) { NativeSMMuteClick(); });
 			Command("swap_hands", [](Args const&) { PressKey(SDLK_Q, SDL_KMOD_CTRL); });
+			Command("readout", [](Args const&) { OpenWeaponReadout(); });
 
 			lEndTurn = Str("tac.end_turn");
 			lTurnBased = Str("tac.turn_based");

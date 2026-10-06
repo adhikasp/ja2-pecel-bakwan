@@ -79,6 +79,7 @@
 #include "Rotting_Corpses.h"
 #include "Handle_Items.h"
 #include "Items.h"
+#include "NativeUI.h"
 #include "Keys.h"
 #include "Interface.h"
 #include "Interface_Items.h"
@@ -986,6 +987,11 @@ namespace
 					ITEM_POOL* const pool = GetItemPool(s->sGridNo, s->bLevel);
 					if (!pool) throw std::runtime_error("no items on this tile");
 					InitializeItemPickupMenu(s, s->sGridNo, pool, 0);
+				}
+				else if (what == "readout")
+				{
+					// Test aid: open the native range and ballistics readout (issue #141)
+					NativeUI::OpenWeaponReadout();
 				}
 				else if (what == "killmerc")
 				{

@@ -76,6 +76,7 @@
 | A22 | Sector exit menu | click edge | `ja2.debug("exitmenu")` path |
 | A23 | Misc keys: A auto-bandage, E cycle enemies, F range, G lights, H help, I item glow, N cycle stack, T roofs, V settings, W wireframe, X swap places, `=` select all, `*`/`,` red glow, Home 3D cursor, End continue move, F12 clear lines, Ctrl+Q swap hands, Ctrl+N head gear, Alt+R reload, Ctrl+Shift+R group reload, Insert overhead, keypad ± zoom | | see `Turn_Based_Input.cc` |
 | A24 | Placement: click merc, click zone, Clear (C), Spread (S), Group (G), Done (Enter) | | `Tactical_Placement_GUI.cc` |
+| A25 | Range and ballistics readout: compare two weapons over the damage pipeline | chart button in the detail panel | `NativeUI::OpenWeaponReadout` (see [weapon-readout.md](weapon-readout.md)) |
 
 ## 4. States
 
