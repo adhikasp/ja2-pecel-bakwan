@@ -11,12 +11,15 @@ ja2.waitIdle()
 local size = ja2.screenSize()
 local native = size.w >= 1280 and size.h >= 720
 
--- A9 (ours) with Barry and Ivan; A10 and C10 friendly, B9 enemy-held with a garrison.
+-- A9 (ours) with Barry and Ivan; the sectors around enemy-held B9 are friendly, so
+-- wherever the retreat sends the squad it lands on friendly ground.
 worldmap.staged{
 	sectors = {
 		["B9"]  = { enemy = true, admins = 3 },
 		["A10"] = { enemy = false },
+		["B8"]  = { enemy = false },
 		["B10"] = { enemy = false },
+		["C9"]  = { enemy = false },
 		["C10"] = { enemy = false },
 	},
 }
