@@ -944,8 +944,8 @@ void SDLCALL SoundCallback(void* userdata, SDL_AudioStream* stream, int addition
 				const INT vol_l   = Sound->uiFadeVolume * (127 - Sound->Pan) / MAXVOLUME;
 				const INT vol_r   = Sound->uiFadeVolume * (  0 + Sound->Pan) / MAXVOLUME;
 				UINT32    samples = want_samples;
-				const INT16* src;
-				auto rbResult = ma_pcm_rb_acquire_read(Sound->pRingBuffer, &samples, (void**)&src);
+				void* srcRaw = nullptr;
+				auto rbResult = ma_pcm_rb_acquire_read(Sound->pRingBuffer, &samples, &srcRaw);
 				if (rbResult == MA_AT_END) {
 					// Ring buffer is empty and servicing is done, channel can be freed
 					Sound->State = CHANNEL_DEAD;
@@ -956,6 +956,7 @@ void SDLCALL SoundCallback(void* userdata, SDL_AudioStream* stream, int addition
 					continue;
 				}
 
+				const INT16* src = static_cast<const INT16*>(srcRaw);
 				for (UINT32 i = 0; i < samples; ++i)
 				{
 					gMixBuffer[2 * i + 0] += src[2 * i + 0] * vol_l >> 7;
@@ -1050,8 +1051,8 @@ static void SoundConsumeVirtual(UINT32 frames)
 				{
 					FillRingBuffer(&Sound);
 					UINT32 n = remaining;
-					const void* src;
-					ma_result const r = ma_pcm_rb_acquire_read(Sound.pRingBuffer, &n, (void**)&src);
+					void* srcRaw = nullptr;
+					ma_result const r = ma_pcm_rb_acquire_read(Sound.pRingBuffer, &n, &srcRaw);
 					if (r != MA_SUCCESS && r != MA_AT_END) break;
 					if (n == 0)
 					{

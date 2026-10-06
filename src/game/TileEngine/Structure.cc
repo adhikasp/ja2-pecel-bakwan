@@ -1176,8 +1176,10 @@ StructureDamageResult DamageStructure(STRUCTURE* const s, UINT8 damage, Structur
 		if (s->fFlags & STRUCTURE_EXPLOSIVE && Random(2))
 		{ // Remove struct
 			// ATE: Set hit points to zero
-			STRUCTURE* const base = FindBaseStructure(s);
-			base->ubHitPoints = 0;
+			if (STRUCTURE* const base = FindBaseStructure(s))
+			{
+				base->ubHitPoints = 0;
+			}
 
 			IgniteExplosionXY(owner, x, y, 0, grid_no, STRUCTURE_IGNITE, 0);
 

@@ -281,7 +281,7 @@ void ApplyEquipment(SOLDIERTYPE& s, sol::table const& spec, std::vector<std::str
 			{
 				gun.usGunAmmoItem  = magazine;
 				gun.ubGunAmmoType  = GCM->getItem(magazine)->asAmmo()->ammoType->index;
-				gun.ubGunShotsLeft = GCM->getItem(magazine)->asAmmo()->capacity;
+				gun.ubGunShotsLeft = nonNull(GCM->getItem(magazine)->asAmmo())->capacity;
 				gun.bGunAmmoStatus = 100;
 			}
 		}

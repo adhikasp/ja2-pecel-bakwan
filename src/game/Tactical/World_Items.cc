@@ -276,7 +276,7 @@ void LoadWorldItemsFromMap(HWFILE const f)
 				const MagazineModel *mag = item->asAmmo();
 				if (weapon && weapon->isInBigGunList())
 				{
-					const WeaponModel *replacement = GCM->getWeaponByName(item->asWeapon()->getStandardReplacement());
+					const WeaponModel *replacement = GCM->getWeaponByName(nonNull(item->asWeapon())->getStandardReplacement());
 
 						// everything else can be the same? no.
 						INT8 const ammo     = o.ubGunShotsLeft;

@@ -8,6 +8,10 @@ struct ItemModel;
 class MercSystem
 {
 public:
+	// Polymorphic base class: deleting a derived object through a MercSystem*
+	// is undefined behaviour without a virtual destructor (-Wnon-virtual-dtor).
+	virtual ~MercSystem() = default;
+
 	/**
 	 * @param profileID
 	 * @return pointer to a MercProfileInfo. Never returns null. A pointer to the empty instance is returned if not defined in JSON.

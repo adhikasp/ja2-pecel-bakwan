@@ -131,7 +131,6 @@ void AddStrategicEvent_(UINT8 const ubCallbackID, UINT32 const uiMinStampSeconds
 	}
 }
 
-void StartQuest(UINT8, const SGPSector &);
 void StartQuest_(UINT8 const ubQuestID, const std::string sectorID)
 {
 	if (!sectorID.empty())
@@ -146,7 +145,6 @@ void StartQuest_(UINT8 const ubQuestID, const std::string sectorID)
 	}
 }
 
-void EndQuest(UINT8, const SGPSector &);
 void EndQuest_(UINT8 const ubQuestID, const std::string sectorID)
 {
 	if (!sectorID.empty())
@@ -161,7 +159,6 @@ void EndQuest_(UINT8 const ubQuestID, const std::string sectorID)
 	}
 }
 
-void GuaranteeAtLeastXItemsOfIndex(ArmsDealerID, UINT16, UINT8);
 void GuaranteeAtLeastXItemsOfIndex_(INT8 const bDealerID, UINT16 const usItemIndex, UINT8 const ubNumItems)
 {
 	GuaranteeAtLeastXItemsOfIndex((ArmsDealerID)bDealerID, usItemIndex, ubNumItems);
@@ -183,7 +180,6 @@ std::vector<DEALER_ITEM_HEADER*> GetDealerInventory(UINT8 ubDealerID)
 	return items;
 }
 
-void DoScreenIndependantMessageBox(const ST::string &, MessageBoxFlags, MSGBOX_CALLBACK);
 void DoBasicMessageBox(const ST::string text)
 {
 	DoScreenIndependantMessageBox(text, MSG_BOX_FLAG_OK, NULL);

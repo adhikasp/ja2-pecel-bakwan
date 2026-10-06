@@ -1,7 +1,11 @@
 #pragma once
 
 #include "Facts.h"
+// GetWorldTotalMin()/GetWorldDay()/SetFactTrue()/... are declared here by
+// Game_Clock.h and Quests.h; this header must not repeat them.
+#include "Game_Clock.h"
 #include "Item_Types.h"
+#include "Quests.h"
 #include "Types.h"
 #include "Observable.h"
 #include <variant>
@@ -252,15 +256,8 @@ void AddEveryDayStrategicEvent_(UINT8 ubCallbackID, UINT32 uiStartMin, UINT32 ui
  * @param uiParam a parameter that will be passed to the event handler
  */
 void AddStrategicEvent_(UINT8 ubCallbackID, UINT32 uiMinStamp, UINT32);
-UINT32 GetWorldTotalMin();
-UINT32 GetWorldTotalSeconds();
-UINT32 GetWorldDay();
 void StartQuest_(UINT8 ubQuestID, std::string sectorID);
 void EndQuest_(UINT8 ubQuest, std::string sectorID);
-
-void SetFactTrue(Fact);
-void SetFactFalse(Fact);
-BOOLEAN CheckFact(Fact, UINT8);
 
 
 /**

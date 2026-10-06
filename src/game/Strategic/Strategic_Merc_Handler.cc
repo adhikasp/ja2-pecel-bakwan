@@ -448,9 +448,9 @@ BOOLEAN SoldierHasWorseEquipmentThanUsedTo( SOLDIERTYPE *pSoldier )
 			// Check if it's a gun
 			if ( item->isGun())
 			{
-				if ( item->asWeapon()->ubDeadliness > bBestGun )
+				if ( nonNull(item->asWeapon())->ubDeadliness > bBestGun )
 				{
-					bBestGun = item->asWeapon()->ubDeadliness;
+					bBestGun = nonNull(item->asWeapon())->ubDeadliness;
 				}
 			}
 

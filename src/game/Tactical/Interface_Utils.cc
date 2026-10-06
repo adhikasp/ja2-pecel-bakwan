@@ -198,7 +198,7 @@ void DrawItemUIBarEx(OBJECTTYPE const& o, const UINT8 ubStatus, const INT16 x, c
 		
 		if (item->isAmmo())
 		{
-			value = 100 * o.ubShotsLeft[ubStatus] / (item->asAmmo()->capacity ? item->asAmmo()->capacity : 1);
+			value = 100 * o.ubShotsLeft[ubStatus] / (nonNull(item->asAmmo())->capacity ? nonNull(item->asAmmo())->capacity : 1);
 			if (value > 100) value = 100;
 		}
 		else

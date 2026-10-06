@@ -381,11 +381,11 @@ int BobbyRayItemQsortCompare(const void *pArg1, const void *pArg2)
 	UINT8  ubItem1Quality;
 	UINT8  ubItem2Quality;
 
-	usItem1Index = ( ( STORE_INVENTORY * ) pArg1 ) -> usItemIndex;
-	usItem2Index = ( ( STORE_INVENTORY * ) pArg2 ) -> usItemIndex;
+	usItem1Index = ( ( const STORE_INVENTORY * ) pArg1 ) -> usItemIndex;
+	usItem2Index = ( ( const STORE_INVENTORY * ) pArg2 ) -> usItemIndex;
 
-	ubItem1Quality = ( ( STORE_INVENTORY * ) pArg1 ) -> ubItemQuality;
-	ubItem2Quality = ( ( STORE_INVENTORY * ) pArg2 ) -> ubItemQuality;
+	ubItem1Quality = ( ( const STORE_INVENTORY * ) pArg1 ) -> ubItemQuality;
+	ubItem2Quality = ( ( const STORE_INVENTORY * ) pArg2 ) -> ubItemQuality;
 
 	return( CompareItemsForSorting( usItem1Index, usItem2Index, ubItem1Quality, ubItem2Quality ) );
 }
@@ -399,11 +399,11 @@ int ArmsDealerItemQsortCompare(const void *pArg1, const void *pArg2)
 	UINT8  ubItem1Quality;
 	UINT8  ubItem2Quality;
 
-	usItem1Index = ( ( INVENTORY_IN_SLOT * ) pArg1 ) -> sItemIndex;
-	usItem2Index = ( ( INVENTORY_IN_SLOT * ) pArg2 ) -> sItemIndex;
+	usItem1Index = ( ( const INVENTORY_IN_SLOT * ) pArg1 ) -> sItemIndex;
+	usItem2Index = ( ( const INVENTORY_IN_SLOT * ) pArg2 ) -> sItemIndex;
 
-	ubItem1Quality = ( ( INVENTORY_IN_SLOT * ) pArg1 ) -> ItemObject.bStatus[ 0 ];
-	ubItem2Quality = ( ( INVENTORY_IN_SLOT * ) pArg2 ) -> ItemObject.bStatus[ 0 ];
+	ubItem1Quality = ( ( const INVENTORY_IN_SLOT * ) pArg1 ) -> ItemObject.bStatus[ 0 ];
+	ubItem2Quality = ( ( const INVENTORY_IN_SLOT * ) pArg2 ) -> ItemObject.bStatus[ 0 ];
 
 	return( CompareItemsForSorting( usItem1Index, usItem2Index, ubItem1Quality, ubItem2Quality ) );
 }
@@ -427,14 +427,14 @@ int CompareItemsForSorting(UINT16 const item_index1, UINT16 const item_index2, U
 	if (item1->getItemClass() == IC_AMMO && item2->getItemClass() == IC_AMMO)
 	{
 		// AMMO is sorted by caliber first
-		uint16_t calibre1 = item1->asAmmo()->calibre->index;
-		uint16_t calibre2 = item2->asAmmo()->calibre->index;
+		uint16_t calibre1 = nonNull(item1->asAmmo())->calibre->index;
+		uint16_t calibre2 = nonNull(item2->asAmmo())->calibre->index;
 		if (calibre1 > calibre2) return -1;
 		if (calibre1 < calibre2) return  1;
 
 		// the same caliber - compare size of magazine
-		UINT8 const mag_size1 = item1->asAmmo()->capacity;
-		UINT8 const mag_size2 = item2->asAmmo()->capacity;
+		UINT8 const mag_size1 = nonNull(item1->asAmmo())->capacity;
+		UINT8 const mag_size2 = nonNull(item2->asAmmo())->capacity;
 		if (mag_size1 > mag_size2) return -1;
 		if (mag_size1 < mag_size2) return  1;
 	}
@@ -479,7 +479,7 @@ static UINT8 GetDealerItemCategoryNumber(UINT16 const usItemIndex)
 
 	// If it's not a weapon, set no weapon class, as this won't be needed
 	UINT8 const weapon_class = itemModel->isWeapon() ?
-		itemModel->asWeapon()->ubWeaponClass : NOGUNCLASS;
+		nonNull(itemModel->asWeapon())->ubWeaponClass : NOGUNCLASS;
 
 	// search table until end-of-list marker is encountered
 	for (UINT8 category = 0;; ++category)

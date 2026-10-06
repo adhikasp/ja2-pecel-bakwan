@@ -1439,6 +1439,7 @@ void JumpIntoAdjacentSector( UINT8 ubTacticalDirection, UINT8 ubJumpCode, INT16 
 	}
 
 	Assert( pValidSoldier );
+	if (pValidSoldier == nullptr) return;
 
 	//Now, determine the traversal time.
 	GROUP* const pGroup = GetGroup(pValidSoldier->ubGroupID);

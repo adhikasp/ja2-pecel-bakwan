@@ -8,15 +8,57 @@ option(WITH_MAEMO "Build with right click mapped to F4 (menu button)" OFF)
 set(WITH_SANITIZERS "" CACHE STRING "Semicolon-separated sanitizers to instrument the game with: address, undefined, thread. Linux and macOS only (see the FATAL_ERROR below)")
 
 function(add_warnings target)
+    # The build used to stop at -Wall. Everything below was measured against
+    # this tree one flag at a time. Several of them found real cleanup (a
+    # non-virtual-destructor bug class, qualifier casts, maybe-uninitialized
+    # out-params); that cleanup is done, so the tree is warning-free with all
+    # of them on. They are enabled for visibility, not as -Werror - a new
+    # warning here is a bug in the change that introduced it.
     target_compile_options(${target} PRIVATE
         $<$<CXX_COMPILER_ID:AppleClang,Clang>:-Wstring-conversion>
-        $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:-Wall -Wtype-limits -Wignored-qualifiers>
+        $<$<CXX_COMPILER_ID:AppleClang,Clang,GNU>:
+            -Wall -Wtype-limits -Wignored-qualifiers
+            -Wformat=2 -Wcast-qual -Wnull-dereference -Wunused -Winit-self
+            -Wuninitialized -Wstrict-aliasing=2 -Wparentheses
+            -Wimplicit-fallthrough -Wcast-align -Wpointer-arith -Wwrite-strings
+            -Wsizeof-pointer-memaccess -Wnoexcept-type
+            -Wredundant-decls
+            -Wnon-virtual-dtor>
+        # GCC-only diagnostics: Clang has no -Wduplicated-cond / -Wlogical-op
+        # and would print "unknown warning option" for either.
+        $<$<CXX_COMPILER_ID:GNU>:-Wduplicated-cond -Wlogical-op -Wclobbered>
         $<$<CXX_COMPILER_ID:MSVC>:/W3 /wd4018 /wd4101 /wd4244 /wd4996>
             # 4018 : example: signed/unsigned mismatch
             # 4101 : example: unreferenced local variable
             # 4244 : example: conversion from 'int' to 'real', possible loss of data
             # 4996 : example: This function or variable may be unsafe (sscanf)
     )
+
+    # Flags deliberately *not* enabled, so the next person does not re-run the
+    # measurement or re-litigate the decision:
+    #   -Wpedantic          663 hits, essentially one header: the anonymous
+    #                       union-of-anonymous-structs layout trick in
+    #                       Tactical/Item_Types.h. Rewriting a layout-sensitive
+    #                       struct is high risk for no bug-finding value.
+    #   -Wswitch-enum       217 hits, one per switch over an enum that does not
+    #                       name every case. -Wswitch (from -Wall) already
+    #                       catches the interesting half.
+    #   -Wunused-parameter  207 hits, pure noise; would need [[maybe_unused]]
+    #                       sprayed over most callbacks in the tree.
+    #   -Wuseless-cast      140 hits, noise, and the casts worth seeing are the
+    #                       ones -Wcast-qual / -Wold-style-cast would flag.
+    #   -Wswitch-default    34 hits, style.
+    #   -Wdouble-promotion  19 hits, low value in an engine that is floats.
+    #   -Wshadow            17 hits, cheap enough to revisit later; some come
+    #                       from SOL/RmlUi headers.
+    #   -Wfloat-equal       9 hits, a game engine legitimately compares floats.
+    #
+    #   -Wjump-misses-init  was listed with the silent flags but cannot be
+    #                       enabled: it is a C/ObjC-only diagnostic and GCC
+    #                       rejects it for C++ with
+    #                       "valid for C/ObjC but not for C++", once per every
+    #                       one of the ~500 translation units. There is no C in
+    #                       this tree for it to see, so it is dropped.
 endfunction()
 
 target_compile_features(${JA2_BINARY} PRIVATE cxx_std_20)

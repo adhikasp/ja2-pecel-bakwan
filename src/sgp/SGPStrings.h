@@ -8,11 +8,19 @@
 #include <string_theory/string>
 #include <string_theory/format>
 
-// poison deprecated functions
+// poison deprecated functions.
+//
+// These deliberately re-declare the libc functions to attach [[deprecated]],
+// which is what makes any use a warning. snprintf in particular is already
+// declared by <stdio.h>, so the redeclaration is intentional: silence
+// -Wredundant-decls for these two lines only, not for the tree.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wredundant-decls"
 [[deprecated("Don't use strlcpy, but regular ST::string assignment.")]]
 	size_t strlcpy(char *dst, const char *src, size_t size);
 [[deprecated("Don't use snprintf, use ST::format instead.")]]
 	int snprintf(char* const s, size_t const n, const char* const fmt, ...);
+#pragma GCC diagnostic pop
 
 /// Converts `std::printf` formatting to `ST::format` formatting.
 /// @see https://en.cppreference.com/w/cpp/io/c/fprintf

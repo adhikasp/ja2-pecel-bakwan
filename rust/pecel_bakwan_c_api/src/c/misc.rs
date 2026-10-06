@@ -43,31 +43,37 @@ pub extern "C" fn CString_destroy(s: *mut c_char) {
 /// The function is a noop when the passed in pointer is null
 /// It panics when the length does not match
 #[unsafe(no_mangle)]
-#[cfg(not(target_endian = "little"))]
-pub unsafe extern "C" fn convertLittleEndianBufferToNativeEndianU16(buf: *mut u8, buf_len: u32) {
-    use byteorder::{ByteOrder, LittleEndian, NativeEndian};
-
-    if buf.is_null() {
-        log::warn!(
-            "convertLittleEndianU16BufferToNativeEndian: Called with null ptr, doing nothing"
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
+pub extern "C" fn convertLittleEndianBufferToNativeEndianU16(buf: *mut u8, buf_len: u32) {
+    // One definition with a cfg'd body, not two cfg'd definitions: cbindgen
+    // cannot evaluate target_endian and would emit both as duplicate C
+    // declarations in pecel_bakwan.h (-Wredundant-decls).
+    #[cfg(target_endian = "little")]
+    {
+        let _ = (buf, buf_len);
+        log::debug!(
+            "convertLittleEndianU16BufferToNativeEndian: Native format is little endian so this is a noop"
         );
-        return;
     }
-    let buf = std::slice::from_raw_parts_mut(buf, buf_len as usize);
-    for chunk in buf.chunks_exact_mut(2) {
-        let current_value = LittleEndian::read_u16(chunk);
-        NativeEndian::write_u16(chunk, current_value);
-    }
-}
 
-/// Converts a UINT16 buffer from little endian to native endian
-/// The conversion is done in place, so no new allocations are done
-#[unsafe(no_mangle)]
-#[cfg(target_endian = "little")]
-pub extern "C" fn convertLittleEndianBufferToNativeEndianU16(_buf: *mut u8, _buf_len: u32) {
-    log::debug!(
-        "convertLittleEndianU16BufferToNativeEndian: Native format is little endian so this is a noop"
-    );
+    #[cfg(not(target_endian = "little"))]
+    {
+        use byteorder::{ByteOrder, LittleEndian, NativeEndian};
+
+        if buf.is_null() {
+            log::warn!(
+                "convertLittleEndianU16BufferToNativeEndian: Called with null ptr, doing nothing"
+            );
+            return;
+        }
+        // SAFETY: `buf` is non-null (checked above) and the caller guarantees
+        // that it points to `buf_len` readable and writable bytes.
+        let slice = unsafe { std::slice::from_raw_parts_mut(buf, buf_len as usize) };
+        for chunk in slice.chunks_exact_mut(2) {
+            let current_value = LittleEndian::read_u16(chunk);
+            NativeEndian::write_u16(chunk, current_value);
+        }
+    }
 }
 
 /// Guesses the resource version from the contents of the game directory.

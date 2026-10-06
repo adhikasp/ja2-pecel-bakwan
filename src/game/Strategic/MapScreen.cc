@@ -1,3 +1,11 @@
+// GCC 16 reports a false -Wmaybe-uninitialized inside libstdc++'s
+// char_traits<char>::copy when it inlines an ST::string copy (it cannot see that
+// the source buffer is initialised). string_theory's own headers trip it in a
+// handful of TUs; it predates the warning flags added in #290.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 #include "MapScreen.h"
 #include "Animated_ProgressBar.h"
 #include "Campaign.h"
@@ -1006,6 +1014,7 @@ INT32 GetPathTravelTimeDuringPlotting(PathSt* pPath)
 	}
 
 	Assert(pGroup);
+	if (pGroup == nullptr) return 0;
 
 
 	// if between sectors

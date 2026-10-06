@@ -1,6 +1,7 @@
 #ifndef TACTICALAI_AIINTERNALS_H
 #define TACTICALAI_AIINTERNALS_H
 
+#include "AI.h"
 #include "JA2Types.h"
 #include "Overhead_Types.h"
 
@@ -130,7 +131,7 @@ INT32 CalcManThreatValue(SOLDIERTYPE *pSoldier, INT16 sMyGrid, UINT8 ubReduceFor
 INT8 CanNPCAttack(SOLDIERTYPE *pSoldier);
 void CheckIfTossPossible(SOLDIERTYPE *pSoldier, ATTACKTYPE *pBestThrow);
 BOOLEAN ClimbingNecessary( SOLDIERTYPE * pSoldier, INT16 sDestGridNo, INT8 bDestLevel );
-INT8 ClosestPanicTrigger( SOLDIERTYPE * pSoldier );
+// ClosestPanicTrigger() is declared in AI.h.
 INT16 ClosestReachableDisturbance(SOLDIERTYPE *pSoldier, UINT8 ubUnconsciousOK, BOOLEAN * pfChangeLevel );
 INT16 ClosestReachableFriendInTrouble(SOLDIERTYPE *pSoldier, BOOLEAN * pfClimbingNecessary);
 INT16 ClosestSeenOpponent(SOLDIERTYPE *pSoldier, INT16 * psGridNo, INT8 * pbLevel);

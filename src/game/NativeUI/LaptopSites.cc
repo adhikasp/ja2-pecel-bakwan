@@ -399,8 +399,7 @@ void LaptopViewModel::ReadBobby()
 	auto const t = LaptopNative::OrderTotal(orderCity, orderSpeed);
 	cartTotal = Money(t.subtotal);
 	cartWeight = Kg(t.weight);
-	int items = 0;
-	for (auto const& l : cart) items += 1;
+	int items = static_cast<int>(cart.size());
 	cartCountText = ST::format(Str("laptop.cart_lines").c_str(), items, MAX_PURCHASE_AMOUNT).to_std_string();
 	orderSubtotal = Money(t.subtotal);
 	orderWeight = Kg(std::max<UINT32>(t.weight, 20));

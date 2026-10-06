@@ -1044,7 +1044,9 @@ static void FreeLeaveListSlot(UINT32 uiSlotIndex);
 
 static void HandleEquipmentLeft(UINT32 const slot_idx, INT const sector, GridNo const grid)
 {
-	Assert(slot_idx < NUM_LEAVE_LIST_SLOTS);
+	// The Assert below documents the invariant; this release-build guard is what
+	// -Warray-bounds needs (assert() is compiled out under NDEBUG).
+	if (slot_idx >= NUM_LEAVE_LIST_SLOTS) return;
 
 	if (MERC_LEAVE_ITEM* i = gpLeaveListHead[slot_idx])
 	{

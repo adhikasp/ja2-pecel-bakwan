@@ -1,3 +1,11 @@
+// GCC 16 reports a false -Wmaybe-uninitialized inside libstdc++ when it
+// inlines an ST::string or std::function construct (it cannot see that the
+// source is initialised). string_theory/libstdc++ trip it in a few TUs; it
+// predates the warning flags added in #290.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 #include "Assignments.h"
 #include "Directories.h"
 #include "Font.h"
@@ -798,7 +806,7 @@ static bool CompatibleAmmoForGun(const OBJECTTYPE* pTryObject, const OBJECTTYPE*
 {
 	if ( ( GCM->getItem(pTryObject->usItem)->isAmmo() ) )
 	{
-		return GCM->getWeapon( pTestObject->usItem )->matches(GCM->getItem(pTryObject->usItem)->asAmmo()->calibre);
+		return GCM->getWeapon( pTestObject->usItem )->matches(nonNull(GCM->getItem(pTryObject->usItem)->asAmmo())->calibre);
 	}
 	return false;
 }
@@ -808,7 +816,7 @@ static bool CompatibleGunForAmmo(const OBJECTTYPE* pTryObject, const OBJECTTYPE*
 {
 	if ( ( GCM->getItem(pTryObject->usItem)->isGun()) )
 	{
-		return GCM->getWeapon( pTryObject->usItem )->matches(GCM->getItem(pTestObject->usItem)->asAmmo()->calibre);
+		return GCM->getWeapon( pTryObject->usItem )->matches(nonNull(GCM->getItem(pTestObject->usItem)->asAmmo())->calibre);
 	}
 	return false;
 }
@@ -5304,10 +5312,11 @@ ItemDescNativeView GetItemDescNativeView()
 	v.money     = o.usItem == MONEY ? o.uiMoneyAmount : 0;
 	v.shotsLeft = -1;
 	ItemModel const* const item = GCM->getItem(o.usItem, ItemSystem::nothrow);
-	if (item && item->isWeapon() && item->asWeapon() && item->asWeapon()->ubMagSize > 0)
+	WeaponModel const* const weapon = item != nullptr ? item->asWeapon() : nullptr;
+	if (item && item->isWeapon() && weapon != nullptr && weapon->ubMagSize > 0)
 	{
 		v.shotsLeft = o.ubGunShotsLeft;
-		v.magSize   = item->asWeapon()->ubMagSize;
+		v.magSize   = weapon->ubMagSize;
 	}
 	for (int i = 0; i < MAX_ATTACHMENTS; ++i)
 	{

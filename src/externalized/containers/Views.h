@@ -107,7 +107,8 @@ namespace Containers {
 					return iterator(m_models.end());
 				}
 
-				const Model* byId(Id id) const {
+				// byId() throws instead of returning null, so it never returns null.
+				[[gnu::returns_nonnull]] const Model* byId(Id id) const {
 					auto model = optionalById(id);
 					if (!model) {
 						throw NotFoundError(ST::format("entity {}({}) not found", Model::ENTITY_NAME, id));
@@ -143,7 +144,8 @@ namespace Containers {
 					}
 				}
 
-				const Model* byName(const ST::string& internalName) const {
+				// byName() throws instead of returning null, so it never returns null.
+				[[gnu::returns_nonnull]] const Model* byName(const ST::string& internalName) const {
 					auto model = optionalByName(internalName);
 					if (!model) {
 						throw NotFoundError(ST::format("entity {}(\"{}\") not found", Model::ENTITY_NAME, internalName));

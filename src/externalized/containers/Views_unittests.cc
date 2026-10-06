@@ -51,8 +51,7 @@ TEST(Views, Indexed)
 	ASSERT_EQ(view.byId(2)->getInternalName(), "e2");
 	EXPECT_THROW({ view.byId(1); }, NotFoundError);
 
-	ASSERT_EQ(view.optionalById(2)->getId(), 2);
-	ASSERT_EQ(view.optionalById(2)->getInternalName(), "e2");
+	ASSERT_EQ(view.optionalById(2), view.byId(2));
 	ASSERT_EQ(view.optionalById(1), nullptr);
 }
 
@@ -76,8 +75,7 @@ TEST(Views, Named)
 	ASSERT_EQ(view.byName("e2")->getInternalName(), "e2");
 	EXPECT_THROW({ view.byName("e1"); }, NotFoundError);
 
-	ASSERT_EQ(view.optionalByName("e2")->getId(), 2);
-	ASSERT_EQ(view.optionalByName("e2")->getInternalName(), "e2");
+	ASSERT_EQ(view.optionalByName("e2"), view.byName("e2"));
 	ASSERT_EQ(view.optionalByName("e1"), nullptr);
 }
 

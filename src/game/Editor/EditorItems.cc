@@ -782,7 +782,7 @@ void AddSelectedItemToWorld(INT16 sGridNo)
 	const ItemModel * item = GCM->getItem(obj.usItem);
 	if (item->isAmmo())
 	{
-		UINT8 const mag_size = item->asAmmo()->capacity;
+		UINT8 const mag_size = nonNull(item->asAmmo())->capacity;
 		obj.ubShotsLeft[0] = Random(2) ? mag_size : Random(mag_size);
 	}
 	else

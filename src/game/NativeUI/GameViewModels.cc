@@ -9,6 +9,7 @@
 #include "StrategicMap.h"
 
 #include <cstdio>
+#include <string_theory/format>
 
 namespace NativeUI
 {
@@ -29,9 +30,7 @@ std::string FormatMoney(int const amount)
 
 std::string FormatWhen(unsigned const day, unsigned const hour, unsigned const minute)
 {
-	char buf[48];
-	std::snprintf(buf, sizeof buf, "Day %u, %02u:%02u", day, hour, minute);
-	return buf;
+	return ST::format("Day {}, {02d}:{02d}", day, hour, minute).to_std_string();
 }
 
 GameStatusViewModel::GameStatusViewModel() : ViewModel("status", TOPIC_MONEY | TOPIC_CLOCK | TOPIC_SECTOR | TOPIC_TEAM)

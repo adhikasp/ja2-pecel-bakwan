@@ -101,7 +101,7 @@ Platform SlotsFor(const ItemModel& item, const SlotPolicy& policy)
 {
 	if (item.isGun() && item.asWeapon() != nullptr)
 	{
-		return GunPlatform(item.asWeapon()->ubWeaponClass, policy);
+		return GunPlatform(nonNull(item.asWeapon())->ubWeaponClass, policy);
 	}
 	if (item.isArmour() && item.asArmour() != nullptr)
 	{
