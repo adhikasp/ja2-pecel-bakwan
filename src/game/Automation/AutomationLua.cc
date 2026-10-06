@@ -1,6 +1,7 @@
 #include "AutomationLua.h"
 #include "Automation.h"
 #include "AutomationSession.h"
+#include "BattleReport.h"
 #include "BattleScenario.h"
 #include "ScenarioItems.h"
 #include "CampaignScenario.h"
@@ -10,6 +11,7 @@
 #include "Assignments.h"
 #include "Font_Control.h"
 #include "Game_Clock.h"
+#include "Timer_Control.h"
 #include "Input.h"
 #include "Isometric_Utils.h"
 #include "SysUtil.h"
@@ -308,6 +310,64 @@ namespace
 		}
 		if (n == 0) return std::nullopt;
 		return SDL_Point{ int(sumX / n), int(sumY / n) };
+	}
+
+	// One side of the battle report as a Lua table.
+	sol::table TallyTable(sol::state_view L, BattleReport::Tally const& t)
+	{
+		sol::table out = L.create_table();
+		out["soldiers"]    = t.soldiers;
+		out["alive"]       = t.alive;
+		out["dead"]        = t.dead;
+		out["wounded"]     = t.wounded;
+		out["lifeStart"]   = t.lifeStart;
+		out["lifeEnd"]     = t.lifeEnd;
+		out["shots"]       = t.shots;
+		out["hits"]        = t.hits;
+		out["impacts"]     = t.impacts;
+		out["damageDealt"] = t.damageDealt;
+		out["damageTaken"] = t.damageTaken;
+		out["breaks"]      = t.breaks;
+		return out;
+	}
+
+	// The battle report as a Lua table (issue #59, docs/plan/ai-evaluation.md): what
+	// happened in the battle in progress, or the last one that finished. Reached
+	// through ja2.battleReport().
+	sol::table BattleReportState()
+	{
+		sol::state& L = g_lua;
+		BattleReport::Report const& r = BattleReport::Current();
+
+		sol::table t = L.create_table();
+		t["started"]  = r.started;
+		t["finished"] = r.finished;
+		t["sector"]   = r.sector;
+		t["outcome"]  = r.outcome;
+		t["endedBy"]  = r.endedBy;
+		t["rounds"]   = r.rounds;
+		// The core counts engine milliseconds; the Lua surface shows seconds.
+		auto const seconds = [](int const ms) { return ms < 0 ? -1.0 : double(ms) / 1000.0; };
+		t["seconds"] = r.finished
+			? seconds(r.endMs - r.startMs)
+			: seconds(int(GetJA2Clock()) - r.startMs);
+		t["contactSeconds"]       = seconds(r.contactMs);
+		t["firstCasualtySeconds"] = seconds(r.firstCasualtyMs);
+		t["firstBreakSeconds"]    = seconds(r.firstBreakMs);
+		t["disengageSeconds"]     = seconds(r.disengageMs);
+
+		if (r.objectiveGrid >= 0)
+		{
+			sol::table o = L.create_table();
+			o["grid"] = r.objectiveGrid;
+			o["side"] = BattleReport::SideName(static_cast<BattleReport::Side>(r.objectiveSide));
+			o["held"] = r.objectiveHeld;
+			t["objective"] = o;
+		}
+
+		t["player"] = TallyTable(L, r.player);
+		t["enemy"]  = TallyTable(L, r.enemy);
+		return t;
 	}
 
 	sol::table GameState()
@@ -733,6 +793,16 @@ namespace
 			});
 		});
 		ja2.set_function("state", [] { return Guarded([] { return GameState(); }); });
+		// ja2.battleReport(): the battle as data - outcome, losses inflicted vs taken,
+		// the times (contact, first casualty, first break, disengage) and whether the
+		// objective was held (issue #59, docs/plan/ai-evaluation.md). nil until a battle
+		// has started in this session.
+		ja2.set_function("battleReport", []() -> sol::object {
+			return Guarded([]() -> sol::object {
+				if (!BattleReport::HasReport()) return sol::make_object(g_lua, sol::lua_nil);
+				return sol::make_object(g_lua, BattleReportState());
+			});
+		});
 		// ja2.loadout(name): the equipment schema a merc carries - the weapon, its
 		// typed attachments keyed by slot role, the worn LBE keyed by kind and the
 		// pocket contents keyed by pocket.

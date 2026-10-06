@@ -15,6 +15,10 @@
 >   spread out like a real battle. The militia fight on their own AI turn, so the scenario
 >   ends the player's turns and asserts what the AI does (fire, cover, manoeuvre, morale
 >   breaking) and that the militia won (#65).
+> - `tests/e2e/battle_ai_eval.lua` + `ja2.battleReport()` — the AI evaluation harness: a
+>   matchup played out AI-only and read back as a battle report (outcome, losses inflicted
+>   vs taken, time to disengage, objective), with `python tools/dev.py ai-eval` running the
+>   matrix ([ai-evaluation.md](ai-evaluation.md), #59).
 > - `tests/e2e/lib/battle.lua` — the reusable fixtures and orders the scenarios share.
 > - `ja2.debug("battle", spec)` / `ja2.debug("fire", gridNo)` — the C++ harness in
 >   [`src/game/Automation/BattleScenario.cc`](../../src/game/Automation/BattleScenario.cc).
@@ -77,6 +81,7 @@ The spec table:
 | `clear` | `true` | clear the sector's existing enemies first |
 | `start` | `true` | enter turn-based combat when staged |
 | `militia` | — | the player's own AI soldiers (`MILITIA_TEAM`): a count, or a table `{ count, class, grids = { grid, ... }, units = { { grid, class, direction }, ... } }`. `class` is `"green"` (default), `"regular"` or `"elite"`; `units` pins each militia to its own grid. The staged militia replace the sector's own, so the spec's list is the whole force. |
+| `objective` | — | the tile the battle is fought over and the side that must hold it when combat ends: `{ grid, side = "player" (default) \| "enemy" }`. The battle report ([ai-evaluation.md](ai-evaluation.md)) answers whether that side held it. |
 | `our` | — | per-merc setup, matched by `name` (or by position when unnamed) |
 
 `enemies.units` spawns exactly those enemies, each on its own grid with its own class,
@@ -124,6 +129,12 @@ of who is looking. Together with the native tactical view model
 (`ja2.viewModel("tactical")`: `combat`, `our_turn`, `can_end`,
 `cards[i].{name,ap,hp,en,mo,ammo,sel,done}`, `lines`, `log`) a scenario can assert both
 game state and what the HUD shows.
+
+`ja2.battleReport()` is the fight as one object: the outcome and how it ended, each side's
+losses inflicted vs taken (soldiers, life, shots/hits/impacts, damage), the times (contact,
+first casualty, first break, disengage) and whether the scenario's objective was held.
+[ai-evaluation.md](ai-evaluation.md) defines those metrics and the matrix
+(`python tools/dev.py ai-eval`) that turns a set of matchups into an evaluation.
 
 ### Orders — `ja2.debug("fire", gridNo)`
 
@@ -227,6 +238,8 @@ ctest -R e2e_battle -V --output-on-failure                 # from the build dire
 python tools/ja2ctl.py run tests/e2e/battle_smoke.lua --isolated --res 1920x1080
 python tools/ja2ctl.py run tests/e2e/battle_los.lua --isolated --res 1920x1080
 python tools/ja2ctl.py run tests/e2e/battle_militia.lua --isolated --res 1920x1080
+python tools/ja2ctl.py run tests/e2e/battle_ai_eval.lua --isolated --res 1920x1080 --arg militia=10,enemy_class=elite
+python tools/dev.py ai-eval                                # the evaluation matrix
 python tools/ja2ctl.py run tests/e2e/battle_los.lua --isolated --res 1920x1080 --show
 ```
 
@@ -245,3 +258,4 @@ corpus by existing. Running the e2e suite on every PR needs the synthetic game d
 | #63 | deterministic harness (`ja2.debug("battle"/"fire")`) — **first cut landed here** |
 | #64 | assertions: LOS, cover, positioning, AP, morale and breaks, outcome — **landed here** (`battle_los.lua`) |
 | #65 | the scenario corpus wired into `ctest -L e2e` — **landed here** (`battle_militia.lua` and the AI battle harness); running it on every PR is #302 |
+| #59 | AI metrics and the evaluation harness — **landed here** (`ja2.battleReport()`, `battle_ai_eval.lua`, `tools/ai_eval.py`); the metrics themselves are defined in [ai-evaluation.md](ai-evaluation.md) |

@@ -52,6 +52,13 @@ end
 
 function battle.tactical() return ja2.state().tactical end
 
+-- The battle report (issue #59, docs/plan/ai-evaluation.md): the battle in progress or the
+-- last one that finished, as data - outcome, losses inflicted vs taken, the times (contact,
+-- first casualty, first break, disengage) and the objective. nil until a battle has started.
+function battle.report()
+	return ja2.battleReport()
+end
+
 -- The enemies still standing in the sector, in state order.
 function battle.enemies()
 	local out = {}

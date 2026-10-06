@@ -73,6 +73,8 @@
 
 const SOLDIERTYPE* gLastMercTalkedAboutKilling = NULL;
 
+Observable<SOLDIERTYPE*> OnSoldierDeath;
+
 
 static const DOUBLE gHopFenceForwardSEDist[NUMSOLDIERBODYTYPES]     = { 2.2, 0.7, 3.2, 0.7 };
 static const DOUBLE gHopFenceForwardNWDist[NUMSOLDIERBODYTYPES]     = { 2.7, 1.0, 2.7, 1.0 };
@@ -2860,6 +2862,10 @@ BOOLEAN HandleSoldierDeath( SOLDIERTYPE *pSoldier , BOOLEAN *pfMadeCorpse )
 
 	if ( pSoldier->bLife == 0 && !( pSoldier->uiStatusFlags & SOLDIER_DEAD )  )
 	{
+		// One event per soldier, while he still carries who he was (team, id, grid):
+		// the battle report counts casualties here.
+		OnSoldierDeath(pSoldier);
+
 		// Cancel services here...
 		ReceivingSoldierCancelServices( pSoldier );
 		GivingSoldierCancelServices( pSoldier );

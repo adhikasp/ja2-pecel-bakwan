@@ -5,6 +5,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/AIMain.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/AIUtils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Attacks.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/BattleReport.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/CreatureDecideAction.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/DecideAction.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/FindLocations.cc
@@ -15,6 +16,13 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/PanicButtons.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Realtime.cc
 )
+
+if (WITH_UNITTESTS)
+    set(LOCAL_JA2_SOURCES
+        ${LOCAL_JA2_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/BattleReport_unittest.cc
+    )
+endif()
 
 set_property(
     SOURCE ${LOCAL_JA2_SOURCES}
