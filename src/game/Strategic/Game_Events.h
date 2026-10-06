@@ -34,6 +34,9 @@ void LoadStrategicEventsFromSavedGame(HWFILE);
 
 STRATEGICEVENT* AddAdvancedStrategicEvent(StrategicEventFrequency, StrategicEventKind, UINT32 uiTimeStamp, UINT32 uiParam);
 
+/** Remove the events marked SEF_DELETION_PENDING (Game_Events.cc). */
+void DeletePendingStrategicEvents();
+
 BOOLEAN ExecuteStrategicEvent( STRATEGICEVENT *pEvent );
 
 extern STRATEGICEVENT *gpEventList;

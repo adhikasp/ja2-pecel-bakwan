@@ -43,6 +43,15 @@ static void DeleteEventsWithDeletionPending()
 }
 
 
+void DeletePendingStrategicEvents()
+{
+	// for a caller that marked events itself (the campaign staging harness rebasing
+	// the queue): the flag is only the "there is something to sweep" shortcut
+	gfEventDeletionPending = TRUE;
+	DeleteEventsWithDeletionPending();
+}
+
+
 static void AdjustClockToEventStamp(STRATEGICEVENT* pEvent, UINT32* puiAdjustment)
 {
 	UINT32 uiDiff;

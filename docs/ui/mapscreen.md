@@ -234,6 +234,11 @@ toggles). Now the names come back when the view that hid them is turned off (bot
 of output pixels (2 at 1080p, 3 at 1440p, 4 at 4K; Scale2x or nearest neighbour), centred, stepping down only when it
 would not fit. Ammo, clips and grenades therefore stay small.
 
+**The sleep cell keeps its hit area when no icon is shown.** The first team column is empty for an awake merc, and an
+empty flex cell has zero height — the click that puts him to sleep only worked once he was already asleep (the icon
+gave the cell its height). The cell now has a fixed 22x22 hit area, so the toggle is clickable either way and the
+automation can address it as `map.team[N].sleep`.
+
 ## 10. Parity tour
 
 `tests/e2e/mapscreen_parity.lua` (goldens `mapscreen_default`, `_assignment`, `_contract`, `_plotting`, `_log`,
@@ -267,6 +272,13 @@ and sector link, drag and drop, the item description, the stack popup, filters, 
 overlays: the help title/paragraphs, the page buttons and close; the pre-battle header, forces and involved table with
 retreat disabled; and the militia 3x3 town map with sector selection, pick-up/drop and Auto/Done. Below 1280x720 the
 legacy screens run and the tour only checks that the legacy map screen is up.
+
+`tests/e2e/world_map_steps.lua` and `tests/e2e/world_map_actions.lua` (issue #69) drive the map itself as the world
+map, through `ja2.state()` and the element ids: plot a path and confirm it, move a squad between sectors and arrive,
+walk into an enemy-held sector and retreat from the pre-battle panel, and board, fly and leave Skyrider's helicopter;
+then split a squad (the move box lists both), sleep and recover, doctor a patient, repair with a toolkit, practise an
+attribute, and move an item from one merc to another through the sector inventory. `lib/worldmap.lua` holds the steps.
+
 `MapScreenModel_unittest.cc` tests the view model's rules (team grouping, the box lines, the log, item art) on
 game-state fixtures.
 

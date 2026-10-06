@@ -510,6 +510,18 @@ namespace
 			t["destination"] = SGPSector::FromStrategicIndex(GetLastSectorIdInCharactersPath(m)).AsShortString().to_std_string();
 			t["asleep"]   = m->fMercAsleep != 0;
 			t["trainStat"] = static_cast<int>(m->bTrainStat);
+			// the strategic move in progress and the route as it was plotted (first sector = where he is now),
+			// so a world-map test can assert a plotted path and a travel in progress (issue #69)
+			t["betweenSectors"] = m->fBetweenSectors != 0;
+			sol::table path = L.create_table();
+			int pi = 1;
+			for (PathSt const* p = GetSoldierMercPathPtr(m); p; p = p->pNext)
+				path[pi++] = SGPSector::FromStrategicIndex(UINT16(p->uiSectorId)).AsShortString().to_std_string();
+			t["path"] = path;
+			// rest and recovery: the breath a sleeping or healing merc gets back
+			t["energy"]    = static_cast<int>(m->bBreath);
+			t["energyMax"] = static_cast<int>(m->bBreathMax);
+			if (m->bAssignment == VEHICLE) t["vehicle"] = pShortVehicleStrings[GetVehicle(m->iVehicleId).ubVehicleType].to_std_string();
 			t["life"]     = static_cast<int>(m->bLife);
 			t["lifeMax"]  = static_cast<int>(m->bLifeMax);
 			t["inSector"] = m->bInSector != 0;
@@ -533,6 +545,42 @@ namespace
 			mercs[i++] = t;
 		}
 		s["mercs"] = mercs;
+
+		// The vehicles: Skyrider's helicopter (ja2.debug("helicopter")) and the others, with where they are,
+		// where they are going, who is aboard and whether the helicopter is in the air. A world-map test uses
+		// this to assert a helicopter flight without reading the icon's CSS.
+		sol::table vehicles = L.create_table();
+		int vi = 1;
+		FOR_EACH_VEHICLE(v)
+		{
+			sol::table t = L.create_table();
+			t["name"]           = pShortVehicleStrings[v.ubVehicleType].to_std_string();
+			t["sector"]         = v.sSector.AsShortString().to_std_string();
+			t["betweenSectors"] = v.fBetweenSectors != 0;
+			t["passengers"]     = GetNumberInVehicle(v);
+			t["helicopter"]     = IsHelicopter(v);
+			if (IsHelicopter(v)) t["airborne"] = fHelicopterIsAirBorne != 0;
+			INT16 destination = -1;
+			for (PathSt const* p = v.pMercPath; p; p = p->pNext) destination = INT16(p->uiSectorId);
+			if (destination >= 0) t["destination"] = SGPSector::FromStrategicIndex(UINT16(destination)).AsShortString().to_std_string();
+			vehicles[vi++] = t;
+		}
+		s["vehicles"] = vehicles;
+
+		// The pre-battle panel (an encounter on the way): the sector, the known enemy count and
+		// what the player can do about it, so a world-map test can trigger and avoid one.
+		PreBattleView const pb = GetPreBattleView();
+		sol::table preBattle = L.create_table();
+		preBattle["active"] = pb.active;
+		if (pb.active)
+		{
+			preBattle["sector"]     = gubPBSector.AsShortString().to_std_string();
+			preBattle["enemyCount"] = pb.enemy_count;
+			preBattle["canEnter"]   = pb.can_enter;
+			preBattle["canRetreat"] = pb.can_retreat;
+			preBattle["canAuto"]    = pb.can_auto;
+		}
+		s["preBattle"] = preBattle;
 		return s;
 	}
 
