@@ -11,9 +11,10 @@
 >   the cover the building gives, that firing spends AP, whose morale moves, the casualties
 >   and the state the fight is left in (#64).
 > - `tests/e2e/battle_militia.lua` — the AI battle: twenty player militia against ten
->   low-level enemy soldiers on a rural map, both sides staged on predetermined tiles.
->   The militia fight on their own AI turn, so the scenario ends the player's turns and
->   asserts the militia won (#65).
+>   low-level enemy soldiers on a rural map, both sides staged on predetermined tiles and
+>   spread out like a real battle. The militia fight on their own AI turn, so the scenario
+>   ends the player's turns and asserts what the AI does (fire, cover, manoeuvre, morale
+>   breaking) and that the militia won (#65).
 > - `tests/e2e/lib/battle.lua` — the reusable fixtures and orders the scenarios share.
 > - `ja2.debug("battle", spec)` / `ja2.debug("fire", gridNo)` — the C++ harness in
 >   [`src/game/Automation/BattleScenario.cc`](../../src/game/Automation/BattleScenario.cc).
@@ -139,6 +140,14 @@ and each merc carries `finalDestination`. A merc who dies is removed from the ma
 longer counts a dead merc as still walking — otherwise a single casualty left the game
 "busy" forever.
 
+### Looking at a fight — `ja2.debug("camera", gridNo)`
+
+The tactical view normally follows the selected merc (the start of a player turn slides to
+him). `ja2.debug("camera", gridNo)` centers it on a tile instead, so a scenario whose merc
+is not at the fight — the AI battle keeps the observer over 40 tiles away — can still take
+screenshots of it. The next player turn may slide the view back, so a screenshot moves the
+camera first.
+
 The scenario pieces are small Lua steps (`tests/e2e/lib/battle.lua`):
 
 - `battle.stage(spec)` — stage a fight and return the tactical state.
@@ -196,14 +205,20 @@ stage a spent/outmatched enemy; `aimorale` is exposed for it.
 
 `battle_militia.lua` is the AI-vs-AI scenario (#65): twenty green militia against ten
 administrators on E11, a rural sector (woods, grass and a river). Both forces are pinned to
-exact tiles — two militia ranks facing south, the enemy patrol a dozen tiles south of them,
-and one player merc behind the line who never fires. It asserts the staging (20 militia, 10
-enemies, every one on its tile, the lines in sight of each other) and then lets the two AIs
-fight: the scenario only presses End Turn, waits out the enemy and militia turns, and
-asserts the militia won — the enemy patrol wiped out, combat over, the militia and the merc
-still standing — bounded at 12 rounds. Determinism is per the usual contract: the same spec
-and seed give the same dead (the isolated run reports the same rounds and survivors every
-time).
+exact tiles and spread out like a real battle: the militia in a loose line with a support
+echelon behind it (a 40-tile front, men two to four tiles apart), the enemy patrol in a
+loose assault line with its own depth, a few tiles inside pistol range. The player's merc is
+only an observer: he stays at the sector entry, over 40 tiles north of the nearest enemy,
+never fires and is never seen. The scenario asserts the staging (20 militia, 10 enemies,
+every one on its tile, the lines in sight of each other, the observer out of it) and then
+lets the two AIs fight: it only presses End Turn, waits out the enemy and militia turns, and
+asserts what the current tactical AI does — both sides fired (the other side lost life),
+both took cover (soldiers left standing) and manoeuvred (soldiers left their tiles), the
+losing side's morale broke (`aimorale` reached at least WORRIED), and the militia won: the
+enemy patrol wiped out, combat over, the militia still standing, bounded at 12 rounds. The
+observer ends on his tile with his health and magazine untouched. Determinism is per the
+usual contract: the same spec and seed give the same dead (the isolated run reports the same
+rounds, survivors and frames every time).
 
 ## Running
 

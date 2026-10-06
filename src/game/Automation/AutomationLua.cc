@@ -1143,6 +1143,16 @@ namespace
 					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"battle\", spec)");
 					StageBattle(a->as<sol::table>());
 				}
+				else if (what == "camera")
+				{
+					// Center the tactical view on a tile, so a scenario can watch a fight
+					// its selected merc is not standing in (the AI battle keeps the
+					// observer away from the field). The next player turn may slide the
+					// view back to the selected merc, so a screenshot calls this first.
+					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"camera\", gridNo)");
+					if (guiCurrentScreen != GAME_SCREEN) throw std::runtime_error("ja2.debug(\"camera\"): needs the tactical screen");
+					InternalLocateGridNo(static_cast<UINT16>(a->as<int>()), TRUE);
+				}
 				else if (what == "lane")
 				{
 					// Stage a two-actor shooting lane at an exact distance with a fixed
