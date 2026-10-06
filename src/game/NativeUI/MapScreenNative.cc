@@ -47,6 +47,7 @@
 #include "MapScreen.h"
 #include "MapScreenBridge.h"
 #include "Message.h"
+#include "SectorStock.h"
 #include "MineModel.h"
 #include "PopUpBox.h"
 #include "PreBattle_Interface.h"
@@ -141,6 +142,34 @@ namespace
 }
 
 // ------------------------------------------------------------------------------------------------------ rows
+/** The sector sort keys, as the panel and the automation name them. */
+Equipment::StashSort SortKeyFrom(std::string const& key)
+{
+	if (key == "name")      return Equipment::StashSort::Name;
+	if (key == "condition") return Equipment::StashSort::Condition;
+	if (key == "count")     return Equipment::StashSort::Count;
+	return Equipment::StashSort::Type;
+}
+
+/** What the last mass operation did, as one line of text for the panel's readout. Every note is a
+ * key the strings file owns; an unknown one falls back to the raw key rather than to nothing. */
+std::string NoteText(SectorStock::Report const& r)
+{
+	if (r.note.empty()) return {};
+	std::string const key    = "map." + r.note;
+	std::string const format = Str(key);
+	if (format == key) return key; // no such string: show the key rather than nothing
+
+	// which counts a note carries is the note's own business
+	if (r.note == "stash.note.merged" || r.note == "stash.note.taken" || r.note == "stash.note.moved")
+		return ST::format(format.c_str(), r.items).to_std_string();
+	if (r.note == "stash.note.loaded")
+		return ST::format(format.c_str(), r.guns, r.rounds).to_std_string();
+	if (r.note == "stash.note.repaired")
+		return ST::format(format.c_str(), r.repaired, r.pointsSpent).to_std_string();
+	return format;
+}
+
 struct TeamRow
 {
 	int line = 0, hp = 0, energy = 0, morale = 0;
@@ -440,7 +469,24 @@ public:
 			Poke();
 		});
 		Command("pool_filter", [this](Args const&) { Poke(); });
-		Command("pool_sort", [this](Args const& a) { if (!a.empty()) poolSort = a[0]; Poke(); });
+		Command("pool_sort", [this](Args const& a) {
+			if (a.empty()) return;
+			poolSort = a[0];
+			// Sorting is a mass operation, not a view setting: the order it produces is the order
+			// the stash is stored in, so it survives the panel closing.
+			SectorStock::SortBy(SortKeyFrom(a[0]));
+			Poke();
+		});
+		// The mass operations (issue #124). Each one is a SectorStock call, so the e2e harness can
+		// assert it without a click, and the panel only decides which one to ask for.
+		Command("stock_mark",   [this](Args const& a) { if (!a.empty()) SectorStock::ToggleMark(std::atoi(a[0].c_str())); Poke(); });
+		Command("stock_all",    [this](Args const& a) { SectorStock::MarkAll(a.empty() || a[0] != "0"); Poke(); });
+		Command("stock_invert", [this](Args const&)   { SectorStock::InvertMarks(); Poke(); });
+		Command("stock_merge",  [this](Args const&)   { SectorStock::MergeStacks(); Poke(); });
+		Command("stock_load",   [this](Args const&)   { SectorStock::FillMagazines(); Poke(); });
+		Command("stock_repair", [this](Args const&)   { SectorStock::RepairStash(); Poke(); });
+		Command("stock_take",   [this](Args const&)   { SectorStock::TakeMarked(); Poke(); });
+		Command("stock_drop",   [this](Args const&)   { SectorStock::DropAll(); Poke(); });
 		Command("stack", [this](Args const&) { StackAndMerge(); Poke(); });
 		Command("desc_close", [this](Args const&) { ItemDescNativeClose(); Poke(); });
 		Command("desc_attach",   [this](Args const& a) { if (!a.empty()) ItemDescNativeAttachmentClick(std::atoi(a[0].c_str()), false); Poke(); });
@@ -499,7 +545,9 @@ public:
 			"lg_militia", "lg_enemy", "lg_fog", "cancel", "weight", "camo", "inv_hint", "done", "sector", "sector_hint", "forces", "mercs",
 			"green", "regular", "veteran", "enemy", "control", "loyalty", "training", "producing", "possible", "sam", "in_sector",
 			"sector_inv", "map_hint", "messages", "stop", "continue", "time_help", "open_gear", "pool_empty",
-			"log_all", "log_combat", "log_team", "log_money", "search", "search_items", "sort_type", "sort_name", "sort_cond", "stack",
+			"log_all", "log_combat", "log_team", "log_money", "search", "search_items", "sort_type", "sort_name", "sort_cond", "sort_count",
+			"stack", "marked", "take", "drop", "load_mags", "repair", "select_all", "select_none", "select_invert", "stock_hint",
+			"take_hint", "drop_hint", "load_hint", "repair_hint", "merge_hint",
 			"desc_cond", "desc_weight", "desc_ammo", "desc_attach", "desc_hint", "stack_hint", "move_all", "close",
 			"pb_sector", "pb_involved", "pb_uninvolved", "pb_auto", "pb_enter", "pb_retreat",
 			"militia_unassigned", "militia_green", "militia_regular", "militia_elite", "militia_auto", "militia_hint", "militia_pick" })
@@ -535,6 +583,8 @@ public:
 		f.Field("modal", modal); f.Field("modal_title", modalTitle); f.Field("modal_lead", modalLead); f.Rows("modal_rows", modalRows);
 		f.Field("modal_box", modalBox); f.Field("modal_go", modalGo); f.Field("modal_cancel", modalCancel); f.Field("modal_go_label", modalGoLabel);
 		f.Field("pool_query", poolQuery); f.Field("pool_sort", poolSort); f.Field("pool_empty_index", poolEmptyIndex);
+		f.Field("pool_marked", poolMarked); f.Field("pool_weight", poolWeight); f.Field("pool_note", poolNote);
+		f.Field("pool_locked", poolBlocked);
 		f.Field("desc_open", descOpen); f.Field("desc_name", descName); f.Field("desc_text", descText); f.Field("desc_art", descArt);
 		f.Field("desc_art_style", descArtStyle); f.Field("desc_cond", descCond); f.Field("desc_weight", descWeight); f.Field("desc_ammo", descAmmo);
 		f.Rows("desc_attach", descAttach);
@@ -626,7 +676,9 @@ public:
 	int modalBox = -1, modalGo = -1, modalCancel = -1;
 	std::vector<ModalRow> modalRows;
 	std::string poolQuery, poolSort = "type";
-	int poolEmptyIndex = -1;
+	int poolEmptyIndex = -1, poolMarked = 0;
+	std::string poolWeight, poolNote;
+	bool poolBlocked = false; // no live merc in the sector: the operations that need one are off
 	bool descOpen = false, stackOpen = false;
 	std::string descName, descText, descArt, descArtStyle, descCond, descWeight, descAmmo, stackName;
 	std::vector<DescAttachment> descAttach;
@@ -1336,12 +1388,22 @@ private:
 			gearTitle = Str("map.open_gear");
 		}
 		if (!fShowMapInventoryPool) { poolTitle.clear(); return; }
-		poolTitle = S(sSelMap.AsShortString()) + " - " + ST::format(Str("map.items_count").c_str(), int(pInventoryPoolList.size())).to_std_string();
-		struct Cat { char const* key; char const* icon; uint32_t mask; };
-		static Cat const catDefs[] = {
-			{ "all", "misc-item", 0xFFFFFFFF }, { "guns", "gun", IC_GUN | IC_LAUNCHER }, { "ammo", "ammo", IC_AMMO },
-			{ "armour", "armour", IC_ARMOUR }, { "explosives", "grenade", IC_GRENADE | IC_BOMB },
-			{ "medical", "medkit", IC_MEDKIT }, { "other", "misc-item", ~uint32_t(IC_GUN | IC_LAUNCHER | IC_AMMO | IC_ARMOUR | IC_GRENADE | IC_BOMB | IC_MEDKIT) },
+
+		// The stash model is the authority on what is in the sector (SectorStock.h); the panel
+		// draws a filtered, searched projection of it, and every mass operation runs on it.
+		SectorStock::StashView const stock = SectorStock::View();
+		poolSort = Equipment::Describe(SectorStock::Sort());
+		poolTitle = stock.sector + " - " + ST::format(Str("map.items_count").c_str(), stock.pileCount).to_std_string();
+		poolMarked = stock.marked;
+		poolWeight = ST::format("{.1f} kg", stock.weight / 1000.0).to_std_string();
+		poolNote = NoteText(SectorStock::LastReport());
+		poolBlocked = !SectorStock::CanOperate();
+
+		static struct { char const* key; char const* icon; Equipment::StashCategory cat; } const catDefs[] = {
+			{ "all", "misc-item", Equipment::StashCategory::All }, { "guns", "gun", Equipment::StashCategory::Guns },
+			{ "ammo", "ammo", Equipment::StashCategory::Ammo }, { "armour", "armour", Equipment::StashCategory::Armour },
+			{ "explosives", "grenade", Equipment::StashCategory::Explosives },
+			{ "medical", "medkit", Equipment::StashCategory::Medical }, { "other", "misc-item", Equipment::StashCategory::Other },
 		};
 		std::map<std::string, int> counts;
 		poolEmptyIndex = -1;
@@ -1349,37 +1411,34 @@ private:
 		{
 			if (pInventoryPoolList[i].o.usItem == NOTHING) { poolEmptyIndex = int(i); break; }
 		}
-		uint32_t mask = 0xFFFFFFFF;
-		for (Cat const& c : catDefs) if (category == c.key) mask = c.mask;
-		for (size_t i = 0; i < pInventoryPoolList.size(); ++i)
+		uint32_t mask = Equipment::CategoryMask(Equipment::StashCategory::All);
+		for (auto const& c : catDefs) if (category == c.key) mask = Equipment::CategoryMask(c.cat);
+		for (SectorStock::PileView const& row : stock.piles)
 		{
-			WORLDITEM const& w = pInventoryPoolList[i];
-			if (w.o.usItem == NOTHING) continue;
-			ItemModel const* const item = GCM->getItem(w.o.usItem, ItemSystem::nothrow);
+			ItemModel const* const item = GCM->getItem(row.item, ItemSystem::nothrow);
 			if (!item) continue;
 			uint32_t const cls = item->getItemClass();
-			for (Cat const& c : catDefs) if (cls & c.mask) ++counts[c.key];
+			for (auto const& c : catDefs) if (cls & Equipment::CategoryMask(c.cat)) ++counts[c.key];
 			if (!(cls & mask)) continue;
 			if (!MapModel::Matches(S(item->getShortName()) + " " + S(item->getName()), poolQuery)) continue;
 			PoolItem p;
-			p.index = int(i);
-			ItemArt const a = MakeItemArt(w.o.usItem, 128, 50);
+			p.index = row.index;
+			ItemArt const a = MakeItemArt(row.item, 128, 50);
 			p.art = a.art; p.art_style = a.style;
-			if (w.o.ubNumberOfObjects > 1) p.count = "x" + std::to_string(w.o.ubNumberOfObjects);
+			if (row.count > 1) p.count = "x" + std::to_string(row.count);
 			p.name = S(item->getShortName());
-			p.cond = std::clamp<int>(w.o.bStatus[0], 0, 100);
-			p.away = !(w.usFlags & WORLD_ITEM_REACHABLE);
+			p.cond = std::clamp(row.condition, 0, 100);
+			p.sel = row.marked;
+			p.away = !row.reachable;
 			if (p.away) p.tag = Str("map.unreachable");
+			else if (row.marked) p.tag = Str("map.marked");
 			pool.push_back(std::move(p));
 		}
-		if (poolSort == "name")
-			std::stable_sort(pool.begin(), pool.end(), [](PoolItem const& a, PoolItem const& b) { return a.name < b.name; });
-		else if (poolSort == "condition")
-			std::stable_sort(pool.begin(), pool.end(), [](PoolItem const& a, PoolItem const& b) { return a.cond > b.cond; });
-		for (Cat const& c : catDefs)
+		for (auto const& c : catDefs)
 		{
 			Category k;
-			k.key = c.key; k.icon = c.icon; k.label = Str(std::string("map.cat.") + c.key); k.n = counts[c.key]; k.on = category == c.key;
+			k.key = c.key; k.icon = c.icon; k.label = Str(std::string("map.cat.") + c.key);
+			k.n = counts[c.key]; k.on = category == c.key;
 			cats.push_back(k);
 		}
 	}

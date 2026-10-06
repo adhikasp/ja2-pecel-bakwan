@@ -47,6 +47,7 @@ set(JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Strategic_Town_Loyalty.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Strategic_Turns.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/SAM_Sites.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/SectorStock.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Town_Militia.cc
     PARENT_SCOPE
 )

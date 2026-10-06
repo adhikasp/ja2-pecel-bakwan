@@ -36,6 +36,7 @@
 #include "VSurface.h"
 #include "ShopKeeper_Interface.h"
 #include "ArmsDealerInvInit.h"
+#include "SectorStock.h"
 
 #include "ContentManager.h"
 #include "GameInstance.h"
@@ -398,6 +399,9 @@ static void SaveSeenAndUnseenItems(void)
 		SaveWorldItemsToTempItemFile(sector, pUnSeenItems);
 		AddWorldItemsToUnLoadedSector(sector, pSeenItemsList);
 	}
+
+	// the panel owns the list again; the stash reads the sector's items the next time it is asked
+	SectorStock::PanelClosed();
 }
 
 
@@ -641,38 +645,23 @@ static void DestroyMapInventoryButtons(void)
 
 
 static void CheckGridNoOfItemsInMapScreenMapInventory(void);
-static void SortSectorInventory(WORLDITEM* pInventory, size_t sizeOfArray);
 
 
 static void BuildStashForSelectedSector(const SGPSector& sector)
 {
-	std::vector<WORLDITEM> temp;
-	std::vector<WORLDITEM>* items = nullptr;
-	if (sector == gWorldSector)
-	{
-		items = &gWorldItems;
-	}
-	else
-	{
-		temp = LoadWorldItemsFromTempItemFile(sector);
-		items = &temp;
-	}
-
-	pInventoryPoolList.clear();
+	// The visible items come from SectorStock, which owns the stash and the player's marks on it
+	// (issue #124); this function keeps the panel's own bookkeeping - the unseen items it holds
+	// apart and the slot padding.
 	pUnSeenItems.clear();
-
-	for (const WORLDITEM& wi : *items)
+	std::vector<WORLDITEM> const items =
+		sector == gWorldSector ? gWorldItems : LoadWorldItemsFromTempItemFile(sector);
+	for (const WORLDITEM& wi : items)
 	{
-		if (!wi.fExists) continue;
-		if (IsMapScreenWorldItemVisibleInMapInventory(wi))
-		{
-			pInventoryPoolList.push_back(wi);
-		}
-		else
-		{
-			pUnSeenItems.push_back(wi);
-		}
+		if (!wi.fExists || IsMapScreenWorldItemVisibleInMapInventory(wi)) continue;
+		pUnSeenItems.push_back(wi);
 	}
+
+	SectorStock::PanelOpened(sector);
 
 	size_t visible_slots = pInventoryPoolList.size();
 	size_t empty_slots = MAP_INVENTORY_POOL_SLOT_COUNT - visible_slots % MAP_INVENTORY_POOL_SLOT_COUNT;
@@ -680,7 +669,9 @@ static void BuildStashForSelectedSector(const SGPSector& sector)
 	iLastInventoryPoolPage  = static_cast<INT32>((pInventoryPoolList.size() - 1) / MAP_INVENTORY_POOL_SLOT_COUNT);
 
 	CheckGridNoOfItemsInMapScreenMapInventory();
-	SortSectorInventory(pInventoryPoolList.data(), visible_slots);
+	// The opening order is the stash model's own (Equipment/Stash.h): the legacy comparator went
+	// through the arms dealer's category table, which asserts on an item the dealer never sells -
+	// a first aid kit or a money pile lying in the sector, for one.
 }
 
 
@@ -1325,32 +1316,9 @@ static void CheckGridNoOfItemsInMapScreenMapInventory(void)
 }
 
 
-static INT32 MapScreenSectorInventoryCompare(const void* pNum1, const void* pNum2);
-
-
-static void SortSectorInventory(WORLDITEM* pInventory, size_t sizeOfArray)
-{
-	qsort(pInventory, sizeOfArray, sizeof(WORLDITEM), MapScreenSectorInventoryCompare);
-}
-
-
-static INT32 MapScreenSectorInventoryCompare(const void* pNum1, const void* pNum2)
-{
-	WORLDITEM *pFirst = (WORLDITEM *)pNum1;
-	WORLDITEM *pSecond = (WORLDITEM *)pNum2;
-	UINT16	usItem1Index;
-	UINT16	usItem2Index;
-	UINT8		ubItem1Quality;
-	UINT8		ubItem2Quality;
-
-	usItem1Index = pFirst->o.usItem;
-	usItem2Index = pSecond->o.usItem;
-
-	ubItem1Quality = pFirst->o.bStatus[ 0 ];
-	ubItem2Quality = pSecond->o.bStatus[ 0 ];
-
-	return( CompareItemsForSorting( usItem1Index, usItem2Index, ubItem1Quality, ubItem2Quality ) );
-}
+// The panel's own order comes from the stash model now (Equipment/Stash.h, SortStash). The legacy
+// comparator that used to be here went through the arms dealer's category table, which asserts on
+// anything the dealer never sells - a first aid kit or a money pile lying in the sector, for one.
 
 
 static BOOLEAN CanPlayerUseSectorInventory(void)
@@ -1364,6 +1332,15 @@ static BOOLEAN CanPlayerUseSectorInventory(void)
 }
 
 
+// The sector inventory pool was rewritten wholesale by a mass operation (SectorStock.cc): re-pad the
+// slot allocation and ask for a redraw.
+void SectorInventoryPoolResized()
+{
+	CheckAndUnDateSlotAllocation();
+	fMapPanelDirty = TRUE;
+}
+
+
 // the native map screen's bridge (MapScreenBridge.h)
 MOUSE_REGION* MapBridgePoolSlotRegion(int const slot)
 {
@@ -1371,40 +1348,9 @@ MOUSE_REGION* MapBridgePoolSlotRegion(int const slot)
 }
 
 
-// the native map screen's "Stack & merge" (MapScreenBridge.h): like items in the sector inventory go together, as many
-// as the stash takes per slot (getPerPocket, the rule PlaceObjectInInventoryStash uses), money into one pile.  the emptied slots are sorted to the end as when the pool is built.
+// the native map screen's "Stack & merge" (MapScreenBridge.h). The rule itself now lives in the
+// tested core (Equipment/Stash.h, MergeStash), which is also what the automation harness runs.
 void MapBridgeStackAndMerge()
 {
-	size_t const n = pInventoryPoolList.size();
-	for (size_t i = 0; i < n; ++i)
-	{
-		WORLDITEM& a = pInventoryPoolList[i];
-		if (a.o.usItem == NOTHING) continue;
-		ItemModel const* const item = GCM->getItem(a.o.usItem);
-		UINT8 const limit = item->getPerPocket();
-		for (size_t j = i + 1; j < n; ++j)
-		{
-			WORLDITEM& b = pInventoryPoolList[j];
-			// only piles that are equally reachable (an unreachable pile stays where it lies)
-			if (b.o.usItem != a.o.usItem || (b.usFlags & WORLD_ITEM_REACHABLE) != (a.usFlags & WORLD_ITEM_REACHABLE)) continue;
-			if (item->isMoney())
-			{
-				a.o.uiMoneyAmount += b.o.uiMoneyAmount;
-				DeleteObj(&b.o);
-				b = WORLDITEM{};
-				continue;
-			}
-			if (limit < 2 || a.o.ubNumberOfObjects >= limit) break;
-			UINT8 const room = limit - a.o.ubNumberOfObjects;
-			UINT8 const move = std::min<UINT8>(room, b.o.ubNumberOfObjects);
-			StackObjs(&b.o, &a.o, move);
-			if (b.o.ubNumberOfObjects == 0) b = WORLDITEM{};
-		}
-	}
-	// the visible, non-empty ones first
-	std::stable_partition(pInventoryPoolList.begin(), pInventoryPoolList.end(), [](WORLDITEM const& w) { return w.o.usItem != NOTHING; });
-	size_t visible = 0;
-	while (visible < n && pInventoryPoolList[visible].o.usItem != NOTHING) ++visible;
-	SortSectorInventory(pInventoryPoolList.data(), visible);
-	fMapPanelDirty = TRUE;
+	SectorStock::MergeStacks();
 }

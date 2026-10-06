@@ -405,7 +405,8 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .pockets .slot { margin: 0 var(--sp-1) var(--sp-1) 0; }
 .inv-stats { display: flex; margin-top: auto; padding-top: var(--sp-2); border-top: var(--border) var(--c-line); }
 .inv-pool { display: flex; flex-direction: column; flex: 1 1 0; padding: var(--sp-3); min-width: 0; }
-.inv-tools { display: flex; align-items: center; margin-bottom: var(--sp-3); }
+.inv-tools { display: flex; align-items: center; margin-bottom: var(--sp-3); flex-wrap: wrap; }
+.inv-tools .grow { flex: 1 1 auto; }
 .inv-tools .field-input { width: 220dp; display: flex; align-items: center; margin-right: var(--sp-3); }
 .inv-tools .field-input .icon { width: var(--icon-sm); height: var(--icon-sm); margin-right: var(--sp-2); image-color: var(--c-text-faint); }
 .inv-tools .field-input span { display: block; color: var(--c-text-faint); font-size: var(--fs-sm); }
@@ -536,6 +537,21 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .mv-row .chk, .mv-grp .chk { flex: 0 0 16dp; }
 .chk.on { background-color: var(--c-accent); border-color: var(--c-accent); }
 .mv-grp, .mv-row { cursor: pointer; }
+/* --- sector inventory mass operations (#124) --- */
+.cat { flex: 0 0 auto; }
+.stock-sel { display: flex; flex: 0 0 auto; }
+.stock-sel .btn { height: 30dp; padding: 0 var(--sp-2); margin-left: var(--sp-1); font-size: var(--fs-xs); white-space: nowrap; }
+.stock-sel .btn .label { white-space: nowrap; }
+.pslot .mk { position: absolute; right: 4dp; top: 4dp; z-index: 2; }
+.pslot .mk .chk { display: block; width: 16dp; height: 16dp; border: var(--border) var(--c-line-2); border-radius: var(--r-1); background-color: var(--c-bg); }
+.pslot .mk .chk.on { background-color: var(--c-accent); border-color: var(--c-accent); decorator: image(icon-confirm); image-color: var(--c-on-accent); }
+.pslot.sel .art, .pslot.sel .nm { opacity: 0.7; }
+.pslot .tag { color: var(--c-accent); }
+.inv-note { display: flex; align-items: center; height: 26dp; padding-top: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-dim); }
+.inv-note .icon { width: var(--icon-sm); height: var(--icon-sm); margin-right: 6dp; image-color: var(--c-text-faint); }
+.inv-note span { display: block; white-space: nowrap; overflow: hidden; }
+.inv-foot { height: 52dp; }
+.inv-foot > span { flex: 0 0 auto; white-space: nowrap; font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--c-text-faint); }
 .desc .modal-body { display: block; }
 .desc-art { display: flex; align-items: center; justify-content: center; position: relative; height: 150dp; background-color: var(--c-panel-2); border: var(--border) var(--c-line); }
 .desc-art img { position: absolute; image-color: #FFFFFF; }
@@ -546,9 +562,9 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .stack-grid { display: flex; flex-wrap: wrap; }
 .sslot { margin: 0 var(--sp-2) var(--sp-2) 0; }
 .hint-text { display: block; font-size: var(--fs-2xs); color: var(--c-text-faint); }
-.inv-foot > span { flex: 1 1 0; margin-right: var(--sp-3); }
+.inv-foot > span { flex: 0 0 auto; margin-right: var(--sp-3); white-space: nowrap; }
+.inv-foot .grow { flex: 1 1 auto; }
 .inv-foot .btn { flex: 0 0 auto; white-space: nowrap; }
-.inv-foot .grow { display: none; }
 
 /* ================================================================ Phase 7 overlays: pre-battle, militia, help */
 /* blinking header (ambush / creature attack): a pulse, like the legacy flashing text */
