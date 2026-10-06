@@ -417,7 +417,7 @@ if (WITH_UNITTESTS)
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
-            if(n MATCHES "^(tactical_layers|world_renderer|battle_|weapon_readout)")
+            if(n MATCHES "^(tactical_layers|world_renderer|battle_|weapon_readout|loadout_screen)")
                 continue() # run below, with layers or at a native resolution
             endif()
             add_test(
@@ -481,6 +481,14 @@ if (WITH_UNITTESTS)
             COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/weapon_readout.lua" --isolated
                 --res 1920x1080 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/weapon_readout"
         )
+        # The native loadout screen (issue #262) needs 1280x720 and up: run it once at a
+        # native resolution for the e2e suite; the resolution sweep below also covers its
+        # layout and golden at every resolution.
+        add_test(
+            NAME e2e_loadout_screen
+            COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/loadout_screen.lua" --isolated
+                --res 1920x1080 --timeout 900 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/loadout_screen"
+        )
         foreach(check determinism sessions)
             add_test(
                 NAME e2e_${check}
@@ -528,6 +536,7 @@ if (WITH_UNITTESTS)
             map_screen_tour
             loadingscreen_parity
             main_menu
+            loadout_screen
         )
         set(RESOLUTION_SCRIPTS "")
         foreach(n ${RESOLUTION_HEAVY_FIRST})
@@ -548,10 +557,10 @@ if (WITH_UNITTESTS)
         foreach(f ${RESOLUTION_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             get_filename_component(ext ${f} EXT)
-            # The sweep exists to compare screenshots. The battle_ and loadout_ scripts
+            # The sweep exists to compare screenshots. The battle_ and loadout_ fixture scripts
             # assert on data the game hands back, take no shots, and have nothing to
             # compare at another resolution - they run once, in the loops above.
-            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer|battle_|loadout_)")
+            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer|battle_|loadout_(spec|matrix))")
                 continue()
             endif()
             foreach(res ${RESOLUTION_MATRIX})

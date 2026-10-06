@@ -993,6 +993,11 @@ namespace
 					// Test aid: open the native range and ballistics readout (issue #141)
 					NativeUI::OpenWeaponReadout();
 				}
+				else if (what == "loadout")
+				{
+					// Test aid: open the native loadout screen (issue #262)
+					NativeUI::OpenLoadout();
+				}
 				else if (what == "killmerc")
 				{
 					// Test aid: merc a (name) dies (the strategic handling of a death: assignment, list, email)

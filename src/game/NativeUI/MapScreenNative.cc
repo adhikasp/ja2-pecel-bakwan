@@ -491,6 +491,7 @@ public:
 		Command("stack_pick_r", [this](Args const& a) { if (!a.empty()) ItemStackNativeClick(std::atoi(a[0].c_str()), true); Poke(); });
 		Command("stack_close", [this](Args const&) { ItemStackNativeClose(); Poke(); });
 		Command("open_pool", [this](Args const&) { ToggleSectorInventory(); Poke(); });
+		Command("gear_loadout", [](Args const&) { OpenLoadout(); });
 		Command("pool_done", [this](Args const&) {
 			if (fShowInventoryFlag) CloseMercInventory();
 			if (fShowMapInventoryPool) ToggleSectorInventory();
@@ -544,7 +545,7 @@ public:
 			"log_all", "log_combat", "log_team", "log_money", "search", "search_items", "sort_type", "sort_name", "sort_cond", "sort_count",
 			"stack", "marked", "take", "drop", "load_mags", "repair", "select_all", "select_none", "select_invert", "stock_hint",
 			"take_hint", "drop_hint", "load_hint", "repair_hint", "merge_hint",
-			"desc_cond", "desc_weight", "desc_ammo", "desc_attach", "desc_hint", "stack_hint", "move_all", "close",
+			"desc_cond", "desc_weight", "desc_ammo", "desc_attach", "desc_hint", "stack_hint", "move_all", "close", "loadout",
 			"pb_sector", "pb_involved", "pb_uninvolved", "pb_auto", "pb_enter", "pb_retreat",
 			"militia_unassigned", "militia_green", "militia_regular", "militia_elite", "militia_auto", "militia_hint", "militia_pick" })
 		{

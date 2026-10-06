@@ -148,7 +148,7 @@
 		<!-- ============================================================ sector inventory -->
 		<div class="inv-area" id="map.inv" data-if="pool_open">
 			<div class="inv-merc" id="map.inv.merc">
-				<span class="sec-title">{{gear_title}}</span>
+				<div class="gear-head"><span class="sec-title">{{gear_title}}</span><div class="grow"></div><button class="btn btn-sm" id="map.inv.loadout" data-attr-data-label="l_loadout" title="Loadout: pockets, weapon slots, weight" data-event-click="gear_loadout"><img class="icon" src="icon-inventory"/><span class="label">{{l_loadout}}</span></button></div>
 				<div class="gear" id="map.inv.gear"><div data-for="g : gear" data-attr-class="'slot gslot ' + g.cls" data-attr-id="'map.inv.slot[' + g.pos + ']'" data-attr-style="g.style" data-attr-dnd-slot="g.pos" data-attr-rclick="'slot_r(' + g.pos + ')'" data-attr-title="g.name"><img class="art" data-if="g.art != ''" data-attr-src="g.art" data-attr-style="g.art_style"/><span class="count" data-if="g.count != ''">{{g.count}}</span><span class="lbl">{{g.label}}</span><div class="cond" data-if="g.cond >= 0"><div class="fill" data-style-width="g.cond + '%'"></div></div></div></div>
 				<div class="inv-stats"><div class="kv2"><span class="k">{{l_weight}}</span><span class="v"><span>{{gear_weight}}</span></span></div><div class="kv2"><span class="k">{{l_camo}}</span><span class="v"><span>{{gear_camo}}</span></span></div></div>
 			</div>
