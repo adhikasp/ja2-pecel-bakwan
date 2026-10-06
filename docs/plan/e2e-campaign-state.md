@@ -170,6 +170,23 @@ around them (split a squad, rest, doctor/patient, repair, train, inventory trans
 
 ## Definition of done
 
+### World-map steps and the strategic actions
+
+- `world_map_steps.lua` covers path plotting (temporary route + confirm), squad movement
+  and arrival, an encounter trigger (the pre-battle panel) and an encounter avoided
+  (retreat), and the helicopter boarded, flown and left — asserted through `ja2.state()`
+  and the native element ids.
+- `world_map_actions.lua` covers the squad split (the move box lists both), rest,
+  doctor/patient, repair, training and an item transferred between two mercs.
+- `ja2.state()` exposes `betweenSectors`, `path`, `energy`/`energyMax`, `vehicle`,
+  `vehicles[]` and `preBattle`.
+- The staging spec supports `life`, `energy`, `hold` and item tables, and rebases the
+  strategic event queue on the staged clock.
+- `./ja2 -unittests` green; the two tests pass at 640x480 (legacy) and in the resolution
+  sweep (native).
+
+### State authoring
+
 - `ja2.debug("campaign", spec)` sets day/time, money, difficulty, town ownership + loyalty +
   militia, sector garrisons/control, merc roster + assignments, per-merc inventory and
   quest/fact progress on the live game.
