@@ -733,7 +733,7 @@ static UINT32 GetArmsDealerItemTypeFromItemNumber(UINT16 usItem)
 		case IC_NONE: return 0;
 
 		case IC_GUN:
-			switch(  GCM->getItem(usItem)->asWeapon()->ubWeaponClass )
+			switch(  nonNull(GCM->getItem(usItem)->asWeapon())->ubWeaponClass )
 			{
 				case HANDGUNCLASS:
 					return ARMS_DEALER_HANDGUNCLASS;
@@ -1377,7 +1377,7 @@ static void AddAmmoToArmsDealerInventory(ArmsDealerID const ubArmsDealer, UINT16
 	}
 
 
-	ubMagCapacity = GCM->getItem(usItemIndex)->asAmmo()->capacity;
+	ubMagCapacity = nonNull(GCM->getItem(usItemIndex)->asAmmo())->capacity;
 
 	if ( ubShotsLeft >= ubMagCapacity )
 	{

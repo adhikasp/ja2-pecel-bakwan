@@ -198,6 +198,16 @@ STBIWDEF void stbi_flip_vertically_on_write(int flip_boolean);
 
 #ifdef STB_IMAGE_WRITE_IMPLEMENTATION
 
+// Vendored third-party single-header library. Its implementation is a pile of
+// intentional const-stripping casts and type-punning (stb's own header says it
+// "will probably not work correctly with strict-aliasing optimizations"). Keep
+// the warnings on for our own code and turn these two off just for this file.
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+
 #ifdef _WIN32
    #ifndef _CRT_SECURE_NO_WARNINGS
    #define _CRT_SECURE_NO_WARNINGS
@@ -1623,6 +1633,10 @@ STBIWDEF int stbi_write_jpg(char const *filename, int x, int y, int comp, const 
    } else
       return 0;
 }
+#endif
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
 #endif
 
 #endif // STB_IMAGE_WRITE_IMPLEMENTATION

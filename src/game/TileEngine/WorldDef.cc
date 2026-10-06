@@ -2000,8 +2000,6 @@ catch (...) { return FALSE; }
 
 static void LoadMapLights(HWFILE);
 
-void LoadWorldFromSGPFile(SGPFile *f);
-
 void LoadWorld(const ST::string &name)
 try
 {

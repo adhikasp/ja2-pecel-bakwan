@@ -86,13 +86,6 @@ namespace
 	std::string Pct(double v) { return ST::format("{.4f}%", v).to_std_string(); }
 	std::string Px(int v) { return std::to_string(v) + "px"; }
 
-	/** How many output pixels an item picture's pixel covers: a whole number (2 at 1080p, 3 at 1440p, 4 at 4K), never a
-	 * fraction, so item art keeps its shape and crisp pixels (docs/ui/mapscreen.md, "Item art"). */
-	int ItemScale()
-	{
-		return std::max(1, std::min(4, int(std::lround(2.0 * DpScale()))));
-	}
-
 	struct ItemArt { std::string art, style; };
 	/** Item @a id drawn at a whole-number scale, centred in a box of @a boxW x @a boxH dp; the scale steps down (never
 	 * below 1) only when the picture would not fit. Small items (ammo, grenades) stay at their natural size. */
@@ -138,7 +131,9 @@ namespace
 		return S(GetProfile(s.ubProfile).zNickname);
 	}
 
-	bool IsWarnColour(UINT8 const c) { return c == FONT_RED || c == FONT_MCOLOR_RED || c == FONT_LTRED; }
+	// FONT_MCOLOR_RED and FONT_RED are both 163 (Font_Control.h), so only one of
+	// them belongs here; -Wlogical-op is right.
+	bool IsWarnColour(UINT8 const c) { return c == FONT_RED || c == FONT_LTRED; }
 }
 
 // ------------------------------------------------------------------------------------------------------ rows

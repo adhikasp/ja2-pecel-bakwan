@@ -143,7 +143,6 @@ void		HandleIMPSkillTraitAnswers( UINT32 uiSkillPressed, BOOLEAN fResetAllButton
 void		IMPSkillTraitDisplaySkills();
 INT8		CountNumSkillStraitsSelected( BOOLEAN fIncludeNoneSkill );
 BOOLEAN ShouldTraitBeSkipped( UINT32 uiTrait );
-void		AddSelectedSkillsToSkillsList();
 void		HandleLastSelectedTraits( INT8 bNewTrait );
 BOOLEAN CameBackToSpecialtiesPageButNotFinished();
 //ppp

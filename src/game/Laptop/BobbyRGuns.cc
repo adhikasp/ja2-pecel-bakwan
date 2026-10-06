@@ -856,7 +856,7 @@ static UINT16 DisplayCaliber(UINT16 usPosY, UINT16 usIndex, UINT16 usFontHeight)
 	DrawTextToScreen(BobbyRText[BOBBYR_GUNS_CALIBRE], BOBBYR_ITEM_WEIGHT_TEXT_X, usPosY, 0, BOBBYR_ITEM_DESC_TEXT_FONT, BOBBYR_STATIC_TEXT_COLOR, FONT_MCOLOR_BLACK, LEFT_JUSTIFIED);
 
 	// ammo or gun?
-	const CalibreModel *calibre = item->getItemClass() == IC_AMMO ? item->asAmmo()->calibre : item->asWeapon()->calibre;
+	const CalibreModel *calibre = item->getItemClass() == IC_AMMO ? nonNull(item->asAmmo())->calibre : nonNull(item->asWeapon())->calibre;
 	if (calibre) {
 		zTemp = calibre->getBobbyRaysName();
 	}
@@ -1366,7 +1366,7 @@ static void CalcFirstIndexForPage(STORE_INVENTORY* const pInv, UINT32 const item
 static UINT8 CheckPlayersInventoryForGunMatchingGivenAmmoID(ItemModel const* const ammo)
 {
 	UINT8 n_items = 0;
-	const CalibreModel *calibre = ammo->asAmmo()->calibre;
+	const CalibreModel *calibre = nonNull(ammo->asAmmo())->calibre;
 	CFOR_EACH_IN_TEAM(s, OUR_TEAM)
 	{
 		// Loop through all the pockets on the merc

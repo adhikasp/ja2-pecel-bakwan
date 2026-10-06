@@ -247,8 +247,6 @@ std::vector<INT32> StaticKey()
 		INT32(guiTranslucentMask), INT32(ShadeTable[0x7BEF]) };
 }
 
-void InvalidateStaticCache() { gStaticCache.valid = false; }
-
 /** Records the current view into gWorldFrame. With `cached`, the static part comes from the cache when it is
  * still valid. */
 void RecordWorldFrame(bool const mutate, bool const checkInteractive, bool const cached = false)
@@ -391,7 +389,6 @@ WorldRendererKind WorldRendererDefault(bool const driven)
 	return driven ? WorldRendererKind::Software : WorldRendererKind::Gpu;
 }
 
-void WorldRenderFrameTick();
 void WorldRendererConfigure(WorldRendererKind const k)
 {
 	VideoSetPresentHook(WorldRenderFrameTick);

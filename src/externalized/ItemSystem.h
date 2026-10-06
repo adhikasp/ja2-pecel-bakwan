@@ -15,6 +15,10 @@ class ArmoursContainer;
 class ItemSystem
 {
 public:
+	// Polymorphic base class: deleting a derived object through an ItemSystem*
+	// is undefined behaviour without a virtual destructor (-Wnon-virtual-dtor).
+	virtual ~ItemSystem() = default;
+
 	// Similar to std::nothrow and nothrow_t, defined here so we do not have
 	// to include <new> almost everywhere.
 	struct nothrow_t{ explicit nothrow_t() = default; };

@@ -68,9 +68,7 @@ namespace
 				default:
 					if (c < 0x20)
 					{
-						char buf[8];
-						std::snprintf(buf, sizeof(buf), "\\u%04x", c);
-						out += buf;
+						out += ST::format("\\u{04x}", static_cast<unsigned>(c)).to_std_string();
 					}
 					else out += static_cast<char>(c);
 			}

@@ -248,9 +248,7 @@ namespace
 
 	std::string HexColor(uint32_t const c)
 	{
-		char buf[8];
-		std::snprintf(buf, sizeof(buf), "#%06x", c & 0xffffff);
-		return buf;
+		return ST::format("#{06x}", c & 0xffffff).to_std_string();
 	}
 
 	uint32_t ParseColor(std::string const& s)

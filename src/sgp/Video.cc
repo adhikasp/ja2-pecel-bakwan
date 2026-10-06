@@ -308,7 +308,9 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 			gWindowIconData.width,
 			gWindowIconData.height,
 			SDL_PIXELFORMAT_ABGR8888,
-			(void*)gWindowIconData.pixel_data,
+			// SDL takes a non-const void*; the icon data is read-only, so
+			// const_cast explicitly (a C-style cast here trips -Wcast-qual).
+			const_cast<unsigned char*>(gWindowIconData.pixel_data),
 			gWindowIconData.bytes_per_pixel*gWindowIconData.width
 	));
 	SDL_SetWindowIcon(g_game_window, windowIcon.get());

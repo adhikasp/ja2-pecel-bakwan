@@ -18,6 +18,20 @@ struct ExplosiveModel;
 struct MagazineModel;
 struct WeaponModel;
 
+/** The asXxx() downcasts on ItemModel return null in the base and `this` in the
+ * concrete model, so after an isXxx() guard GCC still cannot see that the cast
+ * is non-null and warns (-Wnull-dereference). nonNull() states the invariant the
+ * guard already proved: passing null is undefined behaviour, exactly as the
+ * dereference it feeds would be, so it hides nothing. */
+template <typename T>
+inline T* nonNull(T* const p) noexcept
+{
+#if defined(__GNUC__) || defined(__clang__)
+	if (p == nullptr) __builtin_unreachable();
+#endif
+	return p;
+}
+
 struct ItemModel : public Containers::NamedEntity<uint16_t>
 {
 public:

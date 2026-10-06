@@ -580,7 +580,7 @@ static void ChooseWeaponForSoldierCreateStruct(SOLDIERCREATE_STRUCT* pp, INT8 bW
 
 		// check default ammo first...
 		usAmmoIndex = DefaultMagazine( usGunIndex );
-		switch( GCM->getItem(usAmmoIndex)->asAmmo()->ammoType->index )
+		switch( nonNull(GCM->getItem(usAmmoIndex)->asAmmo())->ammoType->index )
 		{
 			case AMMO_AP:
 			case AMMO_SUPER_AP:

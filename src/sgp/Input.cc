@@ -138,8 +138,6 @@ void SetSafeMousePosition(int x, int y) {
 	gusMouseYPos = y;
 }
 
-void HandleSingleClicksAndButtonRepeats();
-
 BOOLEAN DequeueSpecificEvent(InputAtom* Event, UINT32 uiMaskFlags)
 {
 	// Is there an event to dequeue

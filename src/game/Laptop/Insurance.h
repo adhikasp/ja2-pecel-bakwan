@@ -2,6 +2,8 @@
 #define __INSURANCE_H
 
 #include "Types.h"
+// GetInsuranceText() and the INS_* text ids live together in Insurance_Text.h.
+#include "Insurance_Text.h"
 #include <string_theory/string>
 
 
@@ -31,6 +33,5 @@ void InitInsuranceDefaults(void);
 void DisplayInsuranceDefaults(void);
 void RemoveInsuranceDefaults(void);
 void DisplaySmallRedLineWithShadow( UINT16 usStartX, UINT16 usStartY, UINT16 EndX, UINT16 EndY);
-ST::string GetInsuranceText(UINT8 ubNumber);
 
 #endif

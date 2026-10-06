@@ -252,10 +252,12 @@ void EndTacticalBattleForEnemy()
 	}
 	else if (gWorldSector.z > 0)
 	{
-		UNDERGROUND_SECTORINFO& sector = *FindUnderGroundSector(gWorldSector);
-		sector.ubAdminsInBattle = 0;
-		sector.ubTroopsInBattle = 0;
-		sector.ubElitesInBattle = 0;
+		if (UNDERGROUND_SECTORINFO* const sector = FindUnderGroundSector(gWorldSector))
+		{
+			sector->ubAdminsInBattle = 0;
+			sector->ubTroopsInBattle = 0;
+			sector->ubElitesInBattle = 0;
+		}
 	}
 	else
 	{ // Negative
@@ -573,16 +575,17 @@ void ProcessQueenCmdImplicationsOfDeath(const SOLDIERTYPE* const pSoldier)
 			}
 			else
 			{
-				UNDERGROUND_SECTORINFO *pUnderground;
-				pUnderground = FindUnderGroundSector(pSoldier->sSector);
-				Assert( pUnderground );
-				if( pUnderground->ubNumElites )
+				UNDERGROUND_SECTORINFO * const pUnderground = FindUnderGroundSector(pSoldier->sSector);
+				if (pUnderground != nullptr)
 				{
-					pUnderground->ubNumElites--;
-				}
-				if( pUnderground->ubElitesInBattle )
-				{
-					pUnderground->ubElitesInBattle--;
+					if( pUnderground->ubNumElites )
+					{
+						pUnderground->ubNumElites--;
+					}
+					if( pUnderground->ubElitesInBattle )
+					{
+						pUnderground->ubElitesInBattle--;
+					}
 				}
 			}
 			break;
@@ -804,7 +807,7 @@ void ProcessQueenCmdImplicationsOfDeath(const SOLDIERTYPE* const pSoldier)
 		else
 		{ //basement level (UNDERGROUND_SECTORINFO)
 			UNDERGROUND_SECTORINFO* pSector = FindUnderGroundSector(gWorldSector);
-			assert(pSector);
+			if (pSector == nullptr) return;
 			UINT32 ubTotalEnemies = Enemies(*pSector);
 			switch (pSoldier->ubSoldierClass)
 			{

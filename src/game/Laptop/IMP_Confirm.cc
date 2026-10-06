@@ -1,3 +1,11 @@
+// GCC 16 reports a false -Wmaybe-uninitialized inside libstdc++ when it
+// inlines an ST::string or std::function construct (it cannot see that the
+// source is initialised). string_theory/libstdc++ trip it in a few TUs; it
+// predates the warning flags added in #290.
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+#endif
+
 #include "CharProfile.h"
 #include "Directories.h"
 #include "Font.h"

@@ -2609,7 +2609,7 @@ static FLOAT ItemConditionModifier(UINT16 usItemIndex, INT8 bStatus)
 	if( GCM->getItem(usItemIndex)->getItemClass() == IC_AMMO )
 	{
 		// # bullets left / max magazine capacity
-		dConditionModifier = bStatus / ((FLOAT) GCM->getItem(usItemIndex)->asAmmo()->capacity? (FLOAT) GCM->getItem(usItemIndex)->asAmmo()->capacity: 1);
+		dConditionModifier = bStatus / ((FLOAT) nonNull(GCM->getItem(usItemIndex)->asAmmo())->capacity? (FLOAT) nonNull(GCM->getItem(usItemIndex)->asAmmo())->capacity: 1);
 	}
 	else	// non-ammo
 	{
@@ -6472,7 +6472,7 @@ namespace
 			case IC_GUN: return std::clamp<int>(o.bGunStatus, 0, 100);
 			case IC_AMMO:
 			{
-				int const cap = GCM->getItem(id)->asAmmo()->capacity;
+				int const cap = nonNull(GCM->getItem(id)->asAmmo())->capacity;
 				return cap > 0 ? std::clamp(o.bStatus[0] * 100 / cap, 0, 100) : 0;
 			}
 			default:

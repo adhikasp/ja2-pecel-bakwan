@@ -38,8 +38,9 @@ TEST(Containers, Indexed)
 	ASSERT_EQ(container.byId(2)->getInternalName(), "e2");
 	EXPECT_THROW({ container.byId(5); }, NotFoundError);
 
-	ASSERT_EQ(container.optionalById(2)->getId(), 2);
-	ASSERT_EQ(container.optionalById(2)->getInternalName(), "e2");
+	// optionalById() can return null, so compare the pointers instead of
+	// dereferencing a possibly-null result (-Wnull-dereference).
+	ASSERT_EQ(container.optionalById(2), container.byId(2));
 	ASSERT_EQ(container.optionalById(5), nullptr);
 }
 
@@ -57,8 +58,9 @@ TEST(Containers, Named)
 	ASSERT_EQ(container.byName("e2")->getInternalName(), "e2");
 	EXPECT_THROW({ container.byName("nothing"); }, NotFoundError);
 
-	ASSERT_EQ(container.optionalByName("e2")->getId(), 2);
-	ASSERT_EQ(container.optionalByName("e2")->getInternalName(), "e2");
+	// optionalByName() can return null, so compare the pointers instead of
+	// dereferencing a possibly-null result (-Wnull-dereference).
+	ASSERT_EQ(container.optionalByName("e2"), container.byName("e2"));
 	ASSERT_EQ(container.optionalByName("nothing"), nullptr);
 }
 

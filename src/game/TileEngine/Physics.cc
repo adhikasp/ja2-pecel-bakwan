@@ -639,8 +639,11 @@ static BOOLEAN PhysicsCheckForCollisions(REAL_OBJECT* pObject, INT32* piCollisio
 	INT32    iCollisionCode = COLLISION_NONE;
 	BOOLEAN  fDoCollision = FALSE;
 	FLOAT    dElasity = 1;
-	UINT16   usStructureID;
-	FLOAT    dNormalX, dNormalY, dNormalZ;
+	// CheckForCollision() writes these through pointers, but not on every path
+	// (e.g. COLLISION_NONE); give them the same benign defaults the checks below
+	// assume, so -Wmaybe-uninitialized does not read an indeterminate value.
+	UINT16   usStructureID = INVALID_STRUCTURE_ID;
+	FLOAT    dNormalX = 0, dNormalY = 0, dNormalZ = 0;
 	INT16    sGridNo;
 
 	// Checkf for collisions

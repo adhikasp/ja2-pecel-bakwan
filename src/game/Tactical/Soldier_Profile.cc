@@ -166,7 +166,7 @@ void InitProfileFromContent(ProfileID const i)
 			const ItemModel *item = GCM->getItem(*k);
 			if (!item->isGun() || !item->isInBigGunList()) continue;
 
-			const WeaponModel *oldWeapon = item->asWeapon();
+			const WeaponModel *oldWeapon = nonNull(item->asWeapon());
 			const WeaponModel *newWeapon = GCM->getWeaponByName(oldWeapon->getStandardReplacement());
 
 			*k = newWeapon->getItemIndex();
@@ -196,7 +196,7 @@ void InitProfileFromContent(ProfileID const i)
 		const ItemModel * item = GCM->getItem(item_id);
 
 		if (item->isGun()) {
-			p.bMainGunAttractiveness = item->asWeapon()->ubDeadliness;
+			p.bMainGunAttractiveness = nonNull(item->asWeapon())->ubDeadliness;
 		}
 		if (item->isArmour()) {
 			p.bArmourAttractiveness = item->asArmour()->getProtection();

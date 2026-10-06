@@ -15,6 +15,7 @@
 #include <filesystem>
 #include <fstream>
 #include <sstream>
+#include <string_theory/format>
 #include <thread>
 
 namespace Automation
@@ -59,9 +60,8 @@ namespace
 		// sscanf cannot tell a trailing 'junk' from a missing field, so check the shape first:
 		// exactly the digits and separators below, and a trailing 'Z' for UTC.
 		if (std::sscanf(v.c_str(), "%4d-%2d-%2dT%2d:%2d:%2dZ", &y, &mo, &d, &h, &mi, &s) != 6) return std::nullopt;
-		char shape[32];
-		std::snprintf(shape, sizeof shape, "%04d-%02d-%02dT%02d:%02d:%02dZ", y, mo, d, h, mi, s);
-		if (v != shape) return std::nullopt;
+		ST::string const shape = ST::format("{04d}-{02d}-{02d}T{02d}:{02d}:{02d}Z", y, mo, d, h, mi, s);
+		if (v != shape.to_std_string()) return std::nullopt;
 
 		return sgp::Clock::WallSecondsFromUtc(y, mo, d, h, mi, s);
 	}
