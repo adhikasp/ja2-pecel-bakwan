@@ -14,6 +14,12 @@
 > change that moves a behaviour in here without editing this file and saying why in the PR
 > is a regression. Source of truth is always the code; the `file:line` references are the
 > audit's snapshot and will rot.
+>
+> The calculations are pinned by
+> [`AICalculations_unittest.cc`](../../src/game/TacticalAI/AICalculations_unittest.cc)
+> (threat value §5, morale §9.1, interrupt duel §10.2): ordinary gtest that build soldiers
+> by hand and assert the arithmetic, including that it picks up a change made in the module
+> it borrows from (Points, Weapons, the item content).
 
 Scope: human/army/militia/civilian tactical AI in `src/game/TacticalAI/`, plus the
 turn/AP/sight/interrupt machinery it depends on in `src/game/Tactical/`. Creature AI
