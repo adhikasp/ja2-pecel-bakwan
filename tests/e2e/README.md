@@ -12,6 +12,7 @@ for the full API.
 | `tactical_move_merc.lua` | Select a merc and walk to a clicked tile and back |
 | `battle_smoke.lua` | A staged fight (3 decked-out mercs vs 10 enemies): fire, damage, AP, the native tactical HUD and a win (runs at 1920x1080, see [docs/plan/e2e-tactical-battles.md](../../docs/plan/e2e-tactical-battles.md)) |
 | `battle_los.lua` | A pin-pointed, staggered enemy line: line of sight, cover, positioning, AP, morale and casualties (#64) |
+| `battle_militia.lua` | An AI battle: 20 player militia vs 10 low-level enemy soldiers on a rural map, both sides pinned to predetermined tiles; asserts the militia won (runs at 1920x1080, #65) |
 | `loadout_spec.lua` | A loadout builds through the equipment rules, and the rules refuse a mount mismatch, an LBE item in a pocket and a medkit in a magazine pocket (#96) |
 | `loadout_matrix.lua` | The damage pipeline as a table: ammo type x armour tier x range through the range lane, plus noise, weapon and armour wear, and reproducibility (issue [#263](https://github.com/adhikasp/ja2-pecel-bakwan/issues/263)) |
 | `battle_loadout_arc.lua` | A whole loadout - weapon, attachments, ammo, LBE, pockets, armour - taken into a firefight and read back afterwards (runs at 1920x1080, #263) |
@@ -30,9 +31,9 @@ for the full API.
 `lib/campaign.lua` has the shared steps (new game, hire from A.I.M., land,
 dismiss popups, and the campaign-state helpers `stage`, `at`, `assertState`,
 `enterSector`, `enterTown`, `stepIntoBattle`). `lib/battle.lua` has the battle
-fixtures and orders (stage a fight, select a merc, shoot, end the turn) for the
-tactical battle e2e track. `lib/loadout.lua` has the equipment fixtures - see
-below.
+fixtures and orders (stage a fight, select a merc, shoot, end the turn, read the
+militia back) for the tactical battle e2e track. `lib/loadout.lua` has the
+equipment fixtures - see below.
 
 ## Equipment fixtures
 

@@ -10,11 +10,13 @@
 >   staggered enemy line the team can partly see and shoot; asserts what each side can see,
 >   the cover the building gives, that firing spends AP, whose morale moves, the casualties
 >   and the state the fight is left in (#64).
+> - `tests/e2e/battle_militia.lua` — the AI battle: twenty player militia against ten
+>   low-level enemy soldiers on a rural map, both sides staged on predetermined tiles.
+>   The militia fight on their own AI turn, so the scenario ends the player's turns and
+>   asserts the militia won (#65).
 > - `tests/e2e/lib/battle.lua` — the reusable fixtures and orders the scenarios share.
 > - `ja2.debug("battle", spec)` / `ja2.debug("fire", gridNo)` — the C++ harness in
 >   [`src/game/Automation/BattleScenario.cc`](../../src/game/Automation/BattleScenario.cc).
->
-> Still to come: the scenario corpus in CI (#65).
 
 ## Goal
 
@@ -73,11 +75,17 @@ The spec table:
 | `distance` | `6` | tiles from the team to stand at |
 | `clear` | `true` | clear the sector's existing enemies first |
 | `start` | `true` | enter turn-based combat when staged |
+| `militia` | — | the player's own AI soldiers (`MILITIA_TEAM`): a count, or a table `{ count, class, grids = { grid, ... }, units = { { grid, class, direction }, ... } }`. `class` is `"green"` (default), `"regular"` or `"elite"`; `units` pins each militia to its own grid. The staged militia replace the sector's own, so the spec's list is the whole force. |
 | `our` | — | per-merc setup, matched by `name` (or by position when unnamed) |
 
 `enemies.units` spawns exactly those enemies, each on its own grid with its own class,
 gun and facing; it overrides `count`/`grids` and is how a scenario takes pin-point
 control of a staggered line.
+
+`militia` stages the player's militia: friendly soldiers that fight on the player's side
+on their own AI turn (after the enemy's), not under the player's control. A scenario
+that stages militia can therefore let the two AIs fight and assert the outcome, without
+the player firing a shot; `battle_militia.lua` is that scenario.
 
 Each `our` entry:
 
@@ -96,14 +104,17 @@ Item names are the original internal names, looked up through
 
 ### Reading the fight
 
-`ja2.state().tactical` gained `ourTurn`, `attackBusy` and `enemies`. For every enemy in the
-sector it gives `name`, `class`, `life`, `lifeMax`, `gridNo`, `dead`, `level`, `direction`,
-`stance`, `morale`, the AI's own `aimorale` verdict (0 = hopeless .. 4 = fearless, what the
-AI reads as whether it is close to breaking) and `ap`. Two fields describe vision:
-`known` (the player knows about him, so he is rendered) and `los` (some merc can currently
-trace an unobstructed line of sight to him within sight range), plus `cover` (the chance a
-shot from the nearest merc has to get through; lower is more cover). In tactical it also
-has `screenX`/`screenY`.
+`ja2.state().tactical` gained `ourTurn`, `attackBusy`, `enemies` and `militia`. For every
+enemy in the sector it gives `name`, `class`, `life`, `lifeMax`, `gridNo`, `dead`, `level`,
+`direction`, `stance`, `morale`, the AI's own `aimorale` verdict (0 = hopeless .. 4 =
+fearless, what the AI reads as whether it is close to breaking) and `ap`. Two fields
+describe vision: `known` (the player knows about him, so he is rendered) and `los` (some
+merc can currently trace an unobstructed line of sight to him within sight range), plus
+`cover` (the chance a shot from the nearest merc has to get through; lower is more cover).
+In tactical it also has `screenX`/`screenY`. `militia` carries the same shape for the
+player's own AI soldiers (`name`, `class`, `life`, `lifeMax`, `gridNo`, `dead`, `level`,
+`direction`, `stance`, `morale`, `aimorale`, `ap`), so an AI battle can assert what
+happened to them.
 
 Mercs gained `level`, `direction`, `stance`, `morale`, `ap` and `maxAp` on top of `life`,
 `lifeMax`, `inSector`, `gridNo` and `finalDestination`. `ja2.los(fromGrid, toGrid)`
@@ -131,8 +142,9 @@ longer counts a dead merc as still walking — otherwise a single casualty left 
 The scenario pieces are small Lua steps (`tests/e2e/lib/battle.lua`):
 
 - `battle.stage(spec)` — stage a fight and return the tactical state.
-- `battle.enemies()` / `battle.mercs()` — the living soldiers, state order; `battle.byGrid(grid)`
-  and `battle.merc(name)` look one up by tile or name.
+- `battle.enemies()` / `battle.mercs()` / `battle.militia()` — the living soldiers, state
+  order; `battle.byGrid(grid)`, `battle.militiaByGrid(grid)` and `battle.merc(name)` look
+  one up by tile or name.
 - `battle.inSight()` — the living enemies the team currently has a line of sight to.
 - `battle.select(i)` / `battle.card(i)` / `battle.selected()` — drive and read the native
   squad bar.
@@ -182,17 +194,32 @@ state the fight is left in — combat continues around the squad the team cannot
 forced HOPELESS break (morale is the input to the AI's flee/break decision) needs a way to
 stage a spent/outmatched enemy; `aimorale` is exposed for it.
 
+`battle_militia.lua` is the AI-vs-AI scenario (#65): twenty green militia against ten
+administrators on E11, a rural sector (woods, grass and a river). Both forces are pinned to
+exact tiles — two militia ranks facing south, the enemy patrol a dozen tiles south of them,
+and one player merc behind the line who never fires. It asserts the staging (20 militia, 10
+enemies, every one on its tile, the lines in sight of each other) and then lets the two AIs
+fight: the scenario only presses End Turn, waits out the enemy and militia turns, and
+asserts the militia won — the enemy patrol wiped out, combat over, the militia and the merc
+still standing — bounded at 12 rounds. Determinism is per the usual contract: the same spec
+and seed give the same dead (the isolated run reports the same rounds and survivors every
+time).
+
 ## Running
 
 ```bash
 ctest -R e2e_battle -V --output-on-failure                 # from the build directory
 python tools/ja2ctl.py run tests/e2e/battle_smoke.lua --isolated --res 1920x1080
 python tools/ja2ctl.py run tests/e2e/battle_los.lua --isolated --res 1920x1080
+python tools/ja2ctl.py run tests/e2e/battle_militia.lua --isolated --res 1920x1080
 python tools/ja2ctl.py run tests/e2e/battle_los.lua --isolated --res 1920x1080 --show
 ```
 
 Battle scenarios run at 1920x1080: the native tactical HUD needs 1280x720, and the generic
-640x480 loop and the resolution matrix skip `battle_*` scripts.
+640x480 loop and the resolution matrix skip `battle_*` scripts. `ctest` registers every
+`battle_*.lua` as `e2e_<name>` (the glob in `CMakeLists.txt`), so a new scenario joins the
+corpus by existing. Running the e2e suite on every PR needs the synthetic game data of
+#302; until then the corpus runs wherever the real game data is.
 
 ## Roadmap
 
@@ -202,4 +229,4 @@ Battle scenarios run at 1920x1080: the native tactical HUD needs 1280x720, and t
 | #62 | scenario fixtures (`lib/battle.lua`) — **first cut landed here** |
 | #63 | deterministic harness (`ja2.debug("battle"/"fire")`) — **first cut landed here** |
 | #64 | assertions: LOS, cover, positioning, AP, morale and breaks, outcome — **landed here** (`battle_los.lua`) |
-| #65 | the scenario corpus wired into `ctest -L e2e` and run on every PR |
+| #65 | the scenario corpus wired into `ctest -L e2e` — **landed here** (`battle_militia.lua` and the AI battle harness); running it on every PR is #302 |

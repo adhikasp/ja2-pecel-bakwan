@@ -32,6 +32,16 @@ namespace Automation
 	 *   clear         true (default): remove the enemies already in the sector
 	 *   start         true (default): enter turn-based combat with our turn first
 	 *
+	 *   militia       the player's own AI soldiers (MILITIA_TEAM): a count, or a
+	 *                 table { count, class, grids = { grid, ... },
+	 *                         units = { { grid, class, direction }, ... } }.
+	 *                 class is "green" (default), "regular" or "elite"; `units`
+	 *                 pins each militia to its own grid. The staged militia
+	 *                 replace whatever militia the sector already had, so the
+	 *                 scenario's list is the whole force. They fight on the
+	 *                 player's side on their own AI turn, so a scenario can
+	 *                 stage an AI battle and assert its outcome.
+	 *
 	 *   our           per-merc setup, matched by `name` (or by position when no
 	 *                 entry is named). Each entry:
 	 *                 { name, weapon, armour, grid, direction,
