@@ -3,6 +3,17 @@
 
 local campaign = {}
 
+-- Reset the RNG to the run's seed, so a flow point and everything after it is a
+-- function of the seed alone and not of how many incidental numbers the screens
+-- driven before it happened to draw. A UI change then cannot churn the goldens of
+-- unrelated screens further down the flow: the native laptop draws fewer incidental
+-- random numbers than the legacy one, which used to shift later merc quotes and the
+-- selected merc (issue #177). Called at the campaign steps' flow points: a new game,
+-- entering the map (toMap/landInArulco), and staging a battle (BattleScenario does it).
+function campaign.reseed()
+	ja2.reseed()
+end
+
 -- A rect given in classic 640x480 coordinates, moved to where that area sits
 -- on the current screen (the classic screens are centred at wider resolutions).
 function campaign.std(r)
@@ -38,6 +49,9 @@ end
 
 -- Main menu -> new game with default settings -> laptop, popups dismissed.
 function campaign.newGame()
+	-- A new game is a flow point: the campaign starts from the seeded RNG whatever
+	-- the main menu drew before it.
+	campaign.reseed()
 	ja2.waitScreen("MAINMENU_SCREEN")
 	ja2.click("New Game")
 	ja2.waitScreen("GAME_INIT_OPTIONS_SCREEN")
@@ -139,9 +153,7 @@ end
 
 -- Laptop -> map screen -> run time until the hired mercs land in tactical.
 function campaign.landInArulco()
-	ja2.click("Shut Down")
-	ja2.waitScreen("MAP_SCREEN")
-	campaign.dismissHelp()
+	campaign.toMap()
 	-- Compressing time runs the clock until the helicopter drop.
 	ja2.click("Time Compress (+)")
 	ja2.waitScreen("GAME_SCREEN", 600000)
@@ -191,6 +203,9 @@ function campaign.toMap()
 	ja2.waitIdle()
 	if ja2.screen() == "LAPTOP_SCREEN" then
 		ja2.click("Shut Down")
+		-- Entering the map is a flow point: reseed before the map loads, so the map's
+		-- random draws (and everything after) do not depend on how the laptop was driven.
+		campaign.reseed()
 		ja2.waitScreen("MAP_SCREEN")
 		campaign.dismissHelp()
 	end

@@ -83,6 +83,7 @@
 #include "Items.h"
 #include "NativeUI.h"
 #include "Keys.h"
+#include "Random.h"
 #include "Interface.h"
 #include "Interface_Items.h"
 #include "Render_Fun.h"
@@ -659,6 +660,17 @@ namespace
 		// back to rendering a frame per step for nobody (issue #159).
 		ja2.set_function("composes", [] { return VideoComposeCount(); });
 		ja2.set_function("time", [] { return Session::ElapsedMs(); });
+		// ja2.reseed([seed]): reset the random number generator to a defined state, so a
+		// flow point and everything after it is a function of the seed alone and not of how
+		// many incidental numbers the screens driven before it happened to draw (issue #177).
+		// Without a seed the run's own -seed is restored (default 1). The campaign step
+		// framework calls this at its flow points: a new game, entering the map, staging a
+		// battle (which already reseeds itself, see BattleScenario.cc).
+		ja2.set_function("reseed", [](sol::optional<int> seed) {
+			Guarded([&] {
+				SetRandomSeed(seed ? static_cast<UINT32>(*seed) : GetOptions().Seed());
+			});
+		});
 		ja2.set_function("waitUntil", [](sol::protected_function pred, sol::optional<unsigned> timeout, sol::optional<std::string> what) {
 			Guarded([&] {
 				Session::WaitUntil([&] {

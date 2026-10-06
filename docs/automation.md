@@ -160,6 +160,7 @@ that can wait takes an optional timeout in milliseconds of game time.
 | `ja2.waitUntil(fn, [timeout], [what])` | Until `fn()` returns true. |
 | `ja2.waitPixel(x, y, "#rrggbb", [tol], [timeout])`, `ja2.waitStable(x, y, [timeout])` | Pixel-based waits. |
 | `ja2.frame()`, `ja2.time()` | Frames stepped, game milliseconds elapsed. |
+| `ja2.reseed([seed])` | Reset the RNG to a defined state: everything after a flow point is a function of `seed` (or the run's `-seed`) alone, not of how many incidental numbers the screens driven before it drew. The campaign steps call it at a new game and entering the map; staging a battle reseeds itself ([`e2e-tactical-battles.md`](plan/e2e-tactical-battles.md), issue #177). |
 | `ja2.composes()` | Full frames rendered (composes) since start-up: a headless session composes on demand, so this is what a load or an animation is allowed to cost. |
 
 **Input.** Each call takes the frames a real user would take (move, press,
