@@ -4,6 +4,7 @@
 #include "Soldier_Control.h"
 #include "Overhead.h"
 #include "Animation_Control.h"
+#include "BattleReport.h"
 #include "Points.h"
 #include "OppList.h"
 #include "Sound_Control.h"
@@ -87,6 +88,14 @@ void StartPlayerTeamTurn( BOOLEAN fDoBattleSnd, BOOLEAN fEnteringCombatMode )
 	//
 	// make sure set properly in gTacticalStatus:
 	gTacticalStatus.ubCurrentTeam = OUR_TEAM;
+
+	// A player turn is one round of the battle, and every AI soldier has made its
+	// decision for the last one: the battle report counts the round and samples the
+	// AI's morale verdicts (BattleReport.h, docs/plan/ai-evaluation.md).
+	if ( gTacticalStatus.uiFlags & INCOMBAT )
+	{
+		BattleReport::SamplePlayerTurn();
+	}
 
 	InitPlayerUIBar( FALSE );
 

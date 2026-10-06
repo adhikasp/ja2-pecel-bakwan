@@ -2,6 +2,7 @@
 #include "ScenarioItems.h"
 
 #include "Auto_Resolve.h"
+#include "BattleReport.h"
 #include "Campaign_Types.h"
 #include "ContentManager.h"
 #include "GameInstance.h"
@@ -175,6 +176,29 @@ void StageBattle(sol::table const& spec)
 	std::string const defaultArmour = Scenario::ArmourLevel(armourObj, "kevlar");
 	std::string const defaultClass  = Scenario::StrField(spec, "class", "administrator");
 	std::string const defaultEnemyWeapon = Scenario::StrField(spec, "enemy_weapon", "");
+
+	// `objective`: the tile the battle is fought over and the side that must hold it
+	// (docs/plan/ai-evaluation.md). The battle report answers whether that side was
+	// standing on it when combat ended.
+	bool haveObjective = false;
+	int  objectiveGrid = -1;
+	BattleReport::Side objectiveSide = BattleReport::Side::Player;
+	{
+		sol::object const o = spec["objective"];
+		if (o.is<sol::table>())
+		{
+			sol::table const t = o.as<sol::table>();
+			objectiveGrid = Scenario::IntField(t, "grid", -1);
+			if (objectiveGrid < 0)
+				throw std::runtime_error("ja2.debug(\"battle\"): objective needs a grid");
+			std::string const side = Scenario::StrField(t, "side", "player");
+			if      (side == "player") objectiveSide = BattleReport::Side::Player;
+			else if (side == "enemy")  objectiveSide = BattleReport::Side::Enemy;
+			else throw std::runtime_error("ja2.debug(\"battle\"): objective side must be"
+				" \"player\" or \"enemy\", got \"" + side + "\"");
+			haveObjective = true;
+		}
+	}
 
 	// `enemies` may be a count or a table with its own setup.
 	sol::object const enemiesObj = spec["enemies"];
@@ -492,6 +516,10 @@ void StageBattle(sol::table const& spec)
 	// interrupts) while combat is already running.
 	if (start && (gTacticalStatus.uiFlags & INCOMBAT) == 0) EnterCombatMode(OUR_TEAM);
 	AllTeamsLookForAll(FALSE);
+
+	// The objective goes to the battle that is now running (or waits for the next one when
+	// the scenario staged without starting combat).
+	if (haveObjective) BattleReport::SetObjective(objectiveGrid, objectiveSide);
 }
 
 }

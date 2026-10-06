@@ -42,6 +42,11 @@ namespace Automation
 	 *                 player's side on their own AI turn, so a scenario can
 	 *                 stage an AI battle and assert its outcome.
 	 *
+	 *   objective     the tile the battle is fought over and the side that must hold
+	 *                 it when combat ends: { grid, side = "player" (default) |
+	 *                 "enemy" }. The battle report (ja2.battleReport(),
+	 *                 docs/plan/ai-evaluation.md) answers whether that side held it.
+	 *
 	 *   our           per-merc setup, matched by `name` (or by position when no
 	 *                 entry is named). Each entry:
 	 *                 { name, weapon, armour, grid, direction,

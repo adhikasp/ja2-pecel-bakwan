@@ -2,6 +2,12 @@
 #define __SOLDIER_ANI_H
 
 #include "JA2Types.h"
+#include "Observable.h"
+
+/** Emitted once per soldier death, from HandleSoldierDeath, while the soldier still
+ * carries who he was (team, id, grid): the battle report counts casualties through it.
+ * A listener runs mid-death, so it must copy what it needs, not hold the pointer. */
+extern Observable<SOLDIERTYPE*> OnSoldierDeath;
 
 BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier );
 

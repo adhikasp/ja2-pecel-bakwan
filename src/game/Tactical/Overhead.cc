@@ -4,6 +4,7 @@
 #include "Arms_Dealer_Init.h"
 #include "Assignments.h"
 #include "Auto_Bandage.h"
+#include "BattleReport.h"
 #include "Boxing.h"
 #include "Campaign.h"
 #include "Civ_Quotes.h"
@@ -3890,6 +3891,10 @@ void CommonEnterCombatModeCode( )
 {
 	gTacticalStatus.uiFlags |= INCOMBAT;
 
+	// The battle report starts here: it snapshots who is standing and listens to the
+	// battle's events until combat ends (BattleReport.h, docs/plan/ai-evaluation.md).
+	BattleReport::BeginBattle();
+
 	//gTacticalStatus.ubAttackBusyCount = 0;
 
 	// Reset num enemies fought flag...
@@ -4042,6 +4047,10 @@ void ExitCombatMode( )
 
 	// Leave combat mode
 	gTacticalStatus.uiFlags &= (~INCOMBAT);
+
+	// The battle is over: the report freezes, computing the outcome from who is left
+	// standing (BattleReport.h).
+	BattleReport::FinishBattle();
 
 	EndTopMessage( );
 

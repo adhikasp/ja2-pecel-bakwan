@@ -537,6 +537,7 @@ def cmd_bootstrap(args):
 
 
 ROADMAP_TOOL = Path(__file__).resolve().parent / "roadmap.py"
+AI_EVAL_TOOL = Path(__file__).resolve().parent / "ai_eval.py"
 
 
 def cmd_roadmap(args):
@@ -544,6 +545,13 @@ def cmd_roadmap(args):
     argv = [sys.executable, str(ROADMAP_TOOL), "generate"] + args.args
     if args.offline:
         argv.append("--offline")
+    log(" ".join(shlex.quote(a) for a in argv))
+    sys.exit(subprocess.run(argv, cwd=str(REPO)).returncode)
+
+
+def cmd_ai_eval(args):
+    """Run the AI evaluation matrix and report the battle metrics."""
+    argv = [sys.executable, str(AI_EVAL_TOOL)] + args.args
     log(" ".join(shlex.quote(a) for a in argv))
     sys.exit(subprocess.run(argv, cwd=str(REPO)).returncode)
 
@@ -706,6 +714,9 @@ def main():
     p.add_argument("args", nargs="*", help="extra flags for tools/roadmap.py")
     p.set_defaults(func=cmd_roadmap)
 
+    p = sub.add_parser("ai-eval", help="run the AI evaluation matrix (tools/ai_eval.py)")
+    p.set_defaults(func=cmd_ai_eval)
+
     p = sub.add_parser("dep", help="set an issue's native dependency relations (the roadmap's edges)")
     p.add_argument("issue", type=int, help="issue number")
     p.add_argument("--blocked-by", default=None,
@@ -720,7 +731,7 @@ def main():
     p.set_defaults(func=cmd_dep)
 
     argv = sys.argv[1:]
-    if argv and argv[0] in {"test", "e2e", "run"}:
+    if argv and argv[0] in {"test", "e2e", "run", "ai-eval"}:
         dev, child = split_tail(argv[1:])
         args = parser.parse_args([argv[0]] + dev)
         args.args = child
