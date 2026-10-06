@@ -1,0 +1,105 @@
+<rml>
+<head>
+	<title>Weapon readout</title>
+	<link type="text/rcss" href="../components.rcss"/>
+	<link type="text/rcss" href="weapon_readout.rcss"/>
+</head>
+<!-- The native range and ballistics readout (issue #141, docs/plan/equipment-revamp.md). View model: the
+     WeaponReadoutViewModel ("readout", src/game/NativeUI/WeaponReadout.cc). It is an overlay opened from the
+     tactical HUD and the map screen; every number is the damage pipeline's own (Equipment/WeaponBallistics.h). -->
+<body class="ro">
+<div class="ro-root" id="ro" data-model="readout">
+
+	<div class="ro-panel">
+		<!-- =============================================================== header -->
+		<div class="ro-head">
+			<div class="ro-title">
+				<span class="t" id="ro.title">{{l_title}}</span>
+				<span class="s" id="ro.hint">{{l_hint}}</span>
+			</div>
+			<button class="btn" id="ro.close" data-attr-data-label="l_close" data-event-click="close"><span class="label">{{l_close}}</span></button>
+		</div>
+
+		<!-- =============================================================== the two weapons -->
+		<div class="ro-slots">
+			<section class="ro-slot a" id="ro.a">
+				<div class="ro-slothead">
+					<div class="ro-picbox"><img class="ro-pic" data-if="has_a" data-attr-src="a_pic" data-style-width="a_pw + 'px'" data-style-height="a_ph + 'px'"/></div>
+					<div class="ro-slotmeta">
+						<span class="nm" id="ro.a.name">{{a_name}}</span>
+						<span class="sub"><span class="ammo" id="ro.a.ammo">{{a_ammo}}</span><span class="dot">·</span><span id="ro.a.cond">{{a_cond}}</span></span>
+					</div>
+				</div>
+				<div class="ro-slotacts">
+					<button class="btn btn-sm" id="ro.a.cycle" data-attr-data-label="l_cycle" data-event-click="cycle('A', 1)"><img class="icon" src="icon-reload"/><span class="label">{{l_cycle}}</span></button>
+					<button class="btn btn-sm" id="ro.a.ammo.btn" data-event-click="ammo('A')"><span class="label">{{l_ammo}}</span></button>
+				</div>
+				<div class="ro-slotstats">
+					<span class="k">{{l_range}}</span><span class="v mono" id="ro.a.range">{{a_range}}</span>
+					<span class="k">{{l_noise}}</span><span class="v mono" id="ro.a.noise">{{a_noise}}</span>
+				</div>
+			</section>
+
+			<div class="ro-vs" id="ro.vs"><span>{{l_vs}}</span></div>
+
+			<section class="ro-slot b" id="ro.b">
+				<div class="ro-slothead">
+					<div class="ro-picbox"><img class="ro-pic" data-if="has_b" data-attr-src="b_pic" data-style-width="b_pw + 'px'" data-style-height="b_ph + 'px'"/></div>
+					<div class="ro-slotmeta">
+						<span class="nm" id="ro.b.name">{{b_name}}</span>
+						<span class="sub"><span class="ammo" id="ro.b.ammo">{{b_ammo}}</span><span class="dot">·</span><span id="ro.b.cond">{{b_cond}}</span></span>
+					</div>
+				</div>
+				<div class="ro-slotacts">
+					<button class="btn btn-sm" id="ro.b.cycle" data-attr-data-label="l_cycle" data-event-click="cycle('B', 1)"><img class="icon" src="icon-reload"/><span class="label">{{l_cycle}}</span></button>
+					<button class="btn btn-sm" id="ro.b.ammo.btn" data-event-click="ammo('B')"><span class="label">{{l_ammo}}</span></button>
+				</div>
+				<div class="ro-slotstats">
+					<span class="k">{{l_range}}</span><span class="v mono" id="ro.b.range">{{b_range}}</span>
+					<span class="k">{{l_noise}}</span><span class="v mono" id="ro.b.noise">{{b_noise}}</span>
+				</div>
+			</section>
+		</div>
+
+		<!-- =============================================================== target armour -->
+		<div class="ro-target">
+			<span class="k">{{l_target}}</span>
+			<div class="seg" id="ro.tier">
+				<span class="seg-b" id="ro.tier.none" data-class-on="tier == 'none'" data-event-click="tier('none')">{{l_tier_none}}</span>
+				<span class="seg-b" id="ro.tier.soft" data-class-on="tier == 'soft'" data-event-click="tier('soft')">{{l_tier_soft}}</span>
+				<span class="seg-b" id="ro.tier.plate" data-class-on="tier == 'plate'" data-event-click="tier('plate')">{{l_tier_plate}}</span>
+			</div>
+			<span class="ro-verdict" id="ro.verdict">{{verdict}}</span>
+		</div>
+
+		<!-- =============================================================== the range table -->
+		<div class="ro-table" id="ro.table">
+			<div class="ro-hrow group">
+				<span class="cell dist"></span>
+				<span class="cell group a">{{l_weapon}} A</span>
+				<span class="cell group b">{{l_weapon}} B</span>
+			</div>
+			<div class="ro-hrow">
+				<span class="cell dist">{{l_dist}}</span>
+				<span class="cell a">{{l_hit}}</span><span class="cell a">{{l_damage}}</span><span class="cell a">{{l_through}}</span><span class="cell a">{{l_noise}}</span>
+				<span class="cell b">{{l_hit}}</span><span class="cell b">{{l_damage}}</span><span class="cell b">{{l_through}}</span><span class="cell b">{{l_noise}}</span>
+			</div>
+			<div class="ro-row" data-for="r : bands" data-attr-id="'ro.row[' + r.distance + ']'" data-attr-class="r.row_cls">
+				<span class="cell dist mono">{{r.distance}}</span>
+				<span class="cell a mono" data-attr-class="'cell a mono ' + r.a_hit_cls">{{r.a_hit}}</span>
+				<span class="cell a mono" data-attr-class="'cell a mono ' + r.a_dmg_cls">{{r.a_dmg}}</span>
+				<span class="cell a mono" data-attr-class="'cell a mono ' + r.a_through_cls">{{r.a_through}}</span>
+				<span class="cell a mono" data-attr-class="'cell a mono ' + r.a_noise_cls">{{r.a_noise}}</span>
+				<span class="cell b mono" data-attr-class="'cell b mono ' + r.b_hit_cls">{{r.b_hit}}</span>
+				<span class="cell b mono" data-attr-class="'cell b mono ' + r.b_dmg_cls">{{r.b_dmg}}</span>
+				<span class="cell b mono" data-attr-class="'cell b mono ' + r.b_through_cls">{{r.b_through}}</span>
+				<span class="cell b mono" data-attr-class="'cell b mono ' + r.b_noise_cls">{{r.b_noise}}</span>
+			</div>
+		</div>
+
+		<div class="ro-note" data-if="!has_a || !has_b" id="ro.no_guns">{{l_no_guns}}</div>
+	</div>
+
+</div>
+</body>
+</rml>

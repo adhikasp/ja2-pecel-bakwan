@@ -146,6 +146,13 @@ namespace NativeUI
 	/** H: open or close the message log of the native HUD. */
 	void TacticalHudToggleLog();
 
+	// ---- weapon readout (issue #141, docs/plan/equipment-revamp.md) --------------------------------------------
+	/** The range and ballistics readout: a compact comparison of two weapons over
+	 * the damage pipeline, opened over the tactical HUD or the map screen. */
+	void OpenWeaponReadout();
+	void CloseWeaponReadout();
+	bool WeaponReadoutActive();
+
 	// ---- change notification (view models, ViewModel.h) -------------------------------------------------------
 	enum Topic : uint32_t
 	{

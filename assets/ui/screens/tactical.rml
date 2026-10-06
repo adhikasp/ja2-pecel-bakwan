@@ -70,6 +70,7 @@
 				<div class="stat"><span class="k">MO</span><span class="bar morale"><span class="fill" data-style-width="d_mow + '%'"></span></span><span class="v">{{d_mo}}</span></div>
 			</div>
 			<div class="acts">
+				<button class="icon-btn" id="tac.detail.readout" title="Range &amp; ballistics" data-event-click="readout"><img class="icon" src="icon-chart"/></button>
 				<button class="icon-btn" id="tac.detail.swap" title="Swap hands (Ctrl+Q)" data-event-click="swap_hands"><img class="icon" src="icon-swap-hands"/></button>
 				<button class="icon-btn" id="tac.detail.mute" title="Mute this merc" data-class-on="d_mute" data-event-click="mute"><img class="icon" src="icon-mute"/></button>
 				<button class="icon-btn" id="tac.detail.close" title="Close (`)" data-event-click="detail_close"><img class="icon" src="icon-close"/></button>

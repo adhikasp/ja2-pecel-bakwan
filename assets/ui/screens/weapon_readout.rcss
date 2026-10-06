@@ -1,0 +1,96 @@
+/* The native range and ballistics readout (issue #141, docs/plan/equipment-revamp.md). Components and tokens come
+ * from ../components.rcss and ../tokens.rcss; nothing here hard-codes a colour. Layout is flex, no coordinates, so
+ * it scales from 1280x720 dp up to 4K and 21:9. */
+
+.ro-root {
+	display: flex; align-items: center; justify-content: center;
+	position: absolute; left: 0; top: 0; right: 0; bottom: 0;
+	background-color: var(--c-void);
+}
+body.ro { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+
+.ro-panel {
+	display: flex; flex-direction: column;
+	width: 94%; max-width: 1180dp; max-height: 92%;
+	padding: var(--sp-5); box-sizing: border-box;
+	background-color: var(--e1-bg); decorator: image(gen-mottle repeat);
+	border: var(--border) var(--e1-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
+	border-radius: var(--r-2);
+}
+
+/* ---------------------------------------------------------------- header */
+.ro-head { display: flex; align-items: flex-start; flex: 0 0 auto; padding-bottom: var(--sp-3); border-bottom: var(--border) var(--c-line); }
+.ro-title { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.ro-title .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); }
+.ro-title .s { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+
+/* ---------------------------------------------------------------- the two weapons */
+.ro-slots { display: flex; align-items: stretch; flex: 0 0 auto; gap: var(--sp-3); padding: var(--sp-4) 0; }
+.ro-slot {
+	display: flex; flex-direction: column; flex: 1 1 0; min-width: 0;
+	padding: var(--sp-3); box-sizing: border-box;
+	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1);
+	border-top-width: 3dp;
+}
+.ro-slot.a { border-top-color: var(--c-accent); }
+.ro-slot.b { border-top-color: var(--c-info); }
+.ro-slothead { display: flex; align-items: center; min-width: 0; }
+.ro-picbox {
+	display: flex; align-items: center; justify-content: center; flex: 0 0 auto;
+	width: 240dp; height: 60dp; margin-right: var(--sp-3);
+	background-color: var(--c-inset); border: var(--border) var(--c-inset-line); overflow: hidden;
+}
+.ro-pic { max-width: 100%; max-height: 100%; }
+.ro-slotmeta { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
+.ro-slotmeta .nm { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); }
+.ro-slotmeta .sub { display: flex; align-items: center; gap: var(--sp-1); font-size: var(--fs-sm); color: var(--c-text-dim); }
+.ro-slotmeta .ammo { color: var(--c-select); }
+.ro-slotacts { display: flex; gap: var(--sp-2); margin-top: var(--sp-2); }
+.ro-slotacts .btn { flex: 1 1 0; }
+.ro-slotstats { display: flex; align-items: center; gap: var(--sp-2); margin-top: var(--sp-2); }
+.ro-slotstats .k { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.ro-slotstats .v { font-size: var(--fs-md); color: var(--c-text-strong); margin-right: var(--sp-3); }
+
+.ro-vs { display: flex; align-items: center; justify-content: center; flex: 0 0 auto; }
+.ro-vs span { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-faint); }
+
+/* ---------------------------------------------------------------- target armour */
+.ro-target { display: flex; align-items: center; gap: var(--sp-3); flex: 0 0 auto; padding: var(--sp-3) 0; border-top: var(--border) var(--c-line); }
+.ro-target .k { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.ro-target .seg { display: flex; border: var(--border) var(--c-line-2); border-radius: var(--r-1); }
+.ro-target .seg-b {
+	display: block; height: 28dp; line-height: 28dp; padding: 0 var(--sp-4);
+	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase;
+	color: var(--c-text-dim); border-left: var(--border) var(--c-line); cursor: pointer;
+}
+.ro-target .seg-b:first-child { border-left-width: 0dp; }
+.ro-target .seg-b:hover { color: var(--c-text-strong); }
+.ro-target .seg-b.on { background-color: var(--c-accent-soft); color: var(--c-text-strong); }
+.ro-verdict { display: block; flex: 1 1 0; text-align: right; font-size: var(--fs-sm); color: var(--c-select); }
+
+/* ---------------------------------------------------------------- the range table */
+.ro-table { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; overflow-y: auto; border-top: var(--border) var(--c-line); }
+.ro-hrow, .ro-row { display: flex; align-items: center; }
+.ro-hrow { flex: 0 0 auto; padding: 2dp 0; }
+.ro-hrow.group { border-bottom: var(--border) var(--c-line); }
+.ro-hrow .cell { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.ro-hrow .cell.group { font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); }
+.ro-hrow .cell.group.a { color: var(--c-accent); }
+.ro-hrow .cell.group.b { color: var(--c-info); }
+.ro-row { flex: 0 0 auto; padding: 3dp 0; border-bottom: var(--border) var(--c-panel-2); }
+.ro-row.far { opacity: 0.62; }
+.ro-row:hover { background-color: var(--c-accent-soft); }
+
+.cell { display: block; flex: 0 0 auto; text-align: right; padding: 0 var(--sp-2); box-sizing: border-box; }
+.cell.dist { width: 64dp; text-align: left; color: var(--c-text-dim); }
+.cell.a, .cell.b { width: 68dp; color: var(--c-text); }
+.ro-hrow .cell.a { width: 68dp; }
+.ro-hrow .cell.b { width: 68dp; }
+.ro-hrow .cell.group.a, .ro-hrow .cell.group.b { width: 272dp; }
+.ro-hrow .cell.group { text-align: center; }
+
+.cell.win { color: var(--c-select); font-weight: 600; }
+.cell.stop { color: var(--c-danger); }
+.cell.ok { color: var(--c-ok); }
+
+.ro-note { display: block; flex: 0 0 auto; margin-top: var(--sp-3); font-size: var(--fs-sm); color: var(--c-warn); }

@@ -90,6 +90,7 @@
 | A28 | Update box | Continue/Stop, Space | `EndUpdateBox` | faces clickable |
 | A29 | Click battle sector | reopen pre-battle | `InitPreBattleInterface` | |
 | A30 | Cheats | Ctrl+T teleport, Ctrl+A ambush, Ctrl+Z AI aware | | keep behind cheat level |
+| A31 | Range and ballistics readout (new) | toolbar chart button (`map.ballistics`) | `NativeUI::OpenWeaponReadout` | a view over the damage pipeline; see [weapon-readout.md](weapon-readout.md) |
 
 ## 4. States and modes
 
