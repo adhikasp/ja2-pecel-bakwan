@@ -150,6 +150,11 @@
   "attachment_strict_mounts": true,
   "weapon_slot_bonus": 0,
 
+  //  Leaf tunables of the damage pipeline: the percent scale on condition wear
+  //  and on how fast a round loses delivery past a weapon's effective range.
+  "pipeline_wear_rate": 100,
+  "pipeline_range_falloff": 100,
+
   //  Packages at Drassen airport never get stolen, no need to bribe Pablo.
   //  vanilla_setting: false
   "pablo_wont_steal": false,

@@ -100,7 +100,34 @@ quiet), heavy and launcher. A weapon is in only if its role is distinct.
 
 ## Owner decisions
 
-*(None recorded yet; the owner fills this section as each issue is decided.)*
+### The damage pipeline (#260)
+
+Two questions were left open when the pipeline was planned, and the
+implementation answers them:
+
+- **Penetration model: tiered threshold plus residual.** A round's penetration
+  power at the range is compared to the tier's threshold (both scaled by the
+  armour's condition). At or over it the round gets through; the surplus over
+  the threshold is the **residual**, reported rather than banked - the "through
+  by N" the readout shows. Under the threshold the round is stopped, and one
+  that came within half the threshold of it still bruises
+  (`BluntTrauma`). No ricochet and no second roll: the only random value in a
+  shot is the hit roll the caller takes from the seeded stream.
+- **Armour condition enters at two points, both the defender's problem.** A
+  worn plate soaks less (its protection is scaled by condition) and asks less
+  (its threshold is scaled too), so shooting somebody's armour is a way to win
+  a fight. A tier worn to nothing is read as the unarmoured cell, so a ruined
+  vest is exactly no vest.
+
+The counter table is one explicit cell per ammo type per armour tier
+(`AmmoVersusArmour`), with a unit-tested golden table and the invariants: against
+armour, AP always absorbs less and penetrates more than ball (at any armour
+condition) and never does less damage with the armour intact, while never
+beating ball on flesh; HP is never better than ball against a plate and is the
+best round against a bare man; subsonic is quietest and shortest-ranged. More
+armour is never worse for the man wearing it. The numbers live in
+`src/game/Equipment/DamagePipeline.cc`; the leaf tunables (wear rate, range
+falloff) are game policy toggles.
 
 ## Dependency order
 
