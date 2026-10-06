@@ -96,10 +96,10 @@ ja2.expect(condition("Barry", "G11") == 60, "the staged rifle is damaged (" .. t
 worldmap.assign("Barry", "Repair")
 worldmap.clickMenu("Items")
 ja2.expect(worldmap.merc("Barry").assignmentName == "Repair", "Barry is repairing")
-local before = condition("Barry", "G11")
+local damaged = condition("Barry", "G11")
 worldmap.runHours(4)
-local after = condition("Barry", "G11")
-ja2.expect(after > before, "the rifle is being repaired (" .. before .. " -> " .. after .. ")")
+local repaired = condition("Barry", "G11")
+ja2.expect(repaired > damaged, "the rifle is being repaired (" .. damaged .. " -> " .. repaired .. ")")
 shots.take("world_map_repair.png")
 worldmap.assign("Barry", "On Duty", "Squad 1")
 
