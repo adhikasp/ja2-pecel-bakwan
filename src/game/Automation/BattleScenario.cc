@@ -22,6 +22,7 @@
 #include "Soldier_Tile.h"
 #include "Strategic.h"
 #include "StrategicMap.h"
+#include "Town_Militia.h"
 #include "WorldDef.h"
 #include "WorldMan.h"
 
@@ -44,6 +45,15 @@ namespace
 		if (name == "army" || name == "troop" || name == "troops") return SOLDIER_CLASS_ARMY;
 		if (name == "elite") return SOLDIER_CLASS_ELITE;
 		throw std::runtime_error("unknown enemy class \"" + name + "\"");
+	}
+
+	// The player's militia, the AI side that fights alongside the mercs.
+	SoldierClass ParseMilitiaClass(std::string const& name)
+	{
+		if (name == "green" || name == "green_militia") return SOLDIER_CLASS_GREEN_MILITIA;
+		if (name == "regular" || name == "reg" || name == "reg_militia") return SOLDIER_CLASS_REG_MILITIA;
+		if (name == "elite" || name == "elite_militia") return SOLDIER_CLASS_ELITE_MILITIA;
+		throw std::runtime_error("unknown militia class \"" + name + "\"");
 	}
 
 	// Move an actor onto @a grid without running sight (placement must not start combat
@@ -72,6 +82,14 @@ namespace
 		SoldierClass klass = SOLDIER_CLASS_ADMINISTRATOR;
 		UINT16 gun = NOTHING; // NOTHING keeps the kit the generator gave him
 		int direction = -1;   // -1 keeps the generated facing
+	};
+
+	// One militia to place: a grid, a class and a facing.
+	struct MilitiaUnit
+	{
+		GridNo grid = NOWHERE;
+		SoldierClass klass = SOLDIER_CLASS_GREEN_MILITIA;
+		int direction = -1;
 	};
 
 	// Find the per-merc setup entry, by name if the entries are named, else by position.
@@ -209,12 +227,67 @@ void StageBattle(sol::table const& spec)
 	}
 	SoldierClass const enemySoldierClass = ParseClass(enemyClass);
 
+	// `militia` stages the player's own AI soldiers (MILITIA_TEAM): a count, or a table
+	// { count, class, grids, units }. `units` pins each one to its own grid with its own
+	// class and facing. When the field is given, the spec's militia replace whatever
+	// militia the sector already had, so the scenario's list is the whole force.
+	int militiaCount = 0;
+	std::string militiaClass = "green";
+	std::vector<GridNo> militiaGrids;
+	std::vector<MilitiaUnit> militiaUnits;
+	bool haveMilitiaGrids = false;
+	sol::object const militiaObj = spec["militia"];
+	bool const stageMilitia = militiaObj.is<int>() || militiaObj.is<sol::table>();
+	if (militiaObj.is<int>())
+	{
+		militiaCount = std::max(0, militiaObj.as<int>());
+	}
+	else if (militiaObj.is<sol::table>())
+	{
+		sol::table const m = militiaObj.as<sol::table>();
+		militiaCount = std::max(0, Scenario::IntField(m, "count", 10));
+		militiaClass = Scenario::StrField(m, "class", militiaClass);
+		sol::object const gridsObj = m["grids"];
+		if (gridsObj.is<sol::table>())
+		{
+			sol::table const grids = gridsObj.as<sol::table>();
+			for (int i = 1; i <= int(grids.size()); ++i)
+			{
+				int g;
+				if (Scenario::AsInt(grids[i], g)) militiaGrids.push_back(GridNo(g));
+			}
+			haveMilitiaGrids = !militiaGrids.empty();
+		}
+		sol::object const unitsObj = m["units"];
+		if (unitsObj.is<sol::table>())
+		{
+			sol::table const list = unitsObj.as<sol::table>();
+			for (int i = 1; i <= int(list.size()); ++i)
+			{
+				sol::object const o = list[i];
+				if (!o.is<sol::table>()) continue;
+				sol::table const u = o.as<sol::table>();
+				MilitiaUnit unit;
+				unit.grid = GridNo(Scenario::IntField(u, "grid", NOWHERE));
+				unit.klass = ParseMilitiaClass(Scenario::StrField(u, "class", militiaClass));
+				unit.direction = Scenario::IntField(u, "direction", -1);
+				militiaUnits.push_back(unit);
+			}
+		}
+	}
+	SoldierClass const militiaSoldierClass = ParseMilitiaClass(militiaClass);
+
 	if (clear)
 	{
 		// as ja2.debug("clearenemies"): drop the defenders and their strategic count
 		FOR_EACH_IN_TEAM(e, ENEMY_TEAM) TacticalRemoveSoldier(*e);
 		EliminateAllEnemies(gWorldSector);
 		gTacticalStatus.fEnemyInSector = FALSE;
+	}
+	if (stageMilitia)
+	{
+		// The staged militia are the whole force: drop the sector's own first.
+		FOR_EACH_IN_TEAM(m, MILITIA_TEAM) TacticalRemoveSoldier(*m);
 	}
 
 	// Equip and place the player's team.
@@ -277,10 +350,63 @@ void StageBattle(sol::table const& spec)
 	if (anchorN == 0) throw std::runtime_error("ja2.debug(\"battle\"): no merc is in the sector");
 	GridNo const anchor = INT16(anchorSum / anchorN);
 
+	// Free tiles for actors staged without an exact grid; the militia take them first (they
+	// stand nearer the team), then the enemies.
+	std::vector<GridNo> const tiles = FreeTilesAround(anchor, distance, distance + 6);
+	size_t freeTile = 0;
+
+	// Spawn and place the player's militia: AI soldiers on our side, pinned to their grids
+	// when the spec gives them, else on the free tiles.
+	int spawnedMilitia = 0;
+	if (stageMilitia)
+	{
+		std::vector<MilitiaUnit> list = militiaUnits;
+		if (list.empty())
+		{
+			for (int i = 0; i < militiaCount; ++i)
+			{
+				GridNo grid = NOWHERE;
+				if (haveMilitiaGrids)
+				{
+					if (i >= int(militiaGrids.size())) break;
+					grid = militiaGrids[i];
+				}
+				else
+				{
+					if (freeTile >= tiles.size()) break;
+					grid = tiles[freeTile++];
+				}
+				MilitiaUnit unit;
+				unit.grid = grid;
+				unit.klass = militiaSoldierClass;
+				list.push_back(unit);
+			}
+		}
+		for (MilitiaUnit const& unit : list)
+		{
+			GridNo grid = unit.grid;
+			if (grid == NOWHERE)
+			{
+				if (freeTile >= tiles.size()) break;
+				grid = tiles[freeTile++];
+			}
+			SOLDIERTYPE* const m = TacticalCreateMilitia(unit.klass);
+			if (!m) continue;
+			m->sSector = gWorldSector;
+			m->sInsertionGridNo = grid;
+			m->ubStrategicInsertionCode = INSERTION_CODE_GRIDNO;
+			AddSoldierToSector(m);
+			PlaceActor(*m, grid);
+			FaceDirection(*m, unit.direction);
+			++spawnedMilitia;
+		}
+		if (spawnedMilitia == 0 && (militiaCount > 0 || !militiaUnits.empty()))
+			throw std::runtime_error("ja2.debug(\"battle\"): could not place any militia");
+	}
+
 	// Spawn and place the enemies. An explicit `units` list wins; otherwise the count and
 	// grids/free tiles produce one default enemy each.
 	UINT16 const enemyGun = enemyWeapon.empty() ? NOTHING : Scenario::ItemByName(enemyWeapon);
-	std::vector<GridNo> const tiles = haveEnemyGrids ? std::vector<GridNo>{} : FreeTilesAround(anchor, distance, distance + 6);
 	std::vector<EnemyUnit> units = explicitUnits;
 	if (units.empty())
 	{
@@ -294,8 +420,8 @@ void StageBattle(sol::table const& spec)
 			}
 			else
 			{
-				if (i >= int(tiles.size())) break;
-				grid = tiles[i];
+				if (freeTile >= tiles.size()) break;
+				grid = tiles[freeTile++];
 			}
 			EnemyUnit unit;
 			unit.grid = grid;
@@ -304,15 +430,15 @@ void StageBattle(sol::table const& spec)
 			units.push_back(unit);
 		}
 	}
-	int spawned = 0, free = 0;
+	int spawned = 0;
 	for (EnemyUnit const& unit : units)
 	{
 		GridNo grid = unit.grid;
 		if (grid == NOWHERE)
 		{
 			// an entry without a grid takes the next free tile
-			if (free >= int(tiles.size())) break;
-			grid = tiles[free++];
+			if (freeTile >= tiles.size()) break;
+			grid = tiles[freeTile++];
 		}
 		SOLDIERTYPE* const e = TacticalCreateEnemySoldier(unit.klass);
 		if (!e) continue;
@@ -344,6 +470,21 @@ void StageBattle(sol::table const& spec)
 	si.ubAdminsInBattle = si.ubNumAdmins;
 	si.ubTroopsInBattle = si.ubNumTroops;
 	si.ubElitesInBattle = si.ubNumElites;
+
+	// The sector's militia records must match the staged militia too, or a militia death
+	// (which removes one from the strategic records) trips the consistency assert in
+	// StrategicRemoveMilitiaFromSector. The staged militia are the sector's whole force,
+	// so the levels are set from what is standing there.
+	if (stageMilitia)
+	{
+		for (UINT8 rank = 0; rank < MAX_MILITIA_LEVELS; ++rank) si.ubNumberOfCivsAtLevel[rank] = 0;
+		FOR_EACH_IN_TEAM(m, MILITIA_TEAM)
+		{
+			if (!m->bInSector) continue;
+			auto const rank = SoldierClassToMilitiaRank(m->ubSoldierClass);
+			if (rank) ++si.ubNumberOfCivsAtLevel[*rank];
+		}
+	}
 
 	// Enter combat first, with the player's turn, so the scenario is deterministic (a sighting
 	// pass started in real time can hand the first turn to whichever side spots the other).

@@ -391,7 +391,7 @@ namespace
 		}
 		tactical["enemies"] = enemies;
 		// Friendlies who are not on the player's team: the townsfolk/NPCs a script spawns
-		// (ja2.debug("npcs")) and militia, so a town-entry test can assert who is there.
+		// (ja2.debug("npcs")), so a town-entry test can assert who is there.
 		sol::table civilians = L.create_table();
 		int c = 1;
 		CFOR_EACH_IN_TEAM(x, CIV_TEAM)
@@ -406,6 +406,30 @@ namespace
 			civilians[c++] = t;
 		}
 		tactical["civilians"] = civilians;
+		// The player's militia (MILITIA_TEAM): the AI soldiers that fight on our side,
+		// staged with ja2.debug("battle", { militia = ... }) so a scenario can stage an
+		// AI battle and assert its outcome.
+		sol::table militia = L.create_table();
+		int mi = 1;
+		FOR_EACH_IN_TEAM(x, MILITIA_TEAM)
+		{
+			if (!x->bInSector) continue;
+			sol::table t = L.create_table();
+			t["name"]    = x->name.to_std_string();
+			t["class"]   = static_cast<int>(x->ubSoldierClass);
+			t["life"]    = static_cast<int>(x->bLife);
+			t["lifeMax"] = static_cast<int>(x->bLifeMax);
+			t["gridNo"]  = x->sGridNo;
+			t["dead"]    = x->bLife <= 0;
+			t["level"]     = static_cast<int>(x->bLevel);
+			t["direction"] = static_cast<int>(x->bDirection);
+			t["stance"]    = static_cast<int>(gAnimControl[x->usAnimState].ubEndHeight);
+			t["morale"]    = static_cast<int>(x->bMorale);
+			t["aimorale"]  = static_cast<int>(CalcMorale(x));
+			t["ap"]        = static_cast<int>(x->bActionPoints);
+			militia[mi++] = t;
+		}
+		tactical["militia"] = militia;
 		s["tactical"] = tactical;
 
 		sol::table mercs = L.create_table();
@@ -1118,6 +1142,16 @@ namespace
 					// Stage a deterministic fight in the loaded sector (docs/plan/e2e-tactical-battles.md).
 					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"battle\", spec)");
 					StageBattle(a->as<sol::table>());
+				}
+				else if (what == "camera")
+				{
+					// Center the tactical view on a tile, so a scenario can watch a fight
+					// its selected merc is not standing in (the AI battle keeps the
+					// observer away from the field). The next player turn may slide the
+					// view back to the selected merc, so a screenshot calls this first.
+					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"camera\", gridNo)");
+					if (guiCurrentScreen != GAME_SCREEN) throw std::runtime_error("ja2.debug(\"camera\"): needs the tactical screen");
+					InternalLocateGridNo(static_cast<UINT16>(a->as<int>()), TRUE);
 				}
 				else if (what == "lane")
 				{

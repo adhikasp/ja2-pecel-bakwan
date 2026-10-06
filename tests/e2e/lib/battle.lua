@@ -61,6 +61,23 @@ function battle.enemies()
 	return out
 end
 
+-- The player's militia still standing in the sector, in state order.
+function battle.militia()
+	local out = {}
+	for _, m in ipairs(ja2.state().tactical.militia or {}) do
+		if not m.dead then out[#out + 1] = m end
+	end
+	return out
+end
+
+-- The living militia standing on @a grid, or nil.
+function battle.militiaByGrid(grid)
+	for _, m in ipairs(battle.militia()) do
+		if m.gridNo == grid then return m end
+	end
+	return nil
+end
+
 -- The living enemy standing on @a grid, or nil.
 function battle.byGrid(grid)
 	for _, e in ipairs(battle.enemies()) do
