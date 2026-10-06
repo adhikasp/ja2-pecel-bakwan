@@ -36,6 +36,11 @@ fixtures and orders (stage a fight, select a merc, shoot, end the turn, read the
 militia back) for the tactical battle e2e track. `lib/loadout.lua` has the
 equipment fixtures - see below.
 
+The campaign steps reseed the RNG at their flow points (`campaign.reseed`: a new
+game, entering the map; `BattleScenario` reseeds when it stages a battle), so a
+UI change cannot churn the goldens of screens further down the flow by drawing a
+different number of incidental random numbers (issue #177).
+
 ## Equipment fixtures
 
 The equipment revamp ([docs/plan/equipment-revamp.md](../../docs/plan/equipment-revamp.md))

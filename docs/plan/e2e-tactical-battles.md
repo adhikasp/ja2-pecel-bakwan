@@ -180,7 +180,10 @@ The scenario pieces are small Lua steps (`tests/e2e/lib/battle.lua`):
 
 - The RNG is seeded once per process (`-seed`, default `1`) before the game initialises
   (`src/sgp/SGP.cc`), and the automation clock is virtual, so a scenario is reproducible.
-  `tests/e2e/check_determinism.py` already proves the same script produces the same frames.
+  The campaign steps reseed it at their flow points — a new game, entering the map — and
+  `StageBattle()` reseeds when it stages a fight, so a scenario is a function of its own
+  spec and seed and not of the UI path that reached it (issue #177). `tests/e2e/check_determinism.py`
+  already proves the same script produces the same frames.
 - One scenario per process (`ja2ctl run ... --isolated`), so nothing leaks between them.
 - Scenarios are **bounded**: a fixed number of rounds, an AP-gated number of shots per
   merc, and a wall-clock `--timeout`. A scenario that needs to prove a battle ends asserts
