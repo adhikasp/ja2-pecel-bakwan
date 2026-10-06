@@ -8,6 +8,8 @@
 > - `ja2.battleReport()` — any staged battle, read back as data.
 > - `tests/e2e/battle_ai_eval.lua` — one matchup, played out AI-only, printed and asserted.
 > - `python tools/dev.py ai-eval` — the matchup matrix, as a table (`tools/ai_eval.py`).
+>
+> What the AI does today, behaviour by behaviour, is [tactical-ai.md](tactical-ai.md).
 
 ## Why
 

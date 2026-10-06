@@ -22,6 +22,9 @@
 > - `tests/e2e/lib/battle.lua` — the reusable fixtures and orders the scenarios share.
 > - `ja2.debug("battle", spec)` / `ja2.debug("fire", gridNo)` — the C++ harness in
 >   [`src/game/Automation/BattleScenario.cc`](../../src/game/Automation/BattleScenario.cc).
+>
+> The behaviour these scenarios are the baseline for is documented in
+> [tactical-ai.md](tactical-ai.md).
 
 ## Goal
 
