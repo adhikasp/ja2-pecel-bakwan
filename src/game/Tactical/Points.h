@@ -81,6 +81,12 @@
 
 #define AP_BURST			5
 
+// Autofire (issue #102): a role-gated continuous mode. Every round costs this
+// many AP beyond the cost to start the attack, and one trigger pull is capped
+// here so a large magazine cannot be emptied for free.
+#define AP_AUTOFIRE_PER_ROUND	1
+#define AP_AUTOFIRE_MAX_ROUNDS	15
+
 #define AP_DROP_BOMB			3
 
 #define AP_RELOAD_GUN			5 // loading new clip/magazine
@@ -303,6 +309,9 @@ void DeductAmmo( SOLDIERTYPE *pSoldier, INT8 bInvPos );
 UINT16 GetAPsToPickupItem( SOLDIERTYPE *pSoldier, UINT16 usMapPos );
 UINT8 CalcTotalAPsToAttack(SOLDIERTYPE *, GridNo, bool add_turning_cost, INT8 bAimTime);
 UINT8 CalcAPsToBurst(INT8 bBaseActionPoints, OBJECTTYPE const&);
+// The rounds one autofire trigger pull buys with the AP the soldier has left,
+// capped by the magazine and AP_AUTOFIRE_MAX_ROUNDS. Pure on the soldier state.
+UINT8 AutofireRounds(SOLDIERTYPE* s, GridNo grid);
 UINT16 GetAPsToChangeStance(const SOLDIERTYPE* pSoldier, INT8 bDesiredHeight);
 
 UINT16 GetAPsToLook(const SOLDIERTYPE* pSoldier);

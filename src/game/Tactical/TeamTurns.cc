@@ -6,6 +6,7 @@
 #include "Animation_Control.h"
 #include "BattleReport.h"
 #include "Points.h"
+#include "AimModel.h"
 #include "OppList.h"
 #include "Sound_Control.h"
 #include "Interface.h"
@@ -337,6 +338,9 @@ void BeginTeamTurn( UINT8 ubTeam )
 			if (s.bLife <= 0) continue;
 			// decay personal opplist, and refresh APs and BPs
 			EVENT_BeginMercTurn(s);
+			// Recoil fades while the soldier is not firing (issue #102): a burst
+			// carries into the next exchange, then bleeds off.
+			s.bRecoil = (INT8)Equipment::RecoilDecay(s.bRecoil, 1);
 		}
 
 		if (gTacticalStatus.bBoxingState == LOST_ROUND || gTacticalStatus.bBoxingState == WON_ROUND || gTacticalStatus.bBoxingState == DISQUALIFIED )

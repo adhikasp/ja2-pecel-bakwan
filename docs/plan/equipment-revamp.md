@@ -129,6 +129,34 @@ armour is never worse for the man wearing it. The numbers live in
 `src/game/Equipment/DamagePipeline.cc`; the leaf tunables (wear rate, range
 falloff) are game policy toggles.
 
+### The chance to hit (#102)
+
+The four open questions on the aim core were settled by the owner:
+
+- **Aim ceilings are per weapon discipline, and a marksman's is highest.** A
+  weapon may spend at most its discipline's extra AP aiming (SMG 3, shotgun 2,
+  rifle 5, machine gun 3, **marksman 8**); the targeting cursor and the AI respect
+  it, and the targeting cursor reuses its most-aimed art past the field weapons'
+  ceiling. A marksman also gets more out of each click (`AimScale`), so its
+  ceiling is higher both in clicks and in payoff.
+- **The aim curve is a formula with diminishing returns**, not a table: click k
+  is worth `scaled * 12 / ((k+1)(k+2))`, so the first click buys the most and the
+  total equals the vanilla flat bonus at four clicks. The numbers live in
+  `src/game/Equipment/AimModel.cc`.
+- **Automatic fire is a role gate.** Only rifles and machine guns
+  (`SupportsAutofire`) may lay down continuous fire; everything else keeps the
+  fixed burst its data declares. Autofire fires until the AP or the magazine runs
+  out, at one AP per round.
+- **Recoil decays, it does not reset.** A burst builds a pool on the shooter that
+  costs accuracy immediately and bleeds off while the soldier is not firing, so it
+  carries into the next exchange (an interrupt, an overwatch shot). The pool is
+  the shared "rounds fired this burst" that overheating (#98) and suppression
+  (#103) read.
+
+The rules are pure and unit-tested in `src/game/Equipment/AimModel.{h,cc}`; the
+adapter that reads a soldier into them is in `src/game/Tactical/Weapons.cc`, and
+the lane asserts it end-to-end in `tests/e2e/battle_ncth.lua`.
+
 ## Dependency order
 
 The build order follows the schema. Each issue lists what it depends on.

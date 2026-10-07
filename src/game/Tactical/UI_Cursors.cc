@@ -201,7 +201,7 @@ static UICursorID HandleActivatedTargetCursor(SOLDIERTYPE* const s, GridNo const
 		else
 		{
 			UINT8 const future_aim = s->bShownAimTime + 2;
-			if (future_aim <= REFINE_AIM_5)
+			if (future_aim <= MaxShownAimTime(s))
 			{
 				INT16 const AP_costs = MinAPsToAttack(s, map_pos, TRUE) + future_aim / 2;
 				if (!EnoughPoints(s, AP_costs, 0, FALSE))
@@ -221,9 +221,9 @@ static UICursorID HandleActivatedTargetCursor(SOLDIERTYPE* const s, GridNo const
 		else
 		{
 			++s->bShownAimTime;
-			if (s->bShownAimTime > REFINE_AIM_5)
+			if (s->bShownAimTime > MaxShownAimTime(s))
 			{
-				s->bShownAimTime = REFINE_AIM_5;
+				s->bShownAimTime = MaxShownAimTime(s);
 			}
 			else if (s->bShownAimTime % 2 != 0)
 			{
@@ -356,6 +356,29 @@ static UICursorID HandleActivatedTargetCursor(SOLDIERTYPE* const s, GridNo const
 				break;
 
 			case REFINE_AIM_5:
+				if (is_throwing_knife)
+				{
+					cursor = gfDisplayFullCountRing ? ACTION_THROWAIMFULL_UICURSOR :
+						enough_points          ? ACTION_THROWAIM9_UICURSOR    :
+						ACTION_THROWAIMCANT5_UICURSOR;
+				}
+				else
+				{
+					cursor = gfDisplayFullCountRing ? ACTION_TARGETAIMFULL_UICURSOR :
+						enough_points          ? ACTION_TARGETAIM9_UICURSOR    :
+						ACTION_TARGETAIMCANT5_UICURSOR;
+				}
+				break;
+
+			case REFINE_AIM_MID5:
+			case REFINE_AIM_6:
+			case REFINE_AIM_MID6:
+			case REFINE_AIM_7:
+			case REFINE_AIM_MID7:
+			case REFINE_AIM_8:
+				// Past the drawn cursor series the aim still refines (issue #102);
+				// show the most-aimed art and let the AP/chance readout carry the
+				// difference.
 				if (is_throwing_knife)
 				{
 					cursor = gfDisplayFullCountRing ? ACTION_THROWAIMFULL_UICURSOR :
@@ -1072,7 +1095,7 @@ void HandleRightClickAdjustCursor( SOLDIERTYPE *pSoldier, INT16 usMapPos )
 
 				bFutureAim = (INT8)( pSoldier->bShownAimTime + 2 );
 
-				if ( bFutureAim <= REFINE_AIM_5 )
+				if ( bFutureAim <= MaxShownAimTime(pSoldier) )
 				{
 					sAPCosts = CalcTotalAPsToAttack( pSoldier, usMapPos, TRUE, (INT8)(bFutureAim / 2) );
 
@@ -1080,9 +1103,9 @@ void HandleRightClickAdjustCursor( SOLDIERTYPE *pSoldier, INT16 usMapPos )
 					if ( EnoughPoints( pSoldier, sAPCosts, 0, FALSE ) )
 					{
 						pSoldier->bShownAimTime+= 2;
-						if ( pSoldier->bShownAimTime > REFINE_AIM_5 )
+						if ( pSoldier->bShownAimTime > MaxShownAimTime(pSoldier) )
 						{
-							pSoldier->bShownAimTime = REFINE_AIM_5;
+							pSoldier->bShownAimTime = MaxShownAimTime(pSoldier);
 						}
 					}
 					// Else - goto first level!
@@ -1239,7 +1262,7 @@ void HandleWheelAdjustCursor(SOLDIERTYPE* const pSoldier, INT16 usMapPos, const 
 
 			bStep   = 2;
 			bMinAim = REFINE_AIM_1;
-			bMaxAim = REFINE_AIM_5;
+			bMaxAim = MaxShownAimTime(pSoldier);
 			break;
 
 		case PUNCHCURS:

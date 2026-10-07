@@ -643,7 +643,11 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 					// FIRST CHECK IF WE'VE REACHED MAX FOR GUN
 					fStop = FALSE;
 
-					if ( pSoldier->bDoBurst > GCM->getWeapon( pSoldier->usAttackingWeapon )->ubShotsPerBurst )
+					// A normal burst stops at the weapon's burst length; an autofire
+					// burst (issue #102) runs the rounds its AP bought.
+					if (pSoldier->bWeaponMode == WM_AUTOFIRE
+						? pSoldier->bDoBurst > pSoldier->bAutofireRounds
+						: pSoldier->bDoBurst > GCM->getWeapon( pSoldier->usAttackingWeapon )->ubShotsPerBurst)
 					{
 						fStop = TRUE;
 					}

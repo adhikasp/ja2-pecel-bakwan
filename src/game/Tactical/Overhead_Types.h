@@ -16,7 +16,15 @@ enum RefineAim : INT8
 	REFINE_AIM_4 = 6,
 	REFINE_AIM_MID4 = 7,
 	REFINE_AIM_5 = 8,
-	REFINE_AIM_BURST = 10,
+	// Past the field weapons' ceiling (issue #102): a marksman aims further, and
+	// the targeting cursor reuses the most-aimed art for these.
+	REFINE_AIM_MID5 = 9,
+	REFINE_AIM_6 = 10,
+	REFINE_AIM_MID6 = 11,
+	REFINE_AIM_7 = 12,
+	REFINE_AIM_MID7 = 13,
+	REFINE_AIM_8 = 14,
+	REFINE_AIM_BURST = 100,
 	REFINE_PUNCH_1 = 0,
 	REFINE_PUNCH_2 = 6,
 	REFINE_KNIFE_1 = 0,
