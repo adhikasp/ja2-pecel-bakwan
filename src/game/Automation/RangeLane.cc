@@ -316,6 +316,8 @@ sol::table StageRangeLane(sol::state_view L, sol::table const& spec)
 	g_lane.targetName  = target->name.to_std_string();
 	g_lane.distance    = distance;
 	g_lane.actualRange = SpacesAway(anchor, targetGrid);
+	g_lane.aim         = std::max(0, Scenario::IntField(spec, "aim", 0));
+	g_lane.mode        = Scenario::IntField(spec, "mode", 0);
 
 	sol::table t = L.create_table();
 	t["shooter"]     = g_lane.shooterName;
@@ -355,11 +357,14 @@ bool FireLaneShot()
 
 	// The AP for the shot: a lane measures the shot, not the turn's bookkeeping.
 	shooter->bActionPoints    = g_lane.apPool;
-	shooter->bAimTime         = 0;
+	shooter->bAimTime         = g_lane.aim;
 	shooter->bAimShotLocation = AIM_SHOT_TORSO;
 	shooter->target           = target;
 	shooter->opponent         = target;
-	shooter->bDoBurst         = 0;
+	// The fire mode is part of the lane (issue #102): a burst or autofire lane
+	// measures how a run of automatic rounds walks off the target.
+	shooter->bWeaponMode      = (WeaponModes)g_lane.mode;
+	shooter->bDoBurst         = (g_lane.mode == WM_BURST || g_lane.mode == WM_AUTOFIRE) ? 1 : 0;
 
 	// Face down the lane before ordering. A click on a tile the shooter is not
 	// looking at spends its first order turning him (see battle.lua), which a lane
@@ -391,6 +396,8 @@ sol::table LaneReport(sol::state_view L)
 	t["shooter"]     = g_lane.shooterName;
 	t["target"]      = g_lane.targetName;
 	t["distance"]    = g_lane.actualRange;
+	t["aim"]         = g_lane.aim;
+	t["mode"]        = g_lane.mode;
 	t["targetGrid"]  = target ? int(target->sGridNo) : int(NOWHERE);
 	t["targetLife"]  = target ? int(target->bLife) : 0;
 	t["condition"]   = shooter ? int(shooter->inv[HANDPOS].bGunStatus) : 0;

@@ -78,6 +78,8 @@ namespace Automation
 		UINT8 shooterId  = 0;
 		UINT8 targetId   = 0;
 		UINT8 apPool     = 100; // the AP the shooter is refilled to, so the turn never leaves us
+		int   aim        = 0;   // extra AP the shooter aims with (issue #102)
+		int   mode       = 0;   // the fire mode: 0 normal, 1 burst, 3 autofire
 		std::vector<LaneShot> shots;
 	};
 }

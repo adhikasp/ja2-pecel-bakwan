@@ -224,6 +224,12 @@ extern UINT32 CalcThrownChanceToHit(SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 
 
 extern void ChangeWeaponMode( SOLDIERTYPE * pSoldier );
 
+/** The furthest aim refinement (a bShownAimTime value) the soldier's weapon
+ *  allows (issue #102): twice its discipline's extra-AP ceiling. The aim cycle
+ *  and the targeting cursor use it, so a marksman can aim past a field weapon's
+ *  ceiling while an SMG caps out early. */
+UINT8 MaxShownAimTime(const SOLDIERTYPE* pSoldier);
+
 void UseHandToHand(SOLDIERTYPE* pSoldier, INT16 sTargetGridNo, BOOLEAN fStealing);
 
 void DishoutQueenSwipeDamage( SOLDIERTYPE *pQueenSoldier );

@@ -294,6 +294,7 @@ enum WeaponModes : INT8
 	WM_NORMAL = 0,
 	WM_BURST,
 	WM_ATTACHED,
+	WM_AUTOFIRE, // continuous fire, role-gated (issue #102)
 	NUM_WEAPON_MODES
 };
 
@@ -503,6 +504,12 @@ struct SOLDIERTYPE
 	INT16 sOldAniCode;
 
 	INT8 bBulletsLeft;
+	// The recoil pool (issue #102): builds with each automatic round and decays
+	// while the soldier is not firing, so a burst costs accuracy into the next
+	// exchange instead of resetting the moment the trigger is released.
+	INT8 bRecoil;
+	// How many rounds the current autofire burst intends to fire (0 otherwise).
+	INT8 bAutofireRounds;
 	UINT8 ubSuppressionPoints;
 
 	// STUFF FOR RANDOM ANIMATIONS

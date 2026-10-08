@@ -533,6 +533,12 @@ namespace
 			t["morale"]    = static_cast<int>(m->bMorale);
 			t["ap"]        = static_cast<int>(m->bActionPoints);
 			t["maxAp"]     = static_cast<int>(m->bInitialActionPoints);
+			// The NCTH recoil pool and the chosen fire mode (issue #102): what an
+			// automatic burst has cost the shooter so far, and how it is aimed.
+			t["recoil"]     = static_cast<int>(m->bRecoil);
+			t["weaponMode"] = static_cast<int>(m->bWeaponMode);
+			t["aimTime"]    = static_cast<int>(m->bAimTime);
+			t["autofireRounds"] = static_cast<int>(m->bAutofireRounds);
 			if (guiCurrentScreen == GAME_SCREEN && m->bInSector && m->sGridNo != NOWHERE)
 			{
 				// Where to click on this merc (the tile they stand on).

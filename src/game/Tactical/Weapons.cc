@@ -50,6 +50,7 @@
 #include "WeaponModels.h"
 #include "Logger.h"
 #include "GamePolicy.h"
+#include "AimModel.h"
 
 // NB this is arbitrary, chances in DG ranged from 1 in 6 to 1 in 20
 #define BASIC_DEPRECIATE_CHANCE	15
@@ -81,6 +82,10 @@ BOOLEAN gfNextShotKills    = FALSE;
 // pipeline decided without a screenshot.
 Observable<ShotFired const&>  OnShotFired;
 Observable<ShotImpact const&> OnShotImpact;
+
+// Defined with the NCTH adapter below; forward-declared so UseGun can call it
+// without moving the adapter up here.
+namespace { void AddRecoilAfterShot(SOLDIERTYPE& s); }
 
 //GLOBALS
 
@@ -865,6 +870,10 @@ static void UseGun(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 	}
 
 	MakeNoise(pSoldier, pSoldier->sGridNo, pSoldier->bLevel, ubVolume, NOISE_GUNFIRE);
+
+	// The round just fired pushes the recoil pool up (issue #102); the next
+	// automatic round is aimed through it.
+	AddRecoilAfterShot(*pSoldier);
 
 	if ( pSoldier->bDoBurst )
 	{
@@ -2001,6 +2010,68 @@ BOOLEAN InRange(const SOLDIERTYPE* pSoldier, INT16 sGridNo)
 	return( FALSE );
 }
 
+namespace
+{
+	// The NCTH aim/recoil adapter (issue #102): the pure rules live in
+	// Equipment::AimModel, and these read the soldier into them. They are the
+	// only place the game's globals meet the aim model.
+
+	Equipment::AimDiscipline DisciplineOf(const SOLDIERTYPE& s)
+	{
+		OBJECTTYPE const& o = s.inv[s.ubAttackingHand];
+		if (!GCM->getItem(o.usItem)->isWeapon()) return Equipment::AimDiscipline::Other;
+		WeaponModel const* const w = GCM->getWeapon(o.usItem);
+		return Equipment::DisciplineForWeapon(w->ubWeaponClass, GunRange(o) / CELL_X_SIZE);
+	}
+
+	int WeaponRecoilOf(const SOLDIERTYPE& s)
+	{
+		UINT16 const item = s.inv[s.ubAttackingHand].usItem;
+		if (!GCM->getItem(item)->isWeapon()) return 0;
+		WeaponModel const* const w = GCM->getWeapon(item);
+		return Equipment::RecoilForWeapon(w->ubWeaponClass, w->ubBurstPenalty, w->ubImpact);
+	}
+
+	int RecoilMitigationOf(const SOLDIERTYPE& s)
+	{
+		Equipment::RecoilMitigators m;
+		m.strength   = EffectiveStrength(&s);
+		m.level      = EffectiveExpLevel(&s);
+		m.autoTrait  = NUM_SKILL_TRAITS(&s, AUTO_WEAPS);
+		m.bodyHeight = gAnimControl[s.usAnimState].ubEndHeight;
+		m.bipod      = FindAttachment(&s.inv[s.ubAttackingHand], BIPOD) != ITEM_NOT_FOUND;
+		// A foregrip's recoil bonus is #100/#261's attachment to wire; the rule
+		// already supports it.
+		return Equipment::RecoilMitigation(m);
+	}
+
+	// One more automatic round pushes the soldier's pool up. Called from UseGun
+	// for every round of a burst or an autofire burst.
+	void AddRecoilAfterShot(SOLDIERTYPE& s)
+	{
+		if (!s.bDoBurst) return; // a single aimed shot does not build the pool
+		s.bRecoil = (INT8)Equipment::RecoilAfterShot(
+			s.bRecoil,
+			Equipment::RecoilGain(DisciplineOf(s), WeaponRecoilOf(s), RecoilMitigationOf(s)));
+	}
+
+	// Autofire is a role (issue #102): a weapon may lay down continuous fire
+	// only if its data gives it a burst and its discipline is an autofire role.
+	bool SupportsAutofireWeapon(const SOLDIERTYPE& s)
+	{
+		return IsGunBurstCapable(&s, HANDPOS) && Equipment::SupportsAutofire(DisciplineOf(s));
+	}
+}
+
+UINT8 MaxShownAimTime(const SOLDIERTYPE* const pSoldier)
+{
+	OBJECTTYPE const& o = pSoldier->inv[HANDPOS];
+	if (!GCM->getItem(o.usItem)->isWeapon()) return REFINE_AIM_5;
+	int const ceiling = Equipment::AimCeiling(Equipment::DisciplineForWeapon(
+		GCM->getWeapon(o.usItem)->ubWeaponClass, GunRange(o) / CELL_X_SIZE));
+	return (UINT8)std::min(2 * ceiling, (int)REFINE_AIM_8);
+}
+
 UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime, UINT8 ubAimPos, BOOLEAN fModify )
 {
 	INT32 iChance, iRange, iSightRange, iMaxRange, iScopeBonus, iBonus; //, minRange;
@@ -2021,6 +2092,15 @@ UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime
 	// make sure the guy's actually got a weapon in his hand!
 	pInHand = &(pSoldier->inv[pSoldier->ubAttackingHand]);
 	usInHand = pSoldier->usAttackingWeapon;
+
+	// How far this weapon may be aimed (issue #102). The AI and a forced shot
+	// can ask for more AP than the weapon's discipline allows; the ceiling is a
+	// property of the weapon, so clamp the request rather than the bonus.
+	Equipment::AimDiscipline const aim_discipline = DisciplineOf(*pSoldier);
+	{
+		UINT8 const ceiling = (UINT8)Equipment::AimCeiling(aim_discipline);
+		if (ubAimTime > ceiling) ubAimTime = ceiling;
+	}
 
 	// DETERMINE BASE CHANCE OF HITTING
 	iGunCondition = WEAPON_STATUS_MOD( pInHand->bGunStatus );
@@ -2135,18 +2215,14 @@ UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime
 		}
 	}
 
-	// If in burst mode, deduct points for change to hit for each shot after the first
-	if ( pSoldier->bDoBurst )
+	// Recoil (issue #102): automatic fire walks the muzzle off the target. The
+	// pool is built round by round in UseGun and decays while the soldier is not
+	// firing, so what is subtracted here is the accumulated cost of this burst -
+	// not a flat per-shot penalty. Mitigation (strength, the autoweapons trait,
+	// a braced stance) already entered when the pool grew.
+	if (pSoldier->bRecoil > 0)
 	{
-		iPenalty = GCM->getWeapon(usInHand)->ubBurstPenalty * (pSoldier->bDoBurst - 1);
-
-		// halve the penalty for people with the autofire trait
-		UINT AutoWeaponsSkill = NUM_SKILL_TRAITS(pSoldier, AUTO_WEAPS);
-		if (AutoWeaponsSkill != 0)
-		{
-			iPenalty /= 2 * AutoWeaponsSkill;
-		}
-		iChance -= iPenalty;
+		iChance -= Equipment::RecoilPenalty(pSoldier->bRecoil);
 	}
 
 	sDistVis = DistanceVisible( pSoldier, DIRECTION_IRRELEVANT, DIRECTION_IRRELEVANT, sGridNo, 0 );
@@ -2188,7 +2264,12 @@ UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime
 
 	// if shooter spent some extra time aiming and can see the target
 	if (iSightRange > 0 && ubAimTime && !pSoldier->bDoBurst)
-		iChance += (AIM_BONUS_PER_AP * ubAimTime); // bonus for every pt of aiming
+	{
+		// Diminishing returns (issue #102): each click is worth less than the one
+		// before, scaled by the weapon's discipline, so aiming is a choice against
+		// AP and a marksman gets more out of the same time.
+		iChance += Equipment::AimBonus(ubAimTime, AIM_BONUS_PER_AP, Equipment::AimScale(aim_discipline));
+	}
 
 	if ( !(pSoldier->uiStatusFlags & SOLDIER_PC ) ) // if this is a computer AI controlled enemy
 	{
@@ -3812,6 +3893,14 @@ void EnsureConsistentWeaponMode(SOLDIERTYPE* const s)
 			s->bWeaponMode = WM_NORMAL;
 		}
 	}
+	else if (s->bWeaponMode == WM_AUTOFIRE)
+	{
+		// The weapon may have changed: autofire is only for the roles that own it.
+		if (!SupportsAutofireWeapon(*s))
+		{
+			s->bWeaponMode = WM_NORMAL;
+		}
+	}
 	else if (s->bWeaponMode == WM_ATTACHED)
 	{
 		if (!HasLauncher(s))
@@ -3820,7 +3909,7 @@ void EnsureConsistentWeaponMode(SOLDIERTYPE* const s)
 		}
 	}
 
-	s->bDoBurst = s->bWeaponMode == WM_BURST;
+	s->bDoBurst = s->bWeaponMode == WM_BURST || s->bWeaponMode == WM_AUTOFIRE;
 }
 
 
@@ -3850,6 +3939,19 @@ void ChangeWeaponMode(SOLDIERTYPE* const s)
 			break;
 
 		case WM_BURST:
+			// A weapon built to hold the trigger gets a third mode; everything
+			// else cycles on to the launcher or back to a single shot.
+			if (SupportsAutofireWeapon(*s))
+			{
+				mode = WM_AUTOFIRE;
+			}
+			else
+			{
+				mode = (HasLauncher(s) ? WM_ATTACHED : WM_NORMAL);
+			}
+			break;
+
+		case WM_AUTOFIRE:
 			mode = (HasLauncher(s) ? WM_ATTACHED : WM_NORMAL);
 			break;
 

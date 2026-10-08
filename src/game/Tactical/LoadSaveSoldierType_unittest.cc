@@ -79,6 +79,8 @@ protected:
 		testSoldier.sBreathRed = 0;
 		testSoldier.bBleeding = 0;
 		testSoldier.sFractLife = 0;
+		testSoldier.bRecoil = 37; // the NCTH recoil pool (issue #102)
+		testSoldier.bAutofireRounds = 5; // the current autofire burst's rounds
 		
 		// Skills and traits
 		testSoldier.ubSkillTrait1 = 0;
@@ -230,6 +232,8 @@ TEST_F(LoadSaveSoldierTypeTestImpl, RoundTripSerialization)
 	EXPECT_EQ(extractedSoldier.sBreathRed, testSoldier.sBreathRed);
 	EXPECT_EQ(extractedSoldier.bBleeding, testSoldier.bBleeding);
 	EXPECT_EQ(extractedSoldier.sFractLife, testSoldier.sFractLife);
+	EXPECT_EQ(extractedSoldier.bRecoil, testSoldier.bRecoil);
+	EXPECT_EQ(extractedSoldier.bAutofireRounds, testSoldier.bAutofireRounds);
 	
 	// Verify skills and traits
 	EXPECT_EQ(extractedSoldier.ubSkillTrait1, testSoldier.ubSkillTrait1);

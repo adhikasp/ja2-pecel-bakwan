@@ -138,6 +138,8 @@ function loadout.lane(spec)
 		distance = spec.distance or 8,
 		shots    = spec.shots or 5,
 		seed     = spec.seed or 1,
+		aim      = spec.aim or 0,
+		mode     = spec.mode or 0,
 		shooter  = loadout.rifle(spec.shooter or spec.gear),
 		target   = spec.target or {},
 	}
@@ -146,6 +148,8 @@ function loadout.lane(spec)
 	ja2.debug("lane", {
 		distance = wanted.distance,
 		seed     = wanted.seed,
+		aim      = wanted.aim,
+		mode     = wanted.mode,
 		shooter  = wanted.shooter,
 		target   = wanted.target,
 	})

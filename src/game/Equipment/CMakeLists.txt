@@ -1,5 +1,6 @@
 file(GLOB LOCAL_JA2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 set(LOCAL_JA2_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/AimModel.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/AttachmentRules.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/DamagePipeline.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/EquipmentCatalog.cc
@@ -15,6 +16,7 @@ set(LOCAL_JA2_SOURCES
 if (WITH_UNITTESTS)
     set(LOCAL_JA2_SOURCES
         ${LOCAL_JA2_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/AimModel_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/DamagePipeline_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Equipment_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LoadoutBuilder_unittest.cc

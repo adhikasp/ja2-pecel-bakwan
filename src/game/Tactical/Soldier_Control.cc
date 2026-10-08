@@ -2139,9 +2139,20 @@ void EVENT_FireSoldierWeapon( SOLDIERTYPE *pSoldier, INT16 sTargetGridNo )
 	{
 		if (pSoldier->bDoBurst)
 		{
-			// Set the TOTAL number of bullets to be fired
-			// Can't shoot more bullets than we have in our magazine!
-			pSoldier->bBulletsLeft = std::min(GCM->getWeapon(pSoldier->inv[ pSoldier->ubAttackingHand].usItem)->ubShotsPerBurst, pSoldier->inv[ pSoldier->ubAttackingHand ].ubGunShotsLeft);
+			if (pSoldier->bWeaponMode == WM_AUTOFIRE)
+			{
+				// Autofire (issue #102): hold the trigger until the AP or the
+				// magazine runs out, at one AP per round.
+				pSoldier->bAutofireRounds = (INT8)AutofireRounds(pSoldier, sTargetGridNo);
+				pSoldier->bBulletsLeft    = pSoldier->bAutofireRounds;
+			}
+			else
+			{
+				pSoldier->bAutofireRounds = 0;
+				// Set the TOTAL number of bullets to be fired
+				// Can't shoot more bullets than we have in our magazine!
+				pSoldier->bBulletsLeft = std::min(GCM->getWeapon(pSoldier->inv[ pSoldier->ubAttackingHand].usItem)->ubShotsPerBurst, pSoldier->inv[ pSoldier->ubAttackingHand ].ubGunShotsLeft);
+			}
 		}
 		else if ( IsValidSecondHandShot( pSoldier ) )
 		{

@@ -840,6 +840,24 @@ static INT16 GetBreathPerAP(SOLDIERTYPE* pSoldier, UINT16 usAnimState)
 }
 
 
+UINT8 AutofireRounds(SOLDIERTYPE* const s, GridNo const grid_no)
+{
+	// The magazine is the hard limit; AP is the real one. The round leaves the
+	// same check as a burst leaves, so autofire is not a way to fire for free.
+	UINT8 const magazine = s->inv[HANDPOS].ubGunShotsLeft;
+	if (magazine == 0) return 0;
+
+	INT16 const min_ap = MinAPsToAttack(s, grid_no, FALSE);
+	INT32 const spare  = s->bActionPoints - min_ap;
+	if (spare < AP_AUTOFIRE_PER_ROUND) return 1; // at least the one round
+
+	INT32 rounds = spare / AP_AUTOFIRE_PER_ROUND;
+	rounds = std::min<INT32>(rounds, AP_AUTOFIRE_MAX_ROUNDS);
+	rounds = std::min<INT32>(rounds, magazine);
+	return (UINT8)std::max<INT32>(rounds, 1);
+}
+
+
 UINT8 CalcAPsToBurst(INT8 const bBaseActionPoints, OBJECTTYPE const& o)
 {
 	// base APs is what you'd get from CalcActionPoints();
@@ -874,7 +892,9 @@ UINT8 CalcTotalAPsToAttack(SOLDIERTYPE * const s, GridNo const grid_no, bool con
 		case IC_TENTACLES:
 		case IC_THROWING_KNIFE:
 			return MinAPsToAttack(s, grid_no, add_turning_cost) +
-				(s->bDoBurst ? CalcAPsToBurst(CalcActionPoints(s), in_hand) :
+				(s->bWeaponMode == WM_AUTOFIRE ?
+					std::max<INT16>(1, AutofireRounds(s, grid_no)) * AP_AUTOFIRE_PER_ROUND :
+				s->bDoBurst ? CalcAPsToBurst(CalcActionPoints(s), in_hand) :
 				// WM_ATTACHED is already handled by MinAPsToAttack and the
 				// aim time cannot be refined further.
 				s->bWeaponMode == WM_ATTACHED ? 0 : aim_time);
