@@ -26,6 +26,15 @@ namespace NativeUI
 	std::string Escape(std::string const& text);
 	/** The element under the mouse (or nullptr), and the mouse position in output pixels. */
 	Rml::Vector2f MousePosition();
+	/** A point of the game's canvas (SCREEN_WIDTH x SCREEN_HEIGHT, the legacy UI's pixels: what WorldToUi gives) in
+	 * output pixels, where the native UI draws. The window scales and letterboxes the canvas, so this is not the UI
+	 * scale. */
+	Rml::Vector2f CanvasToOutput(float x, float y);
+	/** Output pixels per canvas pixel (a length on the canvas, in output pixels). */
+	float CanvasScale();
+	/** The item picture the native pointer carries (an item held by the mouse), or none with an empty @a src;
+	 * @a w x @a h in output pixels. */
+	void SetCursorItem(std::string const& src, int w, int h);
 
 	/** A native screen: owns input and drawing while it is the current screen. */
 	class Screen
@@ -90,4 +99,6 @@ namespace NativeUI
 
 	/** The mouse is over a part of the HUD that takes clicks (an element with class "hit"). */
 	bool TacticalHudWantsMouse();
+	/** The native pointer is the tactical cursor: over the HUD, and wherever an item is held by the mouse. */
+	bool TacticalHudOwnsCursor();
 }

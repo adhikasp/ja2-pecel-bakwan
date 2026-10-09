@@ -631,7 +631,6 @@ namespace
 		void ReadOverlays()
 		{
 			overlays.clear();
-			float const su = float(g_ui.m_uiScale);
 			SOLDIERTYPE const* const sel = GetSelectedMan();
 			FOR_EACH_MERC(i)
 			{
@@ -648,8 +647,10 @@ namespace
 				INT16 x, y;
 				GetSoldierAboveGuyPositions(&s, &x, &y, FALSE);
 				OverRow r;
-				r.x = int((x + 40) * su);
-				r.y = int(y * su);
+				// the canvas point centred over the merc (the legacy text box is 80 wide), where the native UI draws
+				Rml::Vector2f const at = CanvasToOutput(float(x + 40), float(y));
+				r.x = int(at.x);
+				r.y = int(at.y);
 				r.sel = &s == sel;
 				if (damage) r.dmg = ST::format("−{}", s.sDamage).to_std_string();
 				if (shown)
@@ -909,9 +910,9 @@ namespace
 					menu.push_back(r);
 				}
 				// the action menu opens by the merc, the door menu by the door (the approved wireframes)
-				float const su = float(g_ui.m_uiScale);
-				float x = m.x * su + std::round((door ? 8.f : 70.f) * DpScale());
-				float y = m.y * su - std::round((door ? 24.f : 64.f) * DpScale());
+				Rml::Vector2f const at = CanvasToOutput(float(m.x), float(m.y));
+				float x = at.x + std::round((door ? 8.f : 70.f) * DpScale());
+				float y = at.y - std::round((door ? 24.f : 64.f) * DpScale());
 				int h = 56;
 				for (MenuItemRow const& r : menu) h += r.kind == "item" ? (r.why.empty() ? 40 : 60) : 20;
 				ClampPopup(x, y, 252, float(h));
@@ -953,9 +954,9 @@ namespace
 					}
 					pick.push_back(r);
 				}
-				float const su = float(g_ui.m_uiScale);
-				float x = p.x * su;
-				float y = p.y * su;
+				Rml::Vector2f const at = CanvasToOutput(float(p.x), float(p.y));
+				float x = at.x;
+				float y = at.y;
 				ClampPopup(x, y, 360, float(120 + 56 * int(p.rows.size())));
 				pickX = int(x);
 				pickY = int(y);
@@ -993,6 +994,7 @@ namespace
 	// document that RmlUi closes only at its next update would break the document's bindings.
 	void Close()
 	{
+		SetCursorItem({}, 0, 0);
 		if (g_hud.doc && g_hud.doc->IsVisible()) { g_hud.doc->Hide(); Invalidate(); }
 		if (g_hud.active)
 		{
@@ -1043,6 +1045,16 @@ void TacticalHudUpdate()
 		SetRenderFlags(RENDER_FLAG_FULL);
 	}
 	g_hud.vm->Refresh();
+	// an item held by the mouse rides on the native pointer, at the integer scale of the inventory slots
+	if (gpItemPointer && gpItemPointer->usItem != NOTHING)
+	{
+		Pic const p = FitPic("nitem-" + std::to_string(gpItemPointer->usItem), 2, 128, 48);
+		SetCursorItem(p.src, p.w, p.h);
+	}
+	else
+	{
+		SetCursorItem({}, 0, 0);
+	}
 	std::string sig = Signature(*g_hud.vm);
 	if (sig != g_hud.signature)
 	{
@@ -1057,10 +1069,13 @@ void TacticalHudUpdate()
 			if (Rml::Element* list = g_hud.doc->GetElementById("tac.log.list")) list->SetScrollTop(list->GetScrollHeight());
 		}
 	}
-	// the bar is never lower than the legacy panel it hides
+	// the bar reaches up to the top of the legacy panel it hides: that panel is on the canvas, which the window
+	// scales and letterboxes, so its top is a canvas point in output pixels (not the panel height times the UI scale)
 	if (Rml::Element* bar = g_hud.doc->GetElementById("tac.bar"))
 	{
-		float const legacy = float((gsCurInterfacePanel == SM_PANEL ? INV_INTERFACE_HEIGHT : TEAMPANEL_HEIGHT) * g_ui.m_uiScale);
+		int const panelH = gsCurInterfacePanel == SM_PANEL ? INV_INTERFACE_HEIGHT : TEAMPANEL_HEIGHT;
+		float const panelTop = CanvasToOutput(0, float(SCREEN_HEIGHT - panelH)).y;
+		float const legacy = std::ceil(float(Context()->GetDimensions().y) - panelTop);
 		float const want = std::max(legacy, std::round(156 * DpScale()));
 		bar->SetProperty(Rml::PropertyId::Height, Rml::Property(want, Rml::Unit::PX));
 		// only as many cards as fit whole (a card is at least 236 dp wide); the rest wait for a wider view
@@ -1097,6 +1112,15 @@ bool TacticalHudWantsMouse()
 		if (e->IsClassSet("hit")) return true;
 	}
 	return false;
+}
+
+bool TacticalHudOwnsCursor()
+{
+	if (!g_hud.active) return false;
+	// over the HUD the legacy cursor is whatever the world last set (often none): the native pointer takes over
+	if (TacticalHudWantsMouse()) return true;
+	// a held item is a native picture on the pointer everywhere, so it does not change look between world and HUD
+	return gpItemPointer && gpItemPointer->usItem != NOTHING;
 }
 
 void TacticalHudShutdown() { Close(); }

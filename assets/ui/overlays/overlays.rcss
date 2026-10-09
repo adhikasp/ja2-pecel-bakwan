@@ -21,3 +21,6 @@ body.nui-overlays { position: absolute; left: 0; top: 0; right: 0; bottom: 0; po
 #nui-cursor img { position: absolute; left: 0; top: 0; width: 28dp; height: 28dp; }
 #nui-cursor .cursor-fill { image-color: var(--c-text-strong); }
 #nui-cursor .cursor-edge { image-color: var(--c-void); }
+/* an item held by the mouse rides below and right of the tip, under the arrow; the runtime sets its size in pixels */
+#nui-cursor #nui-cursor-item { display: none; left: 14dp; top: 16dp; width: auto; height: auto; opacity: 0.92; }
+#nui-cursor #nui-cursor-item.shown { display: block; }
