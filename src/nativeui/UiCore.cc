@@ -892,13 +892,28 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 			else if (r > 0.94f) Over(px, w, x, y, 150, 140, 120, 0.08f + (r - 0.94f) * 3.f);
 		}
 	}
-	else if (name == "doll")
+	else if (name == "doll" || name == "doll-big" || name == "doll-female")
 	{
 		// the paper doll behind the worn-gear slots: a merc in fatigues, front view, lit from the top left - short dark
 		// hair, tanned skin, a woodland-camouflage shirt and trousers, a webbing belt with a brass buckle, black boots.
 		// The body is a signed distance field of capsules and ellipses joined with a smooth minimum; its depth gives a
 		// rounded height field whose normal lights the figure, and the nearest body part picks the material.
 		size(240, 440, false);
+		// One skeleton, three builds (the original's normal male, large male and female inventory figures): the head,
+		// chest, belt, hands and knees stay where the leader lines point; widths, limb thickness and hair change.
+		struct Build
+		{
+			float headRx, headRy, neckR;
+			float shoulderL, shoulderR, shoulderRad;   // the shoulder line and its thickness
+			float chestHalf, chestRad, waistRad, waistTop, hipHalf, hipRad;
+			float armOut, upperArmRad, foreArmRad, handRx, handRy;
+			float thighX, thighRad, shinRad, bootRad;
+			bool bust, longHair;
+		};
+		static Build const regular { 23, 27, 14, 74, 166, 23, 17, 36, 32, 150, 14, 30, 0, 16, 13.5f, 11.5f, 16, 16, 20, 16.5f, 17.5f, false, false };
+		static Build const big     { 26, 29, 19, 60, 180, 30, 22, 44, 40, 150, 16, 35, 0, 21.5f, 18, 14, 18, 18, 25, 20.5f, 20.5f, false, false };
+		static Build const female  { 20, 25, 10.5f, 84, 156, 18, 13, 30, 22, 156, 19, 33, 4, 12, 10.5f, 9.5f, 13.5f, 19, 19.5f, 14, 15, true, true };
+		Build const& B = name == "doll-big" ? big : name == "doll-female" ? female : regular;
 		auto capsule = [](float px_, float py_, float ax, float ay, float bx, float by, float r) {
 			float const pax = px_ - ax, pay = py_ - ay, bax = bx - ax, bay = by - ay;
 			float const t = std::clamp((pax * bax + pay * bay) / (bax * bax + bay * bay), 0.f, 1.f);
@@ -913,29 +928,33 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 			float const hh = std::clamp(0.5f + 0.5f * (b - a) / k, 0.f, 1.f);
 			return b + (a - b) * hh - k * hh * (1.f - hh);
 		};
-		enum Mat { SKIN, SHIRT, TROUSERS, BOOTS };
+		enum Mat { SKIN, SHIRT, TROUSERS, BOOTS, HAIR };
 		struct Part { float d; Mat m; };
 		auto parts = [&](float fx, float fy, Part* p) {
 			int n = 0;
-			p[n++] = { ellipse(fx, fy, 120, 40, 23, 27), SKIN };                         // head
-			p[n++] = { ellipse(fx, fy, 120, 54, 17, 15), SKIN };                         // jaw
-			p[n++] = { std::min(ellipse(fx, fy, 96, 44, 4, 7), ellipse(fx, fy, 144, 44, 4, 7)), SKIN }; // ears
-			p[n++] = { capsule(fx, fy, 120, 62, 120, 86, 14), SKIN };                    // neck
-			p[n++] = { capsule(fx, fy, 74, 104, 166, 104, 23), SHIRT };                  // shoulders
-			p[n++] = { capsule(fx, fy, 103, 126, 137, 126, 36), SHIRT };                 // chest
-			p[n++] = { capsule(fx, fy, 120, 150, 120, 194, 32), SHIRT };                 // belly
-			p[n++] = { capsule(fx, fy, 66, 110, 57, 186, 16), SHIRT };                   // upper arms
-			p[n++] = { capsule(fx, fy, 174, 110, 183, 186, 16), SHIRT };
-			p[n++] = { capsule(fx, fy, 57, 186, 52, 246, 13.5f), SHIRT };                // forearms (sleeves)
-			p[n++] = { capsule(fx, fy, 183, 186, 188, 246, 13.5f), SHIRT };
-			p[n++] = { std::min(ellipse(fx, fy, 51, 264, 11.5f, 16), ellipse(fx, fy, 189, 264, 11.5f, 16)), SKIN }; // hands
-			p[n++] = { capsule(fx, fy, 106, 214, 134, 214, 30), TROUSERS };              // hips
-			p[n++] = { capsule(fx, fy, 104, 234, 101, 322, 20), TROUSERS };              // thighs
-			p[n++] = { capsule(fx, fy, 136, 234, 139, 322, 20), TROUSERS };
-			p[n++] = { capsule(fx, fy, 101, 322, 99, 382, 16.5f), TROUSERS };            // shins
-			p[n++] = { capsule(fx, fy, 139, 322, 141, 382, 16.5f), TROUSERS };
-			p[n++] = { std::min(capsule(fx, fy, 99, 384, 99, 404, 17.5f), ellipse(fx, fy, 96, 416, 19, 11)), BOOTS };
-			p[n++] = { std::min(capsule(fx, fy, 141, 384, 141, 404, 17.5f), ellipse(fx, fy, 144, 416, 19, 11)), BOOTS };
+			float const lA = B.shoulderL - 8 - B.armOut, rA = 240 - lA;                      // where the arms hang
+			p[n++] = { ellipse(fx, fy, 120, 40, B.headRx, B.headRy), SKIN };              // head
+			p[n++] = { ellipse(fx, fy, 120, 54, B.headRx * 0.74f, 15), SKIN };            // jaw
+			p[n++] = { std::min(ellipse(fx, fy, 120 - B.headRx - 1, 44, 4, 7), ellipse(fx, fy, 120 + B.headRx + 1, 44, 4, 7)), SKIN }; // ears
+			if (B.longHair)                                                               // hair down to the shoulders
+				p[n++] = { std::min(capsule(fx, fy, 101, 36, 99, 80, 9), capsule(fx, fy, 139, 36, 141, 80, 9)), HAIR };
+			p[n++] = { capsule(fx, fy, 120, 62, 120, 86, B.neckR), SKIN };                // neck
+			p[n++] = { capsule(fx, fy, B.shoulderL, 104, B.shoulderR, 104, B.shoulderRad), SHIRT }; // shoulders
+			p[n++] = { capsule(fx, fy, 120 - B.chestHalf, 126, 120 + B.chestHalf, 126, B.chestRad), SHIRT }; // chest
+			if (B.bust) p[n++] = { std::min(ellipse(fx, fy, 108, 132, 13, 11), ellipse(fx, fy, 132, 132, 13, 11)), SHIRT };
+			p[n++] = { capsule(fx, fy, 120, B.waistTop, 120, 194, B.waistRad), SHIRT };    // belly
+			p[n++] = { capsule(fx, fy, lA, 110, lA - 9, 186, B.upperArmRad), SHIRT };      // upper arms
+			p[n++] = { capsule(fx, fy, rA, 110, rA + 9, 186, B.upperArmRad), SHIRT };
+			p[n++] = { capsule(fx, fy, lA - 9, 186, lA - 14, 246, B.foreArmRad), SHIRT };  // forearms (sleeves)
+			p[n++] = { capsule(fx, fy, rA + 9, 186, rA + 14, 246, B.foreArmRad), SHIRT };
+			p[n++] = { std::min(ellipse(fx, fy, lA - 15, 264, B.handRx, B.handRy), ellipse(fx, fy, rA + 15, 264, B.handRx, B.handRy)), SKIN }; // hands
+			p[n++] = { capsule(fx, fy, 120 - B.hipHalf, 214, 120 + B.hipHalf, 214, B.hipRad), TROUSERS }; // hips
+			p[n++] = { capsule(fx, fy, 120 - B.thighX, 234, 101, 322, B.thighRad), TROUSERS };            // thighs
+			p[n++] = { capsule(fx, fy, 120 + B.thighX, 234, 139, 322, B.thighRad), TROUSERS };
+			p[n++] = { capsule(fx, fy, 101, 322, 99, 382, B.shinRad), TROUSERS };                         // shins
+			p[n++] = { capsule(fx, fy, 139, 322, 141, 382, B.shinRad), TROUSERS };
+			p[n++] = { std::min(capsule(fx, fy, 99, 384, 99, 404, B.bootRad), ellipse(fx, fy, 96, 416, B.bootRad + 1.5f, 11)), BOOTS };
+			p[n++] = { std::min(capsule(fx, fy, 141, 384, 141, 404, B.bootRad), ellipse(fx, fy, 144, 416, B.bootRad + 1.5f, 11)), BOOTS };
 			return n;
 		};
 		std::vector<float> height(size_t(w) * h), dist(size_t(w) * h);
@@ -988,6 +1007,7 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 				case SHIRT: r = 92; g = 96; b = 62; camo(x, y, r, g, b); break;
 				case TROUSERS: r = 104; g = 98; b = 66; camo(x + 61, y + 37, r, g, b); break;
 				case BOOTS: r = 30; g = 26; b = 22; shine = 0.18f; break;
+				case HAIR: r = 52; g = 38; b = 26; shine = 0.05f; break;
 			}
 			// a camouflage patrol cap over the top of the head, its brim casting a shadow on the brow; dark hair at the
 			// temples below it

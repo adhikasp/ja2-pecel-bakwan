@@ -84,7 +84,7 @@
 			     leader line to that part (the lines and the figure are decoration, not hit areas) -->
 			<div class="doll" id="tac.inv.body">
 				<div class="stage audit-skip"></div>
-				<img class="figure audit-skip" src="gen-doll"/>
+				<img class="figure audit-skip" data-attr-src="d_doll"/>
 				<div class="ld audit-skip l-hl"></div><div class="ld audit-skip l-ch"></div><div class="ld audit-skip l-wa"></div><div class="ld audit-skip l-kn"></div>
 				<div class="ld audit-skip r-hd"></div><div class="ld audit-skip r-f2a"></div><div class="ld audit-skip r-f2b"></div><div class="ld audit-skip r-f2c"></div>
 				<div class="ld audit-skip r-lba"></div><div class="ld audit-skip r-lbb"></div><div class="ld audit-skip r-lbc"></div><div class="ld audit-skip r-pk"></div>

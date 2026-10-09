@@ -54,7 +54,7 @@ stone wells, stencilled crates, typed dossiers. Field Kit adds those, still proc
 | **Depth on type** | letters cast onto metal | `font-effect` tokens: `--fx-emboss`, `--fx-deep`, `--fx-engrave` (drawn into the glyphs, so every render path has them) |
 | **Wear** | scratched, scuffed panels | `gen-mottle` now has finer blotches and tapered scratches; the big blotchy "camouflage" pattern is gone |
 | **Arulco red** | the flag, the blood-red "2" | `--c-blood`/`--c-blood-2`: enemy-side chrome and the main-menu subtitle. Chrome only — status still uses `--c-danger` |
-| **Paper doll** | the merc figure behind the inventory slots | `gen-doll`: a stencilled soldier silhouette behind the worn-gear slots (tactical detail panel) |
+| **Paper doll** | the merc figure behind the inventory slots, one per build | `gen-doll`, `gen-doll-big`, `gen-doll-female`: a merc in fatigues behind the worn-gear slots, picked from the body type (big and stocky men share the big build) |
 
 Rules: a surface that holds content is a plate or a frame; a surface that *contains* things (a list, a slot, a
 portrait) is a well. Screws only on frames that bound a screen region, never on small cards. Stencil type only for

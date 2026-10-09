@@ -215,7 +215,7 @@ TEST(UiSpike, TokensExpand)
 TEST(UiSpike, ProceduralTextures)
 {
 	for (char const* name : { "grain", "grain-light", "scan", "hatch", "grid", "topo", "topo-dark", "vignette", "rays", "dots", "silhouette",
-		"mottle", "leather", "brushed", "wood", "groove", "frame", "frame-plain", "well", "brackets", "hazard", "granite", "screw", "doll", "spot" })
+		"mottle", "leather", "brushed", "wood", "groove", "frame", "frame-plain", "well", "brackets", "hazard", "granite", "screw", "doll", "doll-big", "doll-female", "spot" })
 	{
 		int w = 0, h = 0;
 		bool repeat = false;

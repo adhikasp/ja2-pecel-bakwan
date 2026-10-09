@@ -289,7 +289,7 @@ namespace
 		// detail panel
 		bool detail = false;
 		bool dMute = false;
-		std::string dName, dFull, dFace, dVitHp, dEn, dMo, dMoney, dKeys, dWeight, dCamo, dArmour;
+		std::string dDoll = "gen-doll", dName, dFull, dFace, dVitHp, dEn, dMo, dMoney, dKeys, dWeight, dCamo, dArmour;
 		int dFw = 0, dFh = 0, dHpw = 0, dLostw = 0, dEnw = 0, dMow = 0, dWeightw = 0, dCamow = 0, dArmourw = 0;
 		bool dHeavy = false;
 		std::vector<AttrRow> attrs;
@@ -410,7 +410,7 @@ namespace
 			f.Rows("overlays", overlays);
 			f.Field("detail", detail);
 			f.Field("d_mute", dMute);
-			f.Field("d_name", dName); f.Field("d_full", dFull); f.Field("d_face", dFace); f.Field("d_fw", dFw); f.Field("d_fh", dFh);
+			f.Field("d_doll", dDoll); f.Field("d_name", dName); f.Field("d_full", dFull); f.Field("d_face", dFace); f.Field("d_fw", dFw); f.Field("d_fh", dFh);
 			f.Field("d_hp", dVitHp); f.Field("d_en", dEn); f.Field("d_mo", dMo);
 			f.Field("d_hpw", dHpw); f.Field("d_lostw", dLostw); f.Field("d_enw", dEnw); f.Field("d_mow", dMow);
 			f.Field("d_money", dMoney); f.Field("d_keys", dKeys); f.Field("d_weight", dWeight); f.Field("d_camo", dCamo); f.Field("d_armour", dArmour);
@@ -728,6 +728,9 @@ namespace
 			if (!detail) return;
 			SOLDIERTYPE const& s = *gpSMCurrentMerc;
 			dName = S(s.name);
+			// the paper doll's build, as the original's three inventory figures: big and stocky men share the large one
+			dDoll = s.ubBodyType == REGFEMALE ? "gen-doll-female"
+				: s.ubBodyType == BIGMALE || s.ubBodyType == STOCKYMALE ? "gen-doll-big" : "gen-doll";
 			dMute = (s.uiStatusFlags & SOLDIER_MUTE) != 0;
 			std::string full = s.ubProfile != NO_PROFILE ? S(GetProfile(s.ubProfile).zName) : dName;
 			dFull = full;
