@@ -248,7 +248,7 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .doll { display: block; position: relative; flex: 0 0 380dp; width: 380dp; height: 360dp; margin-right: var(--sp-4); }
 .doll .stage {
 	position: absolute; left: 76dp; right: 76dp; top: 0; bottom: 0;
-	background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 8dp), image(gen-spot), image(gen-granite repeat);
+	background-color: #2A2216; decorator: ninepatch(fk-well-o, fk-well-i, 8dp), image(gen-spot), image(gen-mottle repeat);
 }
 .doll .figure { position: absolute; left: 92dp; top: 0; width: 196dp; height: 360dp; }
 .doll .slot { position: absolute; }

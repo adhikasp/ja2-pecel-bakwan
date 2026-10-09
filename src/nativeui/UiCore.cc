@@ -894,10 +894,10 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 	}
 	else if (name == "doll")
 	{
-		// the paper doll behind the worn-gear slots: a clay mannequin in front view, lit from the top left. The body is a
-		// signed distance field of capsules and ellipses joined with a smooth minimum; the depth inside it is shaped into
-		// a rounded height field, and its normal lights the figure (ambient + diffuse + a little specular), so it reads
-		// as a sculpted figure in the recess rather than an outline.
+		// the paper doll behind the worn-gear slots: a merc in fatigues, front view, lit from the top left - short dark
+		// hair, tanned skin, a woodland-camouflage shirt and trousers, a webbing belt with a brass buckle, black boots.
+		// The body is a signed distance field of capsules and ellipses joined with a smooth minimum; its depth gives a
+		// rounded height field whose normal lights the figure, and the nearest body part picks the material.
 		size(240, 440, false);
 		auto capsule = [](float px_, float py_, float ax, float ay, float bx, float by, float r) {
 			float const pax = px_ - ax, pay = py_ - ay, bax = bx - ax, bay = by - ay;
@@ -913,63 +913,121 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 			float const hh = std::clamp(0.5f + 0.5f * (b - a) / k, 0.f, 1.f);
 			return b + (a - b) * hh - k * hh * (1.f - hh);
 		};
-		auto body = [&](float fx, float fy) {
-			float d = ellipse(fx, fy, 120, 42, 22, 27);                                         // head
-			d = smin(d, ellipse(fx, fy, 120, 58, 16, 14), 6);                                   // jaw
-			d = smin(d, capsule(fx, fy, 120, 64, 120, 92, 13), 6);                              // neck
-			d = smin(d, capsule(fx, fy, 76, 104, 164, 104, 21), 10);                            // shoulders
-			d = smin(d, capsule(fx, fy, 104, 128, 136, 128, 34), 12);                           // chest
-			d = smin(d, capsule(fx, fy, 120, 150, 120, 196, 30), 10);                           // waist
-			d = smin(d, capsule(fx, fy, 108, 212, 132, 212, 28), 8);                            // hips
-			d = smin(d, capsule(fx, fy, 70, 112, 58, 190, 13), 6);                              // upper arms
-			d = smin(d, capsule(fx, fy, 170, 112, 182, 190, 13), 6);
-			d = smin(d, capsule(fx, fy, 58, 190, 50, 256, 10.5f), 5);                           // forearms
-			d = smin(d, capsule(fx, fy, 182, 190, 190, 256, 10.5f), 5);
-			d = smin(d, ellipse(fx, fy, 48, 272, 10, 15), 4);                                   // hands
-			d = smin(d, ellipse(fx, fy, 192, 272, 10, 15), 4);
-			d = smin(d, capsule(fx, fy, 104, 236, 100, 322, 18), 8);                            // thighs
-			d = smin(d, capsule(fx, fy, 136, 236, 140, 322, 18), 8);
-			d = smin(d, capsule(fx, fy, 100, 330, 98, 398, 13), 6);                             // shins
-			d = smin(d, capsule(fx, fy, 140, 330, 142, 398, 13), 6);
-			d = smin(d, capsule(fx, fy, 92, 414, 106, 414, 11), 4);                             // feet
-			d = smin(d, capsule(fx, fy, 134, 414, 148, 414, 11), 4);
-			return d;
+		enum Mat { SKIN, SHIRT, TROUSERS, BOOTS };
+		struct Part { float d; Mat m; };
+		auto parts = [&](float fx, float fy, Part* p) {
+			int n = 0;
+			p[n++] = { ellipse(fx, fy, 120, 40, 23, 27), SKIN };                         // head
+			p[n++] = { ellipse(fx, fy, 120, 54, 17, 15), SKIN };                         // jaw
+			p[n++] = { std::min(ellipse(fx, fy, 96, 44, 4, 7), ellipse(fx, fy, 144, 44, 4, 7)), SKIN }; // ears
+			p[n++] = { capsule(fx, fy, 120, 62, 120, 86, 14), SKIN };                    // neck
+			p[n++] = { capsule(fx, fy, 74, 104, 166, 104, 23), SHIRT };                  // shoulders
+			p[n++] = { capsule(fx, fy, 103, 126, 137, 126, 36), SHIRT };                 // chest
+			p[n++] = { capsule(fx, fy, 120, 150, 120, 194, 32), SHIRT };                 // belly
+			p[n++] = { capsule(fx, fy, 66, 110, 57, 186, 16), SHIRT };                   // upper arms
+			p[n++] = { capsule(fx, fy, 174, 110, 183, 186, 16), SHIRT };
+			p[n++] = { capsule(fx, fy, 57, 186, 52, 246, 13.5f), SHIRT };                // forearms (sleeves)
+			p[n++] = { capsule(fx, fy, 183, 186, 188, 246, 13.5f), SHIRT };
+			p[n++] = { std::min(ellipse(fx, fy, 51, 264, 11.5f, 16), ellipse(fx, fy, 189, 264, 11.5f, 16)), SKIN }; // hands
+			p[n++] = { capsule(fx, fy, 106, 214, 134, 214, 30), TROUSERS };              // hips
+			p[n++] = { capsule(fx, fy, 104, 234, 101, 322, 20), TROUSERS };              // thighs
+			p[n++] = { capsule(fx, fy, 136, 234, 139, 322, 20), TROUSERS };
+			p[n++] = { capsule(fx, fy, 101, 322, 99, 382, 16.5f), TROUSERS };            // shins
+			p[n++] = { capsule(fx, fy, 139, 322, 141, 382, 16.5f), TROUSERS };
+			p[n++] = { std::min(capsule(fx, fy, 99, 384, 99, 404, 17.5f), ellipse(fx, fy, 96, 416, 19, 11)), BOOTS };
+			p[n++] = { std::min(capsule(fx, fy, 141, 384, 141, 404, 17.5f), ellipse(fx, fy, 144, 416, 19, 11)), BOOTS };
+			return n;
 		};
 		std::vector<float> height(size_t(w) * h), dist(size_t(w) * h);
+		std::vector<unsigned char> mat(size_t(w) * h);
+		Part p[24];
 		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
 		{
-			float const d = body(x + 0.5f, y + 0.5f);
+			int const n = parts(x + 0.5f, y + 0.5f, p);
+			float d = p[0].d;
+			int best = 0;
+			for (int i = 1; i < n; ++i)
+			{
+				d = smin(d, p[i].d, 7);
+				if (p[i].d < p[best].d) best = i;
+			}
 			dist[size_t(y) * w + x] = d;
+			mat[size_t(y) * w + x] = (unsigned char)p[best].m;
 			float const t = std::clamp(-d / 16.f, 0.f, 1.f);
-			height[size_t(y) * w + x] = std::sqrt(1.f - (1.f - t) * (1.f - t)) * 16.f; // a rounded profile
+			height[size_t(y) * w + x] = std::sqrt(1.f - (1.f - t) * (1.f - t)) * 16.f;
 		}
 		auto H = [&](int x, int y) { return height[size_t(std::clamp(y, 0, h - 1)) * w + std::clamp(x, 0, w - 1)]; };
-		float const lx = -0.55f, ly = -0.65f, lz = 0.52f; // light from the top left, in front
+		// woodland camouflage: three blob layers over the base cloth
+		auto camo = [&](int x, int y, float& r, float& g, float& b) {
+			// soft-edged blobs, blended over the base so the pattern reads as cloth at a distance, not as pixels
+			auto blob = [](float v, float at) { float const t = std::clamp((v - at) / 0.06f, 0.f, 1.f); return t * t * (3 - 2 * t) * 0.8f; };
+			auto mix = [&](float k, float cr, float cg, float cb) { r += (cr - r) * k; g += (cg - g) * k; b += (cb - b) * k; };
+			mix(blob(ValueNoise(x / 10.f, y / 7.f, 1 << 16, 701), 0.6f), 66, 56, 38);   // brown
+			mix(blob(ValueNoise(x / 7.f, y / 10.f, 1 << 16, 709), 0.62f), 52, 62, 40);  // dark green
+			mix(blob(ValueNoise(x / 5.f, y / 6.f, 1 << 16, 719), 0.76f), 36, 34, 26);   // black
+		};
+		float const lx = -0.55f, ly = -0.62f, lz = 0.56f; // a warm key light from the top left, in front
 		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
 		{
 			float const d = dist[size_t(y) * w + x];
 			float const cover = std::clamp(0.5f - d, 0.f, 1.f);
-			// a soft contact shadow under the feet
-			float const sx = (x - 120) / 70.f, sy = (y - 428) / 9.f;
-			float const ground = std::clamp(1.f - (sx * sx + sy * sy), 0.f, 1.f) * 0.55f;
+			float const sx = (x - 120) / 74.f, sy = (y - 428) / 9.f;                       // contact shadow
+			float const ground = std::clamp(1.f - (sx * sx + sy * sy), 0.f, 1.f) * 0.6f;
 			if (cover <= 0) { if (ground > 0) Put(px, w, x, y, 0, 0, 0, ground); continue; }
 			float nx = -(H(x + 1, y) - H(x - 1, y)), ny = -(H(x, y + 1) - H(x, y - 1)), nz = 2.f;
 			float const len = std::sqrt(nx * nx + ny * ny + nz * nz);
 			nx /= len; ny /= len; nz /= len;
 			float const diffuse = std::max(0.f, nx * lx + ny * ly + nz * lz);
-			float const spec = std::pow(std::max(0.f, nz * 0.9f + (nx * lx + ny * ly) * 0.45f), 24.f) * 0.25f;
-			float occl = std::clamp(-d / 6.f, 0.35f, 1.f);                                       // darker in the creases
-			// sculpted grooves: the chest line, the centre line of the belly, the belt line
-			auto groove = [](float v, float w) { return 1.f - 0.22f * std::clamp(1.f - std::abs(v) / w, 0.f, 1.f); };
-			float const fxc = x + 0.5f, fyc = y + 0.5f;
-			if (fyc > 140 && fyc < 160) occl *= groove(fyc - (146 + std::abs(fxc - 120) * -0.12f), 2.2f) * 1.f;
-			if (fyc > 158 && fyc < 204) occl *= groove(fxc - 120, 1.6f);
-			if (std::abs(fxc - 120) < 40) occl *= groove(fyc - 206, 2.f);
-			float const grain = (Rand01(x, y, 613) - 0.5f) * 0.05f;
-			float const lum = std::clamp((0.18f + diffuse * 0.78f) * occl + spec + grain, 0.f, 1.2f);
-			// warm putty-grey clay
-			Put(px, w, x, y, int(std::clamp(lum * 196, 0.f, 255.f)), int(std::clamp(lum * 184, 0.f, 255.f)),
-				int(std::clamp(lum * 160, 0.f, 255.f)), cover);
+			float const occl = std::clamp(-d / 5.f, 0.45f, 1.f);
+			float const fx = x + 0.5f, fy = y + 0.5f;
+			Mat m = Mat(mat[size_t(y) * w + x]);
+			float r = 0, g = 0, b = 0, shine = 0;
+			switch (m)
+			{
+				case SKIN: r = 186; g = 138; b = 102; shine = 0.10f; break;
+				case SHIRT: r = 92; g = 96; b = 62; camo(x, y, r, g, b); break;
+				case TROUSERS: r = 104; g = 98; b = 66; camo(x + 61, y + 37, r, g, b); break;
+				case BOOTS: r = 30; g = 26; b = 22; shine = 0.18f; break;
+			}
+			// a camouflage patrol cap over the top of the head, its brim casting a shadow on the brow; dark hair at the
+			// temples below it
+			bool const head = fy < 64 && std::abs(fx - 120) < 30;
+			bool const cap = head && m == SKIN && fy < 27.f + std::pow((fx - 120) / 24.f, 2.f) * 4.f;
+			if (cap) { r = 92; g = 96; b = 62; camo(x + 13, y + 7, r, g, b); shine = 0.f; if (fy > 22) { r *= 0.7f; g *= 0.7f; b *= 0.7f; } }
+			else if (head && m == SKIN && std::abs(fx - 120) > 17 && fy < 46) { r = 46; g = 36; b = 28; }
+			else if (head && m == SKIN && fy < 34) { r *= 0.72f; g *= 0.70f; b *= 0.70f; }
+			// a beard shadow along the jaw and the shaded eyes, kept soft so the face stays calm
+			if (head && m == SKIN && fy > 50 && fy < 66) { r *= 0.86f; g *= 0.84f; b *= 0.84f; }
+			if (head && m == SKIN)
+			{
+				// soft eye sockets and a shaded line under the nose, so the face reads without staring
+				float const ex = (std::abs(fx - 120) - 9) / 6.f, ey = (fy - 40) / 3.5f;
+				float const eye = std::clamp(1.f - (ex * ex + ey * ey), 0.f, 1.f) * 0.38f;
+				float const nose = std::clamp(1.f - std::abs(fx - 120) / 3.f, 0.f, 1.f) * std::clamp(1.f - std::abs(fy - 50) / 1.5f, 0.f, 1.f) * 0.15f;
+				r *= 1.f - eye - nose; g *= 1.f - eye - nose; b *= 1.f - eye - nose;
+			}
+			// the collar: a darker V at the neck of the shirt
+			if (m == SHIRT && fy < 104 && std::abs(fx - 120) < (104 - fy) * 0.55f + 2) { r *= 0.62f; g *= 0.62f; b *= 0.62f; }
+			// chest pockets with flaps, a cargo pocket on each thigh
+			auto rect = [&](float x0, float y0, float x1, float y1) { return fx > x0 && fx < x1 && fy > y0 && fy < y1; };
+			auto edge = [&](float x0, float y0, float x1, float y1) {
+				return rect(x0, y0, x1, y1) && !rect(x0 + 1.4f, y0 + 1.4f, x1 - 1.4f, y1 - 1.4f);
+			};
+			if (m == SHIRT && (edge(93, 116, 113, 140) || edge(127, 116, 147, 140) || edge(93, 116, 113, 123) || edge(127, 116, 147, 123)))
+			{ r *= 0.55f; g *= 0.55f; b *= 0.55f; }
+			if (m == TROUSERS && (edge(80, 262, 99, 292) || edge(141, 262, 160, 292))) { r *= 0.55f; g *= 0.55f; b *= 0.55f; }
+			// the webbing belt and its brass buckle
+			if ((m == SHIRT || m == TROUSERS) && fy > 199 && fy < 211)
+			{
+				r = 66; g = 56; b = 36; shine = 0.06f;
+				if (std::abs(fx - 120) < 8) { r = 182; g = 150; b = 82; shine = 0.3f; }
+			}
+			// cloth folds: soft vertical creases on the trousers
+			if (m == TROUSERS && fy > 230) { float const f = 0.93f + 0.07f * std::sin(fx * 0.55f + fy * 0.04f); r *= f; g *= f; b *= f; }
+			float const spec = std::pow(std::max(0.f, nz * 0.9f + (nx * lx + ny * ly) * 0.45f), 20.f) * shine;
+			float const lum = (0.30f + diffuse * 0.85f) * occl;
+			auto ch = [&](float c, float warm) { return int(std::clamp(c * lum * warm + spec * 255.f, 0.f, 255.f)); };
+			Put(px, w, x, y, ch(r, 1.08f), ch(g, 1.0f), ch(b, 0.9f), cover);
 		}
 	}
 	else if (name == "spot")
