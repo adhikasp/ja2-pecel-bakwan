@@ -101,6 +101,9 @@ namespace
 		SDL_Rect area{ 0, 0, 0, 0 };
 		VideoOutputMapping map{ 1, 1, 0, 0, 0, 0, false };
 		float mouseX = -1, mouseY = -1; // output pixels
+		std::string cursorItem;         // the item picture the pointer carries (SetCursorItem)
+		int cursorItemW = 0, cursorItemH = 0;
+		bool cursorItemDirty = false;
 
 		// screen routing
 		ScreenID                routedScreen = ERROR_SCREEN;
@@ -459,6 +462,23 @@ std::string Escape(std::string const& text)
 
 Rml::Vector2f MousePosition() { return { g_rt.mouseX, g_rt.mouseY }; }
 
+Rml::Vector2f CanvasToOutput(float const x, float const y)
+{
+	return { x * g_rt.map.sx + g_rt.map.ox, y * g_rt.map.sy + g_rt.map.oy };
+}
+
+float CanvasScale() { return g_rt.map.sy; }
+
+void SetCursorItem(std::string const& src, int const w, int const h)
+{
+	if (src == g_rt.cursorItem && w == g_rt.cursorItemW && h == g_rt.cursorItemH) return;
+	g_rt.cursorItem = src;
+	g_rt.cursorItemW = w;
+	g_rt.cursorItemH = h;
+	g_rt.cursorItemDirty = true;
+	Invalidate(2);
+}
+
 void Runtime::Sync()
 {
 	int nw = 0, nh = 0;
@@ -502,6 +522,7 @@ bool Runtime::NativeCursorShown() const
 	if (msgbox && msgbox->IsVisible()) return true;
 	if (WeaponReadoutActive()) return true;
 	if (LoadoutActive()) return true;
+	if (TacticalHudOwnsCursor()) return true;
 	return ConfiguredMode("cursor") == UiMode::Native && GetCurrentCursorIndex() == CURSOR_NORMAL;
 }
 
@@ -522,6 +543,20 @@ void Runtime::UpdateOverlays()
 		{
 			c->SetProperty(Rml::PropertyId::Left, Rml::Property(std::floor(mouseX), Rml::Unit::PX));
 			c->SetProperty(Rml::PropertyId::Top, Rml::Property(std::floor(mouseY), Rml::Unit::PX));
+		}
+		if (cursorItemDirty)
+		{
+			cursorItemDirty = false;
+			if (Rml::Element* item = overlays->GetElementById("nui-cursor-item"))
+			{
+				item->SetClass("shown", !cursorItem.empty());
+				if (!cursorItem.empty())
+				{
+					item->SetAttribute("src", cursorItem);
+					item->SetProperty(Rml::PropertyId::Width, Rml::Property(float(cursorItemW), Rml::Unit::PX));
+					item->SetProperty(Rml::PropertyId::Height, Rml::Property(float(cursorItemH), Rml::Unit::PX));
+				}
+			}
 		}
 	}
 	// the overlay document stays above everything else

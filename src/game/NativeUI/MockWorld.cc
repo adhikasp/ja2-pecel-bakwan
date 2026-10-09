@@ -207,9 +207,9 @@ void PrepareMockDocument(Rml::ElementDocument* const doc)
 			if (!found) { e->SetProperty(Rml::PropertyId::Display, Rml::Property(Rml::Style::Display::None)); continue; }
 			INT16 x, y;
 			GetSoldierAboveGuyPositions(found, &x, &y, FALSE);
-			float const su = float(g_ui.m_uiScale);
-			float const cx = (x + 40) * su + e->GetAttribute<float>("data-dx", 0.0f) * dp;
-			float const top = y * su + e->GetAttribute<float>("data-dy", 0.0f) * dp;
+			Rml::Vector2f const at = CanvasToOutput(float(x + 40), float(y));
+			float const cx = at.x + e->GetAttribute<float>("data-dx", 0.0f) * dp;
+			float const top = at.y + e->GetAttribute<float>("data-dy", 0.0f) * dp;
 			bool const left = e->GetAttribute<Rml::String>("data-align", "") == "left";
 			float const w = e->GetOffsetWidth();
 			e->SetProperty(Rml::PropertyId::Left, Rml::Property(std::round(left ? cx : cx - w / 2), Rml::Unit::PX));

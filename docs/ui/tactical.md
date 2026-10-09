@@ -146,6 +146,12 @@ turn bar). Every native control acts through the legacy code, so the rules canno
   (`NativeMenuClick`, `NativePickupClick`, `NativePickupOK`, …) while the legacy drawing of those menus is off.
 The detail panel is open exactly when the legacy single-merc panel is (`, double click on a card).
 
+The native UI draws in output pixels, and the window scales and letterboxes the game's canvas: everything anchored to
+the world (names over the mercs, the action, door and pick-up menus) and the bar's height over the legacy panel go
+through `CanvasToOutput` / `CanvasScale` (NativeUI.cc), never the UI scale. The native pointer is the cursor over the
+HUD, and an item held by the mouse is a native picture on the pointer everywhere in tactical (`TacticalHudOwnsCursor`),
+so it looks the same over the world and over the inventory.
+
 | Done | Rows |
 |---|---|
 | Squad bar: cards (face, HP/lost, EN, MO, AP in combat, status icons, stance, hand item and ammo), squad tabs, select, details | I1–I7, A1–A2 |
