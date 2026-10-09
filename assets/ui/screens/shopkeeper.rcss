@@ -13,10 +13,8 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .sk-frame {
 	display: flex; flex-direction: column;
 	width: 98%; height: 96%; margin: auto;
-	padding: var(--sp-3); box-sizing: border-box;
-	background-color: var(--e1-bg); decorator: image(gen-mottle repeat);
-	border: var(--border) var(--e1-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
-	border-radius: var(--r-2);
+	padding: 28dp; box-sizing: border-box;
+	background-color: var(--e1-bg); decorator: ninepatch(fk-frame-o, fk-frame-i, 20dp), image(gen-mottle repeat);
 }
 
 /* ---------------------------------------------------------------- the trade screen */
@@ -33,7 +31,7 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .sk-face { width: 72dp; height: 82dp; margin-right: var(--sp-3); border: var(--border) var(--c-line-2); background-color: var(--c-inset); }
 .sk-face.sm { width: 40dp; height: 46dp; margin: 0 var(--sp-2) 0 0; }
 .sk-who { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
-.sk-who .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-text-strong); }
+.sk-who .t { display: block; font-family: var(--font-stencil); font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-select); font-effect: var(--fx-deep); }
 .sk-who .s { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
 
 .sk-pagebar { display: flex; align-items: center; margin-top: var(--sp-2); padding: var(--sp-1) var(--sp-2); background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1); }
@@ -42,8 +40,8 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .sk-pagebar .icon-btn { width: 28dp; height: 28dp; }
 
 .sk-totals { display: flex; flex-direction: column; flex: 1 1 auto; gap: var(--sp-2); margin-top: var(--sp-3); min-height: 0; }
-.sk-box { display: flex; flex-direction: column; padding: var(--sp-2); background-color: var(--c-inset); border: var(--border) var(--c-inset-line); border-radius: var(--r-1); }
-.sk-box .k { display: block; font-family: var(--font-display); font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.sk-box { display: flex; flex-direction: column; padding: 10dp 12dp; background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 6dp), image(gen-granite repeat); }
+.sk-box .k { display: block; font-family: var(--font-plate); font-weight: 700; letter-spacing: 1dp; font-size: var(--fs-2xs); text-transform: uppercase; color: var(--c-accent); font-effect: var(--fx-emboss); }
 .sk-box .v { display: block; font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-accent); }
 
 .sk-acts { display: flex; flex-direction: column; gap: var(--sp-2); margin-top: var(--sp-3); }
@@ -52,7 +50,7 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 /* ---- main column: stock, the two offer areas ---- */
 .sk-main { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; min-height: 0; padding-left: var(--sp-3); }
 .sk-title { display: flex; align-items: baseline; flex: 0 0 auto; margin-top: var(--sp-2); padding-bottom: 2dp; border-bottom: var(--border) var(--c-line); }
-.sk-title .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); }
+.sk-title .t { display: block; font-family: var(--font-stencil); font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-accent); font-effect: var(--fx-deep); }
 .sk-title .tot { display: block; margin-left: auto; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
 .sk-title .tot b { display: inline-block; margin-left: var(--sp-1); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-accent); }
 
@@ -68,11 +66,12 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .sk-cell {
 	display: flex; flex-direction: column; position: relative;
 	padding: var(--sp-1); box-sizing: border-box;
-	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1);
+	background-color: #4A3F2A; decorator: ninepatch(fk-well-o, fk-well-i, 6dp), image(gen-mottle repeat);
+	border: var(--border) #00000000; border-radius: var(--r-0);
 	cursor: pointer; transition: border-color var(--t-fast) var(--ease);
 }
 .sk-cell:hover { border-color: var(--c-select); background-color: var(--c-panel-3); }
-.sk-cell.selected { border-color: var(--c-warn); }
+.sk-cell.selected { decorator: ninepatch(fk-br-o, fk-br-i, 10dp), ninepatch(fk-well-o, fk-well-i, 6dp), image(gen-mottle repeat); }
 .sk-cell.repaired { border-color: var(--c-ok); }
 .sk-cell.is-empty { border-color: var(--c-line); background-color: var(--c-bg); cursor: default; }
 .sk-art { display: flex; align-items: center; justify-content: center; height: 30dp; margin-bottom: 1dp; }
@@ -103,7 +102,7 @@ body.sk { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .sk-detail-art img { max-width: 100%; max-height: 100%; }
 .sk-detail-main { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
 .sk-detail-head { display: flex; align-items: baseline; }
-.sk-detail-head .n { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); margin-right: var(--sp-3); }
+.sk-detail-head .n { display: block; font-family: var(--font-stencil); font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); margin-right: var(--sp-3); font-effect: var(--fx-deep); }
 .sk-detail-head .c { display: block; font-family: var(--font-mono); font-size: var(--fs-sm); }
 .sk-detail-head .c.ok { color: var(--c-ok); }
 .sk-detail-head .c.warn { color: var(--c-warn); }

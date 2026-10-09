@@ -38,6 +38,28 @@ system reproduces it procedurally (no game art in the repository):
 
 Status colours stay Okabe-Ito and colour-blind safe (the chrome may be nostalgic; accessibility is not).
 
+### Field Kit: thickness, lettering and objects
+
+Field Manual had the right colours but read flat: every edge was a 1dp line, every heading the same condensed sans,
+and nothing on screen was an *object*. The original's charm is that its UI is made of things — screwed-down plates,
+stone wells, stencilled crates, typed dossiers. Field Kit adds those, still procedurally and with no game art:
+
+| Element | The original | Field Kit |
+|---|---|---|
+| **Moulded frame** | 8–10 px frames at 640x480: outline, lit bevel, worn face with a carved seam, a screw in each corner | `fk-frame` nine-patch (`gen-frame`, drawn at 16–20dp): panels, modals, page bars, the squad bar |
+| **Plate** | the thinner moulding of buttons and cards | `fk-plate` nine-patch (`gen-frame-plain`, 8dp): cards, menus, tooltips, dropdowns, map boxes |
+| **Well** | the black speckled stone in the options and load-screen recesses | `fk-well` nine-patch (`gen-well`) over `gen-granite`: lists, attribute and force wells, empty squad slots |
+| **Selection** | the gold corner brackets around the selected merc | `fk-br` targeting brackets (`gen-brackets`) on the selected card, option, tab or slot |
+| **Lettering** | the stencilled logo and crates, embossed plate labels, typed AIM files | `--font-stencil` Black Ops One (titles, names, sector codes), `--font-plate` Chakra Petch (buttons, tabs, section plates), `--font-type` Special Elite (kickers, bios, descriptions, tips — never data) |
+| **Depth on type** | letters cast onto metal | `font-effect` tokens: `--fx-emboss`, `--fx-deep`, `--fx-engrave` (drawn into the glyphs, so every render path has them) |
+| **Wear** | scratched, scuffed panels | `gen-mottle` now has finer blotches and tapered scratches; the big blotchy "camouflage" pattern is gone |
+| **Arulco red** | the flag, the blood-red "2" | `--c-blood`/`--c-blood-2`: enemy-side chrome and the main-menu subtitle. Chrome only — status still uses `--c-danger` |
+| **Paper doll** | the merc figure behind the inventory slots, one per build | `gen-doll`, `gen-doll-big`, `gen-doll-female`: a merc in fatigues behind the worn-gear slots, picked from the body type (big and stocky men share the big build) |
+
+Rules: a surface that holds content is a plate or a frame; a surface that *contains* things (a list, a slot, a
+portrait) is a well. Screws only on frames that bound a screen region, never on small cards. Stencil type only for
+names and titles, at 20dp or more; data stays in Share Tech Mono.
+
 
 ## Seeing it
 

@@ -570,6 +570,11 @@ void LoadUiFonts()
 		{ "barlowcondensed/BarlowCondensed-SemiBold.ttf", "Barlow Condensed", W(600),    false, true },
 		{ "barlowcondensed/BarlowCondensed-Bold.ttf",     "Barlow Condensed", W::Bold,   false, true },
 		{ "sharetechmono/ShareTechMono-Regular.ttf",      "Share Tech Mono",  W::Normal, false, true },
+		// Field Kit voices: stencilled crate lettering, embossed plate lettering, typed dossier
+		{ "blackopsone/BlackOpsOne-Regular.ttf",          "Black Ops One",    W::Normal, false, true },
+		{ "chakrapetch/ChakraPetch-SemiBold.ttf",         "Chakra Petch",     W(600),    false, true },
+		{ "chakrapetch/ChakraPetch-Bold.ttf",             "Chakra Petch",     W::Bold,   false, true },
+		{ "specialelite/SpecialElite-Regular.ttf",        "Special Elite",    W::Normal, false, true },
 		// fallbacks, in order: glyphs the faces above lack (Polish, Russian, ...) and Chinese
 		{ "firasans/FiraSans-Regular.ttf",                "Fira Sans",        W::Normal, true,  true },
 		{ "firasans/FiraSans-SemiBold.ttf",               "Fira Sans",        W(600),    false, true },
@@ -632,6 +637,54 @@ void Put(std::vector<unsigned char>& px, int w, int x, int y, int r, int g, int 
 	px[i] = (unsigned char)r; px[i + 1] = (unsigned char)g; px[i + 2] = (unsigned char)b;
 	px[i + 3] = (unsigned char)std::clamp(int(a * 255.f + 0.5f), 0, 255);
 }
+
+/** Composites a colour over the pixel (straight alpha, "over"). */
+void Over(std::vector<unsigned char>& px, int w, int x, int y, float r, float g, float b, float a)
+{
+	if (a <= 0) return;
+	a = std::min(a, 1.f);
+	size_t const i = (size_t(y) * w + x) * 4;
+	float const da = px[i + 3] / 255.f, oa = a + da * (1 - a);
+	auto const mix = [&](float s, unsigned char d) {
+		return (unsigned char)std::clamp(int((s * a + d * da * (1 - a)) / oa + 0.5f), 0, 255);
+	};
+	px[i] = mix(r, px[i]); px[i + 1] = mix(g, px[i + 1]); px[i + 2] = mix(b, px[i + 2]);
+	px[i + 3] = (unsigned char)std::clamp(int(oa * 255.f + 0.5f), 0, 255);
+}
+
+float Lerp(float a, float b, float t) { return a + (b - a) * t; }
+
+/** A slotted screw head (the corner screws of every JA2 panel): a domed steel-brass head lit from the top left,
+ * its own drop shadow, a dark rim and the slot at the given angle. */
+void Screw(std::vector<unsigned char>& px, int w, int h, float cx, float cy, float r, float angle)
+{
+	float const sx = std::cos(angle), sy = std::sin(angle);
+	for (int y = std::max(0, int(cy - r - 3)); y < std::min(h, int(cy + r + 4)); ++y)
+		for (int x = std::max(0, int(cx - r - 3)); x < std::min(w, int(cx + r + 4)); ++x)
+		{
+			float const dx = x + 0.5f - cx, dy = y + 0.5f - cy, d = std::sqrt(dx * dx + dy * dy);
+			float const sd = std::sqrt((dx - 1.2f) * (dx - 1.2f) + (dy - 1.5f) * (dy - 1.5f));
+			Over(px, w, x, y, 4, 3, 2, 0.6f * std::clamp(r + 1.2f - sd, 0.f, 1.f)); // drop shadow
+			float const cov = std::clamp(r + 0.5f - d, 0.f, 1.f);
+			if (cov <= 0) continue;
+			float const lit = std::clamp(0.5f - 0.5f * (dx + dy) / (r * 1.2f), 0.f, 1.f); // dome, light top left
+			float cr = Lerp(52, 214, lit), cg = Lerp(42, 190, lit), cb = Lerp(28, 136, lit);
+			if (d > r - 1.4f) { cr *= 0.45f; cg *= 0.45f; cb *= 0.45f; }               // rim
+			float const across = dx * sy - dy * sx;                                       // signed distance to the slot
+			if (std::abs(across) < 1.0f && d < r - 1.2f) { cr = 16; cg = 11; cb = 6; }
+			else if (across > 0.9f && across < 1.9f && d < r - 1.4f) { cr = std::min(255.f, cr * 1.35f); cg = std::min(255.f, cg * 1.35f); cb = std::min(255.f, cb * 1.3f); }
+			Over(px, w, x, y, cr, cg, cb, cov);
+		}
+}
+
+/** Distance of (x, y) to the nearest edge of a w x h texture, and whether that edge is lit (top or left). */
+int EdgeDistance(int x, int y, int w, int h, bool& lit)
+{
+	int const t = y, l = x, b = h - 1 - y, r = w - 1 - x;
+	int const d = std::min({ t, l, b, r });
+	lit = d == t || d == l; // the mitred diagonal of the top-right and bottom-left corners counts as lit
+	return d;
+}
 }
 
 std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, int& h, bool& repeat)
@@ -666,19 +719,353 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 	{
 		// weathered gunmetal grunge (JA2's PANELTEX and panel faces): fine blotchy olive-brown wear with pits and
 		// flecks, drawn over a flat surface colour so every panel picks up the wear
+		// Field Kit: finer blotches than a camouflage pattern, plus the scratches and scuffs of a field-worn panel
 		size(256, 256, true);
 		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
 		{
-			float n = 0, amp = 0.55f, f = 1.f / 32;
-			int period = 8;
+			float n = 0, amp = 0.5f, f = 1.f / 16;
+			int period = 16;
 			for (int o = 0; o < 4; ++o, amp *= 0.55f, f *= 2, period *= 2) n += ValueNoise(x * f, y * f, period, 23 + o) * amp;
-			n = std::clamp(n, 0.f, 1.f);
+			n = std::clamp(n + (ValueNoise(x / 64.f, y / 64.f, 4, 19) - 0.5f) * 0.12f, 0.f, 1.f);
 			float const speck = Rand01(x, y, 29);
-			if (n > 0.52f) Put(px, w, x, y, 196, 172, 122, (n - 0.52f) * 0.42f); // worn light patches
-			else if (n < 0.45f) Put(px, w, x, y, 12, 8, 4, (0.45f - n) * 0.75f); // grime
-			if (speck > 0.996f) Put(px, w, x, y, 12, 8, 4, 0.32f);              // pits
-			else if (speck < 0.004f) Put(px, w, x, y, 210, 188, 140, 0.20f);    // metal flecks
+			if (n > 0.55f) Put(px, w, x, y, 196, 172, 122, (n - 0.55f) * 0.34f); // worn light patches
+			else if (n < 0.44f) Put(px, w, x, y, 12, 8, 4, (0.44f - n) * 0.62f); // grime
+			if (speck > 0.996f) Put(px, w, x, y, 12, 8, 4, 0.34f);              // pits
+			else if (speck < 0.005f) Put(px, w, x, y, 214, 192, 146, 0.20f);    // metal flecks
 		}
+		// scratches: thin bright gouges with a dark lower lip, mostly along one direction, wrapping for the tile
+		for (int s = 0; s < 48; ++s)
+		{
+			float const x0 = Rand01(s, 1, 211) * w, y0 = Rand01(s, 2, 211) * h;
+			float const ang = (Rand01(s, 3, 211) < 0.75f ? -0.35f : 1.2f) + (Rand01(s, 4, 211) - 0.5f) * 0.6f;
+			float const len = 5 + Rand01(s, 5, 211) * Rand01(s, 6, 211) * 34;
+			float const bright = 0.04f + Rand01(s, 7, 211) * 0.07f;
+			for (float t = 0; t < len; t += 0.5f)
+			{
+				int const x = (int(x0 + std::cos(ang) * t) % w + w) % w, y = (int(y0 + std::sin(ang) * t) % h + h) % h;
+				float const fade = std::sin(3.14159f * t / len); // tapered ends
+				Over(px, w, x, y, 226, 206, 160, bright * fade);
+				Over(px, w, x, (y + 1) % h, 6, 4, 2, bright * 0.9f * fade);
+			}
+		}
+	}
+	else if (name == "frame")
+	{
+		// a moulded panel frame for a nine-patch (border 32 texels, drawn at about 20dp: the original frames are
+		// 8-10 px at 640x480): black outline, lit outer bevel, a worn brass-olive face with an engraved seam, the
+		// inner bevel falling into the panel, the shadow it casts, and a slotted screw in each corner. Lit from the
+		// top left like every JA2 frame.
+		size(128, 128, false);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			bool lit = false;
+			int const d = EdgeDistance(x, y, w, h, lit);
+			float const grain = (Rand01(x, y, 307) - 0.5f) * 16;
+			if (d < 2) Put(px, w, x, y, 6, 4, 3, 1.f);
+			else if (d < 7)
+			{
+				float const t = (d - 2) / 4.f;
+				if (lit) Put(px, w, x, y, int(Lerp(222, 120, t)), int(Lerp(192, 98, t)), int(Lerp(124, 58, t)), 1.f);
+				else Put(px, w, x, y, int(Lerp(24, 40, t)), int(Lerp(17, 30, t)), int(Lerp(9, 17, t)), 1.f);
+			}
+			else if (d < 22)
+			{
+				// a rounded moulding: brighter towards the outer bevel on the lit sides, darker on the shaded ones
+				float const shade = 1.f + 0.22f * std::cos(3.14159f * (d - 7) / 15.f) * (lit ? 1.f : -0.7f);
+				float r = 84 * shade + grain, g = 67 * shade + grain * 0.8f, b = 40 * shade + grain * 0.5f;
+				if (d == 14 || d == 15) { r *= 0.30f; g *= 0.30f; b *= 0.30f; }          // engraved seam
+				else if (d == 16) { r *= 1.5f; g *= 1.45f; b *= 1.35f; }                  // its lit lip
+				Put(px, w, x, y, int(std::clamp(r, 0.f, 255.f)), int(std::clamp(g, 0.f, 255.f)), int(std::clamp(b, 0.f, 255.f)), 1.f);
+			}
+			else if (d < 26)
+			{
+				float const t = (d - 22) / 3.f;
+				if (lit) Put(px, w, x, y, int(Lerp(30, 10, t)), int(Lerp(21, 7, t)), int(Lerp(12, 4, t)), 1.f);
+				else Put(px, w, x, y, int(Lerp(176, 104, t)), int(Lerp(148, 84, t)), int(Lerp(94, 48, t)), 1.f);
+			}
+			else if (d < 27) Put(px, w, x, y, 5, 3, 2, 0.95f);
+			else if (x >= 27 && y >= 27 && x < w - 27 && y < h - 27)
+			{
+				// the shadow the frame casts on the panel, on the top and left only
+				float const st = y < 32 ? std::pow(1.f - (y - 27) / 5.f, 2.f) * 0.55f : 0.f;
+				float const sl = x < 32 ? std::pow(1.f - (x - 27) / 5.f, 2.f) * 0.55f : 0.f;
+				Put(px, w, x, y, 4, 3, 2, std::max(st, sl));
+			}
+		}
+		Screw(px, w, h, 14.5f, 14.5f, 7.f, 0.5f);
+		Screw(px, w, h, w - 14.5f, 14.5f, 7.f, 1.9f);
+		Screw(px, w, h, 14.5f, h - 14.5f, 7.f, -0.4f);
+		Screw(px, w, h, w - 14.5f, h - 14.5f, 7.f, 1.1f);
+	}
+	else if (name == "frame-plain")
+	{
+		// a thinner moulding without screws, for small plates (cards, menus, label plates): border 16 texels,
+		// drawn at about 8dp
+		size(64, 64, false);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			bool lit = false;
+			int const d = EdgeDistance(x, y, w, h, lit);
+			float const grain = (Rand01(x, y, 311) - 0.5f) * 12;
+			if (d < 2) Put(px, w, x, y, 6, 4, 3, 1.f);
+			else if (d < 5)
+			{
+				float const t = (d - 2) / 2.f;
+				if (lit) Put(px, w, x, y, int(Lerp(214, 132, t)), int(Lerp(184, 106, t)), int(Lerp(118, 62, t)), 1.f);
+				else Put(px, w, x, y, 26, 18, 10, 1.f);
+			}
+			else if (d < 10)
+			{
+				float const shade = lit ? 1.12f : 0.8f;
+				Put(px, w, x, y, int(std::clamp(78 * shade + grain, 0.f, 255.f)), int(std::clamp(62 * shade + grain * 0.8f, 0.f, 255.f)),
+					int(std::clamp(37 * shade + grain * 0.5f, 0.f, 255.f)), 1.f);
+			}
+			else if (d < 12)
+			{
+				if (lit) Put(px, w, x, y, 12, 8, 4, 1.f);
+				else Put(px, w, x, y, 140, 114, 68, 1.f);
+			}
+			else if (d < 16 && x >= 12 && y >= 12 && x < w - 12 && y < h - 12)
+			{
+				float const st = y < 16 ? (1.f - (y - 12) / 4.f) * 0.45f : 0.f;
+				float const sl = x < 16 ? (1.f - (x - 12) / 4.f) * 0.45f : 0.f;
+				Put(px, w, x, y, 4, 3, 2, std::max(st, sl));
+			}
+		}
+	}
+	else if (name == "well")
+	{
+		// a recess cut into the plate (portrait wells, lists, the map): dark top and left wall with a soft inner
+		// shadow, a lit lip on the bottom and right
+		size(64, 64, false);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			bool lit = false;
+			int const d = EdgeDistance(x, y, w, h, lit);
+			if (d < 2) { if (lit) Put(px, w, x, y, 5, 3, 2, 1.f); else Put(px, w, x, y, 150, 124, 76, 0.85f); }
+			else if (d < 3) { if (lit) Put(px, w, x, y, 8, 5, 3, 0.9f); else Put(px, w, x, y, 70, 54, 30, 0.7f); }
+			else
+			{
+				float const st = y < 16 ? std::pow(1.f - (y - 3) / 13.f, 2.f) * 0.6f : 0.f;
+				float const sl = x < 16 ? std::pow(1.f - (x - 3) / 13.f, 2.f) * 0.6f : 0.f;
+				if (x < w - 3 && y < h - 3) Put(px, w, x, y, 3, 2, 1, std::max(st, sl));
+			}
+		}
+	}
+	else if (name == "brackets")
+	{
+		// targeting brackets for the selected thing: amber L corners with a dark keyline, nothing between them
+		size(48, 48, false);
+		int const arm = 15, th = 4;
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			int const cx = std::min(x, w - 1 - x), cy = std::min(y, h - 1 - y);
+			bool const on = (cx < arm && cy < th) || (cy < arm && cx < th);
+			bool const key = !on && ((cx < arm + 1 && cy < th + 1) || (cy < arm + 1 && cx < th + 1));
+			if (on) Put(px, w, x, y, 242, 194, 48, 1.f);
+			else if (key) Put(px, w, x, y, 10, 7, 3, 0.85f);
+		}
+	}
+	else if (name == "hazard")
+	{
+		// worn hazard stripes (danger, enemy contact): amber and black at 45 degrees, scuffed
+		size(40, 40, true);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			bool const amber = (x + y) % 40 < 20;
+			float const wear = Rand01(x, y, 401), blot = ValueNoise(x / 5.f, y / 5.f, 8, 403);
+			float k = amber ? 1.f : 0.f;
+			if (amber && (wear > 0.97f || blot < 0.22f)) k = 0.55f;
+			Put(px, w, x, y, int(Lerp(22, 226, k)), int(Lerp(17, 168, k)), int(Lerp(10, 36, k)), 1.f);
+		}
+	}
+	else if (name == "granite")
+	{
+		// the black speckled stone in the wells of the original options and load screens
+		size(256, 256, true);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float const blot = ValueNoise(x / 32.f, y / 32.f, 8, 503) * 0.7f + ValueNoise(x / 4.f, y / 4.f, 64, 509) * 0.3f;
+			float const r = Rand01(x, y, 521), cell = Rand01(x / 2, y / 2, 523);
+			Put(px, w, x, y, 2, 2, 1, std::clamp((0.5f - blot) * 0.5f, 0.f, 0.3f));
+			if (cell > 0.965f) Over(px, w, x, y, 132, 124, 108, 0.12f + (cell - 0.965f) * 6.f);
+			else if (r > 0.94f) Over(px, w, x, y, 150, 140, 120, 0.08f + (r - 0.94f) * 3.f);
+		}
+	}
+	else if (name == "doll" || name == "doll-big" || name == "doll-female")
+	{
+		// the paper doll behind the worn-gear slots: a merc in fatigues, front view, lit from the top left - short dark
+		// hair, tanned skin, a woodland-camouflage shirt and trousers, a webbing belt with a brass buckle, black boots.
+		// The body is a signed distance field of capsules and ellipses joined with a smooth minimum; its depth gives a
+		// rounded height field whose normal lights the figure, and the nearest body part picks the material.
+		size(240, 440, false);
+		// One skeleton, three builds (the original's normal male, large male and female inventory figures): the head,
+		// chest, belt, hands and knees stay where the leader lines point; widths, limb thickness and hair change.
+		struct Build
+		{
+			float headRx, headRy, neckR;
+			float shoulderL, shoulderR, shoulderRad;   // the shoulder line and its thickness
+			float chestHalf, chestRad, waistRad, waistTop, hipHalf, hipRad;
+			float armOut, upperArmRad, foreArmRad, handRx, handRy;
+			float thighX, thighRad, shinRad, bootRad;
+			bool bust, longHair;
+		};
+		static Build const regular { 23, 27, 14, 74, 166, 23, 17, 36, 32, 150, 14, 30, 0, 16, 13.5f, 11.5f, 16, 16, 20, 16.5f, 17.5f, false, false };
+		static Build const big     { 26, 29, 19, 60, 180, 30, 22, 44, 40, 150, 16, 35, 0, 21.5f, 18, 14, 18, 18, 25, 20.5f, 20.5f, false, false };
+		static Build const female  { 20, 25, 10.5f, 84, 156, 18, 13, 30, 22, 156, 19, 33, 4, 12, 10.5f, 9.5f, 13.5f, 19, 19.5f, 14, 15, true, true };
+		Build const& B = name == "doll-big" ? big : name == "doll-female" ? female : regular;
+		auto capsule = [](float px_, float py_, float ax, float ay, float bx, float by, float r) {
+			float const pax = px_ - ax, pay = py_ - ay, bax = bx - ax, bay = by - ay;
+			float const t = std::clamp((pax * bax + pay * bay) / (bax * bax + bay * bay), 0.f, 1.f);
+			float const dx = pax - bax * t, dy = pay - bay * t;
+			return std::sqrt(dx * dx + dy * dy) - r;
+		};
+		auto ellipse = [](float px_, float py_, float cx, float cy, float rx, float ry) {
+			float const dx = (px_ - cx) / rx, dy = (py_ - cy) / ry;
+			return (std::sqrt(dx * dx + dy * dy) - 1.f) * std::min(rx, ry);
+		};
+		auto smin = [](float a, float b, float k) {
+			float const hh = std::clamp(0.5f + 0.5f * (b - a) / k, 0.f, 1.f);
+			return b + (a - b) * hh - k * hh * (1.f - hh);
+		};
+		enum Mat { SKIN, SHIRT, TROUSERS, BOOTS, HAIR };
+		struct Part { float d; Mat m; };
+		auto parts = [&](float fx, float fy, Part* p) {
+			int n = 0;
+			float const lA = B.shoulderL - 8 - B.armOut, rA = 240 - lA;                      // where the arms hang
+			p[n++] = { ellipse(fx, fy, 120, 40, B.headRx, B.headRy), SKIN };              // head
+			p[n++] = { ellipse(fx, fy, 120, 54, B.headRx * 0.74f, 15), SKIN };            // jaw
+			p[n++] = { std::min(ellipse(fx, fy, 120 - B.headRx - 1, 44, 4, 7), ellipse(fx, fy, 120 + B.headRx + 1, 44, 4, 7)), SKIN }; // ears
+			if (B.longHair)                                                               // hair down to the shoulders
+				p[n++] = { std::min(capsule(fx, fy, 101, 36, 99, 80, 9), capsule(fx, fy, 139, 36, 141, 80, 9)), HAIR };
+			p[n++] = { capsule(fx, fy, 120, 62, 120, 86, B.neckR), SKIN };                // neck
+			p[n++] = { capsule(fx, fy, B.shoulderL, 104, B.shoulderR, 104, B.shoulderRad), SHIRT }; // shoulders
+			p[n++] = { capsule(fx, fy, 120 - B.chestHalf, 126, 120 + B.chestHalf, 126, B.chestRad), SHIRT }; // chest
+			if (B.bust) p[n++] = { std::min(ellipse(fx, fy, 108, 132, 13, 11), ellipse(fx, fy, 132, 132, 13, 11)), SHIRT };
+			p[n++] = { capsule(fx, fy, 120, B.waistTop, 120, 194, B.waistRad), SHIRT };    // belly
+			p[n++] = { capsule(fx, fy, lA, 110, lA - 9, 186, B.upperArmRad), SHIRT };      // upper arms
+			p[n++] = { capsule(fx, fy, rA, 110, rA + 9, 186, B.upperArmRad), SHIRT };
+			p[n++] = { capsule(fx, fy, lA - 9, 186, lA - 14, 246, B.foreArmRad), SHIRT };  // forearms (sleeves)
+			p[n++] = { capsule(fx, fy, rA + 9, 186, rA + 14, 246, B.foreArmRad), SHIRT };
+			p[n++] = { std::min(ellipse(fx, fy, lA - 15, 264, B.handRx, B.handRy), ellipse(fx, fy, rA + 15, 264, B.handRx, B.handRy)), SKIN }; // hands
+			p[n++] = { capsule(fx, fy, 120 - B.hipHalf, 214, 120 + B.hipHalf, 214, B.hipRad), TROUSERS }; // hips
+			p[n++] = { capsule(fx, fy, 120 - B.thighX, 234, 101, 322, B.thighRad), TROUSERS };            // thighs
+			p[n++] = { capsule(fx, fy, 120 + B.thighX, 234, 139, 322, B.thighRad), TROUSERS };
+			p[n++] = { capsule(fx, fy, 101, 322, 99, 382, B.shinRad), TROUSERS };                         // shins
+			p[n++] = { capsule(fx, fy, 139, 322, 141, 382, B.shinRad), TROUSERS };
+			p[n++] = { std::min(capsule(fx, fy, 99, 384, 99, 404, B.bootRad), ellipse(fx, fy, 96, 416, B.bootRad + 1.5f, 11)), BOOTS };
+			p[n++] = { std::min(capsule(fx, fy, 141, 384, 141, 404, B.bootRad), ellipse(fx, fy, 144, 416, B.bootRad + 1.5f, 11)), BOOTS };
+			return n;
+		};
+		std::vector<float> height(size_t(w) * h), dist(size_t(w) * h);
+		std::vector<unsigned char> mat(size_t(w) * h);
+		Part p[24];
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			int const n = parts(x + 0.5f, y + 0.5f, p);
+			float d = p[0].d;
+			int best = 0;
+			for (int i = 1; i < n; ++i)
+			{
+				d = smin(d, p[i].d, 7);
+				if (p[i].d < p[best].d) best = i;
+			}
+			dist[size_t(y) * w + x] = d;
+			mat[size_t(y) * w + x] = (unsigned char)p[best].m;
+			float const t = std::clamp(-d / 16.f, 0.f, 1.f);
+			height[size_t(y) * w + x] = std::sqrt(1.f - (1.f - t) * (1.f - t)) * 16.f;
+		}
+		auto H = [&](int x, int y) { return height[size_t(std::clamp(y, 0, h - 1)) * w + std::clamp(x, 0, w - 1)]; };
+		// woodland camouflage: three blob layers over the base cloth
+		auto camo = [&](int x, int y, float& r, float& g, float& b) {
+			// soft-edged blobs, blended over the base so the pattern reads as cloth at a distance, not as pixels
+			auto blob = [](float v, float at) { float const t = std::clamp((v - at) / 0.06f, 0.f, 1.f); return t * t * (3 - 2 * t) * 0.8f; };
+			auto mix = [&](float k, float cr, float cg, float cb) { r += (cr - r) * k; g += (cg - g) * k; b += (cb - b) * k; };
+			mix(blob(ValueNoise(x / 10.f, y / 7.f, 1 << 16, 701), 0.6f), 66, 56, 38);   // brown
+			mix(blob(ValueNoise(x / 7.f, y / 10.f, 1 << 16, 709), 0.62f), 52, 62, 40);  // dark green
+			mix(blob(ValueNoise(x / 5.f, y / 6.f, 1 << 16, 719), 0.76f), 36, 34, 26);   // black
+		};
+		float const lx = -0.55f, ly = -0.62f, lz = 0.56f; // a warm key light from the top left, in front
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float const d = dist[size_t(y) * w + x];
+			float const cover = std::clamp(0.5f - d, 0.f, 1.f);
+			float const sx = (x - 120) / 74.f, sy = (y - 428) / 9.f;                       // contact shadow
+			float const ground = std::clamp(1.f - (sx * sx + sy * sy), 0.f, 1.f) * 0.6f;
+			if (cover <= 0) { if (ground > 0) Put(px, w, x, y, 0, 0, 0, ground); continue; }
+			float nx = -(H(x + 1, y) - H(x - 1, y)), ny = -(H(x, y + 1) - H(x, y - 1)), nz = 2.f;
+			float const len = std::sqrt(nx * nx + ny * ny + nz * nz);
+			nx /= len; ny /= len; nz /= len;
+			float const diffuse = std::max(0.f, nx * lx + ny * ly + nz * lz);
+			float const occl = std::clamp(-d / 5.f, 0.45f, 1.f);
+			float const fx = x + 0.5f, fy = y + 0.5f;
+			Mat m = Mat(mat[size_t(y) * w + x]);
+			float r = 0, g = 0, b = 0, shine = 0;
+			switch (m)
+			{
+				case SKIN: r = 186; g = 138; b = 102; shine = 0.10f; break;
+				case SHIRT: r = 92; g = 96; b = 62; camo(x, y, r, g, b); break;
+				case TROUSERS: r = 104; g = 98; b = 66; camo(x + 61, y + 37, r, g, b); break;
+				case BOOTS: r = 30; g = 26; b = 22; shine = 0.18f; break;
+				case HAIR: r = 52; g = 38; b = 26; shine = 0.05f; break;
+			}
+			// a camouflage patrol cap over the top of the head, its brim casting a shadow on the brow; dark hair at the
+			// temples below it
+			bool const head = fy < 64 && std::abs(fx - 120) < 30;
+			bool const cap = head && m == SKIN && fy < 27.f + std::pow((fx - 120) / 24.f, 2.f) * 4.f;
+			if (cap) { r = 92; g = 96; b = 62; camo(x + 13, y + 7, r, g, b); shine = 0.f; if (fy > 22) { r *= 0.7f; g *= 0.7f; b *= 0.7f; } }
+			else if (head && m == SKIN && std::abs(fx - 120) > 17 && fy < 46) { r = 46; g = 36; b = 28; }
+			else if (head && m == SKIN && fy < 34) { r *= 0.72f; g *= 0.70f; b *= 0.70f; }
+			// a beard shadow along the jaw and the shaded eyes, kept soft so the face stays calm
+			if (head && m == SKIN && fy > 50 && fy < 66) { r *= 0.86f; g *= 0.84f; b *= 0.84f; }
+			if (head && m == SKIN)
+			{
+				// soft eye sockets and a shaded line under the nose, so the face reads without staring
+				float const ex = (std::abs(fx - 120) - 9) / 6.f, ey = (fy - 40) / 3.5f;
+				float const eye = std::clamp(1.f - (ex * ex + ey * ey), 0.f, 1.f) * 0.38f;
+				float const nose = std::clamp(1.f - std::abs(fx - 120) / 3.f, 0.f, 1.f) * std::clamp(1.f - std::abs(fy - 50) / 1.5f, 0.f, 1.f) * 0.15f;
+				r *= 1.f - eye - nose; g *= 1.f - eye - nose; b *= 1.f - eye - nose;
+			}
+			// the collar: a darker V at the neck of the shirt
+			if (m == SHIRT && fy < 104 && std::abs(fx - 120) < (104 - fy) * 0.55f + 2) { r *= 0.62f; g *= 0.62f; b *= 0.62f; }
+			// chest pockets with flaps, a cargo pocket on each thigh
+			auto rect = [&](float x0, float y0, float x1, float y1) { return fx > x0 && fx < x1 && fy > y0 && fy < y1; };
+			auto edge = [&](float x0, float y0, float x1, float y1) {
+				return rect(x0, y0, x1, y1) && !rect(x0 + 1.4f, y0 + 1.4f, x1 - 1.4f, y1 - 1.4f);
+			};
+			if (m == SHIRT && (edge(93, 116, 113, 140) || edge(127, 116, 147, 140) || edge(93, 116, 113, 123) || edge(127, 116, 147, 123)))
+			{ r *= 0.55f; g *= 0.55f; b *= 0.55f; }
+			if (m == TROUSERS && (edge(80, 262, 99, 292) || edge(141, 262, 160, 292))) { r *= 0.55f; g *= 0.55f; b *= 0.55f; }
+			// the webbing belt and its brass buckle
+			if ((m == SHIRT || m == TROUSERS) && fy > 199 && fy < 211)
+			{
+				r = 66; g = 56; b = 36; shine = 0.06f;
+				if (std::abs(fx - 120) < 8) { r = 182; g = 150; b = 82; shine = 0.3f; }
+			}
+			// cloth folds: soft vertical creases on the trousers
+			if (m == TROUSERS && fy > 230) { float const f = 0.93f + 0.07f * std::sin(fx * 0.55f + fy * 0.04f); r *= f; g *= f; b *= f; }
+			float const spec = std::pow(std::max(0.f, nz * 0.9f + (nx * lx + ny * ly) * 0.45f), 20.f) * shine;
+			float const lum = (0.30f + diffuse * 0.85f) * occl;
+			auto ch = [&](float c, float warm) { return int(std::clamp(c * lum * warm + spec * 255.f, 0.f, 255.f)); };
+			Put(px, w, x, y, ch(r, 1.08f), ch(g, 1.0f), ch(b, 0.9f), cover);
+		}
+	}
+	else if (name == "spot")
+	{
+		// a soft pool of light for a recess (the doll's backdrop): warm, brightest a little above the centre
+		size(256, 256, false);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float const dx = (x + 0.5f) / w * 2 - 1, dy = ((y + 0.5f) / h * 2 - 1) + 0.15f;
+			float const r = std::sqrt(dx * dx + dy * dy * 0.8f);
+			float const t = std::clamp(1.f - r, 0.f, 1.f);
+			Put(px, w, x, y, 255, 226, 168, t * t * 0.16f);
+		}
+	}
+	else if (name == "screw")
+	{
+		size(32, 32, false); // one screw head, for plates and labels
+		Screw(px, w, h, 15.f, 15.f, 10.f, 0.7f);
 	}
 	else if (name == "leather")
 	{

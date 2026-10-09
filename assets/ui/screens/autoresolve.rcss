@@ -5,7 +5,7 @@
 .ar-root {
 	display: flex; align-items: center; justify-content: center;
 	position: absolute; left: 0; top: 0; right: 0; bottom: 0;
-	background-color: var(--c-void);
+	background-color: var(--c-void); decorator: image(gen-vignette), image(gen-topo-dark repeat);
 }
 body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-color: var(--c-void); }
 
@@ -13,34 +13,39 @@ body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 	display: flex; flex-direction: column;
 	position: relative;
 	width: 94%; height: 90%;
-	padding: var(--sp-5); box-sizing: border-box;
-	background-color: var(--e1-bg); decorator: image(gen-mottle repeat);
-	border: var(--border) var(--e1-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
-	border-radius: var(--r-2);
+	padding: 36dp; box-sizing: border-box;
+	background-color: var(--e1-bg); decorator: ninepatch(fk-frame-o, fk-frame-i, 20dp), image(gen-mottle repeat);
 }
 
 .grow { display: block; flex: 1 1 0; }
 
 /* ---------------------------------------------------------------- header */
-.ar-head { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-4); border-bottom: var(--border) var(--c-line); }
+.ar-head { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-4); decorator: image(gen-groove repeat-x left bottom); }
 .ar-title { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
-.ar-title .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); }
-.ar-title .s { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.ar-title .t { display: block; font-family: var(--font-stencil); font-size: 44dp; line-height: 50dp; text-transform: uppercase; color: var(--c-text-strong); font-effect: shadow(2dp 3dp #000000E0); }
+.ar-title .s { display: block; font-family: var(--font-type); font-size: var(--fs-md); letter-spacing: 1dp; color: var(--c-accent); }
 .ar-forces {
-	display: block; flex: 0 0 auto; padding: var(--sp-2) var(--sp-4); box-sizing: border-box;
-	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg);
-	border: var(--border) var(--c-line-2); border-radius: var(--r-1);
+	display: block; flex: 0 0 auto; padding: var(--sp-2) var(--sp-5); box-sizing: border-box;
+	font-family: var(--font-stencil); font-size: var(--fs-xl); font-effect: var(--fx-deep);
+	border: 2dp var(--c-line-2); border-radius: var(--r-0);
 }
-.ar-forces.danger { background-color: var(--c-danger-soft); border-color: var(--c-danger); color: var(--c-danger); }
+.ar-forces.danger { background-color: var(--c-blood); border-color: var(--c-blood-2) #2A0A06 #2A0A06 var(--c-blood-2); color: #FFD9C8; decorator: image(gen-leather repeat); }
 .ar-forces.warn   { background-color: var(--c-warn-soft);   border-color: var(--c-warn);   color: var(--c-warn); }
 .ar-forces.ok     { background-color: var(--c-ok-soft);     border-color: var(--c-ok);     color: var(--c-ok); }
 
 /* ---------------------------------------------------------------- the two sides */
 .ar-cols { display: flex; flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: var(--sp-4) 0; }
-.ar-col { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; padding-right: var(--sp-5); }
-.ar-col.theirs { border-left: var(--border) var(--c-line); padding-left: var(--sp-5); padding-right: 0; }
-.ar-colhead { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-2); border-bottom: var(--border) var(--c-line); }
-.ar-colhead .t { display: block; flex: 1 1 0; margin-left: var(--sp-2); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); }
+/* each side is a well cut into the plate; the enemy's is stained Arulco red */
+.ar-col {
+	display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; padding: 20dp; margin-right: var(--sp-3);
+	background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 8dp), image(gen-granite repeat);
+}
+.ar-col.theirs { margin-right: 0; margin-left: var(--sp-3); background-color: #1E0805; }
+.ar-colhead { display: flex; align-items: center; flex: 0 0 auto; padding-bottom: var(--sp-2); decorator: image(gen-groove repeat-x left bottom); }
+.ar-colhead .icon { image-color: var(--c-accent); }
+.ar-col.theirs .ar-colhead .icon { image-color: var(--c-danger); }
+.ar-colhead .t { display: block; flex: 1 1 0; margin-left: var(--sp-2); font-family: var(--font-plate); font-weight: 700; letter-spacing: 2dp; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-accent); font-effect: var(--fx-emboss); }
+.ar-col.theirs .ar-colhead .t { color: var(--c-danger); }
 .ar-colhead .n { display: block; font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-text-strong); }
 .ar-sub { display: flex; align-items: center; justify-content: space-between; margin-top: var(--sp-3); font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
 .ar-sub .n { font-family: var(--font-mono); color: var(--c-text); }
@@ -50,10 +55,12 @@ body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 /* ---------------------------------------------------------------- a participant card */
 .ar-cellwrap {
 	display: block; flex: 0 1 232dp; min-width: 0;
-	padding: var(--sp-2); box-sizing: border-box;
-	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1);
+	padding: 10dp; box-sizing: border-box;
+	background-color: var(--c-panel-2); decorator: ninepatch(fk-plate-o, fk-plate-i, 8dp), image(gen-mottle repeat);
+	border: var(--border) #00000000; border-radius: var(--r-0);
 	transition: border-color var(--t-fast) var(--ease);
 }
+.theirs .ar-cellwrap { background-color: #3A1A10; }
 .ar-cellwrap.is-disabled { border-color: var(--c-line); }
 .ar-cellwrap.clickable { cursor: pointer; }
 .ar-cellwrap.clickable:hover { border-color: var(--c-select); background-color: var(--c-panel-3); }
@@ -75,7 +82,7 @@ body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 /* the generic smfaces frames are small pixel art: draw them at their own size, no scaling */
 .ar-pic.sm { width: auto; height: auto; }
 .ar-meta { display: flex; flex-direction: column; flex: 1 1 0; min-width: 0; }
-.ar-name { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-text-strong); }
+.ar-name { display: block; font-family: var(--font-plate); font-weight: 700; font-size: var(--fs-sm); letter-spacing: 1dp; text-transform: uppercase; color: var(--c-text-strong); font-effect: var(--fx-emboss); }
 .ar-health { display: block; font-size: var(--fs-xs); }
 .ar-health.ok { color: var(--c-text-dim); }
 .ar-health.warn { color: var(--c-warn); }
@@ -91,7 +98,7 @@ body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .ar-bar .fill.morale { background-color: var(--c-stat-morale); }
 
 /* ---------------------------------------------------------------- footer controls */
-.ar-foot { display: flex; align-items: center; flex: 0 0 auto; gap: var(--sp-2); padding-top: var(--sp-4); border-top: var(--border) var(--c-line); }
+.ar-foot { display: flex; align-items: center; flex: 0 0 auto; gap: var(--sp-2); padding-top: var(--sp-4); decorator: image(gen-groove repeat-x left top); }
 .ar-speed { display: flex; align-items: center; gap: var(--sp-1); }
 .ar-speed .icon-btn { width: 40dp; height: 40dp; }
 .ar-foot .btn { flex: 0 0 auto; }
@@ -100,8 +107,8 @@ body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .ar-result { position: absolute; left: 0; right: 0; bottom: 108dp; text-align: center; }
 .ar-result-badge {
 	display: inline-block; padding: var(--sp-2) var(--sp-6);
-	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xl); text-transform: uppercase;
-	background-color: var(--c-panel-3); border: var(--border) var(--c-line-2); border-radius: var(--r-1);
+	font-family: var(--font-stencil); font-size: var(--fs-2xl); text-transform: uppercase; font-effect: var(--fx-deep);
+	background-color: var(--c-panel-3); border: 2dp var(--c-line-2); border-radius: var(--r-0); decorator: image(gen-leather repeat);
 }
 .ar-result-badge.ok { color: var(--c-ok); border-color: var(--c-ok); }
 .ar-result-badge.warn { color: var(--c-warn); border-color: var(--c-warn); }
@@ -112,9 +119,7 @@ body.ar { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .ar-surrender { display: flex; position: absolute; left: 0; top: 0; right: 0; bottom: 0; align-items: center; justify-content: center; background-color: var(--c-scrim); }
 .ar-surrender-box {
 	display: flex; flex-direction: column; width: 560dp; padding: var(--sp-5); box-sizing: border-box;
-	background-color: var(--e3-bg); decorator: image(gen-leather repeat);
-	border: var(--border) var(--e3-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
-	border-radius: var(--r-2);
+	padding: 32dp; background-color: var(--e3-bg); decorator: ninepatch(fk-frame-o, fk-frame-i, 20dp), image(gen-leather repeat);
 }
 .ar-surrender-text { display: block; font-size: var(--fs-lg); line-height: var(--lh-body); color: var(--c-text-strong); }
 .ar-surrender-acts { display: flex; justify-content: flex-end; gap: var(--sp-3); margin-top: var(--sp-5); }

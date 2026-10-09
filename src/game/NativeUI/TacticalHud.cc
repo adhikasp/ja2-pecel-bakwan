@@ -198,12 +198,16 @@ namespace
 	{
 		int idx = 0, w = 0, h = 0, cond = 0;
 		std::string src, count, ghost, label, title;
+		// the hover card: weight, the magazine in a gun, and one line per attachment (RML, escaped)
+		std::string wt, ammo, atts;
+		int natts = 0;
 		bool empty = true, big = false, att = false, worn = false;
 		static void Describe(RowFields<SlotRow>& f)
 		{
 			f("idx", &SlotRow::idx)("w", &SlotRow::w)("h", &SlotRow::h)("cond", &SlotRow::cond)("src", &SlotRow::src)
 			 ("count", &SlotRow::count)("ghost", &SlotRow::ghost)("label", &SlotRow::label)("title", &SlotRow::title)
-			 ("empty", &SlotRow::empty)("big", &SlotRow::big)("att", &SlotRow::att)("worn", &SlotRow::worn);
+			 ("empty", &SlotRow::empty)("big", &SlotRow::big)("att", &SlotRow::att)("worn", &SlotRow::worn)
+			 ("wt", &SlotRow::wt)("ammo", &SlotRow::ammo)("atts", &SlotRow::atts)("natts", &SlotRow::natts);
 		}
 	};
 
@@ -211,6 +215,26 @@ namespace
 	{
 		std::string k, v;
 		static void Describe(RowFields<KvRow>& f) { f("k", &KvRow::k)("v", &KvRow::v); }
+	};
+
+	/** One line of the item sheet's specs: an icon, the value, and a bar (percent of a typical range) so two items
+	 * read at a glance; `low` marks a stat where less is better (AP costs). */
+	struct StatRow
+	{
+		std::string k, v, icon;
+		int w = 0;
+		bool low = false;
+		static void Describe(RowFields<StatRow>& f) { f("k", &StatRow::k)("v", &StatRow::v)("icon", &StatRow::icon)("w", &StatRow::w)("low", &StatRow::low); }
+	};
+
+	/** One attribute in the detail panel: its value, a bar width (percent of the attribute's range) and whether it
+	 * opens a group (physical, mental, skills). */
+	struct AttrRow
+	{
+		std::string k, v;
+		int w = 0;
+		bool lead = false;
+		static void Describe(RowFields<AttrRow>& f) { f("k", &AttrRow::k)("v", &AttrRow::v)("w", &AttrRow::w)("lead", &AttrRow::lead); }
 	};
 
 	/** One row of the action or door menu (Interface.h: NativeMenuView): item, group heading or separator. */
@@ -265,15 +289,17 @@ namespace
 		// detail panel
 		bool detail = false;
 		bool dMute = false;
-		std::string dName, dFull, dFace, dVitHp, dEn, dMo, dMoney, dKeys, dWeight, dCamo, dArmour;
-		int dFw = 0, dFh = 0, dHpw = 0, dLostw = 0, dEnw = 0, dMow = 0;
-		std::vector<KvRow> attrs;
-		std::vector<SlotRow> body, hands, lbe, bigPockets, smallPockets;
+		std::string dDoll = "gen-doll", dName, dFull, dFace, dVitHp, dEn, dMo, dMoney, dKeys, dWeight, dCamo, dArmour;
+		int dFw = 0, dFh = 0, dHpw = 0, dLostw = 0, dEnw = 0, dMow = 0, dWeightw = 0, dCamow = 0, dArmourw = 0;
+		bool dHeavy = false;
+		std::vector<AttrRow> attrs;
+		std::vector<SlotRow> body, hands, lbe, bigPockets, smallPockets, beltPockets, packPockets;
 		// item description
 		bool desc = false, descMoney = false, descGun = false, descWeapon = false, descProsCons = false, descHatched = false;
 		std::string xName, xType, xText, xPic, xStatusLabel, xStatus, xWeight, xPros, xCons, xAmmo, xAmmoType, xKey;
 		int xPw = 0, xPh = 0, xCond = 0;
-		std::vector<KvRow> xStats;
+		std::vector<StatRow> xStats;
+		std::string xTab = "general";
 		std::vector<SlotRow> xAtts;
 		SlotRow xMag;
 		std::string mTotal, mRemaining, mRemoving;
@@ -338,6 +364,8 @@ namespace
 			Command("money", [](Args const& a) { if (!a.empty()) NativeMoneyButton(std::atoi(a[0].c_str()), Right(a)); });
 			Command("log", [this](Args const&) { logOpen = !logOpen; if (logOpen) ReadLog(); Changed(); });
 			Command("log_filter", [this](Args const& a) { logFilter = a.empty() ? "all" : a[0]; ReadLog(); Changed(); });
+			// the item sheet's page: "general" (specs, ammo, attachments) or "desc" (the dossier text, pros and cons)
+			Command("desc_tab", [this](Args const& a) { xTab = a.empty() ? "general" : a[0]; Changed(); });
 			// the action, door and pick-up menus press the legacy buttons (Interface.cc, Interface_Items.cc)
 			Command("menu_item", [](Args const& a) { if (!a.empty()) NativeMenuClick(INT16(std::atoi(a[0].c_str()))); });
 			Command("menu_cancel", [](Args const&) { NativeMenuCancel(); });
@@ -382,19 +410,21 @@ namespace
 			f.Rows("overlays", overlays);
 			f.Field("detail", detail);
 			f.Field("d_mute", dMute);
-			f.Field("d_name", dName); f.Field("d_full", dFull); f.Field("d_face", dFace); f.Field("d_fw", dFw); f.Field("d_fh", dFh);
+			f.Field("d_doll", dDoll); f.Field("d_name", dName); f.Field("d_full", dFull); f.Field("d_face", dFace); f.Field("d_fw", dFw); f.Field("d_fh", dFh);
 			f.Field("d_hp", dVitHp); f.Field("d_en", dEn); f.Field("d_mo", dMo);
 			f.Field("d_hpw", dHpw); f.Field("d_lostw", dLostw); f.Field("d_enw", dEnw); f.Field("d_mow", dMow);
 			f.Field("d_money", dMoney); f.Field("d_keys", dKeys); f.Field("d_weight", dWeight); f.Field("d_camo", dCamo); f.Field("d_armour", dArmour);
+			f.Field("d_weightw", dWeightw); f.Field("d_camow", dCamow); f.Field("d_armourw", dArmourw); f.Field("d_heavy", dHeavy);
 			f.Rows("attrs", attrs);
 			f.Rows("body", body); f.Rows("hands", hands); f.Rows("lbe", lbe); f.Rows("big", bigPockets); f.Rows("small", smallPockets);
+			f.Rows("belt", beltPockets); f.Rows("pack", packPockets);
 			f.Field("desc", desc); f.Field("desc_money", descMoney); f.Field("desc_gun", descGun); f.Field("desc_weapon", descWeapon);
 			f.Field("desc_pros_cons", descProsCons); f.Field("desc_hatched", descHatched);
 			f.Field("x_name", xName); f.Field("x_type", xType); f.Field("x_text", xText); f.Field("x_pic", xPic);
 			f.Field("x_pw", xPw); f.Field("x_ph", xPh); f.Field("x_status_label", xStatusLabel); f.Field("x_status", xStatus);
 			f.Field("x_cond", xCond); f.Field("x_weight", xWeight); f.Field("x_pros", xPros); f.Field("x_cons", xCons);
 			f.Field("x_ammo", xAmmo); f.Field("x_ammo_type", xAmmoType); f.Field("x_key", xKey);
-			f.Rows("x_stats", xStats); f.Rows("x_atts", xAtts);
+			f.Rows("x_stats", xStats); f.Field("x_tab", xTab); f.Rows("x_atts", xAtts);
 			f.Field("m_total", mTotal); f.Field("m_remaining", mRemaining); f.Field("m_removing", mRemoving);
 			f.Field("m_1000", m1000); f.Field("m_100", m100); f.Field("m_10", m10);
 			f.Field("menu_open", menuOpen); f.Field("menu_title", menuTitle); f.Field("menu_sub", menuSub);
@@ -672,7 +702,20 @@ namespace
 				r.cond = std::clamp(int(o.bStatus[0]), 0, 100);
 				r.worn = r.cond < 60;
 				r.att = false;
-				for (UINT16 const a : o.usAttachItem) if (a != NOTHING) r.att = true;
+				for (UINT16 const a : o.usAttachItem)
+				{
+					if (a == NOTHING) continue;
+					r.att = true;
+					++r.natts;
+					r.atts += "<div class=\"ln\">" + Escape(S(GCM->getItem(a)->getName())) + "</div>";
+				}
+				bool const metric = gGameSettings.fOptions[TOPTION_USE_METRIC_SYSTEM];
+				r.wt = ST::format("{.1f} {}", Weight(o) / (metric ? 1000.0 : 453.59237), GetWeightUnitString()).to_std_string();
+				if (it->isGun())
+				{
+					r.ammo = ST::format("{} / {}", o.ubGunShotsLeft, GCM->getWeapon(o.usItem)->ubMagSize).to_std_string();
+					if (o.usGunAmmoItem != NOTHING) r.ammo += " \xC2\xB7 " + S(GCM->getItem(o.usGunAmmoItem)->getShortName());
+				}
 			}
 			return r;
 		}
@@ -681,10 +724,13 @@ namespace
 		{
 			detail = gsCurInterfacePanel == SM_PANEL && gpSMCurrentMerc;
 			dMute = false;
-			body.clear(); hands.clear(); lbe.clear(); bigPockets.clear(); smallPockets.clear(); attrs.clear();
+			body.clear(); hands.clear(); lbe.clear(); bigPockets.clear(); smallPockets.clear(); beltPockets.clear(); packPockets.clear(); attrs.clear();
 			if (!detail) return;
 			SOLDIERTYPE const& s = *gpSMCurrentMerc;
 			dName = S(s.name);
+			// the paper doll's build, as the original's three inventory figures: big and stocky men share the large one
+			dDoll = s.ubBodyType == REGFEMALE ? "gen-doll-female"
+				: s.ubBodyType == BIGMALE || s.ubBodyType == STOCKYMALE ? "gen-doll-big" : "gen-doll";
 			dMute = (s.uiStatusFlags & SOLDIER_MUTE) != 0;
 			std::string full = s.ubProfile != NO_PROFILE ? S(GetProfile(s.ubProfile).zName) : dName;
 			dFull = full;
@@ -697,16 +743,26 @@ namespace
 			dLostw = std::clamp(int(s.bLifeMax) - s.bLife, 0, 100);
 			dEnw = std::clamp(int(s.bBreath), 0, 100);
 			dMow = std::clamp(int(s.bMorale), 0, 100);
-			dWeight = ST::format("{}%", CalculateCarriedWeight(&s)).to_std_string();
+			int const carried = CalculateCarriedWeight(&s), armour = ArmourPercent(&s);
+			dWeight = ST::format("{}%", carried).to_std_string();
 			dCamo = ST::format("{}%", s.bCamo).to_std_string();
-			dArmour = ST::format("{}%", ArmourPercent(&s)).to_std_string();
+			dArmour = ST::format("{}%", armour).to_std_string();
+			dWeightw = std::clamp(carried, 0, 100);
+			dHeavy = carried > 100;
+			dCamow = std::clamp(int(s.bCamo), 0, 100);
+			dArmourw = std::clamp(armour, 0, 100);
 			dMoney = S(SPrintMoney(LaptopSaveInfo.iCurrentBalance));
 			int keys = 0;
 			if (s.pKeyRing) for (int k = 0; k < NUM_KEYS; ++k) if (s.pKeyRing[k].ubNumber > 0) ++keys;
 			dKeys = std::to_string(keys);
 			INT8 const values[] = { s.bAgility, s.bDexterity, s.bStrength, s.bLeadership, s.bWisdom,
 				s.bExpLevel, s.bMarksmanship, s.bExplosive, s.bMechanical, s.bMedical };
-			for (int i = 0; i < 10; ++i) attrs.push_back({ S(pShortAttributeStrings[i]), std::to_string(values[i]) });
+			for (int i = 0; i < 10; ++i)
+			{
+				// physical (agility, dexterity, strength), mental (leadership, wisdom, level), skills; level runs 1-10
+				int const scale = i == 5 ? 10 : 1;
+				attrs.push_back({ S(pShortAttributeStrings[i]), std::to_string(values[i]), std::clamp(values[i] * scale, 0, 100), i == 3 || i == 6 });
+			}
 			body.push_back(MakeSlot(s, HEAD1POS, false, "face-gear", Str("tac.slot.face1")));
 			body.push_back(MakeSlot(s, HEAD2POS, false, "face-gear", Str("tac.slot.face2")));
 			body.push_back(MakeSlot(s, HELMETPOS, false, "armour", Str("tac.slot.helmet")));
@@ -717,13 +773,18 @@ namespace
 			lbe.push_back(MakeSlot(s, LBE_VESTPOS, false, "inventory", Str("tac.slot.lbe_vest")));
 			lbe.push_back(MakeSlot(s, LBE_BELTPOS, false, "inventory", Str("tac.slot.lbe_belt")));
 			lbe.push_back(MakeSlot(s, LBE_PACKPOS, false, "inventory", Str("tac.slot.lbe_pack")));
-			for (int p = POCK1POS; p <= POCK4POS; ++p) bigPockets.push_back(MakeSlot(s, p, true, "inventory", ""));
+			for (int p = POCK1POS; p <= POCK4POS; ++p) bigPockets.push_back(MakeSlot(s, p, false, "inventory", ""));
 			for (int p = POCK5POS; p <= POCK12POS; ++p) smallPockets.push_back(MakeSlot(s, p, false, "inventory", ""));
+			// the panel shows the pockets by the LBE item that carries them: vest POCK1-4, belt POCK5-8, pack POCK9-12
+			beltPockets.assign(smallPockets.begin(), smallPockets.begin() + LBE_WINDOW_SIZE);
+			packPockets.assign(smallPockets.begin() + LBE_WINDOW_SIZE, smallPockets.end());
 		}
 
 		void ReadDesc()
 		{
+			bool const was = desc;
 			desc = InItemDescriptionBox();
+			if (desc && !was) xTab = "general";
 			xStats.clear();
 			xAtts.clear();
 			if (!desc) return;
@@ -744,12 +805,15 @@ namespace
 			}
 			if (d.weapon)
 			{
-				if (d.damage >= 0) xStats.push_back({ S(gWeaponStatsDesc[4]), std::to_string(d.damage) });
-				if (d.range >= 0)  xStats.push_back({ S(gWeaponStatsDesc[3]), std::to_string(d.range) });
-				xStats.push_back({ S(gWeaponStatsDesc[5]), std::to_string(d.aps) });
-				if (d.burstAps >= 0) xStats.push_back({ ST::format("{} ({})", Str("tac.burst"), d.burstShots).to_std_string(), std::to_string(d.burstAps) });
+				// bar scales: damage up to 60, range up to 70, AP costs out of 25 (shorter is better)
+				auto pct = [](int v, int max) { return std::clamp(v * 100 / max, 0, 100); };
+				if (d.damage >= 0) xStats.push_back({ S(gWeaponStatsDesc[4]), std::to_string(d.damage), "target", pct(d.damage, 60) });
+				if (d.range >= 0)  xStats.push_back({ S(gWeaponStatsDesc[3]), std::to_string(d.range), "range", pct(d.range, 70) });
+				xStats.push_back({ S(gWeaponStatsDesc[5]), std::to_string(d.aps), "action-points", pct(d.aps, 25), true });
+				if (d.burstAps >= 0) xStats.push_back({ ST::format("{} ({})", Str("tac.burst"), d.burstShots).to_std_string(), std::to_string(d.burstAps), "burst", pct(d.burstAps, 25), true });
 			}
-			xStats.push_back({ S(st_format_printf(gWeaponStatsDesc[0], d.weightUnit)), S(d.weight) });
+			xStats.push_back({ S(st_format_printf(gWeaponStatsDesc[0], d.weightUnit)), S(d.weight), "weight",
+				std::clamp(int(std::atof(S(d.weight).c_str()) * 10), 0, 100), true });
 			if (d.gun)
 			{
 				xAmmo = ST::format("{} / {}", d.shotsLeft, d.magSize).to_std_string();

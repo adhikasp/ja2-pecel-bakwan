@@ -13,10 +13,8 @@ body.lo { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .lo-panel {
 	display: flex; flex-direction: column;
 	width: 97%; max-width: 1720dp; height: 94%;
-	padding: var(--sp-4); box-sizing: border-box;
-	background-color: var(--e1-bg); decorator: image(gen-mottle repeat);
-	border: var(--border) var(--e1-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
-	border-radius: var(--r-2);
+	padding: 30dp; box-sizing: border-box;
+	background-color: var(--e1-bg); decorator: ninepatch(fk-frame-o, fk-frame-i, 20dp), image(gen-mottle repeat);
 }
 
 /* ---------------------------------------------------------------- header */
@@ -27,7 +25,7 @@ body.lo { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 	background-color: var(--c-inset); border: var(--border) var(--c-inset-line); overflow: hidden;
 }
 .lo-head .who { display: block; flex: 0 0 260dp; min-width: 0; margin-right: var(--sp-3); }
-.lo-head .who .nm { display: block; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); line-height: var(--lh-tight); }
+.lo-head .who .nm { display: block; font-family: var(--font-stencil); font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-select); line-height: 40dp; font-effect: shadow(2dp 2dp #000000E0); }
 .lo-head .who .sub { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
 
 .lo-load { display: block; flex: 1 1 0; min-width: 0; margin-right: var(--sp-4); }
@@ -77,8 +75,8 @@ body.lo { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 /* ---------------------------------------------------------------- the LBE windows */
 .lbe-win {
 	display: flex; align-items: flex-start; flex: 0 0 auto;
-	padding: var(--sp-2); margin-bottom: var(--sp-2);
-	background-color: var(--c-panel-2); border: var(--border) var(--c-line); border-radius: var(--r-1);
+	padding: 12dp; margin-bottom: var(--sp-2);
+	background-color: var(--c-panel-2); decorator: ninepatch(fk-plate-o, fk-plate-i, 8dp), image(gen-mottle repeat);
 }
 .lbe-win .worn { display: block; flex: 0 0 auto; margin-right: var(--sp-3); }
 .lbe-win .worn .cap, .lbe-win .pk .cap { margin-top: 0; }
@@ -95,7 +93,7 @@ body.lo { position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 }
 .gun-head .gun-pic img { max-width: 100%; max-height: 100%; }
 .gun-head .gun-meta { display: block; flex: 1 1 0; min-width: 0; }
-.gun-head .gun-meta .nm { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-text-strong); }
+.gun-head .gun-meta .nm { display: block; font-family: var(--font-stencil); font-size: var(--fs-xl); text-transform: uppercase; color: var(--c-text-strong); font-effect: var(--fx-deep); }
 .gun-head .gun-meta .sub { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
 .gun-head .gun-meta .line { display: flex; align-items: center; margin-top: var(--sp-1); }
 .gun-head .gun-meta .line .k { font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); margin-right: var(--sp-2); }
