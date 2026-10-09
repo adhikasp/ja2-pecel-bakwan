@@ -894,9 +894,10 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 	}
 	else if (name == "doll")
 	{
-		// the paper doll behind the worn-gear slots: a soldier's front silhouette (head, torso with vest seams, arms,
-		// legs, boots) as a stencilled fill with an etched outline and faint cross-hatching. White: tint it with
-		// image-color. Built from capsules and ellipses as signed distances, so the edges are anti-aliased.
+		// the paper doll behind the worn-gear slots: a clay mannequin in front view, lit from the top left. The body is a
+		// signed distance field of capsules and ellipses joined with a smooth minimum; the depth inside it is shaped into
+		// a rounded height field, and its normal lights the figure (ambient + diffuse + a little specular), so it reads
+		// as a sculpted figure in the recess rather than an outline.
 		size(240, 440, false);
 		auto capsule = [](float px_, float py_, float ax, float ay, float bx, float by, float r) {
 			float const pax = px_ - ax, pay = py_ - ay, bax = bx - ax, bay = by - ay;
@@ -908,35 +909,79 @@ std::vector<unsigned char> GenerateProcedural(std::string const& name, int& w, i
 			float const dx = (px_ - cx) / rx, dy = (py_ - cy) / ry;
 			return (std::sqrt(dx * dx + dy * dy) - 1.f) * std::min(rx, ry);
 		};
+		auto smin = [](float a, float b, float k) {
+			float const hh = std::clamp(0.5f + 0.5f * (b - a) / k, 0.f, 1.f);
+			return b + (a - b) * hh - k * hh * (1.f - hh);
+		};
+		auto body = [&](float fx, float fy) {
+			float d = ellipse(fx, fy, 120, 42, 22, 27);                                         // head
+			d = smin(d, ellipse(fx, fy, 120, 58, 16, 14), 6);                                   // jaw
+			d = smin(d, capsule(fx, fy, 120, 64, 120, 92, 13), 6);                              // neck
+			d = smin(d, capsule(fx, fy, 76, 104, 164, 104, 21), 10);                            // shoulders
+			d = smin(d, capsule(fx, fy, 104, 128, 136, 128, 34), 12);                           // chest
+			d = smin(d, capsule(fx, fy, 120, 150, 120, 196, 30), 10);                           // waist
+			d = smin(d, capsule(fx, fy, 108, 212, 132, 212, 28), 8);                            // hips
+			d = smin(d, capsule(fx, fy, 70, 112, 58, 190, 13), 6);                              // upper arms
+			d = smin(d, capsule(fx, fy, 170, 112, 182, 190, 13), 6);
+			d = smin(d, capsule(fx, fy, 58, 190, 50, 256, 10.5f), 5);                           // forearms
+			d = smin(d, capsule(fx, fy, 182, 190, 190, 256, 10.5f), 5);
+			d = smin(d, ellipse(fx, fy, 48, 272, 10, 15), 4);                                   // hands
+			d = smin(d, ellipse(fx, fy, 192, 272, 10, 15), 4);
+			d = smin(d, capsule(fx, fy, 104, 236, 100, 322, 18), 8);                            // thighs
+			d = smin(d, capsule(fx, fy, 136, 236, 140, 322, 18), 8);
+			d = smin(d, capsule(fx, fy, 100, 330, 98, 398, 13), 6);                             // shins
+			d = smin(d, capsule(fx, fy, 140, 330, 142, 398, 13), 6);
+			d = smin(d, capsule(fx, fy, 92, 414, 106, 414, 11), 4);                             // feet
+			d = smin(d, capsule(fx, fy, 134, 414, 148, 414, 11), 4);
+			return d;
+		};
+		std::vector<float> height(size_t(w) * h), dist(size_t(w) * h);
 		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
 		{
-			float const fx = x + 0.5f, fy = y + 0.5f;
-			float d = ellipse(fx, fy, 120, 46, 25, 31);                                   // head
-			d = std::min(d, capsule(fx, fy, 120, 70, 120, 92, 13));                       // neck
-			d = std::min(d, capsule(fx, fy, 84, 112, 156, 112, 22));                      // shoulders
-			d = std::min(d, capsule(fx, fy, 120, 118, 120, 210, 38));                     // chest and belly
-			d = std::min(d, capsule(fx, fy, 104, 214, 136, 214, 30));                     // hips
-			d = std::min(d, capsule(fx, fy, 68, 118, 52, 196, 15));                       // upper arms
-			d = std::min(d, capsule(fx, fy, 172, 118, 188, 196, 15));
-			d = std::min(d, capsule(fx, fy, 52, 196, 44, 262, 12));                       // forearms
-			d = std::min(d, capsule(fx, fy, 188, 196, 196, 262, 12));
-			d = std::min(d, ellipse(fx, fy, 42, 276, 12, 15));                            // hands
-			d = std::min(d, ellipse(fx, fy, 198, 276, 12, 15));
-			d = std::min(d, capsule(fx, fy, 103, 236, 98, 330, 19));                      // thighs
-			d = std::min(d, capsule(fx, fy, 137, 236, 142, 330, 19));
-			d = std::min(d, capsule(fx, fy, 98, 330, 96, 400, 15));                       // shins
-			d = std::min(d, capsule(fx, fy, 142, 330, 144, 400, 15));
-			d = std::min(d, capsule(fx, fy, 88, 412, 104, 412, 13));                      // boots
-			d = std::min(d, capsule(fx, fy, 136, 412, 152, 412, 13));
-			float const inside = std::clamp(0.5f - d, 0.f, 1.f);
-			float const edge = std::clamp(1.6f - std::abs(d + 1.2f), 0.f, 1.f);          // etched outline
-			float a = inside * 0.15f;
-			if (inside > 0 && (x + y) % 9 == 0) a += inside * 0.06f;                      // hatching
-			bool const seam = (std::abs(fy - 214) < 1.2f && std::abs(fx - 120) < 44)       // belt line
-				|| (std::abs(fx - 120) < 1.0f && fy > 100 && fy < 206);                     // vest zip
-			if (seam && inside > 0) a += 0.18f;
-			a = std::max(a, edge * 0.6f);
-			if (a > 0) Put(px, w, x, y, 255, 255, 255, a);
+			float const d = body(x + 0.5f, y + 0.5f);
+			dist[size_t(y) * w + x] = d;
+			float const t = std::clamp(-d / 16.f, 0.f, 1.f);
+			height[size_t(y) * w + x] = std::sqrt(1.f - (1.f - t) * (1.f - t)) * 16.f; // a rounded profile
+		}
+		auto H = [&](int x, int y) { return height[size_t(std::clamp(y, 0, h - 1)) * w + std::clamp(x, 0, w - 1)]; };
+		float const lx = -0.55f, ly = -0.65f, lz = 0.52f; // light from the top left, in front
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float const d = dist[size_t(y) * w + x];
+			float const cover = std::clamp(0.5f - d, 0.f, 1.f);
+			// a soft contact shadow under the feet
+			float const sx = (x - 120) / 70.f, sy = (y - 428) / 9.f;
+			float const ground = std::clamp(1.f - (sx * sx + sy * sy), 0.f, 1.f) * 0.55f;
+			if (cover <= 0) { if (ground > 0) Put(px, w, x, y, 0, 0, 0, ground); continue; }
+			float nx = -(H(x + 1, y) - H(x - 1, y)), ny = -(H(x, y + 1) - H(x, y - 1)), nz = 2.f;
+			float const len = std::sqrt(nx * nx + ny * ny + nz * nz);
+			nx /= len; ny /= len; nz /= len;
+			float const diffuse = std::max(0.f, nx * lx + ny * ly + nz * lz);
+			float const spec = std::pow(std::max(0.f, nz * 0.9f + (nx * lx + ny * ly) * 0.45f), 24.f) * 0.25f;
+			float occl = std::clamp(-d / 6.f, 0.35f, 1.f);                                       // darker in the creases
+			// sculpted grooves: the chest line, the centre line of the belly, the belt line
+			auto groove = [](float v, float w) { return 1.f - 0.22f * std::clamp(1.f - std::abs(v) / w, 0.f, 1.f); };
+			float const fxc = x + 0.5f, fyc = y + 0.5f;
+			if (fyc > 140 && fyc < 160) occl *= groove(fyc - (146 + std::abs(fxc - 120) * -0.12f), 2.2f) * 1.f;
+			if (fyc > 158 && fyc < 204) occl *= groove(fxc - 120, 1.6f);
+			if (std::abs(fxc - 120) < 40) occl *= groove(fyc - 206, 2.f);
+			float const grain = (Rand01(x, y, 613) - 0.5f) * 0.05f;
+			float const lum = std::clamp((0.18f + diffuse * 0.78f) * occl + spec + grain, 0.f, 1.2f);
+			// warm putty-grey clay
+			Put(px, w, x, y, int(std::clamp(lum * 196, 0.f, 255.f)), int(std::clamp(lum * 184, 0.f, 255.f)),
+				int(std::clamp(lum * 160, 0.f, 255.f)), cover);
+		}
+	}
+	else if (name == "spot")
+	{
+		// a soft pool of light for a recess (the doll's backdrop): warm, brightest a little above the centre
+		size(256, 256, false);
+		for (int y = 0; y < h; ++y) for (int x = 0; x < w; ++x)
+		{
+			float const dx = (x + 0.5f) / w * 2 - 1, dy = ((y + 0.5f) / h * 2 - 1) + 0.15f;
+			float const r = std::sqrt(dx * dx + dy * dy * 0.8f);
+			float const t = std::clamp(1.f - r, 0.f, 1.f);
+			Put(px, w, x, y, 255, 226, 168, t * t * 0.16f);
 		}
 	}
 	else if (name == "screw")

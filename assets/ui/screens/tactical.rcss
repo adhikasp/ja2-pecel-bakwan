@@ -206,12 +206,12 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .attrs .row .v.up { color: var(--c-ok); }
 .attrs .cap { margin: var(--sp-2) 0 var(--sp-1); }
 
-.t5 .slot { overflow: hidden; }
-.t5 .slot .item { display: flex; align-items: center; justify-content: center; }
+.t5 .slot { overflow: visible; }
+.t5 .slot .item { display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .t5 .slot .item img.pic { position: relative; left: 0; top: 0; image-color: #FFFFFF; }
 .t5 .slot.big { width: 136dp; }
-.t5 .slot { background-color: #4A3F2A; decorator: ninepatch(fk-well-o, fk-well-i, 6dp), image(gen-mottle repeat); }
-.t5 .slot:hover { background-color: #5A4C33; }
+.t5 .slot { background-color: #3C3323; decorator: ninepatch(fk-plate-o, fk-plate-i, 5dp), image(gen-mottle repeat); }
+.t5 .slot:hover { background-color: #54462E; }
 .t5 .slot .ghost { image-color: #8A7650; }
 .t5 .slot .lbl { position: absolute; left: 5dp; bottom: 3dp; font-family: var(--font-plate); font-weight: 700; font-size: 10dp; letter-spacing: 1dp; text-transform: uppercase; color: #C9B68A; font-effect: var(--fx-emboss); }
 .t5 .slot .count { color: var(--c-text-strong); }
@@ -219,25 +219,83 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .t5 .slot .cond .fill { left: 0; right: 0; top: auto; bottom: 0; }
 .t5 .slot .ghost { left: 50%; top: 50%; margin-left: -14dp; margin-top: -14dp; }
 .t5 .slot .att { position: absolute; left: 4dp; top: 3dp; width: 12dp; height: 12dp; image-color: var(--c-accent); }
+/* attachments on the item: a green pip with their count */
+.t5 .slot .pip {
+	position: absolute; left: 5dp; top: 5dp; width: 15dp; height: 15dp; border-radius: 8dp;
+	font-family: var(--font-mono); font-size: 11dp; line-height: 15dp; text-align: center;
+	background-color: var(--c-ok); color: var(--c-on-accent); border: 1dp #0A0704;
+}
+/* the hover card: what the item is, its condition, weight, ammo and what is attached. It floats beside the slot
+   (bottom-aligned so it never runs under the squad bar) and never takes the mouse. */
+.t5 .slot .card {
+	display: none; position: absolute; left: 100%; bottom: 0; margin-left: 10dp; width: 248dp; padding: 10dp 12dp 12dp;
+	z-index: 40; pointer-events: none; box-sizing: border-box;
+	background-color: #0C0805F4; decorator: image(gen-leather repeat);
+	border: 2dp var(--c-accent-3); border-color: var(--c-accent-2) var(--c-accent-3) var(--c-accent-3) var(--c-accent-2);
+}
+.t5 .slot:hover .card { display: block; }
+.t5 .slot .card .cn { display: block; font-family: var(--font-plate); font-weight: 700; font-size: var(--fs-sm); text-transform: uppercase; color: var(--c-accent-2); line-height: 19dp; font-effect: var(--fx-emboss); }
+.t5 .slot .card .cc { display: flex; align-items: center; margin: 6dp 0 4dp; }
+.t5 .slot .card .cc .bar { flex: 1 1 0; height: 6dp; margin-right: var(--sp-2); }
+.t5 .slot .card .cc .v { display: block; width: 40dp; text-align: right; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-strong); }
+.t5 .slot .card .kv { height: 20dp; }
+.t5 .slot .card .kv .k { font-family: var(--font-plate); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 1dp; color: var(--c-text-dim); }
+.t5 .slot .card .ch { display: block; margin-top: 6dp; padding-top: 5dp; font-family: var(--font-plate); font-weight: 700; font-size: var(--fs-2xs); text-transform: uppercase; letter-spacing: 1dp; color: var(--c-accent); decorator: image(gen-groove repeat-x left top); }
+.t5 .slot .card .atl .ln { display: block; margin-top: 3dp; padding-left: 8dp; font-size: var(--fs-xs); line-height: 17dp; color: var(--c-text); border-left: 2dp var(--c-ok); }
 .t5 .slot.dragging .item { opacity: 0.25; }
 
 /* the paper doll: 380 x 360dp, the figure (gen-doll, 240 x 440) centred behind the slots, each slot where it is worn */
 .doll { display: block; position: relative; flex: 0 0 380dp; width: 380dp; height: 360dp; margin-right: var(--sp-4); }
-.doll .figure { position: absolute; left: 90dp; top: 0; width: 196dp; height: 360dp; image-color: var(--c-accent); }
+.doll .stage {
+	position: absolute; left: 76dp; right: 76dp; top: 0; bottom: 0;
+	background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 8dp), image(gen-spot), image(gen-granite repeat);
+}
+.doll .figure { position: absolute; left: 92dp; top: 0; width: 196dp; height: 360dp; }
 .doll .slot { position: absolute; }
-.doll .at-3  { left: 78dp;  top: 8dp; }    /* face 1 */
-.doll .at-0  { left: 158dp; top: 0; }      /* helmet */
-.doll .at-4  { left: 238dp; top: 8dp; }    /* face 2 */
-.doll .at-7  { left: 78dp;  top: 92dp; }   /* LBE vest */
-.doll .at-1  { left: 158dp; top: 86dp; }   /* armour vest */
-.doll .at-9  { left: 238dp; top: 92dp; }   /* pack */
-.doll .at-8  { left: 158dp; top: 166dp; }  /* belt */
-.doll .at-5  { left: 0;     top: 200dp; }  /* hand */
-.doll .at-6  { left: 244dp; top: 200dp; }  /* off hand */
-.doll .at-2  { left: 158dp; top: 252dp; }  /* legs */
+/* left column: helmet, armour vest, belt, legs; right column: face 1, face 2, LBE vest, pack; hands below */
+.doll .at-0  { left: 0;     top: 0; }
+.doll .at-1  { left: 0;     top: 74dp; }
+.doll .at-8  { left: 0;     top: 148dp; }
+.doll .at-2  { left: 0;     top: 222dp; }
+.doll .at-3  { left: 316dp; top: 0; }
+.doll .at-4  { left: 316dp; top: 74dp; }
+.doll .at-7  { left: 316dp; top: 148dp; }
+.doll .at-9  { left: 316dp; top: 222dp; }
+.doll .at-5  { left: 0;     top: 296dp; }
+.doll .at-6  { left: 244dp; top: 296dp; }
+/* leader lines (2dp brass rules) and the anchor dots on the figure */
+.doll .ld { position: absolute; background-color: #D8B25E99; }
+.doll .l-hl  { left: 64dp;  top: 31dp;  width: 107dp; height: 2dp; }
+.doll .l-ch  { left: 64dp;  top: 105dp; width: 98dp;  height: 2dp; }
+.doll .l-wa  { left: 64dp;  top: 179dp; width: 96dp;  height: 2dp; }
+.doll .l-kn  { left: 64dp;  top: 253dp; width: 96dp;  height: 2dp; }
+.doll .r-hd  { left: 209dp; top: 31dp;  width: 107dp; height: 2dp; }
+.doll .r-f2a { left: 248dp; top: 105dp; width: 68dp;  height: 2dp; }
+.doll .r-f2b { left: 248dp; top: 46dp;  width: 2dp;   height: 61dp; }
+.doll .r-f2c { left: 204dp; top: 46dp;  width: 46dp;  height: 2dp; }
+.doll .r-lba { left: 264dp; top: 179dp; width: 52dp;  height: 2dp; }
+.doll .r-lbb { left: 264dp; top: 120dp; width: 2dp;   height: 61dp; }
+.doll .r-lbc { left: 218dp; top: 120dp; width: 48dp;  height: 2dp; }
+.doll .r-pk  { left: 220dp; top: 253dp; width: 96dp;  height: 2dp; }
+.doll .h-l   { left: 129dp; top: 238dp; width: 2dp;   height: 58dp; }
+.doll .h-r   { left: 249dp; top: 238dp; width: 2dp;   height: 58dp; }
+.doll .dot {
+	position: absolute; width: 8dp; height: 8dp; margin-left: -4dp; margin-top: -4dp; border-radius: 4dp;
+	background-color: var(--c-accent-2); border: 1dp #0A0704;
+}
+.doll .p-head   { left: 171dp; top: 32dp; }
+.doll .p-chest  { left: 162dp; top: 106dp; }
+.doll .p-waist  { left: 160dp; top: 180dp; }
+.doll .p-knee   { left: 160dp; top: 254dp; }
+.doll .p-head2  { left: 209dp; top: 32dp; }
+.doll .p-face2  { left: 204dp; top: 47dp; }
+.doll .p-chest2 { left: 218dp; top: 121dp; }
+.doll .p-hip    { left: 220dp; top: 254dp; }
+.doll .p-handl  { left: 130dp; top: 236dp; }
+.doll .p-handr  { left: 250dp; top: 236dp; }
 /* the pocket grids are the only part that grows with what a merc carries: they scroll when the
  * panel has run out of room (the worn LBE row, the four vest pockets and the eight pack/belt ones) */
-.pockets { display: block; flex: 1 1 0; min-height: 0; overflow-y: auto; }
+.pockets { display: block; flex: 1 1 0; min-height: 0; }
 .pockets .grid { display: flex; flex-wrap: nowrap; margin-bottom: var(--sp-2); }
 .pockets .grid .slot { width: 58dp; height: 58dp; margin: 0 6dp 0 0; }
 .pockets .cap { margin-bottom: 3dp; }
@@ -263,8 +321,44 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .drag-tip { position: absolute; display: block; padding: 3dp var(--sp-2); background-color: var(--e3-bg); border: var(--border) var(--c-accent); font-size: var(--fs-sm); color: var(--c-text-strong); }
 
 /* ------------------------------------------------------------------ item description */
-.idesc { position: absolute; left: 968dp; bottom: 164dp; width: 600dp; border-top: 2dp var(--c-accent); }
-.idesc .pic-area { display: flex; position: relative; align-items: center; justify-content: center; height: 128dp; margin: var(--sp-3); background-color: var(--c-bg); border: var(--border) var(--c-line); }
+/* the item sheet: a framed card beside the detail panel */
+.idesc {
+	position: absolute; left: 968dp; bottom: 164dp; width: 600dp; padding: 16dp;
+	decorator: ninepatch(fk-frame-o, fk-frame-i, 16dp), image(gen-mottle repeat);
+}
+.idesc .hud-head .t { font-family: var(--font-stencil); font-weight: normal; font-size: var(--fs-lg); letter-spacing: 0; color: var(--c-select); font-effect: var(--fx-deep); }
+.idesc .hud-head .tag {
+	display: block; margin-left: var(--sp-3); padding: 0 var(--sp-2); height: 20dp; line-height: 20dp;
+	font-family: var(--font-type); font-size: var(--fs-xs); color: var(--c-text); background-color: var(--c-well); border: var(--border) var(--c-line-2);
+}
+/* the picture sits in a lit recess, condition and weight stamped in its corners */
+.idesc .pic-area {
+	display: flex; position: relative; align-items: center; justify-content: center; height: 136dp; margin: var(--sp-3) var(--sp-2);
+	background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 8dp), image(gen-spot), image(gen-granite repeat);
+}
+.idesc .pic-area .chip {
+	position: absolute; bottom: 8dp; display: flex; align-items: center; height: 22dp; padding: 0 var(--sp-2);
+	background-color: #0A0704D8; border: var(--border) var(--c-line-2);
+}
+.idesc .pic-area .chip.c-l { left: 8dp; }
+.idesc .pic-area .chip.c-r { right: 8dp; }
+.idesc .pic-area .chip .k { display: block; margin-right: var(--sp-2); font-family: var(--font-plate); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase; color: var(--c-text-dim); }
+.idesc .pic-area .chip .v { display: block; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-strong); }
+.idesc .pic-area .chip .icon { margin-right: var(--sp-1); image-color: var(--c-accent); }
+.idesc .tabs { margin: 0 var(--sp-2); }
+.idesc .tabs .tab { focus: auto; }
+/* specs: icon, name, a bar against a typical range, the value (amber bars: less is better) */
+.idesc .spec { display: flex; align-items: center; height: 26dp; }
+.idesc .spec .icon { width: var(--icon-sm); height: var(--icon-sm); margin-right: var(--sp-2); image-color: var(--c-accent); }
+.idesc .spec .k { display: block; width: 92dp; font-size: var(--fs-xs); color: var(--c-text-dim); white-space: nowrap; overflow: hidden; }
+.idesc .spec .bar { flex: 1 1 0; height: 6dp; margin-right: var(--sp-2); }
+.idesc .spec .bar .fill { background-color: var(--c-accent-3); }
+.idesc .spec.low .bar .fill { background-color: #C98A3A; }
+.idesc .spec .bar.ok .fill { background-color: var(--c-ok); }
+.idesc .spec .v { display: block; width: 44dp; text-align: right; font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text-strong); }
+.idesc .dossier { display: block; margin: var(--sp-3) var(--sp-2) 0; padding: var(--sp-3) var(--sp-4); background-color: #2A2216; decorator: image(gen-grain repeat); border-left: 3dp var(--c-accent-3); }
+.idesc .dossier .text { display: block; padding: 0; margin-bottom: var(--sp-3); font-family: var(--font-type); font-size: var(--fs-sm); line-height: 21dp; color: var(--c-text); }
+.idesc .dossier .pc { padding: 0 0 var(--sp-2); }
 .idesc .pic-area .cat { position: absolute; left: var(--sp-2); top: var(--sp-2); }
 .idesc .pic-area .cat .icon { width: var(--icon-sm); height: var(--icon-sm); image-color: var(--c-text-faint); }
 .idesc .text { display: block; padding: 0 var(--sp-3); font-size: var(--fs-sm); line-height: 20dp; color: var(--c-text); }
@@ -277,16 +371,16 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .idesc .pc .k.pro { color: var(--c-ok); }
 .idesc .pc .k.con { color: var(--c-danger); }
 .idesc .pc .v { display: block; flex: 1 1 0; color: var(--c-text-dim); }
-.idesc .ammo { display: flex; align-items: center; padding: var(--sp-2); background-color: var(--c-panel-2); border: var(--border) var(--c-line); margin-bottom: var(--sp-2); }
+.idesc .ammo { display: flex; align-items: center; padding: var(--sp-2) var(--sp-3); margin-bottom: var(--sp-3); background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 6dp), image(gen-granite repeat); }
 .idesc .ammo .slot { margin-right: var(--sp-2); }
 .idesc .ammo .a { display: block; flex: 1 1 0; }
-.idesc .ammo .a .n { display: block; font-family: var(--font-mono); font-size: var(--fs-lg); color: var(--c-text-strong); }
+.idesc .ammo .a .n { display: block; font-family: var(--font-mono); font-size: var(--fs-xl); color: var(--c-select); font-effect: glow(2dp #F2C23040); }
 .idesc .ammo .a .t { display: block; font-size: var(--fs-xs); color: var(--c-text-dim); }
 .idesc .ammo .btn { height: 30dp; font-size: var(--fs-sm); padding: 0 var(--sp-2); }
 .idesc .atts { display: flex; }
 .idesc .atts .slot { margin-right: var(--sp-2); }
 .idesc .fits { display: block; margin-top: var(--sp-1); font-size: var(--fs-2xs); color: var(--c-text-faint); line-height: 16dp; }
-.idesc .foot { display: flex; align-items: center; padding: var(--sp-2) var(--sp-3); border-top: var(--border) var(--c-line); }
+.idesc .foot { display: flex; align-items: center; padding: var(--sp-2) var(--sp-2) 0; margin-top: var(--sp-2); decorator: image(gen-groove repeat-x left top); }
 .idesc .foot .btn { height: 34dp; font-size: var(--fs-sm); margin-left: var(--sp-2); }
 .idesc .foot span.h { display: block; font-size: var(--fs-xs); color: var(--c-text-faint); }
 .cond-row { display: flex; align-items: center; height: 22dp; }
