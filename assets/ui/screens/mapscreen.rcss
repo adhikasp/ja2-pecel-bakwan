@@ -394,7 +394,8 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .inv-merc { display: flex; flex-direction: column; flex: 0 0 440dp; border-right: var(--border) var(--c-line); padding: var(--sp-3); }
 .gear-head { display: flex; align-items: center; margin-bottom: var(--sp-1); }
 .gear-head .grow { flex: 1 1 auto; }
-.gear-head .btn { height: var(--h-control-sm); padding: 0 var(--sp-2); font-size: var(--fs-sm); }
+.gear-head .btn { flex: 0 0 auto; white-space: nowrap; height: var(--h-control-sm); padding: 0 var(--sp-2); font-size: var(--fs-sm); }
+.gear-head .sec-title { flex: 1 1 0; min-width: 0; letter-spacing: 1dp; }
 .inv-tabs { display: flex; margin-bottom: var(--sp-3); }
 .inv-tab { display: block; position: relative; width: 52dp; height: 58dp; margin-right: var(--sp-1); border: var(--border) var(--c-line-2); background-color: var(--c-panel-2); }
 .inv-tab img { position: absolute; left: 2dp; top: 2dp; width: 46dp; height: 52dp; }

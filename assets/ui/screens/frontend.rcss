@@ -337,6 +337,7 @@ body.p3 .gone { display: none; }
 #newgame.compact .ng-halves { flex-direction: column; }
 #newgame.compact .ng-half { flex: 0 0 auto; margin-right: 0; }
 #options.compact .op-nav { flex-basis: 220dp; margin-right: var(--sp-4); }
+#options.compact .op-tab, #setup.compact .op-tab { font-size: var(--fs-sm); letter-spacing: 0; padding: 0 var(--sp-3); }
 #options.compact .op-help { flex-basis: 300dp; }
 #options.compact .op-col { margin-right: var(--sp-4); }
 #saveload.compact .sl-detail { flex-basis: 400dp; }
