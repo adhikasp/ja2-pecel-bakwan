@@ -170,19 +170,40 @@ asserts results through the Lua surface, never a click path or a screenshot.
 
 ## Wireframes
 
-To be approved by the owner, one state at a time (mocks in `assets/ui/mocks/tactical/`, drawn over the live
-Field Kit HUD in the real game at 1920x1080, screenshots on `pr-screenshots/plan-native-tactical/`):
+For owner approval, one state at a time. The mocks (`assets/ui/mocks/tactical/*.rml`, written by
+`tools/ui/native_tactical_mocks.py`, style `mocks.rcss`) do not redraw the HUD: each one is opened over the **live
+Field Kit HUD** in the real game, with the real squad, and adds only what changes. Shots are taken by
+`tests/e2e/manual/native_tactical_mocks.lua`; the images are on `pr-screenshots/plan-native-tactical/`. Data in a
+mock is literal (sample keys, sample hit chance).
 
-1. Drag and drop: dragging an item, valid/invalid slots with the reason, give onto a squad card, drop/throw on the world.
-2. Cursors: the cursor sheet (every mode), the target chip on an enemy, the move path with its AP cost.
-3. Item stack popup; key ring popup.
-4. NPC talk panel (and a merc speaking with subtitles); sector exit menu.
-5. Overhead map; placement.
-6. World overlays (locator, item pool list, burst marks, rubber band, paused).
+| # | State | Slice | What it shows |
+|---|---|---|---|
+| W1 | `drag_slot` | #320 | a first aid kit dragged over the helmet slot: free pockets and hands outlined as valid, worn-gear and LBE slots refuse, the chip says why |
+| W2 | `drag_give` | #320 | the same item over Barry's card: "Give to Barry · 1 tile · 2 AP each"; Buns is out of reach and says so |
+| W3 | `drag_world` | #320 | a grenade held over the world: throw arc, landing marker, range, AP and spread; a click on the merc drops it at his feet |
+| W4 | `cursors` | #318 | the cursor sheet: every mode as one native pointer with a tone (can do / with a catch / hostile or can't), the legacy ids each replaces, and the three chip kinds |
+| W5 | `target` | #318 | the target cursor on a real enemy in turn-based combat: hit chance, aim clicks, AP, range |
+| W6 | `move` | #318 | the move path as a native line through the tile centres: solid for this turn's AP, amber beyond, the cost at the destination |
+| W7 | `stack` | #321 | the stack popup over the pocket it came from: each magazine with its rounds, take one / n / all |
+| W8 | `keyring` | #321 | the key ring: each key with where it fits and where it came from, Use (with why it is off) and Give |
+| W9 | `talk` | #321 | the approved Phase 5 talk panel in the Field Kit style: the NPC's talking face, the line, the approaches with keys, the merc's subtitle over his head |
+| W10 | `exit` | #321 | the sector exit menu next to the edge: who leaves, load the next sector now or travel on the map, travel time and what is known there |
+| W11 | `overhead` | #323 | the overhead view: the whole sector (the legacy 640x320 picture stands in for the GPU one), markers, the view box, legend with counts, the squad |
+| W12 | `placement` | #323 | placement: the arrival zone lit, the roster with placed / waiting, progress, Clear / Spread / Group / Done |
+| W13 | `overlays` | #322 | world overlays: locator rings, rubber-band selection, the item list under the cursor, a new-item marker, burst impacts, the paused banner |
+| — | `live` | — | the live HUD as it is, at 1920x1080 and at 1280x720 (the proposed minimum) |
+
+HUD-relative parts are placed in dp measured on the live HUD at 1920x1080, so W1–W3, W7, W8 and the world-anchored
+states are shot at 1920x1080; the self-contained ones (W4, W9, W10) also at 1280x720.
+
+Notes from drawing them: the ground marker is a rounded tile marker, not the isometric diamond (the software UI
+renderer does not draw RmlUi transforms; the real marker is drawn in the world's projection by the overlay layer);
+at 1280x720 today's bar is taller than its layout because it still reaches up to the hidden legacy panel — that
+goes away with #319.
 
 ## Open questions for the owner
 
 1. Minimum output 1280x720 for the whole game (above), or a compact layout below it?
-2. The talk panel docks above the bar on the left instead of floating over the NPC — OK?
-3. The path as a native line instead of the original footstep tiles — OK?
-4. The action, door and pick-up menus become models in #321 (not a separate issue) — OK?
+2. The path as a native line instead of the original footstep tiles (W6) — OK?
+3. The action, door and pick-up menus become models in #321 (not a separate issue) — OK?
+4. Drag a key onto a door to use it (W8), and drop on the merc himself to drop at his feet (W3) — OK as new gestures?
