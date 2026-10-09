@@ -23,6 +23,9 @@
 --c-bevel-lo:    #0D0906;   /* plate: bottom and right edge (shade) */
 --c-inset:       #100A05;   /* recessed wells: portraits, item slots, clocks */
 --c-inset-line:  #6B5530;   /* the gold hairline around a recess */
+--c-well:        #0C0906;   /* a recess cut into the plate, under the gen-granite speckle */
+--c-blood:       #7E1A12;   /* Arulco red (the flag, the "2" of the logo): enemy chrome and danger plates, never status */
+--c-blood-2:     #B0281A;
 
 /* ---------------------------------------------------------------- colour: text (typed dossier: cream on dark) */
 --c-text-strong: #F5EDDA;   /* headings, values, selected */
@@ -66,6 +69,15 @@
 --font-body:     Barlow;              /* prose, lists, values */
 --font-mono:     "Share Tech Mono";   /* numbers, codes, keys, time, money */
 /* fallbacks (any family): Fira Sans (Latin Extended, Cyrillic, Greek), Noto Sans SC (Chinese) */
+/* Field Kit voices (the original's lettering: stencilled crates, embossed plate labels, typed dossiers) */
+--font-stencil:  "Black Ops One";     /* screen titles, the main menu, hero words: stencilled on a crate */
+--font-plate:    "Chakra Petch";      /* buttons, tabs, section plates: squared lettering stamped in metal */
+--font-type:     "Special Elite";     /* dossier flavour: kickers, bios, tips, mail (never data) */
+
+/* lettering depth (font-effect is drawn into the glyphs, so it works on every render path) */
+--fx-emboss:     shadow(0dp 1dp #000000D0);   /* cream or brass letters raised from a dark plate */
+--fx-deep:       shadow(0dp 2dp #000000F0);   /* big titles: cast onto the plate */
+--fx-engrave:    shadow(0dp 1dp #FBE7B866);   /* dark letters pressed into a brass plate: lit lower lip */
 
 --fs-2xs:        12dp;  /* captions under icons */
 --fs-xs:         13dp;  /* key caps, table headers */

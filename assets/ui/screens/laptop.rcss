@@ -176,7 +176,7 @@ span, div { display: block; }
 .aim-face .ph { width: 288dp; background-color: #0A0F1A; border: 2dp var(--site-aim); }
 .aim-face .ph img { display: block; width: 288dp; }
 .aim-face .nav { display: flex; margin-top: var(--sp-3); }
-.aim-face .nav .btn { flex: 1 1 0; margin-right: var(--sp-2); }
+.aim-face .nav .btn { flex: 1 1 0; margin-right: var(--sp-2); padding: 0 var(--sp-2); letter-spacing: 0; font-size: var(--fs-sm); }
 .aim-info { flex: 1 1 0; min-width: 0; margin-left: var(--sp-6); }
 .aim-name { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-3xl); text-transform: uppercase; color: #EEF0F6; line-height: 52dp; }
 .aim-full { color: #8C97AE; margin-bottom: var(--sp-4); }
@@ -215,6 +215,7 @@ span, div { display: block; }
 .vc-sum .kv.total .v { color: var(--c-select); font-size: var(--fs-lg); }
 .vc-act { display: flex; padding: var(--sp-3) var(--sp-4); border-top: var(--border) var(--c-line); }
 .vc-act .btn-primary { flex: 1 1 0; margin-left: var(--sp-2); }
+.vc-act .btn { padding: 0 var(--sp-3); font-size: var(--fs-sm); white-space: nowrap; }
 
 /* M.E.R.C. */
 .merc { background-color: var(--site-merc-bg); }

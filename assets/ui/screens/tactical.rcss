@@ -9,19 +9,18 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 
 /* ------------------------------------------------------------------ shared panel look */
 .hud {
-	background-color: var(--c-panel); decorator: image(gen-mottle repeat);
-	border: var(--border) var(--c-line-2); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
-	border-radius: var(--r-2);
+	background-color: var(--c-panel); decorator: ninepatch(fk-plate-o, fk-plate-i, 8dp), image(gen-mottle repeat);
+	padding: 4dp; box-sizing: border-box;
 }
 .hud-head {
 	display: flex; align-items: center; height: 36dp; padding: 0 var(--sp-2) 0 var(--sp-3);
-	border-bottom: var(--border) var(--c-line); decorator: image(gen-brushed repeat);
+	decorator: image(gen-groove repeat-x left bottom), image(gen-brushed repeat);
 }
-.hud-head .t { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); text-transform: uppercase; color: var(--c-text-strong); }
+.hud-head .t { display: block; font-family: var(--font-plate); font-weight: 700; letter-spacing: 1dp; font-size: var(--fs-md); text-transform: uppercase; color: var(--c-accent); font-effect: var(--fx-emboss); }
 .hud-head .m { display: block; margin-left: var(--sp-3); font-size: var(--fs-sm); color: var(--c-text-dim); }
 .hud-head .icon-btn { width: 28dp; height: 28dp; margin-left: var(--sp-1); }
 .hud-head .icon-btn .icon { width: var(--icon-sm); height: var(--icon-sm); }
-.cap { display: block; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-faint); }
+.cap { display: block; font-family: var(--font-plate); font-weight: 700; font-size: var(--fs-2xs); letter-spacing: 2dp; text-transform: uppercase; color: var(--c-accent); font-effect: var(--fx-emboss); }
 
 /* ------------------------------------------------------------------ top left: message lines */
 .log-lines { position: absolute; left: var(--sp-4); top: var(--sp-4); width: 720dp; }
@@ -100,28 +99,27 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 /* ------------------------------------------------------------------ bottom: squad bar */
 .sbar {
 	position: absolute; left: 0; right: 0; bottom: 0; height: 156dp; display: flex; align-items: stretch;
-	padding: var(--sp-2) var(--sp-3); box-sizing: border-box;
-	background-color: var(--c-bg); decorator: image(gen-mottle repeat);
-	border-top: var(--border) var(--c-line-2);
+	padding: 14dp 18dp 12dp; box-sizing: border-box;
+	background-color: var(--c-panel-2); decorator: ninepatch(fk-frame-o, fk-frame-i, 16dp), image(gen-brushed repeat), image(gen-mottle repeat);
 }
 .squads { display: flex; flex-direction: column; width: 56dp; margin-right: var(--sp-2); }
 .sq {
 	display: flex; align-items: center; justify-content: center; height: 30dp; margin-bottom: 4dp; box-sizing: border-box;
-	font-family: var(--font-display); font-weight: 600; font-size: var(--fs-sm); color: var(--c-text-dim);
-	border: var(--border) var(--c-line); border-radius: var(--r-1); background-color: var(--c-panel);
+	font-family: var(--font-stencil); font-size: var(--fs-md); color: var(--c-text-dim); font-effect: var(--fx-emboss);
+	border: 2dp var(--c-line); border-color: var(--c-bevel-lo) var(--c-bevel-hi) var(--c-bevel-hi) var(--c-bevel-lo); border-radius: var(--r-0); background-color: var(--c-well);
 }
 .sq span { display: block; }
 .sq .n { margin-left: 4dp; font-family: var(--font-mono); font-size: var(--fs-2xs); color: var(--c-text-faint); }
-.sq.on { border-color: var(--c-accent); color: var(--c-accent); background-color: var(--c-accent-soft); }
+.sq.on { color: var(--c-on-accent); background-color: var(--c-accent); border-color: var(--c-accent-2) var(--c-accent-3) var(--c-accent-3) var(--c-accent-2); font-effect: var(--fx-engrave); }
+.sq.on .n { color: var(--c-on-accent); }
 .sq.empty { color: var(--c-line-2); }
 .cards { display: flex; flex: 1 1 0; min-width: 0; }
 .tcard {
 	display: flex; position: relative; flex: 1 1 0; max-width: 300dp; min-width: 0; margin-right: var(--sp-2); padding: var(--sp-2);
-	box-sizing: border-box; background-color: var(--c-panel); decorator: image(gen-mottle repeat);
-	border: var(--border) var(--c-line); border-color: var(--c-bevel-hi) var(--c-bevel-lo) var(--c-bevel-lo) var(--c-bevel-hi);
-	border-radius: var(--r-2);
+	box-sizing: border-box; background-color: var(--c-panel); decorator: ninepatch(fk-plate-o, fk-plate-i, 8dp), image(gen-mottle repeat);
+	border: 2dp #00000000; border-radius: var(--r-0);
 }
-.tcard .face { display: flex; position: relative; align-items: center; justify-content: center; width: 104dp; height: 92dp; margin-right: var(--sp-2); background-color: var(--c-inset); border: var(--border) var(--c-inset-line); overflow: hidden; }
+.tcard .face { display: flex; position: relative; align-items: center; justify-content: center; width: 104dp; height: 92dp; margin-right: var(--sp-2); background-color: var(--c-well); border: 3dp var(--c-bevel-lo); border-color: var(--c-bevel-lo) var(--c-bevel-hi) var(--c-bevel-hi) var(--c-bevel-lo); overflow: hidden; }
 .tcard .face .ap {
 	position: absolute; left: 0; right: 0; bottom: 0; height: 24dp; text-align: center; background-color: #0A0704D8;
 	font-family: var(--font-mono); font-size: var(--fs-lg); line-height: 24dp; color: var(--c-accent);
@@ -130,7 +128,7 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .tcard .face .spk { position: absolute; right: 2dp; top: 2dp; width: 20dp; height: 20dp; image-color: var(--c-info); }
 .tcard .info { display: block; flex: 1 1 0; min-width: 0; }
 .tcard .nr { display: flex; align-items: center; height: 22dp; }
-.tcard .nr .nm { display: block; flex: 1 1 0; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); white-space: nowrap; overflow: hidden; }
+.tcard .nr .nm { display: block; flex: 1 1 0; font-family: var(--font-stencil); font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); white-space: nowrap; overflow: hidden; font-effect: var(--fx-deep); }
 .tcard .nr .icon { width: var(--icon-sm); height: var(--icon-sm); margin-left: 3dp; image-color: var(--c-warn); }
 .tcard .nr .icon.info { image-color: var(--c-info); }
 .tcard .nr .icon.danger { image-color: var(--c-danger); }
@@ -139,19 +137,20 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .tcard .st .k { display: block; width: 22dp; font-family: var(--font-display); font-weight: 600; font-size: 11dp; color: var(--c-text-faint); }
 .tcard .st .bar { flex: 1 1 0; height: 5dp; margin-right: var(--sp-1); }
 .tcard .st .v { display: block; width: 26dp; text-align: right; font-family: var(--font-mono); font-size: 12dp; color: var(--c-text); }
-.tcard .hand { display: flex; align-items: center; height: 28dp; margin-top: 3dp; padding: 0 var(--sp-1); background-color: var(--c-bg); border: var(--border) var(--c-line); overflow: hidden; }
+.tcard .hand { display: flex; align-items: center; height: 28dp; margin-top: 3dp; padding: 0 var(--sp-1); background-color: #5A4C33; border: var(--border) var(--c-line); border-color: var(--c-bevel-lo) var(--c-bevel-hi) var(--c-bevel-hi) var(--c-bevel-lo); decorator: image(gen-mottle repeat); overflow: hidden; }
 .tcard .hand img.pic { margin-right: var(--sp-1); flex: 0 1 auto; }
-.tcard .hand .am { display: block; flex: 0 0 auto; white-space: nowrap; margin-left: auto; font-family: var(--font-mono); font-size: 12dp; color: var(--c-text-dim); }
+.tcard .hand .am { display: block; flex: 0 0 auto; white-space: nowrap; margin-left: auto; font-family: var(--font-mono); font-size: 13dp; color: var(--c-text-strong); font-effect: var(--fx-emboss); }
 .tcard .hand .am.low { color: var(--c-warn); }
-.tcard:hover { border-color: var(--c-text-faint); }
-.tcard.sel { border: 2dp var(--c-select); background-color: #2E2210; padding: 7dp; }
+.tcard:hover { background-color: var(--c-panel-2); }
+.tcard.sel { background-color: #3A2A12; decorator: ninepatch(fk-br-o, fk-br-i, 14dp), ninepatch(fk-plate-o, fk-plate-i, 8dp), image(gen-mottle repeat); }
+.tcard.sel .nr .nm { color: var(--c-select); }
 .tcard.sel .face .ap { color: var(--c-select); }
 .tcard.done .face img.pic { image-color: #A8916B; }
 .tcard.done .face .ap { color: var(--c-text-faint); }
 .tcard.crit { border-color: var(--c-danger); }
 .tcard.drop-ok { border: 2dp var(--c-accent); background-color: #2E2210; padding: 7dp; }
 .tcard.talking { border-color: var(--c-info); }
-.tcard.ghost { border-color: var(--c-line); background-color: var(--c-bg); }
+.tcard.ghost { background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 8dp), image(gen-granite repeat); opacity: 0.55; }
 .tcard.ghost span { display: block; margin: auto; font-size: var(--fs-xs); color: var(--c-line-2); }
 
 .tools { display: flex; flex-direction: column; justify-content: center; margin-left: var(--sp-2); }
@@ -170,13 +169,16 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 /* ------------------------------------------------------------------ merc detail + inventory panel */
 /* The panel grows upwards from `bottom: 164dp`, so its height is its content's. The game caps the UI scale at
  * screen height / 720, so the room above the bar is 556dp at any resolution: the content has to fit in that. */
-.detail { position: absolute; left: var(--sp-3); bottom: 164dp; width: 940dp; display: flex; flex-direction: column; }
-.detail .body { display: flex; flex: 1 1 auto; min-height: 0; padding: var(--sp-3); }
-.detail .who { display: flex; align-items: center; flex: 0 0 auto; height: 108dp; padding: 0 var(--sp-3); border-bottom: var(--border) var(--c-line); }
-.detail .who .face { display: flex; align-items: center; justify-content: center; width: 104dp; height: 92dp; background-color: var(--c-bg); border: var(--border) var(--c-line); margin-right: var(--sp-3); overflow: hidden; }
+.detail {
+	position: absolute; left: var(--sp-3); bottom: 164dp; width: 940dp; display: flex; flex-direction: column;
+	padding: 16dp; decorator: ninepatch(fk-frame-o, fk-frame-i, 16dp), image(gen-mottle repeat);
+}
+.detail .body { display: flex; flex: 1 1 auto; min-height: 0; padding: var(--sp-3) var(--sp-2) var(--sp-2); }
+.detail .who { display: flex; align-items: center; flex: 0 0 auto; height: 100dp; padding: 0 var(--sp-2); decorator: image(gen-groove repeat-x left bottom); }
+.detail .who .face { display: flex; align-items: center; justify-content: center; width: 96dp; height: 86dp; background-color: var(--c-well); border: 3dp var(--c-bevel-lo); border-color: var(--c-bevel-lo) var(--c-bevel-hi) var(--c-bevel-hi) var(--c-bevel-lo); margin-right: var(--sp-3); overflow: hidden; }
 .detail .who .names { display: block; flex: 1 1 0; }
-.detail .who .nm { display: block; font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-text-strong); line-height: 36dp; }
-.detail .who .full { display: block; font-size: var(--fs-sm); color: var(--c-text-dim); }
+.detail .who .nm { display: block; font-family: var(--font-stencil); font-size: var(--fs-2xl); text-transform: uppercase; color: var(--c-select); line-height: 38dp; font-effect: shadow(2dp 2dp #000000E0); }
+.detail .who .full { display: block; font-family: var(--font-type); font-size: var(--fs-sm); color: var(--c-text-dim); }
 .detail .who .tags { display: flex; margin-top: var(--sp-1); }
 .tag { display: flex; align-items: center; height: 22dp; padding: 0 var(--sp-2); margin-right: var(--sp-1); border: var(--border) var(--c-line-2); border-radius: var(--r-1); font-size: var(--fs-2xs); color: var(--c-text-dim); }
 .tag .icon { width: 14dp; height: 14dp; margin-right: 4dp; image-color: var(--c-text-dim); }
@@ -188,15 +190,19 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 /* the value column is 56dp in the component; a 7-character value (breath "188/188")
  * overflows it, so let it grow and shrink the bar instead of the text */
 .detail .who .vit .stat .v { width: auto; min-width: 56dp; }
-.detail .who .acts { display: flex; flex-direction: column; margin-left: var(--sp-3); }
+.detail .who .acts { display: flex; flex-direction: row; flex-wrap: wrap; width: 72dp; margin-left: var(--sp-3); }
 .detail .who .names .btn { height: 26dp; padding: 0 var(--sp-2); margin-top: var(--sp-1); font-size: var(--fs-sm); }
-.detail .who .acts .icon-btn { width: 32dp; height: 32dp; margin-bottom: var(--sp-1); }
+.detail .who .acts .icon-btn { width: 32dp; height: 32dp; margin: 0 4dp 4dp 0; }
 .detail .who .acts .icon-btn .icon { width: var(--icon-sm); height: var(--icon-sm); }
 
-.attrs { display: block; width: 196dp; margin-right: var(--sp-4); }
-.attrs .row { display: flex; align-items: center; height: 24dp; border-bottom: var(--border) var(--c-panel-3); }
-.attrs .row .k { display: block; flex: 1 1 0; font-size: var(--fs-sm); color: var(--c-text-dim); }
-.attrs .row .v { display: block; font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text-strong); }
+/* attributes: a bar per value so a glance compares them; physical, mental and skill groups are spaced apart */
+.attrs { display: block; width: 176dp; margin-right: var(--sp-4); padding: var(--sp-2) var(--sp-3); background-color: var(--c-well); decorator: ninepatch(fk-well-o, fk-well-i, 8dp), image(gen-granite repeat); }
+.attrs .row { display: flex; align-items: center; height: 26dp; }
+.attrs .row.lead { margin-top: 10dp; }
+.attrs .row .k { display: block; width: 40dp; font-family: var(--font-plate); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.attrs .row .bar { flex: 1 1 0; height: 6dp; margin-right: var(--sp-2); }
+.attrs .row .bar .fill { background-color: var(--c-accent-3); }
+.attrs .row .v { display: block; width: 28dp; text-align: right; font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text-strong); }
 .attrs .row .v.up { color: var(--c-ok); }
 .attrs .cap { margin: var(--sp-2) 0 var(--sp-1); }
 
@@ -204,7 +210,10 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .t5 .slot .item { display: flex; align-items: center; justify-content: center; }
 .t5 .slot .item img.pic { position: relative; left: 0; top: 0; image-color: #FFFFFF; }
 .t5 .slot.big { width: 136dp; }
-.t5 .slot .lbl { position: absolute; left: 4dp; bottom: 2dp; font-family: var(--font-display); font-weight: 600; font-size: 10dp; text-transform: uppercase; color: var(--c-text-faint); }
+.t5 .slot { background-color: #4A3F2A; decorator: ninepatch(fk-well-o, fk-well-i, 6dp), image(gen-mottle repeat); }
+.t5 .slot:hover { background-color: #5A4C33; }
+.t5 .slot .ghost { image-color: #8A7650; }
+.t5 .slot .lbl { position: absolute; left: 5dp; bottom: 3dp; font-family: var(--font-plate); font-weight: 700; font-size: 10dp; letter-spacing: 1dp; text-transform: uppercase; color: #C9B68A; font-effect: var(--fx-emboss); }
 .t5 .slot .count { color: var(--c-text-strong); }
 .t5 .slot .cond { left: auto; right: 4dp; bottom: auto; top: 4dp; width: 3dp; height: 22dp; }
 .t5 .slot .cond .fill { left: 0; right: 0; top: auto; bottom: 0; }
@@ -212,21 +221,38 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .t5 .slot .att { position: absolute; left: 4dp; top: 3dp; width: 12dp; height: 12dp; image-color: var(--c-accent); }
 .t5 .slot.dragging .item { opacity: 0.25; }
 
-.doll { display: flex; margin-right: var(--sp-4); }
-.doll .col { display: block; margin-right: var(--sp-2); }
-.doll .slot { margin-bottom: var(--sp-2); }
-.doll .cap { margin-bottom: var(--sp-1); }
+/* the paper doll: 380 x 360dp, the figure (gen-doll, 240 x 440) centred behind the slots, each slot where it is worn */
+.doll { display: block; position: relative; flex: 0 0 380dp; width: 380dp; height: 360dp; margin-right: var(--sp-4); }
+.doll .figure { position: absolute; left: 90dp; top: 0; width: 196dp; height: 360dp; image-color: var(--c-accent); }
+.doll .slot { position: absolute; }
+.doll .at-3  { left: 78dp;  top: 8dp; }    /* face 1 */
+.doll .at-0  { left: 158dp; top: 0; }      /* helmet */
+.doll .at-4  { left: 238dp; top: 8dp; }    /* face 2 */
+.doll .at-7  { left: 78dp;  top: 92dp; }   /* LBE vest */
+.doll .at-1  { left: 158dp; top: 86dp; }   /* armour vest */
+.doll .at-9  { left: 238dp; top: 92dp; }   /* pack */
+.doll .at-8  { left: 158dp; top: 166dp; }  /* belt */
+.doll .at-5  { left: 0;     top: 200dp; }  /* hand */
+.doll .at-6  { left: 244dp; top: 200dp; }  /* off hand */
+.doll .at-2  { left: 158dp; top: 252dp; }  /* legs */
 /* the pocket grids are the only part that grows with what a merc carries: they scroll when the
  * panel has run out of room (the worn LBE row, the four vest pockets and the eight pack/belt ones) */
 .pockets { display: block; flex: 1 1 0; min-height: 0; overflow-y: auto; }
-.pockets .grid { display: flex; flex-wrap: wrap; margin-bottom: var(--sp-1); }
-.pockets .grid .slot { margin: 0 var(--sp-2) var(--sp-1) 0; }
-.pockets .cap { margin-bottom: var(--sp-1); }
-.purse { display: flex; align-items: center; margin-top: var(--sp-1); }
+.pockets .grid { display: flex; flex-wrap: nowrap; margin-bottom: var(--sp-2); }
+.pockets .grid .slot { width: 58dp; height: 58dp; margin: 0 6dp 0 0; }
+.pockets .cap { margin-bottom: 3dp; }
+.gauges { display: block; margin-top: var(--sp-2); }
+.gauge { display: flex; align-items: center; height: 22dp; }
+.gauge .k { display: block; width: 62dp; font-family: var(--font-plate); font-weight: 600; font-size: var(--fs-xs); text-transform: uppercase; color: var(--c-text-dim); }
+.gauge .bar { flex: 1 1 0; height: 6dp; margin-right: var(--sp-2); }
+.gauge .v { display: block; width: 44dp; text-align: right; font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-strong); }
+.gauge.over .fill { background-color: var(--c-danger); decorator: image(gen-hatch repeat); }
+.gauge.over .v { color: var(--c-danger); }
+.purse { display: flex; align-items: center; margin-top: var(--sp-2); }
 .purse .btn { height: 34dp; font-size: var(--fs-sm); margin-right: var(--sp-2); padding: 0 var(--sp-3); }
 .purse .btn .label { margin-left: 0; }
 .purse .btn .mono { margin-left: var(--sp-2); color: var(--c-select); font-size: var(--fs-md); text-transform: none; }
-.detail .foot { display: flex; align-items: center; flex: 0 0 auto; height: 36dp; padding: 0 var(--sp-3); border-top: var(--border) var(--c-line); font-size: var(--fs-xs); color: var(--c-text-dim); }
+.detail .foot { display: flex; align-items: center; flex: 0 0 auto; height: 30dp; padding: 0 var(--sp-2); decorator: image(gen-groove repeat-x left top); font-size: var(--fs-xs); color: var(--c-text-dim); }
 .detail .foot span { display: block; margin-right: var(--sp-2); }
 .detail .foot .kbd { margin-right: var(--sp-1); }
 .kv { display: flex; align-items: center; height: 22dp; }

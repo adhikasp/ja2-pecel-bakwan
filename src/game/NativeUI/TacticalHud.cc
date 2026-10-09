@@ -213,6 +213,16 @@ namespace
 		static void Describe(RowFields<KvRow>& f) { f("k", &KvRow::k)("v", &KvRow::v); }
 	};
 
+	/** One attribute in the detail panel: its value, a bar width (percent of the attribute's range) and whether it
+	 * opens a group (physical, mental, skills). */
+	struct AttrRow
+	{
+		std::string k, v;
+		int w = 0;
+		bool lead = false;
+		static void Describe(RowFields<AttrRow>& f) { f("k", &AttrRow::k)("v", &AttrRow::v)("w", &AttrRow::w)("lead", &AttrRow::lead); }
+	};
+
 	/** One row of the action or door menu (Interface.h: NativeMenuView): item, group heading or separator. */
 	struct MenuItemRow
 	{
@@ -266,9 +276,10 @@ namespace
 		bool detail = false;
 		bool dMute = false;
 		std::string dName, dFull, dFace, dVitHp, dEn, dMo, dMoney, dKeys, dWeight, dCamo, dArmour;
-		int dFw = 0, dFh = 0, dHpw = 0, dLostw = 0, dEnw = 0, dMow = 0;
-		std::vector<KvRow> attrs;
-		std::vector<SlotRow> body, hands, lbe, bigPockets, smallPockets;
+		int dFw = 0, dFh = 0, dHpw = 0, dLostw = 0, dEnw = 0, dMow = 0, dWeightw = 0, dCamow = 0, dArmourw = 0;
+		bool dHeavy = false;
+		std::vector<AttrRow> attrs;
+		std::vector<SlotRow> body, hands, lbe, bigPockets, smallPockets, beltPockets, packPockets;
 		// item description
 		bool desc = false, descMoney = false, descGun = false, descWeapon = false, descProsCons = false, descHatched = false;
 		std::string xName, xType, xText, xPic, xStatusLabel, xStatus, xWeight, xPros, xCons, xAmmo, xAmmoType, xKey;
@@ -386,8 +397,10 @@ namespace
 			f.Field("d_hp", dVitHp); f.Field("d_en", dEn); f.Field("d_mo", dMo);
 			f.Field("d_hpw", dHpw); f.Field("d_lostw", dLostw); f.Field("d_enw", dEnw); f.Field("d_mow", dMow);
 			f.Field("d_money", dMoney); f.Field("d_keys", dKeys); f.Field("d_weight", dWeight); f.Field("d_camo", dCamo); f.Field("d_armour", dArmour);
+			f.Field("d_weightw", dWeightw); f.Field("d_camow", dCamow); f.Field("d_armourw", dArmourw); f.Field("d_heavy", dHeavy);
 			f.Rows("attrs", attrs);
 			f.Rows("body", body); f.Rows("hands", hands); f.Rows("lbe", lbe); f.Rows("big", bigPockets); f.Rows("small", smallPockets);
+			f.Rows("belt", beltPockets); f.Rows("pack", packPockets);
 			f.Field("desc", desc); f.Field("desc_money", descMoney); f.Field("desc_gun", descGun); f.Field("desc_weapon", descWeapon);
 			f.Field("desc_pros_cons", descProsCons); f.Field("desc_hatched", descHatched);
 			f.Field("x_name", xName); f.Field("x_type", xType); f.Field("x_text", xText); f.Field("x_pic", xPic);
@@ -681,7 +694,7 @@ namespace
 		{
 			detail = gsCurInterfacePanel == SM_PANEL && gpSMCurrentMerc;
 			dMute = false;
-			body.clear(); hands.clear(); lbe.clear(); bigPockets.clear(); smallPockets.clear(); attrs.clear();
+			body.clear(); hands.clear(); lbe.clear(); bigPockets.clear(); smallPockets.clear(); beltPockets.clear(); packPockets.clear(); attrs.clear();
 			if (!detail) return;
 			SOLDIERTYPE const& s = *gpSMCurrentMerc;
 			dName = S(s.name);
@@ -697,16 +710,26 @@ namespace
 			dLostw = std::clamp(int(s.bLifeMax) - s.bLife, 0, 100);
 			dEnw = std::clamp(int(s.bBreath), 0, 100);
 			dMow = std::clamp(int(s.bMorale), 0, 100);
-			dWeight = ST::format("{}%", CalculateCarriedWeight(&s)).to_std_string();
+			int const carried = CalculateCarriedWeight(&s), armour = ArmourPercent(&s);
+			dWeight = ST::format("{}%", carried).to_std_string();
 			dCamo = ST::format("{}%", s.bCamo).to_std_string();
-			dArmour = ST::format("{}%", ArmourPercent(&s)).to_std_string();
+			dArmour = ST::format("{}%", armour).to_std_string();
+			dWeightw = std::clamp(carried, 0, 100);
+			dHeavy = carried > 100;
+			dCamow = std::clamp(int(s.bCamo), 0, 100);
+			dArmourw = std::clamp(armour, 0, 100);
 			dMoney = S(SPrintMoney(LaptopSaveInfo.iCurrentBalance));
 			int keys = 0;
 			if (s.pKeyRing) for (int k = 0; k < NUM_KEYS; ++k) if (s.pKeyRing[k].ubNumber > 0) ++keys;
 			dKeys = std::to_string(keys);
 			INT8 const values[] = { s.bAgility, s.bDexterity, s.bStrength, s.bLeadership, s.bWisdom,
 				s.bExpLevel, s.bMarksmanship, s.bExplosive, s.bMechanical, s.bMedical };
-			for (int i = 0; i < 10; ++i) attrs.push_back({ S(pShortAttributeStrings[i]), std::to_string(values[i]) });
+			for (int i = 0; i < 10; ++i)
+			{
+				// physical (agility, dexterity, strength), mental (leadership, wisdom, level), skills; level runs 1-10
+				int const scale = i == 5 ? 10 : 1;
+				attrs.push_back({ S(pShortAttributeStrings[i]), std::to_string(values[i]), std::clamp(values[i] * scale, 0, 100), i == 3 || i == 6 });
+			}
 			body.push_back(MakeSlot(s, HEAD1POS, false, "face-gear", Str("tac.slot.face1")));
 			body.push_back(MakeSlot(s, HEAD2POS, false, "face-gear", Str("tac.slot.face2")));
 			body.push_back(MakeSlot(s, HELMETPOS, false, "armour", Str("tac.slot.helmet")));
@@ -717,8 +740,11 @@ namespace
 			lbe.push_back(MakeSlot(s, LBE_VESTPOS, false, "inventory", Str("tac.slot.lbe_vest")));
 			lbe.push_back(MakeSlot(s, LBE_BELTPOS, false, "inventory", Str("tac.slot.lbe_belt")));
 			lbe.push_back(MakeSlot(s, LBE_PACKPOS, false, "inventory", Str("tac.slot.lbe_pack")));
-			for (int p = POCK1POS; p <= POCK4POS; ++p) bigPockets.push_back(MakeSlot(s, p, true, "inventory", ""));
+			for (int p = POCK1POS; p <= POCK4POS; ++p) bigPockets.push_back(MakeSlot(s, p, false, "inventory", ""));
 			for (int p = POCK5POS; p <= POCK12POS; ++p) smallPockets.push_back(MakeSlot(s, p, false, "inventory", ""));
+			// the panel shows the pockets by the LBE item that carries them: vest POCK1-4, belt POCK5-8, pack POCK9-12
+			beltPockets.assign(smallPockets.begin(), smallPockets.begin() + LBE_WINDOW_SIZE);
+			packPockets.assign(smallPockets.begin() + LBE_WINDOW_SIZE, smallPockets.end());
 		}
 
 		void ReadDesc()

@@ -78,45 +78,38 @@
 		</div>
 		<div class="body">
 			<div class="attrs" id="tac.detail.attrs">
-				<div class="row" data-for="a : attrs"><span class="k">{{a.k}}</span><span class="v">{{a.v}}</span></div>
-				<div class="row"><span class="k">Armour</span><span class="v">{{d_armour}}</span></div>
-				<div class="row"><span class="k">Weight</span><span class="v">{{d_weight}}</span></div>
-				<div class="row"><span class="k">Camo</span><span class="v">{{d_camo}}</span></div>
+				<div class="row" data-for="a : attrs" data-class-lead="a.lead"><span class="k">{{a.k}}</span><span class="bar"><span class="fill" data-style-width="a.w + '%'"></span></span><span class="v">{{a.v}}</span></div>
 			</div>
+			<!-- the paper doll: worn gear where it is worn, over the merc's silhouette -->
 			<div class="doll" id="tac.inv.body">
-				<div class="col">
-					<div class="slot" data-for="s : body" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
-						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
-						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
-						<span class="count" data-if="s.count != ''">{{s.count}}</span>
-						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
-						<span class="lbl">{{s.label}}</span>
-					</div>
+				<img class="figure audit-skip" src="gen-doll"/>
+				<div data-for="s : body" data-attr-class="'slot at-' + s.idx" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+					<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+					<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+					<span class="count" data-if="s.count != ''">{{s.count}}</span>
+					<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+					<span class="lbl">{{s.label}}</span>
 				</div>
-				<div class="col">
-					<div class="slot big" data-for="s : hands" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
-						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
-						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
-						<span class="count" data-if="s.count != ''">{{s.count}}</span>
-						<img class="att" data-if="s.att" src="icon-add"/>
-						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
-						<span class="lbl">{{s.label}}</span>
-					</div>
-					<div class="purse"><button class="btn" id="tac.inv.money" title="Deposit or withdraw money" data-event-click="money_region"><img class="icon" src="icon-money"/><span class="label">Cash</span><span class="mono">{{d_money}}</span></button></div>
-					<div class="purse"><button class="btn" id="tac.inv.keys" title="Key ring (K)" data-event-click="keyring"><img class="icon" src="icon-key"/><span class="label">Keys</span><span class="mono">{{d_keys}}</span></button></div>
+				<div data-for="s : lbe" data-attr-class="'slot at-' + s.idx" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+					<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+					<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+					<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+					<span class="lbl">{{s.label}}</span>
+				</div>
+				<div data-for="s : hands" data-attr-class="'slot big at-' + s.idx" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+					<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+					<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+					<span class="count" data-if="s.count != ''">{{s.count}}</span>
+					<img class="att" data-if="s.att" src="icon-add"/>
+					<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+					<span class="lbl">{{s.label}}</span>
 				</div>
 			</div>
+			<!-- pockets, grouped by the LBE item that carries them (vest POCK1-4, belt POCK5-8, pack POCK9-12) -->
 			<div class="pockets" id="tac.inv.pockets">
+				<span class="cap">Vest pockets</span>
 				<div class="grid">
-					<div class="slot" data-for="s : lbe" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
-						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
-						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
-						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
-						<span class="lbl">{{s.label}}</span>
-					</div>
-				</div>
-				<div class="grid">
-					<div class="slot big" data-for="s : big" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+					<div class="slot" data-for="s : big" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
 						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
 						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
 						<span class="count" data-if="s.count != ''">{{s.count}}</span>
@@ -124,13 +117,33 @@
 						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
 					</div>
 				</div>
+				<span class="cap">Belt pouches</span>
 				<div class="grid">
-					<div class="slot" data-for="s : small" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+					<div class="slot" data-for="s : belt" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
 						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
 						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
 						<span class="count" data-if="s.count != ''">{{s.count}}</span>
 						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
 					</div>
+				</div>
+				<span class="cap">Pack</span>
+				<div class="grid">
+					<div class="slot" data-for="s : pack" data-attr-id="'tac.inv.slot[' + s.idx + ']'" data-attr-title="s.title" data-event-mouseup="slot(s.idx, ev.button)">
+						<div class="item" data-if="!s.empty"><img class="pic" data-attr-src="s.src" data-style-width="s.w + 'px'" data-style-height="s.h + 'px'"/></div>
+						<img class="ghost" data-if="s.empty" data-attr-src="'icon-' + s.ghost"/>
+						<span class="count" data-if="s.count != ''">{{s.count}}</span>
+						<div class="cond" data-if="!s.empty" data-class-worn="s.worn"><div class="fill" data-style-height="s.cond + '%'"></div></div>
+					</div>
+				</div>
+				<!-- what the kit costs the merc: load, protection, concealment -->
+				<div class="gauges">
+					<div class="gauge" data-class-over="d_heavy"><span class="k">Load</span><span class="bar"><span class="fill" data-style-width="d_weightw + '%'"></span></span><span class="v">{{d_weight}}</span></div>
+					<div class="gauge"><span class="k">Armour</span><span class="bar"><span class="fill" data-style-width="d_armourw + '%'"></span></span><span class="v">{{d_armour}}</span></div>
+					<div class="gauge"><span class="k">Camo</span><span class="bar"><span class="fill" data-style-width="d_camow + '%'"></span></span><span class="v">{{d_camo}}</span></div>
+				</div>
+				<div class="purse">
+					<button class="btn" id="tac.inv.money" title="Deposit or withdraw money" data-event-click="money_region"><img class="icon" src="icon-money"/><span class="mono">{{d_money}}</span></button>
+					<button class="btn" id="tac.inv.keys" title="Key ring (K)" data-event-click="keyring"><img class="icon" src="icon-key"/><span class="mono">{{d_keys}}</span></button>
 				</div>
 			</div>
 		</div>
