@@ -198,8 +198,6 @@ public:
 	ActivateKind PlanActivate(uint16_t item, int count, int slotLimit, bool popupAllowed) const;
 	/** Dropping the hand on a merc's portrait: camo, a canteen, a drug. */
 	InvWhy       PlanApply(InvParty const& target) const;
-	/** Giving the hand to another merc by dropping it on his face. */
-	PlaceVerdict PlanGive(InvParty const& target) const;
 	/** The sheet's attachment position: attach the hand, or take the attachment out. */
 	SheetAttachVerdict PlanSheetAttach(SheetAttachRequest const& r) const;
 	/** The sheet's unload button. */

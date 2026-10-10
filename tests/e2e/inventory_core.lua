@@ -93,3 +93,17 @@ ja2.expect(inv("Ivan").asking == "merge", "the core holds the merge question")
 r = ja2.inventoryOp("answer", { yes = false })
 ja2.expect(r.ok and r.action == "put", "no puts the item down instead (" .. tostring(r.action) .. ")")
 ja2.expect(inv("Ivan").asking == nil, "the question is answered")
+
+-- A question never outlives what it asked about: clicking elsewhere drops it, and a late answer is a no-op.
+ja2.debug("hand", { merc = "Ivan", item = "FIRSTAIDKIT", count = 1 })
+r = click({ merc = "Ivan", slot = OFFHAND })
+ja2.expect(r.action == "asked" or r.action == "put", "the kit meets the one in the off hand (" .. tostring(r.action) .. ")")
+if r.action == "asked" then
+	ja2.expect(inv("Ivan").asking == "merge", "the merge question is pending")
+	local spare
+	for i = 12, 30 do if inv("Ivan").pockets[i] == nil then spare = i break end end
+	click({ merc = "Ivan", slot = spare })
+	ja2.expect(inv("Ivan").asking == nil, "clicking another pocket drops the question")
+	r = ja2.inventoryOp("answer", { yes = true })
+	ja2.expect(not r.ok or r.action ~= "merge", "a late yes merges nothing")
+end

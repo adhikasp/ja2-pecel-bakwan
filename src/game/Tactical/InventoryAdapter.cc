@@ -83,7 +83,12 @@ Equipment::HeldStack const& InventoryHand()
 }
 
 InventoryOutcome const& LastInventoryOutcome() { return g_lastOutcome; }
-void RecordInventoryOutcome(InventoryOutcome const& o) { g_lastOutcome = o; }
+void RecordInventoryOutcome(InventoryOutcome const& o)
+{
+	unsigned const seq = g_lastOutcome.seq + 1;
+	g_lastOutcome = o;
+	g_lastOutcome.seq = seq;
+}
 
 
 // ---- one merc's own equipment ---------------------------------------------------------------------------------
@@ -157,7 +162,11 @@ namespace
 
 bool InventoryMoveSlot(SOLDIERTYPE& s, int const from, int const to)
 {
+	if (from < 0 || from >= NUM_INV_SLOTS || to < 0 || to >= NUM_INV_SLOTS || from == to) return false;
 	UINT16 const item = s.inv[from].usItem;
+	if (item == NOTHING) return false;
+	// Nails keeps his vest, whichever screen moves it
+	if (NailsVestBlocks(&s, from, NOTHING) || NailsVestBlocks(&s, to, item)) return Finish(false, s, to, item, "put");
 	Raise(BeforeInventoryMove, s, to, item, "put");
 	OBJECTTYPE carry = s.inv[from];
 	DeleteObj(&s.inv[from]);
@@ -172,7 +181,10 @@ bool InventoryMoveSlot(SOLDIERTYPE& s, int const from, int const to)
 
 bool InventoryAttachFromSlot(SOLDIERTYPE& s, int const from, int const host)
 {
+	if (from < 0 || from >= NUM_INV_SLOTS || host < 0 || host >= NUM_INV_SLOTS) return false;
 	UINT16 const item = s.inv[from].usItem;
+	if (item == NOTHING) return false;
+	if (NailsVestBlocks(&s, from, NOTHING)) return Finish(false, s, host, item, "attach");
 	Raise(BeforeInventoryMove, s, host, item, "attach");
 	OBJECTTYPE carry;
 	SplitOne(s, from, &carry);
@@ -183,7 +195,8 @@ bool InventoryAttachFromSlot(SOLDIERTYPE& s, int const from, int const host)
 
 bool InventoryDetach(SOLDIERTYPE& s, int const host, int const index, int const to)
 {
-	if (host < 0 || index < 0 || index >= MAX_ATTACHMENTS) return false;
+	if (host < 0 || host >= NUM_INV_SLOTS || to < 0 || to >= NUM_INV_SLOTS || index < 0 || index >= MAX_ATTACHMENTS)
+		return false;
 	OBJECTTYPE const& gun = s.inv[host];
 	if (gun.usAttachItem[index] == NOTHING) return false;
 	UINT16 const item = gun.usAttachItem[index];

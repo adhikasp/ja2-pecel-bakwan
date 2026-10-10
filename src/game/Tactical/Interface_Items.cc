@@ -2637,8 +2637,16 @@ void HandleItemDescriptionBox(DirtyLevel* const dirty_level)
 }
 
 
+bool ItemDescIsOpenOn(UINT16 const item)
+{
+	return gfInItemDescBox && gpItemDescObject && gpItemDescObject->usItem == item;
+}
+
+
 void DeleteItemDescriptionBox( )
 {
+	// "attach this?" was about the sheet that is going away
+	if (TacticalInventory().Pending().kind == Equipment::QuestionKind::PermanentAttachment) TacticalInventory().Answer();
 	INT32 cnt, cnt2;
 	BOOLEAN	fFound, fAllFound;
 
@@ -2889,6 +2897,8 @@ void EndItemPointer( )
 
 		// re-evaluate repairs
 		gfReEvaluateEveryonesNothingToDo = TRUE;
+		// nothing in the hand: a question about it is moot
+		TacticalInventory().Answer();
 		SyncInventoryHand();
 	}
 }

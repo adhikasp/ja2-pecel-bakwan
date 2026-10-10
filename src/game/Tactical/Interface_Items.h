@@ -189,6 +189,8 @@ void InventoryUnload();
 void InventoryMoneyStep(int which, bool right);
 struct InventoryMoneySplit { UINT32 total, remaining, removing; };
 InventoryMoneySplit InventoryMoneyState();
+/** The item sheet is open on an item of this kind (a pending question about it is still good). */
+bool ItemDescIsOpenOn(UINT16 item);
 /** The player said yes to "this attachment cannot be removed again": mount it. */
 void ItemDescConfirmPermanentAttachment();
 SOLDIERTYPE* NativeItemDescSoldier();

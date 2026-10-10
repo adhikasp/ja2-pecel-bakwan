@@ -37,6 +37,7 @@ struct InventoryOutcome
 	UINT16      item   = 0;     // the item involved
 	int         apFrom = 0;     // AP the giver paid for a pass between two mercs
 	int         apTo   = 0;     // AP the receiver paid
+	unsigned    seq    = 0;     // counts outcomes, so a reader can tell a new one from the one it has shown
 };
 
 /** Raised before the verdict is applied; the adapter then moves the item. */

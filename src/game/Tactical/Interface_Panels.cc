@@ -448,6 +448,9 @@ void SetSMPanelCurrentMerc(SOLDIERTYPE* s)
 {
 	gSelectSMPanelToMerc = NULL;
 
+	// a question about another merc's pockets does not follow the panel
+	TacticalInventory().Answer();
+
 	gpSMCurrentMerc = s;
 
 	// Disable all faces
@@ -1532,7 +1535,8 @@ static void SMInvClickCamoCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 		if (obj == NULL) return;
 
 		SOLDIERTYPE* const s = gpSMCurrentMerc;
-		if (s->bLife < CONSCIOUSNESS) return;
+		SyncInventoryHand();
+		if (TacticalInventory().PlanApply(InventoryPartyOf(s)) != Equipment::InvWhy::None) return;
 
 		BOOLEAN fGoodAPs;
 		// Try to apply camo....
@@ -1653,7 +1657,7 @@ namespace
 	}
 
 	/** What a refusal tells the player: the legacy messages and Nails' line. */
-	InventoryOutcome Refused(SOLDIERTYPE const* const s, Equipment::PlaceVerdict const& v, UINT16 const item)
+	InventoryOutcome Refused(SOLDIERTYPE* const s, int const slot, Equipment::PlaceVerdict const& v, UINT16 const item)
 	{
 		switch (v.why)
 		{
@@ -1664,6 +1668,11 @@ namespace
 
 			case InvWhy::NailsVest:
 				if (v.fetish) TacticalCharacterDialogue(s, 61);
+				break;
+
+			case InvWhy::DoesNotFit:
+				// placing says why (the pocket's rule) in a message, as the legacy placement did
+				if (gpItemPointer) CanItemFitInPosition(s, gpItemPointer, static_cast<INT8>(slot), TRUE);
 				break;
 
 			default: break;
@@ -1732,11 +1741,17 @@ InventoryOutcome InventoryAnswer(bool const yes)
 
 	Equipment::Question const q = core.Answer();
 
+	// The question is only good while what it asked about is still there: the same item in the hand,
+	// the same item in the pocket or the sheet.
+	SyncInventoryHand();
+	bool const handIsAsked = gpItemPointer && gpItemPointer->usItem == q.held;
+
 	if (q.kind == Equipment::QuestionKind::PermanentAttachment)
 	{
 		// "this attachment cannot be taken off again": the sheet mounts it
 		UINT16 const item = q.held;
 		if (!yes) return Done("declined", item);
+		if (!handIsAsked || !InItemDescriptionBox() || !ItemDescIsOpenOn(q.host)) return Refusal(InvWhy::HandEmpty, item);
 		ItemDescConfirmPermanentAttachment();
 		SyncInventoryHand();
 		return Done("attach", item);
@@ -1746,6 +1761,8 @@ InventoryOutcome InventoryAnswer(bool const yes)
 
 	SOLDIERTYPE* const s = &GetMan(static_cast<UINT>(q.merc));
 	if (q.kind != Equipment::QuestionKind::Merge) return Refusal(InvWhy::None);
+	if (q.slot < 0 || q.slot >= NUM_INV_SLOTS || !handIsAsked || s->inv[q.slot].usItem != q.host)
+		return Refusal(InvWhy::HandEmpty, q.held);
 
 	if (yes)
 	{
@@ -1840,7 +1857,7 @@ static InventoryOutcome SlotPrimary(SOLDIERTYPE* const s, UINT32 const pos, bool
 	switch (v.kind)
 	{
 		case Equipment::PlaceKind::Refused:
-			return Refused(s, v, usNewItemIndex);
+			return Refused(s, static_cast<int>(pos), v, usNewItemIndex);
 
 		case Equipment::PlaceKind::Attach:
 			// it's an attempt to attach; bring up the inventory panel
@@ -1961,9 +1978,17 @@ static InventoryOutcome SlotSecondary(SOLDIERTYPE* const s, UINT32 const pos)
 }
 
 
+static bool ShopHatched(UINT32 pos);
+
+
 InventoryOutcome InventorySlotClick(SOLDIERTYPE* const merc, int const slot, bool const right, bool const ctrl)
 {
-	if (!merc || slot < 0 || slot >= NUM_INV_SLOTS) return Refusal(InvWhy::NothingHere);
+	if (!merc || slot < 0 || slot >= NUM_INV_SLOTS || fInMapMode) return Refusal(InvWhy::NothingHere);
+	// the pockets are the single-merc panel's: they act on the merc it shows
+	if (merc != gpSMCurrentMerc) return Refusal(InvWhy::OutOfReach);
+	if (ShopHatched(static_cast<UINT32>(slot))) return Refusal(InvWhy::NothingHere);
+	// a click answers nothing: a question still open is dropped
+	TacticalInventory().Answer();
 	return right ? SlotSecondary(merc, static_cast<UINT32>(slot)) : SlotPrimary(merc, static_cast<UINT32>(slot), ctrl);
 }
 

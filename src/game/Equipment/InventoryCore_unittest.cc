@@ -249,18 +249,6 @@ TEST(InventoryCore, ApplyNeedsAHandAndAConsciousMerc)
 	EXPECT_EQ(c.PlanApply(Merc(1)), InvWhy::None);
 }
 
-TEST(InventoryCore, GiveFollowsThePassingRules)
-{
-	InventoryCore c(Rules());
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	PlaceVerdict const v = c.PlanGive(Merc(2));
-	EXPECT_EQ(v.kind, PlaceKind::Put);
-	EXPECT_EQ(v.apFrom, PASS_COST_AP);
-	EXPECT_EQ(v.apTo, PASS_COST_AP);
-	c.SetHand(Hold(RIFLE, Merc(1, true, false)));
-	EXPECT_EQ(c.PlanGive(Merc(2)).why, InvWhy::NoAP);
-}
-
 TEST(InventoryCore, SheetAttachRules)
 {
 	InventoryCore c(Rules());

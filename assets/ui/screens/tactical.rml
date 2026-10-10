@@ -232,6 +232,8 @@
 			<button class="btn btn-primary" id="tac.ask.yes" data-event-click="ask_yes"><span class="label">{{l_yes}}</span></button></div>
 	</div>
 
+	<div class="ask-hint" id="tac.hint" data-if="hint != ''"><span>{{hint}}</span></div>
+
 	<!-- squad bar -->
 	<div class="sbar hit" id="tac.bar">
 		<div class="squads" id="tac.squadtabs">

@@ -18,6 +18,7 @@
 #include "Handle_UI.h"
 #include "English.h"
 #include "Input.h"
+#include "Timer_Control.h"
 #include "Interface.h"
 #include "Interface_Dialogue.h"
 #include "Interface_Items.h"
@@ -309,6 +310,8 @@ namespace
 		// the question a move asked (the core holds it), and the line the last refusal gave
 		bool ask = false;
 		std::string askText, hint, lYes, lNo;
+		unsigned hintSeq = 0;
+		UINT32 hintAt = 0;
 		// action and door menus (right click hold, or clicking a door)
 		bool menuOpen = false;
 		std::string menuTitle, menuSub;
@@ -873,7 +876,9 @@ namespace
 			ask = q.kind != Equipment::QuestionKind::None;
 			askText = ask ? Str(q.kind == Equipment::QuestionKind::Merge ? "tac.ask.merge" : "tac.ask.permanent") : std::string();
 			InventoryOutcome const& o = LastInventoryOutcome();
-			hint = !o.ok && o.action == "refused" ? o.why : std::string();
+			// a refusal is shown for a moment, then goes
+			if (o.seq != hintSeq) { hintSeq = o.seq; hintAt = GetJA2Clock(); }
+			hint = !o.ok && o.action == "refused" && GetJA2Clock() - hintAt < 2500 ? o.why : std::string();
 		}
 
 		/** What a disabled menu row says; the codes come from Interface.cc. */

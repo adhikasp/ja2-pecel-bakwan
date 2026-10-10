@@ -139,20 +139,6 @@ InvWhy InventoryCore::PlanApply(InvParty const& target) const
 	return InvWhy::None;
 }
 
-PlaceVerdict InventoryCore::PlanGive(InvParty const& target) const
-{
-	PlaceVerdict v;
-	if (hand_.Empty())
-	{
-		v.why = InvWhy::HandEmpty;
-		return v;
-	}
-	// The same rules as a drop into his pocket; nothing is attached or merged by a face.
-	PlaceVerdict const p = PlanPlace(target, -1, 0, false, false);
-	v = p;
-	return v;
-}
-
 SheetAttachVerdict InventoryCore::PlanSheetAttach(SheetAttachRequest const& r) const
 {
 	if (r.sheetIsAttachment || r.shopOwned) return { SheetAttachKind::Ignored, InvWhy::None };

@@ -326,12 +326,16 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 	position: absolute; left: 968dp; bottom: 164dp; width: 600dp; padding: 16dp;
 	decorator: ninepatch(fk-frame-o, fk-frame-i, 16dp), image(gen-mottle repeat);
 }
+/* the question card sits mid-screen, away from the pockets, so the pointer's item tooltip never covers it */
 .ask {
-	position: absolute; left: 50%; bottom: 200dp; width: 420dp; margin-left: -210dp; padding: 16dp;
+	position: absolute; left: 50%; top: 32%; width: 420dp; margin-left: -210dp; padding: 16dp;
 	decorator: ninepatch(fk-frame-o, fk-frame-i, 16dp), image(gen-mottle repeat);
 }
 .ask .text { display: block; padding: var(--sp-2) var(--sp-3); font-size: var(--fs-md); color: var(--c-text-strong); }
 .ask .foot .btn { margin-left: var(--sp-2); }
+/* why the last inventory move was refused */
+.ask-hint { position: absolute; left: 50%; top: 24%; width: 420dp; margin-left: -210dp; padding: var(--sp-2) var(--sp-3);
+	background-color: #2E2210E0; border: var(--border) var(--c-accent); font-size: var(--fs-md); color: var(--c-text-strong); text-align: center; }
 
 .idesc .hud-head .t { font-family: var(--font-stencil); font-weight: normal; font-size: var(--fs-lg); letter-spacing: 0; color: var(--c-select); font-effect: var(--fx-deep); }
 .idesc .hud-head .tag {
