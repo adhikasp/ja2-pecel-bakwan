@@ -1876,6 +1876,8 @@ INT16 LightSpriteRadius(LIGHT_SPRITE const* const l)
 	INT16 r = 0;
 	for (LIGHT_NODE const& n : l->light_template->lights)
 	{
+		// Every template ends with a sentinel node (iDX = iDY = 8191, ubLight = 0); unlit nodes do not count
+		if (n.ubLight == 0) continue;
 		INT16 const dx = n.iDX < 0 ? -n.iDX : n.iDX;
 		INT16 const dy = n.iDY < 0 ? -n.iDY : n.iDY;
 		r = dx > r ? dx : r;

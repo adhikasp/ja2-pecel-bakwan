@@ -1019,17 +1019,18 @@ namespace
 			});
 		});
 
-		// ja2.addLightSprite{ grid = N }: create the game's own light sprite (the explosion light template) at a
-		// tile, the way an explosion does, so CollectLighting turns it into world lighting. Returns its radius
-		// in tiles (0 if the template did not load).
+		// ja2.addLightSprite{ grid = N }: create (once, then reposition) one of the game's own light sprites - the
+		// explosion template - at a tile, the way an explosion does, so CollectLighting turns it into world
+		// lighting. Returns its radius in tiles.
 		ja2.set_function("addLightSprite", [](sol::table t) {
 			return Guarded([&] {
 				int const grid = t["grid"].get_or(-1);
 				if (grid < 0 || grid >= WORLD_MAX) throw std::runtime_error("ja2.addLightSprite: bad grid");
-				LIGHT_SPRITE* const l = LightSpriteCreate("L-R04.LHT");
-				if (!l) throw std::runtime_error("ja2.addLightSprite: no free light sprite");
-				LightSpritePosition(l, INT16(grid % WORLD_COLS), INT16(grid / WORLD_COLS));
-				return int(LightSpriteRadius(l));
+				static LIGHT_SPRITE* light = nullptr;
+				if (!light) light = LightSpriteCreate("L-R04.LHT");
+				if (!light) throw std::runtime_error("ja2.addLightSprite: no free light sprite");
+				LightSpritePosition(light, INT16(grid % WORLD_COLS), INT16(grid / WORLD_COLS));
+				return int(LightSpriteRadius(light));
 			});
 		});
 
@@ -1550,6 +1551,7 @@ namespace
 				t["gpuDifferent"] = double(r.gpuDifferent);
 				t["gpuPercent"] = r.gpuPercent;
 				t["gpuVsPipelineDifferent"] = double(r.gpuVsPipelineDifferent);
+				t["gpuVsPipelineQuantizedDifferent"] = double(r.gpuVsPipelineQuantizedDifferent);
 				t["legacyMs"] = r.legacyMs;
 				t["recordMs"] = r.recordMs;
 				t["pipelineMs"] = r.pipelineMs;

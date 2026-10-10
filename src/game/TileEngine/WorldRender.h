@@ -76,6 +76,7 @@ struct WorldEquivalenceResult
 	long long   gpuDifferent = 0;               // GPU vs software renderer
 	double      gpuPercent = 0;
 	long long   gpuVsPipelineDifferent = 0;
+	long long   gpuVsPipelineQuantizedDifferent = 0; // the pipeline rounded to 565 vs the GPU's 565 readback
 	double      legacyMs = 0, recordMs = 0, pipelineMs = 0, gpuMs = 0;
 	std::string legacyPng, pipelinePng, gpuPng, pipelineDiffPng, gpuDiffPng;
 };

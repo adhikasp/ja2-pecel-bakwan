@@ -18,19 +18,27 @@ local function scene(name, lit)
 	local ops = {}
 	for op, n in pairs(r.ops) do ops[#ops + 1] = op .. "=" .. n end
 	table.sort(ops)
-	ja2.log(("world %-9s %dx%d, %d instances, %d frames, %d palettes; pipeline %d px differ (%.4f%%); gpu %s %s; software %.1f ms, record %.1f ms, pipeline %.1f ms, gpu %.1f ms")
+	ja2.log(("world %-9s %dx%d, %d instances, %d frames, %d palettes; pipeline %d px differ (%.4f%%); gpu %s %s; gpu vs pipeline %d px (%d at 565); software %.1f ms, record %.1f ms, pipeline %.1f ms, gpu %.1f ms")
 		:format(name, r.width, r.height, r.instances, r.sprites, r.palettes, r.pipelineDifferent, r.pipelinePercent,
 			r.gpuRan and ("%d px differ (%.4f%%)"):format(r.gpuDifferent, r.gpuPercent) or "not run",
-			r.gpuRan and r.gpuDriver or r.gpuError, r.legacyMs, r.recordMs, r.pipelineMs, r.gpuMs))
+			r.gpuRan and r.gpuDriver or r.gpuError, r.gpuVsPipelineDifferent, r.gpuVsPipelineQuantizedDifferent,
+			r.legacyMs, r.recordMs, r.pipelineMs, r.gpuMs))
 	ja2.log("  ops: " .. table.concat(ops, " "))
 	ja2.expect(r.instances > 1000, name .. ": the view has instances")
 	if lit then
 		-- A scene where the game's lights may be on: the pipeline applies the dynamic lighting (Phase 8), so it
-		-- may differ from the software renderer by that lighting; the GPU must match the pipeline's lighting.
+		-- may differ from the software renderer by that lighting; the GPU must apply the same lighting.
 		ja2.expect(r.pipelinePercent < 10,
 			("%s: the pipeline's lighting difference is bounded (%.2f%% differ)"):format(name, r.pipelinePercent))
-		ja2.expect(r.gpuRan and r.gpuDifferent < r.pixels // 10,
-			("%s: the GPU lighting matches the pipeline's (GPU %d px vs software)"):format(name, r.gpuDifferent))
+		ja2.expect(r.gpuRan, name .. ": the GPU ran (" .. tostring(r.gpuError) .. ")")
+		if name == "night" then
+			-- At zoom 1 the GPU's 565 readback must equal the pipeline rounded to 565 (the exact lighting match)
+			ja2.expect(r.gpuVsPipelineQuantizedDifferent == 0,
+				("%s: the GPU lighting matches the pipeline exactly at 565 (%d px)"):format(name, r.gpuVsPipelineQuantizedDifferent))
+		else
+			ja2.expect(r.gpuDifferent < r.pixels // 10,
+				("%s: the GPU applies the lighting (GPU %d px vs software)"):format(name, r.gpuDifferent))
+		end
 	else
 		ja2.expect(r.pipelineDifferent == 0, ("%s: the pipeline matches the software renderer (%d px differ)"):format(name, r.pipelineDifferent))
 		if r.gpuRan then

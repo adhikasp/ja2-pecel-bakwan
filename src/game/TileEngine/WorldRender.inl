@@ -258,7 +258,7 @@ WorldPipe::Lighting CollectLighting()
 		WorldPipe::PointLight p;
 		p.x = float(g_ui.m_tacticalMapCenterX + INT16(sx) - gsRenderWorldOffsetX);
 		p.y = float(g_ui.m_tacticalMapCenterY + INT16(sy) - gsRenderWorldOffsetY);
-		p.radius = float(std::min<INT16>(rTiles, 16)) * CELL_X_SIZE; // the template extent, capped
+		p.radius = float(std::min<INT16>(rTiles, 24)) * CELL_X_SIZE; // the template extent (a safety bound only)
 		p.r = cr; p.g = cg; p.b = cb;
 		p.intensity = 0.5f;
 		L.points.push_back(p);
@@ -574,6 +574,8 @@ bool RenderWorldRecorded()
 		gWorldStats.uploadBytes = gpu->LastStats().uploadBytes;
 		if (cpuCopy)
 		{
+			// The GPU's 888 texture is only seen in a real window; a driven session reads the frame back as RGB565
+			// into the WORLD_BUFFER (headless composition, screenshots), so those shots are 565, not 888.
 			std::vector<UINT16> px;
 			if (gpu->Read565(px)) CopyToWorldBuffer(px.data(), gpu->Width(), gpu->Height());
 			gWorldStats.gpuWaitMs = gpu->LastStats().waitMs;
@@ -695,6 +697,13 @@ WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool const
 				res.gpuDifferent = dg.different;
 				res.gpuPercent = dg.percent();
 				res.gpuVsPipelineDifferent = WorldPipe::Compare(gWorldTarget.color.data(), out888.data(), W, H,
+					clip.iLeft, clip.iTop, clip.iRight, clip.iBottom).different;
+				// The GPU is read back as 565, so compare the pipeline rounded to 565 with it: this is the exact
+				// GPU-vs-pipeline lighting check (the 888-vs-565 difference above is just the readback).
+				std::vector<uint32_t> pipelineQ(gWorldTarget.color.size());
+				for (size_t i = 0; i < gWorldTarget.color.size(); ++i)
+					pipelineQ[i] = WorldPipe::Expand565(WorldPipe::Quantize565(gWorldTarget.color[i]));
+				res.gpuVsPipelineQuantizedDifferent = WorldPipe::Compare(pipelineQ.data(), out888.data(), W, H,
 					clip.iLeft, clip.iTop, clip.iRight, clip.iBottom).different;
 				if (png)
 				{
