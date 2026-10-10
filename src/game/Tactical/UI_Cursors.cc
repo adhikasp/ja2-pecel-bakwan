@@ -30,11 +30,19 @@
 #include "ContentManager.h"
 #include "GameInstance.h"
 #include "policy/GamePolicy.h"
+#include "NativeUI.h"
 
 #include <string_theory/string>
 
 
 // FUNCTIONS FOR ITEM CURSOR HANDLING
+// The native cursor's chip shows the chance to hit as part of what a click costs, so it is always worked out there;
+// the legacy cursor shows it only when the game policy asks.
+static bool ShowHitChance()
+{
+	return gamepolicy(show_hit_chance) || NativeUI::TacticalHudActive();
+}
+
 static UICursorID HandleActivatedTargetCursor(   SOLDIERTYPE*, GridNo map_pos, BOOLEAN recalc);
 static UICursorID HandleNonActivatedTargetCursor(SOLDIERTYPE*, GridNo map_pos, BOOLEAN show_APs, BOOLEAN fRecalc, MouseMoveState);
 static UICursorID HandleKnifeCursor(             SOLDIERTYPE*, GridNo map_pos, BOOLEAN activated, MouseMoveState);
@@ -241,7 +249,7 @@ static UICursorID HandleActivatedTargetCursor(SOLDIERTYPE* const s, GridNo const
 		gfCannotGetThrough = chance < OK_CHANCE_TO_GET_THROUGH;
 	}
 
-	if(gamepolicy(show_hit_chance))
+	if(ShowHitChance())
 	{
 		// Calculate chance to hit
 		if (recalc || giLastBodyLocationTargeted != s->bAimShotLocation || giLastAimTime != s->bShownAimTime)
@@ -640,7 +648,7 @@ static UICursorID HandleKnifeCursor(SOLDIERTYPE* const s, GridNo const map_pos, 
 		DetermineCursorBodyLocation(s, TRUE, TRUE);
 
 		// Calculate chance to hit
-		if (gamepolicy(show_hit_chance) && gUIFullTarget)
+		if (ShowHitChance() && gUIFullTarget)
 		{
 			UINT32 uiHitChance = CalcChanceToStab(s, gUIFullTarget, s->bShownAimTime / 2);
 			SetChanceToHitText(st_format_printf("%d%%", uiHitChance));
@@ -723,7 +731,7 @@ static UICursorID HandlePunchCursor(SOLDIERTYPE* const s, GridNo const map_pos, 
 		DetermineCursorBodyLocation(s, TRUE, TRUE);
 
 		// Calculate chance to hit
-		if (gamepolicy(show_hit_chance) && gUIFullTarget)
+		if (ShowHitChance() && gUIFullTarget)
 		{
 			UINT32 uiHitChance = CalcChanceToPunch(s, gUIFullTarget, s->bShownAimTime / 2, true);
 			SetChanceToHitText(st_format_printf("%d%%", uiHitChance));
@@ -896,7 +904,7 @@ static UICursorID HandleNonActivatedTossCursor(SOLDIERTYPE* const s, GridNo cons
 		}
 
 		// Calculate chance to hit
-		if (gamepolicy(show_hit_chance))
+		if (ShowHitChance())
 		{
 			if (bad_ctgh)
 				giHitChance = 0;
@@ -906,7 +914,7 @@ static UICursorID HandleNonActivatedTossCursor(SOLDIERTYPE* const s, GridNo cons
 	}
 
 	// Attach chance-to-hit to mouse cursor
-	if (gamepolicy(show_hit_chance) && giHitChance != -1)
+	if (ShowHitChance() && giHitChance != -1)
 		SetChanceToHitText(st_format_printf("%d%%", giHitChance));
 
 	return bad_ctgh ? BAD_THROW_UICURSOR : GOOD_THROW_UICURSOR;

@@ -2950,6 +2950,10 @@ static BOOLEAN SoldierCanSeeCatchComing(const SOLDIERTYPE* pSoldier, INT16 sSrcG
 
 }
 
+static int giHeldItemCursorKind = 1;
+
+int HeldItemCursorKind() { return giHeldItemCursorKind; }
+
 void DrawItemTileCursor( )
 {
 	INT16 sAPCost;
@@ -3235,6 +3239,9 @@ void DrawItemTileCursor( )
 		}
 
 		gViewportRegion.ChangeCursor(uiCursorId);
+
+		// what the native cursor shows of it: a drop or throw, one that cannot get there, a give
+		giHeldItemCursorKind = fGiveItem ? 3 : uiCursorId == CURSOR_ITEM_BAD_THROW ? 2 : 1;
 	}
 }
 

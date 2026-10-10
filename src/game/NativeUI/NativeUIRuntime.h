@@ -35,6 +35,12 @@ namespace NativeUI
 	/** The item picture the native pointer carries (an item held by the mouse), or none with an empty @a src;
 	 * @a w x @a h in output pixels. */
 	void SetCursorItem(std::string const& src, int w, int h);
+	/** The shape of the native pointer: an icon of the design system ("walk", "target"; empty: the plain arrow),
+	 * its tone class ("ok", "warn", "no", "foe") and whether a ring surrounds it (an attack). */
+	void SetCursorShape(std::string const& icon, std::string const& tone, bool ring);
+	/** Width in pixels of the item picture the pointer carries (0 none): what rides to the right of the arrow.
+	 * Things placed beside the pointer keep clear of it. */
+	int CursorItemWidth();
 
 	/** A native screen: owns input and drawing while it is the current screen. */
 	class Screen
@@ -99,6 +105,10 @@ namespace NativeUI
 
 	/** The mouse is over a part of the HUD that takes clicks (an element with class "hit"). */
 	bool TacticalHudWantsMouse();
+	/** The tactical cursor layer (TacticalCursor.cc): registers its element once, refreshed once a frame with the HUD
+	 * document (the marker, path and chip over the world, the pointer's shape). */
+	void RegisterTacticalCursor();
+	void TacticalCursorUpdate(Rml::ElementDocument* hud);
 	/** The native pointer is the tactical cursor: over the HUD, and wherever an item is held by the mouse. */
 	bool TacticalHudOwnsCursor();
 }

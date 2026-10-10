@@ -9,6 +9,13 @@
 <body class="t5">
 <div class="t5-root" id="tac" data-model="tactical">
 
+	<!-- the cursor over the world (src/game/NativeUI/TacticalCursor.cc): the tile marker, the move path and the
+	     destination as geometry, and the chip beside the pointer. Under everything else of the HUD. -->
+	<div class="cur-layer audit-skip">
+		<cursorlayer id="tac.cursor.layer"></cursorlayer>
+		<div class="cchip" id="tac.cursor.chip"></div>
+	</div>
+
 	<!-- names, bars and damage over the mercs (the legacy rules of who gets one) -->
 	<div class="ov-layer">
 		<div class="ov ov-merc audit-skip" data-for="o : overlays" data-class-sel="o.sel" data-style-left="(o.x - 60) + 'px'" data-style-top="(o.y - 4) + 'px'">

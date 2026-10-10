@@ -12,6 +12,8 @@
 #include "JA2Types.h"
 #include "Structure_Internals.h"
 
+#include <vector>
+
 
 void InitPathAI(void);
 void ShutDownPathAI( void );
@@ -20,6 +22,12 @@ INT16 UIPlotPath(      SOLDIERTYPE* pSold, INT16 sDestGridno, INT8 bCopyRoute, I
 INT16 EstimatePlotPath(SOLDIERTYPE* pSold, INT16 sDestGridno, INT8 bCopyRoute, INT8 bPlot, UINT16 usMovementMode, INT16 sAPBudget);
 
 void ErasePath();
+
+/** One tile of the path PlotPath last plotted for the cursor (PLOT): the tile, and the action points the merc has
+ * spent when he is there (what the native path line splits at the turn's budget). */
+struct PathTrailStep { INT16 gridNo; INT16 ap; };
+std::vector<PathTrailStep> const& PlottedTrail();
+INT8 PlottedTrailLevel();
 INT32 FindBestPath(SOLDIERTYPE* s, INT16 sDestination, INT8 ubLevel, INT16 usMovementMode, INT8 bCopy, UINT8 fFlags);
 
 // Tiles lit at night and visible to a player merc; enemies path around them
