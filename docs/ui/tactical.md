@@ -173,6 +173,22 @@ click attacks). The marker diamond replaces the snapping tile cursor, the path i
 solid for this turn's action points, dashed amber beyond; the footstep tile nodes are not drawn while the native HUD is
 up. The chance to hit is always worked out for the chip (`show_hit_chance` only gates the legacy cursor text).
 
+### Drag and drop (#320)
+
+A press on a full pocket that moves more than `DRAG_THRESHOLD_DP` (6 dp) lifts the item into the hand (the same pick-up
+as a click, so the pointer carries it); the button going up decides the rest. Click-to-pick and right-click stay.
+
+| Let go over | What happens | Decided by |
+|---|---|---|
+| a pocket | put down, swap, attach or the merge question | `InventoryCore::PlanPlace` (`InventorySlotDrop` gives the verdict without the click) |
+| a squad card | give: the card's merc must be within 3 tiles and in sight, each merc needs 3 AP and pays 2; on the card of the merc it came from, drop at his feet (`AP_PICKUP_ITEM`) | `Equipment/DragDrop` `PlanCardDrop` through `PlanDropOnCard` / `DropOnCard` (`Tactical/InventoryAdapter.cc`) |
+| the world | drop, throw (arc, landing marker and chip of #318), give to a merc, drop at his feet when it is the merc himself | the cursor's legacy click handler (`HandleItemPointerClick`), whose give branch is now `PassHeldItemTo`, the same function the card uses |
+
+While something is held, every pocket of the detail panel and every card is tinted `dok` / `dno` (takes it / does not),
+and over a pocket or a card the chip beside the pointer says what letting go does and, when it cannot, why
+(`tac.drag.*` strings). Lua: `ja2.inventoryOp("plan_card", {to})`, `("drop_card", {to})`, `("plan_slot", {merc, slot})`;
+`ja2.viewModel("tactical").cards[i].drop` and the slot rows' `drop` carry the outline.
+
 | Done | Rows |
 |---|---|
 | Squad bar: cards (face, HP/lost, EN, MO, AP in combat, status icons, stance, hand item and ammo), squad tabs, select, details | I1–I7, A1–A2 |

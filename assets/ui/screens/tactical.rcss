@@ -587,3 +587,13 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .cchip.warn .why { color: #F0E442; }
 .cchip .hint { display: block; margin-top: 3dp; font-size: 11dp; color: #8F8260; white-space: nowrap; }
 
+/* ------------------------------------------------------------------ drag and drop: where the held item goes */
+.t5 .slot.dok { background-color: #2E4A36; }
+.t5 .slot.dok:hover { background-color: #3C6A48; }
+.t5 .slot.dno { background-color: #4A2A22; opacity: 0.6; }
+.tcard.dok { background-color: #2F7A4C; }
+.tcard.dok:hover { background-color: #3C9A60; }
+.tcard.dno { opacity: 0.55; }
+.cchip.held { z-index: 60; pointer-events: none; }
+/* with something in the hand the chip says what letting go does: the pocket's own hover card stays out of its way */
+.t5 .slot.dok:hover .card, .t5 .slot.dno:hover .card { display: none; }

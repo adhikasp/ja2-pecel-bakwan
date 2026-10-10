@@ -1980,6 +1980,32 @@ static InventoryOutcome SlotSecondary(SOLDIERTYPE* const s, UINT32 const pos)
 
 static bool ShopHatched(UINT32 pos);
 
+/** What putting the hand down in pocket @a slot of @a s would do: the verdict of the click, without the click. */
+SlotDrop InventorySlotDrop(SOLDIERTYPE* const s, int const slot)
+{
+	SlotDrop d;
+	SyncInventoryHand();
+	if (!s || slot < 0 || slot >= NUM_INV_SLOTS || fInMapMode || !gpItemPointer)
+	{
+		d.why = InvWhy::HandEmpty;
+		return d;
+	}
+	if (s != gpSMCurrentMerc || ShopHatched(static_cast<UINT32>(slot)))
+	{
+		d.why = InvWhy::OutOfReach;
+		return d;
+	}
+	Equipment::PlaceVerdict const v = TacticalInventory().PlanPlace(InventoryPartyOf(s), slot, s->inv[slot].usItem,
+		IsAttachHostPocket(static_cast<UINT32>(slot)), false);
+	d.kind   = v.kind;
+	d.why    = v.why;
+	d.apFrom = v.apFrom;
+	d.apTo   = v.apTo;
+	d.ok     = v.kind != Equipment::PlaceKind::Refused;
+	return d;
+}
+
+
 
 InventoryOutcome InventorySlotClick(SOLDIERTYPE* const merc, int const slot, bool const right, bool const ctrl)
 {

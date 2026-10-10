@@ -5,6 +5,8 @@
 #include "Handle_Items.h"
 #include "Interface_Items.h"
 #include "Isometric_Utils.h"
+#include "LOS.h"
+#include "OppList.h"
 #include "ItemModel.h"
 #include "Message.h"
 #include "World_Items.h"
@@ -14,6 +16,7 @@
 #include "Overhead.h"
 #include "Points.h"
 #include "Soldier_Control.h"
+#include "Soldier_Macros.h"
 
 #include <memory>
 
@@ -212,4 +215,81 @@ bool InventoryDetach(SOLDIERTYPE& s, int const host, int const index, int const 
 	}
 	DisposeLeftover(s, -1, carry);
 	return Finish(true, s, to, item, "detach");
+}
+
+
+// ---- drag and drop: the squad card ---------------------------------------------------------------------------------
+
+Equipment::DropVerdict PlanDropOnCard(SOLDIERTYPE const* const target)
+{
+	Equipment::DropVerdict none;
+	SyncInventoryHand();
+	if (!target || !gpItemPointer || !gpItemPointerSoldier || TacticalInventory().Hand().Empty())
+	{
+		none.why = Equipment::InvWhy::HandEmpty;
+		return none;
+	}
+	SOLDIERTYPE* const giver = gpItemPointerSoldier;
+	Equipment::CardDrop d;
+	d.giver         = InventoryPartyOf(giver);
+	d.receiver      = InventoryPartyOf(target);
+	d.sameMerc      = target == giver;
+	d.tiles         = PythSpacesAway(giver->sGridNo, target->sGridNo);
+	d.receiverTakes = target->bTeam == OUR_TEAM && !AM_AN_EPC(target) && !(target->uiStatusFlags & SOLDIER_VEHICLE);
+	d.dropAp        = AP_PICKUP_ITEM;
+	d.dropFree      = gfDontChargeAPsToPickup;
+	if (!d.sameMerc && d.receiverTakes && d.tiles <= Equipment::GIVE_RANGE_TILES)
+	{
+		INT16 const visible = DistanceVisible(target, DIRECTION_IRRELEVANT, DIRECTION_IRRELEVANT, giver->sGridNo, giver->bLevel);
+		d.inSight = SoldierTo3DLocationLineOfSightTest(target, giver->sGridNo, giver->bLevel, 3, static_cast<UINT8>(visible), TRUE) != 0;
+	}
+	return Equipment::PlanCardDrop(d);
+}
+
+InventoryOutcome DropOnCard(SOLDIERTYPE* const target)
+{
+	InventoryOutcome out;
+	Equipment::DropVerdict const v = PlanDropOnCard(target);
+	if (!v.Ok())
+	{
+		out.action = "refused";
+		out.why    = Equipment::Describe(v.why);
+		RecordInventoryOutcome(out);
+		return out;
+	}
+	UINT16 const item = gpItemPointer->usItem;
+	InventoryMove move;
+	move.merc   = gpItemPointerSoldier->ubID;
+	move.item   = item;
+	move.count  = gpItemPointer->ubNumberOfObjects;
+	move.action = v.action == Equipment::DropAction::Give ? "give" : "drop";
+	move.apFrom = v.apGiver;
+	move.apTo   = v.apReceiver;
+	BeforeInventoryMove(move);
+
+	bool done;
+	if (v.action == Equipment::DropAction::DropAtFeet)
+	{
+		SOLDIERTYPE* const s = gpItemPointerSoldier;
+		if (!gfDontChargeAPsToPickup) DeductPoints(s, AP_PICKUP_ITEM, 0);
+		SoldierDropItem(s, gpItemPointer);
+		gfDontChargeAPsToPickup = FALSE;
+		EndItemPointer();
+		done = true;
+	}
+	else
+	{
+		done = PassHeldItemTo(target) != FALSE;
+		if (done) { gfDontChargeAPsToPickup = FALSE; EndItemPointer(); }
+	}
+	SyncInventoryHand();
+	out.ok     = done;
+	out.action = done ? move.action : "refused";
+	out.why    = done ? "" : "no room";
+	out.item   = item;
+	out.apFrom = done ? v.apGiver : 0;
+	out.apTo   = done ? v.apReceiver : 0;
+	RecordInventoryOutcome(out);
+	if (done) OnInventoryMoved(move);
+	return out;
 }

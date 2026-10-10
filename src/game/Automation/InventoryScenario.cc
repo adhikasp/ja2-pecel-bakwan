@@ -190,6 +190,39 @@ sol::table InventoryOp(sol::state& L, std::string const& op, sol::optional<sol::
 		InventoryMoveSlot(*s, from, to);
 		return OutcomeTable(L, LastInventoryOutcome());
 	}
+	if (op == "plan_card")
+	{
+		// what letting go of the hand over a merc's squad card would do: { ok, action, why, apFrom, apTo, tiles }
+		SOLDIERTYPE* const to = FindMerc(text("to"));
+		Equipment::DropVerdict const v = PlanDropOnCard(to);
+		sol::table t = L.create_table();
+		t["ok"]     = v.Ok();
+		t["action"] = v.action == Equipment::DropAction::Give ? "give" : v.action == Equipment::DropAction::DropAtFeet ? "feet" : "none";
+		t["why"]    = v.Ok() ? "" : std::string(Equipment::Describe(v.why));
+		t["apFrom"] = v.apGiver;
+		t["apTo"]   = v.apReceiver;
+		t["tiles"]  = v.tiles;
+		return t;
+	}
+	if (op == "drop_card")
+	{
+		return OutcomeTable(L, DropOnCard(FindMerc(text("to"))));
+	}
+	if (op == "plan_slot")
+	{
+		// what putting the hand down in a pocket would do, without doing it: { ok, kind, why, apFrom, apTo }
+		SOLDIERTYPE* const s = FindMerc(text("merc"));
+		ShowPanelFor(s);
+		SlotDrop const d = InventorySlotDrop(s, num("slot", -1));
+		sol::table t = L.create_table();
+		t["ok"]     = d.ok;
+		t["kind"]   = d.kind == Equipment::PlaceKind::Put ? "put" : d.kind == Equipment::PlaceKind::Attach ? "attach" :
+			d.kind == Equipment::PlaceKind::AskMerge ? "merge" : d.kind == Equipment::PlaceKind::CleanUp ? "cleanup" : "refused";
+		t["why"]    = d.ok ? "" : std::string(Equipment::Describe(d.why));
+		t["apFrom"] = d.apFrom;
+		t["apTo"]   = d.apTo;
+		return t;
+	}
 	throw std::runtime_error("ja2.inventoryOp(\"" + op + "\"): unknown operation");
 }
 

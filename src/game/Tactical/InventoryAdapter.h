@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Equipment/DragDrop.h"
 #include "Equipment/InventoryCore.h"
 #include "JA2Types.h"
 #include "Observable.h"
@@ -82,3 +83,23 @@ bool InventoryMoveSlot(SOLDIERTYPE& s, int from, int to);
 bool InventoryAttachFromSlot(SOLDIERTYPE& s, int from, int host);
 /** Attachment @a index of the gun at @a host into pocket @a to (back on the gun when it does not fit). */
 bool InventoryDetach(SOLDIERTYPE& s, int host, int index, int to);
+
+// ---- drag and drop (#320): letting go of the hand over a merc's squad card ------------------------------------------
+
+/** What dropping the hand on @a target's card would do: give (range, sight, both mercs' points) or, on the merc the
+ *  item came from, drop at his feet. The hand must hold something; otherwise nothing is allowed. */
+Equipment::DropVerdict PlanDropOnCard(SOLDIERTYPE const* target);
+
+/** Carries the verdict of PlanDropOnCard out and records the outcome. Returns what happened. */
+InventoryOutcome DropOnCard(SOLDIERTYPE* target);
+
+/** What putting the hand down in a pocket would do (the HUD outlines the pockets that take it). */
+struct SlotDrop
+{
+	bool                  ok = false;
+	Equipment::PlaceKind  kind = Equipment::PlaceKind::Refused;
+	Equipment::InvWhy     why = Equipment::InvWhy::None;
+	int                   apFrom = 0;
+	int                   apTo = 0;
+};
+SlotDrop InventorySlotDrop(SOLDIERTYPE* merc, int slot);
