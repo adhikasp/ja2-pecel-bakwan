@@ -274,6 +274,7 @@ namespace
 	// a drop on a squad card happened this click: the click that follows is not a selection
 	bool g_swallowClick = false;
 	bool g_swallowUp = false; // a cancelled drag: the button's release is not a click on the pocket under it
+	bool g_escWasDown = false;
 	bool g_releaseSeen = false;
 	bool g_rightWasDown = false;
 	bool g_dragLifted = false; // a drag lifted the item and the button is still down
@@ -1108,8 +1109,18 @@ namespace
 		}
 		// a click-to-pick item: the right button anywhere but on a pocket puts it back
 		if (!g_dragLifted && rightEdge && InventoryHand().item != NOTHING && !TacticalInventory().Asking() &&
-			IndexOf(Context()->GetHoverElement(), "tac.inv.slot[") < 0 && IndexOf(Context()->GetHoverElement(), "tac.desc") < 0 &&
-			!InItemDescriptionBox())
+			IndexOf(Context()->GetHoverElement(), "tac.desc") < 0 && !InItemDescriptionBox())
+		{
+			// a pocket with something in it is a swap / describe; an empty one, or anywhere else, puts it back
+			int const over = IndexOf(Context()->GetHoverElement(), "tac.inv.slot[");
+			if (over < 0 || !gpSMCurrentMerc || over >= NUM_INV_SLOTS || gpSMCurrentMerc->inv[over].usItem == NOTHING)
+				CancelItemPointer();
+		}
+		// Esc does the same for an item held by a click
+		bool const esc = _KeyDown(SDLK_ESCAPE);
+		bool const escEdge = esc && !g_escWasDown;
+		g_escWasDown = esc;
+		if (!g_dragLifted && escEdge && InventoryHand().item != NOTHING && !TacticalInventory().Asking() && !InItemDescriptionBox())
 			CancelItemPointer();
 		if (!g_dragLifted) return;
 		if (InventoryHand().item == NOTHING)
@@ -1229,7 +1240,7 @@ namespace
 					chip.why = Str(std::string("tac.drag.why.") + WhyKey(d.why));
 				}
 			}
-			else if (TacticalHudWantsMouse())
+			else if (TacticalHudWantsMouse() || NearHud(MousePosition(), std::max(0.01f, DpScale())))
 			{
 				// over a part of the HUD that takes nothing: say how to get out of it
 				chip.shown = true;

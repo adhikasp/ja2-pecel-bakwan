@@ -186,7 +186,7 @@ as a click, so the pointer carries it); the button going up decides the rest. Cl
 
 A drag never leaves the item stuck: Esc or the right button while dragging, a release on a part of the HUD that
 takes nothing, a refusal, or a release within 16 dp of a panel all send it back to its pocket at no cost. Only a release
-clearly outside the HUD is the world's click. A click-to-pick item goes back with the right button off a pocket. A team
+clearly outside the HUD is the world's click. A click-to-pick item goes back with Esc, or the right button anywhere but on a pocket that holds something. The "Holding" chip shows over the HUD and within the same margin of it. A team
 mate in reach under the pointer reads "Give" at 2 AP, not "Drop".
 
 While something is held, every pocket of the detail panel and every card is tinted `dok` / `dno` (takes it / does not),
