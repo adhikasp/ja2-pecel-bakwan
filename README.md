@@ -12,7 +12,7 @@ JA2 Pecel Bakwan (named after the Javanese street-food combo of vegetables in pe
 [![Discord](https://img.shields.io/badge/Discord-The%20Bear%27s%20Pit-5865F2?logo=discord&logoColor=white)](https://discord.com/invite/GqrVZUM)
 [![Built by agents](https://img.shields.io/badge/built%20by-agents%20%F0%9F%A4%96-8957e5)](#how-its-built-agents-with-a-test-harness)
 
-![The native main menu at 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/logo-pecel-bakwan/mainmenu_1920x1080.png)
+![The native main menu at 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-screenshots-refresh/mainmenu_1920x1080.png)
 
 ---
 
@@ -22,13 +22,13 @@ Every screen is being redesigned for modern displays (16:9, 16:10, 21:9; 1280x72
 
 | Strategic map | Tactical HUD |
 |---|---|
-| ![Native strategic map screen](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-rewrite/strategic-map.png) | ![Native tactical HUD in a firefight](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-rewrite/tactical-hud.png) |
+| ![Native strategic map screen](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-screenshots-refresh/strategic-map.png) | ![Native tactical HUD in a firefight](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-screenshots-refresh/tactical-hud.png) |
 | Full-screen map with dockable panels, time compression, message log and sector intel. | Squad bar, per-merc AP/HP/breath/morale, native action bar and turn control. |
 
 | Inventory and merc detail | Route plotting |
 |---|---|
-| ![Native inventory and merc detail panel](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-rewrite/inventory.png) | ![Native route plotting on the strategic map](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-rewrite/route-plotting.png) |
-| Drag-and-drop inventory, attributes, attachments, slot-aware item pictures. | Native confirmation modals and shortcuts replace hand-placed popups. |
+| ![Native inventory and merc detail panel](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-screenshots-refresh/inventory.png) | ![Native route plotting on the strategic map](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/docs-readme-screenshots-refresh/route-plotting.png) |
+| Paper-doll inventory with drag-and-drop, load and armour readouts, and the loadout screen. | Plot a route waypoint by waypoint with a live path, banner and cancel. |
 
 ## Where we are headed
 
