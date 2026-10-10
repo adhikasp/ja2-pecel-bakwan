@@ -60,7 +60,7 @@ private:
 	SDL_GPUComputePipeline* m_pipeline = nullptr;
 	SDL_GPUTexture*         m_texture = nullptr;
 	int                     m_w = 0, m_h = 0;
-	Buffer m_instances, m_ranges, m_items, m_pixels, m_palettes, m_columns, m_shade, m_out;
+	Buffer m_instances, m_ranges, m_items, m_pixels, m_palettes, m_columns, m_shade, m_lights, m_out;
 	SDL_GPUTransferBuffer*  m_upload = nullptr;
 	uint32_t                m_uploadSize = 0;
 	SDL_GPUTransferBuffer*  m_download = nullptr;

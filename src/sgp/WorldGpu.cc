@@ -14,8 +14,10 @@ double Ms(clock_type::time_point a, clock_type::time_point b) { return std::chro
 
 struct Params
 {
-	uint32_t width, height, binCols, clearColor, clearDepth, mask, pad0, pad1;
+	uint32_t width, height, binCols, clearColor, clearDepth, mask, pointCount, pad0;
+	float ambientR, ambientG, ambientB, sunR, sunG, sunB, falloff, pad1;
 };
+static_assert(sizeof(Params) == 64);
 
 uint32_t Align4(size_t v) { return uint32_t((v + 3) & ~size_t(3)); }
 }
@@ -80,7 +82,7 @@ bool Renderer::Init(SDL_GPUDevice* device)
 		Shutdown();
 		return false;
 	}
-	ci.num_readonly_storage_buffers = 7;
+	ci.num_readonly_storage_buffers = 8;
 	ci.num_readwrite_storage_textures = 1;
 	ci.num_readwrite_storage_buffers = 1;
 	ci.num_uniform_buffers = 1;
@@ -103,7 +105,7 @@ void Renderer::Shutdown()
 	SDL_WaitForGPUIdle(m_device);
 	if (m_fence) SDL_ReleaseGPUFence(m_device, m_fence);
 	m_fence = nullptr;
-	for (Buffer* b : { &m_instances, &m_ranges, &m_items, &m_pixels, &m_palettes, &m_columns, &m_shade, &m_out })
+	for (Buffer* b : { &m_instances, &m_ranges, &m_items, &m_pixels, &m_palettes, &m_columns, &m_shade, &m_lights, &m_out })
 	{
 		if (b->buf) SDL_ReleaseGPUBuffer(m_device, b->buf);
 		*b = {};
@@ -196,11 +198,15 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 	bool const shadeChanged = m_shadeCopy.empty() || std::memcmp(m_shadeCopy.data(), shadeTable, 65536 * 2) != 0;
 
 	struct Part { Buffer* dst; void const* src; size_t bytes; size_t dstOffset; };
+	std::vector<float> lightData;
+	lightData.reserve(f.lighting.points.size() * 8);
+	for (WorldPipe::PointLight const& p : f.lighting.points)
+		lightData.insert(lightData.end(), { p.x, p.y, p.radius, p.intensity, p.r, p.g, p.b, 0.0f });
 	std::vector<Part> parts = {
 		{ &m_instances, f.instances.data(), f.instances.size() * sizeof(WorldPipe::Instance), 0 },
 		{ &m_ranges,    m_bins.ranges.data(), m_bins.ranges.size() * 4, 0 },
 		{ &m_items,     m_bins.items.data(),  m_bins.items.size() * 4, 0 },
-		{ &m_palettes,  f.palettes.data(),    f.palettes.size() * 2, 0 },
+		{ &m_palettes,  f.palettes.data(),    f.palettes.size() * 4, 0 },
 		{ &m_columns,   f.columns.data(),     f.columns.size() * 2, 0 },
 	};
 	for (Part const& p : parts)
@@ -210,6 +216,8 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 	if (poolTo > poolFrom) parts.push_back({ &m_pixels, reinterpret_cast<uint8_t const*>(pool.pixels.data()) + poolFrom, poolTo - poolFrom, poolFrom });
 	if (!Ensure(m_shade, 65536 * 2, ro)) return false;
 	if (shadeChanged) parts.push_back({ &m_shade, shadeTable, 65536 * 2, 0 });
+	if (!Ensure(m_lights, uint32_t(lightData.size() * 4), ro)) return false;
+	if (!lightData.empty()) parts.push_back({ &m_lights, lightData.data(), lightData.size() * 4, 0 });
 	if (!Ensure(m_out, uint32_t(size_t(f.width) * f.height * 4), SDL_GPU_BUFFERUSAGE_COMPUTE_STORAGE_WRITE)) return false;
 
 	size_t total = 0;
@@ -270,9 +278,12 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 	out.buffer = m_out.buf;
 	SDL_GPUComputePass* pass = SDL_BeginGPUComputePass(cmd, &tex, 1, &out, 1);
 	SDL_BindGPUComputePipeline(pass, m_pipeline);
-	SDL_GPUBuffer* ros[7] = { m_instances.buf, m_ranges.buf, m_items.buf, m_pixels.buf, m_palettes.buf, m_columns.buf, m_shade.buf };
-	SDL_BindGPUComputeStorageBuffers(pass, 0, ros, 7);
-	Params const params{ uint32_t(f.width), uint32_t(f.height), uint32_t(m_bins.cols), f.clearColor, f.clearDepth, f.translucentMask, 0, 0 };
+	SDL_GPUBuffer* ros[8] = { m_instances.buf, m_ranges.buf, m_items.buf, m_pixels.buf, m_palettes.buf, m_columns.buf, m_shade.buf, m_lights.buf };
+	SDL_BindGPUComputeStorageBuffers(pass, 0, ros, 8);
+	Params const params{ uint32_t(f.width), uint32_t(f.height), uint32_t(m_bins.cols), f.clearColor, f.clearDepth, f.translucentMask,
+		uint32_t(f.lighting.points.size()), 0,
+		f.lighting.ambientR, f.lighting.ambientG, f.lighting.ambientB,
+		f.lighting.sunR, f.lighting.sunG, f.lighting.sunB, f.lighting.falloff, 0.0f };
 	SDL_PushGPUComputeUniformData(cmd, 0, &params, sizeof(params));
 	SDL_DispatchGPUCompute(pass, uint32_t((f.width + 15) / 16), uint32_t((f.height + 15) / 16), 1);
 	SDL_EndGPUComputePass(pass);

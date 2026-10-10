@@ -95,7 +95,7 @@ Instance FromClip(ClipInfo const& ci, SpritePool& pool, Frame& f, Op op, uint16_
 	in.z = z;
 	in.outline = outline;
 	in.columns = NO_COLUMNS;
-	in.palette = f.Palette(pal);
+	in.palette = f.Palette(pal, nullptr);
 	return in;
 }
 
@@ -127,12 +127,13 @@ int Mismatches(Op op, Legacy const& legacy, bool clipped, uint32_t seed, uint16_
 	Target t;
 	t.w = W;
 	t.h = H;
-	t.color = b.color;
+	t.color.resize(size_t(W) * H);
+	for (int i = 0; i < W * H; ++i) t.color[i] = Expand565(b.color[i]);
 	t.depth = b.depth;
-	Rasterize(f, pool, ShadeTable, t);
+	Rasterize(f, pool, t);
 
 	int bad = 0;
-	for (int i = 0; i < W * H; ++i) bad += (a.color[i] != t.color[i]) + (a.depth[i] != t.depth[i]);
+	for (int i = 0; i < W * H; ++i) bad += (Expand565(a.color[i]) != t.color[i]) + (a.depth[i] != t.depth[i]);
 	return bad;
 }
 
@@ -185,8 +186,47 @@ TEST(WorldPipeline, SpritePoolReusesAndNoticesChanges)
 	EXPECT_EQ(pool.pixels[c.offset], 0x109);
 }
 
-TEST(WorldPipeline, BinsKeepSubmissionOrder)
+TEST(WorldPipeline, PaletteKeepsThe24BitColours)
 {
+	Frame f;
+	f.Clear(8, 8);
+	uint16_t p565[256];
+	uint32_t p24[256];
+	for (int i = 0; i < 256; ++i)
+	{
+		p565[i] = uint16_t(i * 257);
+		p24[i] = (uint32_t(i) << 16) | (uint32_t(255 - i) << 8) | uint32_t(i);
+	}
+	uint32_t const a = f.Palette(p565, nullptr);      // no 24-bit palette: the 565 table expanded
+	uint16_t p565b[256] = {};
+	uint32_t const b = f.Palette(p565b, p24);         // 24-bit colours: used as they are
+	EXPECT_NE(a, b);
+	for (int i = 0; i < 256; ++i)
+	{
+		EXPECT_EQ(f.palettes[a * 256 + i], Expand565(p565[i]));
+		EXPECT_EQ(f.palettes[b * 256 + i], p24[i]);
+	}
+}
+
+TEST(WorldPipeline, LightingMultipliesAndLeavesIdentity)
+{
+	uint32_t d = 0x804020;
+	ApplyLighting(d, 0, 0, Lighting{});
+	EXPECT_EQ(d, 0x804020u); // identity
+
+	Lighting l;
+	l.points.push_back(PointLight{ 10, 10, 20, 1.0f, 0.5f, 0.0f, 0.5f });
+	uint32_t at = 0x404040, away = 0x404040, edge = 0x404040;
+	ApplyLighting(at, 10, 10, l);    // centre: the full intensity
+	ApplyLighting(away, 100, 100, l); // outside the radius: untouched
+	ApplyLighting(edge, 30, 10, l);   // exactly the radius: untouched
+	EXPECT_EQ(away, 0x404040u);
+	EXPECT_EQ(edge, 0x404040u);
+	// centre: r = 64 * (1 + 0.5) = 96, g = 64 * (1 + 0.25) = 80, b = 64
+	EXPECT_EQ(at, 0x605040u);
+}
+
+TEST(WorldPipeline, BinsKeepSubmissionOrder){
 	Frame f;
 	f.Clear(40, 20);
 	Instance in{};

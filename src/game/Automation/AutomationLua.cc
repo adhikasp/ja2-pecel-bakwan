@@ -19,6 +19,9 @@
 #include "SysUtil.h"
 #include "UILayout.h"
 #include "Video.h"
+#include "WorldRender.h"
+#include "Lighting.h"
+#include "WorldDef.h"
 #include "VSurface.h"
 #include "VideoOptionsScreen.h"
 #include "GameLoop.h"
@@ -992,6 +995,45 @@ namespace
 			});
 		});
 
+		// ja2.setWorldLights{ {x,y,radius,r,g,b,intensity}, ... }: extra point lights on the world frame (the
+		// game's own muzzle flashes, explosions and lamps are added automatically from its light sprites).
+		// Positions are world pixels (== canvas pixels at world zoom 1). An empty table clears them. Returns
+		// how many were set.
+		ja2.set_function("setWorldLights", [](sol::optional<sol::table> t) {
+			return Guarded([&] {
+				std::vector<WorldPipe::PointLight> lights;
+				if (t)
+					for (auto const& kv : *t)
+					{
+						sol::table l = kv.second.as<sol::table>();
+						WorldPipe::PointLight p;
+						p.x = float(l["x"].get_or(0.0)); p.y = float(l["y"].get_or(0.0));
+						p.radius = float(l["radius"].get_or(0.0));
+						p.r = float(l["r"].get_or(1.0)); p.g = float(l["g"].get_or(1.0)); p.b = float(l["b"].get_or(1.0));
+						p.intensity = float(l["intensity"].get_or(1.0));
+						lights.push_back(p);
+					}
+				int const n = int(lights.size());
+				WorldRendererSetExtraLights(std::move(lights));
+				return n;
+			});
+		});
+
+		// ja2.addLightSprite{ grid = N }: create (once, then reposition) one of the game's own light sprites - the
+		// explosion template - at a tile, the way an explosion does, so CollectLighting turns it into world
+		// lighting. Returns its radius in tiles.
+		ja2.set_function("addLightSprite", [](sol::table t) {
+			return Guarded([&] {
+				int const grid = t["grid"].get_or(-1);
+				if (grid < 0 || grid >= WORLD_MAX) throw std::runtime_error("ja2.addLightSprite: bad grid");
+				static LIGHT_SPRITE* light = nullptr;
+				if (!light) light = LightSpriteCreate("L-R04.LHT");
+				if (!light) throw std::runtime_error("ja2.addLightSprite: no free light sprite");
+				LightSpritePosition(light, INT16(grid % WORLD_COLS), INT16(grid / WORLD_COLS));
+				return int(LightSpriteRadius(light));
+			});
+		});
+
 		// --- tactical map ---
 		ja2.set_function("gridPos", [](int grid, sol::optional<int> level) {
 			return Guarded([&] {
@@ -1509,6 +1551,7 @@ namespace
 				t["gpuDifferent"] = double(r.gpuDifferent);
 				t["gpuPercent"] = r.gpuPercent;
 				t["gpuVsPipelineDifferent"] = double(r.gpuVsPipelineDifferent);
+				t["gpuVsPipelineQuantizedDifferent"] = double(r.gpuVsPipelineQuantizedDifferent);
 				t["legacyMs"] = r.legacyMs;
 				t["recordMs"] = r.recordMs;
 				t["pipelineMs"] = r.pipelineMs;

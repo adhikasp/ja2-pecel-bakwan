@@ -1,8 +1,9 @@
 #version 450
 // The world renderer's rasterizer (src/sgp/WorldPipeline.h): one thread per pixel of the world, walking the
-// sprite instances that cover its 16x16 bin in the legacy submission order. Colour (RGB565) and depth stay in
-// registers, so every legacy blitter rule, including the ones that read the destination (shade-table shadows,
-// 50 % translucency), is exact. ApplyPixel in WorldPipeline.h is the reference; keep the two in step.
+// sprite instances that cover its 16x16 bin in the legacy submission order. Colour (0xRRGGBB, 8 bits per
+// channel) and depth stay in registers, so every legacy blitter rule, including the ones that read the
+// destination (shade-table shadows, 50 % translucency), is exact. A finished pixel is lit (ambient + sun +
+// point lights). ApplyPixel and ApplyLighting in WorldPipeline.h are the reference; keep the two in step.
 //
 // Compiled to SPIR-V by tools/shaders/build.sh (glslangValidator) into world_raster.comp.spv.h.
 // SDL_GPU compute resource layout: set 0 = read-only storage buffers, set 1 = read-write storage
@@ -11,11 +12,11 @@
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 
 // Resource slots per backend. SPIR-V / HLSL (spirv-cross maps set -> register space): SDL_GPU's compute sets.
-// MSL (spirv-cross --msl-decoration-binding): [[buffer]] uniform 0, read-only 1..7, read-write 8; [[texture]] 0.
+// MSL (spirv-cross --msl-decoration-binding): [[buffer]] uniform 0, read-only 1..8, read-write 9; [[texture]] 0.
 #ifdef MSL_LAYOUT
 #define RO(n) set = 0, binding = (n + 1)
 #define RW_TEX set = 0, binding = 0
-#define RW_BUF set = 0, binding = 8
+#define RW_BUF set = 0, binding = 9
 #define UNIFORM set = 0, binding = 0
 #else
 #define RO(n) set = 0, binding = n
@@ -28,29 +29,50 @@ layout(std430, RO(0)) readonly buffer Instances { uvec4 inst[]; };  // 2 per ins
 layout(std430, RO(1)) readonly buffer Ranges    { uint ranges[]; }; // first, count per bin
 layout(std430, RO(2)) readonly buffer Items     { uint items[]; };
 layout(std430, RO(3)) readonly buffer Pixels    { uint pixels[]; };  // uint16 pairs
-layout(std430, RO(4)) readonly buffer Palettes  { uint palettes[]; };// uint16 pairs
+layout(std430, RO(4)) readonly buffer Palettes  { uint palettes[]; };// 0xRRGGBB each
 layout(std430, RO(5)) readonly buffer Columns   { uint columns[]; }; // uint16 pairs
-layout(std430, RO(6)) readonly buffer Shade     { uint shade[]; };   // uint16 pairs, 65536
+layout(std430, RO(6)) readonly buffer Shade     { uint shade[]; };   // uint16 pairs, 65536 (RGB565 -> RGB565)
+layout(std430, RO(7)) readonly buffer Lights    { vec4 lights[]; };  // 2 per light: (x, y, radius, intensity), (r, g, b, 0)
 
 layout(RW_TEX, rgba8) uniform writeonly image2D outImage;
 layout(std430, RW_BUF) writeonly buffer Out565 { uint out565[]; };
 
 layout(std140, UNIFORM) uniform Params
 {
-	uint width;
-	uint height;
-	uint binCols;
-	uint clearColor;
-	uint clearDepth;
-	uint mask;
-	uint pad0;
-	uint pad1;
+	uint  width;
+	uint  height;
+	uint  binCols;
+	uint  clearColor;   // 0xRRGGBB
+	uint  clearDepth;
+	uint  mask;         // 0x7BEF (the RGB565 halving mask; translucency stays in 565)
+	uint  pointCount;
+	uint  pad0;
+	float ambientR;
+	float ambientG;
+	float ambientB;
+	float sunR;
+	float sunG;
+	float sunB;
+	float falloff;
+	float pad1;
 };
 
 uint Pixel(uint i)   { return (pixels[i >> 1]   >> ((i & 1u) * 16u)) & 0xFFFFu; }
-uint Pal(uint i)     { return (palettes[i >> 1] >> ((i & 1u) * 16u)) & 0xFFFFu; }
 uint Column(uint i)  { return (columns[i >> 1]  >> ((i & 1u) * 16u)) & 0xFFFFu; }
 uint ShadeOf(uint c) { return (shade[c >> 1]    >> ((c & 1u) * 16u)) & 0xFFFFu; }
+
+// RGB565 <-> 0xRRGGBB, the same helpers as WorldPipeline.h
+uint Expand565(uint p)
+{
+	uint r = (p >> 11) & 31u, g = (p >> 5) & 63u, b = p & 31u;
+	return ((r << 3 | r >> 2) << 16) | ((g << 2 | g >> 4) << 8) | (b << 3 | b >> 2);
+}
+uint Quantize565(uint c)
+{
+	return (((c >> 19) & 31u) << 11) | (((c >> 10) & 63u) << 5) | ((c >> 3) & 31u);
+}
+// The legacy shade table is RGB565 -> RGB565: round the destination to 565 to look it up, expand the result
+uint Darken(uint d) { return Expand565(ShadeOf(Quantize565(d))); }
 
 // Op numbers: WorldPipe::Op
 const uint Transparent = 0u, TransZ = 1u, TransZNB = 2u, TransZObscured = 3u, TransZInc = 4u, TransZIncBurns = 5u,
@@ -104,46 +126,46 @@ void main()
 		uint pal = b.y * 256u;
 		uint zc = b.w == 0xFFFFFFFFu ? (b.z & 0xFFFFu) :
 			(parity & 2u) != 0u ? Column(b.w + (y - y0) * (x1 - x0) + (x - x0)) : Column(b.w + (x - x0));
-		uint outline = b.z >> 16;
+		uint outline = Expand565(b.z >> 16);
 		bool L = ((y + (parity & 1u)) & 1u) == (x & 1u);
 		switch (op)
 		{
-			case Transparent: D = Pal(pal + idx); break;
-			case TransZ: if (Z <= zc) { Z = zc; D = Pal(pal + idx); } break;
-			case TransZNB: if (Z <= zc) D = Pal(pal + idx); break;
-			case TransZObscured: if (Z < zc) { Z = zc; D = Pal(pal + idx); } else if (L) D = Pal(pal + idx); break;
-			case TransZInc: if (Z < zc) { Z = zc; D = Pal(pal + idx); } break;
-			case TransZIncBurns: if (Z <= zc) { Z = zc; D = Pal(pal + idx); } break;
-			case TransZIncObscure: if (Z < zc || L) { Z = zc; D = Pal(pal + idx); } break;
-			case TransShadow: D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); break;
-			case TransShadowZ: if (Z < zc) { Z = zc; D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); } break;
-			case TransShadowZNB: if (Z < zc) D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); break;
+			case Transparent: D = palettes[pal + idx]; break;
+			case TransZ: if (Z <= zc) { Z = zc; D = palettes[pal + idx]; } break;
+			case TransZNB: if (Z <= zc) D = palettes[pal + idx]; break;
+			case TransZObscured: if (Z < zc) { Z = zc; D = palettes[pal + idx]; } else if (L) D = palettes[pal + idx]; break;
+			case TransZInc: if (Z < zc) { Z = zc; D = palettes[pal + idx]; } break;
+			case TransZIncBurns: if (Z <= zc) { Z = zc; D = palettes[pal + idx]; } break;
+			case TransZIncObscure: if (Z < zc || L) { Z = zc; D = palettes[pal + idx]; } break;
+			case TransShadow: D = idx == 254u ? Darken(D) : palettes[pal + idx]; break;
+			case TransShadowZ: if (Z < zc) { Z = zc; D = idx == 254u ? Darken(D) : palettes[pal + idx]; } break;
+			case TransShadowZNB: if (Z < zc) D = idx == 254u ? Darken(D) : palettes[pal + idx]; break;
 			case TransShadowZNBObscured:
-				if (idx == 254u) { if (Z < zc) D = ShadeOf(D); }
-				else if (Z <= zc || L) D = Pal(pal + idx);
+				if (idx == 254u) { if (Z < zc) D = Darken(D); }
+				else if (Z <= zc || L) D = palettes[pal + idx];
 				break;
-			case Shadow: D = ShadeOf(D); break;
-			case ShadowZ: if (Z < zc) { Z = zc; D = ShadeOf(D); } break;
-			case ShadowZNB: if (Z < zc) D = ShadeOf(D); break;
+			case Shadow: D = Darken(D); break;
+			case ShadowZ: if (Z < zc) { Z = zc; D = Darken(D); } break;
+			case ShadowZNB: if (Z < zc) D = Darken(D); break;
 			case TranslucentZ:
-				if (Z <= zc) { Z = zc; D = (((Pal(pal + idx) >> 1) & mask) + ((D >> 1) & mask)) & 0xFFFFu; }
+				if (Z <= zc) { Z = zc; D = Expand565(((Quantize565(palettes[pal + idx]) >> 1) & mask) + ((Quantize565(D) >> 1) & mask)); }
 				break;
 			case TranslucentZNB:
-				if (Z <= zc) D = (((Pal(pal + idx) >> 1) & mask) + ((D >> 1) & mask)) & 0xFFFFu;
+				if (Z <= zc) D = Expand565(((Quantize565(palettes[pal + idx]) >> 1) & mask) + ((Quantize565(D) >> 1) & mask));
 				break;
-			case Outline: if (idx != 254u) D = Pal(pal + idx); else if (outline != 0u) D = outline; break;
-			case OutlineZ: if (Z <= zc) { if (idx == 254u) D = outline; else { Z = zc; D = Pal(pal + idx); } } break;
+			case Outline: if (idx != 254u) D = palettes[pal + idx]; else if (outline != 0u) D = outline; break;
+			case OutlineZ: if (Z <= zc) { if (idx == 254u) D = outline; else { Z = zc; D = palettes[pal + idx]; } } break;
 			case OutlineZObscuredLE:
 				if (Z <= zc) Z = zc; else if (!L) break;
-				D = idx == 254u ? outline : Pal(pal + idx);
+				D = idx == 254u ? outline : palettes[pal + idx];
 				break;
 			case OutlineZObscuredLT:
 				if (Z < zc) Z = zc; else if (!L) break;
-				D = idx == 254u ? outline : Pal(pal + idx);
+				D = idx == 254u ? outline : palettes[pal + idx];
 				break;
-			case OutlineZNB: if (Z < zc && idx != 254u) D = Pal(pal + idx); break;
-			case TransShadowZInc: if (Z <= zc) { Z = zc; D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); } break;
-			case TransShadowZIncObscure: if (Z < zc || L) { Z = zc; D = idx == 254u ? ShadeOf(D) : Pal(pal + idx); } break;
+			case OutlineZNB: if (Z < zc && idx != 254u) D = palettes[pal + idx]; break;
+			case TransShadowZInc: if (Z <= zc) { Z = zc; D = idx == 254u ? Darken(D) : palettes[pal + idx]; } break;
+			case TransShadowZIncObscure: if (Z < zc || L) { Z = zc; D = idx == 254u ? Darken(D) : palettes[pal + idx]; } break;
 			default: break;
 		}
 	}
@@ -152,8 +174,30 @@ void main()
 	}
 
 	if (!inside) return;
-	out565[y * width + x] = D;
-	uint r = (D >> 11) & 31u, g = (D >> 5) & 63u, bl = D & 31u;
-	vec3 c = vec3(float((r << 3) | (r >> 2)), float((g << 2) | (g >> 4)), float((bl << 3) | (bl >> 2))) / 255.0;
+
+	// The lighting pass: ambient + sun + the point lights (a plain multiplier on the finished colour)
+	if (ambientR != 1.0 || ambientG != 1.0 || ambientB != 1.0 ||
+		sunR != 0.0 || sunG != 0.0 || sunB != 0.0 || pointCount != 0u)
+	{
+		float lr = ambientR + sunR, lg = ambientG + sunG, lb = ambientB + sunB;
+		for (uint i = 0u; i < pointCount; ++i)
+		{
+			vec4 p = lights[i * 2u];
+			vec4 c = lights[i * 2u + 1u];
+			if (p.z <= 0.0) continue;
+			float dx = float(x) - p.x, dy = float(y) - p.y;
+			float d2 = dx * dx + dy * dy;
+			float r2 = p.z * p.z;
+			if (d2 >= r2) continue;
+			float f = pow(1.0 - sqrt(d2) / p.z, falloff) * p.w;
+			lr += f * c.x; lg += f * c.y; lb += f * c.z;
+		}
+		vec3 col = vec3(float((D >> 16) & 0xFFu), float((D >> 8) & 0xFFu), float(D & 0xFFu));
+		col = clamp(col * vec3(lr, lg, lb), 0.0, 255.0);
+		D = (uint(col.r) << 16) | (uint(col.g) << 8) | uint(col.b);
+	}
+
+	out565[y * width + x] = Quantize565(D);
+	vec3 c = vec3(float((D >> 16) & 0xFFu), float((D >> 8) & 0xFFu), float(D & 0xFFu)) / 255.0;
 	imageStore(outImage, ivec2(int(x), int(y)), vec4(c, 1.0));
 }

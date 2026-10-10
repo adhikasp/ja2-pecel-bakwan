@@ -82,6 +82,39 @@ void SGPVObject::CurrentShade(size_t const idx)
 	current_shade_ = pShades[idx];
 }
 
+namespace {
+inline uint32_t Expand565(uint16_t const p)
+{
+	uint32_t const r = (p >> 11) & 0x1F, g = (p >> 5) & 0x3F, b = p & 0x1F;
+	return ((r << 3 | r >> 2) << 16) | ((g << 2 | g >> 4) << 8) | (b << 3 | b >> 2);
+}
+}
+
+UINT32 const* SGPVObject::CurrentShade24() const
+{
+	if (shade24_ && shade24_key_ == current_shade_) return shade24_;
+	if (!palette_ || !palette16_ || !current_shade_) return nullptr;
+	// The 565 shade is base * factor; apply the same per-channel factor to the art's 24-bit colours, so the
+	// result keeps the palette's precision while shading exactly as the legacy table does.
+	delete[] shade24_;
+	shade24_ = new UINT32[256];
+	SGPPaletteEntry const* const base24 = palette_.get();
+	for (int i = 0; i < 256; ++i)
+	{
+		uint32_t const b = Expand565(palette16_[i]);
+		uint32_t const s = Expand565(current_shade_[i]);
+		auto const ch = [](uint32_t const bv, uint32_t const sv, uint32_t const v24) {
+			if (bv == 0) return sv == 0 ? uint32_t(0) : v24;
+			return std::min<uint32_t>(v24 * sv / bv, 255u);
+		};
+		shade24_[i] = (ch((b >> 16) & 0xFF, (s >> 16) & 0xFF, base24[i].r) << 16)
+		            | (ch((b >>  8) & 0xFF, (s >>  8) & 0xFF, base24[i].g) <<  8)
+		            |  ch( b        & 0xFF,  s        & 0xFF, base24[i].b);
+	}
+	shade24_key_ = current_shade_;
+	return shade24_;
+}
+
 
 ETRLEObject const& SGPVObject::SubregionProperties(size_t const idx) const
 {
@@ -185,6 +218,9 @@ void SGPVObject::DestroyPalettes()
 	}
 
 	current_shade_ = 0;
+	delete[] shade24_;
+	shade24_ = nullptr;
+	shade24_key_ = nullptr;
 }
 
 

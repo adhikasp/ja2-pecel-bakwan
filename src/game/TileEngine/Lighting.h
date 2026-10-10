@@ -101,6 +101,8 @@ LIGHT_SPRITE* LightSpriteCreate(const ST::string& pName);
 BOOLEAN LightSpriteDestroy(LIGHT_SPRITE* l);
 // Sets the X,Y position (IN TILES) of a light instance.
 void LightSpritePosition(LIGHT_SPRITE* l, INT16 iX, INT16 iY);
+// The extent of a light sprite's template, in tiles (0 if it has no template).
+INT16 LightSpriteRadius(const LIGHT_SPRITE* l);
 // Sets the flag of a light sprite to "fake" (in game for merc navig purposes)
 BOOLEAN LightSpriteFake(LIGHT_SPRITE* l);
 
