@@ -405,7 +405,6 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .t5 .menu .menu-item .kbd { color: var(--c-text-faint); }
 .t5 .menu .menu-item .ap { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-dim); margin-right: var(--sp-2); }
 .t5 .menu .menu-item.is-disabled .ap { color: var(--c-text-faint); }
-.t5 .menu .why { display: block; padding: 0 var(--sp-3) var(--sp-1) 44dp; margin-top: -6dp; font-size: var(--fs-2xs); color: var(--c-text-faint); }
 .menu-title { display: flex; align-items: center; height: 34dp; padding: 0 var(--sp-3); border-bottom: var(--border) var(--c-line); margin-bottom: var(--sp-1); }
 .menu-title .t { display: block; flex: 1 1 0; font-family: var(--font-display); font-weight: 600; font-size: var(--fs-md); text-transform: uppercase; color: var(--c-text-strong); }
 .menu-title .m { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-select); }
@@ -553,7 +552,7 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .t5 .menu .menu-item .kbd { color: var(--c-text-faint); }
 .t5 .menu .menu-item .ap { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-dim); margin-right: var(--sp-2); }
 .t5 .menu .menu-item.is-disabled .ap { color: var(--c-text-faint); }
-.t5 .menu .menu-item .lw .why { display: block; font-size: var(--fs-2xs); line-height: 14dp; color: var(--c-text-faint); }
+.t5 .menu .menu-item .lw .why { display: block; font-size: var(--fs-2xs); line-height: 14dp; color: var(--c-warn); }
 .pick { width: 360dp; }
 .pick .hud-head .icon { margin-right: var(--sp-2); }
 .pick .rows { display: block; padding-top: var(--sp-1); }

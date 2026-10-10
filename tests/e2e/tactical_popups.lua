@@ -4,7 +4,7 @@
 -- are read through the tactical view model so the drawing cannot drift from the model. The rules themselves are
 -- unit-tested in NativeUI/PopupModels_unittest.cc.
 --
--- Run: python tools/ja2ctl.py run tests/e2e/tactical_popups.lua --isolated --res 1920x1080
+-- Run: python tools/ja2ctl.py run tests/e2e/tactical_popups.lua --isolated --res 1920x1080 [--arg res=1280x720]
 package.path = (debug.getinfo(1, "S").source:match("^@(.*[/\\])") or "") .. "?.lua;" .. package.path
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
@@ -13,7 +13,9 @@ campaign.newGame()
 campaign.hireFromAim("Ivan", "One Week", true)
 campaign.landInArulco()
 ja2.waitIdle()
-ja2.setVideo{ res = "1920x1080", uiscale = 1, worldzoom = 2 }
+-- -arg res=1280x720 runs it at another size (the PR screenshots)
+local res = (ja2.args and ja2.args[1] or ""):match("^res=(%S+)$") or "1920x1080"
+ja2.setVideo{ res = res, uiscale = 1, worldzoom = 2 }
 ja2.waitIdle()
 
 local function vm() return ja2.viewModel("tactical") end
