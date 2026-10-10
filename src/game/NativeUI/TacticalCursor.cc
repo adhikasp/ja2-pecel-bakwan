@@ -36,7 +36,7 @@ namespace
 		bool marker = false;
 		Rml::Vector2f markerAt;
 		CursorModel::Marker markerKind = CursorModel::Marker::None;
-		bool dest = false, destAttack = false;
+		bool dest = false, destAttack = false, markerWarn = false;
 		Rml::Vector2f destAt;
 		float diamondW = 40, diamondH = 20;   // a tile's diamond in output pixels
 		float dp = 1;
@@ -158,7 +158,7 @@ namespace
 			Rml::ColourbPremultiplied const far = Col(AMBER[0], AMBER[1], AMBER[2], 235);
 
 			// the path: solid for what this turn pays for, amber and dashed beyond; every tile centre a node
-			float const w = std::max(2.f, 3.f * dp);
+			float const w = std::max(3.f, 4.f * dp);
 			for (Seg const& s : d.path)
 			{
 				if (s.far) m.Dashed(s.a, s.b, w + 2.f * dp, 7.f * dp, 5.f * dp, shadow);
@@ -169,8 +169,8 @@ namespace
 				if (s.far) m.Dashed(s.a, s.b, w, 7.f * dp, 5.f * dp, far);
 				else m.Line(s.a, s.b, w, solid);
 			}
-			for (Rml::Vector2f const& p : d.nodes) { m.Disc(p, 3.4f * dp, shadow); m.Disc(p, 2.4f * dp, solid); }
-			for (Rml::Vector2f const& p : d.farNodes) { m.Disc(p, 3.4f * dp, shadow); m.Disc(p, 2.4f * dp, far); }
+			for (Rml::Vector2f const& p : d.nodes) { m.Disc(p, 5.f * dp, shadow); m.Disc(p, 3.6f * dp, solid); }
+			for (Rml::Vector2f const& p : d.farNodes) { m.Disc(p, 5.f * dp, shadow); m.Disc(p, 3.6f * dp, far); }
 
 			// where the merc goes to do it (the tile next to a door, a target): a smaller diamond
 			if (d.dest)
@@ -202,9 +202,13 @@ namespace
 						break;
 					}
 					default:
+					{
+						// beyond this turn's points the marker is amber like the path
+						int const* mc = d.markerWarn ? AMBER : ACC;
 						m.Diamond(c, w2, h2, lw + 2.f * dp, Col(8, 5, 2, 0), shadow);
-						m.Diamond(c, w2, h2, lw, Col(ACC[0], ACC[1], ACC[2], 36), Col(ACC[0], ACC[1], ACC[2], 235));
+						m.Diamond(c, w2, h2, lw, Col(mc[0], mc[1], mc[2], 40), Col(mc[0], mc[1], mc[2], 240));
 						break;
+					}
 				}
 			}
 			return std::move(m.mesh);
@@ -270,15 +274,20 @@ namespace
 		std::string out;
 		// the head: what a click does, to what, and where it lands
 		std::string head = Str(std::string("tac.cur.") + ShapeName(s.shape));
-		if (!s.target.empty() && (s.shape == Shape::Fire || s.shape == Shape::Burst))
+		if (!s.target.empty() && s.shape == Shape::Burst)
+			head = Fill(Str("tac.cur.burst_at"), s.target);
+		else if (!s.target.empty() && s.shape == Shape::Fire)
 			head = Fill(Str("tac.cur.fire_at"), s.target);
 		else if (!s.target.empty() && s.shape == Shape::Punch)
 			head = Fill(Str("tac.cur.punch_at"), s.target);
 		else if (!s.target.empty() && s.shape == Shape::Blade)
 			head = Fill(Str("tac.cur.stab_at"), s.target);
+		bool headFromText = false;
 		for (ChipLine const& l : s.lines)
 		{
 			if (l.kind == "where") { head += " · " + l.text; }
+			// a held item: the game's own word for what the click does (Drop, Throw) names the action
+			else if (l.kind == "text" && s.mode == Mode::Item && !headFromText) { head = l.text; headFromText = true; }
 		}
 		if (s.mode == Mode::Move || s.mode == Mode::MoveConfirm || s.mode == Mode::MoveAll)
 		{
@@ -306,12 +315,20 @@ namespace
 				v = Fill(Str("tac.cur.ap_split"), std::to_string(l.a + l.b), std::to_string(l.a), std::to_string(l.b));
 				vc = "warn";
 			}
-			else if (l.kind == "text") { k = Str("tac.cur.k_note"); v = l.text; }
+			else if (l.kind == "range") { k = Str("tac.cur.k_range"); v = Fill(Str("tac.cur.range_tiles"), std::to_string(l.a)); }
+			else if (l.kind == "text")
+			{
+				if (s.mode == Mode::Item && l.text == head.substr(0, l.text.size())) continue;
+				k = Str("tac.cur.k_note");
+				v = l.text;
+			}
 			else continue;
 			out += "<div class=\"l\"><span class=\"k\">" + Escape(k) + "</span><span class=\"v " + vc + "\">" + Escape(v) + "</span></div>";
 		}
 		if (!s.why.empty() && s.tone != Tone::Ok && s.tone != Tone::Foe)
 			out += "<span class=\"why\">" + Escape(Str("tac.cur.why." + s.why)) + "</span>";
+		if (s.mode == Mode::Target && (s.shape == Shape::Fire || s.shape == Shape::Burst) && s.tone == Tone::Foe)
+			out += "<span class=\"hint\">" + Escape(Str("tac.cur.hint_target")) + "</span>";
 		return out;
 	}
 }
@@ -368,6 +385,7 @@ void TacticalCursorUpdate(Rml::ElementDocument* const doc)
 			next.marker = true;
 			next.markerAt = WorldToOutput(f.markerAt);
 			next.markerKind = f.state.marker;
+			next.markerWarn = f.state.tone == Tone::Warn;
 		}
 		if (f.dest)
 		{
@@ -376,7 +394,7 @@ void TacticalCursorUpdate(Rml::ElementDocument* const doc)
 			next.destAt = WorldToOutput(f.destAt);
 		}
 	}
-	bool same = next.marker == g_layer.marker && next.dest == g_layer.dest && next.destAttack == g_layer.destAttack &&
+	bool same = next.marker == g_layer.marker && next.markerWarn == g_layer.markerWarn && next.dest == g_layer.dest && next.destAttack == g_layer.destAttack &&
 		next.markerKind == g_layer.markerKind && next.path.size() == g_layer.path.size() &&
 		next.nodes.size() == g_layer.nodes.size() && next.farNodes.size() == g_layer.farNodes.size() &&
 		next.dp == g_layer.dp && next.diamondW == g_layer.diamondW;
@@ -437,7 +455,17 @@ void TacticalCursorUpdate(Rml::ElementDocument* const doc)
 		float const carried = float(CursorItemWidth());
 		float x = mouse.x + std::max(30.f * dp, 14.f * dp + carried + 10.f * dp), y = mouse.y + 10.f * dp;
 		if (x + cw > out_w - 4.f * dp) x = mouse.x - 22.f * dp - cw;
-		if (y + ch > out_h - 4.f * dp) y = out_h - 4.f * dp - ch;
+		// the world ends where the bar starts: a chip that would run under it goes above the pointer
+		float floorY = out_h - 4.f * dp;
+		if (Rml::Element* bar = doc->GetElementById("tac.bar")) floorY = std::min(floorY, bar->GetAbsoluteOffset(Rml::BoxArea::Border).y - 4.f * dp);
+		if (y + ch > floorY) y = mouse.y - 10.f * dp - ch;
+		// ... and keeps clear of the turn banner at the top
+		if (Rml::Element* ban = doc->GetElementById("tac.turn"))
+		{
+			Rml::Vector2f const bo = ban->GetAbsoluteOffset(Rml::BoxArea::Border);
+			float const bb = bo.y + ban->GetOffsetHeight() + 4.f * dp;
+			if (ban->GetOffsetHeight() > 0 && x < bo.x + ban->GetOffsetWidth() && x + cw > bo.x && y < bb) y = bb;
+		}
 		x = std::floor(std::max(x, 4.f * dp));
 		y = std::floor(std::max(y, 4.f * dp));
 		if (int(x) != g_chip.x || int(y) != g_chip.y)

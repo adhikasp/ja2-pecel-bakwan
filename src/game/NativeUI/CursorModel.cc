@@ -356,8 +356,15 @@ State Evaluate(Input const& in)
 		ChipLine l;
 		l.kind = "ap";
 		l.a = s.ap;
-		l.b = s.apLeft;
+		l.b = s.apLeft >= 0 ? std::max(0, s.apLeft - s.ap) : -1;
 		l.tone = s.tone == Tone::No && s.why == "no_ap" ? Tone::No : Tone::Ok;
+		s.lines.push_back(std::move(l));
+	}
+	if (in.range >= 0 && (s.mode == Mode::Target || s.mode == Mode::Melee || s.mode == Mode::Throw))
+	{
+		ChipLine l;
+		l.kind = "range";
+		l.a = in.range;
 		s.lines.push_back(std::move(l));
 	}
 	for (std::string const* t : { &in.tile, &in.tile2 })

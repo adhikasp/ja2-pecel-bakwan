@@ -99,6 +99,7 @@ TEST(CursorModel, aShotCarriesHitApAndAim)
 	EXPECT_EQ(s.lines[2].kind, "aim");
 	EXPECT_EQ(s.lines[2].a, 2); // aim step 3 is the second of five clicks
 	EXPECT_EQ(s.lines[3].kind, "ap");
+	EXPECT_EQ(s.lines[3].b, 4); // 12 left, 8 spent: what remains
 	EXPECT_TRUE(s.chip);
 }
 

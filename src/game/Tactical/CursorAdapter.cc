@@ -1,5 +1,6 @@
 #include "CursorAdapter.h"
 
+#include "Animation_Control.h"
 #include "Cursors.h"
 #include "Handle_UI.h"
 #include "Interface.h"
@@ -60,14 +61,18 @@ void UpdateCursorFrame(UICursorID const uiCursor, int const heldItem)
 	CursorModel::Spec const& spec = CursorModel::SpecFor(uiCursor);
 	bool const moves = spec.mode == CursorModel::Mode::Move || spec.mode == CursorModel::Mode::MoveConfirm || spec.mode == CursorModel::Mode::MoveAll;
 
+	// a teammate under the pointer is not an obstacle to report: a click selects him
+	UICursorID uiShown = uiCursor;
+	if (uiShown == CANNOT_MOVE_UICURSOR && gUIFullTarget && gUIFullTarget->bTeam == OUR_TEAM) uiShown = NORMAL_FREEUICURSOR;
+
 	CursorModel::Input in;
-	in.id = uiCursor;
+	in.id = uiShown;
 	in.combat = combat;
 	in.showAp = gfUIDisplayActionPoints;
 	in.ap = gsCurrentActionPoints;
 	// a move that costs more than this turn's points is not refused: it goes on next turn (the path says so)
-	in.apInvalid = gfUIDisplayActionPointsInvalid && !moves;
 	in.apLeft = sel ? sel->bActionPoints : -1;
+	in.apInvalid = (gfUIDisplayActionPointsInvalid || (in.apLeft >= 0 && gsCurrentActionPoints > in.apLeft)) && !moves;
 	in.location = GetHitLocationText().to_std_string();
 	in.chance = GetChanceToHitText().to_std_string();
 	in.tile = GetIntTileLocationText().to_std_string();
@@ -77,10 +82,25 @@ void UpdateCursorFrame(UICursorID const uiCursor, int const heldItem)
 	if (gUIFullTarget && (spec.mode == CursorModel::Mode::Target || spec.mode == CursorModel::Mode::Melee || spec.mode == CursorModel::Mode::Throw))
 		in.target = gUIFullTarget->name.to_std_string();
 
+	if (sel && gUIFullTarget && (spec.mode == CursorModel::Mode::Target || spec.mode == CursorModel::Mode::Melee || spec.mode == CursorModel::Mode::Throw))
+		in.range = PythSpacesAway(sel->sGridNo, gUIFullTarget->sGridNo);
+
 	CursorFrame& f = g_frame;
 	f.uiCursor = uiCursor;
 	f.cursorTile = pos;
 	f.state = CursorModel::Evaluate(in);
+
+	// real time has one move cursor: the merc's own pace says walk, run, sneak or crawl
+	if (sel && f.state.shape == CursorModel::Shape::Walk && moves)
+	{
+		switch (sel->usUIMovementMode)
+		{
+			case RUNNING:  f.state.shape = CursorModel::Shape::Run; break;
+			case SWATTING: f.state.shape = CursorModel::Shape::Sneak; break;
+			case CRAWLING: f.state.shape = CursorModel::Shape::Crawl; break;
+			default: break;
+		}
+	}
 
 	// the path, plotted by PlotPath for the legacy footsteps: the same tiles, drawn as a line
 	std::vector<PathTrailStep> const& trail = PlottedTrail();
@@ -118,7 +138,7 @@ void UpdateCursorFrame(UICursorID const uiCursor, int const heldItem)
 			{
 				l.kind = "ap";
 				l.a = f.plan.total;
-				l.b = sel->bActionPoints;
+				l.b = std::max(0, int(sel->bActionPoints) - f.plan.total);
 			}
 			st.lines.push_back(std::move(l));
 			st.chip = true;

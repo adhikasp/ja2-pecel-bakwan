@@ -72,13 +72,14 @@ namespace CursorModel
 		std::string tile;              // interactive tile text ("Drop", a door), SetIntTileLocationText
 		std::string tile2;             // SetIntTileLocation2Text
 		std::string chance;            // chance to hit as the legacy text ("64%"), SetChanceToHitText
+		int         range = -1;        // tiles to the target, -1 none
 		int         held = 0;          // an item is held by the pointer: 1 drop or throw, 2 a throw that cannot get there, 3 give
 		bool        busy = false;      // the UI is locked (the enemy's turn, an animation): nothing can be clicked
 		std::string target;            // the name of what is under the pointer, "" none
 	};
 
 	/** One line of the chip. kind: "hit" (a = percent), "aim" (a = steps done, b = steps in all), "ap" (a = cost,
-	 * b = left or -1), "where" (text = hit location), "text" (text). */
+	 * b = points left after paying it, or -1), "range" (a = tiles), "where" (text = hit location), "text" (text). */
 	struct ChipLine
 	{
 		std::string kind;

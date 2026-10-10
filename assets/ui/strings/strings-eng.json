@@ -1,4 +1,8 @@
 {
+  "tac.cur.burst_at": "Burst at {}",
+  "tac.cur.k_range": "Range",
+  "tac.cur.range_tiles": "{} tiles",
+  "tac.cur.hint_target": "RMB: aim more · B: burst",
   "tac.cur.walk": "Walk",
   "tac.cur.run": "Run",
   "tac.cur.sneak": "Sneak",
