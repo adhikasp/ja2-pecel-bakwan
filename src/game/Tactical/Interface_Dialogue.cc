@@ -1,4 +1,6 @@
 #include "Interface_Dialogue.h"
+#include "PopupAdapter.h"
+#include "PopupModels.h"
 
 #include "AI.h"
 #include "Animation_Control.h"
@@ -98,54 +100,22 @@ static const INT16 sBasementEnterGridNos[] = { 13362, 13363, 13364, 13365, 13525
 static const INT16 sBasementExitGridNos[] = { 8047, 8207, 8208, 8048, 7888, 7728, 7727, 7567 };
 static const SGPSector carmenSector(13, MAP_ROW_C);
 
-#define TALK_PANEL_FACE_X			6
-#define TALK_PANEL_FACE_Y			9
-#define TALK_PANEL_NAME_X			5
-#define TALK_PANEL_NAME_Y			114
-#define TALK_PANEL_NAME_WIDTH			92
-#define TALK_PANEL_NAME_HEIGHT			15
-#define TALK_PANEL_REGION_STARTX		102
-#define TALK_PANEL_REGION_STARTY		14
-#define TALK_PANEL_REGION_SPACEY		16
-#define TALK_PANEL_REGION_HEIGHT		12
-#define TALK_PANEL_REGION_WIDTH		95
-
-#define TALK_PANEL_MENUTEXT_STARTX		102
-#define TALK_PANEL_MENUTEXT_STARTY		16
-#define TALK_PANEL_MENUTEXT_SPACEY		16
-#define TALK_PANEL_MENUTEXT_HEIGHT		13
-#define TALK_PANEL_MENUTEXT_WIDTH		95
-#define TALK_PANEL_BUTTON_X			112
-#define TALK_PANEL_BUTTON_Y			114
-#define TALK_PANEL_SHADOW_AREA_X		97
-#define TALK_PANEL_SHADOW_AREA_Y		9
-#define TALK_PANEL_SHADOW_AREA_WIDTH		107
-#define TALK_PANEL_SHADOW_AREA_HEIGHT		102
-
-#define TALK_PANEL_DEFAULT_SUBTITLE_WIDTH	200
-
-#define TALK_PANEL_CALC_SUBTITLE_WIDTH		280
-#define TALK_PANEL_CALC_SUBTITLE_HEIGHT	125
-
-
-#define TALK_PANEL_POPUP_LEFT			0
-#define TALK_PANEL_POPUP_TOP			1
-#define TALK_PANEL_POPUP_BOTTOM		2
-#define TALK_PANEL_POPUP_RIGHT			3
-
 // chance vince will say random quote to player during conv.
 #define CHANCE_FOR_DOCTOR_TO_SAY_RANDOM_QUOTE	20
 
 
+// the legacy approach of each row of the native panel (PopupModels::Approach order: keys 1..6)
 static Approach const ubTalkMenuApproachIDs[] =
 {
-	APPROACH_REPEAT,
 	APPROACH_FRIENDLY,
 	APPROACH_DIRECT,
 	APPROACH_THREATEN,
 	APPROACH_BUYSELL,
-	APPROACH_RECRUIT
+	APPROACH_RECRUIT,
+	APPROACH_REPEAT
 };
+// zTalkMenuStrings keeps the legacy order: repeat, friendly, direct, threaten, buy/sell, recruit
+static int const kTalkLabel[] = { 1, 2, 3, 4, 5, 0 };
 
 
 // GLOBAL NPC STRUCT
@@ -157,6 +127,7 @@ UINT8 gubSrcSoldierProfile;
 static UINT8 gubNiceNPCProfile  = NO_PROFILE;
 static UINT8 gubNastyNPCProfile = NO_PROFILE;
 
+static ST::string   gTalkPrevious; // what the merc last asked, for the native panel
 static UINT8        gubTargetNPC;
 static UINT8        gubTargetRecord;
 static Approach     gubTargetApproach;
@@ -356,19 +327,8 @@ static void InitTalkingMenu(UINT8 const ubCharacterNum, INT16 const sGridNo)
 }
 
 
-static void CalculatePopupTextOrientation(INT16 sWidth, INT16 sHeight);
-static void TalkPanelMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-static void TalkPanelClickCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-static void TalkPanelBaseRegionClickCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-static void TalkPanelNameRegionClickCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-static void TalkPanelNameRegionMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-static void DoneTalkingButtonClickCallback(GUI_BUTTON* btn, UINT32 reason);
-
-
 void InternalInitTalkingMenu(UINT8 const ubCharacterNum, INT16 sX, INT16 sY)
 {
-	INT16 sCenterYVal, sCenterXVal;
-
 	// disable scroll messages
 	HideMessagesDuringNPCDialogue( );
 
@@ -381,114 +341,21 @@ void InternalInitTalkingMenu(UINT8 const ubCharacterNum, INT16 sX, INT16 sY)
 	gTalkPanel.bOldCurSelect = -1;
 	gTalkPanel.fHandled = FALSE;
 	gTalkPanel.fOnName = FALSE;
-
-	gTalkPanel.uiPanelVO = AddVideoObjectFromFile(INTERFACEDIR "/talkbox1.sti");
-
-	ETRLEObject const& ETRLEProps = gTalkPanel.uiPanelVO->SubregionProperties(0);
-	gTalkPanel.usWidth = ETRLEProps.usWidth;
-	gTalkPanel.usHeight = ETRLEProps.usHeight;
-
-	// Check coords
-	{
-
-		// CHECK FOR LEFT/RIGHT
-		sCenterXVal = gTalkPanel.usWidth / 2;
-
-		sX -= sCenterXVal;
-
-		// Check right
-		if (sX + gTalkPanel.usWidth > SCREEN_WIDTH)
-		{
-			sX = SCREEN_WIDTH - gTalkPanel.usWidth;
-		}
-
-		// Check left
-		if ( sX < 0 )
-		{
-			sX = 0;
-		}
-
-		// Now check for top
-		// Center in the y
-		sCenterYVal = gTalkPanel.usHeight / 2;
-
-		sY -= sCenterYVal;
-
-		if ( sY < gsVIEWPORT_WINDOW_START_Y )
-		{
-			sY = gsVIEWPORT_WINDOW_START_Y;
-		}
-
-		// Check for bottom
-		sY = std::min(int(sY), gsVIEWPORT_WINDOW_END_Y - gTalkPanel.usHeight);
-	}
-
-	//Set values
-	gTalkPanel.sX = sX;
-	gTalkPanel.sY = sY;
-
-	CalculatePopupTextOrientation( TALK_PANEL_CALC_SUBTITLE_WIDTH, TALK_PANEL_CALC_SUBTITLE_HEIGHT );
+	gTalkPanel.zQuoteStr = ST::string();
+	gTalkPanel.fRenderSubTitlesNow = FALSE;
+	gTalkPanel.fSetupSubTitles = FALSE;
+	gTalkPrevious = ST::string();
 
 	// Create face ( a big face! )....
 	FACETYPE& f = InitFace(ubCharacterNum, 0, FACE_BIGFACE | FACE_POTENTIAL_KEYWAIT);
 	gTalkPanel.face = &f;
 
-	// Create mouse regions...
-	sX = gTalkPanel.sX + TALK_PANEL_REGION_STARTX;
-	sY = gTalkPanel.sY + TALK_PANEL_REGION_STARTY;
-
-
-	//Define main region
-	MSYS_DefineRegion(&gTalkPanel.ScreenRegion, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK, MSYS_NO_CALLBACK);
-
-	//Define main region
-	MSYS_DefineRegion(&(gTalkPanel.BackRegion), (INT16)(gTalkPanel.sX), (INT16)(gTalkPanel.sY),
-				(INT16)(gTalkPanel.sX + gTalkPanel.usWidth),
-				(INT16)(gTalkPanel.sY + gTalkPanel.usHeight),
-				MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK,
-				TalkPanelBaseRegionClickCallback);
-
-	//Define name region
-	MSYS_DefineRegion(&(gTalkPanel.NameRegion), (INT16)(gTalkPanel.sX + TALK_PANEL_NAME_X),
-				(INT16)(gTalkPanel.sY + TALK_PANEL_NAME_Y),
-				(INT16)(gTalkPanel.sX + TALK_PANEL_NAME_WIDTH + TALK_PANEL_NAME_X),
-				(INT16)(gTalkPanel.sY + TALK_PANEL_NAME_HEIGHT + TALK_PANEL_NAME_Y), MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, TalkPanelNameRegionMoveCallback,
-				TalkPanelNameRegionClickCallback );
-
-	for (size_t cnt = 0; cnt < std::size(ubTalkMenuApproachIDs); ++cnt)
-	{
-		// Build a mouse region here that is over any others.....
-		MSYS_DefineRegion(&(gTalkPanel.Regions[cnt]), (INT16)(sX), (INT16)(sY),
-					(INT16)(sX + TALK_PANEL_REGION_WIDTH ),
-					(INT16)( sY + TALK_PANEL_REGION_HEIGHT ), MSYS_PRIORITY_HIGHEST,
-					CURSOR_NORMAL, TalkPanelMoveCallback, TalkPanelClickCallback);
-
-		sY += TALK_PANEL_REGION_SPACEY;
-	}
-
-	// Build save buffer
-	// Create a buffer for him to go!
-	// OK, ignore screen widths, height, only use BPP
+	// the face keeps its own surface: its voice, mouth and eyes are timed there
 	gTalkPanel.uiSaveBuffer = AddVideoSurface(f.usFaceWidth, f.usFaceHeight, PIXEL_DEPTH);
 
 	// Set face to auto
 	SetAutoFaceActive(gTalkPanel.uiSaveBuffer, FACE_AUTO_RESTORE_BUFFER, f, 0, 0);
 	f.uiFlags |= FACE_INACTIVE_HANDLED_ELSEWHERE;
-
-	// Load buttons, create button
-	gTalkPanel.iButtonImages = LoadButtonImage(INTERFACEDIR "/talkbox2.sti", 3, 4);
-
-	gTalkPanel.uiCancelButton = CreateIconAndTextButton(gTalkPanel.iButtonImages, zDialogActions, MILITARYFONT1,
-								33, DEFAULT_SHADOW, 33, DEFAULT_SHADOW,
-								gTalkPanel.sX + TALK_PANEL_BUTTON_X,
-								gTalkPanel.sY + TALK_PANEL_BUTTON_Y,
-								MSYS_PRIORITY_HIGHEST,
-								DoneTalkingButtonClickCallback );
-
-	gTalkPanel.uiCancelButton->SpecifyHilitedTextColors(FONT_MCOLOR_WHITE, DEFAULT_SHADOW);
-
-	// Turn off dirty flags
-	gTalkPanel.uiCancelButton->uiFlags &= ~BUTTON_DIRTY;
 
 	// Render once!
 	RenderAutoFace(f);
@@ -496,18 +363,12 @@ void InternalInitTalkingMenu(UINT8 const ubCharacterNum, INT16 sX, INT16 sY)
 	gfInTalkPanel = TRUE;
 
 	gfIgnoreScrolling = TRUE;
-}
 
-
-static void DoneTalkingButtonClickCallback(GUI_BUTTON* btn, UINT32 reason)
-{
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		// OK, pickup item....
-		gTalkPanel.fHandled = TRUE;
-		gTalkPanel.fHandledTalkingVal = gTalkPanel.face->fTalking;
-		gTalkPanel.fHandledCanDeleteVal = TRUE;
-	}
+	PopupEvent e;
+	e.kind = PopupKind::Talk;
+	e.action = "open";
+	e.id = ubCharacterNum;
+	FinishPopup(e);
 }
 
 
@@ -519,38 +380,14 @@ void DeleteTalkingMenu( )
 	// Delete sound if playing....
 	ShutupaYoFace(gTalkPanel.face);
 
-	// Delete screen region
-	MSYS_RemoveRegion( &(gTalkPanel.ScreenRegion));
-
-	// Delete main region
-	MSYS_RemoveRegion( &(gTalkPanel.BackRegion));
-
-	// Delete name region
-	MSYS_RemoveRegion( &(gTalkPanel.NameRegion));
-
-	// Delete mouse regions
-	RemoveRegions(gTalkPanel.Regions);
-
-	if ( gTalkPanel.fTextRegionOn )
-	{
-		// Remove
-		MSYS_RemoveRegion( &(gTalkPanel.TextRegion) );
-		gTalkPanel.fTextRegionOn = FALSE;
-	}
-
 	DeleteVideoSurface(gTalkPanel.uiSaveBuffer);
-
-	// Remove video object
-	DeleteVideoObject(gTalkPanel.uiPanelVO);
 
 	// Remove face....
 	DeleteFace(gTalkPanel.face);
 
-	// Remove button
-	RemoveButton( gTalkPanel.uiCancelButton );
-
-	// Remove button images
-	UnloadButtonImage( gTalkPanel.iButtonImages );
+	gTalkPanel.zQuoteStr = ST::string();
+	gTalkPanel.fRenderSubTitlesNow = FALSE;
+	gTalkPanel.fSetupSubTitles = FALSE;
 
 	// Set cursor back to normal mode...
 	guiPendingOverrideEvent = A_CHANGE_TO_MOVE;
@@ -621,302 +458,180 @@ void DeleteTalkingMenu( )
 }
 
 
-static void CalculatePopupTextPosition(INT16 sWidth, INT16 sHeight);
-static void TextRegionClickCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-
-
 void RenderTalkingMenu()
 {
-	NPC_DIALOGUE_TYPE* const tp  = &gTalkPanel;
-	ProfileID          const pid = tp->ubCharNum;
-
-	if (!gfInTalkPanel) return;
-
-	// Render box!
-	BltVideoObject(FRAME_BUFFER, tp->uiPanelVO, 0, tp->sX, tp->sY);
-
-	// Render name
-	SetFontAttributes(MILITARYFONT1, tp->fOnName ? FONT_WHITE : 33);
-	MPrint(tp->sX + TALK_PANEL_NAME_X, tp->sY + TALK_PANEL_NAME_Y,
-		GetProfile(pid).zNickname,
-		HCenterVCenterAlign(TALK_PANEL_NAME_WIDTH, TALK_PANEL_NAME_HEIGHT));
-
-	SetFontShadow(DEFAULT_SHADOW);
-
-	BltVideoSurface(FRAME_BUFFER, tp->uiSaveBuffer, tp->sX + TALK_PANEL_FACE_X, tp->sY + TALK_PANEL_FACE_Y, NULL);
-
-	MarkButtonsDirty();
-
-	// If guy is talking.... shadow area
-	if (tp->face->fTalking || !DialogueQueueIsEmpty())
-	{
-		INT32 const x = tp->sX + TALK_PANEL_SHADOW_AREA_X;
-		INT32 const y = tp->sY + TALK_PANEL_SHADOW_AREA_Y;
-		FRAME_BUFFER->ShadowRect(x, y, x + TALK_PANEL_SHADOW_AREA_WIDTH, y + TALK_PANEL_SHADOW_AREA_HEIGHT);
-
-		// Disable mouse regions....
-		for (size_t cnt = 0; cnt < std::size(ubTalkMenuApproachIDs); ++cnt)
-		{
-			tp->Regions[cnt].Disable();
-		}
-
-		DisableButton(tp->uiCancelButton);
-
-		tp->bCurSelect = -1;
-	}
-	else
-	{
-		// Enable mouse regions....
-		for (size_t cnt = 0; cnt < std::size(ubTalkMenuApproachIDs); ++cnt)
-		{
-			tp->Regions[cnt].Enable();
-		}
-
-		EnableButton(tp->uiCancelButton);
-
-		// Restore selection....
-		tp->bCurSelect = tp->bOldCurSelect;
-	}
-
-	InvalidateRegion(tp->sX, tp->sY, tp->sX + tp->usWidth, tp->sY + tp->usHeight);
-
-	if (tp->fSetupSubTitles)
-	{
-		if (g_interface_dialogue_box)
-		{
-			// Remove any old ones....
-			RemoveMercPopupBox(g_interface_dialogue_box);
-			g_interface_dialogue_box = 0;
-		}
-
-		UINT16 usTextBoxWidth;
-		UINT16 usTextBoxHeight;
-		g_interface_dialogue_box = PrepareMercPopupBox(0, BASIC_MERC_POPUP_BACKGROUND, BASIC_MERC_POPUP_BORDER, tp->zQuoteStr, TALK_PANEL_DEFAULT_SUBTITLE_WIDTH, 0, 0, 0, &usTextBoxWidth, &usTextBoxHeight);
-		SetFont(MILITARYFONT1); // PrepareMercPopupBox() overwrites the current font
-
-		tp->fSetupSubTitles = FALSE;
-
-		CalculatePopupTextOrientation(usTextBoxWidth, usTextBoxHeight);
-		CalculatePopupTextPosition(   usTextBoxWidth, usTextBoxHeight);
-
-		//Define main region
-		if (tp->fTextRegionOn)
-		{
-			// Remove
-			MSYS_RemoveRegion(&tp->TextRegion);
-			tp->fTextRegionOn = FALSE;
-		}
-
-		UINT16 const x = tp->sPopupX;
-		UINT16 const y = tp->sPopupY;
-		MSYS_DefineRegion(&tp->TextRegion, x, y, x + usTextBoxWidth, y + usTextBoxHeight, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK, TextRegionClickCallback);
-
-		tp->fTextRegionOn = TRUE;
-	}
-
-	if (tp->fRenderSubTitlesNow)
-	{
-		RenderMercPopUpBox(g_interface_dialogue_box, tp->sPopupX, tp->sPopupY,  FRAME_BUFFER);
-	}
-
-	// Create menu selections....
-	INT16 const x = tp->sX + TALK_PANEL_MENUTEXT_STARTX;
-	INT16       y = tp->sY + TALK_PANEL_MENUTEXT_STARTY;
-	for (ptrdiff_t cnt = 0; cnt < std::ssize(ubTalkMenuApproachIDs); cnt++)
-	{
-		if (tp->bCurSelect == cnt)
-		{
-			SetFontForeground(FONT_WHITE);
-			SetFontShadow(DEFAULT_SHADOW);
-		}
-		else
-		{
-			SetFontForeground(FONT_BLACK);
-			SetFontShadow(MILITARY_SHADOW);
-		}
-
-		ST::string str;
-		ST::string buf;
-		if (cnt == 4 && IsMercADealer(pid))
-		{
-			str = zDealerStrings[GetTypeOfArmsDealer(GetArmsDealerIDFromMercID(pid))];
-		}
-		else if (cnt != 0 &&
-#ifndef _DEBUG
-			CHEATER_CHEAT_LEVEL() &&
-#endif
-			gubSrcSoldierProfile != NO_PROFILE &&
-			pid                  != NO_PROFILE)
-		{
-			UINT8 const desire = CalcDesireToTalk(pid, gubSrcSoldierProfile, ubTalkMenuApproachIDs[cnt]);
-			buf = ST::format("{} ({})", zTalkMenuStrings[cnt], desire);
-			str = buf;
-		}
-		else
-		{
-			str = zTalkMenuStrings[cnt];
-		}
-		MPrint(x, y, str, HCenterVCenterAlign(TALK_PANEL_MENUTEXT_WIDTH, TALK_PANEL_MENUTEXT_HEIGHT));
-
-		y += TALK_PANEL_MENUTEXT_SPACEY;
-	}
-
-	SetFontShadow(DEFAULT_SHADOW);
+	// the native HUD draws the panel (PopupAdapter.h)
 }
 
 
-static void TalkPanelMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason)
+/** Nobody is speaking and nothing is queued: an approach can be chosen. */
+static bool TalkIsFree()
 {
-	uint32_t const uiItemPos = pRegion - gTalkPanel.Regions;
-
-	if (iReason & MSYS_CALLBACK_REASON_MOVE)
-	{
-		// Set current selected guy....
-		gTalkPanel.bCurSelect =(INT8)uiItemPos;
-		gTalkPanel.bOldCurSelect = gTalkPanel.bCurSelect;
-	}
-	else if ( iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
-	{
-		gTalkPanel.bCurSelect = -1;
-		gTalkPanel.bOldCurSelect = -1;
-	}
-
-	if (gamepolicy(informative_tooltips) && iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE)
-	{
-		Approach appr = ubTalkMenuApproachIDs[uiItemPos];
-		if (appr == APPROACH_REPEAT)
-			return;
-		if (appr == APPROACH_BUYSELL && !IsMercADealer(gTalkPanel.ubCharNum))
-			return; // this is an item-giving approach - no tooltip
-		pRegion->SetFastHelpText(GetModifiersForDialogue(gpSrcSoldier, gpDestSoldier, appr));
-	}
+	return gfInTalkPanel && gTalkPanel.face && !gTalkPanel.face->fTalking && DialogueQueueIsEmpty();
 }
 
 
-static void TalkPanelClickCallback(MOUSE_REGION* pRegion, UINT32 iReason)
+TalkPopup CurrentTalkPopup()
 {
-	uint32_t const uiItemPos = pRegion - gTalkPanel.Regions;
+	TalkPopup v;
+	if (!gfInTalkPanel || !gTalkPanel.face) return v;
+	ProfileID const pid = gTalkPanel.ubCharNum;
+	v.open = true;
+	v.profile = pid;
+	v.face = pid != NO_PROFILE ? GetProfile(pid).ubFaceIndex : 0;
+	v.name = pid != NO_PROFILE ? GetProfile(pid).zNickname : ST::string();
+	v.line = gTalkPanel.zQuoteStr;
+	v.speaking = !TalkIsFree();
+	if (gpSrcSoldier) v.asker = gpSrcSoldier->name;
+	v.previous = gTalkPrevious;
 
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP)
+	PopupModels::TalkInput in;
+	in.speaking = v.speaking;
+	in.dealer = IsMercADealer(pid);
+	for (PopupModels::TalkRow const& r : PopupModels::BuildTalkMenu(in))
 	{
-		// Donot do this if we are talking already
-		if (!gTalkPanel.face->fTalking)
+		TalkRowView row;
+		row.approach = r.approach;
+		row.name = PopupModels::ApproachName(r.approach);
+		row.key = std::to_string(r.approach + 1);
+		row.enabled = r.enabled;
+		row.why = PopupModels::WhyKey(r.why);
+		// the dealer's own word for the fifth approach ("Buy/Sell", "Repair")
+		if (PopupModels::Approach(r.approach) == PopupModels::Approach::Give && in.dealer)
 		{
-			if ( ubTalkMenuApproachIDs[ uiItemPos ] == APPROACH_BUYSELL )
+			row.label = zDealerStrings[GetTypeOfArmsDealer(GetArmsDealerIDFromMercID(pid))];
+		}
+		else
+		{
+			row.label = zTalkMenuStrings[kTalkLabel[r.approach]];
+		}
+		if (gamepolicy(informative_tooltips) && gpSrcSoldier && gpDestSoldier)
+		{
+			Approach const appr = ubTalkMenuApproachIDs[r.approach];
+			// repeat and the item-giving approach have no modifiers
+			if (appr != APPROACH_REPEAT && !(appr == APPROACH_BUYSELL && !in.dealer))
 			{
-				//if its an arms dealer
-				if( IsMercADealer( gTalkPanel.ubCharNum ) )
-				{
-					if ( NPCHasUnusedRecordWithGivenApproach( gTalkPanel.ubCharNum, APPROACH_BUYSELL ) )
-					{
-						TriggerNPCWithGivenApproach(gTalkPanel.ubCharNum, APPROACH_BUYSELL);
-					}
-					else
-					{
-						DeleteTalkingMenu( );
+				row.title = GetModifiersForDialogue(gpSrcSoldier, gpDestSoldier, appr);
+			}
+		}
+		v.rows.push_back(row);
+	}
+	return v;
+}
 
-						//Enter the shopkeeper interface
-						EnterShopKeeperInterfaceScreen( gTalkPanel.ubCharNum );
-					}
 
-					/*
-					// check if this is a shopkeeper who has been shutdown
-					if (!HandleShopKeepHasBeenShutDown(gTalkPanel.ubCharNum))
-					{
-						DeleteTalkingMenu( );
+bool TalkChoose(int const approach)
+{
+	PopupEvent e;
+	e.kind = PopupKind::Talk;
+	e.action = "choose";
+	e.id = approach;
+	if (!gfInTalkPanel || approach < 0 || approach >= int(PopupModels::Approach::Count)) return false;
+	e.what = PopupModels::ApproachName(approach);
+	// Donot do this if we are talking already
+	if (!TalkIsFree())
+	{
+		e.ok = false;
+		e.why = PopupModels::WhyKey(PopupModels::Why::Speaking);
+		return FinishPopup(e);
+	}
+	BeginPopup(e);
 
-						EnterShopKeeperInterfaceScreen( gTalkPanel.ubCharNum );
-					}*/
-				}
-				else
-				{
-					// Do something different if we selected the 'give' approach
-					// Close panel, set UI guy to wait a sec, open inv if not done so yet
-					gTalkPanel.fHandled = TRUE;
-					gTalkPanel.fHandledTalkingVal = gTalkPanel.face->fTalking;
-					gTalkPanel.fHandledCanDeleteVal = TRUE;
-
-					// open inv panel...
-					SetNewPanel(gpSrcSoldier);
-
-					// Wait!
-					gpDestSoldier->bNextAction = AI_ACTION_WAIT;
-					gpDestSoldier->usNextActionData = 10000;
-
-					// UNless he's has a pending action, delete what he was doing!
-					// Cancel anything he was doing
-					if ( gpDestSoldier->bAction != AI_ACTION_PENDING_ACTION )
-					{
-						CancelAIAction(gpDestSoldier);
-					}
-				}
+	Approach const appr = ubTalkMenuApproachIDs[approach];
+	gTalkPrevious = gpSrcSoldier ? ST::format("{} ({})", gpSrcSoldier->name, zTalkMenuStrings[kTalkLabel[approach]]) : ST::string();
+	if (appr == APPROACH_BUYSELL)
+	{
+		//if its an arms dealer
+		if (IsMercADealer(gTalkPanel.ubCharNum))
+		{
+			if (NPCHasUnusedRecordWithGivenApproach(gTalkPanel.ubCharNum, APPROACH_BUYSELL))
+			{
+				TriggerNPCWithGivenApproach(gTalkPanel.ubCharNum, APPROACH_BUYSELL);
 			}
 			else
 			{
-				//Speak
-				Converse(gTalkPanel.ubCharNum, gubSrcSoldierProfile, ubTalkMenuApproachIDs[uiItemPos]);
+				DeleteTalkingMenu();
+
+				//Enter the shopkeeper interface
+				EnterShopKeeperInterfaceScreen(gTalkPanel.ubCharNum);
+			}
+		}
+		else
+		{
+			// Do something different if we selected the 'give' approach
+			// Close panel, set UI guy to wait a sec, open inv if not done so yet
+			gTalkPanel.fHandled = TRUE;
+			gTalkPanel.fHandledTalkingVal = gTalkPanel.face->fTalking;
+			gTalkPanel.fHandledCanDeleteVal = TRUE;
+
+			// open inv panel...
+			SetNewPanel(gpSrcSoldier);
+
+			// Wait!
+			gpDestSoldier->bNextAction = AI_ACTION_WAIT;
+			gpDestSoldier->usNextActionData = 10000;
+
+			// UNless he's has a pending action, delete what he was doing!
+			// Cancel anything he was doing
+			if (gpDestSoldier->bAction != AI_ACTION_PENDING_ACTION)
+			{
+				CancelAIAction(gpDestSoldier);
 			}
 		}
 	}
+	else
+	{
+		//Speak
+		Converse(gTalkPanel.ubCharNum, gubSrcSoldierProfile, appr);
+	}
+	return FinishPopup(e);
 }
 
 
-static void TalkPanelBaseRegionClickCallback(MOUSE_REGION* pRegion, UINT32 iReason)
+bool TalkWho()
 {
-	static BOOLEAN fLButtonDown = FALSE;
-
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_DWN )
+	PopupEvent e;
+	e.kind = PopupKind::Talk;
+	e.action = "who";
+	if (!gfInTalkPanel) return false;
+	if (!TalkIsFree())
 	{
-		fLButtonDown = TRUE;
+		e.ok = false;
+		e.why = PopupModels::WhyKey(PopupModels::Why::Speaking);
+		return FinishPopup(e);
 	}
-
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP && fLButtonDown )
-	{
-		// Only do this if we are talking already
-		if (gTalkPanel.face->fTalking)
-		{
-			// Stop speech, cancel
-			InternalShutupaYoFace(gTalkPanel.face, FALSE);
-
-			fLButtonDown = FALSE;
-		}
-	}
-	else if (iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
-	{
-		fLButtonDown = FALSE;
-	}
+	BeginPopup(e);
+	// Say who are you?
+	Converse(gTalkPanel.ubCharNum, gubSrcSoldierProfile, NPC_WHOAREYOU);
+	return FinishPopup(e);
 }
 
 
-static void TalkPanelNameRegionClickCallback(MOUSE_REGION* pRegion, UINT32 iReason)
+bool TalkSkip()
 {
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		// Donot do this if we are talking already
-		if (!gTalkPanel.face->fTalking)
-		{
-			// Say who are you?
-			Converse(gTalkPanel.ubCharNum, gubSrcSoldierProfile, NPC_WHOAREYOU);
-		}
-	}
+	if (!gfInTalkPanel || !gTalkPanel.face || !gTalkPanel.face->fTalking) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Talk;
+	e.action = "skip";
+	BeginPopup(e);
+	// Stop speech, cancel
+	InternalShutupaYoFace(gTalkPanel.face, FALSE);
+	return FinishPopup(e);
 }
 
 
-static void TalkPanelNameRegionMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason)
+bool TalkDone()
 {
-	// Donot do this if we are talking already
-	if (gTalkPanel.face->fTalking) return;
-
-	if (iReason & MSYS_CALLBACK_REASON_MOVE)
-	{
-		// Set current selected guy....
-		gTalkPanel.fOnName = TRUE;
-	}
-	else if ( iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
-	{
-		gTalkPanel.fOnName = FALSE;
-	}
-
+	if (!gfInTalkPanel) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Talk;
+	e.action = "done";
+	BeginPopup(e);
+	// OK, a line playing stops, else the panel goes
+	gTalkPanel.fHandled = TRUE;
+	gTalkPanel.fHandledTalkingVal = gTalkPanel.face->fTalking;
+	gTalkPanel.fHandledCanDeleteVal = TRUE;
+	return FinishPopup(e);
 }
 
 
@@ -1040,117 +755,6 @@ void HandleTalkingMenuBackspace(void)
 
 	if ( fTalking )	*/
 	if (pFace->fTalking) ShutupaYoFace(gTalkPanel.face);
-}
-
-
-static void CalculatePopupTextOrientation(INT16 sWidth, INT16 sHeight)
-{
-	BOOLEAN fOKLeft = FALSE, fOKTop = FALSE, fOKBottom = FALSE, fOK = FALSE;
-	INT16   sX, sY;
-
-	// Check Left
-	sX = gTalkPanel.sX - sWidth;
-
-	if ( sX > 0 )
-	{
-		fOKLeft = TRUE;
-	}
-
-	// Check bottom
-	sY = gTalkPanel.sY + sHeight + gTalkPanel.usHeight;
-
-	if ( sY < 340 )
-	{
-		fOKBottom = TRUE;
-	}
-
-	// Check top
-	sY = gTalkPanel.sY - sHeight;
-
-	if ( sY > gsVIEWPORT_WINDOW_START_Y )
-	{
-		fOKTop = TRUE;
-	}
-
-	// OK, now decide where to put it!
-
-	// First precidence is bottom
-	if ( fOKBottom )
-	{
-		gTalkPanel.ubPopupOrientation = TALK_PANEL_POPUP_BOTTOM;
-
-		fOK = TRUE;
-	}
-
-	if ( !fOK )
-	{
-		// Try left
-		if ( fOKLeft )
-		{
-			// Our panel should not be heigher than our dialogue talking panel, so don't bother with the height checks!
-			gTalkPanel.ubPopupOrientation = TALK_PANEL_POPUP_LEFT;
-			fOK = TRUE;
-		}
-
-	}
-
-	// Now at least top should work
-	if ( !fOK )
-	{
-		// Try top!
-		if ( fOKTop )
-		{
-			gTalkPanel.ubPopupOrientation = TALK_PANEL_POPUP_TOP;
-
-			fOK = TRUE;
-		}
-	}
-
-	// failed all the above
-	if( !fOK )
-	{
-		// when all else fails go right
-		gTalkPanel.ubPopupOrientation = TALK_PANEL_POPUP_RIGHT;
-		fOK = TRUE;
-
-	}
-	// If we don't have anything here... our viewport/box is too BIG! ( which should never happen
-}
-
-
-static void CalculatePopupTextPosition(INT16 sWidth, INT16 sHeight)
-{
-	switch( gTalkPanel.ubPopupOrientation )
-	{
-		case TALK_PANEL_POPUP_LEFT:
-
-			// Set it here!
-			gTalkPanel.sPopupX = gTalkPanel.sX - sWidth;
-			// Center in height!
-			gTalkPanel.sPopupY = gTalkPanel.sY + ( gTalkPanel.usHeight / 2 ) -  ( sHeight / 2 );
-			break;
-		case TALK_PANEL_POPUP_RIGHT:
-			// Set it here!
-			gTalkPanel.sPopupX = gTalkPanel.sX + gTalkPanel.usWidth + 1;
-			// Center in height!
-			gTalkPanel.sPopupY = gTalkPanel.sY + ( gTalkPanel.usHeight / 2 ) -  ( sHeight / 2 );
-			break;
-		case TALK_PANEL_POPUP_BOTTOM:
-
-			// Center in X
-			gTalkPanel.sPopupX = gTalkPanel.sX + ( gTalkPanel.usWidth / 2 ) - ( sWidth / 2 );
-			// Calc height
-			gTalkPanel.sPopupY = gTalkPanel.sY + gTalkPanel.usHeight;
-			break;
-
-		case TALK_PANEL_POPUP_TOP:
-
-			// Center in X
-			gTalkPanel.sPopupX = gTalkPanel.sX + ( gTalkPanel.usWidth / 2 ) - ( sWidth / 2 );
-			// Calc height
-			gTalkPanel.sPopupY = gTalkPanel.sY - sHeight;
-			break;
-	}
 }
 
 

@@ -128,10 +128,28 @@ try
 	MusicPoll();
 
 	if (!nativeMouse) HandleSingleClicksAndButtonRepeats();
+	// The buttons the legacy mouse system saw go down. A release that lands on native UI (a menu a held right click
+	// opened, a popup) is still the legacy side's release: without it its button state sticks and the next hold or
+	// click is read as a continuation of this one.
+	static bool legacyButtonDown[2] = {};
 	while (DequeueSpecificEvent(&InputEvent, MOUSE_EVENTS))
 	{
-		if (nativeMouse) NativeUI::HandleMouseEvent(InputEvent);
-		else MouseSystemHook(InputEvent.usEvent, InputEvent.usParam, MousePos.iX, MousePos.iY);
+		int const button = InputEvent.usParam == MOUSE_BUTTON_LEFT ? 0 : InputEvent.usParam == MOUSE_BUTTON_RIGHT ? 1 : -1;
+		bool const isButton = InputEvent.usEvent == MOUSE_BUTTON_DOWN || InputEvent.usEvent == MOUSE_BUTTON_UP;
+		if (nativeMouse)
+		{
+			NativeUI::HandleMouseEvent(InputEvent);
+			if (isButton && button >= 0 && InputEvent.usEvent == MOUSE_BUTTON_UP && legacyButtonDown[button])
+			{
+				legacyButtonDown[button] = false;
+				MouseSystemHook(InputEvent.usEvent, InputEvent.usParam, MousePos.iX, MousePos.iY);
+			}
+		}
+		else
+		{
+			MouseSystemHook(InputEvent.usEvent, InputEvent.usParam, MousePos.iX, MousePos.iY);
+			if (isButton && button >= 0) legacyButtonDown[button] = InputEvent.usEvent == MOUSE_BUTTON_DOWN;
+		}
 	}
 	while (DequeueSpecificEvent(&InputEvent, TOUCH_EVENTS))
 	{

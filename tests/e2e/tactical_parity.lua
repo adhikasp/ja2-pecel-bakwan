@@ -175,7 +175,7 @@ if v.menu_open then
 	end
 	shots.take("menu_door.png", "small")
 	-- Examine for traps: the row runs the legacy door action and closes the menu
-	ja2.click{ id = "tac.menu.item[9]" }
+	ja2.click{ id = "tac.menu.item[1]" }
 	ja2.waitIdle()
 	ja2.expect(not vm().menu_open, "choosing a door action closes the menu")
 end

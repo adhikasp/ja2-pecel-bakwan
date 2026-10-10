@@ -30,9 +30,7 @@ struct ItemModel;
 
 // Itempickup stuff
 void InitializeItemPickupMenu(SOLDIERTYPE* pSoldier, INT16 sGridNo, ITEM_POOL* pItemPool, INT8 bZLevel);
-void RenderItemPickupMenu(void);
 void RemoveItemPickupMenu(void);
-void SetItemPickupMenuDirty( BOOLEAN fDirtyLevel );
 BOOLEAN HandleItemPickupMenu(void);
 
 
@@ -89,6 +87,8 @@ void DeleteKeyRingPopup(void);
 
 void ShutdownKeyRingInterface( void );
 BOOLEAN InKeyRingPopup( void );
+/** A key (an object of key items) back on a merc's key ring. False when the ring is full. */
+bool PutKeyOnRing(SOLDIERTYPE&, OBJECTTYPE const& key);
 void BeginKeyRingItemPointer( SOLDIERTYPE *pSoldier, UINT8 ubKeyRingPosition );
 
 
@@ -221,31 +221,6 @@ struct NativeItemDescInfo
 };
 NativeItemDescInfo NativeItemDescData();
 
-// The pick-up menu: the native HUD draws it itself (the same rows, the same rules); its clicks reach the regions and
-// buttons the legacy menu makes.
-struct NativePickupRow
-{
-	INT16 slot = -1; // the row on the page: NativePickupClick toggles its selection
-	INT16 item = 0;  // the item type (the picture the HUD draws)
-	INT16 cond = 0;  // status, 0-100
-	ST::string name, count, title;
-	bool empty = true, sel = false, att = false;
-};
-struct NativePickupView
-{
-	bool open = false;
-	INT16 x = 0, y = 0; // where the menu goes, in UI pixels (the legacy anchor)
-	ST::string who;
-	INT16 total = 0, page = 0, pages = 0;
-	bool canUp = false, canDown = false, okEnabled = false, allSelected = false;
-	std::vector<NativePickupRow> rows;
-};
-NativePickupView NativeItemPickupView();
-void NativePickupClick(INT16 slot);
-void NativePickupHover(INT16 slot); // -1: the pointer left the list
-void NativePickupAll();
-void NativePickupOK();
-void NativePickupCancel();
-void NativePickupScroll(INT16 dir);
+// The pick-up list, the stack popup and the key ring are models the native HUD draws (PopupAdapter.h).
 
 #endif

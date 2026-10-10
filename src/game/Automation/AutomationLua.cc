@@ -9,6 +9,7 @@
 #include "StockScenario.h"
 #include "InventoryScenario.h"
 #include "CursorScenario.h"
+#include "PopupScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -918,6 +919,12 @@ namespace
 		// The tactical cursor as data (issue #318): { shown, mode, shape, tone, marker, ap, apLeft, hit, aim, why, target,
 		// tile, id, chip, lines, path, markerAt, destAt } (see CursorScenario.h).
 		ja2.set_function("cursor", [] { return Guarded([&] { return CursorState(g_lua); }); });
+		// The tactical popups as data (issue #321): ja2.popup() reads what is open, ja2.popupOp(op, spec) makes one
+		// choice and returns { ok, why }. See PopupScenario.h.
+		ja2.set_function("popup", [] { return Guarded([&] { return PopupState(g_lua); }); });
+		ja2.set_function("popupOp", [](std::string const& op, sol::optional<sol::table> spec) {
+			return Guarded([&] { return PopupOp(g_lua, op, spec); });
+		});
 		ja2.set_function("inventoryOp", [](std::string const& op, sol::optional<sol::table> spec) {
 			return Guarded([&] { return InventoryOp(g_lua, op, spec); });
 		});
@@ -1394,6 +1401,27 @@ namespace
 					// Move the team into a sector and load it in tactical, for a world-map step.
 					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"entersector\", spec)");
 					EnterSector(a->as<sol::table>());
+				}
+				else if (what == "talk")
+				{
+					// Start a conversation with an NPC of the sector: ja2.debug("talk", "Fatima")
+					StartTalk(a && a->is<std::string>() ? a->as<std::string>() : std::string());
+				}
+				else if (what == "teleport")
+				{
+					// Put a merc on a tile: ja2.debug("teleport", { merc = "Ivan", grid = 12956 })
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"teleport\", spec)");
+					sol::table const t = a->as<sol::table>();
+					TeleportMerc(Scenario::StrField(t, "merc", ""), Scenario::IntField(t, "grid", -1));
+				}
+				else if (what == "keys")
+				{
+					// Put keys on a merc's ring: ja2.debug("keys", { merc = "Ivan", keys = { 1, 2 } })
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"keys\", spec)");
+					sol::table const t = a->as<sol::table>();
+					sol::object const list = t["keys"];
+					if (!list.is<sol::table>()) throw std::runtime_error("ja2.debug(\"keys\"): keys = { id, ... }");
+					GiveKeys(Scenario::StrField(t, "merc", ""), list.as<sol::table>());
 				}
 				else if (what == "npcs")
 				{

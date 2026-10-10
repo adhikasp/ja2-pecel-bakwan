@@ -6,7 +6,8 @@
 // Interface.cc check TacticalHudActive). The view model reads the game every frame. Its commands act through the
 // legacy code: buttons press the legacy hotkeys (same handler, same rules), inventory slots and the description's
 // attachments, unload and money buttons click the legacy regions and buttons of the hidden panel
-// (Interface_Items.cc, Native*). So the native HUD cannot do anything the legacy one could not.
+// (Interface_Items.cc). The menus and popups (action, door, pick-up, stack, key ring, talk, sector exit, the speaking
+// face) are models (PopupModels.h) that this view only draws: their choices come back as calls (PopupAdapter.h).
 #include "NativeImages.h"
 #include "NativeUIRuntime.h"
 #include "ViewModel.h"
@@ -24,6 +25,9 @@
 #include "Interface_Items.h"
 #include "Interface_Panels.h"
 #include "InventoryAdapter.h"
+#include "PopupAdapter.h"
+#include "Strategic_Exit_GUI.h"
+#include "Tactical_Placement_GUI.h"
 #include "ItemModel.h"
 #include "Items.h"
 #include "JAScreens.h"
@@ -270,6 +274,46 @@ namespace
 		}
 	};
 
+	/** One box of the stack popup. */
+	struct StkRow
+	{
+		int i = 0, w = 0, h = 0;
+		std::string eid, text, src;
+		bool filled = false, low = false;
+		static void Describe(RowFields<StkRow>& f)
+		{
+			f("i", &StkRow::i)("w", &StkRow::w)("h", &StkRow::h)("eid", &StkRow::eid)("text", &StkRow::text)
+			 ("src", &StkRow::src)("filled", &StkRow::filled)("low", &StkRow::low);
+		}
+	};
+
+	/** One key of the key ring. */
+	struct KeyRow
+	{
+		int slot = 0, count = 0, w = 0, h = 0;
+		std::string eid, use_id, take_id, name, found, src, why;
+		bool can_use = false, fits = false;
+		static void Describe(RowFields<KeyRow>& f)
+		{
+			f("slot", &KeyRow::slot)("count", &KeyRow::count)("w", &KeyRow::w)("h", &KeyRow::h)("eid", &KeyRow::eid)
+			 ("use_id", &KeyRow::use_id)("take_id", &KeyRow::take_id)("name", &KeyRow::name)("found", &KeyRow::found)
+			 ("src", &KeyRow::src)("why", &KeyRow::why)("can_use", &KeyRow::can_use)("fits", &KeyRow::fits);
+		}
+	};
+
+	/** One approach of the talk panel. */
+	struct TalkRowV
+	{
+		int approach = 0;
+		std::string eid, label, key, title, why;
+		bool enabled = true;
+		static void Describe(RowFields<TalkRowV>& f)
+		{
+			f("approach", &TalkRowV::approach)("eid", &TalkRowV::eid)("label", &TalkRowV::label)("key", &TalkRowV::key)
+			 ("title", &TalkRowV::title)("why", &TalkRowV::why)("enabled", &TalkRowV::enabled);
+		}
+	};
+
 	// ------------------------------------------------------------------ the view model
 	// a drop on a squad card happened this click: the click that follows is not a selection
 	bool g_swallowClick = false;
@@ -336,7 +380,32 @@ namespace
 		int pickX = 0, pickY = 0, pickPage = 0, pickPages = 0;
 		bool pickCanUp = false, pickCanDown = false, pickAll = false, pickEnabled = false;
 		std::vector<PickRow> pick;
+		// stack popup
+		bool stkOpen = false, stkHolding = false, stkMore = false, stkLess = false;
+		std::string stkName, stkWhere, stkTakeLabel, stkHint;
+		int stkX = 0, stkY = 0, stkCount = 0, stkTake = 0, stkSlot = -1;
+		std::vector<StkRow> stk;
+		// key ring
+		bool keyOpen = false, keyDoor = false, keyNone = false, keyHolding = false;
+		std::string keyWho, keyHint;
+		int keyX = 0, keyY = 0;
+		std::vector<KeyRow> keys;
+		// talk panel
+		bool talkOpen = false, talkSpeaking = false;
+		std::string talkName, talkLine, talkPrev, talkFace;
+		int talkFw = 0, talkFh = 0, talkBottom = 0;
+		std::vector<TalkRowV> talk;
+		// the speaking face and its subtitle
+		bool spOpen = false, spBubble = false;
+		std::string spWho, spLine, spFace;
+		int spFw = 0, spFh = 0, spX = 0, spY = 0;
+		// sector exit
+		bool exOpen = false, exSingleSel = false, exAllSel = false, exLoadSel = false;
+		bool exSingleOff = false, exAllOff = false, exLoadOff = false, exCanGo = false;
+		std::string exDir, exDirLabel, exTitle, exSingleLabel, exAllLabel, exLoadLabel, exSingleCount, exAllCount;
+		std::string exSingleTip, exAllTip, exLoadTip, exSingleWhy, exAllWhy, exLoadWhy, exTrip;
 		// labels
+		std::string lTake, lTakeAll, lKeyRing, lUse, lGive, lNoKeys, lClose, lTalkWho, lTravel, lCancel, lGo, lPutKey, lExitNone;
 		std::string lEndTurn, lTurnBased, lMap, lDone, lUnload, lPros, lCons, lAttachments, lAmmo, lWeapon, lLog, lLoadout;
 
 		std::string signature;
@@ -376,7 +445,7 @@ namespace
 			Command("talk", [](Args const&) { ToggleTalkCursorMode(&guiCurrentEvent); });
 			Command("options", [](Args const&) { PressKey(SDLK_O); });
 			Command("money_region", [](Args const&) { InventoryCashButton(); });
-			Command("keyring", [](Args const&) { InventoryKeyRing(); });
+			Command("keyring", [](Args const&) { if (InKeyRingPopup()) KeyRingClose(); else InventoryKeyRing(); });
 			// slot(index, mouse button): left picks up or puts down, right shows the description (the inventory core decides)
 			Command("slot", [](Args const& a) {
 				if (g_swallowUp) { g_swallowUp = false; return; }
@@ -405,15 +474,41 @@ namespace
 			Command("log_filter", [this](Args const& a) { logFilter = a.empty() ? "all" : a[0]; ReadLog(); Changed(); });
 			// the item sheet's page: "general" (specs, ammo, attachments) or "desc" (the dossier text, pros and cons)
 			Command("desc_tab", [this](Args const& a) { xTab = a.empty() ? "general" : a[0]; Changed(); });
-			// the action, door and pick-up menus press the legacy buttons (Interface.cc, Interface_Items.cc)
-			Command("menu_item", [](Args const& a) { if (!a.empty()) NativeMenuClick(INT16(std::atoi(a[0].c_str()))); });
-			Command("menu_cancel", [](Args const&) { NativeMenuCancel(); });
-			Command("pick_item", [](Args const& a) { if (!a.empty()) NativePickupClick(INT16(std::atoi(a[0].c_str()))); });
-			Command("pick_hover", [](Args const& a) { NativePickupHover(a.empty() ? INT16(-1) : INT16(std::atoi(a[0].c_str()))); });
-			Command("pick_all", [](Args const&) { NativePickupAll(); });
-			Command("pick_ok", [](Args const&) { NativePickupOK(); });
-			Command("pick_cancel", [](Args const&) { NativePickupCancel(); });
-			Command("pick_scroll", [](Args const& a) { if (!a.empty()) NativePickupScroll(INT16(std::atoi(a[0].c_str()))); });
+			// the menus and popups: each choice is a call into the popup's adapter (PopupAdapter.h)
+			Command("menu_item", [](Args const& a) { if (!a.empty()) PopupMenuChoose(std::atoi(a[0].c_str())); });
+			Command("menu_cancel", [](Args const&) { PopupMenuCancel(); });
+			Command("pick_item", [](Args const& a) { if (!a.empty()) PickupToggle(std::atoi(a[0].c_str())); });
+			Command("pick_hover", [](Args const& a) { PickupHover(a.empty() ? -1 : std::atoi(a[0].c_str())); });
+			Command("pick_all", [](Args const&) { PickupAll(); });
+			Command("pick_ok", [](Args const&) { PickupTake(); });
+			Command("pick_cancel", [](Args const&) { PickupCancel(); });
+			Command("pick_scroll", [](Args const& a) { if (!a.empty()) PickupScroll(std::atoi(a[0].c_str())); });
+			// a box of the stack popup: left takes that object (or puts the hand's), right describes it
+			Command("stack_box", [](Args const& a) {
+				if (a.empty()) return;
+				int const i = std::atoi(a[0].c_str());
+				if (Right(a)) StackDescribe(i); else StackClickBox(i);
+			});
+			Command("stack_more", [](Args const&) { StackSplitStep(1); });
+			Command("stack_less", [](Args const&) { StackSplitStep(-1); });
+			Command("stack_take", [](Args const&) { StackTakeSplit(); });
+			Command("stack_all", [](Args const&) { StackTakeAll(); });
+			Command("stack_close", [](Args const&) { StackClose(); });
+			// a key row: left on the row describes nothing; the buttons use it or take it into the hand, right describes it
+			Command("key_row", [](Args const& a) { if (!a.empty() && Right(a)) KeyRingDescribe(std::atoi(a[0].c_str())); });
+			Command("key_use", [](Args const& a) { if (!a.empty()) KeyRingUse(std::atoi(a[0].c_str())); });
+			Command("key_take", [](Args const& a) { if (!a.empty()) KeyRingTake(std::atoi(a[0].c_str())); });
+			Command("key_close", [](Args const&) { KeyRingClose(); });
+			Command("key_put", [](Args const&) { KeyRingPut(); });
+			Command("talk_choose", [](Args const& a) { if (!a.empty()) TalkChoose(std::atoi(a[0].c_str())); });
+			Command("talk_who", [](Args const&) { TalkWho(); });
+			Command("talk_done", [](Args const&) { TalkDone(); });
+			Command("speech_click", [](Args const&) { SpeechClick(); });
+			Command("exit_single", [](Args const&) { ExitChooseSingle(); });
+			Command("exit_all", [](Args const&) { ExitChooseAll(); });
+			Command("exit_load", [](Args const&) { ExitToggleLoad(); });
+			Command("exit_go", [](Args const&) { ExitGo(); });
+			Command("exit_cancel", [](Args const&) { ExitCancel(); });
 			Command("mute", [](Args const&) { NativeSMMuteClick(); });
 			Command("swap_hands", [](Args const&) { PressKey(SDLK_Q, SDL_KMOD_CTRL); });
 			Command("readout", [](Args const&) { OpenWeaponReadout(); });
@@ -432,6 +527,19 @@ namespace
 			lLog = Str("tac.log");
 			lLoadout = Str("tac.loadout");
 			lYes = Str("tac.yes");
+			lTake = Str("tac.stack.take");
+			lTakeAll = Str("tac.stack.all");
+			lKeyRing = Str("tac.key.title");
+			lUse = Str("tac.key.use");
+			lGive = Str("tac.key.give");
+			lNoKeys = Str("tac.key.none");
+			lClose = Str("tac.close");
+			lTalkWho = Str("tac.talk.who");
+			lTravel = Str("tac.exit.travel");
+			lCancel = Str("tac.pick.cancel");
+			lGo = Str("tac.exit.go");
+			lPutKey = Str("tac.key.put");
+			lExitNone = Str("tac.exit.none");
 			lNo = Str("tac.no");
 		}
 
@@ -478,6 +586,28 @@ namespace
 			f.Field("pick_can_up", pickCanUp); f.Field("pick_can_down", pickCanDown); f.Field("pick_all", pickAll);
 			f.Field("pick_ok_enabled", pickEnabled);
 			f.Rows("pick", pick);
+			f.Field("stk_open", stkOpen); f.Field("stk_name", stkName); f.Field("stk_where", stkWhere);
+			f.Field("stk_x", stkX); f.Field("stk_y", stkY); f.Field("stk_count", stkCount); f.Field("stk_take", stkTake);
+			f.Field("stk_holding", stkHolding); f.Field("stk_more", stkMore); f.Field("stk_less", stkLess);
+			f.Field("stk_take_label", stkTakeLabel); f.Field("stk_hint", stkHint); f.Rows("stk", stk);
+			f.Field("key_open", keyOpen); f.Field("key_who", keyWho); f.Field("key_hint", keyHint); f.Field("key_door", keyDoor);
+			f.Field("key_none", keyNone); f.Field("key_holding", keyHolding); f.Field("key_x", keyX); f.Field("key_y", keyY); f.Rows("keys", keys);
+			f.Field("talk_open", talkOpen); f.Field("talk_name", talkName); f.Field("talk_line", talkLine);
+			f.Field("talk_prev", talkPrev); f.Field("talk_face", talkFace); f.Field("talk_fw", talkFw); f.Field("talk_fh", talkFh);
+			f.Field("talk_speaking", talkSpeaking); f.Field("talk_bottom", talkBottom); f.Rows("talk", talk);
+			f.Field("sp_open", spOpen); f.Field("sp_bubble", spBubble); f.Field("sp_who", spWho); f.Field("sp_line", spLine);
+			f.Field("sp_face", spFace); f.Field("sp_fw", spFw); f.Field("sp_fh", spFh); f.Field("sp_x", spX); f.Field("sp_y", spY);
+			f.Field("ex_open", exOpen); f.Field("ex_dir", exDir); f.Field("ex_dir_label", exDirLabel); f.Field("ex_title", exTitle);
+			f.Field("ex_single_label", exSingleLabel); f.Field("ex_all_label", exAllLabel); f.Field("ex_load_label", exLoadLabel);
+			f.Field("ex_single_count", exSingleCount); f.Field("ex_all_count", exAllCount);
+			f.Field("ex_single_sel", exSingleSel); f.Field("ex_all_sel", exAllSel); f.Field("ex_load_sel", exLoadSel);
+			f.Field("ex_single_off", exSingleOff); f.Field("ex_all_off", exAllOff); f.Field("ex_load_off", exLoadOff);
+			f.Field("ex_single_tip", exSingleTip); f.Field("ex_all_tip", exAllTip); f.Field("ex_load_tip", exLoadTip);
+			f.Field("ex_single_why", exSingleWhy); f.Field("ex_all_why", exAllWhy); f.Field("ex_load_why", exLoadWhy);
+			f.Field("ex_trip", exTrip); f.Field("ex_can_go", exCanGo);
+			f.Field("l_take", lTake); f.Field("l_take_all", lTakeAll); f.Field("l_key_ring", lKeyRing); f.Field("l_use", lUse);
+			f.Field("l_give", lGive); f.Field("l_no_keys", lNoKeys); f.Field("l_close", lClose); f.Field("l_talk_who", lTalkWho);
+			f.Field("l_travel", lTravel); f.Field("l_cancel", lCancel); f.Field("l_go", lGo); f.Field("l_put_key", lPutKey); f.Field("l_exit_none", lExitNone);
 			f.Field("l_end_turn", lEndTurn); f.Field("l_turn_based", lTurnBased); f.Field("l_map", lMap); f.Field("l_done", lDone);
 			f.Field("l_unload", lUnload); f.Field("l_pros", lPros); f.Field("l_cons", lCons); f.Field("l_attachments", lAttachments);
 			f.Field("l_ammo", lAmmo); f.Field("l_weapon", lWeapon); f.Field("l_log", lLog); f.Field("l_loadout", lLoadout);
@@ -492,6 +622,7 @@ namespace
 			ReadDetail();
 			ReadDesc();
 			ReadMenus();
+			ReadPopups();
 			ReadAsk();
 			if (logOpen) ReadLog();
 		}
@@ -910,12 +1041,13 @@ namespace
 			hint = !o.ok && o.action == "refused" && GetJA2Clock() - hintAt < 2500 ? o.why : std::string();
 		}
 
-		/** What a disabled menu row says; the codes come from Interface.cc. */
+		/** What a disabled row says: a PopupModels::WhyKey code, in words. */
 		std::string WhyText(std::string const& code)
 		{
-			return code.empty() ? std::string() : Str("tac.door." + code);
+			return code.empty() ? std::string() : Str("tac.why." + code);
 		}
 
+		/** The action menu and the door menu, from PopupModels::Menu (Interface.cc), and the pick-up list. */
 		void ReadMenus()
 		{
 			menu.clear();
@@ -923,18 +1055,17 @@ namespace
 			menuOpen = false;
 			pickOpen = false;
 
-			NativeMenuView m = NativeMovementMenuView();
-			if (!m.open) m = NativeDoorMenuView();
+			MenuPopup const m = CurrentMenuPopup();
 			if (m.open)
 			{
 				menuOpen = true;
-				bool const door = m.kind == "door";
-				bool const showAp = (gTacticalStatus.uiFlags & INCOMBAT) != 0 && m.ap >= 0;
-				std::string const ap = showAp ? ST::format("{} {}", m.ap, Str("tac.ap")).to_std_string() : std::string();
+				bool const door = m.door;
+				bool const showAp = (gTacticalStatus.uiFlags & INCOMBAT) != 0 && m.apLeft >= 0;
+				std::string const ap = showAp ? ST::format("{} {}", m.apLeft, Str("tac.ap")).to_std_string() : std::string();
 				menuTitle = door ? Str("tac.menu.door") : S(m.who);
-				menuSub = door ? (showAp ? S(m.who) + " · " + ap : std::string()) : ap;
+				menuSub = door ? (showAp ? S(m.who) + " \xC2\xB7 " + ap : std::string()) : ap;
 				int lastGroup = -1, seq = 0;
-				for (NativeMenuItem const& it : m.items)
+				for (PopupRow const& it : m.rows)
 				{
 					if (it.group != lastGroup)
 					{
@@ -957,21 +1088,22 @@ namespace
 					}
 					MenuItemRow r;
 					r.kind = "item";
-					r.id = it.id;
-					r.eid = "tac.menu.item[" + std::to_string(it.id) + "]";
+					r.id = it.cmd;
+					r.eid = "tac.menu.item[" + std::to_string(it.cmd) + "]";
 					r.label = S(it.label);
 					r.kbd = S(it.kbd);
-					r.icon = S(it.icon);
+					r.icon = it.icon;
 					r.title = S(it.title);
-					r.why = it.disabled ? WhyText(S(it.why)) : "";
+					r.why = it.enabled ? "" : WhyText(it.why);
 					r.ap = it.ap;
-					r.disabled = it.disabled;
+					r.disabled = !it.enabled;
 					menu.push_back(r);
 				}
 				// the action menu opens by the merc, the door menu by the door (the approved wireframes)
 				Rml::Vector2f const at = CanvasToOutput(float(m.x), float(m.y));
-				float x = at.x + std::round((door ? 8.f : 70.f) * DpScale());
-				float y = at.y - std::round((door ? 24.f : 64.f) * DpScale());
+				// the action menu opens under the pointer, the door menu by the merc
+				float x = at.x + std::round((door ? 36.f : -20.f) * DpScale());
+				float y = at.y - std::round(20.f * DpScale());
 				int h = 56;
 				for (MenuItemRow const& r : menu) h += r.kind == "item" ? (r.why.empty() ? 40 : 60) : 20;
 				ClampPopup(x, y, 252, float(h));
@@ -979,26 +1111,24 @@ namespace
 				menuY = int(y);
 			}
 
-			NativePickupView const p = NativeItemPickupView();
+			PickupPopup const p = CurrentPickupPopup();
 			if (p.open)
 			{
 				pickOpen = true;
 				pickTitle = Str("tac.pick.title");
 				pickSub = ST::format(Str("tac.pick.sub").c_str(), p.who, p.total).to_std_string();
-				int picked = 0;
-				for (NativePickupRow const& it : p.rows) if (it.sel) ++picked;
-				pickOk = ST::format(Str("tac.pick.take").c_str(), picked).to_std_string();
+				pickOk = ST::format(Str("tac.pick.take").c_str(), p.selected).to_std_string();
 				pickPage = p.page;
 				pickPages = p.pages;
 				pickCanUp = p.canUp;
 				pickCanDown = p.canDown;
-				pickAll = p.allSelected;
-				pickEnabled = p.okEnabled;
-				for (NativePickupRow const& it : p.rows)
+				pickAll = p.all;
+				pickEnabled = p.canTake;
+				for (PickupRowView const& it : p.rows)
 				{
 					PickRow r;
-					r.slot = it.slot;
-					r.eid = "tac.pick.item[" + std::to_string(it.slot) + "]";
+					r.slot = it.row;
+					r.eid = "tac.pick.item[" + std::to_string(it.row) + "]";
 					r.empty = it.empty;
 					r.sel = it.sel;
 					r.att = it.att;
@@ -1015,10 +1145,234 @@ namespace
 				}
 				Rml::Vector2f const at = CanvasToOutput(float(p.x), float(p.y));
 				float x = at.x;
-				float y = at.y;
+				x += std::round(36.f * DpScale());
+				float y = at.y - std::round(20.f * DpScale());
 				ClampPopup(x, y, 360, float(120 + 56 * int(p.rows.size())));
 				pickX = int(x);
 				pickY = int(y);
+			}
+		}
+
+		/** The label of a pocket or worn slot, for "where the stack came from". */
+		static std::string SlotName(int const slot)
+		{
+			switch (slot)
+			{
+				case HEAD1POS:       return Str("tac.slot.face1");
+				case HEAD2POS:       return Str("tac.slot.face2");
+				case HELMETPOS:      return Str("tac.slot.helmet");
+				case VESTPOS:        return Str("tac.slot.vest");
+				case LEGPOS:         return Str("tac.slot.legs");
+				case HANDPOS:        return Str("tac.slot.hand");
+				case SECONDHANDPOS:  return Str("tac.slot.offhand");
+				case LBE_VESTPOS:    return Str("tac.slot.lbe_vest");
+				case LBE_BELTPOS:    return Str("tac.slot.lbe_belt");
+				case LBE_PACKPOS:    return Str("tac.slot.lbe_pack");
+			}
+			if (slot >= POCK1POS && slot <= POCK12POS) return ST::format(Str("tac.pocket").c_str(), slot - POCK1POS + 1).to_std_string();
+			return std::string();
+		}
+
+		/** The big face of an NPC or merc (the small one when there is no big one), at an integer scale. */
+		static Pic FacePic(int const face, float const base)
+		{
+			Pic p = MakePic("bface-" + std::to_string(face), base);
+			if (p.src.empty()) p = MakePic("sface-" + std::to_string(face), base);
+			return p;
+		}
+
+		/** Puts the popups that hang on a part of the HUD where that part is now: the stack popup over the pocket it came
+		 * from, the key ring over the key button, the talk panel over the bar (never over the speaker). */
+		void Place(Rml::ElementDocument* const doc, float const barPx)
+		{
+			float const dp = std::max(0.01f, DpScale());
+			Rml::Vector2i const dim = Context()->GetDimensions();
+			talkBottom = int(std::round(barPx + 12.f * dp));
+
+			auto anchor = [&](std::string const& id, float& cx, float& top, float& bottom) {
+				cx = dim.x * 0.5f;
+				top = dim.y * 0.5f;
+				bottom = top;
+				if (Rml::Element* const e = doc ? doc->GetElementById(id) : nullptr)
+				{
+					Rml::Vector2f const o = e->GetAbsoluteOffset(Rml::BoxArea::Border);
+					Rml::Vector2f const sz = e->GetBox().GetSize(Rml::BoxArea::Border);
+					if (sz.x > 0)
+					{
+						cx = o.x + sz.x * 0.5f;
+						top = o.y;
+						bottom = o.y + sz.y;
+					}
+				}
+			};
+			auto put = [&](float const widthDp, float const heightDp, std::string const& id, int& outX, int& outY) {
+				float cx, top, bottom;
+				anchor(id, cx, top, bottom);
+				float const h = heightDp * dp;
+				float x = cx - widthDp * dp * 0.5f;
+				float y = top - h - 8.f * dp; // above it
+				if (y < 8.f * dp) y = bottom + 8.f * dp; // else below
+				ClampPopup(x, y, widthDp, heightDp);
+				outX = int(x);
+				outY = int(y);
+			};
+
+			if (stkOpen)
+			{
+				int const rows = std::max(1, (int(stk.size()) + 4) / 5);
+				put(452.f, 150.f + 92.f * rows + (stkCount > 1 ? 40.f : 0.f), "tac.inv.slot[" + std::to_string(stkSlot) + "]", stkX, stkY);
+			}
+			if (keyOpen)
+			{
+				put(470.f, 120.f + 64.f * float(std::max<size_t>(1, keys.size())), "tac.inv.keys", keyX, keyY);
+			}
+		}
+
+		/** The stack popup, the key ring, the talk panel, the speaking face and the sector exit menu. */
+		void ReadPopups()
+		{
+			stk.clear();
+			keys.clear();
+			talk.clear();
+			stkOpen = keyOpen = talkOpen = spOpen = exOpen = false;
+
+			StackPopup const sp = CurrentStackPopup();
+			if (sp.open)
+			{
+				stkOpen = true;
+				stkName = S(sp.name);
+				std::string const where = SlotName(sp.slot);
+				stkWhere = ST::format(Str("tac.stack.where").c_str(), sp.count, S(sp.where)).to_std_string();
+				if (!where.empty()) stkWhere += " \xC2\xB7 " + where;
+				stkCount = sp.count;
+				stkTake = sp.take;
+				stkSlot = sp.slot;
+				stkHolding = sp.holding;
+				stkMore = sp.canMore;
+				stkLess = sp.canLess;
+				stkTakeLabel = ST::format(Str("tac.stack.n").c_str(), sp.take).to_std_string();
+				stkHint = Str(sp.holding ? "tac.stack.hint_put" : "tac.stack.hint");
+				Pic const pic = FitPic("nitem-" + std::to_string(sp.item), 2, 60, 48);
+				for (StackBox const& b : sp.boxes)
+				{
+					StkRow r;
+					r.i = b.index;
+					r.eid = "tac.stack.box[" + std::to_string(b.index) + "]";
+					r.filled = b.filled;
+					r.low = b.low;
+					r.text = S(b.text);
+					if (b.filled) { r.src = pic.src; r.w = pic.w; r.h = pic.h; }
+					stk.push_back(r);
+				}
+			}
+
+			KeyRingPopup const kp = CurrentKeyRingPopup();
+			if (kp.open)
+			{
+				keyOpen = true;
+				keyWho = S(kp.who);
+				keyDoor = kp.door;
+				keyHolding = kp.holding;
+				keyNone = kp.keys.empty();
+				keyHint = ST::format(Str(kp.door ? "tac.key.hint_door" : "tac.key.hint").c_str(), kp.who).to_std_string();
+				for (KeyView const& k : kp.keys)
+				{
+					KeyRow r;
+					r.slot = k.slot;
+					r.count = k.count;
+					r.eid = "tac.keyring.row[" + std::to_string(k.slot) + "]";
+					r.use_id = "tac.keyring.use[" + std::to_string(k.slot) + "]";
+					r.take_id = "tac.keyring.take[" + std::to_string(k.slot) + "]";
+					r.name = S(k.name);
+					r.found = k.day > 0 ? ST::format(Str("tac.key.found").c_str(), k.sector, k.day).to_std_string() : S(k.sector);
+					r.can_use = k.canUse;
+					r.fits = k.fits;
+					r.why = WhyText(k.why);
+					if (k.item)
+					{
+						Pic const pic = FitPic("nitem-" + std::to_string(k.item), 2, 52, 44);
+						r.src = pic.src; r.w = pic.w; r.h = pic.h;
+					}
+					keys.push_back(r);
+				}
+			}
+
+			TalkPopup const tp = CurrentTalkPopup();
+			if (tp.open)
+			{
+				talkOpen = true;
+				talkName = S(tp.name);
+				talkLine = S(tp.line);
+				talkPrev = S(tp.previous);
+				talkSpeaking = tp.speaking;
+				Pic const f = FacePic(tp.face, 2);
+				talkFace = f.src; talkFw = f.w; talkFh = f.h;
+				for (TalkRowView const& r : tp.rows)
+				{
+					TalkRowV v;
+					v.approach = r.approach;
+					v.eid = "tac.talk." + r.name;
+					v.label = S(r.label);
+					v.key = r.key;
+					v.enabled = r.enabled;
+					v.why = WhyText(r.why);
+					v.title = r.enabled ? S(r.title) : v.why;
+					talk.push_back(v);
+				}
+			}
+
+			SpeechView const sv = CurrentSpeech();
+			// the talk panel shows its own NPC's lines
+			if (sv.shown && !talkOpen)
+			{
+				spOpen = true;
+				spWho = S(sv.who);
+				spLine = S(sv.line);
+				Pic const f = MakePic("sface-" + std::to_string(sv.face), 2);
+				spFace = f.src; spFw = f.w; spFh = f.h;
+				spBubble = false;
+				if (sv.soldier && !sv.line.empty())
+				{
+					SOLDIERTYPE const* const s = FindSoldierByProfileID(UINT8(sv.profile));
+					if (s && s->bInSector && s->bVisible != -1)
+					{
+						INT16 x, y;
+						GetSoldierAboveGuyPositions(s, &x, &y, FALSE);
+						Rml::Vector2f const at = CanvasToOutput(float(x + 40), float(y));
+						float px = at.x - std::round(150.f * DpScale());
+						float py = at.y - std::round(96.f * DpScale());
+						ClampPopup(px, py, 300, 80);
+						spX = int(px);
+						spY = int(py);
+						spBubble = true;
+					}
+				}
+				// no words and no merc on screen: the face card still says who is speaking
+			}
+
+			ExitPopup const ep = CurrentExitPopup();
+			if (ep.open)
+			{
+				exOpen = true;
+				exDir = S(ep.direction);
+				exDirLabel = Str("tac.exit.dir." + exDir);
+				exTitle = ep.to.empty() ? ST::format(Str("tac.exit.leave").c_str(), ep.from).to_std_string()
+					: ST::format(Str("tac.exit.leave_to").c_str(), ep.from, ep.to).to_std_string();
+				exSingleLabel = S(ep.selectedLabel) + ": " + S(ep.selected);
+				exAllLabel = S(ep.allLabel);
+				exLoadLabel = S(ep.loadLabel);
+				exSingleCount = Str("tac.exit.one");
+				exAllCount = ep.squadSize == 1 ? Str("tac.exit.one") : ST::format(Str("tac.exit.many").c_str(), ep.squadSize).to_std_string();
+				exSingleSel = ep.singleSel; exAllSel = ep.allSel; exLoadSel = ep.loadSel;
+				exSingleOff = ep.singleOff; exAllOff = ep.allOff; exLoadOff = ep.loadOff;
+				exSingleTip = S(ep.singleTip); exAllTip = S(ep.allTip); exLoadTip = S(ep.loadTip);
+				exSingleWhy = S(ep.singleTip); exAllWhy = S(ep.allTip); exLoadWhy = S(ep.loadTip);
+				if (exSingleWhy.empty()) exSingleWhy = WhyText(ep.singleWhy);
+				if (exAllWhy.empty()) exAllWhy = WhyText(ep.allWhy);
+				if (exLoadWhy.empty()) exLoadWhy = WhyText(ep.loadWhy);
+				exTrip = ep.minutes > 0 ? ST::format(Str(ep.shortTrip ? "tac.exit.trip_short" : "tac.exit.trip").c_str(), ep.minutes).to_std_string()
+					: Str("tac.exit.trip_none");
+				exCanGo = ep.canGo;
 			}
 		}
 	};
@@ -1263,6 +1617,16 @@ namespace
 	};
 	Hud g_hud;
 
+	/** The bar reaches up to the top of the legacy panel it hides: that panel is on the canvas, which the window scales and
+	 * letterboxes, so its top is a canvas point in output pixels (not the panel height times the UI scale). */
+	float BarHeightPx()
+	{
+		int const panelH = gsCurInterfacePanel == SM_PANEL ? INV_INTERFACE_HEIGHT : TEAMPANEL_HEIGHT;
+		float const panelTop = CanvasToOutput(0, float(SCREEN_HEIGHT - panelH)).y;
+		float const legacy = std::ceil(float(Context()->GetDimensions().y) - panelTop);
+		return std::max(legacy, std::round(156 * DpScale()));
+	}
+
 	std::string Signature(TacticalViewModel& vm)
 	{
 		return vm.Snapshot().ToJson();
@@ -1272,9 +1636,6 @@ namespace
 	{
 		if (guiCurrentScreen != GAME_SCREEN) return false;
 		if (ResolveMode("tactical") != UiMode::Native) return false;
-		// legacy popups that live in the bottom panel area stay legacy for now: let them show
-		if (InItemStackPopup() || InKeyRingPopup()) return false;
-		if (gfInTalkPanel) return true;
 		return true;
 	}
 
@@ -1336,6 +1697,7 @@ void TacticalHudUpdate()
 		SetRenderFlags(RENDER_FLAG_FULL);
 	}
 	g_hud.vm->Refresh();
+	g_hud.vm->Place(g_hud.doc, BarHeightPx());
 	UpdateDrag();
 	// an item held by the mouse rides on the native pointer, at the integer scale of the inventory slots
 	if (InventoryHand().item != NOTHING)
@@ -1365,10 +1727,7 @@ void TacticalHudUpdate()
 	// scales and letterboxes, so its top is a canvas point in output pixels (not the panel height times the UI scale)
 	if (Rml::Element* bar = g_hud.doc->GetElementById("tac.bar"))
 	{
-		int const panelH = gsCurInterfacePanel == SM_PANEL ? INV_INTERFACE_HEIGHT : TEAMPANEL_HEIGHT;
-		float const panelTop = CanvasToOutput(0, float(SCREEN_HEIGHT - panelH)).y;
-		float const legacy = std::ceil(float(Context()->GetDimensions().y) - panelTop);
-		float const want = std::max(legacy, std::round(156 * DpScale()));
+		float const want = BarHeightPx();
 		bar->SetProperty(Rml::PropertyId::Height, Rml::Property(want, Rml::Unit::PX));
 		// only as many cards as fit whole (a card is at least 236 dp wide); the rest wait for a wider view
 		if (Rml::Element* cards = g_hud.doc->GetElementById("tac.squad"))

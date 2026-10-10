@@ -55,12 +55,12 @@ shots.take("dialogue.png", "small")
 ja2.wait(9000)
 ja2.waitIdle()
 
--- The sector exit menu.
+-- The sector exit menu is native only (tactical_popups.lua covers it): with the legacy HUD nothing draws it, so it
+-- resolves to what it opened with and leaves no popup (and no modal state) behind.
 ja2.debug("exitmenu")
 ja2.wait(500)
-shots.take("exit_menu.png", "small")
-ja2.click{text = "Cancel", exact = true}
-ja2.waitIdle()
+ja2.expect(ja2.popup().kind == "none", "the legacy HUD leaves no exit menu open, got " .. ja2.popup().kind)
+ja2.expect(ja2.screen() == "GAME_SCREEN", "and the squad stays in the sector")
 
 -- The tactical placement GUI, anchored to the bottom of the screen (last: it needs a battle to end properly).
 ja2.debug("placement")

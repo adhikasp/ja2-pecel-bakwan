@@ -684,9 +684,10 @@ static void HandleModalTactical(void)
 	// Handle faces
 	HandleAutoFaces( );
 
+	// the sector exit menu is modal: it reads its own keys (Esc leaves it, Enter goes)
 	if ( gfInSectorExitMenu )
 	{
-		RenderSectorExitMenu( );
+		HandleSectorExitMenu( );
 	}
 	RenderButtons();
 

@@ -39,6 +39,7 @@
 #include "Soldier_Add.h"
 #include "Dialogue_Control.h"
 #include "Interface_Dialogue.h"
+#include "PopupAdapter.h"
 #include "OppList.h"
 #include "MessageBoxScreen.h"
 #include "GameLoop.h"
@@ -2318,6 +2319,14 @@ void GetKeyboardInput(UIEventKind* const puiNewEvent)
 			{
 				DeleteKeyRingPopup( );
 			}
+			else if( InItemStackPopup( ) )
+			{
+				StackClose();
+			}
+			else if( gfInItemPickupMenu )
+			{
+				PickupCancel();
+			}
 
 			if ( gCurrentUIMode == MENU_MODE )
 			{
@@ -2461,6 +2470,10 @@ static void HandleTalkingMenuKeys(InputAtom* const pInputEvent, UIEventKind* con
 		else if (pInputEvent->usParam == SDLK_BACKSPACE)
 		{
 			HandleTalkingMenuBackspace();
+		}
+		else if (pInputEvent->usParam >= SDLK_1 && pInputEvent->usParam <= SDLK_6)
+		{
+			TalkChoose(int(pInputEvent->usParam - SDLK_1));
 		}
 
 	}

@@ -49,6 +49,11 @@
 #include "Interface_Cursors.h"
 #include "Interface_Utils.h"
 #include "Interface_Items.h"
+#include "PopupAdapter.h"
+#include "PopupModels.h"
+#include "Keys.h"
+#include "Handle_Doors.h"
+#include "Structure_Wrap.h"
 #include "InventoryAdapter.h"
 #include "WordWrap.h"
 #include "Interface_Control.h"
@@ -3267,6 +3272,7 @@ static bool IsValidAmmoToReloadRobot(SOLDIERTYPE const& s, OBJECTTYPE const& amm
 }
 
 
+static INT16 DoorNear(INT32 gridno);
 // Hands the stack in the pointer to a team mate: the core's verdict (range, sight, both mercs' points) decides, then
 // the item is auto-placed in his pockets, both mercs pay and turn to each other. Used by a click on a merc in the
 // world and by a drop on his squad card (DropOnCard in InventoryAdapter.cc). FALSE when nothing was handed over.
@@ -3369,6 +3375,12 @@ BOOLEAN HandleItemPointerClick( UINT16 usMapPos )
 	{
 		EndUIMessage( );
 		return( FALSE );
+	}
+
+	// a key dropped on a door uses it (issue #321): the door must be next to the merc and the key must fit
+	if (GCM->getItem(gpItemPointer->usItem)->isKey() && DoorNear(usMapPos) != NOWHERE)
+	{
+		return UseHeldKeyOnDoor(usMapPos);
 	}
 
 	// Don't allow if our soldier is a # of things...
@@ -3726,6 +3738,32 @@ BOOLEAN InItemStackPopup( )
 }
 
 
+/** In tactical the native HUD draws the stack popup and the key ring, and the player's clicks arrive as calls
+ * (PopupAdapter.h); the map screen and the shopkeeper still use the regions below. */
+/** A key back on a merc's ring: the slot that holds the same key, else the first free one. False when the ring is full. */
+bool PutKeyOnRing(SOLDIERTYPE& s, OBJECTTYPE const& key)
+{
+	if (!s.pKeyRing) return false;
+	INT32 free = -1;
+	for (INT32 i = 0; i < NUMBER_KEYS_ON_KEYRING; ++i)
+	{
+		KEY_ON_RING const& k = s.pKeyRing[i];
+		if (k.isValid() && k.ubKeyID == key.ubKeyID) return AddKeysToSlot(s, INT8(i), key) == key.ubNumberOfObjects;
+		if (!k.isValid() && free < 0) free = i;
+	}
+	return free >= 0 && AddKeysToSlot(s, INT8(free), key) == key.ubNumberOfObjects;
+}
+
+static bool NativeTacticalPopup()
+{
+	return guiCurrentScreen == GAME_SCREEN && NativeUI::TacticalHudActive();
+}
+
+static bool gfStackRegions = false;   // the stack popup made its regions
+static bool gfKeyRingRegions = false; // the key ring made its regions
+static PopupModels::StackSplit gStackSplit;
+
+
 BOOLEAN InKeyRingPopup( )
 {
 	return( gfInKeyRingPopup );
@@ -3736,6 +3774,9 @@ static void ItemPopupFullRegionCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iRe
 static void ItemPopupFullRegionCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason);
 static void ItemPopupRegionCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason);
 static void ItemPopupRegionCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason);
+static void StackPrimary(UINT32 uiItemPos);
+static void StackSecondary(UINT32 uiItemPos);
+static void DeleteItemStackPopup(void);
 
 
 void InitItemStackPopup(SOLDIERTYPE* const pSoldier, UINT8 const ubPosition, INT16 const sInvX, INT16 const sInvY, INT16 const sInvWidth, INT16 const sInvHeight)
@@ -3822,23 +3863,28 @@ void InitItemStackPopup(SOLDIERTYPE* const pSoldier, UINT8 const ubPosition, INT
 	gsItemPopupX	= sCenX;
 	gsItemPopupY	= sCenY;
 
-	for ( cnt = 0; cnt < gubNumItemPopups; cnt++ )
+	bool const native = NativeTacticalPopup();
+	gfStackRegions = !native;
+	if (!native)
 	{
-		UINT32 row = cnt / MAX_STACK_POPUP_WIDTH;
-		UINT32 col = cnt % MAX_STACK_POPUP_WIDTH;
+		for ( cnt = 0; cnt < gubNumItemPopups; cnt++ )
+		{
+			UINT32 row = cnt / MAX_STACK_POPUP_WIDTH;
+			UINT32 col = cnt % MAX_STACK_POPUP_WIDTH;
+
+			// Build a mouse region here that is over any others.....
+			MOUSE_CALLBACK itemPopupRegionCallback = MouseCallbackPrimarySecondary(ItemPopupRegionCallbackPrimary, ItemPopupRegionCallbackSecondary, MSYS_NO_CALLBACK, true);
+			MSYS_DefineRegion(&gItemPopupRegions[cnt], sCenX + col * usPopupWidth, sCenY + row * usPopupHeight, sCenX + (col + 1) * usPopupWidth, sCenY + (row+1) * usPopupHeight, MSYS_PRIORITY_HIGHEST, MSYS_NO_CURSOR, MSYS_NO_CALLBACK, itemPopupRegionCallback);
+			MSYS_SetRegionUserData( &gItemPopupRegions[cnt], 0, cnt );
+
+			//OK, for each item, set dirty text if applicable!
+			gItemPopupRegions[cnt].SetFastHelpText(GCM->getItem(pSoldier->inv[ubPosition].usItem)->getName());
+		}
+
 
 		// Build a mouse region here that is over any others.....
-		MOUSE_CALLBACK itemPopupRegionCallback = MouseCallbackPrimarySecondary(ItemPopupRegionCallbackPrimary, ItemPopupRegionCallbackSecondary, MSYS_NO_CALLBACK, true);
-		MSYS_DefineRegion(&gItemPopupRegions[cnt], sCenX + col * usPopupWidth, sCenY + row * usPopupHeight, sCenX + (col + 1) * usPopupWidth, sCenY + (row+1) * usPopupHeight, MSYS_PRIORITY_HIGHEST, MSYS_NO_CURSOR, MSYS_NO_CALLBACK, itemPopupRegionCallback);
-		MSYS_SetRegionUserData( &gItemPopupRegions[cnt], 0, cnt );
-
-		//OK, for each item, set dirty text if applicable!
-		gItemPopupRegions[cnt].SetFastHelpText(GCM->getItem(pSoldier->inv[ubPosition].usItem)->getName());
+		MSYS_DefineRegion(&gItemPopupRegion, gsItemPopupInvX, gsItemPopupInvY, gsItemPopupInvX + gsItemPopupInvWidth, gsItemPopupInvY + gsItemPopupInvHeight, MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR, MSYS_NO_CALLBACK, MouseCallbackPrimarySecondary(ItemPopupFullRegionCallbackPrimary, ItemPopupFullRegionCallbackSecondary));
 	}
-
-
-	// Build a mouse region here that is over any others.....
-	MSYS_DefineRegion(&gItemPopupRegion, gsItemPopupInvX, gsItemPopupInvY, gsItemPopupInvX + gsItemPopupInvWidth, gsItemPopupInvY + gsItemPopupInvHeight, MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR, MSYS_NO_CALLBACK, MouseCallbackPrimarySecondary(ItemPopupFullRegionCallbackPrimary, ItemPopupFullRegionCallbackSecondary));
 
 
 	//Disable all faces
@@ -3848,6 +3894,17 @@ void InitItemStackPopup(SOLDIERTYPE* const pSoldier, UINT8 const ubPosition, INT
 	fInterfacePanelDirty = DIRTYLEVEL2;
 
 	gfInItemStackPopup = TRUE;
+	gStackSplit = PopupModels::StackSplit(gpItemPopupObject->ubNumberOfObjects);
+
+	if (native)
+	{
+		PopupEvent e;
+		e.kind = PopupKind::Stack;
+		e.action = "open";
+		e.id = ubPosition;
+		FinishPopup(e);
+		return;
+	}
 
 	if( guiCurrentItemDescriptionScreen != MAP_SCREEN )
 	{
@@ -3928,18 +3985,19 @@ static void DeleteItemStackPopup(void)
 
 	DeleteVideoObject(guiItemPopupBoxes);
 
-	MSYS_RemoveRegion( &gItemPopupRegion);
-
-
 	gfInItemStackPopup = FALSE;
+
+	fInterfacePanelDirty = DIRTYLEVEL2;
+
+	if (!gfStackRegions) return; // the native popup: nothing else was made
+
+	MSYS_RemoveRegion( &gItemPopupRegion);
 
 	for ( cnt = 0; cnt < gubNumItemPopups; cnt++ )
 	{
 		MSYS_RemoveRegion( &gItemPopupRegions[cnt]);
 	}
-
-
-	fInterfacePanelDirty = DIRTYLEVEL2;
+	gfStackRegions = false;
 
 	if( guiCurrentItemDescriptionScreen != MAP_SCREEN )
 	{
@@ -3987,23 +4045,28 @@ void InitKeyRingPopup(SOLDIERTYPE* const pSoldier, INT16 const sInvX, INT16 cons
 	UINT16      const  usPopupWidth  = pTrav.usWidth;
 	UINT16      const  usPopupHeight = pTrav.usHeight;
 
-	for (INT32 cnt = 0; cnt < NUMBER_KEYS_ON_KEYRING; cnt++)
+	bool const native = NativeTacticalPopup();
+	gfKeyRingRegions = !native;
+	if (!native)
 	{
+		for (INT32 cnt = 0; cnt < NUMBER_KEYS_ON_KEYRING; cnt++)
+		{
+			// Build a mouse region here that is over any others.....
+			MSYS_DefineRegion(&gKeyRingRegions[cnt],
+				gsKeyRingPopupInvX + (cnt % sKeyRingItemWidth      * usPopupWidth)  + sOffSetX, // top left
+				sInvY              + (cnt / sKeyRingItemWidth      * usPopupHeight) + sOffSetY, // top right
+				gsKeyRingPopupInvX + (cnt % sKeyRingItemWidth + 1) * usPopupWidth   + sOffSetX, // bottom left
+				sInvY              + (cnt / sKeyRingItemWidth + 1) * usPopupHeight  + sOffSetY, // bottom right
+				MSYS_PRIORITY_HIGHEST,
+				MSYS_NO_CURSOR, MSYS_NO_CALLBACK, KeyRingSlotInvClickCallback
+			);
+			MSYS_SetRegionUserData( &gKeyRingRegions[cnt], 0, cnt );
+		}
+
+
 		// Build a mouse region here that is over any others.....
-		MSYS_DefineRegion(&gKeyRingRegions[cnt],
-			gsKeyRingPopupInvX + (cnt % sKeyRingItemWidth      * usPopupWidth)  + sOffSetX, // top left
-			sInvY              + (cnt / sKeyRingItemWidth      * usPopupHeight) + sOffSetY, // top right
-			gsKeyRingPopupInvX + (cnt % sKeyRingItemWidth + 1) * usPopupWidth   + sOffSetX, // bottom left
-			sInvY              + (cnt / sKeyRingItemWidth + 1) * usPopupHeight  + sOffSetY, // bottom right
-			MSYS_PRIORITY_HIGHEST,
-			MSYS_NO_CURSOR, MSYS_NO_CALLBACK, KeyRingSlotInvClickCallback
-		);
-		MSYS_SetRegionUserData( &gKeyRingRegions[cnt], 0, cnt );
+		MSYS_DefineRegion(&gItemPopupRegion, sInvX, sInvY, sInvX + sInvWidth, sInvY + sInvHeight, MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR, MSYS_NO_CALLBACK, MouseCallbackPrimarySecondary(ItemPopupFullRegionCallbackPrimary, ItemPopupFullRegionCallbackSecondary));
 	}
-
-
-	// Build a mouse region here that is over any others.....
-	MSYS_DefineRegion(&gItemPopupRegion, sInvX, sInvY, sInvX + sInvWidth, sInvY + sInvHeight, MSYS_PRIORITY_HIGH, MSYS_NO_CURSOR, MSYS_NO_CALLBACK, MouseCallbackPrimarySecondary(ItemPopupFullRegionCallbackPrimary, ItemPopupFullRegionCallbackSecondary));
 
 
 	//Disable all faces
@@ -4011,6 +4074,16 @@ void InitKeyRingPopup(SOLDIERTYPE* const pSoldier, INT16 const sInvX, INT16 cons
 
 
 	fInterfacePanelDirty = DIRTYLEVEL2;
+
+	if (native)
+	{
+		gfInKeyRingPopup = TRUE;
+		PopupEvent e;
+		e.kind = PopupKind::KeyRing;
+		e.action = "open";
+		FinishPopup(e);
+		return;
+	}
 
 	if( guiCurrentItemDescriptionScreen != MAP_SCREEN )
 	{
@@ -4101,16 +4174,19 @@ void DeleteKeyRingPopup(void)
 
 	DeleteVideoObject(guiItemPopupBoxes);
 
-	MSYS_RemoveRegion(&gItemPopupRegion);
-
 	gfInKeyRingPopup = FALSE;
+
+	fInterfacePanelDirty = DIRTYLEVEL2;
+
+	if (!gfKeyRingRegions) return; // the native key ring: nothing else was made
+
+	MSYS_RemoveRegion(&gItemPopupRegion);
 
 	for (INT32 i = 0; i < NUMBER_KEYS_ON_KEYRING; i++)
 	{
 		MSYS_RemoveRegion(&gKeyRingRegions[i]);
 	}
-
-	fInterfacePanelDirty = DIRTYLEVEL2;
+	gfKeyRingRegions = false;
 
 	if (guiCurrentItemDescriptionScreen != MAP_SCREEN)
 	{
@@ -4220,8 +4296,13 @@ static void ItemDescDoneButtonCallbackSecondary(GUI_BUTTON *btn, UINT32 reason)
 
 static void ItemPopupRegionCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 {
-	UINT32 uiItemPos = MSYS_GetRegionUserData( pRegion, 0 );
+	StackPrimary(MSYS_GetRegionUserData(pRegion, 0));
+}
 
+
+/** A click on box @a uiItemPos of the stack popup: put the hand's object there, or take that object. */
+static void StackPrimary(UINT32 const uiItemPos)
+{
 	//If one in our hand, place it
 	if ( gpItemPointer != NULL )
 	{
@@ -4300,8 +4381,13 @@ static void ItemPopupRegionCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason
 
 static void ItemPopupRegionCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
 {
-	UINT32 uiItemPos = MSYS_GetRegionUserData( pRegion, 0 );
+	StackSecondary(MSYS_GetRegionUserData(pRegion, 0));
+}
 
+
+/** The description of the object in box @a uiItemPos: the popup closes, the sheet opens. */
+static void StackSecondary(UINT32 const uiItemPos)
+{
 	DeleteItemStackPopup( );
 
 	if ( !InItemDescriptionBox( ) )
@@ -4350,89 +4436,48 @@ static void ItemPopupFullRegionCallbackSecondary(MOUSE_REGION* pRegion, UINT32 i
 	}
 }
 
-#define NUM_PICKUP_SLOTS				6
+// ---------------------------------------------------------------------------------------------------------------
+// The pick-up list: the items on the ground, six to a page, with the ones the player ticked. A PopupModels::PickupList
+// holds the paging and the ticks; the native HUD draws the rows (CurrentPickupPopup) and the clicks arrive as calls.
+// No button and no mouse region is made for it.
 
 struct ITEM_PICKUP_MENU_STRUCT
 {
-	ITEM_POOL *pItemPool;
-	INT16 sX;
-	INT16 sY;
-	INT16 sWidth;
-	INT16 sHeight;
-	INT8 bScrollPage;
-	INT32 ubScrollAnchor;
-	INT32 ubTotalItems;
-	INT32 bCurSelect;
-	UINT8 bNumSlotsPerPage;
-	SGPVObject* uiPanelVo;
-	BUTTON_PICS* iUpButtonImages;
-	BUTTON_PICS* iDownButtonImages;
-	BUTTON_PICS* iAllButtonImages;
-	BUTTON_PICS* iCancelButtonImages;
-	BUTTON_PICS* iOKButtonImages;
-	GUIButtonRef iUpButton;
-	GUIButtonRef iDownButton;
-	GUIButtonRef iAllButton;
-	GUIButtonRef iOKButton;
-	GUIButtonRef iCancelButton;
-	BOOLEAN fDirtyLevel;
-	BOOLEAN fHandled;
-	INT16 sGridNo;
-	INT8 bZLevel;
-	INT16 sButtomPanelStartY;
-	SOLDIERTYPE *pSoldier;
-	INT32 items[NUM_PICKUP_SLOTS];
-	MOUSE_REGION Regions[ NUM_PICKUP_SLOTS ];
-	MOUSE_REGION BackRegions;
-	MOUSE_REGION BackRegion;
-	BOOLEAN *pfSelectedArray;
-	OBJECTTYPE CompAmmoObject;
-	BOOLEAN fAllSelected;
+	ITEM_POOL*   pItemPool;
+	INT16        sX;
+	INT16        sY;
+	SOLDIERTYPE* pSoldier;
+	INT16        sGridNo;
+	INT8         bZLevel;
+	std::vector<INT32> pool;                          // the world items of the pool, in the order the list shows them
+	INT32        items[PopupModels::PICKUP_PAGE];     // the world items of the page's rows, -1 for none
+	PopupModels::PickupList list;
+	INT32        bCurSelect;
+	OBJECTTYPE   CompAmmoObject;
+	BOOLEAN      fHandled;
 };
-
-#define ITEMPICK_UP_X					55
-#define ITEMPICK_UP_Y					5
-#define ITEMPICK_DOWN_X				111
-#define ITEMPICK_DOWN_Y				5
-#define ITEMPICK_ALL_X					79
-#define ITEMPICK_ALL_Y					6
-#define ITEMPICK_OK_X					16
-#define ITEMPICK_OK_Y					6
-#define ITEMPICK_CANCEL_X				141
-#define ITEMPICK_CANCEL_Y				6
-
-#define ITEMPICK_START_X_OFFSET			10
-
-#define ITEMPICK_GRAPHIC_X				10
-#define ITEMPICK_GRAPHIC_Y				12
-#define ITEMPICK_GRAPHIC_YSPACE			26
-
-#define ITEMPICK_TEXT_X				56
-#define ITEMPICK_TEXT_Y				22
-#define ITEMPICK_TEXT_YSPACE				26
-#define ITEMPICK_TEXT_WIDTH				109
-
 
 static ITEM_PICKUP_MENU_STRUCT gItemPickupMenu;
 BOOLEAN gfInItemPickupMenu = FALSE;
 
 
-// STUFF FOR POPUP ITEM INFO BOX
-void SetItemPickupMenuDirty( BOOLEAN fDirtyLevel )
+/** The world items of the rows of the page now showing. */
+static void SetupPickupPage()
 {
-	gItemPickupMenu.fDirtyLevel = fDirtyLevel;
+	ITEM_PICKUP_MENU_STRUCT& menu = gItemPickupMenu;
+	for (INT32& i : menu.items) i = -1;
+	for (int row = 0; row < menu.list.Rows(); ++row) menu.items[row] = menu.pool[menu.list.First() + row];
 }
 
 
-static void CalculateItemPickupMenuDimensions(void);
-static void ItemPickMenuMouseClickCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-static void ItemPickMenuMouseMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-static void ItemPickupAll(GUI_BUTTON* btn, UINT32 reason);
-static void ItemPickupCancel(GUI_BUTTON* btn, UINT32 reason);
-static void ItemPickupOK(GUI_BUTTON* btn, UINT32 reason);
-static void ItemPickupScrollDown(GUI_BUTTON* btn, UINT32 reason);
-static void ItemPickupScrollUp(GUI_BUTTON* btn, UINT32 reason);
-static void SetupPickupPage(INT8 bPage);
+/** The ticks as the array SoldierGetItemFromWorld reads: one flag per item of the pool. */
+static std::unique_ptr<BOOLEAN[]> PickupSelection()
+{
+	std::vector<bool> const& sel = gItemPickupMenu.list.Selected();
+	std::unique_ptr<BOOLEAN[]> a(new BOOLEAN[sel.size() ? sel.size() : 1]{});
+	for (size_t i = 0; i < sel.size(); ++i) a[i] = sel[i];
+	return a;
+}
 
 
 void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, ITEM_POOL* const pItemPool, INT8 const bZLevel)
@@ -4443,6 +4488,26 @@ void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, 
 	ITEM_PICKUP_MENU_STRUCT& menu = gItemPickupMenu;
 	menu = ITEM_PICKUP_MENU_STRUCT{};
 	menu.pItemPool = pItemPool;
+
+	// the items that can be shown, in the pool's order
+	for (ITEM_POOL* i = pItemPool; i; i = i->pNext)
+	{
+		if (!ItemPoolOKForDisplay(i, bZLevel)) continue;
+		menu.pool.push_back(i->iItemIndex);
+	}
+	menu.list = PopupModels::PickupList(int(menu.pool.size()));
+	menu.pSoldier = pSoldier;
+	menu.sGridNo  = sGridNo;
+	menu.bZLevel  = bZLevel;
+
+	// nothing draws the list without the native HUD: the merc takes it all
+	if (!NativeUI::TacticalHudActive())
+	{
+		menu.list.ToggleAll();
+		SoldierGetItemFromWorld(pSoldier, ITEM_PICKUP_SELECTION, sGridNo, bZLevel, PickupSelection().get());
+		menu = ITEM_PICKUP_MENU_STRUCT{};
+		return;
+	}
 
 	InterruptTime();
 	PauseGame();
@@ -4455,124 +4520,18 @@ void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, 
 	// Change to INV panel if not there already...
 	SetNewPanel(pSoldier);
 
-	//Determine total #
-	INT32 cnt = 0;
-	for (ITEM_POOL* i = pItemPool; i; i = i->pNext)
+	// the menu opens by the pointer (the HUD keeps it inside the view)
 	{
-		if (!ItemPoolOKForDisplay(i, bZLevel)) continue;
-		++cnt;
+		// by the merc: the point where his name goes, in UI pixels
+		INT16 sx, sy;
+		GetSoldierAboveGuyPositions(pSoldier, &sx, &sy, FALSE);
+		menu.sX = sx + 40;
+		menu.sY = sy;
 	}
-	menu.ubTotalItems = (UINT8)cnt;
+	menu.bCurSelect = 0;
+	menu.fHandled   = FALSE;
 
-	// Determine # of slots per page
-	menu.bNumSlotsPerPage = menu.ubTotalItems < NUM_PICKUP_SLOTS ?
-		menu.ubTotalItems : NUM_PICKUP_SLOTS;
-
-	menu.uiPanelVo = AddVideoObjectFromFile(INTERFACEDIR "/itembox.sti");
-
-	menu.pfSelectedArray = new BOOLEAN[menu.ubTotalItems]{};
-
-	CalculateItemPickupMenuDimensions();
-
-	// First get mouse xy screen location
-	INT16 sX = gusMouseXPos;
-	INT16 sY = gusMouseYPos;
-
-	// CHECK FOR LEFT/RIGHT
-	if (sX + menu.sWidth > SCREEN_WIDTH)
-	{
-		sX = SCREEN_WIDTH - menu.sWidth - ITEMPICK_START_X_OFFSET;
-	}
-	else
-	{
-		sX = sX + ITEMPICK_START_X_OFFSET;
-	}
-
-	// Now check for top
-	// Center in the y
-	INT16 const sCenterYVal = menu.sHeight / 2;
-
-	sY -= sCenterYVal;
-	if (sY < gsVIEWPORT_WINDOW_START_Y)
-	{
-		sY = gsVIEWPORT_WINDOW_START_Y;
-	}
-
-	// Check for bottom
-	if (sY + menu.sHeight > gsVIEWPORT_WINDOW_END_Y)
-	{
-		sY = gsVIEWPORT_WINDOW_END_Y - menu.sHeight;
-	}
-
-	menu.sX           = sX;
-	menu.sY           = sY;
-	menu.bCurSelect   = 0;
-	menu.pSoldier     = pSoldier;
-	menu.fHandled     = FALSE;
-	menu.sGridNo      = sGridNo;
-	menu.bZLevel      = bZLevel;
-	menu.fAllSelected = FALSE;
-
-	//Load images for buttons
-	BUTTON_PICS* const pics  = LoadButtonImage(INTERFACEDIR "/itembox.sti", 5, 10);
-	menu.iUpButtonImages     = pics;
-	menu.iDownButtonImages   = UseLoadedButtonImage(pics, 7, 12);
-	menu.iAllButtonImages    = UseLoadedButtonImage(pics, 6, 11);
-	menu.iCancelButtonImages = UseLoadedButtonImage(pics, 8, 13);
-	menu.iOKButtonImages     = UseLoadedButtonImage(pics, 4,  9);
-
-	// Build a mouse region here that is over any others.....
-	MSYS_DefineRegion(&menu.BackRegion, INTERFACE_START_X + 532, INTERFACE_START_Y + 7, SCREEN_WIDTH, SCREEN_HEIGHT, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK, MSYS_NO_CALLBACK);
-
-	// Build a mouse region here that is over any others.....
-	MSYS_DefineRegion(&menu.BackRegions, sX, sY, menu.sX + menu.sWidth, sY + menu.sHeight, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK, MSYS_NO_CALLBACK);
-
-	INT16 const by = sY + menu.sButtomPanelStartY;
-
-	// Create buttons
-	if (menu.bNumSlotsPerPage == NUM_PICKUP_SLOTS && menu.ubTotalItems > NUM_PICKUP_SLOTS)
-	{
-		menu.iUpButton = QuickCreateButton(menu.iUpButtonImages, sX + ITEMPICK_UP_X, by + ITEMPICK_UP_Y, MSYS_PRIORITY_HIGHEST, ItemPickupScrollUp);
-		menu.iUpButton->SetFastHelpText(ItemPickupHelpPopup[1]);
-
-		menu.iDownButton = QuickCreateButton(menu.iDownButtonImages, sX + ITEMPICK_DOWN_X, by + ITEMPICK_DOWN_Y, MSYS_PRIORITY_HIGHEST, ItemPickupScrollDown);
-		menu.iDownButton->SetFastHelpText(ItemPickupHelpPopup[3]);
-	}
-
-	menu.iOKButton = QuickCreateButton(menu.iOKButtonImages, sX + ITEMPICK_OK_X, by + ITEMPICK_OK_Y, MSYS_PRIORITY_HIGHEST, ItemPickupOK);
-	menu.iOKButton->SetFastHelpText(ItemPickupHelpPopup[0]);
-
-	menu.iAllButton = QuickCreateButton(menu.iAllButtonImages, sX + ITEMPICK_ALL_X, by + ITEMPICK_ALL_Y, MSYS_PRIORITY_HIGHEST, ItemPickupAll);
-	menu.iAllButton->SetFastHelpText(ItemPickupHelpPopup[2]);
-
-	menu.iCancelButton = QuickCreateButton(menu.iCancelButtonImages, sX + ITEMPICK_CANCEL_X, by + ITEMPICK_CANCEL_Y, MSYS_PRIORITY_HIGHEST, ItemPickupCancel);
-	menu.iCancelButton->SetFastHelpText(ItemPickupHelpPopup[4]);
-
-	DisableButton(menu.iOKButton);
-
-	// the native HUD draws the menu itself; the buttons stay for its clicks only
-	if (NativeUI::TacticalHudActive())
-	{
-		if (menu.iUpButton)   HideButton(menu.iUpButton);
-		if (menu.iDownButton) HideButton(menu.iDownButton);
-		HideButton(menu.iOKButton);
-		HideButton(menu.iAllButton);
-		HideButton(menu.iCancelButton);
-	}
-
-	// Create regions
-	INT16 const sCenX = sX;
-	INT16       sCenY = sY + ITEMPICK_GRAPHIC_Y;
-	for (INT32 i = 0; i < menu.bNumSlotsPerPage; ++i)
-	{
-		MOUSE_REGION* const r = &menu.Regions[i];
-		MSYS_DefineRegion(r, sCenX, sCenY + 1, sCenX + menu.sWidth, sCenY + ITEMPICK_GRAPHIC_YSPACE, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, ItemPickMenuMouseMoveCallback, ItemPickMenuMouseClickCallback);
-		MSYS_SetRegionUserData(r, 0, i);
-
-		sCenY += ITEMPICK_GRAPHIC_YSPACE;
-	}
-
-	SetupPickupPage(0);
+	SetupPickupPage();
 
 	gfInItemPickupMenu = TRUE;
 	gfIgnoreScrolling  = TRUE;
@@ -4581,246 +4540,23 @@ void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, 
 	gSelectSMPanelToMerc = pSoldier;
 	ReEvaluateDisabledINVPanelButtons();
 	DisableTacticalTeamPanelButtons(TRUE);
-}
 
-
-static void SetupPickupPage(INT8 bPage)
-{
-	INT32 cnt, iStart, iEnd;
-	ITEM_POOL *pTempItemPool;
-	INT16 sValue;
-
-	// Reset page slots
-	FOR_EACH(INT32, i, gItemPickupMenu.items)
-	{
-		*i = -1;
-	}
-
-	// Get lower bound
-	iStart = bPage * NUM_PICKUP_SLOTS;
-	if ( iStart > gItemPickupMenu.ubTotalItems )
-	{
-		return;
-	}
-
-
-	iEnd   = iStart + NUM_PICKUP_SLOTS;
-	if ( iEnd >= gItemPickupMenu.ubTotalItems )
-	{
-		iEnd = gItemPickupMenu.ubTotalItems;
-	}
-
-	// Setup slots!
-	// These slots contain an inventory pool pointer for each slot...
-	pTempItemPool = gItemPickupMenu.pItemPool;
-
-	// ATE: Patch fix here for crash :(
-	// Clear help text!
-	for ( cnt = 0; cnt < NUM_PICKUP_SLOTS; cnt++ )
-	{
-		gItemPickupMenu.Regions[cnt].SetFastHelpText({});
-	}
-
-	for ( cnt = 0; cnt < iEnd; )
-	{
-		// Move to the closest one that can be displayed....
-		while( !ItemPoolOKForDisplay( pTempItemPool, gItemPickupMenu.bZLevel ) )
-		{
-			pTempItemPool = pTempItemPool->pNext;
-		}
-
-		if ( cnt >= iStart )
-		{
-			INT32 const item = pTempItemPool->iItemIndex;
-			gItemPickupMenu.items[cnt - iStart] = item;
-
-			OBJECTTYPE const& o = GetWorldItem(item).o;
-
-			sValue = o.bStatus[0];
-
-			// Adjust for ammo, other thingys..
-			ST::string pStr;
-			if (GCM->getItem(o.usItem)->isAmmo() || GCM->getItem(o.usItem)->isKey())
-			{
-				pStr.clear();
-			}
-			else
-			{
-				pStr = ST::format("{}%", sValue);
-			}
-
-			gItemPickupMenu.Regions[cnt - iStart].SetFastHelpText(pStr);
-		}
-
-		cnt++;
-
-		pTempItemPool = pTempItemPool->pNext;
-	}
-
-	gItemPickupMenu.bScrollPage = bPage;
-	gItemPickupMenu.ubScrollAnchor = (UINT8)iStart;
-
-	if ( gItemPickupMenu.bNumSlotsPerPage == NUM_PICKUP_SLOTS && gItemPickupMenu.ubTotalItems > NUM_PICKUP_SLOTS )
-	{
-		// Setup enabled/disabled buttons
-		EnableButton(gItemPickupMenu.iUpButton, bPage > 0);
-		// Setup enabled/disabled buttons
-		EnableButton(gItemPickupMenu.iDownButton, iEnd < gItemPickupMenu.ubTotalItems);
-	}
-	SetItemPickupMenuDirty( DIRTYLEVEL2 );
-
-}
-
-
-static void CalculateItemPickupMenuDimensions(void)
-{
-	// Build background
-	INT16 sY = 0;
-
-	for (INT32 cnt = 0; cnt < gItemPickupMenu.bNumSlotsPerPage; cnt++)
-	{
-		// Add height of object
-		UINT16 usSubRegion = (cnt == 0 ? 0 : 1);
-		ETRLEObject const& ETRLEProps = gItemPickupMenu.uiPanelVo->SubregionProperties(usSubRegion);
-		sY += ETRLEProps.usHeight;
-	}
-	gItemPickupMenu.sButtomPanelStartY = sY;
-
-	// Do end
-	ETRLEObject const& ETRLEProps = gItemPickupMenu.uiPanelVo->SubregionProperties(2);
-	sY += ETRLEProps.usHeight;
-
-	// Set height, width
-	gItemPickupMenu.sHeight = sY;
-	gItemPickupMenu.sWidth  = ETRLEProps.usWidth;
+	PopupEvent e;
+	e.kind = PopupKind::Pickup;
+	e.action = "open";
+	e.id = int(menu.pool.size());
+	FinishPopup(e);
 }
 
 
 void RenderItemPickupMenu()
 {
-	ST::string pStr;
-
-	if (NativeUI::TacticalHudActive()) return; // the native HUD draws the menu itself
-	if (!gfInItemPickupMenu) return;
-
-	ITEM_PICKUP_MENU_STRUCT& menu = gItemPickupMenu;
-	if (menu.fDirtyLevel != DIRTYLEVEL2) return;
-
-	MarkButtonsDirty();
-
-	// Build background
-	INT16 sX = menu.sX;
-	INT16 sY = menu.sY;
-
-	for (INT32 cnt = 0; cnt < menu.bNumSlotsPerPage; ++cnt)
-	{
-		UINT16 const usSubRegion = (cnt == 0 ? 0 : 1);
-
-		BltVideoObject(FRAME_BUFFER, menu.uiPanelVo, usSubRegion, sX, sY);
-
-		// Add height of object
-		ETRLEObject const& ETRLEProps = menu.uiPanelVo->SubregionProperties(usSubRegion);
-		sY += ETRLEProps.usHeight;
-	}
-
-	// Do end
-	UINT16 const gfx =
-		menu.bNumSlotsPerPage == NUM_PICKUP_SLOTS &&
-		menu.ubTotalItems     >  NUM_PICKUP_SLOTS ?
-			2 : 3;
-	BltVideoObject(FRAME_BUFFER, menu.uiPanelVo, gfx, sX, sY);
-
-	// Render items....
-	sX = menu.sX + ITEMPICK_GRAPHIC_X;
-	sY = menu.sY + ITEMPICK_GRAPHIC_Y;
-
-	SetFont(ITEMDESC_FONT);
-	SetFontBackground(FONT_MCOLOR_BLACK);
-	SetFontShadow(ITEMDESC_FONTSHADOW2);
-	SetFontDestBuffer(FRAME_BUFFER);
-
-	{
-		SGPVSurface::Lock l(FRAME_BUFFER);
-		UINT16* const pDestBuf         = l.Buffer<UINT16>();
-		UINT32  const uiDestPitchBYTES = l.Pitch();
-
-		UINT16 const outline_col = Get16BPPColor(FROMRGB(255, 255, 0));
-		for (INT32 cnt = 0; cnt < menu.bNumSlotsPerPage; ++cnt)
-		{
-			INT32 const world_item = menu.items[cnt];
-			if (world_item == -1) continue;
-
-			// Get item to render
-			OBJECTTYPE const& o    = GetWorldItem(world_item).o;
-			const ItemModel * item = GCM->getItem(o.usItem);
-
-			UINT16              const usItemTileIndex = GetTileGraphicForItem(item);
-			TILE_ELEMENT const* const te              = &gTileDatabase[usItemTileIndex];
-
-			// ATE: Adjust to basic shade.....
-			te->hTileSurface->CurrentShade(4);
-
-			UINT16 const outline = menu.pfSelectedArray[cnt + menu.ubScrollAnchor] ? outline_col : SGP_TRANSPARENT;
-			Blt8BPPDataTo16BPPBufferOutline(pDestBuf, uiDestPitchBYTES, te->hTileSurface, sX, sY, te->usRegionIndex, outline);
-
-			if (o.ubNumberOfObjects > 1)
-			{
-				SetFontAttributes(ITEM_FONT, FONT_GRAY4);
-				MPrint(sX - 4, sY + 14, o.ubNumberOfObjects, HRightVCenterAlign(42, 1));
-				SetFont(ITEMDESC_FONT);
-			}
-
-			if (ItemHasAttachments(o))
-			{
-				// Render attachment symbols
-				SetFontForeground(GetAttachmentHintColor(&o));
-				SetFontShadow(DEFAULT_SHADOW);
-				ST::string AttachMarker = "*";
-				UINT16         const uiStringLength = StringPixLength(AttachMarker, ITEM_FONT);
-				INT16          const sNewX          = sX + 43 - uiStringLength - 4;
-				INT16          const sNewY          = sY + 2;
-				MPrint(sNewX, sNewY, AttachMarker);
-			}
-
-			if (menu.bCurSelect == cnt + menu.ubScrollAnchor)
-			{
-				SetFontForeground(FONT_WHITE);
-				SetFontShadow(DEFAULT_SHADOW);
-			}
-			else
-			{
-				SetFontForeground(FONT_BLACK);
-				SetFontShadow(ITEMDESC_FONTSHADOW2);
-			}
-
-			// Render name
-			if (item->getItemClass() == IC_MONEY)
-			{
-				ST::string pStr2 = SPrintMoney(o.uiMoneyAmount);
-				pStr = ST::format("{} ({})", GCM->getItem(o.usItem)->getName(), pStr2);
-			}
-			else
-			{
-				pStr = GCM->getItem(o.usItem)->getShortName();
-			}
-			INT16 const x = ITEMPICK_TEXT_X + menu.sX;
-			INT16 const y = ITEMPICK_TEXT_Y + menu.sY + ITEMPICK_TEXT_YSPACE * cnt;
-			MPrint(x, y, pStr, HCenterVCenterAlign(ITEMPICK_TEXT_WIDTH, 1));
-
-			sY += ITEMPICK_GRAPHIC_YSPACE;
-		}
-	}
-
-	SetFontShadow(DEFAULT_SHADOW);
-	InvalidateRegion(menu.sX, menu.sY, menu.sX + menu.sWidth, menu.sY + menu.sHeight);
-	menu.fDirtyLevel = 0;
+	// the native HUD draws the list itself
 }
 
 
 void RemoveItemPickupMenu( )
 {
-	INT32 cnt;
-
 	if ( gfInItemPickupMenu )
 	{
 		gfSMDisableForItems = FALSE;
@@ -4835,39 +4571,6 @@ void RemoveItemPickupMenu( )
 		// Unfreese guy!
 		gItemPickupMenu.pSoldier->fPauseAllAnimation = FALSE;
 
-		DeleteVideoObject(gItemPickupMenu.uiPanelVo);
-
-		// Remove buttons
-		if ( gItemPickupMenu.bNumSlotsPerPage == NUM_PICKUP_SLOTS && gItemPickupMenu.ubTotalItems > NUM_PICKUP_SLOTS )
-		{
-			RemoveButton( gItemPickupMenu.iUpButton );
-			RemoveButton( gItemPickupMenu.iDownButton );
-		}
-		RemoveButton( gItemPickupMenu.iAllButton );
-		RemoveButton( gItemPickupMenu.iOKButton );
-		RemoveButton( gItemPickupMenu.iCancelButton );
-
-		// Remove button images
-		UnloadButtonImage( gItemPickupMenu.iUpButtonImages );
-		UnloadButtonImage( gItemPickupMenu.iDownButtonImages );
-		UnloadButtonImage( gItemPickupMenu.iAllButtonImages );
-		UnloadButtonImage( gItemPickupMenu.iCancelButtonImages );
-		UnloadButtonImage( gItemPickupMenu.iOKButtonImages );
-
-		MSYS_RemoveRegion( &(gItemPickupMenu.BackRegions ) );
-		MSYS_RemoveRegion( &(gItemPickupMenu.BackRegion ) );
-
-		// Remove regions
-		for ( cnt = 0; cnt < gItemPickupMenu.bNumSlotsPerPage; cnt++ )
-		{
-			MSYS_RemoveRegion( &(gItemPickupMenu.Regions[cnt]));
-		}
-
-		// Free selection list...
-		delete[] gItemPickupMenu.pfSelectedArray;
-		gItemPickupMenu.pfSelectedArray = NULL;
-
-
 		// Set cursor back to normal mode...
 		guiPendingOverrideEvent = A_CHANGE_TO_MOVE;
 
@@ -4876,7 +4579,6 @@ void RemoveItemPickupMenu( )
 
 		gfInItemPickupMenu = FALSE;
 
-		//gfSMDisableForItems = FALSE;
 		EnableSMPanelButtons( TRUE , TRUE );
 		gfSMDisableForItems = FALSE;
 
@@ -4886,148 +4588,9 @@ void RemoveItemPickupMenu( )
 		gfIgnoreScrolling = FALSE;
 		DisableTacticalTeamPanelButtons( FALSE );
 		gSelectSMPanelToMerc = gpSMCurrentMerc;
-	}
-}
 
-
-static void ItemPickupScrollUp(GUI_BUTTON* btn, UINT32 reason)
-{
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		SetupPickupPage( (UINT8)( gItemPickupMenu.bScrollPage - 1 ) );
-	}
-}
-
-
-static void ItemPickupScrollDown(GUI_BUTTON* btn, UINT32 reason)
-{
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		SetupPickupPage( (UINT8)( gItemPickupMenu.bScrollPage + 1 ) );
-	}
-}
-
-
-static void ItemPickupAll(GUI_BUTTON* btn, UINT32 reason)
-{
-	INT32 cnt;
-
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		gItemPickupMenu.fAllSelected = !gItemPickupMenu.fAllSelected;
-
-
-		// OK, pickup item....
-		//gItemPickupMenu.fHandled = TRUE;
-		// Tell our soldier to pickup this item!
-		//SoldierGetItemFromWorld( gItemPickupMenu.pSoldier, ITEM_PICKUP_ACTION_ALL, gItemPickupMenu.sGridNo, gItemPickupMenu.bZLevel, NULL );
-		for ( cnt = 0; cnt < gItemPickupMenu.ubTotalItems; cnt++ )
-		{
-			gItemPickupMenu.pfSelectedArray[ cnt ] = gItemPickupMenu.fAllSelected;
-		}
-
-		EnableButton(gItemPickupMenu.iOKButton, gItemPickupMenu.fAllSelected);
-	}
-}
-
-
-static void ItemPickupOK(GUI_BUTTON* btn, UINT32 reason)
-{
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		// OK, pickup item....
-		gItemPickupMenu.fHandled = TRUE;
-
-		// Tell our soldier to pickup this item!
-		SoldierGetItemFromWorld( gItemPickupMenu.pSoldier, ITEM_PICKUP_SELECTION, gItemPickupMenu.sGridNo, gItemPickupMenu.bZLevel, gItemPickupMenu.pfSelectedArray );
-	}
-}
-
-
-static void ItemPickupCancel(GUI_BUTTON* btn, UINT32 reason)
-{
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		// OK, pickup item....
-		gItemPickupMenu.fHandled = TRUE;
-	}
-}
-
-
-static void ItemPickMenuMouseMoveCallback(MOUSE_REGION* const pRegion, UINT32 const iReason)
-{
-	static BOOLEAN bChecked = FALSE;
-
-	if (iReason & MSYS_CALLBACK_REASON_MOVE)
-	{
-		UINT32 const uiItemPos = MSYS_GetRegionUserData(pRegion, 0);
-		INT32  const bPos      = uiItemPos + gItemPickupMenu.ubScrollAnchor;
-		if (bPos >= gItemPickupMenu.ubTotalItems) return;
-
-		gItemPickupMenu.bCurSelect = bPos;
-
-		if (bChecked) return;
-
-		// Show compatible ammo
-		INT32      const  item = gItemPickupMenu.items[uiItemPos];
-		OBJECTTYPE const& o    = GetWorldItem(item).o;
-
-		gItemPickupMenu.CompAmmoObject = o;
-
-		HandleAnyMercInSquadHasCompatibleStuff(0); // Turn off first
-		InternalHandleCompatibleAmmoUI(gpSMCurrentMerc, &gItemPickupMenu.CompAmmoObject, TRUE);
-		HandleAnyMercInSquadHasCompatibleStuff(&o);
-
-		SetItemPickupMenuDirty(DIRTYLEVEL2);
-
-		bChecked = TRUE;
-	}
-	else if (iReason & MSYS_CALLBACK_REASON_LOST_MOUSE)
-	{
-		gItemPickupMenu.bCurSelect = 255;
-
-		InternalHandleCompatibleAmmoUI(gpSMCurrentMerc, &gItemPickupMenu.CompAmmoObject, FALSE);
-		HandleAnyMercInSquadHasCompatibleStuff(NULL);
-
-		SetItemPickupMenuDirty(DIRTYLEVEL2);
-
-		bChecked = FALSE;
-	}
-}
-
-
-static void ItemPickMenuMouseClickCallback(MOUSE_REGION* const pRegion, UINT32 const iReason)
-{
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP)
-	{
-		INT32 const item_pos = MSYS_GetRegionUserData(pRegion, 0) + gItemPickupMenu.ubScrollAnchor;
-		if (item_pos >= gItemPickupMenu.ubTotalItems) return;
-
-		BOOLEAN& selected = gItemPickupMenu.pfSelectedArray[item_pos];
-		selected = !selected;
-
-		// Loop through all and set /unset OK
-		bool enable = false;
-		for (UINT8 i = 0; i < gItemPickupMenu.ubTotalItems; ++i)
-		{
-			if (!gItemPickupMenu.pfSelectedArray[i]) continue;
-			enable = true;
-			break;
-		}
-		EnableButton(gItemPickupMenu.iOKButton, enable);
-	}
-	else if (iReason & MSYS_CALLBACK_REASON_WHEEL_UP)
-	{
-		INT8 const page = gItemPickupMenu.bScrollPage;
-		if (page > 0) SetupPickupPage(page - 1);
-	}
-	else if (iReason & MSYS_CALLBACK_REASON_WHEEL_DOWN)
-	{
-		INT8 const page = gItemPickupMenu.bScrollPage;
-		if ((page + 1) * NUM_PICKUP_SLOTS < gItemPickupMenu.ubTotalItems)
-		{
-			SetupPickupPage(page + 1);
-		}
+		gItemPickupMenu.pool.clear();
+		gItemPickupMenu.list = PopupModels::PickupList();
 	}
 }
 
@@ -5261,7 +4824,16 @@ void CancelItemPointer( )
 	// ATE: If we have an item pointer end it!
 	if ( gpItemPointer != NULL )
 	{
-		if ( gbItemPointerSrcSlot != NO_SLOT )
+		if (GCM->getItem(gpItemPointer->usItem)->isKey())
+		{
+			// a key lives on the key ring: its source slot was a place on the ring, not a pocket
+			if (!PutKeyOnRing(*gpItemPointerSoldier, *gpItemPointer))
+			{
+				AddItemToPool(gpItemPointerSoldier->sGridNo, gpItemPointer, VISIBLE, gpItemPointerSoldier->bLevel, 0 , -1);
+			}
+			*gpItemPointer = OBJECTTYPE{};
+		}
+		else if ( gbItemPointerSrcSlot != NO_SLOT )
 		{
 			// Place it back in our hands!
 			PlaceObject( gpItemPointerSoldier, gbItemPointerSrcSlot, gpItemPointer );
@@ -5512,16 +5084,6 @@ void ItemStackNativeClose()
 // The native tactical HUD reaches the inventory through the core's verdicts (InventorySlotClick in
 // Interface_Panels.cc, the sheet's actions here); no hidden legacy region or button is clicked.
 
-static void ClickRegion(MOUSE_REGION& r, bool const right)
-{
-	for (UINT32 const reason : { right ? MSYS_CALLBACK_REASON_RBUTTON_DWN : MSYS_CALLBACK_REASON_LBUTTON_DWN,
-		right ? MSYS_CALLBACK_REASON_RBUTTON_UP : MSYS_CALLBACK_REASON_LBUTTON_UP })
-	{
-		if (!(r.uiFlags & MSYS_REGION_ENABLED) || !r.ButtonCallback) return;
-		r.ButtonCallback(&r, reason);
-	}
-}
-
 void InventoryAttachClick(int const i, bool const right)
 {
 	if (!gfInItemDescBox || i < 0 || i >= MAX_ATTACHMENTS) return;
@@ -5551,36 +5113,42 @@ InventoryMoneySplit InventoryMoneyState()
 	return { gRemoveMoney.uiTotalAmount, gRemoveMoney.uiMoneyRemaining, gRemoveMoney.uiMoneyRemoving };
 }
 
-// The pick-up menu: the native HUD draws the rows above and reaches the same regions and buttons.
-NativePickupView NativeItemPickupView()
+// ---------------------------------------------------------------------------------------------------------------
+// The pick-up list, the stack popup and the key ring as the native tactical HUD uses them (PopupAdapter.h): what they
+// show, as values, and the choices that come back. Each choice is a call into the same legacy action the regions
+// made, so the rules are one set.
+
+PickupPopup CurrentPickupPopup()
 {
-	NativePickupView v;
+	PickupPopup v;
 	if (!gfInItemPickupMenu) return v;
 	ITEM_PICKUP_MENU_STRUCT const& menu = gItemPickupMenu;
+	PopupModels::PickupList const& list = menu.list;
 	v.open = true;
 	v.x = menu.sX;
 	v.y = menu.sY;
 	v.who = menu.pSoldier ? menu.pSoldier->name : ST::string();
-	v.total = menu.ubTotalItems;
-	v.page = menu.bScrollPage;
-	v.pages = (INT16)((menu.ubTotalItems + NUM_PICKUP_SLOTS - 1) / NUM_PICKUP_SLOTS);
-	v.canUp = menu.bScrollPage > 0;
-	v.canDown = (INT32)(menu.bScrollPage + 1) * NUM_PICKUP_SLOTS < menu.ubTotalItems;
-	v.okEnabled = menu.iOKButton && menu.iOKButton->Enabled();
-	v.allSelected = menu.fAllSelected;
-	for (INT32 i = 0; i < menu.bNumSlotsPerPage; ++i)
+	v.total = list.Total();
+	v.page = list.Page();
+	v.pages = list.Pages();
+	v.selected = list.Count();
+	v.canUp = list.CanUp();
+	v.canDown = list.CanDown();
+	v.canTake = list.Any();
+	v.all = list.AllSelected();
+	for (int row = 0; row < list.Rows(); ++row)
 	{
-		NativePickupRow r;
-		r.slot = (INT16)i;
-		r.sel = menu.pfSelectedArray[i + menu.ubScrollAnchor] != 0;
-		INT32 const world_item = menu.items[i];
+		PickupRowView r;
+		r.row = row;
+		r.sel = list.RowSelected(row);
+		INT32 const world_item = menu.items[row];
 		if (world_item != -1)
 		{
 			r.empty = false;
 			OBJECTTYPE const& o = GetWorldItem(world_item).o;
 			ItemModel const* const item = GCM->getItem(o.usItem);
-			r.item = (INT16)o.usItem;
-			r.cond = (INT16)o.bStatus[0];
+			r.item = o.usItem;
+			r.cond = o.bStatus[0];
 			if (item->getItemClass() == IC_MONEY)
 			{
 				r.name = item->getName();
@@ -5589,7 +5157,7 @@ NativePickupView NativeItemPickupView()
 			else
 			{
 				r.name = item->getShortName();
-				if (o.ubNumberOfObjects > 1) r.count = ST::format("×{}", o.ubNumberOfObjects);
+				if (o.ubNumberOfObjects > 1) r.count = ST::format("\xC3\x97{}", o.ubNumberOfObjects);
 			}
 			if (!item->isAmmo() && !item->isKey()) r.title = ST::format("{}%", o.bStatus[0]);
 			r.att = ItemHasAttachments(o);
@@ -5599,46 +5167,504 @@ NativePickupView NativeItemPickupView()
 	return v;
 }
 
-void NativePickupClick(INT16 const slot)
+bool PickupToggle(int const row)
 {
-	if (!gfInItemPickupMenu || slot < 0 || slot >= gItemPickupMenu.bNumSlotsPerPage) return;
-	ClickRegion(gItemPickupMenu.Regions[slot], false);
+	if (!gfInItemPickupMenu) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Pickup;
+	e.action = "toggle";
+	e.id = row;
+	BeginPopup(e);
+	e.ok = gItemPickupMenu.list.Toggle(row);
+	if (!e.ok) e.why = "no_row";
+	return FinishPopup(e);
 }
 
-void NativePickupHover(INT16 const slot)
+bool PickupAll()
+{
+	if (!gfInItemPickupMenu) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Pickup;
+	e.action = "all";
+	BeginPopup(e);
+	gItemPickupMenu.list.ToggleAll();
+	return FinishPopup(e);
+}
+
+bool PickupScroll(int const dir)
+{
+	if (!gfInItemPickupMenu) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Pickup;
+	e.action = "scroll";
+	e.id = dir;
+	BeginPopup(e);
+	int const before = gItemPickupMenu.list.Page();
+	gItemPickupMenu.list.Scroll(dir);
+	e.ok = gItemPickupMenu.list.Page() != before;
+	if (e.ok) SetupPickupPage();
+	else e.why = "no_page";
+	return FinishPopup(e);
+}
+
+bool PickupTake()
+{
+	if (!gfInItemPickupMenu) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Pickup;
+	e.action = "take";
+	e.id = gItemPickupMenu.list.Count();
+	if (!gItemPickupMenu.list.Any())
+	{
+		e.ok = false;
+		e.why = "nothing_ticked";
+		return FinishPopup(e);
+	}
+	BeginPopup(e);
+	// OK, pickup item....
+	gItemPickupMenu.fHandled = TRUE;
+
+	// Tell our soldier to pickup this item!
+	SoldierGetItemFromWorld(gItemPickupMenu.pSoldier, ITEM_PICKUP_SELECTION, gItemPickupMenu.sGridNo, gItemPickupMenu.bZLevel,
+		PickupSelection().get());
+	return FinishPopup(e);
+}
+
+void PickupCancel()
 {
 	if (!gfInItemPickupMenu) return;
-	if (slot < 0 || slot >= gItemPickupMenu.bNumSlotsPerPage)
-		ItemPickMenuMouseMoveCallback(&gItemPickupMenu.Regions[0], MSYS_CALLBACK_REASON_LOST_MOUSE);
-	else
-		ItemPickMenuMouseMoveCallback(&gItemPickupMenu.Regions[slot], MSYS_CALLBACK_REASON_MOVE);
+	PopupEvent e;
+	e.kind = PopupKind::Pickup;
+	e.action = "cancel";
+	BeginPopup(e);
+	gItemPickupMenu.fHandled = TRUE;
+	FinishPopup(e);
 }
 
-void NativePickupAll()
-{
-	if (gfInItemPickupMenu && gItemPickupMenu.iAllButton)
-		ItemPickupAll(gItemPickupMenu.iAllButton, MSYS_CALLBACK_REASON_POINTER_UP);
-}
-
-void NativePickupOK()
-{
-	if (gfInItemPickupMenu && gItemPickupMenu.iOKButton && gItemPickupMenu.iOKButton->Enabled())
-		ItemPickupOK(gItemPickupMenu.iOKButton, MSYS_CALLBACK_REASON_POINTER_UP);
-}
-
-void NativePickupCancel()
-{
-	if (gfInItemPickupMenu && gItemPickupMenu.iCancelButton)
-		ItemPickupCancel(gItemPickupMenu.iCancelButton, MSYS_CALLBACK_REASON_POINTER_UP);
-}
-
-void NativePickupScroll(INT16 const dir)
+void PickupHover(int const row)
 {
 	if (!gfInItemPickupMenu) return;
-	INT32 const pages = (gItemPickupMenu.ubTotalItems + NUM_PICKUP_SLOTS - 1) / NUM_PICKUP_SLOTS;
-	INT32 const page  = gItemPickupMenu.bScrollPage + dir;
-	if (page < 0 || page >= pages) return;
-	SetupPickupPage((INT8)page);
+	static bool checked = false;
+	ITEM_PICKUP_MENU_STRUCT& menu = gItemPickupMenu;
+	if (row < 0 || row >= menu.list.Rows())
+	{
+		menu.bCurSelect = 255;
+		InternalHandleCompatibleAmmoUI(gpSMCurrentMerc, &menu.CompAmmoObject, FALSE);
+		HandleAnyMercInSquadHasCompatibleStuff(NULL);
+		checked = false;
+		return;
+	}
+	menu.bCurSelect = menu.list.First() + row;
+	if (checked) return;
+
+	// Show compatible ammo
+	OBJECTTYPE const& o = GetWorldItem(menu.items[row]).o;
+	menu.CompAmmoObject = o;
+	HandleAnyMercInSquadHasCompatibleStuff(0); // Turn off first
+	InternalHandleCompatibleAmmoUI(gpSMCurrentMerc, &menu.CompAmmoObject, TRUE);
+	HandleAnyMercInSquadHasCompatibleStuff(&o);
+	checked = true;
+}
+
+
+// ---- the stack popup ------------------------------------------------------------------------------------
+
+/** Which pocket the open stack popup was opened from, -1 if it is not one of the merc's. */
+static int StackPocket()
+{
+	if (!gpItemPopupSoldier || !gpItemPopupObject) return -1;
+	ptrdiff_t const p = gpItemPopupObject - gpItemPopupSoldier->inv;
+	return p >= 0 && p < NUM_INV_SLOTS ? int(p) : -1;
+}
+
+StackPopup CurrentStackPopup()
+{
+	StackPopup v;
+	if (!gfInItemStackPopup || !gpItemPopupObject || !NativeTacticalPopup()) return v;
+	OBJECTTYPE const& o = *gpItemPopupObject;
+	ItemModel const* const item = GCM->getItem(o.usItem);
+	v.open = true;
+	v.item = o.usItem;
+	v.name = item->getName();
+	v.where = gpItemPopupSoldier ? gpItemPopupSoldier->name : ST::string();
+	v.slot = StackPocket();
+	v.slots = gubNumItemPopups;
+	v.count = o.ubNumberOfObjects;
+	v.take = gStackSplit.Take();
+	v.holding = gpItemPointer != NULL;
+	v.canMore = gStackSplit.CanMore();
+	v.canLess = gStackSplit.CanLess();
+	for (int i = 0; i < v.slots; ++i)
+	{
+		StackBox b;
+		b.index = i;
+		b.filled = i < v.count;
+		if (b.filled)
+		{
+			if (item->isAmmo())
+			{
+				int const cap = std::max(1, int(item->asAmmo()->capacity));
+				b.status = o.ubShotsLeft[i];
+				b.text = ST::format("{}/{}", b.status, cap);
+				b.low = b.status * 4 < cap;
+			}
+			else
+			{
+				b.status = o.bStatus[i];
+				b.text = ST::format("{}%", b.status);
+				b.low = b.status < 25;
+			}
+		}
+		v.boxes.push_back(b);
+	}
+	return v;
+}
+
+bool StackClickBox(int const i)
+{
+	if (!gfInItemStackPopup || !gpItemPopupObject) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Stack;
+	e.id = i;
+	PopupModels::StackClick const plan = PopupModels::PlanStackClick(i, gpItemPopupObject->ubNumberOfObjects, gpItemPointer != NULL);
+	e.action = plan == PopupModels::StackClick::Put ? "put" : "take";
+	if (plan == PopupModels::StackClick::Nothing)
+	{
+		e.ok = false;
+		e.why = "empty";
+		return FinishPopup(e);
+	}
+	BeginPopup(e);
+	StackPrimary(UINT32(i));
+	if (gfInItemStackPopup && gpItemPopupObject) gStackSplit.SetCount(gpItemPopupObject->ubNumberOfObjects);
+	return FinishPopup(e);
+}
+
+/** Takes @a n objects, the last ones of the stack, into the hand as one stack. */
+static bool StackTake(int n)
+{
+	PopupEvent e;
+	e.kind = PopupKind::Stack;
+	e.action = "take";
+	e.id = n;
+	if (!gfInItemStackPopup || !gpItemPopupObject) return false;
+	if (gpItemPointer != NULL)
+	{
+		e.ok = false;
+		e.why = "hand_full";
+		return FinishPopup(e);
+	}
+	OBJECTTYPE& src = *gpItemPopupObject;
+	n = std::min(n, int(src.ubNumberOfObjects));
+	if (n <= 0)
+	{
+		e.ok = false;
+		e.why = "empty";
+		return FinishPopup(e);
+	}
+	BeginPopup(e);
+	OBJECTTYPE grab{};
+	for (int k = 0; k < n; ++k)
+	{
+		OBJECTTYPE one{};
+		GetObjFrom(&src, UINT8(src.ubNumberOfObjects - 1), &one);
+		if (k == 0) grab = one;
+		else StackObjs(&one, &grab, 1);
+	}
+	gItemPointer = grab;
+	SetItemPointer(&gItemPointer, gpItemPopupSoldier);
+	// re-evaluate repairs
+	gfReEvaluateEveryonesNothingToDo = TRUE;
+	UpdateItemHatches();
+	if (src.ubNumberOfObjects == 0 || src.usItem == NOTHING) DeleteItemStackPopup();
+	else gStackSplit.SetCount(src.ubNumberOfObjects);
+	return FinishPopup(e);
+}
+
+bool StackTakeSplit() { return StackTake(gStackSplit.Take()); }
+bool StackTakeAll() { return StackTake(gpItemPopupObject ? gpItemPopupObject->ubNumberOfObjects : 0); }
+
+bool StackSplitStep(int const dir)
+{
+	if (!gfInItemStackPopup) return false;
+	if (dir > 0) gStackSplit.More();
+	else gStackSplit.Less();
+	return true;
+}
+
+bool StackDescribe(int const i)
+{
+	if (!gfInItemStackPopup || !gpItemPopupObject || i < 0 || i >= gpItemPopupObject->ubNumberOfObjects) return false;
+	PopupEvent e;
+	e.kind = PopupKind::Stack;
+	e.action = "describe";
+	e.id = i;
+	BeginPopup(e);
+	StackSecondary(UINT32(i));
+	return FinishPopup(e);
+}
+
+void StackClose()
+{
+	if (!gfInItemStackPopup) return;
+	PopupEvent e;
+	e.kind = PopupKind::Stack;
+	e.action = "close";
+	BeginPopup(e);
+	DeleteItemStackPopup();
+	fTeamPanelDirty = TRUE;
+	FinishPopup(e);
+}
+
+
+// ---- the key ring ---------------------------------------------------------------------------------------
+
+/** The door the merc faces (or stands beside), as the key ring's Use would work on it; nullptr when there is none. */
+/** A door on @a gridno or next to it (north or west of it); nothing for a tile whose neighbours are off the map. */
+static INT16 DoorNear(INT32 const gridno)
+{
+	if (gridno <= WORLD_COLS || gridno >= WORLD_MAX) return NOWHERE;
+	return FindDoorAtGridNoOrAdjacent(INT16(gridno));
+}
+
+static DOOR* DoorForKey(SOLDIERTYPE const& s)
+{
+	if (s.sGridNo == NOWHERE) return nullptr;
+	GridNo const front = NewGridNo(s.sGridNo, DirectionInc(s.bDirection));
+	INT16 d = front == NOWHERE ? INT16(NOWHERE) : DoorNear(front);
+	if (d == NOWHERE) d = DoorNear(s.sGridNo);
+	return d == NOWHERE ? nullptr : FindDoorInfoAtGridNo(d);
+}
+
+static PopupModels::KeyRingInput KeyRingInputOf(SOLDIERTYPE const& s, DOOR const* const door)
+{
+	PopupModels::KeyRingInput in;
+	if (s.pKeyRing)
+	{
+		for (INT32 i = 0; i < NUMBER_KEYS_ON_KEYRING; ++i)
+		{
+			KEY_ON_RING const& k = s.pKeyRing[i];
+			if (!k.isValid()) continue;
+			in.keys.push_back({ i, k.ubNumber, k.ubKeyID });
+		}
+	}
+	if (door)
+	{
+		in.doorInFront = true;
+		in.doorLockId = door->ubLockID;
+		// what the merc knows: a door he has not tried may be locked
+		in.doorLocked = door->bPerceivedLocked != DOOR_PERCEIVED_UNLOCKED && door->fLocked;
+	}
+	in.canPay = EnoughPoints(&s, AP_UNLOCK_DOOR, BP_UNLOCK_DOOR, false);
+	return in;
+}
+
+KeyRingPopup CurrentKeyRingPopup()
+{
+	KeyRingPopup v;
+	if (!gfInKeyRingPopup || !gpItemPopupSoldier || !NativeTacticalPopup()) return v;
+	SOLDIERTYPE const& s = *gpItemPopupSoldier;
+	DOOR const* const door = DoorForKey(s);
+	PopupModels::KeyRingInput const in = KeyRingInputOf(s, door);
+	v.open = true;
+	v.who = s.name;
+	v.holding = gpItemPointer != NULL && GCM->getItem(gpItemPointer->usItem)->isKey();
+	if (door)
+	{
+		v.doorLocked = in.doorLocked;
+		v.door = true;
+	}
+	for (PopupModels::KeyRowOut const& r : PopupModels::BuildKeyRing(in))
+	{
+		KeyView k;
+		k.slot = r.slot;
+		k.count = r.count;
+		k.keyId = r.keyId;
+		k.fits = r.fits;
+		k.canUse = r.canUse;
+		k.why = PopupModels::WhyKey(r.why);
+		ItemModel const* const item = GCM->getKeyItemForKeyId(LockTable[r.keyId].usKeyItem);
+		if (item)
+		{
+			k.item = item->getItemIndex();
+			k.name = item->getName();
+		}
+		KEY const& key = KeyTable[r.keyId];
+		k.sector = SGPSector(key.usSectorFound).AsShortString();
+		k.day = key.usDateFound;
+		v.keys.push_back(k);
+	}
+	return v;
+}
+
+bool KeyRingUse(int const slot)
+{
+	if (!gfInKeyRingPopup || !gpItemPopupSoldier) return false;
+	SOLDIERTYPE* const s = gpItemPopupSoldier;
+	PopupEvent e;
+	e.kind = PopupKind::KeyRing;
+	e.action = "use";
+	e.id = slot;
+
+	DOOR* const door = DoorForKey(*s);
+	PopupModels::KeyRingInput const in = KeyRingInputOf(*s, door);
+	KEY_ON_RING const* const k = slot >= 0 && slot < NUMBER_KEYS_ON_KEYRING && s->pKeyRing ? &s->pKeyRing[slot] : nullptr;
+	if (!k || !k->isValid())
+	{
+		e.ok = false;
+		e.why = "no_key";
+		return FinishPopup(e);
+	}
+	PopupModels::KeyRowOut const verdict = PopupModels::PlanKeyOnDoor({ slot, k->ubNumber, k->ubKeyID }, in);
+	if (!verdict.canUse)
+	{
+		e.ok = false;
+		e.why = PopupModels::WhyKey(verdict.why);
+		return FinishPopup(e);
+	}
+	BeginPopup(e);
+	DeleteKeyRingPopup();
+	fTeamPanelDirty = TRUE;
+	SetUIBusy(s);
+	InteractWithClosedDoor(s, HANDLE_DOOR_UNLOCK);
+	return FinishPopup(e);
+}
+
+bool KeyRingTake(int const slot)
+{
+	if (!gfInKeyRingPopup || !gpItemPopupSoldier) return false;
+	PopupEvent e;
+	e.kind = PopupKind::KeyRing;
+	e.action = "take";
+	e.id = slot;
+	if (gpItemPointer != NULL)
+	{
+		e.ok = false;
+		e.why = "hand_full";
+		return FinishPopup(e);
+	}
+	if (slot < 0 || slot >= NUMBER_KEYS_ON_KEYRING || !gpItemPopupSoldier->pKeyRing[slot].isValid())
+	{
+		e.ok = false;
+		e.why = "no_key";
+		return FinishPopup(e);
+	}
+	BeginPopup(e);
+	SelectSoldier(gpItemPopupSoldier, SELSOLDIER_NONE);
+	BeginKeyRingItemPointer(gpItemPopupSoldier, UINT8(slot));
+	// the key rides on the pointer: the ring closes so the player can hand it to a merc or drop it on a door
+	DeleteKeyRingPopup();
+	fTeamPanelDirty = TRUE;
+	e.ok = gpItemPointer != NULL;
+	if (!e.ok) e.why = "no_key";
+	return FinishPopup(e);
+}
+
+bool KeyRingPut()
+{
+	if (!gfInKeyRingPopup || !gpItemPopupSoldier) return false;
+	PopupEvent e;
+	e.kind = PopupKind::KeyRing;
+	e.action = "put";
+	if (!gpItemPointer || !GCM->getItem(gpItemPointer->usItem)->isKey())
+	{
+		e.ok = false;
+		e.why = "empty";
+		return FinishPopup(e);
+	}
+	BeginPopup(e);
+	if (!PutKeyOnRing(*gpItemPopupSoldier, *gpItemPointer))
+	{
+		e.ok = false;
+		e.why = "ring_full";
+		return FinishPopup(e);
+	}
+	*gpItemPointer = OBJECTTYPE{};
+	EndItemPointer();
+	return FinishPopup(e);
+}
+
+bool KeyRingDescribe(int const slot)
+{
+	if (!gfInKeyRingPopup || !gpItemPopupSoldier || slot < 0 || slot >= NUMBER_KEYS_ON_KEYRING) return false;
+	if (!gpItemPopupSoldier->pKeyRing[slot].isValid()) return false;
+	PopupEvent e;
+	e.kind = PopupKind::KeyRing;
+	e.action = "describe";
+	e.id = slot;
+	BeginPopup(e);
+	if (!InItemDescriptionBox())
+		InitKeyItemDescriptionBox(gpItemPopupSoldier, UINT8(slot), ITEMDESC_START_X, ITEMDESC_START_Y);
+	return FinishPopup(e);
+}
+
+void KeyRingClose()
+{
+	if (!gfInKeyRingPopup) return;
+	PopupEvent e;
+	e.kind = PopupKind::KeyRing;
+	e.action = "close";
+	BeginPopup(e);
+	DeleteKeyRingPopup();
+	fTeamPanelDirty = TRUE;
+	FinishPopup(e);
+}
+
+/** Why a key could not be used on a door, in words (the message line and the HUD's hint). */
+static char const* KeyOnDoorWords(std::string const& why)
+{
+	if (why == "no_door")   return "There is no door there";
+	if (why == "far")       return "Move next to the door first";
+	if (why == "unlocked")  return "The door is not locked";
+	if (why == "wrong_key") return "That key does not fit this door";
+	if (why == "ap")        return "Not enough action points";
+	return "The key cannot be used there";
+}
+
+static bool KeyOnDoorRefused(PopupEvent& e, char const* const why)
+{
+	e.ok = false;
+	e.why = why;
+	char const* const words = KeyOnDoorWords(e.why);
+	ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, ST::string(words));
+	InventoryOutcome o;
+	o.action = "refused";
+	o.why = words;
+	o.item = gpItemPointer ? gpItemPointer->usItem : 0;
+	RecordInventoryOutcome(o);
+	return FinishPopup(e);
+}
+
+bool UseHeldKeyOnDoor(int const gridno)
+{
+	PopupEvent e;
+	e.kind = PopupKind::KeyRing;
+	e.action = "use_held";
+	e.id = gridno;
+	if (!gpItemPointer || !GCM->getItem(gpItemPointer->usItem)->isKey()) return false;
+	SOLDIERTYPE* const s = GetSelectedMan();
+	if (!s) return false;
+
+	INT16 const base = DoorNear(gridno);
+	DOOR* const door = base == NOWHERE ? nullptr : FindDoorInfoAtGridNo(base);
+	if (!door) return KeyOnDoorRefused(e, "no_door");
+	if (PythSpacesAway(s->sGridNo, base) > 2) return KeyOnDoorRefused(e, "far");
+	PopupModels::KeyRingInput in;
+	in.doorInFront = true;
+	in.doorLockId = door->ubLockID;
+	in.doorLocked = door->fLocked != FALSE;
+	in.canPay = EnoughPoints(s, AP_UNLOCK_DOOR, BP_UNLOCK_DOOR, false);
+	PopupModels::KeyRowOut const v = PopupModels::PlanKeyOnDoor({ -1, gpItemPointer->ubNumberOfObjects, gpItemPointer->ubKeyID }, in);
+	if (!v.canUse) return KeyOnDoorRefused(e, PopupModels::WhyKey(v.why));
+	BeginPopup(e);
+	// the key goes back on the ring of the merc who turns it, and he faces the door
+	PutKeyOnRing(*s, *gpItemPointer);
+	*gpItemPointer = OBJECTTYPE{};
+	EndItemPointer();
+	EVENT_SetSoldierDesiredDirectionForward(s, GetDirectionFromGridNo(base, s));
+	SetUIBusy(s);
+	InteractWithClosedDoor(s, HANDLE_DOOR_UNLOCK);
+	return FinishPopup(e);
 }
 
 SOLDIERTYPE* NativeItemDescSoldier() { return gfInItemDescBox ? gpItemDescSoldier : nullptr; }

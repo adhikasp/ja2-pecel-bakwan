@@ -384,19 +384,15 @@ void RenderTopmostTacticalInterface()
 		return;
 	}
 
-	if (InItemStackPopup())
+	// the native HUD draws the stack popup, the key ring and the menus (PopupAdapter.h)
+	if (InItemStackPopup() && !NativeUI::TacticalHudActive())
 	{
 		RenderItemStackPopup(fInterfacePanelDirty == DIRTYLEVEL2);
 	}
 
-	if (InKeyRingPopup() && !InItemDescriptionBox())
+	if (InKeyRingPopup() && !InItemDescriptionBox() && !NativeUI::TacticalHudActive())
 	{
 		RenderKeyRingPopup(fInterfacePanelDirty == DIRTYLEVEL2);
-	}
-
-	if (gfInMovementMenu)
-	{
-		RenderMovementMenu();
 	}
 
 	// Setup system for video overlay (text and blitting) Sets clipping rects, etc
@@ -493,24 +489,6 @@ void RenderTopmostTacticalInterface()
 		}
 	}
 
-	switch (gCurrentUIMode)
-	{
-		case GETTINGITEM_MODE:
-			SetItemPickupMenuDirty(DIRTYLEVEL2);
-			RenderItemPickupMenu();
-			break;
-
-		case OPENDOOR_MENU_MODE:
-			RenderOpenDoorMenu();
-			break;
-		default:
-			break;
-	}
-
-	if (gfInTalkPanel) RenderTalkingMenu();
-
-	if (gfInSectorExitMenu) RenderSectorExitMenu();
-
 	if (fRenderRadarScreen)
 	{
 		RenderClock();
@@ -588,6 +566,7 @@ void EraseInterfaceMenus( BOOLEAN fIgnoreUIUnLock )
 	ShutDownQuoteBoxIfActive( );
 	PopDownMovementMenu( );
 	PopDownOpenDoorMenu( );
+	RemoveItemPickupMenu( );
 	DeleteTalkingMenu( );
 
 	// Cancel Rubberbanding every time a menu is erased/opened
