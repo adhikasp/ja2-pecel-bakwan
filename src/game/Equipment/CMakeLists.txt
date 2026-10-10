@@ -3,6 +3,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/AimModel.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/AttachmentRules.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/DamagePipeline.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/DragDrop.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/EquipmentCatalog.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/InventoryCore.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Lbe.cc
@@ -19,6 +20,7 @@ if (WITH_UNITTESTS)
         ${LOCAL_JA2_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/AimModel_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/DamagePipeline_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/DragDrop_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Equipment_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/InventoryCore_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LoadoutBuilder_unittest.cc

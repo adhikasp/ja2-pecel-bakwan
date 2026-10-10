@@ -109,6 +109,15 @@ namespace NativeUI
 	 * document (the marker, path and chip over the world, the pointer's shape). */
 	void RegisterTacticalCursor();
 	void TacticalCursorUpdate(Rml::ElementDocument* hud);
+	/** A chip the HUD asks for next to the pointer where the world's cursor is not shown (a held item over a pocket or
+	 * a squad card: what letting go would do). Set every frame by TacticalHud.cc; read by TacticalCursorUpdate. */
+	struct HudChip
+	{
+		bool shown = false;
+		std::string head, why, tone; // tone: "ok" | "warn" | "no"
+		std::vector<std::pair<std::string, std::string>> lines; // key, value
+	};
+	void SetHudChip(HudChip chip);
 	/** The native pointer is the tactical cursor: over the HUD, and wherever an item is held by the mouse. */
 	bool TacticalHudOwnsCursor();
 }
