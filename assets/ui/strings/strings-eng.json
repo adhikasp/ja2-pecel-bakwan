@@ -1,4 +1,7 @@
 {
+  "tac.ovl.more": "+{} more · click: the pick-up menu",
+  "tac.ovl.paused": "Game paused",
+  "tac.ovl.resume": "click or any key resumes",
   "tac.cur.burst_at": "Burst at {}",
   "tac.cur.k_range": "Range",
   "tac.drag.give": "Give to {}",

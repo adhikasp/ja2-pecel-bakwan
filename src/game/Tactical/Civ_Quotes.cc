@@ -25,6 +25,7 @@
 #include "Strategic_Mines.h"
 #include "Random.h"
 #include "UILayout.h"
+#include "NativeUI.h"
 
 #include "ContentManager.h"
 #include "GameInstance.h"
@@ -110,6 +111,8 @@ struct QUOTE_SYSTEM_STRUCT
 	UINT32 uiTimeOfCreation;
 	UINT32 uiDelayTime;
 	SOLDIERTYPE *pCiv;
+	bool native;        // the native overlay draws the bubble (no video overlay, no region)
+	ST::string text;    // what it says, for that overlay
 };
 
 
@@ -188,13 +191,17 @@ static void ShutDownQuoteBox(BOOLEAN fForce)
 	// Check for min time....
 	if ( ( GetJA2Clock( ) - gCivQuoteData.uiTimeOfCreation ) > 300 || fForce )
 	{
-		RemoveVideoOverlay(gCivQuoteData.video_overlay);
+		if (!gCivQuoteData.native)
+		{
+			RemoveVideoOverlay(gCivQuoteData.video_overlay);
 
-		// Remove mouse region...
-		MSYS_RemoveRegion( &(gCivQuoteData.MouseRegion) );
+			// Remove mouse region...
+			MSYS_RemoveRegion( &(gCivQuoteData.MouseRegion) );
 
-		RemoveMercPopupBox(gCivQuoteData.dialogue_box);
+			RemoveMercPopupBox(gCivQuoteData.dialogue_box);
+		}
 		gCivQuoteData.dialogue_box = 0;
+		gCivQuoteData.native       = false;
 		gCivQuoteData.bActive      = FALSE;
 
 		// do we need to do anything at the end of the civ quote?
@@ -334,6 +341,20 @@ void BeginCivQuote( SOLDIERTYPE *pCiv, UINT8 ubCivQuoteID, UINT8 ubEntryID, INT1
 	if ( ubCivQuoteID == CIV_QUOTE_HINT )
 	{
 		MapScreenMessage( FONT_MCOLOR_WHITE, MSG_DIALOG, ST::format("{}", gzCivQuote) );
+	}
+
+	// the native HUD says it in a bubble over the speaker's head (OverlayAdapter): no legacy box, no region
+	if (NativeUI::TacticalHudActive())
+	{
+		gCivQuoteData.native = true;
+		gCivQuoteData.text = gzCivQuote;
+		gCivQuoteData.video_overlay = NULL;
+		gCivQuoteData.dialogue_box = 0;
+		gCivQuoteData.bActive = TRUE;
+		gCivQuoteData.uiTimeOfCreation = GetJA2Clock();
+		gCivQuoteData.uiDelayTime = FindDelayForString(gzCivQuote) + 500;
+		gCivQuoteData.pCiv = pCiv;
+		return;
 	}
 
 	// Prepare text box
@@ -673,6 +694,15 @@ static UINT8 DetermineCivQuoteEntry(SOLDIERTYPE* pCiv, UINT8* pubCivHintToUse, B
 		return( CIV_QUOTE_KIDS_ALL_PURPOSE );
 	}
 
+}
+
+
+bool CivQuoteBubble(ST::string* const text, SOLDIERTYPE const** const civ)
+{
+	if (!gCivQuoteData.bActive || !gCivQuoteData.native) return false;
+	*text = gCivQuoteData.text;
+	*civ  = gCivQuoteData.pCiv;
+	return true;
 }
 
 

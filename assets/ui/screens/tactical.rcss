@@ -573,6 +573,23 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 
 /* the cursor over the world (TacticalCursor.cc): the layer draws the marker and the path itself, the chip is a box */
 .cur-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; }
+/* ------------------------------------------------------------------ world overlays (TacticalOverlays.cc) */
+.ovl-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; pointer-events: none; }
+.ovl-layer overlaylayer { display: block; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
+.ovl-pool { position: absolute; display: block; width: 250dp; box-sizing: border-box; padding: 4dp; background-color: #0D0905EE; border: var(--border) var(--c-line-2); border-top: 3dp var(--c-info); }
+.ovl-pool .r { display: flex; align-items: center; height: 30dp; padding: 0 var(--sp-1); }
+.ovl-pool .r .pc { display: flex; align-items: center; justify-content: center; width: 44dp; margin-right: var(--sp-2); }
+.ovl-pool .r .a { display: block; flex: 1 1 0; font-size: var(--fs-sm); color: var(--c-text-strong); white-space: nowrap; overflow: hidden; }
+.ovl-pool .r .q { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-text-dim); }
+.ovl-pool .more { display: block; height: 20dp; padding: 2dp var(--sp-1); font-size: var(--fs-2xs); color: var(--c-text-faint); }
+.ovl-say { position: absolute; display: block; width: 220dp; box-sizing: border-box; padding: var(--sp-2) var(--sp-3); background-color: #0D0905EE; border: var(--border) var(--c-line-2); border-bottom: 3dp var(--c-accent); font-size: var(--fs-sm); line-height: 18dp; color: var(--c-text-strong); }
+.ovl-paused { position: absolute; left: 0; right: 0; top: var(--sp-4); display: none; justify-content: center; pointer-events: none; }
+.ovl-paused.shown { display: flex; }
+.ovl-paused .pill { display: flex; align-items: center; height: 44dp; padding: 0 var(--sp-3); background-color: #1A1208F0; border: 2dp var(--c-warn); }
+.ovl-paused .pill .icon { margin-right: var(--sp-2); image-color: var(--c-warn); }
+.ovl-paused .pill .t { display: block; font-family: var(--font-display); font-weight: 700; letter-spacing: 2dp; font-size: var(--fs-md); text-transform: uppercase; color: var(--c-warn); }
+.ovl-paused .pill .m { display: block; margin-left: var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-dim); }
+
 .cur-layer cursorlayer { display: block; position: absolute; left: 0; top: 0; right: 0; bottom: 0; }
 .cchip { position: absolute; display: none; min-width: 150dp; padding: 6dp 10dp; box-sizing: border-box; background-color: #0D0905EE; border: 1dp #7A6136; border-left: 3dp #D8B25E; }
 .cchip.shown { display: block; }

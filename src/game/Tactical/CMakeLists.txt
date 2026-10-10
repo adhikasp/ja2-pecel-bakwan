@@ -11,6 +11,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Bullets.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Campaign.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/CursorAdapter.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/OverlayAdapter.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Civ_Quotes.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Dialogue_Control.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/DisplayCover.cc

@@ -38,6 +38,7 @@
 #include "Map_Screen_Interface.h"
 #include "Civ_Quotes.h"
 #include "UILayout.h"
+#include "OverlayAdapter.h"
 
 #include <string_theory/format>
 
@@ -395,104 +396,116 @@ void RenderTopmostTacticalInterface()
 		RenderKeyRingPopup(fInterfacePanelDirty == DIRTYLEVEL2);
 	}
 
-	// Setup system for video overlay (text and blitting) Sets clipping rects, etc
-	StartViewportOverlays();
-
-	RenderTopmostFlashingItems();
-	RenderTopmostMultiPurposeLocator();
-	RenderAccumulatedBurstLocations();
-
-	// the native HUD draws the names, bars and damage numbers over the mercs itself
+	// the native HUD draws the world overlays itself, from the frame the adapter builds (OverlayAdapter.h)
 	bool const nativeHud = NativeUI::TacticalHudActive();
-	FOR_EACH_MERC(i)
+	if (nativeHud) UpdateOverlayFrame();
+	else           ClearOverlayFrame();
+
+	if (!nativeHud)
 	{
-		if (nativeHud) break;
-		SOLDIERTYPE& s = **i;
-		DrawSelectedUIAboveGuy(s);
+		// Setup system for video overlay (text and blitting) Sets clipping rects, etc
+		StartViewportOverlays();
 
-		if (!s.fDisplayDamage)    continue;
-		if (s.sGridNo == NOWHERE) continue;
-		if (s.bVisible == -1)     continue;
+		RenderTopmostFlashingItems();
+		RenderTopmostMultiPurposeLocator();
+		RenderAccumulatedBurstLocations();
 
-		INT16 sMercScreenX;
-		INT16 sMercScreenY;
-		GetSoldierTRUEScreenPos(&s, &sMercScreenX, &sMercScreenY);
-		sMercScreenX = g_ui.worldToUi(sMercScreenX);
-		sMercScreenY = g_ui.worldToUi(sMercScreenY);
-
-		INT16 x = sMercScreenX + s.sDamageX;
-		INT16 y = sMercScreenY + s.sDamageY;
-		if (s.ubBodyType == QUEENMONSTER)
+		FOR_EACH_MERC(i)
 		{
-			x += 25;
-			y += 10;
-		}
-		else
-		{
-			x += 2 * 30 / 3;
-			y += -5;
+			SOLDIERTYPE& s = **i;
+			DrawSelectedUIAboveGuy(s);
 
-			if (y < gsVIEWPORT_WINDOW_START_Y)
+			if (!s.fDisplayDamage)    continue;
+			if (s.sGridNo == NOWHERE) continue;
+			if (s.bVisible == -1)     continue;
+
+			INT16 sMercScreenX;
+			INT16 sMercScreenY;
+			GetSoldierTRUEScreenPos(&s, &sMercScreenX, &sMercScreenY);
+			sMercScreenX = g_ui.worldToUi(sMercScreenX);
+			sMercScreenY = g_ui.worldToUi(sMercScreenY);
+
+			INT16 x = sMercScreenX + s.sDamageX;
+			INT16 y = sMercScreenY + s.sDamageY;
+			if (s.ubBodyType == QUEENMONSTER)
 			{
-				y = sMercScreenY - s.sBoundingBoxOffsetY;
+				x += 25;
+				y += 10;
 			}
+			else
+			{
+				x += 2 * 30 / 3;
+				y += -5;
+
+				if (y < gsVIEWPORT_WINDOW_START_Y)
+				{
+					y = sMercScreenY - s.sBoundingBoxOffsetY;
+				}
+			}
+
+			SetFontAttributes(TINYFONT1, FONT_MCOLOR_WHITE);
+			GDirtyPrint(x, y, ST::format("-{}", s.sDamage));
 		}
 
-		SetFontAttributes(TINYFONT1, FONT_MCOLOR_WHITE);
-		GDirtyPrint(x, y, ST::format("-{}", s.sDamage));
-	}
+		// FOR THE MOST PART, DISABLE INTERFACE STUFF WHEN IT'S ENEMY'S TURN
+		if (gTacticalStatus.ubCurrentTeam == OUR_TEAM)
+		{
+			RenderArrows();
+		}
 
-	// FOR THE MOST PART, DISABLE INTERFACE STUFF WHEN IT'S ENEMY'S TURN
-	if (gTacticalStatus.ubCurrentTeam == OUR_TEAM)
-	{
-		RenderArrows();
+		EndViewportOverlays();
+		RenderRubberBanding();
 	}
-
-	EndViewportOverlays();
-	RenderRubberBanding();
 
 	if (!gfInItemPickupMenu && !gpItemPointer)
 	{
 		HandleAnyMercInSquadHasCompatibleStuff(NULL);
 	}
 
-	// CHECK IF OUR CURSOR IS OVER AN INV POOL
-	GridNo       const usMapPos = guiCurrentCursorGridNo;
-	SOLDIERTYPE* const sel      = GetSelectedMan();
-	if (usMapPos != NOWHERE && gfUIOverItemPoolGridNo != NOWHERE && sel)
+	if (!nativeHud)
 	{
-		// Check if we are over an item pool
-		INT8             level     = sel->bLevel;
-		ITEM_POOL const* item_pool = GetItemPool(gfUIOverItemPoolGridNo, level);
-		if (!item_pool)
+		// CHECK IF OUR CURSOR IS OVER AN INV POOL
+		GridNo       const usMapPos = guiCurrentCursorGridNo;
+		SOLDIERTYPE* const sel      = GetSelectedMan();
+		if (usMapPos != NOWHERE && gfUIOverItemPoolGridNo != NOWHERE && sel)
 		{
-			// ATE: Allow to see list if a different level....
-			level     = (level == 0 ? 1 : 0);
-			item_pool = GetItemPool(gfUIOverItemPoolGridNo, level);
-		}
-
-		if (item_pool)
-		{
-			STRUCTURE* pStructure;
-			INT16      sIntTileGridNo;
-			INT16 const sActionGridNo =
-				ConditionalGetCurInteractiveTileGridNoAndStructure(&sIntTileGridNo, &pStructure, FALSE) ?
-					sIntTileGridNo : usMapPos;
-
-			INT8 const bZLevel = GetZLevelOfItemPoolGivenStructure(sActionGridNo, level, pStructure);
-			if (AnyItemsVisibleOnLevel(item_pool, bZLevel))
+			// Check if we are over an item pool
+			INT8             level     = sel->bLevel;
+			ITEM_POOL const* item_pool = GetItemPool(gfUIOverItemPoolGridNo, level);
+			if (!item_pool)
 			{
-				DrawItemPoolList(item_pool, bZLevel, gusMouseXPos, gusMouseYPos);
-				// ATE: If over items, remove locator....
-				RemoveFlashItemSlot(item_pool);
+				// ATE: Allow to see list if a different level....
+				level     = (level == 0 ? 1 : 0);
+				item_pool = GetItemPool(gfUIOverItemPoolGridNo, level);
+			}
+
+			if (item_pool)
+			{
+				STRUCTURE* pStructure;
+				INT16      sIntTileGridNo;
+				INT16 const sActionGridNo =
+					ConditionalGetCurInteractiveTileGridNoAndStructure(&sIntTileGridNo, &pStructure, FALSE) ?
+						sIntTileGridNo : usMapPos;
+
+				INT8 const bZLevel = GetZLevelOfItemPoolGivenStructure(sActionGridNo, level, pStructure);
+				if (AnyItemsVisibleOnLevel(item_pool, bZLevel))
+				{
+					DrawItemPoolList(item_pool, bZLevel, gusMouseXPos, gusMouseYPos);
+					// ATE: If over items, remove locator....
+					RemoveFlashItemSlot(item_pool);
+				}
 			}
 		}
 	}
 
 	if (fRenderRadarScreen)
 	{
-		RenderClock();
-		RenderTownIDString();
+		// the native sector card has the clock and the town; the native banner is the pause box
+		if (!nativeHud)
+		{
+			RenderClock();
+			RenderTownIDString();
+		}
 		CreateMouseRegionForPauseOfClock();
 	}
 	else

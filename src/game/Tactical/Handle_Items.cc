@@ -2259,6 +2259,37 @@ void RenderTopmostFlashingItems(void)
 }
 
 
+std::vector<FlashingItemView> FlashingItemsToShow()
+{
+	std::vector<FlashingItemView> out;
+	for (UINT32 cnt = 0; cnt < guiNumFlashItemSlots; ++cnt)
+	{
+		ITEM_POOL_LOCATOR const& l  = FlashItemSlots[cnt];
+		ITEM_POOL const* const   ip = l.pItemPool;
+		if (!ip) continue;
+		if (l.ubFlags & ITEM_LOCATOR_LOCKED) continue;
+		WORLDITEM const& wi = GetWorldItem(ip->iItemIndex);
+		out.push_back({ wi.sGridNo, INT8(wi.ubLevel), wi.bRenderZHeightAboveLevel, l.bRadioFrame, ip });
+	}
+	return out;
+}
+
+
+std::vector<ItemPoolListRow> ItemPoolListRows(ITEM_POOL const* const pool, INT8 const zLevel)
+{
+	std::vector<ItemPoolListRow> out;
+	for (ITEM_POOL const* i = pool; i; i = i->pNext)
+	{
+		if (!ItemPoolOKForDisplay(i, zLevel)) continue;
+		WORLDITEM const& wi = GetWorldItem(i->iItemIndex);
+		// the squad's cards light up for what in the list fits their gear
+		HandleAnyMercInSquadHasCompatibleStuff(&wi.o);
+		out.push_back({ wi.o.usItem, GCM->getItem(wi.o.usItem)->getShortName().to_std_string(), int(wi.o.ubNumberOfObjects) });
+	}
+	return out;
+}
+
+
 SOLDIERTYPE* VerifyGiveItem(SOLDIERTYPE* const pSoldier)
 {
 	INT16 sGridNo;

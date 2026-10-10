@@ -173,6 +173,22 @@ click attacks). The marker diamond replaces the snapping tile cursor, the path i
 solid for this turn's action points, dashed amber beyond; the footstep tile nodes are not drawn while the native HUD is
 up. The chance to hit is always worked out for the chip (`show_hit_chance` only gates the legacy cursor text).
 
+### World overlays (#322)
+
+`RenderTopmostTacticalInterface` used to draw the locators, the new-item markers, the burst impacts, the arrows, the
+rubber band, the item list under the cursor, the clock and the pause box into the canvas. While the native HUD is up
+none of that is drawn; the legacy timers and flags still decide *when* each exists.
+
+| Part | Where | What |
+|---|---|---|
+| Core | `NativeUI/OverlayModel.{h,cc}` | ring phases, `ArrowsFor` (the `ARROWS_*` flags to chevrons), `NormalizeBand`/`BandGlow`, `BuildPool` (at most 8 rows and "+N more"), `PlaceList` (right of the anchor, else left, clamped). No globals; unit-tested (`OverlayModel_unittest.cc`). |
+| Adapter | `Tactical/OverlayAdapter.{h,cc}` | reads the flash slots, the multi-purpose and merc locators (`UpdateMercLocator` is the timer, moved out of the legacy draw), the burst spread, the arrows, `gRubberBandRect`, the pool under the cursor, the pause flag and the civilian's quote (`CivQuoteBubble`) into a `Frame` |
+| View | `NativeUI/TacticalOverlays.cc` | `<overlaylayer>`: rings, impact crosses, chevrons and the band as geometry; the item lists and the civilian bubble as HUD markup; the pause banner. World points go through `WorldToOutput`. |
+| Lua | `ja2.overlays()` | `{paused, locators, bursts, arrows, band, pools, speech}`; scenario aids `ja2.debug("flashitem" / "arrows" / "burst" / "civquote")` |
+
+The sector card is the clock and the town; the pause box is the banner at the top ("click or any key resumes"). A
+civilian's line is a bubble over his head and ends on its own timer (the legacy box ended on a click on it too).
+
 ### Drag and drop (#320)
 
 A press on a full pocket that moves more than `DRAG_THRESHOLD_DP` (6 dp) lifts the item into the hand (the same pick-up

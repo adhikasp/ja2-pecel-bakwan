@@ -24,7 +24,8 @@ local function scene(name, lit)
 			r.gpuRan and r.gpuDriver or r.gpuError, r.gpuVsPipelineDifferent, r.gpuVsPipelineQuantizedDifferent,
 			r.legacyMs, r.recordMs, r.pipelineMs, r.gpuMs))
 	ja2.log("  ops: " .. table.concat(ops, " "))
-	ja2.expect(r.instances > 1000, name .. ": the view has instances")
+	-- about one instance per 170 px of the view (the zoomed scene is a smaller view)
+	ja2.expect(r.instances > r.width * r.height / 200, name .. ": the view has instances (" .. r.instances .. ")")
 	if lit then
 		-- A scene where the game's lights may be on: the pipeline applies the dynamic lighting (Phase 8), so it
 		-- may differ from the software renderer by that lighting; the GPU must apply the same lighting.

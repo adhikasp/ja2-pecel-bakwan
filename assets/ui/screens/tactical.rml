@@ -9,6 +9,14 @@
 <body class="t5">
 <div class="t5-root" id="tac" data-model="tactical">
 
+	<!-- world overlays (src/game/NativeUI/TacticalOverlays.cc): locator rings, burst impacts, arrows and the rubber
+	     band as geometry; the lists of items under the cursor or beside a new item; the pause banner -->
+	<div class="ovl-layer audit-skip">
+		<overlaylayer id="tac.overlay.layer"></overlaylayer>
+		<div id="tac.overlay.pools"></div>
+	</div>
+	<div class="ovl-paused audit-skip" id="tac.paused"></div>
+
 	<!-- the cursor over the world (src/game/NativeUI/TacticalCursor.cc): the tile marker, the move path and the
 	     destination as geometry, and the chip beside the pointer. Under everything else of the HUD. -->
 	<div class="cur-layer audit-skip">

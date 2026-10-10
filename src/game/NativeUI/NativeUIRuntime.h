@@ -30,6 +30,9 @@ namespace NativeUI
 	 * output pixels, where the native UI draws. The window scales and letterboxes the canvas, so this is not the UI
 	 * scale. */
 	Rml::Vector2f CanvasToOutput(float x, float y);
+	/** A world pixel (what the world renderer draws in: the coordinates of GridNoToWorldPixels) in output pixels,
+	 * through the world camera. Everything anchored to the world is placed with this. */
+	Rml::Vector2f WorldToOutput(float x, float y);
 	/** Output pixels per canvas pixel (a length on the canvas, in output pixels). */
 	float CanvasScale();
 	/** The item picture the native pointer carries (an item held by the mouse), or none with an empty @a src;
@@ -109,6 +112,10 @@ namespace NativeUI
 	 * document (the marker, path and chip over the world, the pointer's shape). */
 	void RegisterTacticalCursor();
 	void TacticalCursorUpdate(Rml::ElementDocument* hud);
+	/** The world overlays (TacticalOverlays.cc): locators, burst impacts, arrows, the rubber band, the item lists
+	 * and the pause banner, refreshed once a frame with the HUD document. */
+	void RegisterTacticalOverlays();
+	void TacticalOverlaysUpdate(Rml::ElementDocument* hud);
 	/** A chip the HUD asks for next to the pointer where the world's cursor is not shown (a held item over a pocket or
 	 * a squad card: what letting go would do). Set every frame by TacticalHud.cc; read by TacticalCursorUpdate. */
 	struct HudChip
