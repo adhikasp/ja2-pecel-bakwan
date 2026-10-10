@@ -100,6 +100,11 @@ namespace
 		{
 			return LoadStiFrame(ST::format(FACESDIR "/{02d}.sti", std::atoi(name.c_str() + 6)).to_std_string(), 0);
 		}
+		if (name.rfind("bface-", 0) == 0)
+		{
+			// the big face of the talk panel
+			return LoadStiFrame(ST::format(FACESDIR "/b{02d}.sti", std::atoi(name.c_str() + 6)).to_std_string(), 0);
+		}
 		return nullptr;
 	}
 
@@ -147,6 +152,7 @@ void RegisterTacticalMockImages()
 	RegisterImageSource("nitem-", Provide);
 	RegisterImageSource("nitembig-", Provide);
 	RegisterImageSource("sface-", Provide);
+	RegisterImageSource("bface-", Provide);
 	RegisterImageSource("overhead-snap", Provide);
 }
 
@@ -166,7 +172,7 @@ void PrepareMockDocument(Rml::ElementDocument* const doc)
 	{
 		std::string const src = e->GetAttribute<Rml::String>("src", "");
 		if (src.find('@') != std::string::npos) continue;
-		if (src.rfind("nitem-", 0) != 0 && src.rfind("nitembig-", 0) != 0 && src.rfind("sface-", 0) != 0 && src != "overhead-snap") continue;
+		if (src.rfind("nitem-", 0) != 0 && src.rfind("nitembig-", 0) != 0 && src.rfind("sface-", 0) != 0 && src.rfind("bface-", 0) != 0 && src != "overhead-snap") continue;
 		auto const [w, h] = src == "overhead-snap" ? std::make_pair(640, 320) : PictureBaseSize(src);
 		if (!w) continue;
 		float const want = e->GetAttribute<float>("data-x", 2.0f);

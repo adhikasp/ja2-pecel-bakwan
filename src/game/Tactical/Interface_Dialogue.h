@@ -15,25 +15,9 @@ extern UINT8 gubSrcSoldierProfile;
 struct NPC_DIALOGUE_TYPE
 {
 	FACETYPE *face;
-	INT16    sX;
-	INT16    sY;
-	INT16    sPopupX;
-	INT16    sPopupY;
-	UINT8    ubPopupOrientation;
 	UINT8    ubCharNum;
-	SGPVObject*   uiPanelVO;
-	BUTTON_PICS*  iButtonImages;
-	GUIButtonRef  uiCancelButton;
 	INT8     bCurSelect;
 	INT8     bOldCurSelect;
-	UINT16   usWidth;
-	UINT16   usHeight;
-	MOUSE_REGION Regions[ 6 ];
-	MOUSE_REGION BackRegion;
-	MOUSE_REGION NameRegion;
-	MOUSE_REGION ScreenRegion;
-	MOUSE_REGION TextRegion;
-	BOOLEAN  fTextRegionOn;
 	BOOLEAN  fOnName;
 	SGPVSurface* uiSaveBuffer;
 	BOOLEAN  fHandled;
@@ -61,6 +45,7 @@ void DeleteTalkingMenu(void);
 
 BOOLEAN HandleTalkingMenu(void);
 
+/** The legacy panel is gone (PopupAdapter.h has the native one); the quest debug screen still calls this. */
 void RenderTalkingMenu(void);
 
 BOOLEAN HandleTalkingMenuEscape( BOOLEAN fCanDelete , BOOLEAN fFromEscKey );

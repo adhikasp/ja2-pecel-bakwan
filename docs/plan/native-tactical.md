@@ -18,9 +18,9 @@ The native HUD (`src/game/NativeUI/TacticalHud.cc`) is a skin over the legacy on
 | The team / single-merc panels run hidden under the bar | `Interface_Panels.cc`, `SetCurrentInterfacePanel` | two UIs alive, the world viewport ends at the legacy panel's top, `TEAMPANEL_HEIGHT` sizes the native bar |
 | Buttons press legacy hotkeys | `PressKey` in `TacticalHud.cc` | a button can only do what a key does; no availability or "why not" |
 | Inventory, description, money and key ring click hidden legacy regions | ~~`NativeInvSlotClick`, `NativeItemDescAttachmentClick`, `NativeItemDescUnload`, `NativeMoneyButton`, `NativeSMMoneyClick`, `NativeKeyRingClick`~~ gone with #317 (they call the inventory core); `NativeSMMuteClick` stays until #319 | the rules live in `Equipment/InventoryCore` |
-| Action, door and pick-up menus are legacy button panels shown natively | `NativeMovementMenuView`, `NativeDoorMenuView`, `NativeItemPickupView`, `NativeMenuClick`, `NativePickup*` | hidden legacy buttons exist under every native menu |
+| Action, door and pick-up menus are legacy button panels shown natively | ~~`NativeMovementMenuView`, `NativeDoorMenuView`, `NativeItemPickupView`, `NativeMenuClick`, `NativePickup*`~~ gone with #321: they are `PopupModels` read through `Tactical/PopupAdapter.h`, no button or region is made | the rules live in `NativeUI/PopupModels` |
 | Detail panel open == legacy SM panel open | `gsCurInterfacePanel == SM_PANEL` | the HUD's state is a legacy global |
-| Stack and key-ring popups hide the HUD | `Wanted()` | the legacy panel shows through |
+| Stack and key-ring popups hide the HUD | ~~`Wanted()`~~ gone with #321: the HUD is never hidden, the popups are native | the legacy panel shows through |
 | Two coordinate systems | canvas (`SCREEN_WIDTH x SCREEN_HEIGHT`, mouse, world picking) and output (native UI) | `CanvasToOutput` everywhere; legacy pixels at canvas resolution |
 | Two cursors | `Interface_Cursors.cc` / `Cursor_Control` bitmaps vs the native pointer | `TacticalHudOwnsCursor` switches between them |
 | Canvas-pixel world overlays | `RenderTopmostTacticalInterface` (`Interface_Control.cc`): locators, item pool list, flashing items, burst marks, arrows, rubber band, pause box, clock; `Civ_Quotes.cc` bubbles | low-resolution UI over a high-resolution world |
@@ -160,7 +160,7 @@ already drops cards that do not fit). The 640x480 tactical goldens and `< 1280` 
 | #318 | Native cursor for every mode, target chip, path line | #316 | legacy cursor drawing switched off on `GAME_SCREEN` only; state machine untouched |
 | #322 | Native world overlays | #316 | each overlay switches individually; legacy draw deleted per overlay |
 | #323 | Native overhead map, placement, minimap | #316 | Insert and placement open the native views; legacy deleted |
-| #321 | Native popups: stack, key ring, talk (with external speaking faces and subtitles), sector exit — **plus the action, door and pick-up menus as models instead of hidden legacy buttons** (scope added here) | #317 (stack, key ring) | each popup replaces its legacy one; `Wanted()` never hides the HUD again |
+| #321 | Native popups: stack, key ring, talk (with external speaking faces and subtitles), sector exit — **plus the action, door and pick-up menus as models instead of hidden legacy buttons** (scope added here). **Landed:** `NativeUI/PopupModels`, `Tactical/PopupAdapter`, `ja2.popup()` / `ja2.popupOp()`, `tests/e2e/tactical_popups.lua` | #317 (stack, key ring) | each popup replaces its legacy one; `Wanted()` never hides the HUD again |
 | #319 | No legacy panels: TacticalCommands, `TacticalInput`/`WorldPointer`, SquadRoster, face animation on cards, world fills the output, native message boxes in tactical | #317, #321 (stack/key ring) | the battle e2e tests and the 1080p suite pass with no panel created |
 | #320 | Drag and drop everywhere; give by dropping on a card; drop/throw on the world | #317, #318 | click-to-pick stays; drag is the same core operation |
 | #324 | Retire: no `tactical` mode key, no `gpItemPointer` mirror, dead code and legacy goldens deleted, `docs/ui/tactical.md` native only | all above | — |

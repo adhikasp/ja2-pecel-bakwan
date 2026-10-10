@@ -37,6 +37,7 @@
 #include "NewStrings.h"
 #include "Overhead.h"
 #include "PathAI.h"
+#include "PopupAdapter.h"
 #include "Points.h"
 #include "Radar_Screen.h"
 #include "Render_Dirty.h"
@@ -74,8 +75,6 @@
 
 
 BOOLEAN	gfInMovementMenu = FALSE;
-static INT32 giMenuAnchorX;
-static INT32 giMenuAnchorY;
 
 static UINT8   gubProgNumEnemies = 0;
 static UINT8   gubProgCurEnemy   = 0;
@@ -93,9 +92,6 @@ static TOP_MESSAGE gTopMessage;
 BOOLEAN gfTopMessageDirty = FALSE;
 
 
-static MOUSE_REGION gMenuOverlayRegion;
-
-
 VIDEO_OVERLAY*       g_ui_message_overlay = NULL;
 ST::string           g_ui_message_text; // what the message overlay says (the native map screen draws it)
 static UINT16        gusUIMessageWidth;
@@ -107,40 +103,6 @@ static BOOLEAN       gfUseSkullIconMessage = FALSE;
 
 static BOOLEAN gfPanelAllocated = FALSE;
 
-
-enum
-{
-	WALK_IMAGES = 0,
-	SNEAK_IMAGES,
-	RUN_IMAGES,
-	CRAWL_IMAGES,
-	LOOK_IMAGES,
-	TALK_IMAGES,
-	HAND_IMAGES,
-	CANCEL_IMAGES,
-
-	TARGETACTIONC_IMAGES,
-	KNIFEACTIONC_IMAGES,
-	AIDACTIONC_IMAGES,
-	PUNCHACTIONC_IMAGES,
-	BOMBACTIONC_IMAGES,
-
-	OPEN_DOOR_IMAGES,
-	EXAMINE_DOOR_IMAGES,
-	LOCKPICK_DOOR_IMAGES,
-	BOOT_DOOR_IMAGES,
-	CROWBAR_DOOR_IMAGES,
-	USE_KEY_IMAGES,
-	USE_KEYRING_IMAGES,
-	EXPLOSIVE_DOOR_IMAGES,
-
-	TOOLKITACTIONC_IMAGES,
-	WIRECUTACTIONC_IMAGES,
-
-	NUM_ICON_IMAGES
-};
-
-static BUTTON_PICS* iIconImages[NUM_ICON_IMAGES];
 
 enum
 {
@@ -168,13 +130,6 @@ enum
 };
 
 
-static GUIButtonRef iActionIcons[NUM_ICONS];
-
-// The native HUD's view of the movement and door menus (Interface.h: NativeMenuView), filled where the buttons above
-// are made: what it shows is what the buttons know. Row order and grouping are set when the menu pops up.
-static NativeMenuItem gMenuNativeItems[NUM_ICONS];
-static NativeMenuView gMenuNative;
-
 // "|Stand/Walk" -> label "Stand/Walk" and hotkey "S": in the legacy button strings a | marks the hotkey letter,
 // which is part of the label and also the key hint.
 static void SplitHotkey(const ST::string& text, ST::string& label, ST::string& kbd)
@@ -196,46 +151,9 @@ static void SplitHotkey(const ST::string& text, ST::string& label, ST::string& k
 	kbd = k;
 }
 
-// The design-system icon of each menu button (docs/ui/design-system.md); the action button follows the item in hand.
-static const char* NativeIconName(UINT const idx, UINT const gfx)
-{
-	switch (idx)
-	{
-		case WALK_ICON:           return "walk";
-		case SNEAK_ICON:          return "sneak";
-		case RUN_ICON:            return "run";
-		case CRAWL_ICON:          return "stance-prone";
-		case LOOK_ICON:           return "look";
-		case TALK_ICON:           return "talk";
-		case HAND_ICON:           return "pointer";
-		case OPEN_DOOR_ICON:      return "door";
-		case EXAMINE_DOOR_ICON:   return "search";
-		case LOCKPICK_DOOR_ICON:  return "lockpick";
-		case BOOT_DOOR_ICON:      return "punch";
-		case UNTRAP_DOOR_ICON:    return "wire-cut";
-		case USE_KEY_ICON:
-		case USE_KEYRING_ICON:    return "key";
-		case EXPLOSIVE_DOOR_ICON: return "door-explosive";
-		case USE_CROWBAR_ICON:    return "crowbar";
-		case CANCEL_ICON:         return "close";
-	}
-	switch (gfx)
-	{
-		case TARGETACTIONC_IMAGES:  return "gun";
-		case KNIFEACTIONC_IMAGES:   return "blade";
-		case PUNCHACTIONC_IMAGES:   return "punch";
-		case BOMBACTIONC_IMAGES:    return "bomb";
-		case AIDACTIONC_IMAGES:     return "medkit";
-		case TOOLKITACTIONC_IMAGES: return "toolkit";
-		case WIRECUTACTIONC_IMAGES: return "wire-cut";
-		default:                    return "more";
-	}
-}
-
 // GLOBAL INTERFACE SURFACES
 SGPVObject* guiDEAD;
 SGPVObject* guiHATCH;
-static SGPVObject* guiBUTTONBORDER;
 SGPVObject* guiRADIO;
 static SGPVObject* guiRADIO2;
 
@@ -260,37 +178,9 @@ InterfacePanelKind gsCurInterfacePanel  = TEAM_PANEL;
 
 void InitializeTacticalInterface()
 {
-	// Load button Interfaces
-	iIconImages[WALK_IMAGES ] = LoadButtonImage(INTERFACEDIR "/newicons3.sti", -1,3,4,5,-1 );
-	iIconImages[SNEAK_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 6, 7, 8, -1 );
-	iIconImages[RUN_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 0, 1, 2, -1 );
-	iIconImages[CRAWL_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 9, 10, 11, -1 );
-	iIconImages[LOOK_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 12, 13, 14, -1 );
-	iIconImages[TALK_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 21, 22, 23, -1 );
-	iIconImages[HAND_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 18, 19, 20, -1 );
-	iIconImages[CANCEL_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 15, 16, 17, -1 );
-
-	iIconImages[TARGETACTIONC_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 24, 25, 26, -1 );
-	iIconImages[KNIFEACTIONC_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 27, 28, 29, -1 );
-	iIconImages[AIDACTIONC_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 30, 31, 32, -1 );
-	iIconImages[PUNCHACTIONC_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 33, 34, 35, -1 );
-	iIconImages[BOMBACTIONC_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 36, 37, 38, -1 );
-	iIconImages[TOOLKITACTIONC_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 39, 40, 41, -1 );
-	iIconImages[WIRECUTACTIONC_IMAGES] = UseLoadedButtonImage(iIconImages[WALK_IMAGES ], -1, 42, 43, 44, -1 );
-
-	iIconImages[OPEN_DOOR_IMAGES] = LoadButtonImage(INTERFACEDIR "/door_op2.sti", -1,9,10,11,-1 );
-	iIconImages[EXAMINE_DOOR_IMAGES] = UseLoadedButtonImage(iIconImages[OPEN_DOOR_IMAGES ], -1, 12, 13, 14, -1 );
-	iIconImages[LOCKPICK_DOOR_IMAGES] = UseLoadedButtonImage(iIconImages[OPEN_DOOR_IMAGES ], -1, 21, 22, 23, -1 );
-	iIconImages[BOOT_DOOR_IMAGES] = UseLoadedButtonImage(iIconImages[OPEN_DOOR_IMAGES ], -1, 25, 26, 27, -1 );
-	iIconImages[CROWBAR_DOOR_IMAGES] = UseLoadedButtonImage(iIconImages[OPEN_DOOR_IMAGES ], -1, 0, 1, 2, -1 );
-	iIconImages[USE_KEY_IMAGES] = UseLoadedButtonImage(iIconImages[OPEN_DOOR_IMAGES ], -1, 3, 4, 5, -1 );
-	iIconImages[USE_KEYRING_IMAGES] = UseLoadedButtonImage(iIconImages[OPEN_DOOR_IMAGES ], -1, 6, 7, 8, -1 );
-	iIconImages[EXPLOSIVE_DOOR_IMAGES] = UseLoadedButtonImage(iIconImages[OPEN_DOOR_IMAGES ], -1, 15, 16, 17, -1 );
-
 	// Load interface panels
 	guiDEAD         = AddVideoObjectFromFile(INTERFACEDIR "/p_dead.sti");
 	guiHATCH        = AddVideoObjectFromFile(INTERFACEDIR "/hatch.sti");
-	guiBUTTONBORDER = AddVideoObjectFromFile(INTERFACEDIR "/button_frame.sti");
 	guiRADIO        = AddVideoObjectFromFile(INTERFACEDIR "/radio.sti");
 	guiRADIO2       = AddVideoObjectFromFile(INTERFACEDIR "/radio2.sti");
 
@@ -464,171 +354,122 @@ void HandleInterfaceBackgrounds( )
 }
 
 
-static void BtnMovementCallback(GUI_BUTTON* btn, UINT32 reason);
+// ---------------------------------------------------------------------------------------------------------------
+// The action menu (right click held on the terrain). A PopupModels::Menu says what each row is, whether it is on and
+// why not; the native HUD draws it (CurrentMenuPopup) and a click comes back through PopupMenuChoose. No button and no
+// mouse region is made for it.
 
-
-static void MakeButtonMove(UINT const idx, UINT const gfx, INT16 const x, INT16 const y, UI_EVENT* const event, const ST::string& help, bool const disabled)
-{
-	GUIButtonRef const btn = QuickCreateButton(iIconImages[gfx], x, y, MSYS_PRIORITY_HIGHEST - 1, BtnMovementCallback);
-	iActionIcons[idx] = btn;
-	btn->SetUserPtr(event);
-	btn->SetFastHelpText(help);
-	if (disabled) DisableButton(btn);
-
-	NativeMenuItem& n = gMenuNativeItems[idx];
-	n = NativeMenuItem{};
-	n.id = (INT16)idx;
-	n.icon = NativeIconName(idx, gfx);
-	SplitHotkey(help, n.label, n.kbd);
-	n.title = n.label;
-	n.ap = -1;
-	n.disabled = !btn->Enabled();
-	// the native HUD draws the menu itself; the buttons stay for its clicks only
-	if (NativeUI::TacticalHudActive()) HideButton(btn);
-}
-
-
-static void MovementMenuBackregionCallback(MOUSE_REGION* pRegion, UINT32 iReason);
+static UI_EVENT*         gMovementMenuEvent = nullptr; // the UI event the menu feeds its answer to
+static PopupModels::Menu gMenuModel;                   // the menu that is open (action or door)
+static MenuPopup         gMenuView;                    // what the HUD shows of it
 
 
 void PopupMovementMenu(UI_EVENT* const ev)
 {
 	EraseInterfaceMenus(TRUE);
 
-	// Create mouse region over all area to facilitate clicking to end
-	MSYS_DefineRegion(&gMenuOverlayRegion, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, MSYS_PRIORITY_HIGHEST - 1, CURSOR_NORMAL, MSYS_NO_CALLBACK, MovementMenuBackregionCallback);
+	SOLDIERTYPE const* const s = GetSelectedMan();
+	gMovementMenuEvent = ev;
 
-	giMenuAnchorX = gusMouseXPos - 18;
-	giMenuAnchorY = gusMouseYPos - 18;
-
-	// ATE: Check if we're going off the screen
-	if (giMenuAnchorX < 0) giMenuAnchorX = 0;
-	if (giMenuAnchorY < 0) giMenuAnchorY = 0;
-
-	// Check for boundaries
-	if (giMenuAnchorX > SCREEN_WIDTH - BUTTON_PANEL_WIDTH)
+	// nothing draws the menu without the native HUD: the choice is Cancel
+	if (!NativeUI::TacticalHudActive() || !s)
 	{
-		giMenuAnchorX = SCREEN_WIDTH - BUTTON_PANEL_WIDTH;
-	}
-	if (giMenuAnchorY > gsVIEWPORT_WINDOW_END_Y - BUTTON_PANEL_HEIGHT)
-	{
-		giMenuAnchorY = gsVIEWPORT_WINDOW_END_Y - BUTTON_PANEL_HEIGHT;
+		EndMenuEvent(U_MOVEMENT_MENU);
+		ev->uiParams[1] = FALSE;
+		return;
 	}
 
-	INT32              const x                     = giMenuAnchorX + 9;
-	INT32              const y                     = giMenuAnchorY + 8;
-	SOLDIERTYPE const* const s                     = GetSelectedMan();
-	bool               const is_epc                = AM_AN_EPC(s);
-	bool               const is_vehicle            = s->uiStatusFlags & SOLDIER_VEHICLE;
-	bool               const is_robot              = s->uiStatusFlags & SOLDIER_ROBOT;
-	bool               const is_uncontrolled_robot = is_robot && !CanRobotBeControlled(s);
+	using namespace PopupModels;
+	ActionInput in;
+	in.vehicle           = s->uiStatusFlags & SOLDIER_VEHICLE;
+	in.robot             = s->uiStatusFlags & SOLDIER_ROBOT;
+	in.robotUncontrolled = in.robot && !CanRobotBeControlled(s);
+	in.escort            = AM_AN_EPC(s);
+	in.inWater           = MercInWater(s);
+	in.canCrouch         = IsValidStance(s, ANIM_CROUCH);
+	in.canProne          = IsValidStance(s, ANIM_PRONE);
 
-	MakeButtonMove(LOOK_ICON, LOOK_IMAGES, x, y, ev, TacticalStr[LOOK_CURSOR_POPUPTEXT],
-			is_vehicle || is_uncontrolled_robot);
-	MakeButtonMove(RUN_ICON, RUN_IMAGES, x + 20, y, ev, pTacticalPopupButtonStrings[RUN_ICON],
-			is_vehicle || is_robot || MercInWater(s));
-	ST::string help = is_vehicle ? TacticalStr[DRIVE_POPUPTEXT] : pTacticalPopupButtonStrings[WALK_ICON];
-	MakeButtonMove(WALK_ICON, WALK_IMAGES, x + 40, y, ev, help, is_uncontrolled_robot);
-
-	UINT32         action_image;
-	ST::string action_text;
-	bool           disable_action = false;
-	if (is_vehicle)
+	// the Act row follows the item in the hand
+	ST::string actText = TacticalStr[NOT_APPLICABLE_POPUPTEXT];
+	char const* actIcon = "more";
+	UINT16 const item = s->inv[HANDPOS].usItem;
+	if (item == TOOLKIT)
 	{
-		// Until we get mounted weapons
-		action_image   = CANCEL_IMAGES;
-		action_text    = TacticalStr[NOT_APPLICABLE_POPUPTEXT];
-		disable_action = true;
+		in.hand = HandItem::Toolkit;
+		actIcon = "toolkit";
 	}
-	else
+	else if (item == WIRECUTTERS)
 	{
-		// Create button based on what is in our hands at the moment!
-		UINT16 const item = s->inv[HANDPOS].usItem;
-		if (item == TOOLKIT)
-		{
-			action_image = TOOLKITACTIONC_IMAGES;
-			action_text  = TacticalStr[NOT_APPLICABLE_POPUPTEXT];
-		}
-		else if (item == WIRECUTTERS)
-		{
-			action_image = WIRECUTACTIONC_IMAGES;
-			action_text  = TacticalStr[NOT_APPLICABLE_POPUPTEXT];
-		}
-		else switch (GCM->getItem(item)->getItemClass())
-		{
-			case IC_PUNCH:
-				action_image = PUNCHACTIONC_IMAGES;
-				action_text  = TacticalStr[USE_HANDTOHAND_POPUPTEXT];
-				break;
-
-			case IC_GUN:
-				action_image = TARGETACTIONC_IMAGES;
-				action_text  = TacticalStr[USE_FIREARM_POPUPTEXT];
-				break;
-
-			case IC_BLADE:
-				action_image = KNIFEACTIONC_IMAGES;
-				action_text  = TacticalStr[USE_BLADE_POPUPTEXT];
-				break;
-
-			case IC_GRENADE:
-			case IC_BOMB:
-				action_image = BOMBACTIONC_IMAGES;
-				action_text  = TacticalStr[USE_EXPLOSIVE_POPUPTEXT];
-				break;
-
-			case IC_MEDKIT:
-				action_image = AIDACTIONC_IMAGES;
-				action_text  = TacticalStr[USE_MEDKIT_POPUPTEXT];
-				break;
-
-			default:
-				action_image   = CANCEL_IMAGES;
-				action_text    = TacticalStr[NOT_APPLICABLE_POPUPTEXT];
-				disable_action = true;
-				break;
-		}
+		in.hand = HandItem::Wirecutters;
+		actIcon = "wire-cut";
+	}
+	else if (item == NOTHING)
+	{
+		in.hand = HandItem::Nothing;
+	}
+	else switch (GCM->getItem(item)->getItemClass())
+	{
+		case IC_PUNCH:   in.hand = HandItem::Punch;     actText = TacticalStr[USE_HANDTOHAND_POPUPTEXT]; actIcon = "punch"; break;
+		case IC_GUN:     in.hand = HandItem::Gun;       actText = TacticalStr[USE_FIREARM_POPUPTEXT];    actIcon = "gun";   break;
+		case IC_BLADE:   in.hand = HandItem::Blade;     actText = TacticalStr[USE_BLADE_POPUPTEXT];      actIcon = "blade"; break;
+		case IC_GRENADE:
+		case IC_BOMB:    in.hand = HandItem::Explosive; actText = TacticalStr[USE_EXPLOSIVE_POPUPTEXT];  actIcon = "bomb";  break;
+		case IC_MEDKIT:  in.hand = HandItem::Medkit;    actText = TacticalStr[USE_MEDKIT_POPUPTEXT];     actIcon = "medkit"; break;
+		default:         in.hand = HandItem::Other;     break;
+	}
+	if (in.hand == HandItem::Gun || in.hand == HandItem::Blade)
+	{
+		// the action costs what shooting or stabbing with the item in hand costs
+		in.actAp = BaseAPsToShootOrStab(DEFAULT_APS, DEFAULT_AIMSKILL, s->inv[HANDPOS]);
+	}
+	if (in.vehicle)
+	{
+		actText = TacticalStr[NOT_APPLICABLE_POPUPTEXT];
+		actIcon = "close";
 	}
 
-	MakeButtonMove(ACTIONC_ICON, action_image, x, y + 20, ev, action_text,
-			is_epc || disable_action);
-	MakeButtonMove(CANCEL_ICON, CANCEL_IMAGES, x + 20, y + 20, ev, pTacticalPopupButtonStrings[CANCEL_ICON],
-			false);
-	MakeButtonMove(SNEAK_ICON, SNEAK_IMAGES, x + 40, y + 20, ev, pTacticalPopupButtonStrings[SNEAK_ICON],
-			!IsValidStance(s, ANIM_CROUCH));
-	MakeButtonMove(TALK_ICON, TALK_IMAGES, x, y + 40, ev, pTacticalPopupButtonStrings[TALK_ICON],
-			is_epc || is_vehicle);
-	MakeButtonMove(HAND_ICON, HAND_IMAGES, x + 20, y + 40, ev, pTacticalPopupButtonStrings[HAND_ICON],
-			is_epc || is_vehicle);
-	MakeButtonMove(CRAWL_ICON, CRAWL_IMAGES, x + 40, y + 40, ev, pTacticalPopupButtonStrings[CRAWL_ICON],
-			!IsValidStance(s, ANIM_PRONE));
+	gMenuModel = BuildActionMenu(in);
 
-	// the action costs what shooting or stabbing with the item in hand costs
-	if (action_image == TARGETACTIONC_IMAGES || action_image == KNIFEACTIONC_IMAGES)
-		gMenuNativeItems[ACTIONC_ICON].ap = BaseAPsToShootOrStab(DEFAULT_APS, DEFAULT_AIMSKILL, s->inv[HANDPOS]);
-
-	// the native HUD's rows: Move, then Act, then Cancel (docs/ui/tactical.md, the approved wireframes)
-	gMenuNative = NativeMenuView{};
-	gMenuNative.open = true;
-	gMenuNative.kind = "movement";
+	gMenuView = MenuPopup{};
+	gMenuView.open = true;
+	gMenuView.door = false;
+	// by the merc: the point where his name goes, in UI pixels
 	INT16 sx, sy;
-	GetSoldierScreenPos(s, &sx, &sy);
-	gMenuNative.x = g_ui.worldToUi(sx);
-	gMenuNative.y = g_ui.worldToUi(sy);
-	gMenuNative.who = s->name;
-	gMenuNative.ap = s->bActionPoints;
-	for (INT16 const i : { (INT16)WALK_ICON, (INT16)RUN_ICON, (INT16)SNEAK_ICON, (INT16)CRAWL_ICON })
-	{
-		gMenuNativeItems[i].group = 0;
-		gMenuNative.items.push_back(gMenuNativeItems[i]);
-	}
-	for (INT16 const i : { (INT16)ACTIONC_ICON, (INT16)LOOK_ICON, (INT16)TALK_ICON, (INT16)HAND_ICON })
-	{
-		gMenuNativeItems[i].group = 1;
-		gMenuNative.items.push_back(gMenuNativeItems[i]);
-	}
-	gMenuNativeItems[CANCEL_ICON].group = 2;
-	gMenuNative.items.push_back(gMenuNativeItems[CANCEL_ICON]);
+	GetSoldierAboveGuyPositions(s, &sx, &sy, FALSE);
+	gMenuView.x = sx + 40;
+	gMenuView.y = sy;
+	gMenuView.who = s->name;
+	gMenuView.apLeft = s->bActionPoints;
+
+	auto label = [&](int const cmd, ST::string const& text, char const* const icon) {
+		Row const* const r = gMenuModel.Find(cmd);
+		if (!r) return;
+		PopupRow row;
+		row.cmd = cmd;
+		row.name = ActionCmdName(cmd);
+		row.group = r->group;
+		row.enabled = r->enabled;
+		row.why = WhyKey(r->why);
+		row.ap = r->ap;
+		SplitHotkey(text, row.label, row.kbd);
+		row.title = row.label;
+		row.icon = icon;
+		gMenuView.rows.push_back(row);
+	};
+	label(int(ActionCmd::Walk), in.vehicle ? TacticalStr[DRIVE_POPUPTEXT] : pTacticalPopupButtonStrings[WALK_ICON], "walk");
+	label(int(ActionCmd::Run), pTacticalPopupButtonStrings[RUN_ICON], "run");
+	label(int(ActionCmd::Sneak), pTacticalPopupButtonStrings[SNEAK_ICON], "sneak");
+	label(int(ActionCmd::Crawl), pTacticalPopupButtonStrings[CRAWL_ICON], "stance-prone");
+	label(int(ActionCmd::Act), actText, actIcon);
+	label(int(ActionCmd::Look), TacticalStr[LOOK_CURSOR_POPUPTEXT], "look");
+	label(int(ActionCmd::Talk), pTacticalPopupButtonStrings[TALK_ICON], "talk");
+	label(int(ActionCmd::Hand), pTacticalPopupButtonStrings[HAND_ICON], "pointer");
+	label(int(ActionCmd::Cancel), pTacticalPopupButtonStrings[CANCEL_ICON], "close");
+
+	PopupEvent e;
+	e.kind = PopupKind::Action;
+	e.action = "open";
+	FinishPopup(e);
 
 	gfInMovementMenu  = TRUE;
 	gfIgnoreScrolling = TRUE;
@@ -639,16 +480,6 @@ void PopDownMovementMenu( )
 {
 	if ( gfInMovementMenu )
 	{
-		RemoveButton( iActionIcons[ WALK_ICON  ] );
-		RemoveButton( iActionIcons[ SNEAK_ICON  ] );
-		RemoveButton( iActionIcons[ RUN_ICON  ] );
-		RemoveButton( iActionIcons[ CRAWL_ICON  ] );
-		RemoveButton( iActionIcons[ LOOK_ICON  ] );
-		RemoveButton( iActionIcons[ ACTIONC_ICON  ] );
-		RemoveButton( iActionIcons[ TALK_ICON  ] );
-		RemoveButton( iActionIcons[ HAND_ICON  ] );
-		RemoveButton( iActionIcons[ CANCEL_ICON  ] );
-
 		// Turn off Ignore scrolling
 		gfIgnoreScrolling = FALSE;
 
@@ -657,35 +488,16 @@ void PopDownMovementMenu( )
 
 		fInterfacePanelDirty = DIRTYLEVEL2;
 
-		MSYS_RemoveRegion( &gMenuOverlayRegion );
+		gMenuView = MenuPopup{};
+		gMenuModel = PopupModels::Menu{};
 	}
 
 	gfInMovementMenu = FALSE;
-
 }
 
 void RenderMovementMenu( )
 {
-	if (NativeUI::TacticalHudActive()) return; // the native HUD draws the menu itself
-	if ( gfInMovementMenu )
-	{
-		BltVideoObject(FRAME_BUFFER, guiBUTTONBORDER, 0, giMenuAnchorX, giMenuAnchorY);
-
-		// Mark buttons dirty!
-		MarkAButtonDirty( iActionIcons[ WALK_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ SNEAK_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ RUN_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ CRAWL_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ LOOK_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ ACTIONC_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ TALK_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ HAND_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ CANCEL_ICON  ] );
-
-		InvalidateRegion(giMenuAnchorX, giMenuAnchorY, giMenuAnchorX + BUTTON_PANEL_WIDTH,
-					giMenuAnchorY + BUTTON_PANEL_HEIGHT);
-
-	}
+	// the native HUD draws the menu itself
 }
 
 void CancelMovementMenu( )
@@ -696,66 +508,36 @@ void CancelMovementMenu( )
 }
 
 
-static void BtnMovementCallback(GUI_BUTTON* btn, UINT32 reason)
+/** A row of the action menu was chosen: tell the UI event what it was (UIHandleMovementMenu does the rest). */
+static bool MovementChoose(int const cmd)
 {
-	if ( reason & MSYS_CALLBACK_REASON_POINTER_UP )
+	using PopupModels::ActionCmd;
+	UI_EVENT* const ev = gMovementMenuEvent;
+	if (!ev) return false;
+
+	switch (ActionCmd(cmd))
 	{
-		btn->uiFlags |= BUTTON_CLICKED_ON;
-
-		UI_EVENT* const pUIEvent = btn->GetUserPtr<UI_EVENT>();
-
-		if (btn == iActionIcons[WALK_ICON])
-		{
-			pUIEvent->uiParams[0] = MOVEMENT_MENU_WALK;
-		}
-		else if (btn == iActionIcons[RUN_ICON])
-		{
-			pUIEvent->uiParams[0] = MOVEMENT_MENU_RUN;
-		}
-		else if (btn == iActionIcons[SNEAK_ICON])
-		{
-			pUIEvent->uiParams[0] = MOVEMENT_MENU_SWAT;
-		}
-		else if (btn == iActionIcons[CRAWL_ICON])
-		{
-			pUIEvent->uiParams[0] = MOVEMENT_MENU_PRONE;
-		}
-		else if (btn == iActionIcons[LOOK_ICON])
-		{
-			pUIEvent->uiParams[2] = MOVEMENT_MENU_LOOK;
-		}
-		else if (btn == iActionIcons[ACTIONC_ICON])
-		{
-			pUIEvent->uiParams[2] = MOVEMENT_MENU_ACTIONC;
-		}
-		else if (btn == iActionIcons[TALK_ICON])
-		{
-			pUIEvent->uiParams[2] = MOVEMENT_MENU_TALK;
-		}
-		else if (btn == iActionIcons[HAND_ICON])
-		{
-			pUIEvent->uiParams[2] = MOVEMENT_MENU_HAND;
-		}
-		else if (btn == iActionIcons[CANCEL_ICON])
-		{
+		case ActionCmd::Walk:   ev->uiParams[0] = MOVEMENT_MENU_WALK;    break;
+		case ActionCmd::Run:    ev->uiParams[0] = MOVEMENT_MENU_RUN;     break;
+		case ActionCmd::Sneak:  ev->uiParams[0] = MOVEMENT_MENU_SWAT;    break;
+		case ActionCmd::Crawl:  ev->uiParams[0] = MOVEMENT_MENU_PRONE;   break;
+		case ActionCmd::Look:   ev->uiParams[2] = MOVEMENT_MENU_LOOK;    break;
+		case ActionCmd::Act:    ev->uiParams[2] = MOVEMENT_MENU_ACTIONC; break;
+		case ActionCmd::Talk:   ev->uiParams[2] = MOVEMENT_MENU_TALK;    break;
+		case ActionCmd::Hand:   ev->uiParams[2] = MOVEMENT_MENU_HAND;    break;
+		case ActionCmd::Cancel:
 			// Signal end of event
 			EndMenuEvent( U_MOVEMENT_MENU );
-			pUIEvent->uiParams[1] = FALSE;
-			return;
-		}
-		else
-		{
-			return;
-		}
-
-		// Signal end of event
-		EndMenuEvent( U_MOVEMENT_MENU );
-		pUIEvent->uiParams[1] = TRUE;
-
+			ev->uiParams[1] = FALSE;
+			return true;
+		case ActionCmd::Count:  return false;
 	}
 
+	// Signal end of event
+	EndMenuEvent( U_MOVEMENT_MENU );
+	ev->uiParams[1] = TRUE;
+	return true;
 }
-
 
 static void GetArrowsBackground(void);
 
@@ -1361,6 +1143,7 @@ struct OPENDOOR_MENU
 	INT16   sX;
 	INT16   sY;
 	BOOLEAN fMenuHandled;
+	BOOLEAN fClosing;
 };
 
 static OPENDOOR_MENU gOpenDoorMenu;
@@ -1368,6 +1151,7 @@ BOOLEAN gfInOpenDoorMenu = FALSE;
 
 
 static void PopupDoorOpenMenu(BOOLEAN fClosingDoor);
+static bool DoorChoose(int cmd);
 
 
 void InitDoorOpenMenu(SOLDIERTYPE* const pSoldier, DOOR* const d, BOOLEAN const fClosingDoor)
@@ -1386,6 +1170,7 @@ void InitDoorOpenMenu(SOLDIERTYPE* const pSoldier, DOOR* const d, BOOLEAN const 
 
 	gOpenDoorMenu.pSoldier     = pSoldier;
 	gOpenDoorMenu.pDoor        = d;
+	gOpenDoorMenu.fClosing     = fClosingDoor;
 
 	// OK, Determine position...
 	// Center on guy
@@ -1400,25 +1185,14 @@ void InitDoorOpenMenu(SOLDIERTYPE* const pSoldier, DOOR* const d, BOOLEAN const 
 	// Alrighty, cancel lock UI if we havn't done so already
 	UnSetUIBusy(pSoldier);
 
-
-	// OK, CHECK FOR BOUNDARIES!
-	if (gOpenDoorMenu.sX + BUTTON_PANEL_WIDTH > SCREEN_WIDTH)
-	{
-		gOpenDoorMenu.sX = SCREEN_WIDTH - BUTTON_PANEL_WIDTH;
-	}
-	if ( ( gOpenDoorMenu.sY + BUTTON_PANEL_HEIGHT ) > gsVIEWPORT_WINDOW_END_Y )
-	{
-		gOpenDoorMenu.sY = ( gsVIEWPORT_WINDOW_END_Y - BUTTON_PANEL_HEIGHT );
-	}
-	if ( gOpenDoorMenu.sX < 0 )
+	if (gOpenDoorMenu.sX < 0)
 	{
 		gOpenDoorMenu.sX = 0;
 	}
-	if ( gOpenDoorMenu.sY < 0 )
+	if (gOpenDoorMenu.sY < 0)
 	{
 		gOpenDoorMenu.sY = 0;
 	}
-
 
 	gOpenDoorMenu.fMenuHandled = FALSE;
 
@@ -1429,157 +1203,130 @@ void InitDoorOpenMenu(SOLDIERTYPE* const pSoldier, DOOR* const d, BOOLEAN const 
 }
 
 
-static void BtnDoorMenuCallback(GUI_BUTTON* btn, UINT32 reason);
-
-
-static void MakeButtonDoor(UINT idx, UINT gfx, INT16 x, INT16 y, INT16 ap, INT16 bp, BOOLEAN disable, const ST::string& help, const ST::string& missing)
+static void PopupDoorOpenMenu(BOOLEAN const fClosingDoor)
 {
-	GUIButtonRef const btn = QuickCreateButton(iIconImages[gfx], x, y, MSYS_PRIORITY_HIGHEST - 1, BtnDoorMenuCallback);
-	iActionIcons[idx] = btn;
-	ST::string warnings{}, revealedMods{};
-	SOLDIERTYPE* const soldier = gOpenDoorMenu.pSoldier;
-	DOOR* const          pDoor = gOpenDoorMenu.pDoor;
-	ST::string why = missing; // why the native HUD shows the row disabled (NativeMenuItem::why)
+	using namespace PopupModels;
+	SOLDIERTYPE* const s = gOpenDoorMenu.pSoldier;
+	DOOR* const door = gOpenDoorMenu.pDoor;
 
-	if (gamepolicy(informative_tooltips)) {
-		switch (idx) {
-			case LOCKPICK_DOOR_ICON:
-				revealedMods = GetModifiersForLockPicking(soldier, pDoor);
-				break;
-			case EXAMINE_DOOR_ICON:
-				revealedMods = GetModifiersForLockExam(soldier, pDoor);
-				break;
-			case UNTRAP_DOOR_ICON:
-				revealedMods = GetModifiersForLockUntrap(soldier, pDoor);
-				break;
-			case BOOT_DOOR_ICON:
-			case USE_CROWBAR_ICON:
-				revealedMods = GetModifiersForLockForceOpen(soldier, pDoor, idx == USE_CROWBAR_ICON);
-				break;
-			case EXPLOSIVE_DOOR_ICON:
-				revealedMods = GetModifiersForLockBlowUp(soldier);
-				break;
-		}
-	}
-	
-	if (pDoor) {
-		if (idx == EXAMINE_DOOR_ICON) {
-			if (pDoor->bPerceivedTrapped == DOOR_PROVED_TRAPPED) {
-				warnings += st_format_printf("\n" + TacticalStr[DOOR_LOCK_DESCRIPTION_STR], GetTrapName(*pDoor));
-				disable = true;
-				why = "examined";
-			} else if (pDoor->bPerceivedTrapped == DOOR_PROVED_UNTRAPPED) {
-				warnings += st_format_printf("\n" + TacticalStr[DOOR_LOCK_UNTRAPPED_STR], GetTrapName(*pDoor));
-				disable = true;
-				why = "examined";
-			}
-		}
-		if (idx == UNTRAP_DOOR_ICON) {
-			disable = pDoor->bPerceivedTrapped == DOOR_PROVED_UNTRAPPED;
-			why = disable ? "no_trap" : "";
-		}
-	}
-	if (soldier->bDesiredDirection & 1 && idx != OPEN_DOOR_ICON && idx != CANCEL_ICON) {
-		warnings += "\n" + *(GCM->getNewString(NS_DIAGONALITY_WARNING));
-		DisableButton(btn);
-		why = "diagonal";
-	}
-	if (ap == 0 || !(gTacticalStatus.uiFlags & INCOMBAT)) {
-		btn->SetFastHelpText(help+warnings+revealedMods);
-	} else {
-		ST::string zDisp = ST::format("{} ( {} )", help, ap);
-		btn->SetFastHelpText(zDisp+warnings+revealedMods);
-	}
-	bool const notEnoughAp = ap != 0 && !EnoughPoints(soldier, ap, bp, false);
-	if (disable || notEnoughAp) {
-		DisableButton(btn);
-		if (why.empty() && notEnoughAp) why = "ap";
-	}
-
-	NativeMenuItem& n = gMenuNativeItems[idx];
-	n = NativeMenuItem{};
-	n.id = (INT16)idx;
-	n.icon = NativeIconName(idx, gfx);
-	SplitHotkey(help, n.label, n.kbd);
-	n.title = n.label + warnings + revealedMods;
-	n.ap = ap != 0 ? (INT16)ap : (INT16)-1;
-	n.disabled = !btn->Enabled();
-	n.why = n.disabled ? why : "";
-	// the native HUD draws the menu itself; the buttons stay for its clicks only
-	if (NativeUI::TacticalHudActive()) HideButton(btn);
-}
-
-
-static void DoorMenuBackregionCallback(MOUSE_REGION* pRegion, UINT32 iReason);
-
-
-static void PopupDoorOpenMenu(BOOLEAN fClosingDoor)
-{
-	INT32 dx = gOpenDoorMenu.sX;
-	INT32 dy = gOpenDoorMenu.sY;
-
-	dx += 9;
-	dy += 8;
-
-	// Create mouse region over all area to facilitate clicking to end
-	MSYS_DefineRegion(&gMenuOverlayRegion, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, MSYS_PRIORITY_HIGHEST - 1, CURSOR_NORMAL, MSYS_NO_CALLBACK, DoorMenuBackregionCallback);
-
-	const bool d0 = fClosingDoor || AM_AN_EPC(gOpenDoorMenu.pSoldier);
-	bool d;
-
-	d = d0 || !SoldierHasKey(*gOpenDoorMenu.pSoldier, ANYKEY);
-	MakeButtonDoor(USE_KEYRING_ICON, USE_KEYRING_IMAGES, dx + 20, dy, AP_UNLOCK_DOOR, BP_UNLOCK_DOOR, d,
-			pTacticalPopupButtonStrings[USE_KEYRING_ICON], d0 ? "no" : "key");
-
-	d = fClosingDoor || FindUsableObj(gOpenDoorMenu.pSoldier, CROWBAR) == NO_SLOT;
-	MakeButtonDoor(USE_CROWBAR_ICON, CROWBAR_DOOR_IMAGES, dx + 40, dy, AP_USE_CROWBAR, BP_USE_CROWBAR, d,
-			pTacticalPopupButtonStrings[USE_CROWBAR_ICON], fClosingDoor ? "no" : "crowbar");
-
-	d = d0 || FindObj(gOpenDoorMenu.pSoldier, LOCKSMITHKIT) == NO_SLOT;
-	MakeButtonDoor(LOCKPICK_DOOR_ICON, LOCKPICK_DOOR_IMAGES, dx + 40, dy + 20, AP_PICKLOCK, BP_PICKLOCK, d,
-			pTacticalPopupButtonStrings[LOCKPICK_DOOR_ICON], d0 ? "no" : "lockpick");
-
-	d = d0 || FindObj(gOpenDoorMenu.pSoldier, SHAPED_CHARGE) == NO_SLOT;
-	MakeButtonDoor(EXPLOSIVE_DOOR_ICON, EXPLOSIVE_DOOR_IMAGES, dx + 40, dy + 40, AP_EXPLODE_DOOR, BP_EXPLODE_DOOR,
-			d, pTacticalPopupButtonStrings[EXPLOSIVE_DOOR_ICON], d0 ? "no" : "charge");
-
-	ST::string help = pTacticalPopupButtonStrings[fClosingDoor ? CANCEL_ICON + 1 : OPEN_DOOR_ICON];
-	MakeButtonDoor(OPEN_DOOR_ICON, OPEN_DOOR_IMAGES, dx, dy, doorAPs[gOpenDoorMenu.pSoldier->ubDoorHandleCode], BP_OPEN_DOOR, FALSE, help, "");
-
-	MakeButtonDoor(EXAMINE_DOOR_ICON, EXAMINE_DOOR_IMAGES, dx, dy + 20, AP_EXAMINE_DOOR, BP_EXAMINE_DOOR, d0,
-			pTacticalPopupButtonStrings[EXAMINE_DOOR_ICON], d0 ? "no" : "");
-
-	MakeButtonDoor(BOOT_DOOR_ICON, BOOT_DOOR_IMAGES, dx, dy + 40, AP_BOOT_DOOR, BP_BOOT_DOOR, d0,
-			pTacticalPopupButtonStrings[BOOT_DOOR_ICON], d0 ? "no" : "");
-
-	MakeButtonDoor(UNTRAP_DOOR_ICON, UNTRAP_DOOR_ICON, dx + 20, dy + 40, AP_UNTRAP_DOOR, BP_UNTRAP_DOOR, d0,
-			pTacticalPopupButtonStrings[UNTRAP_DOOR_ICON], d0 ? "no" : "");
-
-	MakeButtonDoor(CANCEL_ICON, CANCEL_IMAGES, dx + 20, dy + 20, 0, 0, FALSE,
-			pTacticalPopupButtonStrings[CANCEL_ICON], "");
-
-	// the native HUD's rows: what to do with the door, then the tools, then Cancel (docs/ui/tactical.md)
-	gMenuNative = NativeMenuView{};
-	gMenuNative.open = true;
-	gMenuNative.kind = "door";
-	gMenuNative.x = gOpenDoorMenu.sX;
-	gMenuNative.y = gOpenDoorMenu.sY;
-	gMenuNative.who = gOpenDoorMenu.pSoldier->name;
-	gMenuNative.ap = gOpenDoorMenu.pSoldier->bActionPoints;
-	for (INT16 const i : { (INT16)OPEN_DOOR_ICON, (INT16)EXAMINE_DOOR_ICON, (INT16)UNTRAP_DOOR_ICON })
+	DoorInput in;
+	in.closing     = fClosingDoor;
+	in.escort      = AM_AN_EPC(s);
+	in.hasKey      = SoldierHasKey(*s, ANYKEY);
+	in.hasCrowbar  = FindUsableObj(s, CROWBAR) != NO_SLOT;
+	in.hasLockpick = FindObj(s, LOCKSMITHKIT) != NO_SLOT;
+	in.hasCharge   = FindObj(s, SHAPED_CHARGE) != NO_SLOT;
+	in.diagonal    = (s->bDesiredDirection & 1) != 0;
+	if (door)
 	{
-		gMenuNativeItems[i].group = 0;
-		gMenuNative.items.push_back(gMenuNativeItems[i]);
+		if (door->bPerceivedTrapped == DOOR_PROVED_TRAPPED)        in.trap = Trap::ProvedTrapped;
+		else if (door->bPerceivedTrapped == DOOR_PROVED_UNTRAPPED) in.trap = Trap::ProvedUntrapped;
 	}
-	for (INT16 const i : { (INT16)USE_KEYRING_ICON, (INT16)LOCKPICK_DOOR_ICON, (INT16)USE_CROWBAR_ICON, (INT16)BOOT_DOOR_ICON, (INT16)EXPLOSIVE_DOOR_ICON })
+
+	struct Cost { DoorCmd cmd; INT16 ap; INT16 bp; };
+	Cost const costs[] = {
+		{ DoorCmd::Open,      doorAPs[s->ubDoorHandleCode], BP_OPEN_DOOR },
+		{ DoorCmd::Examine,   AP_EXAMINE_DOOR,   BP_EXAMINE_DOOR },
+		{ DoorCmd::Untrap,    AP_UNTRAP_DOOR,    BP_UNTRAP_DOOR },
+		{ DoorCmd::Keyring,   AP_UNLOCK_DOOR,    BP_UNLOCK_DOOR },
+		{ DoorCmd::Lockpick,  AP_PICKLOCK,       BP_PICKLOCK },
+		{ DoorCmd::Crowbar,   AP_USE_CROWBAR,    BP_USE_CROWBAR },
+		{ DoorCmd::Boot,      AP_BOOT_DOOR,      BP_BOOT_DOOR },
+		{ DoorCmd::Explosive, AP_EXPLODE_DOOR,   BP_EXPLODE_DOOR },
+	};
+	for (Cost const& c : costs)
 	{
-		gMenuNativeItems[i].group = 1;
-		gMenuNative.items.push_back(gMenuNativeItems[i]);
+		in.ap[int(c.cmd)] = c.ap;
+		in.affordable[int(c.cmd)] = c.ap == 0 || EnoughPoints(s, c.ap, c.bp, false);
 	}
-	gMenuNativeItems[CANCEL_ICON].group = 2;
-	gMenuNative.items.push_back(gMenuNativeItems[CANCEL_ICON]);
+
+	gMenuModel = BuildDoorMenu(in);
 
 	gfInOpenDoorMenu = TRUE;
+
+	// nothing draws the menu without the native HUD: the door just opens
+	if (!NativeUI::TacticalHudActive())
+	{
+		DoorChoose(int(DoorCmd::Open));
+		return;
+	}
+
+	gMenuView = MenuPopup{};
+	gMenuView.open = true;
+	gMenuView.door = true;
+	{
+		// by the merc: the point where his name goes, in UI pixels
+		INT16 sx, sy;
+		GetSoldierAboveGuyPositions(s, &sx, &sy, FALSE);
+		gMenuView.x = sx + 40;
+		gMenuView.y = sy;
+	}
+	gMenuView.who = s->name;
+	gMenuView.apLeft = s->bActionPoints;
+	if (door)
+	{
+		gMenuView.doorGrid = door->sGridNo;
+		gMenuView.doorLock = door->ubLockID;
+	}
+
+	struct Names { DoorCmd cmd; ST::string text; char const* icon; };
+	Names const names[] = {
+		{ DoorCmd::Open,      pTacticalPopupButtonStrings[fClosingDoor ? CANCEL_ICON + 1 : OPEN_DOOR_ICON], "door" },
+		{ DoorCmd::Examine,   pTacticalPopupButtonStrings[EXAMINE_DOOR_ICON],   "search" },
+		{ DoorCmd::Untrap,    pTacticalPopupButtonStrings[UNTRAP_DOOR_ICON],    "wire-cut" },
+		{ DoorCmd::Keyring,   pTacticalPopupButtonStrings[USE_KEYRING_ICON],    "key" },
+		{ DoorCmd::Lockpick,  pTacticalPopupButtonStrings[LOCKPICK_DOOR_ICON],  "lockpick" },
+		{ DoorCmd::Crowbar,   pTacticalPopupButtonStrings[USE_CROWBAR_ICON],    "crowbar" },
+		{ DoorCmd::Boot,      pTacticalPopupButtonStrings[BOOT_DOOR_ICON],      "punch" },
+		{ DoorCmd::Explosive, pTacticalPopupButtonStrings[EXPLOSIVE_DOOR_ICON], "door-explosive" },
+		{ DoorCmd::Cancel,    pTacticalPopupButtonStrings[CANCEL_ICON],         "close" },
+	};
+	for (Names const& n : names)
+	{
+		PopupModels::Row const* const r = gMenuModel.Find(int(n.cmd));
+		if (!r) continue;
+
+		// the modifiers a skill roll would have (the "informative tooltips" policy)
+		ST::string warnings{}, revealedMods{};
+		if (gamepolicy(informative_tooltips))
+		{
+			switch (n.cmd)
+			{
+				case DoorCmd::Lockpick:  revealedMods = GetModifiersForLockPicking(s, door); break;
+				case DoorCmd::Examine:   revealedMods = GetModifiersForLockExam(s, door); break;
+				case DoorCmd::Untrap:    revealedMods = GetModifiersForLockUntrap(s, door); break;
+				case DoorCmd::Boot:      revealedMods = GetModifiersForLockForceOpen(s, door, false); break;
+				case DoorCmd::Crowbar:   revealedMods = GetModifiersForLockForceOpen(s, door, true); break;
+				case DoorCmd::Explosive: revealedMods = GetModifiersForLockBlowUp(s); break;
+				default: break;
+			}
+		}
+		if (door && n.cmd == DoorCmd::Examine)
+		{
+			if (door->bPerceivedTrapped == DOOR_PROVED_TRAPPED)
+				warnings += st_format_printf("\n" + TacticalStr[DOOR_LOCK_DESCRIPTION_STR], GetTrapName(*door));
+			else if (door->bPerceivedTrapped == DOOR_PROVED_UNTRAPPED)
+				warnings += st_format_printf("\n" + TacticalStr[DOOR_LOCK_UNTRAPPED_STR], GetTrapName(*door));
+		}
+		if (r->why == Why::Diagonal) warnings += "\n" + *(GCM->getNewString(NS_DIAGONALITY_WARNING));
+
+		PopupRow row;
+		row.cmd = int(n.cmd);
+		row.name = DoorCmdName(int(n.cmd));
+		row.group = r->group;
+		row.enabled = r->enabled;
+		row.why = WhyKey(r->why);
+		row.ap = r->ap;
+		SplitHotkey(n.text, row.label, row.kbd);
+		row.title = row.label + warnings + revealedMods;
+		row.icon = n.icon;
+		gMenuView.rows.push_back(row);
+	}
+
+	PopupEvent e;
+	e.kind = PopupKind::Door;
+	e.action = "open";
+	FinishPopup(e);
 
 	// Ignore scrolling
 	gfIgnoreScrolling = TRUE;
@@ -1595,16 +1342,6 @@ void PopDownOpenDoorMenu( )
 		// UnPause timers as well....
 		PauseTime( FALSE );
 
-		RemoveButton( iActionIcons[ USE_KEYRING_ICON  ] );
-		RemoveButton( iActionIcons[ USE_CROWBAR_ICON  ] );
-		RemoveButton( iActionIcons[ LOCKPICK_DOOR_ICON  ] );
-		RemoveButton( iActionIcons[ EXPLOSIVE_DOOR_ICON  ] );
-		RemoveButton( iActionIcons[ OPEN_DOOR_ICON  ] );
-		RemoveButton( iActionIcons[ EXAMINE_DOOR_ICON  ] );
-		RemoveButton( iActionIcons[ BOOT_DOOR_ICON  ] );
-		RemoveButton( iActionIcons[ UNTRAP_DOOR_ICON  ] );
-		RemoveButton( iActionIcons[ CANCEL_ICON  ] );
-
 		// Turn off Ignore scrolling
 		gfIgnoreScrolling = FALSE;
 
@@ -1613,7 +1350,8 @@ void PopDownOpenDoorMenu( )
 
 		fInterfacePanelDirty = DIRTYLEVEL2;
 
-		MSYS_RemoveRegion( &gMenuOverlayRegion);
+		gMenuView = MenuPopup{};
+		gMenuModel = PopupModels::Menu{};
 	}
 
 	gfInOpenDoorMenu = FALSE;
@@ -1622,30 +1360,7 @@ void PopDownOpenDoorMenu( )
 
 void RenderOpenDoorMenu( )
 {
-	if (NativeUI::TacticalHudActive()) return; // the native HUD draws the menu itself
-	if ( gfInOpenDoorMenu )
-	{
-		BltVideoObject(FRAME_BUFFER, guiBUTTONBORDER, 0, gOpenDoorMenu.sX, gOpenDoorMenu.sY);
-
-		// Mark buttons dirty!
-		MarkAButtonDirty( iActionIcons[ USE_KEYRING_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ USE_CROWBAR_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ LOCKPICK_DOOR_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ EXPLOSIVE_DOOR_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ OPEN_DOOR_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ EXAMINE_DOOR_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ BOOT_DOOR_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ UNTRAP_DOOR_ICON  ] );
-		MarkAButtonDirty( iActionIcons[ CANCEL_ICON  ] );
-
-		RenderButtons( );
-
-		// if game is paused, then render paused game text
-		RenderPausedGameBox( );
-
-		InvalidateRegion( gOpenDoorMenu.sX, gOpenDoorMenu.sY, gOpenDoorMenu.sX + BUTTON_PANEL_WIDTH, gOpenDoorMenu.sY + BUTTON_PANEL_HEIGHT );
-
-	}
+	// the native HUD draws the menu itself
 }
 
 void CancelOpenDoorMenu( )
@@ -1656,115 +1371,108 @@ void CancelOpenDoorMenu( )
 
 
 // ---------------------------------------------------------------------------------------------------------------
-// The native tactical HUD's view of the movement and door menus (src/game/NativeUI/TacticalHud.cc): it draws the
-// menus above itself and presses these buttons, so what it shows cannot drift from what the buttons do.
+// The popups' side of the menus (PopupAdapter.h): what the native HUD shows, and the choices it sends back.
 
-NativeMenuView NativeMovementMenuView()
+MenuPopup CurrentMenuPopup()
 {
-	if (!gfInMovementMenu || gMenuNative.kind != "movement") return {};
-	return gMenuNative;
+	if (gfInMovementMenu || gfInOpenDoorMenu) return gMenuView;
+	return {};
 }
 
-NativeMenuView NativeDoorMenuView()
-{
-	if (!gfInOpenDoorMenu || gMenuNative.kind != "door") return {};
-	return gMenuNative;
-}
-
-void NativeMenuClick(INT16 const id)
-{
-	if (id < 0 || id >= NUM_ICONS) return;
-	GUIButtonRef const btn = iActionIcons[id];
-	if (!btn || !btn->Enabled()) return;
-	if (gfInMovementMenu)      BtnMovementCallback(btn, MSYS_CALLBACK_REASON_POINTER_UP);
-	else if (gfInOpenDoorMenu) BtnDoorMenuCallback(btn, MSYS_CALLBACK_REASON_POINTER_UP);
-}
-
-void NativeMenuCancel()
-{
-	if (gfInMovementMenu)      CancelMovementMenu();
-	else if (gfInOpenDoorMenu) CancelOpenDoorMenu();
-}
-
-
-static void DoorAction(INT16 const ap, INT16 const bp, HandleDoor const action)
+static bool DoorAction(INT16 const ap, INT16 const bp, HandleDoor const action)
 {
 	SOLDIERTYPE* const s = gOpenDoorMenu.pSoldier;
 	if (EnoughPoints(s, ap, bp, FALSE))
 	{
 		SetUIBusy(s);
 		InteractWithClosedDoor(s, action);
+		return true;
 	}
-	else
-	{
-		// set cancel code
-		gOpenDoorMenu.fMenuHandled = 2;
-	}
+	// set cancel code
+	gOpenDoorMenu.fMenuHandled = 2;
+	return false;
 }
 
 
-static void BtnDoorMenuCallback(GUI_BUTTON* btn, UINT32 reason)
+static bool DoorChoose(int const cmd)
 {
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
+	using PopupModels::DoorCmd;
+	SOLDIERTYPE* const s = gOpenDoorMenu.pSoldier;
+	if (!gfInOpenDoorMenu || !s) return false;
+
+	// Popdown menu
+	gOpenDoorMenu.fMenuHandled = TRUE;
+	bool ok = true;
+
+	switch (DoorCmd(cmd))
 	{
-		btn->uiFlags |= BUTTON_CLICKED_ON;
-
-		// Popdown menu
-		gOpenDoorMenu.fMenuHandled = TRUE;
-
-		if (btn == iActionIcons[CANCEL_ICON])
-		{
+		case DoorCmd::Cancel:
 			// OK, set cancle code!
 			gOpenDoorMenu.fMenuHandled = 2;
-		}
-		else if (btn == iActionIcons[OPEN_DOOR_ICON])
-		{
-			// Open door normally...
-			// Check APs
-			if (EnoughPoints(gOpenDoorMenu.pSoldier, doorAPs[gOpenDoorMenu.pSoldier->ubDoorHandleCode], BP_OPEN_DOOR, FALSE))
+			break;
+
+		case DoorCmd::Open:
+			// Open door normally... Check APs
+			if (EnoughPoints(s, doorAPs[s->ubDoorHandleCode], BP_OPEN_DOOR, FALSE))
 			{
 				// Set UI
-				SetUIBusy(gOpenDoorMenu.pSoldier);
+				SetUIBusy(s);
 
-				InteractWithClosedDoor(gOpenDoorMenu.pSoldier, HANDLE_DOOR_OPEN);
+				InteractWithClosedDoor(s, HANDLE_DOOR_OPEN);
 			}
 			else
 			{
 				// OK, set cancle code!
 				gOpenDoorMenu.fMenuHandled = 2;
+				ok = false;
 			}
-		}
-		else if (btn == iActionIcons[BOOT_DOOR_ICON])
-		{
-			DoorAction(AP_BOOT_DOOR, BP_BOOT_DOOR, HANDLE_DOOR_FORCE);
-		}
-		else if (btn == iActionIcons[USE_KEYRING_ICON])
-		{
-			DoorAction(AP_UNLOCK_DOOR, BP_UNLOCK_DOOR, HANDLE_DOOR_UNLOCK);
-		}
-		else if (btn == iActionIcons[LOCKPICK_DOOR_ICON])
-		{
-			DoorAction(AP_PICKLOCK, BP_PICKLOCK, HANDLE_DOOR_LOCKPICK);
-		}
-		else if (btn == iActionIcons[EXAMINE_DOOR_ICON])
-		{
-			DoorAction(AP_EXAMINE_DOOR, BP_EXAMINE_DOOR, HANDLE_DOOR_EXAMINE);
-		}
-		else if (btn == iActionIcons[EXPLOSIVE_DOOR_ICON])
-		{
-			DoorAction(AP_EXPLODE_DOOR, BP_EXPLODE_DOOR, HANDLE_DOOR_EXPLODE);
-		}
-		else if (btn == iActionIcons[UNTRAP_DOOR_ICON])
-		{
-			DoorAction(AP_UNTRAP_DOOR, BP_UNTRAP_DOOR, HANDLE_DOOR_UNTRAP);
-		}
-		else if (btn == iActionIcons[USE_CROWBAR_ICON])
-		{
-			DoorAction(AP_USE_CROWBAR, BP_USE_CROWBAR, HANDLE_DOOR_CROWBAR);
-		}
+			break;
 
-		HandleOpenDoorMenu();
+		case DoorCmd::Boot:      ok = DoorAction(AP_BOOT_DOOR, BP_BOOT_DOOR, HANDLE_DOOR_FORCE); break;
+		case DoorCmd::Keyring:   ok = DoorAction(AP_UNLOCK_DOOR, BP_UNLOCK_DOOR, HANDLE_DOOR_UNLOCK); break;
+		case DoorCmd::Lockpick:  ok = DoorAction(AP_PICKLOCK, BP_PICKLOCK, HANDLE_DOOR_LOCKPICK); break;
+		case DoorCmd::Examine:   ok = DoorAction(AP_EXAMINE_DOOR, BP_EXAMINE_DOOR, HANDLE_DOOR_EXAMINE); break;
+		case DoorCmd::Explosive: ok = DoorAction(AP_EXPLODE_DOOR, BP_EXPLODE_DOOR, HANDLE_DOOR_EXPLODE); break;
+		case DoorCmd::Untrap:    ok = DoorAction(AP_UNTRAP_DOOR, BP_UNTRAP_DOOR, HANDLE_DOOR_UNTRAP); break;
+		case DoorCmd::Crowbar:   ok = DoorAction(AP_USE_CROWBAR, BP_USE_CROWBAR, HANDLE_DOOR_CROWBAR); break;
+		case DoorCmd::Count:     ok = false; break;
 	}
+
+	HandleOpenDoorMenu();
+	return ok;
+}
+
+
+bool PopupMenuChoose(int const cmd)
+{
+	bool const door = gfInOpenDoorMenu != FALSE;
+	if (!gfInMovementMenu && !door) return false;
+
+	PopupEvent e;
+	e.kind = door ? PopupKind::Door : PopupKind::Action;
+	e.action = "choose";
+	e.id = cmd;
+	e.what = door ? PopupModels::DoorCmdName(cmd) : PopupModels::ActionCmdName(cmd);
+
+	PopupModels::Row const* const row = gMenuModel.Find(cmd);
+	if (!row || !row->enabled)
+	{
+		e.ok = false;
+		e.why = row ? PopupModels::WhyKey(row->why) : "no_row";
+		return FinishPopup(e);
+	}
+
+	BeginPopup(e);
+	e.ok = door ? DoorChoose(cmd) : MovementChoose(cmd);
+	if (!e.ok) e.why = "refused";
+	return FinishPopup(e);
+}
+
+
+void PopupMenuCancel()
+{
+	if (gfInMovementMenu)      PopupMenuChoose(int(PopupModels::ActionCmd::Cancel));
+	else if (gfInOpenDoorMenu) PopupMenuChoose(int(PopupModels::DoorCmd::Cancel));
 }
 
 
@@ -2215,24 +1923,6 @@ void InitPlayerUIBar( BOOLEAN fInterrupt )
 
 	// OK, set value
 	AddTopMessage(fInterrupt != TRUE ? PLAYER_TURN_MESSAGE : PLAYER_INTERRUPT_MESSAGE);
-}
-
-
-static void MovementMenuBackregionCallback(MOUSE_REGION* pRegion, UINT32 iReason)
-{
-	if ( iReason & MSYS_CALLBACK_REASON_POINTER_UP )
-	{
-		CancelMovementMenu( );
-	}
-}
-
-
-static void DoorMenuBackregionCallback(MOUSE_REGION* pRegion, UINT32 iReason)
-{
-	if ( iReason & MSYS_CALLBACK_REASON_POINTER_UP )
-	{
-		CancelOpenDoorMenu( );
-	}
 }
 
 

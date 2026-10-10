@@ -293,17 +293,16 @@
 			<div class="menu-title"><span class="t">{{menu_title}}</span><span class="m">{{menu_sub}}</span></div>
 			<div data-for="m : menu" data-attr-id="m.eid" data-class-menu-item="m.kind == 'item'" data-class-menu-head="m.kind == 'head'" data-class-menu-sep="m.kind == 'sep'" data-class-is-disabled="m.disabled" data-attr-title="m.title" data-event-click="menu_item(m.id)">
 				<img class="icon" data-if="m.kind == 'item'" data-attr-src="'icon-' + m.icon"/>
-				<span class="label">{{m.label}}</span>
+				<div class="lw"><span class="label">{{m.label}}</span><span class="why" data-if="m.why != ''">{{m.why}}</span></div>
 				<span class="kbd" data-if="m.kbd != ''">{{m.kbd}}</span>
 				<span class="ap" data-if="m.kind == 'item' &amp;&amp; m.ap >= 0">{{m.ap}} AP</span>
-				<span class="why" data-if="m.why != ''">{{m.why}}</span>
 			</div>
 		</div>
 	</div>
 
 	<!-- the pick-up menu (items on the ground): the same rows and rules as the legacy list -->
 	<div class="scrim hit audit-over" data-if="pick_open"></div>
-	<div class="pop pick hit audit-over" id="tac.pickup" data-if="pick_open" data-style-left="pick_x + 'px'" data-style-top="pick_y + 'px'">
+	<div class="pop pick hud hit audit-over" id="tac.pickup" data-if="pick_open" data-style-left="pick_x + 'px'" data-style-top="pick_y + 'px'">
 		<div class="hud-head"><img class="icon sm" src="icon-sector-inventory"/><span class="t">{{pick_title}}</span><span class="m">{{pick_sub}}</span></div>
 		<div class="rows">
 			<div class="prow" data-for="p : pick" data-attr-id="p.eid" data-class-on="p.sel" data-attr-title="p.title" data-event-click="pick_item(p.slot)" data-event-mouseover="pick_hover(p.slot)" data-event-mouseout="pick_hover(-1)">
@@ -323,6 +322,107 @@
 			<button class="btn btn-primary" id="tac.pickup.ok" data-class-is-disabled="!pick_ok_enabled" data-event-click="pick_ok"><span class="label">{{pick_ok}}</span></button>
 		</div>
 	</div>
+	<!-- the stack popup (right click on a stack): the objects of the pocket it came from. A click takes that object into
+	     the hand, or puts the hand's object there; Take n lifts the last n at once (src/game/Tactical/PopupAdapter.h) -->
+	<div class="scrim clear hit audit-over" data-if="stk_open" data-event-click="stack_close"></div>
+	<div class="pop sp-stack hud hit audit-over" id="tac.stack" data-if="stk_open" data-style-left="stk_x + 'px'" data-style-top="stk_y + 'px'">
+		<div class="hud-head"><img class="icon sm" src="icon-ammo"/><span class="t" style="margin-left: 8dp;">{{stk_name}}</span><span class="m">{{stk_where}}</span><div class="grow"></div>
+			<button class="icon-btn" id="tac.stack.close" title="Close (Esc)" data-event-click="stack_close"><img class="icon" src="icon-close"/></button></div>
+		<div class="stk">
+			<div class="it" data-for="b : stk" data-attr-id="b.eid" data-class-on="b.filled" data-class-empty="!b.filled" data-event-mouseup="stack_box(b.i, ev.button)">
+				<div class="pc"><img class="pic" data-if="b.filled" data-attr-src="b.src" data-style-width="b.w + 'px'" data-style-height="b.h + 'px'"/></div>
+				<span class="v" data-class-low="b.low">{{b.text}}</span>
+			</div>
+		</div>
+		<div class="split" data-if="stk_count &gt; 1">
+			<span class="k">{{l_take}}</span>
+			<button class="icon-btn" id="tac.stack.less" data-class-is-disabled="!stk_less" data-event-click="stack_less"><img class="icon sm" src="icon-remove"/></button>
+			<span class="n" id="tac.stack.n">{{stk_take}}</span>
+			<button class="icon-btn" id="tac.stack.more" data-class-is-disabled="!stk_more" data-event-click="stack_more"><img class="icon sm" src="icon-add"/></button>
+			<div class="grow"></div>
+		</div>
+		<div class="foot">
+			<button class="btn" id="tac.stack.take" data-class-is-disabled="stk_holding" data-event-click="stack_take"><span class="label">{{stk_take_label}}</span></button>
+			<div class="grow"></div>
+			<button class="btn btn-primary" id="tac.stack.all" data-class-is-disabled="stk_holding" data-event-click="stack_all"><span class="label">{{l_take_all}}</span></button>
+		</div>
+		<span class="hint">{{stk_hint}}</span>
+	</div>
+
+	<!-- the key ring (the key button of the detail panel, K): each key with where it was found, Use on the door in front
+	     of the merc (with the reason when it is off) and Give (the key in the hand) -->
+	<div class="scrim clear hit audit-over" data-if="key_open" data-event-click="key_close"></div>
+	<div class="pop sp-key hud hit audit-over" id="tac.keyring" data-if="key_open" data-style-left="key_x + 'px'" data-style-top="key_y + 'px'">
+		<div class="hud-head"><img class="icon sm" src="icon-key"/><span class="t" style="margin-left: 8dp;">{{l_key_ring}}</span><span class="m">{{key_who}}</span><div class="grow"></div>
+			<button class="icon-btn" id="tac.keyring.close" title="Close (K)" data-event-click="key_close"><img class="icon" src="icon-close"/></button></div>
+		<div class="rows" id="tac.keyring.rows">
+			<div class="krow" data-for="k : keys" data-attr-id="k.eid" data-event-mouseup="key_row(k.slot, ev.button)">
+				<div class="pc"><img class="pic" data-if="k.src != ''" data-attr-src="k.src" data-style-width="k.w + 'px'" data-style-height="k.h + 'px'"/></div>
+				<div class="tx"><span class="a">{{k.name}}</span><span class="b">{{k.found}}</span></div>
+				<span class="q">×{{k.count}}</span>
+				<button class="btn" data-attr-id="k.use_id" data-class-is-disabled="!k.can_use" data-attr-title="k.why" data-event-click="key_use(k.slot)"><span class="label">{{l_use}}</span></button>
+				<button class="btn" data-attr-id="k.take_id" data-event-click="key_take(k.slot)"><span class="label">{{l_give}}</span></button>
+			</div>
+			<span class="none" data-if="key_none">{{l_no_keys}}</span>
+		</div>
+		<div class="foot"><span class="hint" style="padding: 0;">{{key_hint}}</span><div class="grow"></div>
+			<button class="btn btn-primary" id="tac.keyring.put" data-if="key_holding" data-event-click="key_put"><span class="label">{{l_put_key}}</span></button>
+			<button class="btn" id="tac.keyring.done" data-event-click="key_close"><span class="label">{{l_close}}</span><span class="kbd">K</span></button></div>
+	</div>
+
+	<!-- the talk panel (the approved Phase 5 layout): centred over the bar, never over the speaker. The NPC's face and
+	     what they said, the approaches with their keys, Done. Nothing can be chosen while someone is speaking. -->
+	<div class="scrim clear hit audit-over" data-if="talk_open"></div>
+	<div class="sp-talk hud hit audit-over" id="tac.talk.panel" data-if="talk_open" data-style-bottom="talk_bottom + 'px'">
+		<div class="body">
+			<div class="npc">
+				<div class="face"><img class="pic" data-if="talk_face != ''" data-attr-src="talk_face" data-style-width="talk_fw + 'px'" data-style-height="talk_fh + 'px'"/><img class="spk" data-if="talk_speaking" src="icon-talk"/></div>
+				<span class="nm" id="tac.talk.name" data-attr-title="l_talk_who" data-event-click="talk_who">{{talk_name}}</span>
+			</div>
+			<div class="say" id="tac.talk.text">
+				<span class="who">{{talk_name}}</span>
+				<span class="line" id="tac.talk.line">{{talk_line}}</span>
+				<span class="prev" data-if="talk_prev != ''">{{talk_prev}}</span>
+			</div>
+		</div>
+		<div class="opts" id="tac.talk.approaches">
+			<button class="btn" data-for="r : talk" data-attr-id="r.eid" data-class-is-disabled="!r.enabled" data-attr-title="r.title" data-event-click="talk_choose(r.approach)"><span class="label">{{r.label}}</span><span class="kbd">{{r.key}}</span></button>
+			<div class="grow"></div>
+			<button class="btn btn-primary" id="tac.talk.done" data-event-click="talk_done"><span class="label">{{l_done}}</span><span class="kbd">Esc</span></button>
+		</div>
+	</div>
+
+	<!-- a merc or an NPC speaking in tactical: the subtitle over the merc's head when he is in the sector, otherwise
+	     the face card -->
+	<div class="sp-bubble hit audit-over" id="tac.speech.bubble" data-if="sp_open &amp;&amp; sp_bubble" data-style-left="sp_x + 'px'" data-style-top="sp_y + 'px'" data-event-click="speech_click">
+		<span class="who">{{sp_who}}</span><span class="tx">{{sp_line}}</span>
+	</div>
+	<div class="sp-face hud hit audit-over" id="tac.speech.face" data-if="sp_open &amp;&amp; !sp_bubble" data-event-click="speech_click">
+		<div class="body">
+			<div class="fc"><img class="pic" data-if="sp_face != ''" data-attr-src="sp_face" data-style-width="sp_fw + 'px'" data-style-height="sp_fh + 'px'"/></div>
+			<div class="tx"><span class="who">{{sp_who}}</span><span class="l">{{sp_line}}</span></div>
+		</div>
+	</div>
+
+	<!-- the sector exit menu (moving to the edge of the map): who leaves and whether the next sector loads now -->
+	<div class="scrim clear hit audit-over" data-if="ex_open"></div>
+	<div class="pop sp-exit hud hit audit-over" id="tac.exit" data-if="ex_open" data-class-east="ex_dir == 'east'" data-class-west="ex_dir == 'west'" data-class-north="ex_dir == 'north'" data-class-south="ex_dir == 'south'" data-class-exit="ex_dir == 'exit'">
+		<div class="hud-head"><img class="icon sm" src="icon-exit-sector"/><span class="t" id="tac.exit.title" style="margin-left: 8dp;">{{ex_title}}</span><span class="m">{{ex_dir_label}}</span><div class="grow"></div>
+			<button class="icon-btn" id="tac.exit.close" title="Cancel (Esc)" data-event-click="exit_cancel"><img class="icon" src="icon-close"/></button></div>
+		<div class="rows">
+			<div class="opt" id="tac.exit.single" data-class-on="ex_single_sel" data-class-off="ex_single_off" data-attr-title="ex_single_tip" data-event-click="exit_single"><div class="rb"></div><span class="a">{{ex_single_label}}</span><span class="b">{{ex_single_count}}</span><span class="why" data-if="ex_single_off">{{ex_single_why}}</span></div>
+			<div class="opt" id="tac.exit.all" data-class-on="ex_all_sel" data-class-off="ex_all_off" data-attr-title="ex_all_tip" data-event-click="exit_all"><div class="rb"></div><span class="a">{{ex_all_label}}</span><span class="b">{{ex_all_count}}</span><span class="why" data-if="ex_all_off">{{ex_all_why}}</span></div>
+		</div>
+		<div class="chk" id="tac.exit.load" data-class-on="ex_load_sel" data-class-off="ex_load_off" data-attr-title="ex_load_tip" data-event-click="exit_load"><div class="bx"></div><span>{{ex_load_label}}</span></div>
+		<span class="why-line" data-if="ex_load_off">{{ex_load_why}}</span>
+		<div class="facts">
+			<div class="kv"><span class="k">{{l_travel}}</span><span class="v" id="tac.exit.trip">{{ex_trip}}</span></div>
+		</div>
+		<div class="foot"><div class="grow"></div>
+			<button class="btn" id="tac.exit.cancel" data-event-click="exit_cancel"><span class="label">{{l_cancel}}</span><span class="kbd">Esc</span></button>
+			<button class="btn btn-primary" id="tac.exit.go" data-class-is-disabled="!ex_can_go" data-event-click="exit_go"><span class="label">{{l_go}}</span><span class="kbd">Enter</span></button></div>
+	</div>
+
 </div>
 </body>
 </rml>

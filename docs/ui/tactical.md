@@ -183,11 +183,18 @@ up. The chance to hit is always worked out for the chip (`show_hit_chance` only 
 | Message lines; message log on **H** with filters (help moved to **Shift+H**) | I13 |
 | Turn / interrupt / enemy banner with progress | I14 |
 | Sector, town, day and time; overhead (Insert), tree tops, item glow | I15 |
-| Action menu (right click held): Move and Act groups with keys and AP costs; door menu: the door's actions with AP costs and why a choice is off; pick-up menu: the items on the ground with All / Take / Cancel | A17–A19 |
+| Action menu (right click held): Move and Act groups with keys and AP costs; door menu: the door's actions with AP costs and why a choice is off; pick-up menu: the items on the ground with All / Take / Cancel — all three are models (`PopupModels`), no legacy button or region is made | A17–A19 |
+| Stack popup (right click on a stack): the objects with rounds or condition, click takes one into the hand or puts the hand's object in, *Take n* / *Take all*; key ring: each key with where it was found, *Use* on the door in front of the merc (with the reason when it is off), *Give* (the key in the hand) and *Put the key back*; a key in the hand dropped on a door uses it | A20 |
+| Talk panel (the Phase 5 layout, centred over the bar): the NPC's face and line, the six approaches with keys 1-6, *Done* (Esc), the name asks who they are; the merc's own line as a subtitle over his head and the speaking face as a card | A20 |
+| Sector exit menu: who leaves (selected merc / the squad), load the next sector now or travel on the map, what is off and why, the trip; Esc cancels, Enter goes | A21 |
 
 Gaps, still legacy or not done in this PR:
-- The sector-exit menu and the NPC talk panel: the legacy ones (they draw over the world and work).
-  The stack and key-ring popups open where the legacy panel is: the native HUD hides itself while they are open.
+- The popups need the native HUD (1280x720 and up, `ui_mode tactical=native`). Without it nothing can draw them, so
+  each one takes its safe default: the action menu cancels, the door opens, the pick-up list takes everything, the
+  sector exit goes as the dialogue opened, and a conversation says its first line and closes. The quest debug
+  screen's talk panel no longer draws.
+- The talk panel shows the NPC's face as a picture: no mouth or eyes animation yet (that is the squad card's work in
+  #319). Recruit is never greyed out: whether she will join is the conversation's answer, not a rule the panel knows.
 - Overhead map and placement: legacy. The sector card has no radar picture yet.
 - The detail panel's inventory stays click-to-pick, click-to-put; the dedicated loadout screen
   (`docs/ui/loadout.md`, the inventory button in the panel header) has real drag and drop, the LBE

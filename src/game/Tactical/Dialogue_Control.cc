@@ -1,4 +1,6 @@
 #include "Dialogue_Control.h"
+#include "NativeUI.h"
+#include "PopupAdapter.h"
 #include "AI.h"
 #include "AIMMembers.h"
 #include "Assignments.h"
@@ -137,6 +139,15 @@ static INT8 gubLogForMeTooBleeds = FALSE;
 // has the text region been created?
 static BOOLEAN fTextBoxMouseRegionCreated  = FALSE;
 static BOOLEAN fExternFaceBoxRegionCreated = FALSE;
+
+// What the native HUD shows of the line being spoken (PopupAdapter.h: SpeechView): the speaking face and the subtitle.
+// While the native HUD is up the face overlay, the subtitle box and their regions are not made.
+static SpeechView g_speech;
+
+static bool NativeSpeech()
+{
+	return guiCurrentScreen == GAME_SCREEN && NativeUI::TacticalHudActive();
+}
 
 
 static cache_key_t const guiCOMPANEL{ INTERFACEDIR "/communicationpopup.sti" };
@@ -834,6 +845,20 @@ static void HandleTacticalTextUI(ProfileID profile_id, const ST::string& zQuoteS
 
 static void CreateTalkingUI(DialogueHandler bUIHandlerID, FACETYPE& f, UINT8 ubCharacterNum, const ST::string& zQuoteStr)
 {
+	if (NativeSpeech() && (bUIHandlerID == DIALOGUE_TACTICAL_UI || bUIHandlerID == DIALOGUE_EXTERNAL_NPC_UI))
+	{
+		g_speech = SpeechView{};
+		g_speech.shown = true;
+		g_speech.profile = ubCharacterNum;
+		g_speech.face = ubCharacterNum != NO_PROFILE ? GetProfile(ubCharacterNum).ubFaceIndex : 0;
+		g_speech.who = ubCharacterNum != NO_PROFILE ? GetProfile(ubCharacterNum).zNickname : ST::string();
+		// with subtitles off and a voice to hear, the face is shown without the words
+		if (gGameSettings.fOptions[TOPTION_SUBTITLES] || !f.fValidSpeech) g_speech.line = ST::format("\"{}\"", zQuoteStr);
+		SOLDIERTYPE const* const s = ubCharacterNum != NO_PROFILE ? FindSoldierByProfileID(ubCharacterNum) : nullptr;
+		g_speech.soldier = s && s->bInSector && s->sGridNo != NOWHERE;
+		g_speech.gridno = g_speech.soldier ? s->sGridNo : -1;
+	}
+
 	// Show text, if on
 	if (gGameSettings.fOptions[TOPTION_SUBTITLES] || !f.fValidSpeech)
 	{
@@ -951,6 +976,9 @@ static void DisplayTextForExternalNPC(UINT8 ubCharacterNum, const ST::string& zQ
 	MapScreenMessage(FONT_MCOLOR_WHITE, MSG_DIALOG, ST::format("{}: \"{}\"",
 				GetProfile(ubCharacterNum).zNickname, zQuoteStr));
 
+	// the native HUD shows the line itself
+	if (NativeSpeech()) return;
+
 	if ( guiCurrentScreen == MAP_SCREEN )
 	{
 		// on the map screen dialog can be in any place requested
@@ -973,7 +1001,8 @@ static void HandleTacticalTextUI(ProfileID profile_id, const ST::string& zQuoteS
 {
 	ST::string zText = ST::format("\"{}\"", zQuoteStr);
 
-	ExecuteTacticalTextBox( g_ui.getTacticalTextBoxX(), g_ui.getTacticalTextBoxY(), zText );
+	// the native HUD shows the line itself
+	if (!NativeSpeech()) ExecuteTacticalTextBox( g_ui.getTacticalTextBoxX(), g_ui.getTacticalTextBoxY(), zText );
 
 	MapScreenMessage(FONT_MCOLOR_WHITE, MSG_DIALOG, ST::format("{}: \"{}\"", GetProfile(profile_id).zNickname, zQuoteStr));
 }
@@ -1032,17 +1061,21 @@ static void HandleExternNPCSpeechFace(FACETYPE& f)
 		y = gsExternPanelYPosition;
 	}
 
-	gpCurrentTalkingFace->video_overlay = RegisterVideoOverlay(RenderFaceOverlay, x, y, w, h);
-
 	RenderAutoFace(f);
 
-	// ATE: Create mouse region.......
-	if ( !fExternFaceBoxRegionCreated )
+	// the native HUD draws the face itself (PopupAdapter.h: SpeechView)
+	if (!NativeSpeech())
 	{
-		fExternFaceBoxRegionCreated = TRUE;
+		gpCurrentTalkingFace->video_overlay = RegisterVideoOverlay(RenderFaceOverlay, x, y, w, h);
 
-		//Define main region
-		MSYS_DefineRegion(&gFacePopupMouseRegion, x, y, x + w, y + h, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK, FaceOverlayClickCallback);
+		// ATE: Create mouse region.......
+		if ( !fExternFaceBoxRegionCreated )
+		{
+			fExternFaceBoxRegionCreated = TRUE;
+
+			//Define main region
+			MSYS_DefineRegion(&gFacePopupMouseRegion, x, y, x + w, y + h, MSYS_PRIORITY_HIGHEST, CURSOR_NORMAL, MSYS_NO_CALLBACK, FaceOverlayClickCallback);
+		}
 	}
 
 	gfFacePanelActive = TRUE;
@@ -1093,18 +1126,22 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 		INT16 const w = 99;
 		INT16 const h = 98;
 
-		gpCurrentTalkingFace->video_overlay = RegisterVideoOverlay(RenderFaceOverlay, x, y, w, h);
-
 		RenderAutoFace(f);
 
-		// ATE: Create mouse region.......
-		if ( !fExternFaceBoxRegionCreated )
+		// the native HUD draws the face itself (PopupAdapter.h: SpeechView)
+		if (!NativeSpeech())
 		{
-			fExternFaceBoxRegionCreated = TRUE;
+			gpCurrentTalkingFace->video_overlay = RegisterVideoOverlay(RenderFaceOverlay, x, y, w, h);
 
-			//Define main region
-			MSYS_DefineRegion(&gFacePopupMouseRegion, x, y, x + w, y + h, MSYS_PRIORITY_HIGHEST,
-						CURSOR_NORMAL, MSYS_NO_CALLBACK, FaceOverlayClickCallback);
+			// ATE: Create mouse region.......
+			if ( !fExternFaceBoxRegionCreated )
+			{
+				fExternFaceBoxRegionCreated = TRUE;
+
+				//Define main region
+				MSYS_DefineRegion(&gFacePopupMouseRegion, x, y, x + w, y + h, MSYS_PRIORITY_HIGHEST,
+							CURSOR_NORMAL, MSYS_NO_CALLBACK, FaceOverlayClickCallback);
+			}
 		}
 
 		gfFacePanelActive = TRUE;
@@ -1125,6 +1162,8 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 
 void HandleDialogueEnd(FACETYPE& f)
 {
+	if (&f == gpCurrentTalkingFace || !g_speech.shown) g_speech = SpeechView{};
+
 	if ( gGameSettings.fOptions[ TOPTION_SPEECH ] )
 	{
 
@@ -1206,14 +1245,6 @@ void HandleDialogueEnd(FACETYPE& f)
 
 			case DIALOGUE_NPC_UI:
 
-
-				// Remove region
-				if ( gTalkPanel.fTextRegionOn )
-				{
-					MSYS_RemoveRegion(&(gTalkPanel.TextRegion) );
-					gTalkPanel.fTextRegionOn = FALSE;
-
-				}
 
 				SetRenderFlags( RENDER_FLAG_FULL );
 				gTalkPanel.fRenderSubTitlesNow = FALSE;
@@ -1666,3 +1697,25 @@ TEST(DialogueControl, asserts)
 }
 
 #endif
+
+
+// ---------------------------------------------------------------------------------------------------------------
+// The speaking face as the native HUD shows it (PopupAdapter.h)
+
+SpeechView CurrentSpeech()
+{
+	SpeechView v = g_speech;
+	if (!v.shown) return v;
+	v.speaking = gpCurrentTalkingFace && gpCurrentTalkingFace->fTalking;
+	if (!NativeSpeech()) return SpeechView{};
+	return v;
+}
+
+void SpeechClick()
+{
+	// a click on the face or the words stops the line
+	if (gpCurrentTalkingFace != NULL)
+	{
+		InternalShutupaYoFace(gpCurrentTalkingFace, FALSE);
+	}
+}
