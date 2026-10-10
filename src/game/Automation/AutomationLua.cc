@@ -19,6 +19,7 @@
 #include "SysUtil.h"
 #include "UILayout.h"
 #include "Video.h"
+#include "WorldRender.h"
 #include "VSurface.h"
 #include "VideoOptionsScreen.h"
 #include "GameLoop.h"
@@ -989,6 +990,30 @@ namespace
 				r["zoom"] = double(g_ui.m_worldZoomQ) / VideoLayout::WORLD_ZOOM_STEPS;
 				r["layered"] = VideoIsLayered();
 				return r;
+			});
+		});
+
+		// ja2.setWorldLights{ {x,y,radius,r,g,b,intensity}, ... }: extra point lights on the world frame (the
+		// game's own muzzle flashes, explosions and lamps are added automatically from its light sprites).
+		// Positions are world pixels (== canvas pixels at world zoom 1). An empty table clears them. Returns
+		// how many were set.
+		ja2.set_function("setWorldLights", [](sol::optional<sol::table> t) {
+			return Guarded([&] {
+				std::vector<WorldPipe::PointLight> lights;
+				if (t)
+					for (auto const& kv : *t)
+					{
+						sol::table l = kv.second.as<sol::table>();
+						WorldPipe::PointLight p;
+						p.x = float(l["x"].get_or(0.0)); p.y = float(l["y"].get_or(0.0));
+						p.radius = float(l["radius"].get_or(0.0));
+						p.r = float(l["r"].get_or(1.0)); p.g = float(l["g"].get_or(1.0)); p.b = float(l["b"].get_or(1.0));
+						p.intensity = float(l["intensity"].get_or(1.0));
+						lights.push_back(p);
+					}
+				int const n = int(lights.size());
+				WorldRendererSetExtraLights(std::move(lights));
+				return n;
 			});
 		});
 

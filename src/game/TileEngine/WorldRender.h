@@ -37,6 +37,9 @@ WorldRendererKind WorldRendererSwitch(WorldRendererKind);
 void              WorldRendererSetReadback(bool);
 /** The static layers are recorded once and reused while the view does not change; off = re-record every frame. */
 void              WorldRendererSetStaticCache(bool);
+/** Extra point lights on the world frame, on top of the game's own (muzzle flashes, explosions, lamps). A
+ * test/driving hook: ja2.setWorldLights. Cleared with an empty list. */
+void              WorldRendererSetExtraLights(std::vector<WorldPipe::PointLight>);
 /** Why the gpu renderer is not active, if it was asked for. */
 std::string       WorldRendererError();
 

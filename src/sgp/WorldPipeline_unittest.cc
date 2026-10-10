@@ -95,7 +95,7 @@ Instance FromClip(ClipInfo const& ci, SpritePool& pool, Frame& f, Op op, uint16_
 	in.z = z;
 	in.outline = outline;
 	in.columns = NO_COLUMNS;
-	in.palette = f.Palette(pal);
+	in.palette = f.Palette(pal, nullptr);
 	return in;
 }
 
@@ -127,12 +127,13 @@ int Mismatches(Op op, Legacy const& legacy, bool clipped, uint32_t seed, uint16_
 	Target t;
 	t.w = W;
 	t.h = H;
-	t.color = b.color;
+	t.color.resize(size_t(W) * H);
+	for (int i = 0; i < W * H; ++i) t.color[i] = Expand565(b.color[i]);
 	t.depth = b.depth;
-	Rasterize(f, pool, ShadeTable, t);
+	Rasterize(f, pool, t);
 
 	int bad = 0;
-	for (int i = 0; i < W * H; ++i) bad += (a.color[i] != t.color[i]) + (a.depth[i] != t.depth[i]);
+	for (int i = 0; i < W * H; ++i) bad += (Expand565(a.color[i]) != t.color[i]) + (a.depth[i] != t.depth[i]);
 	return bad;
 }
 

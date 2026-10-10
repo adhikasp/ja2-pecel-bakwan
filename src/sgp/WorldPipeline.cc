@@ -1,4 +1,5 @@
 #include "WorldPipeline.h"
+#include "Shading.h"
 
 #include <algorithm>
 
@@ -86,11 +87,14 @@ void Frame::Clear(int const w, int const h)
 	std::fill(std::begin(paletteCache), std::end(paletteCache), PaletteSlot{});
 }
 
-uint32_t Frame::Palette(uint16_t const* const p)
+uint32_t Frame::Palette(uint16_t const* const p565, uint32_t const* const p24)
 {
-	PaletteSlot& slot = paletteCache[(reinterpret_cast<uintptr_t>(p) >> 9) & 1023];
-	if (slot.p == p) return slot.index;
-	auto it = paletteIndex.find(p);
+	// `p565` identifies the entry: it is what the recorder holds by pointer. A frame may pass only the 24-bit
+	// colours (p565 null), then that pointer is the key.
+	uint16_t const* const key = p565 ? p565 : reinterpret_cast<uint16_t const*>(p24);
+	PaletteSlot& slot = paletteCache[(reinterpret_cast<uintptr_t>(key) >> 9) & 1023];
+	if (slot.p == key) return slot.index;
+	auto it = paletteIndex.find(key);
 	uint32_t i;
 	if (it != paletteIndex.end())
 	{
@@ -99,10 +103,13 @@ uint32_t Frame::Palette(uint16_t const* const p)
 	else
 	{
 		i = uint32_t(palettes.size() / 256);
-		palettes.insert(palettes.end(), p, p + 256);
-		paletteIndex.emplace(p, i);
+		palettes.resize(palettes.size() + 256);
+		uint32_t* const dst = &palettes[size_t(i) * 256];
+		if (p24) std::copy_n(p24, 256, dst);
+		else for (int k = 0; k < 256; ++k) dst[k] = Expand565(p565[k]);
+		paletteIndex.emplace(key, i);
 	}
-	slot = { p, i };
+	slot = { key, i };
 	return i;
 }
 
@@ -114,25 +121,33 @@ void Target::Clear(Frame const& f)
 	depth.assign(size_t(w) * h, f.clearDepth);
 }
 
-void Rasterize(Frame const& f, SpritePool const& pool, uint16_t const* const shade, Target& t)
+void Rasterize(Frame const& f, SpritePool const& pool, Target& t)
 {
 	for (Instance const& in : f.instances)
 	{
-		uint16_t const* const pal = &f.palettes[size_t(in.palette) * 256];
+		uint32_t const* const pal = &f.palettes[size_t(in.palette) * 256];
 		int const x1 = std::min<int>(in.x1, t.w), y1 = std::min<int>(in.y1, t.h);
 		for (int y = in.y0; y < y1; ++y)
 		{
 			uint16_t const* const src = &pool.pixels[in.sprite + size_t(y - in.oy) * in.spriteW];
-			uint16_t* const dst = &t.color[size_t(y) * t.w];
+			uint32_t* const dst = &t.color[size_t(y) * t.w];
 			uint16_t* const dep = &t.depth[size_t(y) * t.w];
 			for (int x = in.x0; x < x1; ++x)
 			{
 				uint16_t const s = src[x - in.ox];
 				if (!(s & 0x100)) continue;
 				uint16_t const zc = DepthAt(in, f, x, y);
-				ApplyPixel(in, s, x, y, zc, pal, shade, f.translucentMask, dst[x], dep[x]);
+				ApplyPixel(in, s, x, y, zc, pal, ShadeTable, f.translucentMask, dst[x], dep[x]);
 			}
 		}
+	}
+	// The lighting pass, once per pixel after every op (Phase 8): the ops that read the destination are exact,
+	// the light is a plain multiplier on the finished colour.
+	if (!f.lighting.Identity())
+	{
+		for (int y = 0; y < t.h; ++y)
+			for (int x = 0; x < t.w; ++x)
+				ApplyLighting(t.color[size_t(y) * t.w + x], x, y, f.lighting);
 	}
 }
 
@@ -166,7 +181,7 @@ void Bins::Build(Frame const& f)
 	for (size_t b = 0; b < n; ++b) ranges[b * 2 + 1] = count[b];
 }
 
-DiffStats Compare(uint16_t const* a, uint16_t const* b, int const w, int const h, int x0, int y0, int x1, int y1,
+DiffStats Compare(uint32_t const* a, uint32_t const* b, int const w, int const h, int x0, int y0, int x1, int y1,
 	std::vector<uint8_t>* const diffRgb)
 {
 	DiffStats st;
@@ -189,27 +204,25 @@ DiffStats Compare(uint16_t const* a, uint16_t const* b, int const w, int const h
 			}
 			else
 			{
-				uint16_t const p = a[i];
-				uint32_t const r = (p >> 11) & 31, g = (p >> 5) & 63, bl = p & 31;
-				o[0] = uint8_t((r << 3 | r >> 2) / 3);
-				o[1] = uint8_t((g << 2 | g >> 4) / 3);
-				o[2] = uint8_t((bl << 3 | bl >> 2) / 3);
+				uint32_t const p = a[i];
+				o[0] = uint8_t((p >> 16) / 3);
+				o[1] = uint8_t(((p >> 8) & 0xFF) / 3);
+				o[2] = uint8_t((p & 0xFF) / 3);
 			}
 		}
 	}
 	return st;
 }
 
-std::vector<uint8_t> ToRgb(uint16_t const* px, int const w, int const h)
+std::vector<uint8_t> ToRgb(uint32_t const* px, int const w, int const h)
 {
 	std::vector<uint8_t> rgb(size_t(w) * h * 3);
 	for (size_t i = 0; i < size_t(w) * h; ++i)
 	{
-		uint16_t const p = px[i];
-		uint32_t const r = (p >> 11) & 31, g = (p >> 5) & 63, b = p & 31;
-		rgb[i * 3 + 0] = uint8_t(r << 3 | r >> 2);
-		rgb[i * 3 + 1] = uint8_t(g << 2 | g >> 4);
-		rgb[i * 3 + 2] = uint8_t(b << 3 | b >> 2);
+		uint32_t const p = px[i];
+		rgb[i * 3 + 0] = uint8_t(p >> 16);
+		rgb[i * 3 + 1] = uint8_t((p >> 8) & 0xFF);
+		rgb[i * 3 + 2] = uint8_t(p & 0xFF);
 	}
 	return rgb;
 }

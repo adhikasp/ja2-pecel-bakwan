@@ -7,6 +7,7 @@
 #include "Automation.h"
 #include "Headless.h"
 #include "Interface_Control.h"
+#include "Lighting.h"
 #include "stb_image_write.h"
 
 #include <chrono>
@@ -27,6 +28,7 @@ WorldRenderStats    gWorldStats;
 WorldGpu::Renderer* gWorldGpu = nullptr;
 bool                gNoStaticCache = false; // measure the worst case (every frame re-records everything, as when scrolling)
 bool                gNoReadback = false; // driven windows: skip the read-back into the WORLD_BUFFER (frame-rate runs)
+std::vector<WorldPipe::PointLight> gExtraLights; // test/driving lights (ja2.setWorldLights)
 
 using wr_clock = std::chrono::steady_clock;
 double WrMs(wr_clock::time_point a, wr_clock::time_point b) { return std::chrono::duration<double, std::milli>(b - a).count(); }
@@ -150,7 +152,8 @@ void RecordBlit(WorldPipe::Op const op, ClipInfo const& ci, UINT16 const* palett
 			// Debugging aid: the legacy strip blitter and the pipeline's rule for this instance on the same random
 			// colour and depth buffers; they must leave the same pixels
 			int const W = WORLD_SCREEN_WIDTH, H = WORLD_SCREEN_HEIGHT;
-			static std::vector<UINT16> c, zb, c2, zb2;
+			static std::vector<UINT16> c, zb, zb2;
+			static std::vector<UINT32> c2;
 			static UINT32 seed = 1;
 			c.resize(size_t(W) * H);
 			zb.resize(size_t(W) * H);
@@ -162,7 +165,8 @@ void RecordBlit(WorldPipe::Op const op, ClipInfo const& ci, UINT16 const* palett
 					c[i] = UINT16(seed >> 8);
 					zb[i] = UINT16(int(z) - 200 + int((seed >> 20) % 400));
 				}
-			c2 = c;
+			c2.resize(c.size());
+			for (size_t i = 0; i < c.size(); ++i) c2[i] = WorldPipe::Expand565(c[i]);
 			zb2 = zb;
 			switch (op)
 			{
@@ -174,21 +178,27 @@ void RecordBlit(WorldPipe::Op const op, ClipInfo const& ci, UINT16 const* palett
 				default: break;
 			}
 			UINT16 const* const pal = palette ? palette : ci.vobject->CurrentShade();
+			std::vector<uint32_t> pal888(256);
+			for (int i = 0; i < 256; ++i) pal888[i] = WorldPipe::Expand565(pal[i]);
 			int bad = 0;
 			for (int y = in.y0; y < in.y1 && y < H; ++y)
 				for (int x = in.x0; x < in.x1 && x < W; ++x)
 				{
 					size_t const i = size_t(y) * W + x;
 					UINT16 const s = r.pool->pixels[in.sprite + size_t(y - in.oy) * in.spriteW + (x - in.ox)];
-					if (s & 0x100) WorldPipe::ApplyPixel(in, s, x, y, WorldPipe::DepthAt(in, *r.frame, x, y), pal, ShadeTable, 0x7BEF, c2[i], zb2[i]);
-					if (c[i] != c2[i] || zb[i] != zb2[i]) ++bad;
+					if (s & 0x100) WorldPipe::ApplyPixel(in, s, x, y, WorldPipe::DepthAt(in, *r.frame, x, y), pal888.data(), ShadeTable, 0x7BEF, c2[i], zb2[i]);
+					if (c[i] != WorldPipe::Quantize565(c2[i]) || zb[i] != zb2[i]) ++bad;
 				}
 			if (bad) SLOGW("strip check: {} px differ, op {}, z {} leftSkip {} topSkip {} first {}", bad, WorldPipe::OpName(op), z, ls, ci.topSkip, first);
 		}
 	}
 
 	static UINT16 const noPalette[256] = {};
-	in.palette = r.frame->Palette(palette ? palette : noPalette);
+	// Tiles and items draw with the object's own palette: take its 24-bit form (Phase 8, 32-bit colour). Entities
+	// whose shade table the game built separately (mercs, corpses) keep their 565 table, expanded by the pipeline.
+	UINT32 const* palette24 = nullptr;
+	if (palette && palette == ci.vobject->CurrentShade()) palette24 = ci.vobject->CurrentShade24();
+	in.palette = r.frame->Palette(palette ? palette : noPalette, palette24);
 	if (r.glowTable) r.glowing.emplace_back(UINT32(r.frame->instances.size()), r.glowTable);
 	r.glowTable = nullptr;
 	r.frame->instances.push_back(in);
@@ -224,6 +234,36 @@ void RenderWorldScene(bool const checkInteractive)
 {
 	RenderWorldStatic();
 	RenderWorldDynamic(checkInteractive);
+}
+
+/** The frame's lighting (Phase 8 "lighting and shade tables as shaders"): the game's own dynamic lights
+ * (muzzle flashes, explosions, lamps - every active LIGHT_SPRITE) as point lights the shader applies. */
+WorldPipe::Lighting CollectLighting()
+{
+	WorldPipe::Lighting L;
+	SGPPaletteEntry const* const c = LightGetColor();
+	float const cr = c->r / 255.0f, cg = c->g / 255.0f, cb = c->b / 255.0f;
+	FOR_EACH(LIGHT_SPRITE, l, LightSprites)
+	{
+		if (!(l->uiFlags & LIGHT_SPR_ACTIVE)) continue;
+		if (l->iX < 0 || l->iY < 0 || l->iX >= WORLD_COLS || l->iY >= WORLD_ROWS) continue;
+		INT16 const rTiles = LightSpriteRadius(l);
+		if (rTiles <= 0) continue;
+		// The tile centre in cell space, through the same isometric transform the tiles are drawn with
+		float const dx = float(l->iX * CELL_X_SIZE + CELL_X_SIZE / 2) - gsRenderCenterX;
+		float const dy = float(l->iY * CELL_Y_SIZE + CELL_Y_SIZE / 2) - gsRenderCenterY;
+		float sx, sy;
+		FloatFromCellToScreenCoordinates(dx, dy, &sx, &sy);
+		WorldPipe::PointLight p;
+		p.x = float(g_ui.m_tacticalMapCenterX + INT16(sx) - gsRenderWorldOffsetX);
+		p.y = float(g_ui.m_tacticalMapCenterY + INT16(sy) - gsRenderWorldOffsetY);
+		p.radius = float(rTiles) * CELL_X_SIZE;
+		p.r = cr; p.g = cg; p.b = cb;
+		p.intensity = 0.45f;
+		L.points.push_back(p);
+	}
+	for (WorldPipe::PointLight const& p : gExtraLights) L.points.push_back(p);
+	return L;
 }
 
 /** The static part of the last runtime frame, kept while nothing it depends on changes. */
@@ -270,7 +310,7 @@ void RecordWorldFrame(bool const mutate, bool const checkInteractive, bool const
 			gWorldFrame.Clear(WORLD_SCREEN_WIDTH, WORLD_SCREEN_HEIGHT);
 			gWorldFrame.clearColor = 0;
 			gWorldFrame.clearDepth = LAND_Z_LEVEL;
-			gWorldFrame.translucentMask = UINT16(guiTranslucentMask);
+			gWorldFrame.translucentMask = UINT16(guiTranslucentMask); // translucency stays in RGB565
 			ResetLayerOptimizing();
 			RenderWorldStatic();
 			if (cached)
@@ -294,6 +334,7 @@ void RecordWorldFrame(bool const mutate, bool const checkInteractive, bool const
 	gWorldRecorder = nullptr;
 	for (LEVELNODE* n : rec.cleared) n->uiFlags |= LEVELNODE_LASTDYNAMIC;
 	ResetLayerOptimizing();
+	gWorldFrame.lighting = CollectLighting();
 }
 
 void CopyToWorldBuffer(UINT16 const* px, int w, int h)
@@ -383,10 +424,10 @@ char const* WorldRendererName(WorldRendererKind const k)
 
 WorldRendererKind WorldRendererDefault(bool const driven)
 {
-	// Real windows draw the world on the GPU (pixel-equivalent, see docs/plan/native-modern-game-decisions.md,
-	// Phase 8), falling back to software when there is no usable device. Driven sessions (headless, automation)
-	// keep software: their screenshots are the reference images.
-	return driven ? WorldRendererKind::Software : WorldRendererKind::Gpu;
+	// The world renderer is the pipeline everywhere: the look (lighting and 32-bit colour, see
+	// docs/plan/native-modern-game.md Phase 8) lives there, and the CPU implementation keeps CI and
+	// driven sessions on the same picture as a window. The GPU is used where there is a device.
+	return driven ? WorldRendererKind::Pipeline : WorldRendererKind::Gpu;
 }
 
 void WorldRendererConfigure(WorldRendererKind const k)
@@ -419,6 +460,7 @@ std::string WorldRendererError() { return gWorldError; }
 
 void WorldRendererSetReadback(bool const on) { gNoReadback = !on; }
 void WorldRendererSetStaticCache(bool const on) { gNoStaticCache = !on; }
+void WorldRendererSetExtraLights(std::vector<WorldPipe::PointLight> l) { gExtraLights = std::move(l); SetRenderFlags(RENDER_FLAG_FULL); }
 
 std::vector<double> gFrameIntervals; // wall-clock intervals between RenderWorld calls since the last reset
 uint64_t            gFrameTicks = 0;
@@ -465,6 +507,7 @@ bool RenderWorldRecorded()
 	if (kind == WorldRendererKind::Software)
 	{
 		VideoSetWorldGpuTexture(nullptr, 0, 0);
+		VideoClearWorld888();
 		return false;
 	}
 
@@ -530,13 +573,14 @@ bool RenderWorldRecorded()
 			gWorldStats.gpuWaitMs = gpu->LastStats().waitMs;
 		}
 		VideoSetWorldGpuTexture(VideoGpuDevice() ? gpu->Texture() : nullptr, gpu->Width(), gpu->Height());
+		VideoClearWorld888();
 	}
 	else
 	{
 		auto const r0 = wr_clock::now();
 		gWorldTarget.Clear(gWorldFrame);
-		WorldPipe::Rasterize(gWorldFrame, gWorldPool, ShadeTable, gWorldTarget);
-		CopyToWorldBuffer(gWorldTarget.color.data(), gWorldTarget.w, gWorldTarget.h);
+		WorldPipe::Rasterize(gWorldFrame, gWorldPool, gWorldTarget);
+		VideoSetWorld888(gWorldTarget.color.data(), gWorldTarget.w, gWorldTarget.h);
 		gWorldStats.rasterMs = WrMs(r0, wr_clock::now());
 		VideoSetWorldGpuTexture(nullptr, 0, 0);
 	}
@@ -577,23 +621,25 @@ WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool const
 	res.legacyMs = WrMs(t0, wr_clock::now());
 	std::vector<UINT16> legacy;
 	ReadWorldBuffer(legacy, W, H);
+	std::vector<uint32_t> legacy888(legacy.size()); // the software renderer's 565 expanded, to compare with the 888 pipeline
+	for (size_t i = 0; i < legacy.size(); ++i) legacy888[i] = WorldPipe::Expand565(legacy[i]);
 	ResetRenderParameters();
 
 	// 3. The CPU pipeline
 	t0 = wr_clock::now();
 	gWorldTarget.Clear(gWorldFrame);
-	WorldPipe::Rasterize(gWorldFrame, gWorldPool, ShadeTable, gWorldTarget);
+	WorldPipe::Rasterize(gWorldFrame, gWorldPool, gWorldTarget);
 	res.pipelineMs = WrMs(t0, wr_clock::now());
 
 	std::vector<uint8_t> diff;
 	bool const png = !outDir.empty();
-	WorldPipe::DiffStats const dp = WorldPipe::Compare(legacy.data(), gWorldTarget.color.data(), W, H,
+	WorldPipe::DiffStats const dp = WorldPipe::Compare(legacy888.data(), gWorldTarget.color.data(), W, H,
 		clip.iLeft, clip.iTop, clip.iRight, clip.iBottom, png ? &diff : nullptr);
 	if (dp.different && std::getenv("JA2_WORLD_STRIP_CHECK"))
 	{
 		for (int i = 0; i < W * H; ++i)
 		{
-			if (legacy[i] == gWorldTarget.color[i]) continue;
+			if (legacy[i] == WorldPipe::Quantize565(gWorldTarget.color[i])) continue;
 			int const x = i % W, y = i / W;
 			if (x < clip.iLeft || x >= clip.iRight || y < clip.iTop || y >= clip.iBottom) continue;
 			SLOGW("diff at {},{}: software {} pipeline {}", x, y, legacy[i], gWorldTarget.color[i]);
@@ -618,7 +664,7 @@ WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool const
 	};
 	if (png)
 	{
-		res.legacyPng = write("world_software.png", WorldPipe::ToRgb(legacy.data(), W, H));
+		res.legacyPng = write("world_software.png", WorldPipe::ToRgb(legacy888.data(), W, H));
 		res.pipelinePng = write("world_pipeline.png", WorldPipe::ToRgb(gWorldTarget.color.data(), W, H));
 		res.pipelineDiffPng = write("world_pipeline_diff.png", diff);
 	}
@@ -636,15 +682,17 @@ WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool const
 			{
 				res.gpuMs = WrMs(t0, wr_clock::now());
 				res.gpuRan = true;
-				WorldPipe::DiffStats const dg = WorldPipe::Compare(legacy.data(), out.data(), W, H,
+				std::vector<uint32_t> out888(out.size());
+				for (size_t i = 0; i < out.size(); ++i) out888[i] = WorldPipe::Expand565(out[i]);
+				WorldPipe::DiffStats const dg = WorldPipe::Compare(legacy888.data(), out888.data(), W, H,
 					clip.iLeft, clip.iTop, clip.iRight, clip.iBottom, png ? &diff : nullptr);
 				res.gpuDifferent = dg.different;
 				res.gpuPercent = dg.percent();
-				res.gpuVsPipelineDifferent = WorldPipe::Compare(gWorldTarget.color.data(), out.data(), W, H,
+				res.gpuVsPipelineDifferent = WorldPipe::Compare(gWorldTarget.color.data(), out888.data(), W, H,
 					clip.iLeft, clip.iTop, clip.iRight, clip.iBottom).different;
 				if (png)
 				{
-					res.gpuPng = write("world_gpu.png", WorldPipe::ToRgb(out.data(), W, H));
+					res.gpuPng = write("world_gpu.png", WorldPipe::ToRgb(out888.data(), W, H));
 					res.gpuDiffPng = write("world_gpu_diff.png", diff);
 				}
 			}

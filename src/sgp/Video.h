@@ -196,6 +196,10 @@ SDL_GPUDevice* VideoGpuDevice();
 /** The world layer is this texture (RGBA8, on VideoGpuDevice(), w x h world pixels) instead of the WORLD_BUFFER;
  * null goes back to the WORLD_BUFFER. */
 void VideoSetWorldGpuTexture(SDL_GPUTexture*, int w, int h);
+/** The CPU pipeline's world layer at 8 bits per channel (0xRRGGBB), w x h world pixels: the compositor samples
+ * it instead of the 565 WORLD_BUFFER while it is set (docs/plan/native-modern-game.md Phase 8, 32-bit colour). */
+void VideoSetWorld888(uint32_t const* px, int w, int h);
+void VideoClearWorld888();
 /** Whether the GPU world texture was presented since the last call (then a new world frame is worth drawing). */
 bool VideoTakeWorldGpuPresented();
 /** Called whenever a frame is put on the window (frame-rate measurements). */

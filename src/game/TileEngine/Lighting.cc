@@ -1870,6 +1870,21 @@ BOOLEAN LightSpriteFake(LIGHT_SPRITE* const l)
 }
 
 
+INT16 LightSpriteRadius(LIGHT_SPRITE const* const l)
+{
+	if (!l->light_template) return 0;
+	INT16 r = 0;
+	for (LIGHT_NODE const& n : l->light_template->lights)
+	{
+		INT16 const dx = n.iDX < 0 ? -n.iDX : n.iDX;
+		INT16 const dy = n.iDY < 0 ? -n.iDY : n.iDY;
+		r = dx > r ? dx : r;
+		r = dy > r ? dy : r;
+	}
+	return r;
+}
+
+
 static void LightSpriteDirty(const LIGHT_SPRITE* l);
 
 

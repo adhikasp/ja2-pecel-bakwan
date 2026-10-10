@@ -447,6 +447,14 @@ if (WITH_UNITTESTS)
                 --res 1920x1080 --uiscale 2 --worldzoom 1 --timeout 900
                 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/world_renderer"
         )
+        # Phase 8 lighting and 32-bit colour: the world pipeline (CPU and, where there is one, GPU) with
+        # dynamic point lights (ja2.setWorldLights)
+        add_test(
+            NAME e2e_world_renderer_light
+            COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/world_renderer_light.lua" --isolated
+                --res 1280x720 --timeout 600
+                --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/world_renderer_light"
+        )
         add_test(
             NAME e2e_tactical_layers_pipeline
             COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/tactical_layers.lua" --isolated

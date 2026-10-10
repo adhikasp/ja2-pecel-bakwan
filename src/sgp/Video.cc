@@ -25,6 +25,7 @@
 #include <SDL3/SDL_surface.h>
 #include <algorithm>
 #include <chrono>
+#include <cstdlib>
 #include <cstring>
 #include <stdexcept>
 
@@ -81,6 +82,10 @@ static SDL_GPUDevice* GpuDevice = nullptr;
 static SDL_GPUTexture* WorldGpuTexture = nullptr;
 static SDL_Texture*   WorldGpuSdlTexture = nullptr;
 static int            WorldGpuW = 0, WorldGpuH = 0;
+// The CPU pipeline's world layer at 8 bits per channel (0xRRGGBB), when it has one (VideoSetWorld888)
+static std::vector<uint32_t> World888;
+static int            World888W = 0, World888H = 0;
+static bool           World888Valid = false;
 static bool           WorldRecorded = false;
 static bool           WorldGpuPresented = true; // the GPU world texture has been put on screen since it was drawn
 static void         (*PresentHook)() = nullptr;
@@ -724,6 +729,15 @@ bool VideoTakeWorldGpuPresented()
 }
 void VideoSetPresentHook(void (*hook)()) { PresentHook = hook; }
 
+void VideoSetWorld888(uint32_t const* const px, int const w, int const h)
+{
+	World888.assign(px, px + size_t(w) * h);
+	World888W = w;
+	World888H = h;
+	World888Valid = true;
+}
+void VideoClearWorld888() { World888Valid = false; }
+
 void VideoSetWorldGpuTexture(SDL_GPUTexture* const tex, int const w, int const h)
 {
 	if (tex == WorldGpuTexture && w == WorldGpuW && h == WorldGpuH) return;
@@ -1013,6 +1027,15 @@ static uint32_t World565To888(UINT16 const p)
 	return ((r << 3 | r >> 2) << 16) | ((g << 2 | g >> 4) << 8) | (b << 3 | b >> 2);
 }
 
+/** The 565 WORLD_BUFFER pixel (0xRRGGBB) at a world coordinate, clamped (the software renderer's layer). */
+static uint32_t WorldBufferPixelAt(int wx, int wy)
+{
+	wx = std::clamp(wx, 0, WorldBuffer->w - 1);
+	wy = std::clamp(wy, 0, WorldBuffer->h - 1);
+	return World565To888(reinterpret_cast<UINT16 const*>(
+		static_cast<UINT8 const*>(WorldBuffer->pixels) + wy * WorldBuffer->pitch)[wx]);
+}
+
 
 /** The colour at a pixel of the canvas (UI size * UI scale) */
 static uint32_t ComposeAt(int const x, int const y)
@@ -1028,10 +1051,18 @@ static uint32_t ComposeAt(int const x, int const y)
 	uint32_t under = 0;
 	if (WorldLayerShown)
 	{
-		int const wx = std::clamp(x * VideoLayout::WORLD_ZOOM_STEPS / zq, 0, WorldBuffer->w - 1);
-		int const wy = std::clamp(y * VideoLayout::WORLD_ZOOM_STEPS / zq, 0, WorldBuffer->h - 1);
-		under = World565To888(reinterpret_cast<UINT16 const*>(
-			static_cast<UINT8 const*>(WorldBuffer->pixels) + wy * WorldBuffer->pitch)[wx]);
+		int const wx = x * VideoLayout::WORLD_ZOOM_STEPS / zq;
+		int const wy = y * VideoLayout::WORLD_ZOOM_STEPS / zq;
+		if (World888Valid)
+		{
+			// The CPU pipeline's 8-bit-per-channel layer (Phase 8, 32-bit colour): sample it as it is
+			int const sx = std::clamp(wx, 0, World888W - 1), sy = std::clamp(wy, 0, World888H - 1);
+			under = World888[size_t(sy) * World888W + sx];
+		}
+		else
+		{
+			under = WorldBufferPixelAt(wx, wy);
+		}
 	}
 	uint32_t const keep = 255 - UiLayerShadowAlpha(ui);
 	return (((under >> 16) & 0xff) * keep / 255) << 16
@@ -1475,7 +1506,20 @@ static void PresentGpuFrame(SDL_Rect const&)
 	int worldW = 0, worldH = 0;
 	if (Layered && WorldLayerShown)
 	{
-		if (WorldGpuTexture)
+		if (World888Valid)
+		{
+			// The CPU pipeline's 8-bit-per-channel layer (Phase 8, 32-bit colour): upload it as RGBA8
+			static std::vector<uint32_t> W888;
+			W888.resize(World888.size());
+			for (size_t i = 0; i < World888.size(); ++i)
+			{
+				uint32_t const c = World888[i];
+				W888[i] = ((c >> 16) & 0xFF) | (((c >> 8) & 0xFF) << 8) | ((c & 0xFF) << 16) | 0xFF000000u;
+			}
+			worldTex = VideoGpu::UploadRgba(GpuWorldUpload, GpuWorldUploadW, GpuWorldUploadH, W888.data(), World888W, World888H);
+			worldW = World888W; worldH = World888H;
+		}
+		else if (WorldGpuTexture)
 		{
 			// A copy makes the compute-written texture sampleable on D3D12 (see CopyToSampled).
 			worldTex = VideoGpu::CopyToSampled(WorldGpuTexture, WorldGpuW, WorldGpuH, GpuWorldCopy, GpuWorldCopyW, GpuWorldCopyH);

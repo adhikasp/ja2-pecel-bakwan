@@ -39,6 +39,10 @@ class SGPVObject
 
 		UINT16 const* CurrentShade() const { return current_shade_; }
 
+		/** The current shade table as 0xRRGGBB (Phase 8, 32-bit colour): the art's 24-bit palette shaded the
+		 * same way as CurrentShade(). Built lazily from Palette() and the 565 tables, cached per shade. */
+		UINT32 const* CurrentShade24() const;
+
 		// Set the current object shade table
 		void CurrentShade(size_t idx);
 
@@ -74,6 +78,8 @@ class SGPVObject
 		UINT16*                      pShades[HVOBJECT_SHADE_TABLES]; // Shading tables
 	private:
 		UINT16 const*                current_shade_;
+		mutable UINT32*              shade24_     = nullptr; // cache of the current shade as 0xRRGGBB
+		mutable UINT16 const*        shade24_key_ = nullptr;
 	public:
 		// Smart pointer to an array of smart pointers to ZStripInfo structs.
 		std::unique_ptr<std::unique_ptr<ZStripInfo> []> ppZStripInfo;// Z-value strip info arrays
