@@ -121,3 +121,85 @@ ja2.wait(1500)
 ja2.waitIdle()
 ja2.expect(inv("Ivan").pockets[pocket] == nil, "the kit left the pocket when let go over the world")
 ja2.expect(inv("Ivan").hand == nil, "and it is not in the hand either")
+
+-- A drag never leaves the item stuck in the hand.
+local function pocketItem() return inv("Ivan").pockets[pocket] end
+local function stage()
+	ja2.debug("hand", { merc = "Ivan", item = "FIRSTAIDKIT", count = 1 })
+	pocket = nil
+	for i = 12, 30 do
+		if inv("Ivan").pockets[i] == nil and ja2.inventoryOp("click", { merc = "Ivan", slot = i }).ok then
+			pocket = i
+			break
+		end
+	end
+	ja2.waitIdle()
+	ja2.expect(pocket and pocketItem(), "the kit is in a pocket")
+	local x, y = centre(slotId(pocket))
+	ja2.move(x, y)
+	ja2.mousedown()
+	ja2.move(x + 14, y + 14)
+	ja2.move(x + 28, y + 28)
+	ja2.waitIdle()
+	ja2.expect(inv("Ivan").hand, "the drag lifted the kit")
+	return x, y
+end
+
+-- Esc while dragging: back in the pocket, no AP
+local ap = inv("Ivan").ap
+stage()
+ja2.key("Escape")
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand == nil and pocketItem(), "Esc sends the item back to its pocket")
+ja2.mouseup()
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand == nil and pocketItem(), "and the release after it does nothing")
+ja2.expect(inv("Ivan").ap == ap, "no action points were spent")
+
+-- right button while dragging: the same
+stage()
+ja2.mousedown("right")
+ja2.mouseup("right")
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand == nil and pocketItem(), "the right button sends the item back")
+ja2.mouseup()
+ja2.waitIdle()
+
+-- let go on a part of the HUD that takes nothing: back in the pocket
+stage()
+local bx, by = centre("tac.bar")
+ja2.move(bx, by)
+ja2.wait(300)
+ja2.mouseup()
+ja2.wait(300)
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand == nil and pocketItem(), "a release on the bar sends the item back")
+
+-- let go a hair outside the panel: still the HUD's, not a throw
+stage()
+local d = ja2.find{ id = "tac.detail" }
+ja2.move(d.x + d.w + 8, d.y + 40)
+ja2.wait(300)
+ja2.mouseup()
+ja2.wait(300)
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand == nil and pocketItem(), "a release next to the panel's edge does not throw")
+ja2.expect(inv("Ivan").ap == ap, "no action points were spent")
+
+-- a click-held item: Esc, and the right button on an empty pocket, both put it back
+ja2.click{ id = slotId(pocket) }
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand, "a click lifts the kit")
+ja2.key("Escape")
+ja2.wait(300)
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand == nil and pocketItem(), "Esc puts a click-held item back")
+ja2.click{ id = slotId(pocket) }
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand, "lifted again")
+local empty
+for i = 12, 30 do if inv("Ivan").pockets[i] == nil then empty = i break end end
+ja2.click({ id = slotId(empty) }, { button = "right" })
+ja2.wait(300)
+ja2.waitIdle()
+ja2.expect(inv("Ivan").hand == nil and pocketItem(), "the right button on an empty pocket puts it back")

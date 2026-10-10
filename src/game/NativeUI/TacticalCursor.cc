@@ -478,7 +478,7 @@ void TacticalCursorUpdate(Rml::ElementDocument* const doc)
 	// ---- the chips: the world's (under the HUD, over the tiles) and the held item's (over a pocket or a card, so
 	// above every panel)
 	ChipState world;
-	if (worldCursor && f.state.chip && mouse.x >= 0)
+	if (worldCursor && f.state.chip && mouse.x >= 0 && !g_hudChip.shown)
 	{
 		world.shown = true;
 		world.rml = ChipRml(f.state);

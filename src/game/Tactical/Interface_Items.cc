@@ -3242,6 +3242,13 @@ void DrawItemTileCursor( )
 
 		// what the native cursor shows of it: a drop or throw, one that cannot get there, a give
 		giHeldItemCursorKind = fGiveItem ? 3 : uiCursorId == CURSOR_ITEM_BAD_THROW ? 2 : 1;
+		if (gfUIMouseOnValidCatcher == 4 && !fGiveItem)
+		{
+			// a team mate within reach: the click passes it (the core's rule: 2 AP each), it is not a drop
+			giHeldItemCursorKind = 3;
+			SetIntTileLocationText(ST::string());
+			gsCurrentActionPoints = Equipment::PASS_COST_AP;
+		}
 	}
 }
 

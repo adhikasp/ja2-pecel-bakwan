@@ -184,6 +184,11 @@ as a click, so the pointer carries it); the button going up decides the rest. Cl
 | a squad card | give: the card's merc must be within 3 tiles and in sight, each merc needs 3 AP and pays 2; on the card of the merc it came from, drop at his feet (`AP_PICKUP_ITEM`) | `Equipment/DragDrop` `PlanCardDrop` through `PlanDropOnCard` / `DropOnCard` (`Tactical/InventoryAdapter.cc`) |
 | the world | drop, throw (arc, landing marker and chip of #318), give to a merc, drop at his feet when it is the merc himself | the cursor's legacy click handler (`HandleItemPointerClick`), whose give branch is now `PassHeldItemTo`, the same function the card uses |
 
+A drag never leaves the item stuck: Esc or the right button while dragging, a release on a part of the HUD that
+takes nothing, a refusal, or a release within 16 dp of a panel all send it back to its pocket at no cost. Only a release
+clearly outside the HUD is the world's click. A click-to-pick item goes back with Esc, or the right button anywhere but on a pocket that holds something. The "Holding" chip shows over the HUD and within the same margin of it. A team
+mate in reach under the pointer reads "Give" at 2 AP, not "Drop".
+
 While something is held, every pocket of the detail panel and every card is tinted `dok` / `dno` (takes it / does not),
 and over a pocket or a card the chip beside the pointer says what letting go does and, when it cannot, why
 (`tac.drag.*` strings). Lua: `ja2.inventoryOp("plan_card", {to})`, `("drop_card", {to})`, `("plan_slot", {merc, slot})`;
