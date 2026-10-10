@@ -208,6 +208,24 @@ TEST(WorldPipeline, PaletteKeepsThe24BitColours)
 	}
 }
 
+TEST(WorldPipeline, LightingMultipliesAndLeavesIdentity)
+{
+	uint32_t d = 0x804020;
+	ApplyLighting(d, 0, 0, Lighting{});
+	EXPECT_EQ(d, 0x804020u); // identity
+
+	Lighting l;
+	l.points.push_back(PointLight{ 10, 10, 20, 1.0f, 0.5f, 0.0f, 0.5f });
+	uint32_t at = 0x404040, away = 0x404040, edge = 0x404040;
+	ApplyLighting(at, 10, 10, l);    // centre: the full intensity
+	ApplyLighting(away, 100, 100, l); // outside the radius: untouched
+	ApplyLighting(edge, 30, 10, l);   // exactly the radius: untouched
+	EXPECT_EQ(away, 0x404040u);
+	EXPECT_EQ(edge, 0x404040u);
+	// centre: r = 64 * (1 + 0.5) = 96, g = 64 * (1 + 0.25) = 80, b = 64
+	EXPECT_EQ(at, 0x605040u);
+}
+
 TEST(WorldPipeline, BinsKeepSubmissionOrder){
 	Frame f;
 	f.Clear(40, 20);
