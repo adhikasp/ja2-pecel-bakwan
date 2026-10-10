@@ -104,6 +104,9 @@ namespace
 		std::string cursorItem;         // the item picture the pointer carries (SetCursorItem)
 		int cursorItemW = 0, cursorItemH = 0;
 		bool cursorItemDirty = false;
+		std::string cursorIcon, cursorTone = "ok"; // the shape of the pointer (SetCursorShape)
+		bool cursorRing = false;
+		bool cursorShapeDirty = true;
 
 		// screen routing
 		ScreenID                routedScreen = ERROR_SCREEN;
@@ -396,6 +399,7 @@ bool Start()
 		g_loadingDayLabel = Str("loading.day_label");
 		g_loadingTimeLabel = Str("loading.time_label");
 
+		RegisterTacticalCursor();
 		g_rt.overlays = LoadDocument("overlays/overlays.rml");
 		g_rt.overlays->Show(Rml::ModalFlag::None, Rml::FocusFlag::None);
 		VideoSetOverlay(&g_rt);
@@ -468,6 +472,18 @@ Rml::Vector2f CanvasToOutput(float const x, float const y)
 }
 
 float CanvasScale() { return g_rt.map.sy; }
+
+int CursorItemWidth() { return g_rt.cursorItem.empty() ? 0 : g_rt.cursorItemW; }
+
+void SetCursorShape(std::string const& icon, std::string const& tone, bool const ring)
+{
+	if (icon == g_rt.cursorIcon && tone == g_rt.cursorTone && ring == g_rt.cursorRing) return;
+	g_rt.cursorIcon = icon;
+	g_rt.cursorTone = tone;
+	g_rt.cursorRing = ring;
+	g_rt.cursorShapeDirty = true;
+	Invalidate(2);
+}
 
 void SetCursorItem(std::string const& src, int const w, int const h)
 {
@@ -543,6 +559,18 @@ void Runtime::UpdateOverlays()
 		{
 			c->SetProperty(Rml::PropertyId::Left, Rml::Property(std::floor(mouseX), Rml::Unit::PX));
 			c->SetProperty(Rml::PropertyId::Top, Rml::Property(std::floor(mouseY), Rml::Unit::PX));
+		}
+		if (cursorShapeDirty)
+		{
+			cursorShapeDirty = false;
+			bool const badge = !cursorIcon.empty();
+			c->SetClass("has-shape", badge);
+			c->SetClass("has-ring", badge && cursorRing);
+			for (char const* t : { "ok", "warn", "no", "foe" }) c->SetClass(std::string("tone-") + t, badge && cursorTone == t);
+			if (Rml::Element* b = overlays->GetElementById("nui-cursor-badge"))
+			{
+				if (badge) b->SetAttribute("src", "icon-" + cursorIcon + "@64");
+			}
 		}
 		if (cursorItemDirty)
 		{

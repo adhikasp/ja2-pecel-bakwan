@@ -211,7 +211,8 @@ add_node:
 			break;
 	}
 
-	if (gfUIHandleShowMoveGrid)
+	// the native cursor draws the tile the merc walks to itself (CursorAdapter, TacticalCursor.cc)
+	if (gfUIHandleShowMoveGrid && !NativeUI::TacticalHudActive())
 	{
 		SOLDIERTYPE const* const sel = GetSelectedMan();
 		if (sel && sel->sGridNo != gsUIHandleShowMoveGridLocation)

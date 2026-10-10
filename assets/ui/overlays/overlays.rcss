@@ -24,3 +24,16 @@ body.nui-overlays { position: absolute; left: 0; top: 0; right: 0; bottom: 0; po
 /* an item held by the mouse rides below and right of the tip, under the arrow; the runtime sets its size in pixels */
 #nui-cursor #nui-cursor-item { display: none; left: 14dp; top: 16dp; width: auto; height: auto; opacity: 0.92; }
 #nui-cursor #nui-cursor-item.shown { display: block; }
+
+/* a mode of the tactical cursor (CursorModel): the arrow gives way to the mode's icon in a dark disc, centred on the
+   hot spot; an attack gets a ring around it. The hot spot is the pointer's own origin (4.7, 2.3 dp into the 28 dp box). */
+#nui-cursor #nui-cursor-badge { display: none; left: -8.3dp; top: -10.7dp; width: 26dp; height: 26dp; margin: 0; padding: 4dp; box-sizing: border-box; border-radius: 13dp; background-color: #0D0905D0; border: 1dp #D8B25E; }
+#nui-cursor #nui-cursor-ring { display: none; position: absolute; left: -13.3dp; top: -15.7dp; width: 36dp; height: 36dp; box-sizing: border-box; border-radius: 18dp; border: 2dp #D8B25E; background-color: #0D090566; }
+#nui-cursor.has-shape .cursor-fill, #nui-cursor.has-shape .cursor-edge { display: none; }
+#nui-cursor.has-shape #nui-cursor-badge { display: block; image-color: #D8B25E; }
+#nui-cursor.has-ring #nui-cursor-ring { display: block; }
+#nui-cursor.has-ring #nui-cursor-badge { left: -5.3dp; top: -7.7dp; width: 20dp; height: 20dp; padding: 0; background-color: transparent; border: 0; }
+#nui-cursor.tone-warn #nui-cursor-badge { image-color: #F0E442; border-color: #F0E442; }
+#nui-cursor.tone-warn #nui-cursor-ring { border-color: #F0E442; }
+#nui-cursor.tone-no #nui-cursor-badge, #nui-cursor.tone-foe #nui-cursor-badge { image-color: #FF6B3D; border-color: #FF6B3D; }
+#nui-cursor.tone-no #nui-cursor-ring, #nui-cursor.tone-foe #nui-cursor-ring { border-color: #FF6B3D; }

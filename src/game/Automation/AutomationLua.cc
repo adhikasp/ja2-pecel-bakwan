@@ -8,6 +8,7 @@
 #include "RangeLane.h"
 #include "StockScenario.h"
 #include "InventoryScenario.h"
+#include "CursorScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -911,6 +912,9 @@ namespace
 		ja2.set_function("inventory", [](sol::optional<std::string> merc) {
 			return Guarded([&] { return InventoryState(g_lua, merc ? *merc : std::string()); });
 		});
+		// The tactical cursor as data (issue #318): { shown, mode, shape, tone, marker, ap, apLeft, hit, aim, why, target,
+		// tile, id, chip, lines, path, markerAt, destAt } (see CursorScenario.h).
+		ja2.set_function("cursor", [] { return Guarded([&] { return CursorState(g_lua); }); });
 		ja2.set_function("inventoryOp", [](std::string const& op, sol::optional<sol::table> spec) {
 			return Guarded([&] { return InventoryOp(g_lua, op, spec); });
 		});

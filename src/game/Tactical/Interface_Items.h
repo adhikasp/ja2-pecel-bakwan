@@ -102,6 +102,9 @@ void BeginItemPointer( SOLDIERTYPE *pSoldier, UINT8 ubHandPos );
 void InternalBeginItemPointer( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, INT8 bHandPos );
 void EndItemPointer(void);
 void DrawItemFreeCursor(void);
+/** What the held item's cursor means over the world, for the native cursor: 1 drop or throw, 2 a throw that cannot get
+ * there, 3 give (set by DrawItemTileCursor). */
+int HeldItemCursorKind();
 void DrawItemTileCursor(void);
 BOOLEAN HandleItemPointerClick( UINT16 usMapPos );
 UINT8 GetAttachmentHintColor(const OBJECTTYPE* pObj);

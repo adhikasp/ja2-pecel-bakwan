@@ -1257,6 +1257,18 @@ void SetIntTileLocation2Text(const ST::string& str)
 }
 
 
+const ST::string& GetHitLocationText(void)
+{
+	return gzLocation;
+}
+
+
+const ST::string& GetChanceToHitText(void)
+{
+	return gzHitChance;
+}
+
+
 const ST::string& GetIntTileLocationText(void)
 {
 	return gzIntTileLocation;

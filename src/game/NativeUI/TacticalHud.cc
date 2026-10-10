@@ -1025,6 +1025,7 @@ namespace
 	void Close()
 	{
 		SetCursorItem({}, 0, 0);
+		SetCursorShape({}, "ok", false);
 		if (g_hud.doc && g_hud.doc->IsVisible()) { g_hud.doc->Hide(); Invalidate(); }
 		if (g_hud.active)
 		{
@@ -1131,6 +1132,8 @@ void TacticalHudUpdate()
 				e->SetProperty(Rml::PropertyId::Bottom, Rml::Property(want + std::round(8 * DpScale()), Rml::Unit::PX));
 		}
 	}
+	// the marker, path and chip over the world, and the pointer's shape
+	TacticalCursorUpdate(g_hud.doc);
 }
 
 bool TacticalHudWantsMouse()
@@ -1146,11 +1149,9 @@ bool TacticalHudWantsMouse()
 
 bool TacticalHudOwnsCursor()
 {
-	if (!g_hud.active) return false;
-	// over the HUD the legacy cursor is whatever the world last set (often none): the native pointer takes over
-	if (TacticalHudWantsMouse()) return true;
-	// a held item is a native picture on the pointer everywhere, so it does not change look between world and HUD
-	return InventoryHand().item != NOTHING;
+	// the pointer over the world is native too (shape and tone from the CursorModel, #318), so it does not change
+	// look between world and HUD
+	return g_hud.active;
 }
 
 void TacticalHudShutdown() { Close(); }

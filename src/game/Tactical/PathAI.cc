@@ -25,6 +25,7 @@
 #include "LOS.h"
 #include "Lighting.h"
 #include "Logger.h"
+#include "NativeUI.h"
 #include "OppList.h"
 #include "Overhead.h"
 #include "Overhead_Types.h"
@@ -1907,9 +1908,19 @@ void RoofReachableTest( INT16 sStartGridNo, UINT8 ubBuildingID )
 }
 
 
+static std::vector<PathTrailStep> gPlottedTrail;
+static INT8                       gPlottedTrailLevel = 0;
+
+std::vector<PathTrailStep> const& PlottedTrail() { return gPlottedTrail; }
+INT8 PlottedTrailLevel() { return gPlottedTrailLevel; }
+
+
 void ErasePath()
 {
 	INT16 iCnt;
+
+	// the native cursor's path line is the same plot, it goes with the footsteps
+	gPlottedTrail.clear();
 
 	// NOTE: This routine must be called BEFORE anything happens that changes
 	//       a merc's gridno, else the....
@@ -1993,6 +2004,11 @@ INT16 PlotPath(SOLDIERTYPE* const pSold, const INT16 sDestGridno, const INT8 bCo
 
 	gusAPtsToMove = 0;
 	sTempGrid = (INT16) pSold->sGridNo;
+	if (bPlot)
+	{
+		gPlottedTrail.clear();
+		gPlottedTrailLevel = pSold->bLevel;
+	}
 
 	sFootOrderIndex = 0;
 
@@ -2180,6 +2196,8 @@ INT16 PlotPath(SOLDIERTYPE* const pSold, const INT16 sDestGridno, const INT8 bCo
 				sPointsRun += (INT16)((DOUBLE)(sTileCost) / RUNDIVISOR) + sExtraCostStand;
 			}
 
+			if (bPlot) gPlottedTrail.push_back({ sTempGrid, sPoints });
+
 			if ( iCnt == 0 && bPlot )
 			{
 				gusAPtsToMove = sPoints;
@@ -2191,7 +2209,8 @@ INT16 PlotPath(SOLDIERTYPE* const pSold, const INT16 sDestGridno, const INT8 bCo
 
 			//if (gTacticalStatus.uiFlags & INCOMBAT) // OR USER OPTION "show paths" ON... ***
 			{
-				if (bPlot && iCnt < iLastGrid - 1 && giPlotCnt < static_cast<INT32>(lengthof(guiPlottedPath)))
+				// the native cursor draws the path as a line (PlottedTrail), the footstep tiles are the legacy HUD's
+				if (bPlot && !NativeUI::TacticalHudActive() && iCnt < iLastGrid - 1 && giPlotCnt < static_cast<INT32>(lengthof(guiPlottedPath)))
 				{
 					guiPlottedPath[giPlotCnt++] = sTempGrid;
 

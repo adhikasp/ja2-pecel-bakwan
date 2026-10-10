@@ -156,6 +156,23 @@ through `CanvasToOutput` / `CanvasScale` (NativeUI.cc), never the UI scale. The 
 HUD, and an item held by the mouse is a native picture on the pointer everywhere in tactical (`TacticalHudOwnsCursor`),
 so it looks the same over the world and over the inventory.
 
+### The cursor over the world (#318)
+
+`Handle_UI.cc` still decides what the pointer means (a `UICursorID`, the action points, the texts the legacy cursor
+wrote beside itself, the plotted path). The drawing is native:
+
+| Part | Where | What |
+|---|---|---|
+| Core | `NativeUI/CursorModel.{h,cc}` | a compiled table maps every `UICursorID` to `{shape, tone, mode, marker, aim, why}`; `Evaluate` turns an `Input` (id, AP, texts) into the chip lines; `PlanPath` splits a path at the turn's budget. No globals; unit-tested (`CursorModel_unittest.cc`, including that every id is mapped). |
+| Adapter | `Tactical/CursorAdapter.{h,cc}` | reads the legacy globals into an `Input`, plots the path (`PathAI.cc` records the tiles `PlotPath` plots, `PlottedTrail()`), and projects tiles with the soldier projection into world pixels |
+| View | `NativeUI/TacticalCursor.cc` | `<cursorlayer>`: marker, path and destination as geometry (RmlUi transforms are not drawn by the software UI path); the chip beside the pointer; the pointer's shape (`SetCursorShape`) |
+| Lua | `ja2.cursor()` | `{shown, mode, shape, tone, marker, ap, apLeft, hit, aim, why, target, tile, id, chip, lines, path = {steps, solid, total, now, next, beyond}, markerAt, destAt}` |
+
+Tones: **ok** (can do), **warn** (with a catch: goes on next turn, out of range), **no** (cannot, and `why`), **foe** (the
+click attacks). The marker diamond replaces the snapping tile cursor, the path is a line through the tile centres:
+solid for this turn's action points, dashed amber beyond; the footstep tile nodes are not drawn while the native HUD is
+up. The chance to hit is always worked out for the chip (`show_hit_chance` only gates the legacy cursor text).
+
 | Done | Rows |
 |---|---|
 | Squad bar: cards (face, HP/lost, EN, MO, AP in combat, status icons, stance, hand item and ammo), squad tabs, select, details | I1–I7, A1–A2 |

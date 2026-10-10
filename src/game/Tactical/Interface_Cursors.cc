@@ -13,6 +13,8 @@
 #include "Interface_Items.h"
 #include "GameSettings.h"
 #include "Video.h"
+#include "CursorAdapter.h"
+#include "NativeUI.h"
 
 
 #define DISPLAY_AP_INDEX		MOCKFLOOR1
@@ -213,6 +215,11 @@ void DrawUICursor()
 	LEVELNODE *pNode;
 	UINT16 usTileCursor;
 
+	// The native HUD draws the cursor itself (marker, path, chip, pointer: NativeUI/TacticalCursor.cc) from the frame
+	// the adapter builds here. What the pointer means is still decided above; only the drawing is not done.
+	bool const native = NativeUI::TacticalHudActive();
+	if (!native) ClearCursorFrame();
+
 	// OK, WE OVERRIDE HERE CURSOR DRAWING FOR THINGS LIKE
 	if ( gpItemPointer != NULL )
 	{
@@ -222,15 +229,26 @@ void DrawUICursor()
 		if ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA || IsPointerOnTacticalTouchUI())
 		{
 			DrawItemTileCursor( );
+			if (native) UpdateCursorFrame(NORMAL_FREEUICURSOR, HeldItemCursorKind());
 		}
 		else
 		{
 			DrawItemFreeCursor( );
+			if (native) ClearCursorFrame();
 		}
 		return;
 	}
 
 	const GridNo usMapPos = guiCurrentCursorGridNo;
+	if (native)
+	{
+		if (usMapPos != NOWHERE) gusCurMousePos = usMapPos;
+		gfTargetDropPos = FALSE;
+		UpdateCursorFrame(UICursorID(guiCurUICursor), 0);
+		gViewportRegion.ChangeCursor(VIDEO_DEFAULT_TO_NO_CURSOR);
+		return;
+	}
+
 	if (usMapPos != NOWHERE)
 	{
 		gusCurMousePos = usMapPos;
