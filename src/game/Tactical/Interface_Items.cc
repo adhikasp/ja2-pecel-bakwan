@@ -49,6 +49,7 @@
 #include "Interface_Cursors.h"
 #include "Interface_Utils.h"
 #include "Interface_Items.h"
+#include "InventoryAdapter.h"
 #include "WordWrap.h"
 #include "Interface_Control.h"
 #include "NativeUI.h"
@@ -1901,17 +1902,34 @@ static void ReloadItemDesc(void)
 }
 
 
-static void ItemDescAmmoCallback(GUI_BUTTON*  const btn, UINT32 const reason)
+/** The sheet's unload button: take the magazine out of the gun into the hand. */
+static void SheetUnload()
 {
-	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
+	Equipment::InventoryCore& core = TacticalInventory();
+	SyncInventoryHand();
+	ItemModel const* const item = gpItemDescObject ? GCM->getItem(gpItemDescObject->usItem) : nullptr;
+	Equipment::UnloadVerdict const v = core.PlanUnload(item && item->isGun(),
+		gpItemDescObject && gpItemDescObject->ubGunShotsLeft > 0, gpItemPointer != nullptr);
+	InventoryOutcome o;
+	o.item = gpItemDescObject ? gpItemDescObject->usItem : 0;
+	if (!v.ok || !EmptyWeaponMagazine(gpItemDescObject, &gItemPointer))
 	{
-		if (gpItemPointer) return;
-		if (!EmptyWeaponMagazine(gpItemDescObject, &gItemPointer)) return;
+		o.action = "refused";
+		o.why    = Equipment::Describe(v.ok ? Equipment::InvWhy::NothingToUnload : v.why);
+		RecordInventoryOutcome(o);
+		return;
+	}
 
+	{
+		InventoryMove m;
+		m.merc   = gpItemDescSoldier ? gpItemDescSoldier->ubID : -1;
+		m.item   = o.item;
+		m.action = "unload";
+		BeforeInventoryMove(m);
 		SetItemPointer(&gItemPointer, gpItemDescSoldier);
 		fInterfacePanelDirty = DIRTYLEVEL2;
 
-		btn->SpecifyText("0");
+		if (giItemDescAmmoButton) giItemDescAmmoButton->SpecifyText("0");
 
 		if (guiCurrentItemDescriptionScreen == MAP_SCREEN)
 		{
@@ -1928,7 +1946,17 @@ static void ItemDescAmmoCallback(GUI_BUTTON*  const btn, UINT32 const reason)
 			}
 			fItemDescDelete = TRUE;
 		}
+		OnInventoryMoved(m);
+		o.ok     = true;
+		o.action = "unload";
+		RecordInventoryOutcome(o);
 	}
+}
+
+
+static void ItemDescAmmoCallback(GUI_BUTTON* const, UINT32 const reason)
+{
+	if (reason & MSYS_CALLBACK_REASON_POINTER_UP) SheetUnload();
 }
 
 
@@ -1985,99 +2013,153 @@ static void DoAttachment(void)
 }
 
 
-static void PermanantAttachmentMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
+void ItemDescConfirmPermanentAttachment()
 {
-	if ( ubExitValue == MSG_BOX_RETURN_YES )
-	{
-		DoAttachment();
-	}
-	// else do nothing
+	DoAttachment();
 }
 
 
-static void ItemDescAttachmentsCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
+static void PermanantAttachmentMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
 {
-	if ( gfItemDescObjectIsAttachment )
-	{
-		// screen out completely
-		return;
-	}
+	// the question lives in the core; answering it runs the attachment
+	InventoryAnswer(ubExitValue == MSG_BOX_RETURN_YES);
+}
 
-	UINT32 uiItemPos = MSYS_GetRegionUserData( pRegion, 0 );
 
+/** A click on attachment position @a uiItemPos of the sheet: mount what is in the hand there, or take the
+ *  attachment out into the hand. The core decides (AP, inseparable items, shop-owned items). */
+static void SheetAttachPrimary(UINT32 const uiItemPos)
+{
+	Equipment::InventoryCore& core = TacticalInventory();
+	SyncInventoryHand();
+
+	Equipment::SheetAttachRequest r;
+	r.sheetIsAttachment = gfItemDescObjectIsAttachment;
 	// if the item being described belongs to a shopkeeper, ignore attempts to pick it up / replace it
-	if (guiCurrentScreen == SHOPKEEPER_SCREEN && pShopKeeperItemDescObject)
+	r.shopOwned         = guiCurrentScreen == SHOPKEEPER_SCREEN && pShopKeeperItemDescObject;
+	r.handFull          = gpItemPointer != NULL;
+	if (r.handFull)
 	{
-		return;
-	}
-
-	// Try to place attachment if something is in our hand
-	// require as many APs as to reload
-	if ( gpItemPointer != NULL )
-	{
-		// nb pointer could be NULL because of inventory manipulation in mapscreen from sector inv
-		if ( !gpItemPointerSoldier || EnoughPoints( gpItemPointerSoldier, AP_RELOAD_GUN, 0, TRUE ) )
-		{
-			if ( (GCM->getItem(gpItemPointer->usItem)->getFlags() & ITEM_INSEPARABLE) && ValidAttachment( gpItemPointer->usItem, gpItemDescObject->usItem ) )
-			{
-				DoScreenIndependantMessageBox(g_langRes->Message[STR_PERMANENT_ATTACHMENT], MSG_BOX_FLAG_YESNO, PermanantAttachmentMessageBoxCallBack);
-				return;
-			}
-
-			DoAttachment();
-		}
+		// require as many APs as to reload; the pointer's soldier can be NULL (sector inventory in the map)
+		r.payerCanPay      = !gpItemPointerSoldier || EnoughPoints(gpItemPointerSoldier, AP_RELOAD_GUN, 0, FALSE);
+		r.handInseparable  = (GCM->getItem(gpItemPointer->usItem)->getFlags() & ITEM_INSEPARABLE) != 0;
+		r.inseparableValid = ValidAttachment(gpItemPointer->usItem, gpItemDescObject->usItem);
 	}
 	else
 	{
-		// ATE: Make sure we have enough AP's to drop it if we pick it up!
-		if ( EnoughPoints( gpItemDescSoldier, ( AP_RELOAD_GUN + AP_PICKUP_ITEM ), 0, TRUE ) )
-		{
-			// Get attachment if there is one
-			// The follwing function will handle if no attachment is here
-			if ( RemoveAttachment( gpItemDescObject, (UINT8)uiItemPos, &gItemPointer ) )
+		// make sure we have enough AP to drop it if we pick it up
+		r.payerCanPay  = EnoughPoints(gpItemDescSoldier, AP_RELOAD_GUN + AP_PICKUP_ITEM, 0, FALSE);
+		r.slotOccupied = uiItemPos < MAX_ATTACHMENTS && gpItemDescObject->usAttachItem[uiItemPos] != NOTHING;
+	}
+
+	Equipment::SheetAttachVerdict const v = core.PlanSheetAttach(r);
+	InventoryOutcome o;
+	o.item = r.handFull ? gpItemPointer->usItem : gpItemDescObject->usItem;
+	switch (v.kind)
+	{
+		case Equipment::SheetAttachKind::Ignored:
+			return;
+
+		case Equipment::SheetAttachKind::Refused:
+			if (v.why == Equipment::InvWhy::NoAP)
 			{
-				SetItemPointer(&gItemPointer, gpItemDescSoldier);
-
-				//if( guiCurrentScreen == MAP_SCREEN )
-				if( guiCurrentItemDescriptionScreen == MAP_SCREEN )
-				{
-					SetMapCursorItem();
-					fTeamPanelDirty=TRUE;
-				}
-
-				//if we are currently in the shopkeeper interface
-				else if (guiCurrentScreen == SHOPKEEPER_SCREEN)
-				{
-					// pick up attachment from item into cursor (don't try to sell)
-					BeginSkiItemPointer( PLAYERS_INVENTORY, -1, FALSE );
-				}
-
-				//Dirty interface
-				fInterfacePanelDirty = DIRTYLEVEL2;
-
-				// re-evaluate repairs
-				gfReEvaluateEveryonesNothingToDo = TRUE;
-
-				UpdateItemHatches();
-				SetAttachmentTooltips();
+				ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, TacticalStr[NOT_ENOUGH_APS_STR]);
 			}
+			o.action = "refused";
+			o.why    = Equipment::Describe(v.why);
+			RecordInventoryOutcome(o);
+			return;
+
+		case Equipment::SheetAttachKind::AskPermanent:
+		{
+			Equipment::Question q;
+			q.kind = Equipment::QuestionKind::PermanentAttachment;
+			q.held = gpItemPointer->usItem;
+			q.host = gpItemDescObject->usItem;
+			core.Ask(q);
+			if (!NativeUI::TacticalHudActive())
+			{
+				DoScreenIndependantMessageBox(g_langRes->Message[STR_PERMANENT_ATTACHMENT], MSG_BOX_FLAG_YESNO, PermanantAttachmentMessageBoxCallBack);
+			}
+			o.ok     = true;
+			o.action = "asked";
+			RecordInventoryOutcome(o);
+			return;
 		}
+
+		case Equipment::SheetAttachKind::Attach:
+		{
+			InventoryMove m;
+			m.merc   = gpItemDescSoldier ? gpItemDescSoldier->ubID : -1;
+			m.item   = o.item;
+			m.action = "attach";
+			BeforeInventoryMove(m);
+			DoAttachment();
+			SyncInventoryHand();
+			OnInventoryMoved(m);
+			o.ok     = true;
+			o.action = "attach";
+			RecordInventoryOutcome(o);
+			return;
+		}
+
+		case Equipment::SheetAttachKind::Detach:
+			break;
+	}
+
+	// Get attachment if there is one
+	// The following function will handle if no attachment is here
+	InventoryMove m;
+	m.merc   = gpItemDescSoldier ? gpItemDescSoldier->ubID : -1;
+	m.item   = gpItemDescObject->usAttachItem[uiItemPos];
+	m.action = "detach";
+	BeforeInventoryMove(m);
+	if (RemoveAttachment(gpItemDescObject, (UINT8)uiItemPos, &gItemPointer))
+	{
+		SetItemPointer(&gItemPointer, gpItemDescSoldier);
+
+		//if( guiCurrentScreen == MAP_SCREEN )
+		if (guiCurrentItemDescriptionScreen == MAP_SCREEN)
+		{
+			SetMapCursorItem();
+			fTeamPanelDirty = TRUE;
+		}
+
+		//if we are currently in the shopkeeper interface
+		else if (guiCurrentScreen == SHOPKEEPER_SCREEN)
+		{
+			// pick up attachment from item into cursor (don't try to sell)
+			BeginSkiItemPointer(PLAYERS_INVENTORY, -1, FALSE);
+		}
+
+		//Dirty interface
+		fInterfacePanelDirty = DIRTYLEVEL2;
+
+		// re-evaluate repairs
+		gfReEvaluateEveryonesNothingToDo = TRUE;
+
+		UpdateItemHatches();
+		SetAttachmentTooltips();
+		OnInventoryMoved(m);
+		o.ok     = true;
+		o.action = "detach";
+		o.item   = m.item;
+		RecordInventoryOutcome(o);
 	}
 }
 
-static void ItemDescAttachmentsCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
+/** The attachment's own description (right click on its position). */
+static void SheetAttachInspect(UINT32 const uiItemPos)
 {
-	if ( gfItemDescObjectIsAttachment )
+	if (gfItemDescObjectIsAttachment)
 	{
 		// screen out completely
 		return;
 	}
 
-	UINT32 uiItemPos = MSYS_GetRegionUserData( pRegion, 0 );
-
 	static OBJECTTYPE Object2;
 
-	if ( gpItemDescObject->usAttachItem[ uiItemPos ] != NOTHING )
+	if (gpItemDescObject->usAttachItem[uiItemPos] != NOTHING)
 	{
 		BOOLEAN fShopkeeperItem = FALSE;
 
@@ -2087,7 +2169,7 @@ static void ItemDescAttachmentsCallbackSecondary(MOUSE_REGION* pRegion, UINT32 i
 			fShopkeeperItem = TRUE;
 		}
 
-		DeleteItemDescriptionBox( );
+		DeleteItemDescriptionBox();
 
 		CreateItem(gpItemDescObject->usAttachItem[uiItemPos], gpItemDescObject->bAttachStatus[uiItemPos], &Object2);
 
@@ -2100,6 +2182,17 @@ static void ItemDescAttachmentsCallbackSecondary(MOUSE_REGION* pRegion, UINT32 i
 			StartSKIDescriptionBox();
 		}
 	}
+}
+
+
+static void ItemDescAttachmentsCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
+{
+	SheetAttachPrimary(MSYS_GetRegionUserData(pRegion, 0));
+}
+
+static void ItemDescAttachmentsCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
+{
+	SheetAttachInspect(MSYS_GetRegionUserData(pRegion, 0));
 }
 
 
@@ -2544,8 +2637,16 @@ void HandleItemDescriptionBox(DirtyLevel* const dirty_level)
 }
 
 
+bool ItemDescIsOpenOn(UINT16 const item)
+{
+	return gfInItemDescBox && gpItemDescObject && gpItemDescObject->usItem == item;
+}
+
+
 void DeleteItemDescriptionBox( )
 {
+	// "attach this?" was about the sheet that is going away
+	if (TacticalInventory().Pending().kind == Equipment::QuestionKind::PermanentAttachment) TacticalInventory().Answer();
 	INT32 cnt, cnt2;
 	BOOLEAN	fFound, fAllFound;
 
@@ -2796,6 +2897,9 @@ void EndItemPointer( )
 
 		// re-evaluate repairs
 		gfReEvaluateEveryonesNothingToDo = TRUE;
+		// nothing in the hand: a question about it is moot
+		TacticalInventory().Answer();
+		SyncInventoryHand();
 	}
 }
 
@@ -4922,67 +5026,70 @@ BOOLEAN HandleItemPickupMenu( )
 }
 
 
-static void BtnMoneyButtonCallbackPrimary(GUI_BUTTON* const btn, UINT32 const reason)
+/** One step of the money sheet: @a which is M_1000, M_100 or M_10; the split itself is the core's. */
+static void MoneyStepClick(UINT8 const which, bool const right)
 {
-	UINT32      amount   = 0;
-	UINT8 const ubButton = btn->GetUserData();
-	switch (ubButton)
-	{
-		case M_1000: amount = 1000; break;
-		case M_100:  amount =  100; break;
-		case M_10:   amount =   10; break;
-
-		case M_DONE:
-			RemoveMoney();
-			DeleteItemDescriptionBox();
-			break;
-	}
-
-	if (amount != 0 && gRemoveMoney.uiMoneyRemaining >= amount)
-	{
-		if (gfAddingMoneyToMercFromPlayersAccount && gRemoveMoney.uiMoneyRemoving + amount > MAX_MONEY_PER_SLOT)
-		{
-			ScreenID const exit_screen = guiCurrentScreen == SHOPKEEPER_SCREEN ?
-				SHOPKEEPER_SCREEN : GAME_SCREEN;
-			DoMessageBox(MSG_BOX_BASIC_STYLE, gzMoneyWithdrawMessageText[MONEY_TEXT_WITHDRAW_MORE_THEN_MAXIMUM], exit_screen, MSG_BOX_FLAG_OK, NULL, NULL);
-			return;
-		}
-
-		gRemoveMoney.uiMoneyRemaining -= amount;
-		gRemoveMoney.uiMoneyRemoving  += amount;
-
-		RenderItemDescriptionBox( );
-		for (INT8 i = 0; i < MAX_ATTACHMENTS; ++i)
-		{
-			MarkAButtonDirty(guiMoneyButtonBtn[i]);
-		}
-	}
-}
-
-static void BtnMoneyButtonCallbackSecondary(GUI_BUTTON* const btn, UINT32 const reason)
-{
-	btn->uiFlags &= ~BUTTON_CLICKED_ON;
-
-	UINT32      amount   = 0;
-	UINT8 const ubButton = btn->GetUserData();
-	switch (ubButton)
+	UINT32 amount = 0;
+	switch (which)
 	{
 		case M_1000: amount = 1000; break;
 		case M_100:  amount =  100; break;
 		case M_10:   amount =   10; break;
 	}
 
-	if (amount != 0 && gRemoveMoney.uiMoneyRemoving >= amount)
+	Equipment::MoneySplit split = Equipment::MoneySplit::Of(gRemoveMoney.uiTotalAmount, gRemoveMoney.uiMoneyRemoving,
+		gfAddingMoneyToMercFromPlayersAccount ? MAX_MONEY_PER_SLOT : 0);
+	Equipment::InvWhy const why = right ? split.Remove(amount) : split.Add(amount);
+
+	InventoryOutcome o;
+	o.item = MONEY;
+	if (why == Equipment::InvWhy::MoneyCap)
 	{
-		gRemoveMoney.uiMoneyRemaining += amount;
-		gRemoveMoney.uiMoneyRemoving  -= amount;
+		ScreenID const exit_screen = guiCurrentScreen == SHOPKEEPER_SCREEN ? SHOPKEEPER_SCREEN : GAME_SCREEN;
+		DoMessageBox(MSG_BOX_BASIC_STYLE, gzMoneyWithdrawMessageText[MONEY_TEXT_WITHDRAW_MORE_THEN_MAXIMUM], exit_screen, MSG_BOX_FLAG_OK, NULL, NULL);
+		o.action = "refused";
+		o.why    = Equipment::Describe(why);
+		RecordInventoryOutcome(o);
+		return;
 	}
+	if (why == Equipment::InvWhy::None)
+	{
+		gRemoveMoney.uiMoneyRemaining = split.Remaining();
+		gRemoveMoney.uiMoneyRemoving  = split.Removing();
+		o.ok     = true;
+		o.action = "money";
+	}
+	else
+	{
+		o.action = "refused";
+		o.why    = Equipment::Describe(why);
+	}
+	RecordInventoryOutcome(o);
 
 	RenderItemDescriptionBox();
 	for (INT8 i = 0; i < MAX_ATTACHMENTS; ++i)
 	{
 		MarkAButtonDirty(guiMoneyButtonBtn[i]);
 	}
+}
+
+
+static void BtnMoneyButtonCallbackPrimary(GUI_BUTTON* const btn, UINT32 const reason)
+{
+	UINT8 const ubButton = btn->GetUserData();
+	if (ubButton == M_DONE)
+	{
+		RemoveMoney();
+		DeleteItemDescriptionBox();
+		return;
+	}
+	MoneyStepClick(ubButton, false);
+}
+
+static void BtnMoneyButtonCallbackSecondary(GUI_BUTTON* const btn, UINT32 const reason)
+{
+	btn->uiFlags &= ~BUTTON_CLICKED_ON;
+	MoneyStepClick(btn->GetUserData(), true);
 }
 
 static void BtnMoneyButtonCallbackOther(GUI_BUTTON* const btn, UINT32 const reason)
@@ -5242,6 +5349,7 @@ void SetItemPointer(OBJECTTYPE* const o, SOLDIERTYPE* const s)
 {
 	gpItemPointer        = o;
 	gpItemPointerSoldier = s;
+	SyncInventoryHand();
 }
 
 
@@ -5340,7 +5448,8 @@ ItemDescNativeView GetItemDescNativeView()
 void ItemDescNativeAttachmentClick(int const i, bool const right)
 {
 	if (i < 0 || i >= MAX_ATTACHMENTS || !(gItemDescAttachmentRegions[i].uiFlags & MSYS_REGION_EXISTS)) return;
-	MSYS_SimulateClick(&gItemDescAttachmentRegions[i], right);
+	if (right) SheetAttachInspect(static_cast<UINT32>(i));
+	else       SheetAttachPrimary(static_cast<UINT32>(i));
 }
 
 void ItemDescNativeClose()
@@ -5377,8 +5486,8 @@ void ItemStackNativeClose()
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// The native tactical HUD: its slots and buttons click the legacy regions and buttons, which stay where the hidden
-// legacy panel is, so every rule of the legacy inventory applies unchanged.
+// The native tactical HUD reaches the inventory through the core's verdicts (InventorySlotClick in
+// Interface_Panels.cc, the sheet's actions here); no hidden legacy region or button is clicked.
 
 static void ClickRegion(MOUSE_REGION& r, bool const right)
 {
@@ -5390,46 +5499,34 @@ static void ClickRegion(MOUSE_REGION& r, bool const right)
 	}
 }
 
-void NativeInvSlotClick(int const slot, bool const right)
-{
-	if (slot < 0 || slot >= NUM_INV_SLOTS) return;
-	ClickRegion(gSMInvRegion[slot], right);
-}
-
-void NativeItemDescAttachmentClick(int const i, bool const right)
+void InventoryAttachClick(int const i, bool const right)
 {
 	if (!gfInItemDescBox || i < 0 || i >= MAX_ATTACHMENTS) return;
-	ClickRegion(gItemDescAttachmentRegions[i], right);
+	if (right) SheetAttachInspect(static_cast<UINT32>(i));
+	else       SheetAttachPrimary(static_cast<UINT32>(i));
 }
 
-void NativeItemDescUnload()
-{
-	if (!gfInItemDescBox || !giItemDescAmmoButton) return;
-	ItemDescAmmoCallback(giItemDescAmmoButton, MSYS_CALLBACK_REASON_POINTER_UP);
-}
-
-void NativeItemDescDone()
+void InventoryUnload()
 {
 	if (!gfInItemDescBox) return;
-	if (gpItemDescObject->usItem == MONEY) RemoveMoney();
-	DeleteItemDescriptionBox();
+	SheetUnload();
 }
 
-void NativeMoneyButton(int const which, bool const right)
+void InventoryMoneyStep(int const which, bool const right)
 {
-	if (!gfInItemDescBox || which < 0 || which >= MAX_ATTACHMENTS || !guiMoneyButtonBtn[which]) return;
-	GUI_BUTTON* const b = guiMoneyButtonBtn[which];
-	if (!b->Enabled()) return;
-	if (right) BtnMoneyButtonCallbackSecondary(b, MSYS_CALLBACK_REASON_RBUTTON_UP);
-	else BtnMoneyButtonCallbackPrimary(b, MSYS_CALLBACK_REASON_POINTER_UP);
+	if (!gfInItemDescBox || which < 0 || which >= MAX_ATTACHMENTS) return;
+	if (which == M_DONE)
+	{
+		ItemDescNativeClose();
+		return;
+	}
+	MoneyStepClick(static_cast<UINT8>(which), right);
 }
 
-NativeMoneySplit NativeMoneyState()
+InventoryMoneySplit InventoryMoneyState()
 {
 	return { gRemoveMoney.uiTotalAmount, gRemoveMoney.uiMoneyRemaining, gRemoveMoney.uiMoneyRemoving };
 }
-
-void NativeKeyRingClick() { ClickRegion(gKeyRingPanel, false); }
 
 // The pick-up menu: the native HUD draws the rows above and reaches the same regions and buttons.
 NativePickupView NativeItemPickupView()

@@ -17,7 +17,7 @@ The native HUD (`src/game/NativeUI/TacticalHud.cc`) is a skin over the legacy on
 |---|---|---|
 | The team / single-merc panels run hidden under the bar | `Interface_Panels.cc`, `SetCurrentInterfacePanel` | two UIs alive, the world viewport ends at the legacy panel's top, `TEAMPANEL_HEIGHT` sizes the native bar |
 | Buttons press legacy hotkeys | `PressKey` in `TacticalHud.cc` | a button can only do what a key does; no availability or "why not" |
-| Inventory, description, money and key ring click hidden legacy regions | `NativeInvSlotClick`, `NativeItemDescAttachmentClick`, `NativeItemDescUnload`, `NativeMoneyButton`, `NativeSMMoneyClick`, `NativeKeyRingClick`, `NativeSMMuteClick` | the rules live in callbacks bound to the 640x480 layout |
+| Inventory, description, money and key ring click hidden legacy regions | ~~`NativeInvSlotClick`, `NativeItemDescAttachmentClick`, `NativeItemDescUnload`, `NativeMoneyButton`, `NativeSMMoneyClick`, `NativeKeyRingClick`~~ gone with #317 (they call the inventory core); `NativeSMMuteClick` stays until #319 | the rules live in `Equipment/InventoryCore` |
 | Action, door and pick-up menus are legacy button panels shown natively | `NativeMovementMenuView`, `NativeDoorMenuView`, `NativeItemPickupView`, `NativeMenuClick`, `NativePickup*` | hidden legacy buttons exist under every native menu |
 | Detail panel open == legacy SM panel open | `gsCurInterfacePanel == SM_PANEL` | the HUD's state is a legacy global |
 | Stack and key-ring popups hide the HUD | `Wanted()` | the legacy panel shows through |

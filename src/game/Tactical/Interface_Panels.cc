@@ -1,4 +1,5 @@
 #include "Interface_Panels.h"
+#include "InventoryAdapter.h"
 #include "Animation_Control.h"
 #include "Assignments.h"
 #include "Boxing.h"
@@ -39,6 +40,7 @@
 #include "Message.h"
 #include "MessageBoxScreen.h"
 #include "MouseSystem.h"
+#include "NativeUI.h"
 #include "NewStrings.h"
 #include "Object_Cache.h"
 #include "OppList.h"
@@ -294,10 +296,6 @@ SOLDIERTYPE* gSelectSMPanelToMerc = NULL;
 static BOOLEAN gfReEvaluateDisabledINVPanelButtons = FALSE;
 
 
-UINT8 gubHandPos;
-UINT16 gusOldItemIndex;
-UINT16 gusNewItemIndex;
-BOOLEAN gfDeductPoints;
 
 
 GUIButtonRef iSMPanelButtons[NUM_SM_BUTTONS];
@@ -449,6 +447,9 @@ static void UpdateSMPanel();
 void SetSMPanelCurrentMerc(SOLDIERTYPE* s)
 {
 	gSelectSMPanelToMerc = NULL;
+
+	// a question about another merc's pockets does not follow the panel
+	TacticalInventory().Answer();
 
 	gpSMCurrentMerc = s;
 
@@ -1534,7 +1535,8 @@ static void SMInvClickCamoCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 		if (obj == NULL) return;
 
 		SOLDIERTYPE* const s = gpSMCurrentMerc;
-		if (s->bLife < CONSCIOUSNESS) return;
+		SyncInventoryHand();
+		if (TacticalInventory().PlanApply(InventoryPartyOf(s)) != Equipment::InvWhy::None) return;
 
 		BOOLEAN fGoodAPs;
 		// Try to apply camo....
@@ -1579,10 +1581,10 @@ static void SMInvClickCamoCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 }
 
 
-BOOLEAN HandleNailsVestFetish(const SOLDIERTYPE* const s, const UINT32 uiHandPos, const UINT16 usReplaceItem)
+bool NailsVestBlocks(SOLDIERTYPE const* const s, UINT32 const uiHandPos, UINT16 const usReplaceItem)
 {
-	if (s->ubProfile != NAILS) return FALSE;
-	if (uiHandPos != VESTPOS)  return FALSE;
+	if (s->ubProfile != NAILS) return false;
+	if (uiHandPos != VESTPOS)  return false;
 
 	switch (usReplaceItem)
 	{
@@ -1592,347 +1594,181 @@ BOOLEAN HandleNailsVestFetish(const SOLDIERTYPE* const s, const UINT32 uiHandPos
 		case LEATHER_JACKET_W_KEVLAR_Y:
 		case COMPOUND18:
 		case JAR_QUEEN_CREATURE_BLOOD:
-			return FALSE;
+			return false;
 
 		default:
-			TacticalCharacterDialogue(s, 61);
-			return TRUE;
+			return true;
 	}
 }
 
 
-static BOOLEAN UIHandleItemPlacement(UINT8 ubHandPos, UINT16 usOldItemIndex, UINT16 usNewItemIndex, BOOLEAN fDeductPoints)
+BOOLEAN HandleNailsVestFetish(const SOLDIERTYPE* const s, const UINT32 uiHandPos, const UINT16 usReplaceItem)
 {
-	if ( _KeyDown(CTRL) )
+	if (!NailsVestBlocks(s, uiHandPos, usReplaceItem)) return FALSE;
+	TacticalCharacterDialogue(s, 61);
+	return TRUE;
+}
+
+
+// ---------------------------------------------------------------------------------------------------------------
+// Clicks on a pocket (issue #317). The inventory core (Equipment/InventoryCore.h) decides what a click means; the
+// functions below fill its inputs from the soldiers and apply the verdict through the legacy primitives
+// (PlaceObject, BeginItemPointer, CleanUpStack, ...). The shopkeeper's special cases stay here, keyed on the screen.
+
+namespace
+{
+	using Equipment::InvWhy;
+
+	InventoryOutcome Refusal(InvWhy const why, UINT16 const item = NOTHING)
 	{
-		CleanUpStack( &( gpSMCurrentMerc->inv[ ubHandPos ] ), gpItemPointer );
-		if ( gpItemPointer->ubNumberOfObjects == 0 )
-		{
-			EndItemPointer( );
-		}
-		return( TRUE );
+		InventoryOutcome o;
+		o.ok     = false;
+		o.action = "refused";
+		o.why    = Equipment::Describe(why);
+		o.item   = item;
+		RecordInventoryOutcome(o);
+		return o;
 	}
 
-	// Try to place here
-	if ( PlaceObject( gpSMCurrentMerc, ubHandPos, gpItemPointer ) )
+	InventoryOutcome Done(char const* const action, UINT16 const item, int const apFrom = 0, int const apTo = 0)
 	{
-		if ( fDeductPoints )
+		InventoryOutcome o;
+		o.ok     = true;
+		o.action = action;
+		o.item   = item;
+		o.apFrom = apFrom;
+		o.apTo   = apTo;
+		RecordInventoryOutcome(o);
+		return o;
+	}
+
+	void Raise(Observable<InventoryMove const&>& event, SOLDIERTYPE const* const s, int const slot, UINT16 const item,
+		int const count, char const* const action, int const apFrom = 0, int const apTo = 0)
+	{
+		InventoryMove m;
+		m.merc   = s ? s->ubID : -1;
+		m.slot   = slot;
+		m.item   = item;
+		m.count  = count;
+		m.action = action;
+		m.apFrom = apFrom;
+		m.apTo   = apTo;
+		event(m);
+	}
+
+	/** What a refusal tells the player: the legacy messages and Nails' line. */
+	InventoryOutcome Refused(SOLDIERTYPE* const s, int const slot, Equipment::PlaceVerdict const& v, UINT16 const item)
+	{
+		switch (v.why)
 		{
-			// Deduct points
-			if ( gpItemPointerSoldier->bLife >= CONSCIOUSNESS )
-			{
-				DeductPoints( gpItemPointerSoldier,  2, 0 );
-			}
-			if ( gpSMCurrentMerc->bLife >= CONSCIOUSNESS )
-			{
-				DeductPoints( gpSMCurrentMerc,  2, 0 );
-			}
+			case InvWhy::NoAP:
+			case InvWhy::NoAPTarget:
+				ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, TacticalStr[NOT_ENOUGH_APS_STR]);
+				break;
+
+			case InvWhy::NailsVest:
+				if (v.fetish) TacticalCharacterDialogue(s, 61);
+				break;
+
+			case InvWhy::DoesNotFit:
+				// placing says why (the pocket's rule) in a message, as the legacy placement did
+				if (gpItemPointer) CanItemFitInPosition(s, gpItemPointer, static_cast<INT8>(slot), TRUE);
+				break;
+
+			default: break;
 		}
+		return Refusal(v.why, item);
+	}
 
-		HandleTacticalEffectsOfEquipmentChange( gpSMCurrentMerc, ubHandPos, usOldItemIndex, usNewItemIndex );
+	/** Puts the hand down into @a pos of @a s through PlaceObject and charges the passing AP. */
+	bool ApplyPlacement(SOLDIERTYPE* const s, UINT8 const pos, UINT16 const oldItem, UINT16 const newItem,
+		int const apFrom, int const apTo)
+	{
+		Raise(BeforeInventoryMove, s, pos, newItem, gpItemPointer ? gpItemPointer->ubNumberOfObjects : 0, "put", apFrom, apTo);
 
-		// Dirty
+		if (!PlaceObject(s, pos, gpItemPointer)) return false;
+
+		if (apFrom != 0 && gpItemPointerSoldier) DeductPoints(gpItemPointerSoldier, apFrom, 0);
+		if (apTo   != 0)                         DeductPoints(s, apTo, 0);
+
+		HandleTacticalEffectsOfEquipmentChange(s, pos, oldItem, newItem);
+
 		fInterfacePanelDirty = DIRTYLEVEL2;
 
-		// Check if cursor is empty now
-		if ( gpItemPointer->ubNumberOfObjects == 0 )
+		// the hand is empty now
+		if (gpItemPointer->ubNumberOfObjects == 0) EndItemPointer();
+
+		if (gpItemPointerSoldier != s)
 		{
-			EndItemPointer( );
+			ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE,
+				st_format_printf(pMessageStrings[MSG_ITEM_PASSED_TO_MERC], GCM->getItem(newItem)->getShortName(), s->name));
 		}
 
-		if ( gpItemPointerSoldier != gpSMCurrentMerc )
-		{
-			ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, st_format_printf(pMessageStrings[ MSG_ITEM_PASSED_TO_MERC ], GCM->getItem(usNewItemIndex)->getShortName(), gpSMCurrentMerc->name) );
-		}
+		// the soldier the hand belongs to is the one it was put down on
+		gpItemPointerSoldier = s;
 
-		// UPDATE ITEM POINTER.....
-		gpItemPointerSoldier = gpSMCurrentMerc;
+		if (gpItemPointer != NULL) ReevaluateItemHatches(s, FALSE);
 
-		if ( gpItemPointer != NULL )
-		{
-			ReevaluateItemHatches( gpSMCurrentMerc, FALSE );
-		}
-
-		// Set cursor back to normal mode...
+		// set the cursor back to normal mode
 		guiPendingOverrideEvent = A_CHANGE_TO_MOVE;
 
-		return( TRUE );
-
+		SyncInventoryHand();
+		Raise(OnInventoryMoved, s, pos, newItem, 0, "put", apFrom, apTo);
+		return true;
 	}
-	else
+
+	void CleanUpPocket(SOLDIERTYPE* const s, UINT8 const pos, bool const withHand)
 	{
-		return( FALSE );
+		CleanUpStack(&s->inv[pos], withHand ? gpItemPointer : NULL);
+		if (withHand && gpItemPointer->ubNumberOfObjects == 0) EndItemPointer();
+		SyncInventoryHand();
 	}
 
+	bool IsAttachHostPocket(UINT32 const pos)
+	{
+		return pos == HANDPOS || pos == SECONDHANDPOS || pos == HELMETPOS || pos == VESTPOS || pos == LEGPOS;
+	}
 }
 
 
 static void MergeMessageBoxCallBack(MessageBoxReturnValue);
 
 
-static void SMInvClickCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
+InventoryOutcome InventoryAnswer(bool const yes)
 {
-	// Copyies of values
-	UINT16 usOldItemIndex, usNewItemIndex;
-	UINT16 usItemPrevInItemPointer;
-	BOOLEAN fNewItem = FALSE;
+	Equipment::InventoryCore& core = TacticalInventory();
+	if (!core.Asking()) return LastInventoryOutcome();
 
-	UINT32 uiHandPos = MSYS_GetRegionUserData( pRegion, 0 );
+	Equipment::Question const q = core.Answer();
 
-	if (fInMapMode) return; // XXX necessary?
+	// The question is only good while what it asked about is still there: the same item in the hand,
+	// the same item in the pocket or the sheet.
+	SyncInventoryHand();
+	bool const handIsAsked = gpItemPointer && gpItemPointer->usItem == q.held;
 
-	//if we are in the shop keeper interface
-	if (guiCurrentScreen == SHOPKEEPER_SCREEN)
+	if (q.kind == Equipment::QuestionKind::PermanentAttachment)
 	{
-		// and this inventory slot is hatched out
-		if( ShouldSoldierDisplayHatchOnItem( gpSMCurrentMerc->ubProfile, (INT16)uiHandPos ) )
-		{
-			// it means that item is a copy of one in the player's offer area, so we treat it as if the slot was empty (ignore)
-			// if the cursor has an item in it, we still ignore the click, because handling swaps in this situation would be
-			// ugly, we'd have to the the swap, then make the bOwnerSlot of the item just picked up a -1 in its offer area spot.
-			return;
-		}
+		// "this attachment cannot be taken off again": the sheet mounts it
+		UINT16 const item = q.held;
+		if (!yes) return Done("declined", item);
+		if (!handIsAsked || !InItemDescriptionBox() || !ItemDescIsOpenOn(q.host)) return Refusal(InvWhy::HandEmpty, item);
+		ItemDescConfirmPermanentAttachment();
+		SyncInventoryHand();
+		return Done("attach", item);
 	}
 
-	// If we do not have an item in hand, start moving it
-	if ( gpItemPointer == NULL )
+	if (q.merc < 0 || q.merc >= TOTAL_SOLDIERS || !gpItemPointer) return Refusal(InvWhy::HandEmpty);
+
+	SOLDIERTYPE* const s = &GetMan(static_cast<UINT>(q.merc));
+	if (q.kind != Equipment::QuestionKind::Merge) return Refusal(InvWhy::None);
+	if (q.slot < 0 || q.slot >= NUM_INV_SLOTS || !handIsAsked || s->inv[q.slot].usItem != q.host)
+		return Refusal(InvWhy::HandEmpty, q.held);
+
+	if (yes)
 	{
-
-		// Return if empty
-		if ( gpSMCurrentMerc->inv[ uiHandPos ].usItem == NOTHING )
-			return;
-
-		SelectSoldier(gpSMCurrentMerc, SELSOLDIER_NONE);
-
-		// OK, check if this is Nails, and we're in the vest position , don't allow it to come off....
-		if ( HandleNailsVestFetish( gpSMCurrentMerc, uiHandPos, NOTHING ) )
-		{
-			return;
-		}
-
-		if ( _KeyDown(CTRL) )
-		{
-			CleanUpStack( &( gpSMCurrentMerc->inv[ uiHandPos ] ), NULL );
-			return;
-		}
-
-		// Turn off new item glow!
-		gpSMCurrentMerc->bNewItemCount[ uiHandPos ] = 0;
-
-		usOldItemIndex = gpSMCurrentMerc->inv[ uiHandPos ].usItem;
-
-		// move item into the mouse cursor
-		BeginItemPointer( gpSMCurrentMerc, (UINT8)uiHandPos );
-
-		//if we are in the shopkeeper interface
-		if (guiCurrentScreen == SHOPKEEPER_SCREEN)
-		{
-			// pick up item from regular inventory slot into cursor OR try to sell it
-			// ( unless CTRL is held down )
-			BeginSkiItemPointer(PLAYERS_INVENTORY, (INT8)uiHandPos, !_KeyDown(CTRL));
-		}
-
-		HandleTacticalEffectsOfEquipmentChange( gpSMCurrentMerc, uiHandPos, usOldItemIndex, NOTHING );
-
-		// HandleCompatibleAmmoUI( gpSMCurrentMerc, (INT8)uiHandPos, FALSE );
-	}
-	else // item in cursor
-	{
-		BOOLEAN fOKToGo = FALSE;
-		BOOLEAN fDeductPoints = FALSE;
-
-		// ATE: OK, get source, dest guy if different... check for and then charge appropriate APs
-		if (gpSMCurrentMerc == gpItemPointerSoldier)
-		{
-			// We are doing this ourselve, continue
-			fOKToGo = TRUE;
-		}
-		else
-		{
-			// These guys are different....
-			fDeductPoints = TRUE;
-
-			// First check points for src guy
-			if ( gpItemPointerSoldier->bLife >= CONSCIOUSNESS )
-			{
-				if ( EnoughPoints( gpItemPointerSoldier, 3, 0, TRUE ) )
-				{
-					fOKToGo = TRUE;
-				}
-			}
-			else
-			{
-				fOKToGo = TRUE;
-			}
-
-			// Should we go on?
-			if ( fOKToGo )
-			{
-				if ( gpSMCurrentMerc->bLife >= CONSCIOUSNESS )
-				{
-					if ( EnoughPoints( gpSMCurrentMerc, 3, 0, TRUE ) )
-					{
-						fOKToGo = TRUE;
-					}
-					else
-					{
-						fOKToGo = FALSE;
-					}
-				}
-			}
-		}
-
-		if ( fOKToGo )
-		{
-			// OK, check if this is Nails, and we're in the vest position , don't allow
-			// it to come off....
-			if ( HandleNailsVestFetish( gpSMCurrentMerc, uiHandPos, gpItemPointer->usItem ) )
-			{
-				return;
-			}
-
-			usOldItemIndex = gpSMCurrentMerc->inv[ uiHandPos ].usItem;
-			usNewItemIndex = gpItemPointer->usItem;
-
-			if ( uiHandPos == HANDPOS || uiHandPos == SECONDHANDPOS || uiHandPos == HELMETPOS || uiHandPos == VESTPOS || uiHandPos == LEGPOS )
-			{
-				//if ( ValidAttachmentClass( usNewItemIndex, usOldItemIndex ) )
-				if ( ValidAttachment( usNewItemIndex, usOldItemIndex ) )
-				{
-					// it's an attempt to attach; bring up the inventory panel
-					if ( !InItemDescriptionBox( ) )
-					{
-						InitItemDescriptionBox( gpSMCurrentMerc, (UINT8)uiHandPos, SM_ITEMDESC_START_X, SM_ITEMDESC_START_Y, 0 );
-					}
-					return;
-				}
-				else if ( ValidMerge( usNewItemIndex, usOldItemIndex ) )
-				{
-					// bring up merge requestor
-					gubHandPos = (UINT8) uiHandPos;
-					gusOldItemIndex = usOldItemIndex;
-					gusNewItemIndex = usNewItemIndex;
-					gfDeductPoints = fDeductPoints;
-
-					if (guiCurrentScreen == SHOPKEEPER_SCREEN)
-					{
-						//the only way to merge items is to pick them up.  In SKI when you pick up an item, the cursor is
-						//locked in a region, free it up.
-						FreeMouseCursor();
-
-						DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], SHOPKEEPER_SCREEN, MSG_BOX_FLAG_YESNO, MergeMessageBoxCallBack, NULL);
-					}
-					else
-						DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], GAME_SCREEN, MSG_BOX_FLAG_YESNO, MergeMessageBoxCallBack, NULL);
-					return;
-				}
-				// else handle normally
-			}
-
-
-			// remember the item type currently in the item pointer
-			usItemPrevInItemPointer = gpItemPointer->usItem;
-
-			if (guiCurrentScreen == SHOPKEEPER_SCREEN)
-			{
-				// If it's just been purchased or repaired, mark it as a "new item"
-				fNewItem = ( BOOLEAN ) ( gMoveingItem.uiFlags & ( ARMS_INV_JUST_PURCHASED | ARMS_INV_ITEM_REPAIRED ) );
-			}
-
-			// try to place the item in the cursor into this inventory slot
-			if ( UIHandleItemPlacement( (UINT8) uiHandPos, usOldItemIndex, usNewItemIndex, fDeductPoints ) )
-			{
-				// it worked!  if we're in the SKI...
-				if (guiCurrentScreen == SHOPKEEPER_SCREEN)
-				{
-					SetNewItem( gpSMCurrentMerc, ( UINT8 ) uiHandPos, fNewItem );
-
-					// and the cursor is now empty
-					if( gpItemPointer == NULL )
-					{
-						// clean up
-						gMoveingItem = INVENTORY_IN_SLOT{};
-						SetSkiCursor( CURSOR_NORMAL );
-					}
-					else
-					{
-						// if we're holding something else in the pointer now
-						if ( usItemPrevInItemPointer != gpItemPointer->usItem )
-						{
-							// pick up item swapped out of inventory slot into
-							// cursor (don't try to sell)
-							BeginSkiItemPointer( PLAYERS_INVENTORY, -1, FALSE );
-						}
-						else
-						{
-							// otherwise, leave the cursor as is, means more items
-							// were picked up at once than can be placed in this slot
-							// we deal with this by leaving the remainder in the
-							// cursor, to be put down elsewhere using subsequent
-							// clicks
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-static void SMInvClickCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
-{
-	UINT32 uiHandPos = MSYS_GetRegionUserData( pRegion, 0 );
-
-	if (fInMapMode) return; // XXX necessary?
-
-	//if we are in the shop keeper interface
-	if (guiCurrentScreen == SHOPKEEPER_SCREEN)
-	{
-		// and this inventory slot is hatched out
-		if( ShouldSoldierDisplayHatchOnItem( gpSMCurrentMerc->ubProfile, (INT16)uiHandPos ) )
-		{
-			// it means that item is a copy of one in the player's offer area, so we treat it as if the slot was empty (ignore)
-			// if the cursor has an item in it, we still ignore the click, because handling swaps in this situation would be
-			// ugly, we'd have to the the swap, then make the bOwnerSlot of the item just picked up a -1 in its offer area spot.
-			return;
-		}
-	}
-
-	// Return if empty
-	if ( gpSMCurrentMerc->inv[ uiHandPos ].usItem == NOTHING )
-		return;
-
-	// Turn off new item glow!
-	gpSMCurrentMerc->bNewItemCount[ uiHandPos ] = 0;
-
-	// Some global stuff here - for esc, etc
-	// Check for # of slots in item
-	if((gpSMCurrentMerc->inv[uiHandPos].ubNumberOfObjects > 1 &&
-		ItemSlotLimit(gpSMCurrentMerc->inv[uiHandPos].usItem, (UINT8)uiHandPos) > 0) &&
-		(guiCurrentScreen != MAP_SCREEN))
-	{
-		if ( !InItemStackPopup( )  )
-		{
-			InitItemStackPopup(gpSMCurrentMerc, (UINT8)uiHandPos, SM_ITEMDESC_START_X,
-						INV_INTERFACE_START_Y, SM_ITEMDESC_WIDTH,
-						SCREEN_HEIGHT - INV_INTERFACE_START_Y );
-		}
-	}
-	else
-	{
-		if ( !InItemDescriptionBox( ) )
-		{
-			InitItemDescriptionBox(gpSMCurrentMerc, (UINT8)uiHandPos,
-						SM_ITEMDESC_START_X, SM_ITEMDESC_START_Y, 0);
-		}
-	}
-}
-
-
-static void MergeMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
-{
-	if ( ubExitValue == MSG_BOX_RETURN_YES )
-	{
-		AttachObject( gpItemPointerSoldier, &( gpSMCurrentMerc->inv[ gubHandPos ] ), gpItemPointer );
+		UINT16 const item = gpItemPointer->usItem;
+		Raise(BeforeInventoryMove, s, q.slot, item, gpItemPointer->ubNumberOfObjects, "merge");
+		AttachObject(gpItemPointerSoldier ? gpItemPointerSoldier : s, &s->inv[q.slot], gpItemPointer);
 
 		// re-evaluate repairs
 		gfReEvaluateEveryonesNothingToDo = TRUE;
@@ -1943,11 +1779,245 @@ static void MergeMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
 			EndItemPointer();
 			fInterfacePanelDirty = DIRTYLEVEL2;
 		}
+		SyncInventoryHand();
+		Raise(OnInventoryMoved, s, q.slot, item, 0, "merge");
+		return Done("merge", item);
 	}
-	else
+
+	UINT16 const newItem = gpItemPointer->usItem;
+	if (ApplyPlacement(s, static_cast<UINT8>(q.slot), s->inv[q.slot].usItem, newItem, q.apFrom, q.apTo))
+		return Done("put", newItem, q.apFrom, q.apTo);
+	return Refusal(InvWhy::None, newItem);
+}
+
+
+static void MergeMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
+{
+	InventoryAnswer(ubExitValue == MSG_BOX_RETURN_YES);
+}
+
+
+/** Left click on a pocket: pick the item up, or put the hand down into it. */
+static InventoryOutcome SlotPrimary(SOLDIERTYPE* const s, UINT32 const pos, bool const ctrl)
+{
+	Equipment::InventoryCore& core = TacticalInventory();
+	SyncInventoryHand();
+	bool const ski = guiCurrentScreen == SHOPKEEPER_SCREEN;
+	Equipment::InvParty const me = InventoryPartyOf(s);
+
+	// If we do not have an item in hand, start moving it
+	if (gpItemPointer == NULL)
 	{
-		UIHandleItemPlacement( gubHandPos, gusOldItemIndex, gusNewItemIndex, gfDeductPoints );
+		UINT16 const item = s->inv[pos].usItem;
+		if (item == NOTHING) return Refusal(InvWhy::NothingHere);
+		if (!me.inReach) return Refusal(InvWhy::OutOfReach, item);
+
+		SelectSoldier(s, SELSOLDIER_NONE);
+
+		// Nails keeps his vest on; Ctrl gathers the pocket's stack
+		Equipment::TakeVerdict const t = core.PlanTake(me, static_cast<int>(pos), item, ctrl);
+		if (t.kind == Equipment::TakeKind::Refused)
+		{
+			if (t.why == InvWhy::NailsVest) TacticalCharacterDialogue(s, 61);
+			return Refusal(t.why, item);
+		}
+		if (t.kind == Equipment::TakeKind::CleanUp)
+		{
+			CleanUpPocket(s, static_cast<UINT8>(pos), false);
+			return Done("cleanup", item);
+		}
+
+		Raise(BeforeInventoryMove, s, static_cast<int>(pos), item, s->inv[pos].ubNumberOfObjects, "take");
+
+		// Turn off new item glow!
+		s->bNewItemCount[pos] = 0;
+
+		// move item into the mouse cursor
+		BeginItemPointer(s, static_cast<UINT8>(pos));
+
+		if (ski)
+		{
+			// pick up item from regular inventory slot into cursor OR try to sell it
+			// ( unless CTRL is held down )
+			BeginSkiItemPointer(PLAYERS_INVENTORY, static_cast<INT8>(pos), !ctrl);
+		}
+
+		HandleTacticalEffectsOfEquipmentChange(s, pos, item, NOTHING);
+
+		SyncInventoryHand();
+		Raise(OnInventoryMoved, s, static_cast<int>(pos), item, 0, "take");
+		return Done("take", item);
 	}
+
+	// item in cursor
+	UINT16 const usOldItemIndex = s->inv[pos].usItem;
+	UINT16 const usNewItemIndex = gpItemPointer->usItem;
+
+	Equipment::PlaceVerdict const v = core.PlanPlace(me, static_cast<int>(pos), usOldItemIndex, IsAttachHostPocket(pos), ctrl);
+	switch (v.kind)
+	{
+		case Equipment::PlaceKind::Refused:
+			return Refused(s, static_cast<int>(pos), v, usNewItemIndex);
+
+		case Equipment::PlaceKind::Attach:
+			// it's an attempt to attach; bring up the inventory panel
+			if (!InItemDescriptionBox())
+			{
+				InitItemDescriptionBox(s, static_cast<UINT8>(pos), SM_ITEMDESC_START_X, SM_ITEMDESC_START_Y, 0);
+			}
+			return Done("attach", usNewItemIndex);
+
+		case Equipment::PlaceKind::AskMerge:
+		{
+			// the question lives in the core; the native HUD shows it, the legacy HUD and the shopkeeper use a box
+			Equipment::Question q;
+			q.kind   = Equipment::QuestionKind::Merge;
+			q.merc   = s->ubID;
+			q.slot   = static_cast<int>(pos);
+			q.held   = usNewItemIndex;
+			q.host   = usOldItemIndex;
+			q.apFrom = v.apFrom;
+			q.apTo   = v.apTo;
+			core.Ask(q);
+
+			if (ski)
+			{
+				// the only way to merge items is to pick them up. In SKI when you pick up an item, the cursor is
+				// locked in a region, free it up.
+				FreeMouseCursor();
+				DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], SHOPKEEPER_SCREEN, MSG_BOX_FLAG_YESNO, MergeMessageBoxCallBack, NULL);
+			}
+			else if (!NativeUI::TacticalHudActive())
+			{
+				DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], GAME_SCREEN, MSG_BOX_FLAG_YESNO, MergeMessageBoxCallBack, NULL);
+			}
+			InventoryOutcome o;
+			o.ok     = true;
+			o.action = "asked";
+			o.item   = usNewItemIndex;
+			RecordInventoryOutcome(o);
+			return o;
+		}
+
+		case Equipment::PlaceKind::CleanUp:
+			CleanUpPocket(s, static_cast<UINT8>(pos), true);
+			return Done("cleanup", usNewItemIndex);
+
+		case Equipment::PlaceKind::Put:
+			break;
+	}
+
+	// remember the item type currently in the item pointer
+	UINT16 const usItemPrevInItemPointer = gpItemPointer->usItem;
+
+	BOOLEAN fNewItem = FALSE;
+	if (ski)
+	{
+		// If it's just been purchased or repaired, mark it as a "new item"
+		fNewItem = (gMoveingItem.uiFlags & (ARMS_INV_JUST_PURCHASED | ARMS_INV_ITEM_REPAIRED)) != 0;
+	}
+
+	// try to place the item in the cursor into this inventory slot
+	if (!ApplyPlacement(s, static_cast<UINT8>(pos), usOldItemIndex, usNewItemIndex, v.apFrom, v.apTo))
+		return Refusal(InvWhy::None, usNewItemIndex);
+
+	// it worked! if we're in the SKI...
+	if (ski)
+	{
+		SetNewItem(s, static_cast<UINT8>(pos), fNewItem);
+
+		if (gpItemPointer == NULL)
+		{
+			// the cursor is now empty: clean up
+			gMoveingItem = INVENTORY_IN_SLOT{};
+			SetSkiCursor(CURSOR_NORMAL);
+		}
+		else if (usItemPrevInItemPointer != gpItemPointer->usItem)
+		{
+			// pick up item swapped out of inventory slot into cursor (don't try to sell)
+			BeginSkiItemPointer(PLAYERS_INVENTORY, -1, FALSE);
+		}
+		// otherwise leave the cursor as is: more items were picked up at once than fit in this slot,
+		// the remainder stays in the cursor to be put down elsewhere
+	}
+	return Done("put", usNewItemIndex, v.apFrom, v.apTo);
+}
+
+
+/** Right click on a pocket: the stack popup for a stack, the item's description otherwise. */
+static InventoryOutcome SlotSecondary(SOLDIERTYPE* const s, UINT32 const pos)
+{
+	Equipment::InventoryCore& core = TacticalInventory();
+	SyncInventoryHand();
+	UINT16 const item = s->inv[pos].usItem;
+	if (item == NOTHING) return Refusal(InvWhy::NothingHere);
+	if (!InventoryPartyOf(s).inReach) return Refusal(InvWhy::OutOfReach, item);
+
+	// Turn off new item glow!
+	s->bNewItemCount[pos] = 0;
+
+	// Some global stuff here - for esc, etc
+	// Check for # of slots in item
+	Equipment::ActivateKind const k = core.PlanActivate(item, s->inv[pos].ubNumberOfObjects,
+		ItemSlotLimit(item, static_cast<UINT8>(pos)), guiCurrentScreen != MAP_SCREEN);
+	if (k == Equipment::ActivateKind::OpenStack)
+	{
+		if (!InItemStackPopup())
+		{
+			InitItemStackPopup(s, static_cast<UINT8>(pos), SM_ITEMDESC_START_X, INV_INTERFACE_START_Y,
+				SM_ITEMDESC_WIDTH, SCREEN_HEIGHT - INV_INTERFACE_START_Y);
+		}
+		return Done("stack", item);
+	}
+
+	if (!InItemDescriptionBox())
+	{
+		InitItemDescriptionBox(s, static_cast<UINT8>(pos), SM_ITEMDESC_START_X, SM_ITEMDESC_START_Y, 0);
+	}
+	return Done("describe", item);
+}
+
+
+static bool ShopHatched(UINT32 pos);
+
+
+InventoryOutcome InventorySlotClick(SOLDIERTYPE* const merc, int const slot, bool const right, bool const ctrl)
+{
+	if (!merc || slot < 0 || slot >= NUM_INV_SLOTS || fInMapMode) return Refusal(InvWhy::NothingHere);
+	// the pockets are the single-merc panel's: they act on the merc it shows
+	if (merc != gpSMCurrentMerc) return Refusal(InvWhy::OutOfReach);
+	if (ShopHatched(static_cast<UINT32>(slot))) return Refusal(InvWhy::NothingHere);
+	// a click answers nothing: a question still open is dropped
+	TacticalInventory().Answer();
+	return right ? SlotSecondary(merc, static_cast<UINT32>(slot)) : SlotPrimary(merc, static_cast<UINT32>(slot), ctrl);
+}
+
+
+static bool ShopHatched(UINT32 const pos)
+{
+	// in the shop keeper interface: is this inventory slot hatched out?
+	// It means that item is a copy of one in the player's offer area, so we treat it as if the slot was empty
+	// (ignore); with the cursor full we still ignore the click, because handling swaps in this situation would be
+	// ugly, we'd have to the the swap, then make the bOwnerSlot of the item just picked up a -1 in its offer area spot.
+	return guiCurrentScreen == SHOPKEEPER_SCREEN && ShouldSoldierDisplayHatchOnItem(gpSMCurrentMerc->ubProfile, static_cast<INT16>(pos));
+}
+
+
+static void SMInvClickCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
+{
+	UINT32 const uiHandPos = MSYS_GetRegionUserData(pRegion, 0);
+	if (fInMapMode) return; // XXX necessary?
+	if (ShopHatched(uiHandPos)) return;
+	SlotPrimary(gpSMCurrentMerc, uiHandPos, _KeyDown(CTRL));
+}
+
+
+static void SMInvClickCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
+{
+	UINT32 const uiHandPos = MSYS_GetRegionUserData(pRegion, 0);
+	if (fInMapMode) return; // XXX necessary?
+	if (ShopHatched(uiHandPos)) return;
+	SlotSecondary(gpSMCurrentMerc, uiHandPos);
 }
 
 
@@ -3398,7 +3468,17 @@ void BeginKeyPanelFromKeyShortcut(void)
 }
 
 
+static void OpenKeyRing();
+
+
 void KeyRingItemPanelButtonCallback(MOUSE_REGION* pRegion, UINT32 iReason)
+{
+	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP) OpenKeyRing();
+}
+
+
+/** The key ring button: the popup with the keys of the merc the panel shows. */
+static void OpenKeyRing()
 {
 	SOLDIERTYPE *pSoldier = NULL;
 	INT16 sStartYPosition = 0;
@@ -3429,7 +3509,6 @@ void KeyRingItemPanelButtonCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 	//if we are in the shop keeper interface
 	if (guiCurrentScreen == SHOPKEEPER_SCREEN) return;
 
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP)
 	{
 		if( guiCurrentScreen == MAP_SCREEN )
 		{
@@ -3713,9 +3792,18 @@ static bool IsMouseInRegion(MOUSE_REGION const& r)
 static void ConfirmationToDepositMoneyToPlayersAccount(MessageBoxReturnValue);
 
 
+static void CashButton();
+
+
 static void SMInvMoneyButtonCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 {
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_DWN )
+	if (iReason & MSYS_CALLBACK_REASON_POINTER_DWN) CashButton();
+}
+
+
+/** The money button of the single-merc panel: deposit the money in the hand, or open the withdrawal. */
+static void CashButton()
+{
 	{
 		//If the current merc is to far away, dont allow anything to be done
 		if( gfSMDisableForItems )
@@ -3883,15 +3971,19 @@ static std::unique_ptr<SGPVSurface> CreateVideoSurfaceFromObjectFile(const ST::s
 }
 
 
-// The native tactical HUD's cash button: the single-merc panel's money region (deposit / withdraw).
-void NativeSMMoneyClick()
+// The native tactical HUD's cash button (deposit / withdraw): the button's own action, no hidden region.
+void InventoryCashButton()
 {
-	MOUSE_REGION& r = gSM_SELMERCMoneyRegion;
-	if (!(r.uiFlags & MSYS_REGION_ENABLED) || !r.ButtonCallback) return;
-	r.ButtonCallback(&r, MSYS_CALLBACK_REASON_LBUTTON_DWN);
-	if (!(r.uiFlags & MSYS_REGION_ENABLED) || !r.ButtonCallback) return;
-	r.ButtonCallback(&r, MSYS_CALLBACK_REASON_LBUTTON_UP);
+	CashButton();
 }
+
+
+/** The native tactical HUD's key ring button. */
+void InventoryKeyRing()
+{
+	OpenKeyRing();
+}
+
 
 // The native tactical HUD's mute button: the single-merc panel's mute button (SOLDIER_MUTE and the message it prints).
 void NativeSMMuteClick()

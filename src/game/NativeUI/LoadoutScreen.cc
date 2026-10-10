@@ -28,6 +28,7 @@
 #include "Handle_Items.h"
 #include "Interface.h"
 #include "Interface_Panels.h"
+#include "InventoryAdapter.h"
 #include "InventorySlots.h"
 #include "ItemModel.h"
 #include "Item_Types.h"
@@ -135,45 +136,6 @@ namespace
 		if (usable(HANDPOS)) return HANDPOS;
 		if (usable(SECONDHANDPOS)) return SECONDHANDPOS;
 		return -1;
-	}
-
-	/** A one-object copy of @a src, removed from it: the unit of an attach move. */
-	void SplitOne(SOLDIERTYPE& s, int const from, OBJECTTYPE* one)
-	{
-		OBJECTTYPE& src = s.inv[from];
-		CreateItem(src.usItem, src.bStatus[0], one);
-		one->ubNumberOfObjects = 1;
-		RemoveObjs(&src, 1);
-	}
-
-	/** Where something that came out of a move goes when its natural place is gone: the preferred
-	 *  slot when it still fits, else wherever it fits, else the ground, else back where it was. */
-	void DisposeLeftover(SOLDIERTYPE& s, int const preferred, OBJECTTYPE& o)
-	{
-		if (o.usItem == NOTHING) return;
-		if (preferred >= 0 && CanItemFitInPosition(&s, &o, INT8(preferred), FALSE))
-		{
-			s.inv[preferred] = o;
-			o = OBJECTTYPE{};
-			return;
-		}
-		if (AutoPlaceObject(&s, &o, FALSE))
-		{
-			o = OBJECTTYPE{};
-			return;
-		}
-		if (s.sGridNo != NOWHERE)
-		{
-			AddItemToPool(s.sGridNo, &o, VISIBLE, s.bLevel, WORLD_ITEM_REACHABLE, 0);
-			ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, ST::format("{} goes on the ground (no room).", ShortName(o.usItem)));
-			o = OBJECTTYPE{};
-			return;
-		}
-		if (preferred >= 0)
-		{
-			s.inv[preferred] = o;
-			o = OBJECTTYPE{};
-		}
 	}
 
 	/** The attachment at @a index of the gun in hand, as a stand-alone object. */
@@ -757,46 +719,18 @@ namespace
 
 		// --- the moves ---------------------------------------------------------------------------------------------
 
-		bool MoveSlotToSlot(SOLDIERTYPE& s, int const from, int const to)
-		{
-			OBJECTTYPE carry = s.inv[from];
-			DeleteObj(&s.inv[from]);
-			if (!PlaceObject(&s, INT8(to), &carry))
-			{
-				s.inv[from] = carry;
-				return false;
-			}
-			DisposeLeftover(s, from, carry);
-			return true;
-		}
+		// the moves themselves (MoveSlotToSlot, attach from a pocket, detach into a pocket) are the inventory
+		// core's adapter: InventoryMoveSlot / InventoryAttachFromSlot / InventoryDetach (InventoryAdapter.cc)
+		bool MoveSlotToSlot(SOLDIERTYPE& s, int const from, int const to) { return InventoryMoveSlot(s, from, to); }
 
-		/** Attaches one item from @a from to the gun in hand, its role slot; leftovers come back. */
 		bool AttachFromSlotToHost(SOLDIERTYPE& s, int const from, int const host)
 		{
-			OBJECTTYPE carry;
-			SplitOne(s, from, &carry);
-			if (!AttachObject(&s, &s.inv[host], &carry, 0))
-			{
-				DisposeLeftover(s, from, carry);
-				return false;
-			}
-			DisposeLeftover(s, from, carry);
-			return true;
+			return InventoryAttachFromSlot(s, from, host);
 		}
 
-		/** Detaches attachment @a index of @a host into inventory slot @a to. */
 		bool DetachFromHost(SOLDIERTYPE& s, int const host, int const index, int const to)
 		{
-			OBJECTTYPE carry = AttachmentObject(s, host, index);
-			if (carry.usItem == NOTHING) return false;
-			if (!RemoveAttachment(&s.inv[host], INT8(index), &carry)) return false;
-			if (!PlaceObject(&s, INT8(to), &carry))
-			{
-				AttachObject(&s, &s.inv[host], &carry, 0); // back where it was
-				return false;
-			}
-			DisposeLeftover(s, -1, carry);
-			return true;
+			return InventoryDetach(s, host, index, to);
 		}
 
 		std::string ExecuteMove(SOLDIERTYPE& s, DragKey const& from, DragKey const& to)
