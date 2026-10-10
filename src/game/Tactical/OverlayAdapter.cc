@@ -178,7 +178,7 @@ void UpdateOverlayFrame()
 			Speech sp;
 			sp.text = text.to_std_string();
 			sp.at = BodyOf(*civ);
-			sp.at.y -= 60.f;
+			sp.at.y -= 95.f; // over the name plate and bars
 			f.speech.push_back(std::move(sp));
 		}
 	}

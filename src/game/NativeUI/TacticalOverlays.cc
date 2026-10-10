@@ -176,7 +176,7 @@ namespace
 	}
 
 	// measures of a list, in dp (the rules of .ovl-pool in tactical.rcss)
-	constexpr float POOL_W = 250.f, ROW_H = 30.f, MORE_H = 20.f, POOL_PAD = 4.f, POOL_TOP = 3.f;
+	constexpr float POOL_W = 250.f, ROW_H = 30.f, MORE_H = 26.f, POOL_PAD = 4.f, POOL_TOP = 3.f;
 
 	std::string Num(int v) { return std::to_string(v); }
 
@@ -233,7 +233,12 @@ void TacticalOverlaysUpdate(Rml::ElementDocument* const doc)
 	{
 		RingPhase const p = RingAt(l.frame);
 		// a locator is a ring on a point: the merc's body, a tile, a new item
-		next.rings.push_back({ WorldToOutput(l.at.x, l.at.y), p.radiusDp * dp, p.alpha, ToneColour(l.tone) });
+		Rml::Vector2f at = WorldToOutput(l.at.x, l.at.y);
+		float const rr = p.radiusDp * dp;
+		// a ring at the edge of the view stays whole
+		at.x = std::clamp(at.x, rr, std::max(rr, outW - rr));
+		at.y = std::clamp(at.y, rr, std::max(rr, outH - rr));
+		next.rings.push_back({ at, rr, p.alpha, ToneColour(l.tone) });
 	}
 	for (BurstMark const& b : f.bursts) next.bursts.push_back(WorldToOutput(b.at.x, b.at.y));
 	if (f.hasArrows)
@@ -243,10 +248,10 @@ void TacticalOverlaysUpdate(Rml::ElementDocument* const doc)
 		{
 			// up arrows float over his head, down arrows under his feet; a ledge arrow sits beside him
 			float const step = 14.f * dp;
-			float const base = a.climb ? 34.f * dp : 72.f * dp;
+			float const base = a.climb ? 34.f * dp : 96.f * dp;
 			for (size_t i = 0; i < a.tones.size(); ++i)
 			{
-				float const y = a.up ? m.y - base - float(i) * step : m.y + 12.f * dp + base - 30.f * dp + float(i) * step;
+				float const y = a.up ? m.y - base - float(i) * step : m.y + (a.climb ? 30.f : 44.f) * dp + float(i) * step;
 				next.chevrons.push_back({ { m.x + (a.climb ? 26.f * dp : 0.f), y }, a.up, ArrowColour(a.tones[i]) });
 			}
 		}
@@ -283,8 +288,14 @@ void TacticalOverlaysUpdate(Rml::ElementDocument* const doc)
 		if (p.atPointer)
 		{
 			if (overHud || mouse.x < 0) continue;
-			// to the right of the pointer, clear of the item it may carry
-			r = PlaceList(mouse.x, mouse.y, POOL_W * dp, h, bounds, 18.f * dp + float(CursorItemWidth()));
+			// to the left of the pointer: the cursor's chip (hit, AP) rides on its right and must stay readable
+			float const gap = 18.f * dp, w = POOL_W * dp;
+			if (mouse.x - gap - w >= bounds.x)
+			{
+				r = PlaceList(0, mouse.y, w, h, bounds, 0); // the vertical placement only
+				r.x = mouse.x - gap - w;
+			}
+			else r = PlaceList(mouse.x, mouse.y, w, h, bounds, gap + 40.f * dp + float(CursorItemWidth()));
 		}
 		else
 		{
@@ -294,14 +305,16 @@ void TacticalOverlaysUpdate(Rml::ElementDocument* const doc)
 		}
 		rml += PoolRml(p.list, r);
 	}
-	// a civilian's line: a bubble that grows upward from just over his head
+	// a civilian's line: a bubble that grows upward from over his head, with a tail to him
 	for (Speech const& sp : f.speech)
 	{
 		Rml::Vector2f const at = WorldToOutput(sp.at.x, sp.at.y);
 		float const w = 220.f * dp;
 		float const x = std::clamp(at.x - w * 0.5f, 4.f * dp, std::max(4.f * dp, outW - w - 4.f * dp));
 		float const bottom = std::clamp(outH - at.y, floorBottom(outH, floorY), outH);
-		rml += "<div class=\"ovl-say\" style=\"left: " + Num(int(x)) + "px; bottom: " + Num(int(bottom)) + "px;\">" + Escape(sp.text) + "</div>";
+		float const tail = std::clamp(at.x - x - 6.f * dp, 6.f * dp, w - 18.f * dp);
+		rml += "<div class=\"ovl-say\" style=\"left: " + Num(int(x)) + "px; bottom: " + Num(int(bottom)) + "px;\">" + Escape(sp.text) +
+			"<span class=\"tail\" style=\"left: " + Num(int(tail)) + "px;\"></span></div>";
 	}
 	if (rml != g_html.rml)
 	{
