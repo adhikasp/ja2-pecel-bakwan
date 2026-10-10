@@ -29,6 +29,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Items.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Panels.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Utils.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/InventoryAdapter.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Inventory_Choosing.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Items.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Keys.cc

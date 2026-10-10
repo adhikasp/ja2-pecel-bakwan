@@ -25,6 +25,7 @@ for the full API.
 | `video_switch.lua` | Runtime video changes (`ja2.setVideo`) through four modes on tactical, map and laptop |
 | `video_options.lua` | The Video options screen: change and apply resolution without a restart |
 | `credits_parity.lua` | Native credits parity tour by element id (docs/ui/credits.md); legacy fallback below 1280x720 |
+| `inventory_core.lua` | The inventory core as data (#317): take, put, refusals, a pass between two mercs with its AP, the merge question and its answer, the item sheet's unload, all through `ja2.inventory()` / `ja2.inventoryOp()` |
 | `tactical_parity.lua` | Native tactical HUD parity tour by element id (docs/ui/tactical.md): squad bar, inventory, item description, money, log, the action, door and pick-up menus |
 | `native_ui.lua` | Native UI runtime on legacy screens: native message box (mouse, focus, shortcuts), toasts, UI scales, a view model |
 | `legacy_script.txt` | The old line-based `-uitest` format still works |

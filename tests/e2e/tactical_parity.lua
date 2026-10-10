@@ -64,6 +64,8 @@ shots.take("desc.png", "small")
 local before = vm().cards[1].ammo
 ja2.click{ id = "tac.desc.unload" }
 ja2.waitIdle()
+ja2.expect(ja2.inventory().last.action == "unload", "the inventory core recorded the unload, got " .. tostring(ja2.inventory().last.action))
+ja2.expect(ja2.inventory().hand ~= nil, "the core holds the magazine in the hand")
 ja2.expect(vm().cards[1].ammo:match("^0/"), "unload empties the gun (" .. before .. " -> " .. vm().cards[1].ammo .. ")")
 -- the magazine is in the cursor now: put it back into the gun
 ja2.click{ id = "tac.inv.slot[5]" }
@@ -85,6 +87,9 @@ if from and to then
 	local moved
 	for _, s in ipairs(vm().small) do if s.idx == to then moved = not s.empty end end
 	ja2.expect(moved, "the item moved from pocket " .. from .. " to pocket " .. to)
+	local o = ja2.inventory().last
+	ja2.expect(o.ok and o.action == "put", "the core recorded the move as a put, got " .. tostring(o.action))
+	ja2.expect(ja2.inventory().hand == nil, "the hand is empty after the move")
 end
 
 -- A15: withdraw money from the account into the hand, then into an empty pocket

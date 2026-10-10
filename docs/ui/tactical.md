@@ -137,9 +137,13 @@ How it works: the native HUD is an overlay over `GAME_SCREEN`, not a screen. The
 with its panels and regions under the native bar and draws nothing the HUD shows (names over mercs, message lines,
 turn bar). Every native control acts through the legacy code, so the rules cannot drift:
 - buttons press the legacy hotkey (`PressKey`: same handler, same checks);
-- inventory slots, the description's attachments, Unload, Done and the money buttons click the legacy regions and buttons
-  of the hidden panel (`NativeInvSlotClick`, `NativeItemDescAttachmentClick`, `NativeItemDescUnload`, `NativeMoneyButton`,
-  `NativeSMMoneyClick`, `NativeKeyRingClick`);
+- inventory slots, the description's attachments, Unload, Done and the money buttons go through the inventory core
+  (`Equipment/InventoryCore.h`, issue #317): the core decides what a click means (take, put, pass between mercs with
+  its AP, attach, merge as a question, stack popup, refusals with their reason), `InventorySlotClick`,
+  `InventoryAttachClick`, `InventoryUnload` and `InventoryMoneyStep` apply the verdict. Nothing clicks a hidden legacy
+  region. A merge, or an attachment that cannot come off again, is a question the HUD shows (`tac.ask`) and answers
+  with `ask_yes` / `ask_no`; the held item is the core's hand (`InventoryHand()`), mirrored into `gpItemPointer`
+  until #324;
 - the item description shows `NativeItemDescData()`, the values the legacy box prints;
 - the action, door and pick-up menus show the menus the legacy code built — same labels, AP costs and enable/disable
   rules (`NativeMovementMenuView`, `NativeDoorMenuView`, `NativeItemPickupView`) — and press their buttons

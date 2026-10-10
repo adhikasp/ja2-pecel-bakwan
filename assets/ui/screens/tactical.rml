@@ -224,6 +224,14 @@
 		<div class="foot"><div class="grow"></div><button class="btn btn-primary" id="tac.desc.done" data-event-click="desc_done"><span class="label">{{l_done}}</span></button></div>
 	</div>
 
+	<!-- the question a move asked (merge two items, mount an attachment that cannot come off again) -->
+	<div class="ask hud hit" id="tac.ask" data-if="ask">
+		<span class="text" id="tac.ask.text">{{ask_text}}</span>
+		<div class="foot"><div class="grow"></div>
+			<button class="btn" id="tac.ask.no" data-event-click="ask_no"><span class="label">{{l_no}}</span></button>
+			<button class="btn btn-primary" id="tac.ask.yes" data-event-click="ask_yes"><span class="label">{{l_yes}}</span></button></div>
+	</div>
+
 	<!-- squad bar -->
 	<div class="sbar hit" id="tac.bar">
 		<div class="squads" id="tac.squadtabs">

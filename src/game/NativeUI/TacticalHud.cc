@@ -16,11 +16,13 @@
 #include "Game_Clock.h"
 #include "GameInstance.h"
 #include "Handle_UI.h"
+#include "English.h"
 #include "Input.h"
 #include "Interface.h"
 #include "Interface_Dialogue.h"
 #include "Interface_Items.h"
 #include "Interface_Panels.h"
+#include "InventoryAdapter.h"
 #include "ItemModel.h"
 #include "Items.h"
 #include "JAScreens.h"
@@ -304,6 +306,9 @@ namespace
 		SlotRow xMag;
 		std::string mTotal, mRemaining, mRemoving;
 		bool m1000 = false, m100 = false, m10 = false;
+		// the question a move asked (the core holds it), and the line the last refusal gave
+		bool ask = false;
+		std::string askText, hint, lYes, lNo;
 		// action and door menus (right click hold, or clicking a door)
 		bool menuOpen = false;
 		std::string menuTitle, menuSub;
@@ -352,16 +357,21 @@ namespace
 			});
 			Command("talk", [](Args const&) { ToggleTalkCursorMode(&guiCurrentEvent); });
 			Command("options", [](Args const&) { PressKey(SDLK_O); });
-			Command("money_region", [](Args const&) { NativeSMMoneyClick(); });
-			Command("keyring", [](Args const&) { NativeKeyRingClick(); });
-			// slot(index, mouse button): left picks up or puts down, right shows the description (the legacy region's rules)
-			Command("slot", [](Args const& a) { if (!a.empty()) NativeInvSlotClick(std::atoi(a[0].c_str()), Right(a)); });
+			Command("money_region", [](Args const&) { InventoryCashButton(); });
+			Command("keyring", [](Args const&) { InventoryKeyRing(); });
+			// slot(index, mouse button): left picks up or puts down, right shows the description (the inventory core decides)
+			Command("slot", [](Args const& a) {
+				if (!a.empty()) InventorySlotClick(gpSMCurrentMerc, std::atoi(a[0].c_str()), Right(a), _KeyDown(CTRL));
+			});
 			Command("detail_close", [](Args const&) { if (gsCurInterfacePanel == SM_PANEL) PressKey(SDLK_GRAVE); });
 			Command("prev_merc", [](Args const&) { PressKey(SDLK_SPACE); });
-			Command("att", [](Args const& a) { if (!a.empty()) NativeItemDescAttachmentClick(std::atoi(a[0].c_str()), Right(a)); });
-			Command("unload", [](Args const&) { NativeItemDescUnload(); });
-			Command("desc_done", [](Args const&) { NativeItemDescDone(); });
-			Command("money", [](Args const& a) { if (!a.empty()) NativeMoneyButton(std::atoi(a[0].c_str()), Right(a)); });
+			Command("att", [](Args const& a) { if (!a.empty()) InventoryAttachClick(std::atoi(a[0].c_str()), Right(a)); });
+			Command("unload", [](Args const&) { InventoryUnload(); });
+			Command("desc_done", [](Args const&) { ItemDescNativeClose(); });
+			// the question a move asked (merge two items; mount an attachment that cannot come off again)
+			Command("ask_yes", [](Args const&) { InventoryAnswer(true); });
+			Command("ask_no", [](Args const&) { InventoryAnswer(false); });
+			Command("money", [](Args const& a) { if (!a.empty()) InventoryMoneyStep(std::atoi(a[0].c_str()), Right(a)); });
 			Command("log", [this](Args const&) { logOpen = !logOpen; if (logOpen) ReadLog(); Changed(); });
 			Command("log_filter", [this](Args const& a) { logFilter = a.empty() ? "all" : a[0]; ReadLog(); Changed(); });
 			// the item sheet's page: "general" (specs, ammo, attachments) or "desc" (the dossier text, pros and cons)
@@ -392,6 +402,8 @@ namespace
 			lWeapon = Str("tac.weapon");
 			lLog = Str("tac.log");
 			lLoadout = Str("tac.loadout");
+			lYes = Str("tac.yes");
+			lNo = Str("tac.no");
 		}
 
 		void Describe(Fields& f) override
@@ -427,6 +439,8 @@ namespace
 			f.Rows("x_stats", xStats); f.Field("x_tab", xTab); f.Rows("x_atts", xAtts);
 			f.Field("m_total", mTotal); f.Field("m_remaining", mRemaining); f.Field("m_removing", mRemoving);
 			f.Field("m_1000", m1000); f.Field("m_100", m100); f.Field("m_10", m10);
+			f.Field("ask", ask); f.Field("ask_text", askText); f.Field("hint", hint);
+			f.Field("l_yes", lYes); f.Field("l_no", lNo);
 			f.Field("menu_open", menuOpen); f.Field("menu_title", menuTitle); f.Field("menu_sub", menuSub);
 			f.Field("menu_x", menuX); f.Field("menu_y", menuY); f.Rows("menu", menu);
 			f.Field("pick_open", pickOpen); f.Field("pick_title", pickTitle); f.Field("pick_sub", pickSub);
@@ -449,6 +463,7 @@ namespace
 			ReadDetail();
 			ReadDesc();
 			ReadMenus();
+			ReadAsk();
 			if (logOpen) ReadLog();
 		}
 
@@ -843,12 +858,22 @@ namespace
 			}
 			if (d.money)
 			{
-				NativeMoneySplit const m = NativeMoneyState();
+				InventoryMoneySplit const m = InventoryMoneyState();
 				mTotal = S(SPrintMoney(m.total));
 				mRemaining = S(SPrintMoney(m.remaining));
 				mRemoving = S(SPrintMoney(m.removing));
 				m1000 = m.total >= 1000; m100 = m.total >= 100; m10 = m.total >= 10;
 			}
+		}
+
+		/** The question the inventory core is waiting on, and the reason the last click was refused. */
+		void ReadAsk()
+		{
+			Equipment::Question const& q = TacticalInventory().Pending();
+			ask = q.kind != Equipment::QuestionKind::None;
+			askText = ask ? Str(q.kind == Equipment::QuestionKind::Merge ? "tac.ask.merge" : "tac.ask.permanent") : std::string();
+			InventoryOutcome const& o = LastInventoryOutcome();
+			hint = !o.ok && o.action == "refused" ? o.why : std::string();
 		}
 
 		/** What a disabled menu row says; the codes come from Interface.cc. */
@@ -1046,9 +1071,9 @@ void TacticalHudUpdate()
 	}
 	g_hud.vm->Refresh();
 	// an item held by the mouse rides on the native pointer, at the integer scale of the inventory slots
-	if (gpItemPointer && gpItemPointer->usItem != NOTHING)
+	if (InventoryHand().item != NOTHING)
 	{
-		Pic const p = FitPic("nitem-" + std::to_string(gpItemPointer->usItem), 2, 128, 48);
+		Pic const p = FitPic("nitem-" + std::to_string(InventoryHand().item), 2, 128, 48);
 		SetCursorItem(p.src, p.w, p.h);
 	}
 	else
@@ -1120,7 +1145,7 @@ bool TacticalHudOwnsCursor()
 	// over the HUD the legacy cursor is whatever the world last set (often none): the native pointer takes over
 	if (TacticalHudWantsMouse()) return true;
 	// a held item is a native picture on the pointer everywhere, so it does not change look between world and HUD
-	return gpItemPointer && gpItemPointer->usItem != NOTHING;
+	return InventoryHand().item != NOTHING;
 }
 
 void TacticalHudShutdown() { Close(); }

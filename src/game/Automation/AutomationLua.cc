@@ -7,6 +7,7 @@
 #include "CampaignScenario.h"
 #include "RangeLane.h"
 #include "StockScenario.h"
+#include "InventoryScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -903,6 +904,16 @@ namespace
 		ja2.set_function("stockOp", [](std::string const& op, sol::optional<std::string> arg) {
 			return Guarded([&] { return StockOp(g_lua, op, arg ? *arg : std::string()); });
 		});
+		// ja2.inventory([merc]): the inventory core as data - the hand, the question a move asked, the
+		// last outcome, the merc's pockets and the open item sheet. ja2.inventoryOp(op, spec) makes one
+		// move ("click", "answer", "attach", "unload", "money", "close", "move") and returns its outcome
+		// { ok, action, why, item }; ja2.debug("hand", {merc, item, count}) holds an item in the hand.
+		ja2.set_function("inventory", [](sol::optional<std::string> merc) {
+			return Guarded([&] { return InventoryState(g_lua, merc ? *merc : std::string()); });
+		});
+		ja2.set_function("inventoryOp", [](std::string const& op, sol::optional<sol::table> spec) {
+			return Guarded([&] { return InventoryOp(g_lua, op, spec); });
+		});
 		// {w, h, stdX, stdY}: the screen size and where the classic 640x480 area starts in it.
 		ja2.set_function("screenSize", [] {
 			sol::table t = g_lua.create_table();
@@ -1323,6 +1334,14 @@ namespace
 					// count = {1, 6}, condition = {70, 100}}). See ja2.stock() and ja2.stockOp().
 					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"stock\", spec)");
 					StageStock(a->as<sol::table>());
+				}
+				else if (what == "hand")
+				{
+					// Hold an item in the hand of a merc: ja2.debug("hand", {merc = "Ivan", item = "FIRST_AID_KIT",
+					// count = 1}). The inventory core reads it back through ja2.inventory().
+					if (!a || !a->is<sol::table>()) throw std::runtime_error("ja2.debug(\"hand\", spec)");
+					sol::table const t = a->as<sol::table>();
+					StageHand(Scenario::StrField(t, "merc", ""), Scenario::StrField(t, "item", ""), Scenario::IntField(t, "count", 1));
 				}
 				else if (what == "entersector")
 				{

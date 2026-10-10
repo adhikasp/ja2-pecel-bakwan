@@ -116,18 +116,16 @@ BOOLEAN HandleNailsVestFetish(const SOLDIERTYPE* pSoldier, UINT32 uiHandPos, UIN
 
 extern SOLDIERTYPE* gpSMCurrentMerc;
 
-/** The native tactical HUD's cash button (the single-merc panel's money region). */
-void NativeSMMoneyClick();
+/** The native tactical HUD's cash button (deposit the money in the hand, or open the withdrawal). */
+void InventoryCashButton();
+/** The native tactical HUD's key ring button. */
+void InventoryKeyRing();
 void NativeSMMuteClick();
 extern GUIButtonRef iSMPanelButtons[NUM_SM_BUTTONS];
 extern GUIButtonRef iTEAMPanelButtons[NUM_TEAM_BUTTONS];
 extern GUIButtonRef giSMStealthButton;
 extern SOLDIERTYPE* gSelectSMPanelToMerc;
 extern MOUSE_REGION gSM_SELMERCMoneyRegion;
-extern UINT8        gubHandPos;
-extern UINT16       gusOldItemIndex;
-extern UINT16       gusNewItemIndex;
-extern BOOLEAN      gfDeductPoints;
 extern BOOLEAN      gfSMDisableForItems;
 
 void ProgressBarBackgroundRect(const INT16 sLeft, const INT16 sTop, const INT16 sWidth, const INT16 sHeight, const UINT32 rgb, const UINT8 scale_rgb);

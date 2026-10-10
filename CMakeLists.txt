@@ -557,10 +557,10 @@ if (WITH_UNITTESTS)
         foreach(f ${RESOLUTION_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             get_filename_component(ext ${f} EXT)
-            # The sweep exists to compare screenshots. The battle_ and loadout_ fixture scripts
+            # The sweep exists to compare screenshots. The battle_, inventory_ and loadout_ fixture scripts
             # assert on data the game hands back, take no shots, and have nothing to
             # compare at another resolution - they run once, in the loops above.
-            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer|battle_|loadout_(spec|matrix))")
+            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer|battle_|inventory_|loadout_(spec|matrix))")
                 continue()
             endif()
             foreach(res ${RESOLUTION_MATRIX})

@@ -179,18 +179,19 @@ void SetItemPointer(OBJECTTYPE*, SOLDIERTYPE*);
 void LoadInterfaceItemsGraphics();
 void DeleteInterfaceItemsGraphics();
 
-// The native tactical HUD (src/game/NativeUI/TacticalHud.cc) acts through the legacy regions and buttons, so that
-// every rule of the legacy inventory stays the same.
-void NativeInvSlotClick(int slot, bool right);
-void NativeItemDescAttachmentClick(int i, bool right);
-void NativeItemDescUnload();
-void NativeItemDescDone();
+// The native tactical HUD (src/game/NativeUI/TacticalHud.cc) acts on the item sheet through the inventory core's
+// verdicts (InventoryAdapter.h); nothing here clicks a legacy region or button.
+/** A click on attachment position @a i of the open sheet: mount the hand there, or take the attachment out. */
+void InventoryAttachClick(int i, bool right);
+/** The sheet's unload button. */
+void InventoryUnload();
 /** which: 0 = 1000, 1 = 100, 2 = 10 (right: take the amount back), 3 = done */
-void NativeMoneyButton(int which, bool right);
-struct NativeMoneySplit { UINT32 total, remaining, removing; };
-NativeMoneySplit NativeMoneyState();
+void InventoryMoneyStep(int which, bool right);
+struct InventoryMoneySplit { UINT32 total, remaining, removing; };
+InventoryMoneySplit InventoryMoneyState();
+/** The player said yes to "this attachment cannot be removed again": mount it. */
+void ItemDescConfirmPermanentAttachment();
 SOLDIERTYPE* NativeItemDescSoldier();
-void NativeKeyRingClick();
 UINT8 NativeItemDescStatusIndex();
 /** What the open item description box shows, as values (the native HUD draws them). */
 struct NativeItemDescInfo
