@@ -316,6 +316,7 @@ ja2.expect(popup().kind == "none", "Done closes the panel, got " .. popup().kind
 -- =====================================================================================================
 -- The sector exit menu: Ivan at the east edge
 local COLS = 160
+detail(false)
 ja2.debug("teleport", { grid = 80 * COLS + COLS - 4 })
 settle()
 ja2.key("/") -- centre the world on him
