@@ -120,6 +120,13 @@ ja2.popupOp("pickup", { action = "all" })
 ja2.expect(popup().pickup.selected == 0, "All again takes the ticks off")
 r = ja2.popupOp("pickup", { action = "scroll", dir = 1 })
 ja2.expect(not r.ok, "there is no second page to scroll to")
+-- Esc closes the list and leaves the pile where it is; it opens again
+ja2.key("escape")
+settle()
+ja2.expect(popup().kind == "none", "Esc closes the pick-up list, got " .. popup().kind)
+ja2.debug("pickupmenu")
+settle()
+ja2.expect(popup().kind == "pickup" and popup().pickup.total >= 3, "and it opens again")
 ja2.popupOp("pickup", { action = "toggle", row = 1 })
 ja2.expect(vm().pick_ok == "Take 1", "the HUD's button follows the model, got " .. tostring(vm().pick_ok))
 shots.take("popup_pickup.png", "small")
@@ -150,6 +157,13 @@ ja2.expect(ja2.exists{ id = "tac.bar" } and ja2.exists{ id = "tac.detail" }, "th
 ja2.expect(ja2.exists{ id = "tac.stack" } and ja2.exists{ id = "tac.stack.box[0]" }, "the popup and its boxes are on screen")
 local total = p.stack.count
 shots.take("popup_stack.png", "small")
+-- Esc closes it (with the hand empty), and it opens again
+ja2.key("escape")
+settle()
+ja2.expect(popup().kind == "none", "Esc closes the stack popup, got " .. popup().kind)
+ja2.click({ id = "tac.inv.slot[" .. stackSlot .. "]" }, { button = "right" })
+settle()
+ja2.expect(popup().kind == "stack", "and a right click opens it again")
 -- click one box: that object is in the hand
 r = ja2.popupOp("stack", { action = "click", i = 0 })
 ja2.expect(r.ok, "a click on a box takes that object")

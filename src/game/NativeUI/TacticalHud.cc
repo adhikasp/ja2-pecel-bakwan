@@ -405,7 +405,7 @@ namespace
 		std::string exDir, exDirLabel, exTitle, exSingleLabel, exAllLabel, exLoadLabel, exSingleCount, exAllCount;
 		std::string exSingleTip, exAllTip, exLoadTip, exSingleWhy, exAllWhy, exLoadWhy, exTrip;
 		// labels
-		std::string lTake, lTakeAll, lKeyRing, lUse, lGive, lNoKeys, lClose, lTalkWho, lTravel, lCancel, lGo, lPutKey;
+		std::string lTake, lTakeAll, lKeyRing, lUse, lGive, lNoKeys, lClose, lTalkWho, lTravel, lCancel, lGo, lPutKey, lExitNone;
 		std::string lEndTurn, lTurnBased, lMap, lDone, lUnload, lPros, lCons, lAttachments, lAmmo, lWeapon, lLog, lLoadout;
 
 		std::string signature;
@@ -539,6 +539,7 @@ namespace
 			lCancel = Str("tac.pick.cancel");
 			lGo = Str("tac.exit.go");
 			lPutKey = Str("tac.key.put");
+			lExitNone = Str("tac.exit.none");
 			lNo = Str("tac.no");
 		}
 
@@ -606,7 +607,7 @@ namespace
 			f.Field("ex_trip", exTrip); f.Field("ex_can_go", exCanGo);
 			f.Field("l_take", lTake); f.Field("l_take_all", lTakeAll); f.Field("l_key_ring", lKeyRing); f.Field("l_use", lUse);
 			f.Field("l_give", lGive); f.Field("l_no_keys", lNoKeys); f.Field("l_close", lClose); f.Field("l_talk_who", lTalkWho);
-			f.Field("l_travel", lTravel); f.Field("l_cancel", lCancel); f.Field("l_go", lGo); f.Field("l_put_key", lPutKey);
+			f.Field("l_travel", lTravel); f.Field("l_cancel", lCancel); f.Field("l_go", lGo); f.Field("l_put_key", lPutKey); f.Field("l_exit_none", lExitNone);
 			f.Field("l_end_turn", lEndTurn); f.Field("l_turn_based", lTurnBased); f.Field("l_map", lMap); f.Field("l_done", lDone);
 			f.Field("l_unload", lUnload); f.Field("l_pros", lPros); f.Field("l_cons", lCons); f.Field("l_attachments", lAttachments);
 			f.Field("l_ammo", lAmmo); f.Field("l_weapon", lWeapon); f.Field("l_log", lLog); f.Field("l_loadout", lLoadout);
@@ -1100,7 +1101,8 @@ namespace
 				}
 				// the action menu opens by the merc, the door menu by the door (the approved wireframes)
 				Rml::Vector2f const at = CanvasToOutput(float(m.x), float(m.y));
-				float x = at.x + std::round(36.f * DpScale());
+				// the action menu opens under the pointer, the door menu by the merc
+				float x = at.x + std::round((door ? 36.f : -20.f) * DpScale());
 				float y = at.y - std::round(20.f * DpScale());
 				int h = 56;
 				for (MenuItemRow const& r : menu) h += r.kind == "item" ? (r.why.empty() ? 40 : 60) : 20;
@@ -1143,7 +1145,8 @@ namespace
 				}
 				Rml::Vector2f const at = CanvasToOutput(float(p.x), float(p.y));
 				float x = at.x;
-				float y = at.y - std::round(60.f * DpScale());
+				x += std::round(36.f * DpScale());
+				float y = at.y - std::round(20.f * DpScale());
 				ClampPopup(x, y, 360, float(120 + 56 * int(p.rows.size())));
 				pickX = int(x);
 				pickY = int(y);
@@ -1221,7 +1224,7 @@ namespace
 			}
 			if (keyOpen)
 			{
-				put(470.f, 120.f + 56.f * float(std::max<size_t>(1, keys.size())), "tac.inv.keys", keyX, keyY);
+				put(470.f, 120.f + 64.f * float(std::max<size_t>(1, keys.size())), "tac.inv.keys", keyX, keyY);
 			}
 		}
 

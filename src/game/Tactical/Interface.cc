@@ -433,11 +433,9 @@ void PopupMovementMenu(UI_EVENT* const ev)
 	gMenuView = MenuPopup{};
 	gMenuView.open = true;
 	gMenuView.door = false;
-	// by the merc: the point where his name goes, in UI pixels
-	INT16 sx, sy;
-	GetSoldierAboveGuyPositions(s, &sx, &sy, FALSE);
-	gMenuView.x = sx + 40;
-	gMenuView.y = sy;
+	// by the pointer that held the click (UI pixels)
+	gMenuView.x = gusMouseXPos;
+	gMenuView.y = gusMouseYPos;
 	gMenuView.who = s->name;
 	gMenuView.apLeft = s->bActionPoints;
 

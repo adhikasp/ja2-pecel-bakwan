@@ -4521,8 +4521,13 @@ void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, 
 	SetNewPanel(pSoldier);
 
 	// the menu opens by the pointer (the HUD keeps it inside the view)
-	menu.sX         = gusMouseXPos + 10;
-	menu.sY         = gusMouseYPos;
+	{
+		// by the merc: the point where his name goes, in UI pixels
+		INT16 sx, sy;
+		GetSoldierAboveGuyPositions(pSoldier, &sx, &sy, FALSE);
+		menu.sX = sx + 40;
+		menu.sY = sy;
+	}
 	menu.bCurSelect = 0;
 	menu.fHandled   = FALSE;
 

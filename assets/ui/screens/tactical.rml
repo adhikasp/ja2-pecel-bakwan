@@ -301,7 +301,7 @@
 	</div>
 
 	<!-- the pick-up menu (items on the ground): the same rows and rules as the legacy list -->
-	<div class="scrim hit audit-over" data-if="pick_open"></div>
+	<div class="scrim hit audit-over" data-if="pick_open" data-event-click="pick_cancel"></div>
 	<div class="pop pick hud hit audit-over" id="tac.pickup" data-if="pick_open" data-style-left="pick_x + 'px'" data-style-top="pick_y + 'px'">
 		<div class="hud-head"><img class="icon sm" src="icon-sector-inventory"/><span class="t">{{pick_title}}</span><span class="m">{{pick_sub}}</span></div>
 		<div class="rows">
@@ -358,7 +358,7 @@
 		<div class="rows" id="tac.keyring.rows">
 			<div class="krow" data-for="k : keys" data-attr-id="k.eid" data-event-mouseup="key_row(k.slot, ev.button)">
 				<div class="pc"><img class="pic" data-if="k.src != ''" data-attr-src="k.src" data-style-width="k.w + 'px'" data-style-height="k.h + 'px'"/></div>
-				<div class="tx"><span class="a">{{k.name}}</span><span class="b">{{k.found}}</span></div>
+				<div class="tx"><span class="a">{{k.name}}</span><span class="b">{{k.found}}</span><span class="b why" data-if="!k.can_use">{{k.why}}</span></div>
 				<span class="q">×{{k.count}}</span>
 				<button class="btn" data-attr-id="k.use_id" data-class-is-disabled="!k.can_use" data-attr-title="k.why" data-event-click="key_use(k.slot)"><span class="label">{{l_use}}</span></button>
 				<button class="btn" data-attr-id="k.take_id" data-event-click="key_take(k.slot)"><span class="label">{{l_give}}</span></button>
@@ -415,6 +415,7 @@
 		</div>
 		<div class="chk" id="tac.exit.load" data-class-on="ex_load_sel" data-class-off="ex_load_off" data-attr-title="ex_load_tip" data-event-click="exit_load"><div class="bx"></div><span>{{ex_load_label}}</span></div>
 		<span class="why-line" data-if="ex_load_off">{{ex_load_why}}</span>
+		<span class="why-line" data-if="!ex_can_go">{{l_exit_none}}</span>
 		<div class="facts">
 			<div class="kv"><span class="k">{{l_travel}}</span><span class="v" id="tac.exit.trip">{{ex_trip}}</span></div>
 		</div>

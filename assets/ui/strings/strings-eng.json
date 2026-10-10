@@ -505,6 +505,7 @@
   "tac.key.hint_door": "Use opens the door in front of {} · Give puts the key in the hand to hand over or drop on a door",
   "tac.talk.who": "Ask who they are",
   "tac.exit.go": "Go",
+  "tac.exit.none": "Nobody can leave from here: move to the edge of the map",
   "tac.exit.travel": "Travel",
   "tac.exit.leave": "Leave {}",
   "tac.exit.leave_to": "Leave {} → {}",

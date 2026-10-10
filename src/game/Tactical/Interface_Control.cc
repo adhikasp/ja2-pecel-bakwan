@@ -566,6 +566,7 @@ void EraseInterfaceMenus( BOOLEAN fIgnoreUIUnLock )
 	ShutDownQuoteBoxIfActive( );
 	PopDownMovementMenu( );
 	PopDownOpenDoorMenu( );
+	RemoveItemPickupMenu( );
 	DeleteTalkingMenu( );
 
 	// Cancel Rubberbanding every time a menu is erased/opened

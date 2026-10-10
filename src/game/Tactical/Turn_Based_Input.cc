@@ -2319,6 +2319,14 @@ void GetKeyboardInput(UIEventKind* const puiNewEvent)
 			{
 				DeleteKeyRingPopup( );
 			}
+			else if( InItemStackPopup( ) )
+			{
+				StackClose();
+			}
+			else if( gfInItemPickupMenu )
+			{
+				PickupCancel();
+			}
 
 			if ( gCurrentUIMode == MENU_MODE )
 			{
