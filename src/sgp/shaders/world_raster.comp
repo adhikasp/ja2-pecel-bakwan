@@ -44,7 +44,7 @@ layout(std140, UNIFORM) uniform Params
 	uint  binCols;
 	uint  clearColor;   // 0xRRGGBB
 	uint  clearDepth;
-	uint  mask;         // 0x7F7F7F
+	uint  mask;         // 0x7BEF (the RGB565 halving mask; translucency stays in 565)
 	uint  pointCount;
 	uint  pad0;
 	float ambientR;

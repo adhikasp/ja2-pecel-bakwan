@@ -20,6 +20,8 @@
 #include "UILayout.h"
 #include "Video.h"
 #include "WorldRender.h"
+#include "Lighting.h"
+#include "WorldDef.h"
 #include "VSurface.h"
 #include "VideoOptionsScreen.h"
 #include "GameLoop.h"
@@ -1014,6 +1016,20 @@ namespace
 				int const n = int(lights.size());
 				WorldRendererSetExtraLights(std::move(lights));
 				return n;
+			});
+		});
+
+		// ja2.addLightSprite{ grid = N }: create the game's own light sprite (the explosion light template) at a
+		// tile, the way an explosion does, so CollectLighting turns it into world lighting. Returns its radius
+		// in tiles (0 if the template did not load).
+		ja2.set_function("addLightSprite", [](sol::table t) {
+			return Guarded([&] {
+				int const grid = t["grid"].get_or(-1);
+				if (grid < 0 || grid >= WORLD_MAX) throw std::runtime_error("ja2.addLightSprite: bad grid");
+				LIGHT_SPRITE* const l = LightSpriteCreate("L-R04.LHT");
+				if (!l) throw std::runtime_error("ja2.addLightSprite: no free light sprite");
+				LightSpritePosition(l, INT16(grid % WORLD_COLS), INT16(grid / WORLD_COLS));
+				return int(LightSpriteRadius(l));
 			});
 		});
 

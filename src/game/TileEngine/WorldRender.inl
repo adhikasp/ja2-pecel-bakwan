@@ -241,8 +241,9 @@ void RenderWorldScene(bool const checkInteractive)
 WorldPipe::Lighting CollectLighting()
 {
 	WorldPipe::Lighting L;
-	SGPPaletteEntry const* const c = LightGetColor();
-	float const cr = c->r / 255.0f, cg = c->g / 255.0f, cb = c->b / 255.0f;
+	// The light templates carry no colour (LightGetColor() tints the baked light map, not the source, and is
+	// often black), so a dynamic light is warm. Per-template colours are a follow-up.
+	float const cr = 1.00f, cg = 0.82f, cb = 0.52f;
 	FOR_EACH(LIGHT_SPRITE, l, LightSprites)
 	{
 		if (!(l->uiFlags & LIGHT_SPR_ACTIVE)) continue;
@@ -257,9 +258,9 @@ WorldPipe::Lighting CollectLighting()
 		WorldPipe::PointLight p;
 		p.x = float(g_ui.m_tacticalMapCenterX + INT16(sx) - gsRenderWorldOffsetX);
 		p.y = float(g_ui.m_tacticalMapCenterY + INT16(sy) - gsRenderWorldOffsetY);
-		p.radius = float(rTiles) * CELL_X_SIZE;
+		p.radius = float(std::min<INT16>(rTiles, 16)) * CELL_X_SIZE; // the template extent, capped
 		p.r = cr; p.g = cg; p.b = cb;
-		p.intensity = 0.45f;
+		p.intensity = 0.5f;
 		L.points.push_back(p);
 	}
 	for (WorldPipe::PointLight const& p : gExtraLights) L.points.push_back(p);
@@ -424,10 +425,13 @@ char const* WorldRendererName(WorldRendererKind const k)
 
 WorldRendererKind WorldRendererDefault(bool const driven)
 {
-	// The world renderer is the pipeline everywhere: the look (lighting and 32-bit colour, see
-	// docs/plan/native-modern-game.md Phase 8) lives there, and the CPU implementation keeps CI and
-	// driven sessions on the same picture as a window. The GPU is used where there is a device.
-	return driven ? WorldRendererKind::Pipeline : WorldRendererKind::Gpu;
+	// Real windows draw the world on the GPU (pixel-equivalent, see docs/plan/native-modern-game-decisions.md,
+	// Phase 8), falling back to software when there is no usable device. Driven sessions (headless, automation)
+	// keep software: their screenshots are the reference images, the picture is identical (the 888 pipeline
+	// expands to the same pixels for the shipped art), and the CPU pipeline is several times slower per frame,
+	// which the resolution suite pays on every tour. The pipeline is still exercised there where it matters
+	// (e2e_world_renderer, e2e_tactical_layers_pipeline, e2e_world_renderer_light).
+	return driven ? WorldRendererKind::Software : WorldRendererKind::Gpu;
 }
 
 void WorldRendererConfigure(WorldRendererKind const k)
@@ -452,6 +456,7 @@ WorldRendererKind WorldRendererSwitch(WorldRendererKind const k)
 	WorldRendererKind const now = WorldRendererActive();
 	VideoSetWorldRecorded(now != WorldRendererKind::Software);
 	if (now != WorldRendererKind::Gpu) VideoSetWorldGpuTexture(nullptr, 0, 0);
+	if (now != WorldRendererKind::Pipeline) VideoClearWorld888();
 	SetRenderFlags(RENDER_FLAG_FULL);
 	return now;
 }
@@ -560,6 +565,7 @@ bool RenderWorldRecorded()
 			gWorldError = gpu ? gpu->Error() : error;
 			VideoSetWorldRecorded(false);
 			VideoSetWorldGpuTexture(nullptr, 0, 0);
+			VideoClearWorld888();
 			SetRenderFlags(RENDER_FLAG_FULL);
 			return false;
 		}

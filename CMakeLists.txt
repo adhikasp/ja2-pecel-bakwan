@@ -452,7 +452,7 @@ if (WITH_UNITTESTS)
         add_test(
             NAME e2e_world_renderer_light
             COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/world_renderer_light.lua" --isolated
-                --res 1280x720 --timeout 600
+                --res 1920x1080 --uiscale 2 --worldzoom 1 --timeout 600
                 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/world_renderer_light"
         )
         add_test(

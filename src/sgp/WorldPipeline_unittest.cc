@@ -186,8 +186,29 @@ TEST(WorldPipeline, SpritePoolReusesAndNoticesChanges)
 	EXPECT_EQ(pool.pixels[c.offset], 0x109);
 }
 
-TEST(WorldPipeline, BinsKeepSubmissionOrder)
+TEST(WorldPipeline, PaletteKeepsThe24BitColours)
 {
+	Frame f;
+	f.Clear(8, 8);
+	uint16_t p565[256];
+	uint32_t p24[256];
+	for (int i = 0; i < 256; ++i)
+	{
+		p565[i] = uint16_t(i * 257);
+		p24[i] = (uint32_t(i) << 16) | (uint32_t(255 - i) << 8) | uint32_t(i);
+	}
+	uint32_t const a = f.Palette(p565, nullptr);      // no 24-bit palette: the 565 table expanded
+	uint16_t p565b[256] = {};
+	uint32_t const b = f.Palette(p565b, p24);         // 24-bit colours: used as they are
+	EXPECT_NE(a, b);
+	for (int i = 0; i < 256; ++i)
+	{
+		EXPECT_EQ(f.palettes[a * 256 + i], Expand565(p565[i]));
+		EXPECT_EQ(f.palettes[b * 256 + i], p24[i]);
+	}
+}
+
+TEST(WorldPipeline, BinsKeepSubmissionOrder){
 	Frame f;
 	f.Clear(40, 20);
 	Instance in{};
