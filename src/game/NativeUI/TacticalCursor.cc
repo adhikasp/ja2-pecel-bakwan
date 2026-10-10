@@ -266,7 +266,8 @@ namespace
 		int x = -1, y = -1;
 		bool shown = false;
 	};
-	ChipState g_chip;
+	ChipState g_chip, g_heldChip;
+	HudChip g_hudChip;
 
 	std::string ChipRml(CursorModel::State const& s)
 	{
@@ -331,6 +332,53 @@ namespace
 			out += "<span class=\"hint\">" + Escape(Str("tac.cur.hint_target")) + "</span>";
 		return out;
 	}
+	/** Shows @a chip in @a el beside the pointer, on the side that has room; @a g is what was drawn last. */
+	void PlaceChip(Rml::ElementDocument* const doc, Rml::Element* const el, ChipState const& chip, ChipState& g,
+		Rml::Vector2f const mouse, float const dp)
+	{
+		Rml::Context* const ctx = Context();
+		if (!el || !ctx) return;
+		if (chip.shown != g.shown || chip.rml != g.rml || chip.cls != g.cls)
+		{
+			el->SetInnerRML(chip.rml);
+			el->SetClass("shown", chip.shown);
+			for (char const* c : { "ok", "warn", "no", "foe" }) el->SetClass(c, chip.shown && chip.cls == c);
+			g.rml = chip.rml;
+			g.cls = chip.cls;
+			g.shown = chip.shown;
+			Invalidate(2);
+		}
+		if (!chip.shown) return;
+		float const out_w = float(ctx->GetDimensions().x), out_h = float(ctx->GetDimensions().y);
+		float const cw = el->GetOffsetWidth() > 0 ? el->GetOffsetWidth() : 260.f * dp;
+		float const ch = el->GetOffsetHeight() > 0 ? el->GetOffsetHeight() : 110.f * dp;
+		// an item on the pointer rides at the right of it, 14 dp in: the chip starts after the picture
+		float const carried = float(CursorItemWidth());
+		float x = mouse.x + std::max(30.f * dp, 14.f * dp + carried + 10.f * dp), y = mouse.y + 10.f * dp;
+		if (x + cw > out_w - 4.f * dp) x = mouse.x - 22.f * dp - cw;
+		float floorY = out_h - 4.f * dp;
+		// the world ends where the bar starts: a world chip that would run under it goes above the pointer
+		if (el->GetId() == "tac.cursor.chip")
+			if (Rml::Element* bar = doc->GetElementById("tac.bar")) floorY = std::min(floorY, bar->GetAbsoluteOffset(Rml::BoxArea::Border).y - 4.f * dp);
+		if (y + ch > floorY) y = mouse.y - 10.f * dp - ch;
+		// ... and keeps clear of the turn banner at the top
+		if (Rml::Element* ban = doc->GetElementById("tac.turn"))
+		{
+			Rml::Vector2f const bo = ban->GetAbsoluteOffset(Rml::BoxArea::Border);
+			float const bb = bo.y + ban->GetOffsetHeight() + 4.f * dp;
+			if (ban->GetOffsetHeight() > 0 && x < bo.x + ban->GetOffsetWidth() && x + cw > bo.x && y < bb) y = bb;
+		}
+		x = std::floor(std::max(x, 4.f * dp));
+		y = std::floor(std::max(y, 4.f * dp));
+		if (int(x) != g.x || int(y) != g.y)
+		{
+			g.x = int(x);
+			g.y = int(y);
+			el->SetProperty(Rml::PropertyId::Left, Rml::Property(x, Rml::Unit::PX));
+			el->SetProperty(Rml::PropertyId::Top, Rml::Property(y, Rml::Unit::PX));
+			Invalidate(2);
+		}
+	}
 }
 
 void RegisterTacticalCursor()
@@ -340,6 +388,8 @@ void RegisterTacticalCursor()
 	static Rml::ElementInstancerGeneric<CursorLayer> instancer;
 	Rml::Factory::RegisterElementInstancer("cursorlayer", &instancer);
 }
+
+void SetHudChip(HudChip chip) { g_hudChip = std::move(chip); }
 
 void TacticalCursorUpdate(Rml::ElementDocument* const doc)
 {
@@ -425,58 +475,28 @@ void TacticalCursorUpdate(Rml::ElementDocument* const doc)
 		SetCursorShape({}, "ok", false);
 	}
 
-	// ---- the chip
-	ChipState chip;
-	if (worldCursor && f.state.chip && mouse.x >= 0)
+	// ---- the chips: the world's (under the HUD, over the tiles) and the held item's (over a pocket or a card, so
+	// above every panel)
+	ChipState world;
+	if (worldCursor && f.state.chip && mouse.x >= 0 && !g_hudChip.shown)
 	{
-		chip.shown = true;
-		chip.rml = ChipRml(f.state);
-		chip.cls = ToneClass(f.state.tone);
+		world.shown = true;
+		world.rml = ChipRml(f.state);
+		world.cls = ToneClass(f.state.tone);
 	}
-	Rml::Element* const el = doc->GetElementById("tac.cursor.chip");
-	if (!el) return;
-	if (chip.shown != g_chip.shown || chip.rml != g_chip.rml || chip.cls != g_chip.cls)
+	ChipState held;
+	if (g_hudChip.shown && mouse.x >= 0)
 	{
-		el->SetInnerRML(chip.rml);
-		el->SetClass("shown", chip.shown);
-		for (char const* c : { "ok", "warn", "no", "foe" }) el->SetClass(c, chip.shown && chip.cls == c);
-		g_chip.rml = chip.rml;
-		g_chip.cls = chip.cls;
-		g_chip.shown = chip.shown;
-		Invalidate(2);
+		held.shown = true;
+		held.rml = "<span class=\"h\">" + Escape(g_hudChip.head) + "</span>";
+		for (auto const& l : g_hudChip.lines)
+			held.rml += "<div class=\"l\"><span class=\"k\">" + Escape(l.first) + "</span><span class=\"v " +
+				(g_hudChip.tone == "no" ? "no" : "ok") + "\">" + Escape(l.second) + "</span></div>";
+		if (!g_hudChip.why.empty()) held.rml += "<span class=\"why\">" + Escape(g_hudChip.why) + "</span>";
+		held.cls = g_hudChip.tone;
 	}
-	if (chip.shown)
-	{
-		// beside the pointer, on the side that has room
-		float const out_w = float(ctx->GetDimensions().x), out_h = float(ctx->GetDimensions().y);
-		float const cw = el->GetOffsetWidth() > 0 ? el->GetOffsetWidth() : 260.f * dp;
-		float const ch = el->GetOffsetHeight() > 0 ? el->GetOffsetHeight() : 110.f * dp;
-		// an item on the pointer rides at the right of it, 14 dp in: the chip starts after the picture
-		float const carried = float(CursorItemWidth());
-		float x = mouse.x + std::max(30.f * dp, 14.f * dp + carried + 10.f * dp), y = mouse.y + 10.f * dp;
-		if (x + cw > out_w - 4.f * dp) x = mouse.x - 22.f * dp - cw;
-		// the world ends where the bar starts: a chip that would run under it goes above the pointer
-		float floorY = out_h - 4.f * dp;
-		if (Rml::Element* bar = doc->GetElementById("tac.bar")) floorY = std::min(floorY, bar->GetAbsoluteOffset(Rml::BoxArea::Border).y - 4.f * dp);
-		if (y + ch > floorY) y = mouse.y - 10.f * dp - ch;
-		// ... and keeps clear of the turn banner at the top
-		if (Rml::Element* ban = doc->GetElementById("tac.turn"))
-		{
-			Rml::Vector2f const bo = ban->GetAbsoluteOffset(Rml::BoxArea::Border);
-			float const bb = bo.y + ban->GetOffsetHeight() + 4.f * dp;
-			if (ban->GetOffsetHeight() > 0 && x < bo.x + ban->GetOffsetWidth() && x + cw > bo.x && y < bb) y = bb;
-		}
-		x = std::floor(std::max(x, 4.f * dp));
-		y = std::floor(std::max(y, 4.f * dp));
-		if (int(x) != g_chip.x || int(y) != g_chip.y)
-		{
-			g_chip.x = int(x);
-			g_chip.y = int(y);
-			el->SetProperty(Rml::PropertyId::Left, Rml::Property(x, Rml::Unit::PX));
-			el->SetProperty(Rml::PropertyId::Top, Rml::Property(y, Rml::Unit::PX));
-			Invalidate(2);
-		}
-	}
+	PlaceChip(doc, doc->GetElementById("tac.cursor.chip"), world, g_chip, mouse, dp);
+	PlaceChip(doc, doc->GetElementById("tac.drag.chip"), held, g_heldChip, mouse, dp);
 }
 
 }

@@ -383,6 +383,8 @@ void Drag(int const x0, int const y0, int const x1, int const y1)
 	{
 		MouseMove(x0 + (x1 - x0) * i / STEPS, y0 + (y1 - y0) * i / STEPS);
 	}
+	// a person's hand rests a moment before letting go: the game works out what is under the pointer on a frame
+	Wait(250);
 	MouseButton(1, false);
 }
 

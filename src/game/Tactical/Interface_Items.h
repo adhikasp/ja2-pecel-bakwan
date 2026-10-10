@@ -107,6 +107,11 @@ void DrawItemFreeCursor(void);
 int HeldItemCursorKind();
 void DrawItemTileCursor(void);
 BOOLEAN HandleItemPointerClick( UINT16 usMapPos );
+/** Hands the pointer's stack to a team mate under the core's verdict (reach, sight, both mercs' points). */
+BOOLEAN PassHeldItemTo(SOLDIERTYPE* receiver);
+/** The item in the pointer let go over the tile under the cursor: what a click on the world does with it (drop,
+ * throw, give, at his feet). A drag from a pocket ends here when it is released over the world. */
+BOOLEAN DropHeldAtCursor();
 UINT8 GetAttachmentHintColor(const OBJECTTYPE* pObj);
 CSubVObject GetSmallInventoryGraphicForItem(const ItemModel *item);
 

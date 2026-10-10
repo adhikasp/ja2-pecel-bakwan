@@ -3247,6 +3247,13 @@ void DrawItemTileCursor( )
 
 		// what the native cursor shows of it: a drop or throw, one that cannot get there, a give
 		giHeldItemCursorKind = fGiveItem ? 3 : uiCursorId == CURSOR_ITEM_BAD_THROW ? 2 : 1;
+		if (gfUIMouseOnValidCatcher == 4 && !fGiveItem)
+		{
+			// a team mate within reach: the click passes it (the core's rule: 2 AP each), it is not a drop
+			giHeldItemCursorKind = 3;
+			SetIntTileLocationText(ST::string());
+			gsCurrentActionPoints = Equipment::PASS_COST_AP;
+		}
 	}
 }
 
@@ -3266,19 +3273,97 @@ static bool IsValidAmmoToReloadRobot(SOLDIERTYPE const& s, OBJECTTYPE const& amm
 
 
 static INT16 DoorNear(INT32 gridno);
+// Hands the stack in the pointer to a team mate: the core's verdict (range, sight, both mercs' points) decides, then
+// the item is auto-placed in his pockets, both mercs pay and turn to each other. Used by a click on a merc in the
+// world and by a drop on his squad card (DropOnCard in InventoryAdapter.cc). FALSE when nothing was handed over.
+BOOLEAN PassHeldItemTo(SOLDIERTYPE* const pSoldier)
+{
+	if (gpItemPointer == NULL || gpItemPointerSoldier == NULL || pSoldier == NULL) return FALSE;
+
+	Equipment::DropVerdict const verdict = PlanDropOnCard(pSoldier);
+	if (verdict.action != Equipment::DropAction::Give)
+	{
+		if (verdict.why == Equipment::InvWhy::NoAP || verdict.why == Equipment::InvWhy::NoAPTarget)
+		{
+			// EnoughPoints says "not enough action points" itself
+			EnoughPoints(verdict.why == Equipment::InvWhy::NoAP ? gpItemPointerSoldier : pSoldier, Equipment::PASS_CHECK_AP, 0, TRUE);
+		}
+		return FALSE;
+	}
+
+	// Charge AP values...
+	DeductPoints( pSoldier, verdict.apReceiver, 0 );
+	DeductPoints( gpItemPointerSoldier, verdict.apGiver, 0 );
+
+	UINT16 const usItem = gpItemPointer->usItem;
+
+	// try to auto place object....
+	if ( AutoPlaceObject( pSoldier, gpItemPointer, TRUE ) )
+	{
+		ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, st_format_printf(pMessageStrings[ MSG_ITEM_PASSED_TO_MERC ], GCM->getItem(usItem)->getShortName(), pSoldier->name) );
+
+		// Check if it's the same now!
+		if ( gpItemPointer->ubNumberOfObjects == 0 )
+		{
+			EndItemPointer( );
+		}
+
+		// OK, make guys turn towards each other and do animation...
+		{
+			// Get direction to face.....
+			UINT8 const ubFacingDirection = (UINT8)GetDirectionFromGridNo( gpItemPointerSoldier->sGridNo, pSoldier );
+
+			// Stop merc first....
+			EVENT_StopMerc(pSoldier);
+
+			// If we are standing only...
+			if ( gAnimControl[ pSoldier->usAnimState ].ubEndHeight == ANIM_STAND && !MercInWater( pSoldier ) )
+			{
+				// Turn to face, then do animation....
+				EVENT_SetSoldierDesiredDirection( pSoldier, ubFacingDirection );
+				pSoldier->fTurningUntilDone = TRUE;
+				pSoldier->usPendingAnimation = PASS_OBJECT;
+			}
+
+			if ( gAnimControl[ gpItemPointerSoldier->usAnimState ].ubEndHeight == ANIM_STAND && !MercInWater( gpItemPointerSoldier ) )
+			{
+				EVENT_SetSoldierDesiredDirection(gpItemPointerSoldier, OppositeDirection(ubFacingDirection));
+				gpItemPointerSoldier->fTurningUntilDone = TRUE;
+				gpItemPointerSoldier->usPendingAnimation = PASS_OBJECT;
+			}
+		}
+
+		return TRUE;
+	}
+
+	ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, st_format_printf(pMessageStrings[ MSG_NO_ROOM_TO_PASS_ITEM ], GCM->getItem(usItem)->getShortName(), pSoldier->name) );
+	return FALSE;
+}
+
+
+BOOLEAN DropHeldAtCursor()
+{
+	if (gpItemPointer == NULL || gpItemPointerSoldier == NULL) return FALSE;
+	GridNo const at = guiCurrentCursorGridNo;
+	if (at == NOWHERE) return FALSE;
+	if (!HandleItemPointerClick(static_cast<UINT16>(at))) return FALSE;
+	// what the world's click does when it took the item
+	EndItemPointer();
+	guiPendingOverrideEvent = A_CHANGE_TO_MOVE;
+	return TRUE;
+}
+
 
 BOOLEAN HandleItemPointerClick( UINT16 usMapPos )
 {
 	// Determine what to do
 	UINT8 ubDirection;
-	UINT16 usItem;
 	INT16 sAPCost;
 	UINT8 ubThrowActionCode=0;
 	INT16 sEndZ = 0;
 	OBJECTTYPE TempObject;
 	INT16 sGridNo;
 	INT16 sDist;
-	INT16 sDistVisible;
 
 
 	if ( SelectedGuyInBusyAnimation( ) )
@@ -3364,8 +3449,6 @@ BOOLEAN HandleItemPointerClick( UINT16 usMapPos )
 
 	if ( fGiveItem )
 	{
-		usItem = gpItemPointer->usItem;
-
 		// If the target is a robot,
 		if (tgt->uiStatusFlags & SOLDIER_ROBOT)
 		{
@@ -3554,76 +3637,8 @@ BOOLEAN HandleItemPointerClick( UINT16 usMapPos )
 			!AM_AN_EPC(pSoldier) &&
 			!(pSoldier->uiStatusFlags & SOLDIER_VEHICLE))
 		{
-			// OK, do the transfer...
-			{
-				{
-					if ( !EnoughPoints( pSoldier, 3, 0, TRUE ) ||
-						!EnoughPoints( gpItemPointerSoldier, 3, 0, TRUE ) )
-					{
-						return( FALSE );
-					}
-
-					sDistVisible = DistanceVisible( pSoldier, DIRECTION_IRRELEVANT, DIRECTION_IRRELEVANT, gpItemPointerSoldier->sGridNo, gpItemPointerSoldier->bLevel );
-
-					// Check LOS....
-					if ( !SoldierTo3DLocationLineOfSightTest( pSoldier, gpItemPointerSoldier->sGridNo,  gpItemPointerSoldier->bLevel, 3, (UINT8) sDistVisible, TRUE ) )
-					{
-						return( FALSE );
-					}
-
-					// Charge AP values...
-					DeductPoints( pSoldier, 3, 0 );
-					DeductPoints( gpItemPointerSoldier, 3, 0 );
-
-					usItem = gpItemPointer->usItem;
-
-					// try to auto place object....
-					if ( AutoPlaceObject( pSoldier, gpItemPointer, TRUE ) )
-					{
-						ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, st_format_printf(pMessageStrings[ MSG_ITEM_PASSED_TO_MERC ], GCM->getItem(usItem)->getShortName(), pSoldier->name) );
-
-						// Check if it's the same now!
-						if ( gpItemPointer->ubNumberOfObjects == 0 )
-						{
-							EndItemPointer( );
-						}
-
-						// OK, make guys turn towards each other and do animation...
-						{
-							UINT8 ubFacingDirection;
-
-							// Get direction to face.....
-							ubFacingDirection = (UINT8)GetDirectionFromGridNo( gpItemPointerSoldier->sGridNo, pSoldier );
-
-							// Stop merc first....
-							EVENT_StopMerc(pSoldier);
-
-							// If we are standing only...
-							if ( gAnimControl[ pSoldier->usAnimState ].ubEndHeight == ANIM_STAND && !MercInWater( pSoldier ) )
-							{
-								// Turn to face, then do animation....
-								EVENT_SetSoldierDesiredDirection( pSoldier, ubFacingDirection );
-								pSoldier->fTurningUntilDone = TRUE;
-								pSoldier->usPendingAnimation = PASS_OBJECT;
-							}
-
-							if ( gAnimControl[ gpItemPointerSoldier->usAnimState ].ubEndHeight == ANIM_STAND && !MercInWater( gpItemPointerSoldier ) )
-							{
-								EVENT_SetSoldierDesiredDirection(gpItemPointerSoldier, OppositeDirection(ubFacingDirection));
-								gpItemPointerSoldier->fTurningUntilDone = TRUE;
-								gpItemPointerSoldier->usPendingAnimation = PASS_OBJECT;
-							}
-						}
-
-						return( TRUE );
-					}
-					else
-					{
-						ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, st_format_printf(pMessageStrings[ MSG_NO_ROOM_TO_PASS_ITEM ], GCM->getItem(usItem)->getShortName(), pSoldier->name) );
-						return( FALSE );
-					}
-				}
-			}
+			// the same rule as dropping on a squad card: reach, sight and both mercs' points (the core's verdict)
+			return PassHeldItemTo(pSoldier);
 		}
 		else
 		{

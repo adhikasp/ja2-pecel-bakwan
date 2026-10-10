@@ -162,6 +162,7 @@ namespace
 		int hp = 0, hpw = 0, lostw = 0, en = 0, mo = 0, ap = 0;
 		bool empty = true, sel = false, done = false, crit = false, talking = false, low = false;
 		bool bleeding = false, asleep = false, stealth = false, drunk = false, dead = false, vehicle = false;
+		std::string drop; // while something is held: "ok" when it can be handed to this merc, "no" when not
 		static void Describe(RowFields<CardRow>& f)
 		{
 			f("slot", &CardRow::slot)("name", &CardRow::name)("face", &CardRow::face)("sub", &CardRow::sub)
@@ -171,7 +172,7 @@ namespace
 			 ("ap", &CardRow::ap)("empty", &CardRow::empty)("sel", &CardRow::sel)("done", &CardRow::done)
 			 ("crit", &CardRow::crit)("talking", &CardRow::talking)("low", &CardRow::low)("bleeding", &CardRow::bleeding)
 			 ("asleep", &CardRow::asleep)("stealth", &CardRow::stealth)("drunk", &CardRow::drunk)("dead", &CardRow::dead)
-			 ("vehicle", &CardRow::vehicle);
+			 ("vehicle", &CardRow::vehicle)("drop", &CardRow::drop);
 		}
 	};
 
@@ -209,12 +210,13 @@ namespace
 		std::string wt, ammo, atts;
 		int natts = 0;
 		bool empty = true, big = false, att = false, worn = false;
+		std::string drop; // while something is held: "ok" when the pocket takes it, "no" when it does not
 		static void Describe(RowFields<SlotRow>& f)
 		{
 			f("idx", &SlotRow::idx)("w", &SlotRow::w)("h", &SlotRow::h)("cond", &SlotRow::cond)("src", &SlotRow::src)
 			 ("count", &SlotRow::count)("ghost", &SlotRow::ghost)("label", &SlotRow::label)("title", &SlotRow::title)
 			 ("empty", &SlotRow::empty)("big", &SlotRow::big)("att", &SlotRow::att)("worn", &SlotRow::worn)
-			 ("wt", &SlotRow::wt)("ammo", &SlotRow::ammo)("atts", &SlotRow::atts)("natts", &SlotRow::natts);
+			 ("wt", &SlotRow::wt)("ammo", &SlotRow::ammo)("atts", &SlotRow::atts)("natts", &SlotRow::natts)("drop", &SlotRow::drop);
 		}
 	};
 
@@ -313,6 +315,17 @@ namespace
 	};
 
 	// ------------------------------------------------------------------ the view model
+	// a drop on a squad card happened this click: the click that follows is not a selection
+	bool g_swallowClick = false;
+	bool g_swallowUp = false; // a cancelled drag: the button's release is not a click on the pocket under it
+	bool g_escWasDown = false;
+	bool g_releaseSeen = false;
+	bool g_rightWasDown = false;
+	bool g_dragLifted = false; // a drag lifted the item and the button is still down
+	int g_downCard = -1; // the squad card the left button went down on, -1 none
+	// the press on a pocket that may become a drag
+	Equipment::DragGesture g_gesture;
+
 	class TacticalViewModel final : public ViewModel
 	{
 	public:
@@ -401,6 +414,8 @@ namespace
 		{
 			Command("select", [](Args const& a) {
 				if (a.empty()) return;
+				// the drop on this card already happened: the click that follows it is not a selection
+				if (g_swallowClick) { g_swallowClick = false; return; }
 				int const slot = std::atoi(a[0].c_str());
 				if (slot >= 0 && slot < 10) PressKey(SDL_Keycode(SDLK_F1 + slot));
 			});
@@ -433,7 +448,18 @@ namespace
 			Command("keyring", [](Args const&) { if (InKeyRingPopup()) KeyRingClose(); else InventoryKeyRing(); });
 			// slot(index, mouse button): left picks up or puts down, right shows the description (the inventory core decides)
 			Command("slot", [](Args const& a) {
+				if (g_swallowUp) { g_swallowUp = false; return; }
 				if (!a.empty()) InventorySlotClick(gpSMCurrentMerc, std::atoi(a[0].c_str()), Right(a), _KeyDown(CTRL));
+			});
+			// card_drop(slot): the hand is let go over a squad card - give, or on his own card drop at his feet
+			Command("card_drop", [](Args const& a) {
+				if (a.empty() || InventoryHand().item == NOTHING) return;
+				int const slot = std::atoi(a[0].c_str());
+				SOLDIERTYPE* const s = slot >= 0 && slot < NUM_TEAM_SLOTS ? GetPlayerFromInterfaceTeamSlot(UINT8(slot)) : nullptr;
+				if (!s) return;
+				DropOnCard(s);
+				// a click-to-pick then click on the card ends in a click event too; a drag from a pocket does not
+				g_swallowClick = g_downCard == slot;
 			});
 			Command("detail_close", [](Args const&) { if (gsCurInterfacePanel == SM_PANEL) PressKey(SDLK_GRAVE); });
 			Command("prev_merc", [](Args const&) { PressKey(SDLK_SPACE); });
@@ -636,6 +662,7 @@ namespace
 					r.drunk = GetDrunkLevel(s) != SOBER;
 					r.vehicle = (s->uiStatusFlags & SOLDIER_VEHICLE) != 0;
 					r.talking = s->face && s->face->fTalking;
+					if (InventoryHand().item != NOTHING) r.drop = PlanDropOnCard(s).Ok() ? "ok" : "no";
 					// "|Stand/Walk", "|Crouch/Crouched Move", "Stand/|Run", "|Prone/Crawl": the stance is before the slash
 					r.sub = S(pTacticalPopupButtonStrings[Stance(*s) == "prone" ? 3 : Stance(*s) == "crouch" ? 1 : 0]);
 					r.sub.erase(std::remove(r.sub.begin(), r.sub.end(), '|'), r.sub.end());
@@ -866,6 +893,8 @@ namespace
 					if (o.usGunAmmoItem != NOTHING) r.ammo += " \xC2\xB7 " + S(GCM->getItem(o.usGunAmmoItem)->getShortName());
 				}
 			}
+			// something is held: which pockets take it (the core's verdict, drawn as an outline)
+			if (InventoryHand().item != NOTHING) r.drop = InventorySlotDrop(const_cast<SOLDIERTYPE*>(&s), pos).ok ? "ok" : "no";
 			return r;
 		}
 
@@ -1345,6 +1374,235 @@ namespace
 		}
 	};
 
+	/** The id of the nearest ancestor named "<prefix><n>]" (tac.inv.slot[3], tac.squad[1]): n, or -1. */
+	int IndexOf(Rml::Element* e, std::string const& prefix)
+	{
+		for (; e; e = e->GetParentNode())
+		{
+			std::string const& id = e->GetId();
+			if (id.size() > prefix.size() && id.compare(0, prefix.size(), prefix) == 0)
+				return std::atoi(id.c_str() + prefix.size());
+		}
+		return -1;
+	}
+
+	/** The left button going down and up on the HUD: a press on a pocket may become a drag (see UpdateDrag). */
+	class DragListener final : public Rml::EventListener
+	{
+	public:
+		void ProcessEvent(Rml::Event& ev) override
+		{
+			if (ev.GetParameter<int>("button", 0) != 0) return;
+			if (ev.GetType() == "mousedown")
+			{
+				g_swallowClick = false;
+				g_swallowUp = false;
+				Rml::Element* const target = ev.GetTargetElement();
+				g_downCard = IndexOf(target, "tac.squad[");
+				int const slot = IndexOf(target, "tac.inv.slot[");
+				// only a full pocket of the merc the panel shows can be dragged, and only with nothing in the hand
+				if (slot >= 0 && slot < NUM_INV_SLOTS && gpSMCurrentMerc && gpSMCurrentMerc->inv[slot].usItem != NOTHING &&
+					InventoryHand().item == NOTHING)
+					g_gesture.Press(ev.GetParameter<float>("mouse_x", 0.f), ev.GetParameter<float>("mouse_y", 0.f), slot);
+				else
+					g_gesture.Cancel();
+			}
+			else
+			{
+				g_gesture.Release();
+			}
+		}
+	};
+	DragListener g_dragListener;
+
+	/** Something of the HUD that takes clicks lies within @a dp of @a p: a release there is "on the HUD", not on the
+	 * world (a hand that lets go a finger's width outside a panel does not throw the item). */
+	bool NearHud(Rml::Vector2f const p, float const dp)
+	{
+		float const r = 16.f * dp;
+		for (Rml::Vector2f const d : { Rml::Vector2f(0, 0), Rml::Vector2f(r, 0), Rml::Vector2f(-r, 0), Rml::Vector2f(0, r),
+			Rml::Vector2f(0, -r), Rml::Vector2f(r, r), Rml::Vector2f(-r, r), Rml::Vector2f(r, -r), Rml::Vector2f(-r, -r) })
+		{
+			Rml::Element* e = Context()->GetElementAtPoint(p + d);
+			for (; e; e = e->GetParentNode())
+				if (e->IsClassSet("hit")) return true;
+		}
+		return false;
+	}
+
+	/** A press on a pocket that moved a few dp is a drag: the item is in the hand, riding on the pointer. Where it is
+	 * let go decides the rest: on a pocket or card the HUD's own mouse-up (slot / card_drop), on the world the legacy
+	 * click handler (drop, throw, give) that has always acted on a held item. A drag never leaves the item stuck: Esc
+	 * or the right button while dragging, a release on nothing or a refusal, and a release at the edge of a panel all
+	 * send it back where it came from. */
+	void UpdateDrag()
+	{
+		bool const down = IsMouseButtonDown(MOUSE_BUTTON_LEFT);
+		bool const right = IsMouseButtonDown(MOUSE_BUTTON_RIGHT);
+		bool const rightEdge = right && !g_rightWasDown;
+		g_rightWasDown = right;
+		if (g_gesture.Pressed())
+		{
+			if (!down)
+			{
+				// let go where the HUD does not get the button (the world): the release is handled below
+				g_gesture.Cancel();
+			}
+			else
+			{
+				Rml::Vector2f const m = MousePosition();
+				if (g_gesture.Move(m.x, m.y, Equipment::DRAG_THRESHOLD_DP * std::max(0.01f, DpScale())))
+				{
+					InventorySlotClick(gpSMCurrentMerc, g_gesture.Slot(), false, false);
+					g_dragLifted = InventoryHand().item != NOTHING;
+				}
+			}
+		}
+		// a click-to-pick item: the right button anywhere but on a pocket puts it back
+		if (!g_dragLifted && rightEdge && InventoryHand().item != NOTHING && !TacticalInventory().Asking() &&
+			IndexOf(Context()->GetHoverElement(), "tac.desc") < 0 && !InItemDescriptionBox())
+		{
+			// a pocket with something in it is a swap / describe; an empty one, or anywhere else, puts it back
+			int const over = IndexOf(Context()->GetHoverElement(), "tac.inv.slot[");
+			if (over < 0 || !gpSMCurrentMerc || over >= NUM_INV_SLOTS || gpSMCurrentMerc->inv[over].usItem == NOTHING)
+				CancelItemPointer();
+		}
+		// Esc does the same for an item held by a click
+		bool const esc = _KeyDown(SDLK_ESCAPE);
+		bool const escEdge = esc && !g_escWasDown;
+		g_escWasDown = esc;
+		if (!g_dragLifted && escEdge && InventoryHand().item != NOTHING && !TacticalInventory().Asking() && !InItemDescriptionBox())
+			CancelItemPointer();
+		if (!g_dragLifted) return;
+		if (InventoryHand().item == NOTHING)
+		{
+			g_dragLifted = false; // put down by the HUD's own mouse-up
+			return;
+		}
+		if (down && (rightEdge || _KeyDown(SDLK_ESCAPE)))
+		{
+			// changed his mind: back in the pocket, at no cost; the release that follows does nothing
+			CancelItemPointer();
+			g_dragLifted = false;
+			g_swallowUp = true;
+			return;
+		}
+		if (down) { g_releaseSeen = false; return; }
+		// the HUD's own mouse-up is processed with the frame after the button went up: look at the result then
+		if (!g_releaseSeen) { g_releaseSeen = true; return; }
+		g_releaseSeen = false;
+		g_dragLifted = false;
+		// released: over a pocket or a card the HUD's mouse-up has already put it down (or refused). What is left in the
+		// hand goes to the world only when it was let go clearly outside the HUD.
+		if (TacticalInventory().Asking() || InItemDescriptionBox()) return;
+		if (TacticalHudWantsMouse() || NearHud(MousePosition(), std::max(0.01f, DpScale())))
+		{
+			CancelItemPointer();
+			return;
+		}
+		if (!DropHeldAtCursor()) CancelItemPointer();
+	}
+
+	/** The first "{}" of @a fmt replaced. */
+	std::string Sub(std::string fmt, std::string const& a)
+	{
+		size_t const i = fmt.find("{}");
+		if (i != std::string::npos) fmt.replace(i, 2, a);
+		return fmt;
+	}
+
+	char const* WhyKey(Equipment::InvWhy const why)
+	{
+		using W = Equipment::InvWhy;
+		switch (why)
+		{
+			case W::OutOfReach:    return "out_of_reach";
+			case W::NoAP:          return "no_ap";
+			case W::NoAPTarget:    return "no_ap_target";
+			case W::Unconscious:   return "unconscious";
+			case W::NailsVest:     return "nails_vest";
+			case W::NotAttachable: return "not_attachable";
+			case W::DoesNotFit:    return "does_not_fit";
+			case W::HandFull:      return "hand_full";
+			default:               return "cannot";
+		}
+	}
+
+	/** With something in the hand, the chip over a pocket or a squad card says what letting go would do. */
+	void UpdateDropChip(TacticalViewModel const& vm)
+	{
+		HudChip chip;
+		Equipment::HeldStack const& hand = InventoryHand();
+		if (hand.item != NOTHING)
+		{
+			Rml::Element* const hover = Context()->GetHoverElement();
+			int const card = IndexOf(hover, "tac.squad[");
+			int const slot = card < 0 ? IndexOf(hover, "tac.inv.slot[") : -1;
+			if (card >= 0)
+			{
+				SOLDIERTYPE* const s = card < NUM_TEAM_SLOTS ? GetPlayerFromInterfaceTeamSlot(UINT8(card)) : nullptr;
+				if (s)
+				{
+					Equipment::DropVerdict const v = PlanDropOnCard(s);
+					std::string const name = S(s->name);
+					chip.shown = true;
+					chip.tone = v.Ok() ? "ok" : "no";
+					bool const self = gpItemPointerSoldier == s;
+					if (v.action == Equipment::DropAction::Give)
+					{
+						chip.head = Sub(Str("tac.drag.give"), name);
+						chip.lines.push_back({ Str("tac.cur.k_range"), (v.tiles == 1 ? Str("tac.drag.tile") : Sub(Str("tac.cur.range_tiles"), std::to_string(v.tiles))) });
+						if (vm.combat) chip.lines.push_back({ Str("tac.cur.k_ap"), Sub(Str("tac.drag.ap_each"), std::to_string(v.apGiver)) });
+					}
+					else if (v.action == Equipment::DropAction::DropAtFeet)
+					{
+						chip.head = Str("tac.drag.feet");
+						if (vm.combat && v.apGiver > 0) chip.lines.push_back({ Str("tac.cur.k_ap"), std::to_string(v.apGiver) });
+					}
+					else
+					{
+						chip.head = self ? Str("tac.drag.cannot_feet") : Sub(Str("tac.drag.cannot_give"), name);
+						chip.why = Str(std::string("tac.drag.why.") + WhyKey(v.why));
+						if (v.why == Equipment::InvWhy::OutOfReach && !self)
+							chip.lines.push_back({ Str("tac.cur.k_range"), (v.tiles == 1 ? Str("tac.drag.tile") : Sub(Str("tac.cur.range_tiles"), std::to_string(v.tiles))) });
+					}
+				}
+			}
+			else if (slot >= 0 && gpSMCurrentMerc)
+			{
+				SlotDrop const d = InventorySlotDrop(gpSMCurrentMerc, slot);
+				std::string const item = S(GCM->getItem(hand.item)->getName());
+				std::string occupant;
+				for (auto const* rows : { &vm.body, &vm.hands, &vm.lbe, &vm.bigPockets, &vm.smallPockets, &vm.beltPockets, &vm.packPockets })
+					for (SlotRow const& r : *rows)
+						if (r.idx == slot) occupant = r.title;
+				chip.shown = true;
+				chip.tone = d.ok ? "ok" : "no";
+				if (d.ok)
+				{
+					if (d.kind == Equipment::PlaceKind::Attach) chip.head = Sub(Str("tac.drag.attach"), occupant);
+					else if (d.kind == Equipment::PlaceKind::AskMerge) chip.head = Sub(Str("tac.drag.merge"), occupant);
+					else chip.head = Sub(Str("tac.drag.put"), item);
+					if (vm.combat && d.apFrom > 0) chip.lines.push_back({ Str("tac.cur.k_ap"), std::to_string(d.apFrom) });
+				}
+				else
+				{
+					chip.head = Sub(Str("tac.drag.cannot_put"), item);
+					chip.why = Str(std::string("tac.drag.why.") + WhyKey(d.why));
+				}
+			}
+			else if (TacticalHudWantsMouse() || NearHud(MousePosition(), std::max(0.01f, DpScale())))
+			{
+				// over a part of the HUD that takes nothing: say how to get out of it
+				chip.shown = true;
+				chip.tone = "warn";
+				chip.head = Sub(Str("tac.drag.holding"), S(GCM->getItem(hand.item)->getName()));
+				chip.lines.push_back({ Str("tac.drag.k_back"), Str("tac.drag.back") });
+			}
+		}
+		SetHudChip(std::move(chip));
+	}
+
 	struct Hud
 	{
 		std::unique_ptr<TacticalViewModel> vm;
@@ -1425,6 +1683,8 @@ void TacticalHudUpdate()
 			g_hud.vm.reset();
 			return;
 		}
+		g_hud.doc->AddEventListener("mousedown", &g_dragListener, true);
+		g_hud.doc->AddEventListener("mouseup", &g_dragListener, true);
 	}
 	if (!g_hud.active)
 	{
@@ -1435,6 +1695,7 @@ void TacticalHudUpdate()
 	}
 	g_hud.vm->Refresh();
 	g_hud.vm->Place(g_hud.doc, BarHeightPx());
+	UpdateDrag();
 	// an item held by the mouse rides on the native pointer, at the integer scale of the inventory slots
 	if (InventoryHand().item != NOTHING)
 	{
@@ -1488,6 +1749,8 @@ void TacticalHudUpdate()
 				e->SetProperty(Rml::PropertyId::Bottom, Rml::Property(want + std::round(8 * DpScale()), Rml::Unit::PX));
 		}
 	}
+	// what letting go of a held item would do, over a pocket or a card
+	UpdateDropChip(*g_hud.vm);
 	// the marker, path and chip over the world, and the pointer's shape
 	TacticalCursorUpdate(g_hud.doc);
 }
@@ -1496,7 +1759,7 @@ bool TacticalHudWantsMouse()
 {
 	if (!g_hud.active || !g_hud.doc) return false;
 	Rml::Element* e = Context()->GetHoverElement();
-	for (; e && e != g_hud.doc; e = e->GetParentNode())
+	for (; e; e = e->GetParentNode())
 	{
 		if (e->IsClassSet("hit")) return true;
 	}
