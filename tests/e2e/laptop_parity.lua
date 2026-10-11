@@ -139,6 +139,15 @@ ja2.expect(vm().page == "personality" and #vm().imp_answers >= 2, "quiz question
 click("imp.answer[0]"); ja2.expect(vm().imp_answers[1].on, "answer selected")
 layout("imp")
 
+-- back navigation: Previous on the first question returns to Begin with the names kept; the step bar jumps back
+click("imp.prev")
+ja2.expect(vm().page == "begin" and vm().imp_full == "Zed Quark" and vm().imp_nick == "Zed", "Previous on question 1 returns to Begin")
+click("imp.begin.next")
+ja2.expect(vm().page == "personality", "Next returns to the quiz")
+click("imp.step[0]")
+ja2.expect(vm().page == "begin", "the step bar goes back to Begin")
+click("imp.begin.next")
+
 -- quiz: answer every question with the first answer and confirm; the last confirm leaves for the attributes
 local questions = 0
 while vm().page == "personality" do
@@ -163,6 +172,18 @@ ja2.expect(vm().imp_bonus == 0, "all bonus points spent")
 shots.take("laptop_imp_attributes.png")
 local want = {}
 for i = 0, 9 do want[i] = attr(i) end
+
+-- unspent points are not carried past the attributes (they would be lost on creation)
+click("imp.attr[1].less")
+ja2.expect(vm().imp_bonus == 1, "a point is given back")
+click("imp.attr.next")
+ja2.expect(vm().page == "attributes", "unspent points keep the player on the attributes page")
+click("imp.attr[1].more")
+ja2.expect(vm().imp_bonus == 0, "the point is spent again")
+click("imp.attr.back")
+ja2.expect(vm().page == "personality" and vm().imp_question == #vm().imp_progress - 1, "Previous on attributes returns to the last question")
+click("imp.confirm")
+ja2.expect(vm().page == "attributes", "confirming the last answer returns to the attributes")
 click("imp.attr.next")
 
 -- portrait and voice: take the second of each, as the model lists them
@@ -177,6 +198,9 @@ click("imp.voice[1]"); ja2.expect(vm().imp_voice == 1, "voice chosen")
 click("imp.voice.next")
 ja2.expect(vm().page == "finish", "finish page")
 shots.take("laptop_imp_finish.png")
+click("imp.finish.back")
+ja2.expect(vm().page == "voice", "Previous on finish returns to voice")
+click("imp.voice.next")
 
 -- finish: the money goes, the character joins the team with what was chosen
 money = ja2.state().money
@@ -187,6 +211,13 @@ ja2.expect(vm().page == "done", "the I.M.P. site confirms the character")
 s = ja2.state()
 ja2.expect(s.money == money - 3000, "the $3,000 is charged (" .. money .. " -> " .. s.money .. ")")
 ja2.expect(#s.mercs == team + 1, "the new character is on the team")
+-- the starting kit is placed without pocket warnings and is complete (explosives >= 50 earns the TNT)
+for _, line in ipairs(ja2.feedback()) do
+	ja2.expect(not line:find("does not fit"), "placing the starting kit raises no pocket warnings: " .. line)
+end
+local kit = {}
+for _, pocket in pairs(ja2.inventory("Zed").pockets) do kit[pocket.item] = true end
+ja2.expect(kit.CANTEEN and kit.FLAK_JACKET and kit.TNT, "the starting kit is complete")
 local imp
 for _, m in ipairs(s.mercs) do if m.profileData and m.profileData.nickName == "Zed" then imp = m end end
 ja2.expect(imp ~= nil, "a character called Zed exists")

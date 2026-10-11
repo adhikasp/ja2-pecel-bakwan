@@ -290,8 +290,13 @@ static void TacticalScreenMsg(UINT16 usColor, UINT8 ubPriority, const ST::string
 
 
 // new screen message
+static std::vector<ST::string> g_uiFeedbackLog;
+
+std::vector<ST::string> const& GetUIFeedbackLog() { return g_uiFeedbackLog; }
+
 void ScreenMsg(UINT16 usColor, UINT8 ubPriority, const ST::string& str)
 {
+	if (ubPriority == MSG_UI_FEEDBACK || ubPriority == MSG_SKULL_UI_FEEDBACK) g_uiFeedbackLog.push_back(str);
 	// pass onto tactical message and mapscreen message; with native toasts (ui_mode "toasts", or a native screen
 	// showing) the on-screen part is a toast instead of the tactical scroll text
 	// (not on the map screen: its message log shows them)

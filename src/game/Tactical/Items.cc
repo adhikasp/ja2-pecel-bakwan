@@ -2155,6 +2155,16 @@ BOOLEAN PlaceObject( SOLDIERTYPE * pSoldier, INT8 bPos, OBJECTTYPE * pObj )
 }
 
 
+// Auto-placement tries pockets until one takes the item. A pocket that refuses
+// is a probe, not a player action: ask first so the "does not fit" feedback
+// only follows a placement the player attempted.
+static BOOLEAN TryPlaceObject(SOLDIERTYPE* pSoldier, INT8 bPos, OBJECTTYPE* pObj)
+{
+	if (!CanItemFitInPosition(pSoldier, pObj, bPos, FALSE)) return FALSE;
+	return PlaceObject(pSoldier, bPos, pObj);
+}
+
+
 static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, BOOLEAN fNewItem, INT8 bExcludeSlot)
 {
 	INT8  bSlot;
@@ -2179,7 +2189,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 				if (pSoldier->inv[HANDPOS].usItem == NONE)
 				{
 					// put the one-handed weapon in the guy's hand...
-					PlaceObject( pSoldier, HANDPOS, pObj );
+					TryPlaceObject( pSoldier, HANDPOS, pObj );
 					SetNewItem( pSoldier, HANDPOS, fNewItem );
 					if ( pObj->ubNumberOfObjects == 0 )
 					{
@@ -2189,7 +2199,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 				else if ( !(GCM->getItem(pSoldier->inv[HANDPOS].usItem)->isTwoHanded()) && pSoldier->inv[SECONDHANDPOS].usItem == NONE)
 				{
 					// put the one-handed weapon in the guy's 2nd hand...
-					PlaceObject( pSoldier, SECONDHANDPOS, pObj );
+					TryPlaceObject( pSoldier, SECONDHANDPOS, pObj );
 					SetNewItem( pSoldier, SECONDHANDPOS, fNewItem );
 					if ( pObj->ubNumberOfObjects == 0 )
 					{
@@ -2208,7 +2218,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 					if (pSoldier->inv[VESTPOS].usItem == NONE)
 					{
 						// put on the armour!
-						PlaceObject( pSoldier, VESTPOS, pObj );
+						TryPlaceObject( pSoldier, VESTPOS, pObj );
 						SetNewItem( pSoldier, VESTPOS, fNewItem );
 						if ( pObj->ubNumberOfObjects == 0 )
 						{
@@ -2220,7 +2230,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 					if (pSoldier->inv[LEGPOS].usItem == NONE)
 					{
 						// put on the armour!
-						PlaceObject( pSoldier, LEGPOS, pObj );
+						TryPlaceObject( pSoldier, LEGPOS, pObj );
 						SetNewItem( pSoldier, LEGPOS, fNewItem );
 						if ( pObj->ubNumberOfObjects == 0 )
 						{
@@ -2232,7 +2242,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 					if (pSoldier->inv[HELMETPOS].usItem == NONE)
 					{
 						// put on the armour!
-						PlaceObject( pSoldier, HELMETPOS, pObj );
+						TryPlaceObject( pSoldier, HELMETPOS, pObj );
 						SetNewItem( pSoldier, HELMETPOS, fNewItem );
 						if ( pObj->ubNumberOfObjects == 0 )
 						{
@@ -2248,7 +2258,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 		case IC_FACE:
 			if ( (pSoldier->inv[HEAD1POS].usItem == NOTHING) && CompatibleFaceItem( pObj->usItem, pSoldier->inv[HEAD2POS].usItem ) )
 			{
-				PlaceObject( pSoldier, HEAD1POS, pObj );
+				TryPlaceObject( pSoldier, HEAD1POS, pObj );
 				SetNewItem( pSoldier, HEAD1POS, fNewItem );
 				if ( pObj->ubNumberOfObjects == 0 )
 				{
@@ -2257,7 +2267,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			}
 			else if ( (pSoldier->inv[HEAD2POS].usItem == NOTHING) && CompatibleFaceItem( pObj->usItem, pSoldier->inv[HEAD1POS].usItem ) )
 			{
-				PlaceObject( pSoldier, HEAD2POS, pObj );
+				TryPlaceObject( pSoldier, HEAD2POS, pObj );
 				SetNewItem( pSoldier, HEAD2POS, fNewItem );
 				if ( pObj->ubNumberOfObjects == 0 )
 				{
@@ -2292,7 +2302,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			}
 			// this might fail if we're trying to place in HANDPOS,
 			// and SECONDHANDPOS is full
-			PlaceObject( pSoldier, bSlot, pObj );
+			TryPlaceObject( pSoldier, bSlot, pObj );
 			SetNewItem( pSoldier, bSlot, fNewItem );
 			if (pObj->ubNumberOfObjects == 0)
 			{
@@ -2324,7 +2334,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 						// will disappear in their entirety if sold/moved, causing anything added through here to vanish also!
 						if (guiCurrentScreen != SHOPKEEPER_SCREEN || !ShouldSoldierDisplayHatchOnItem(pSoldier->ubProfile, bSlot))
 						{
-							PlaceObject( pSoldier, bSlot, pObj );
+							TryPlaceObject( pSoldier, bSlot, pObj );
 							SetNewItem( pSoldier, bSlot, fNewItem );
 							if (pObj->ubNumberOfObjects == 0)
 							{
@@ -2346,7 +2356,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			{
 				break;
 			}
-			PlaceObject( pSoldier, bSlot, pObj );
+			TryPlaceObject( pSoldier, bSlot, pObj );
 			SetNewItem( pSoldier, bSlot, fNewItem );
 			if (pObj->ubNumberOfObjects == 0)
 			{
@@ -2363,7 +2373,7 @@ static BOOLEAN InternalAutoPlaceObject(SOLDIERTYPE* pSoldier, OBJECTTYPE* pObj, 
 			{
 				break;
 			}
-			PlaceObject( pSoldier, bSlot, pObj );
+			TryPlaceObject( pSoldier, bSlot, pObj );
 			SetNewItem( pSoldier, bSlot, fNewItem );
 			if (pObj->ubNumberOfObjects == 0)
 			{

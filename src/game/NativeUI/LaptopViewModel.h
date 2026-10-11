@@ -163,4 +163,12 @@ namespace NativeUI
 		std::vector<std::string> floristText, insuranceText, funeralText;
 		std::vector<Row> insuranceRows;
 	};
+
+	/** Position of an I.M.P. page in the profile flow (begin ... finish), -1 for the pages outside it. */
+	inline int ImpStepIndex(std::string const& step)
+	{
+		static char const* const steps[] = { "begin", "personality", "attributes", "portrait", "voice", "finish" };
+		for (int i = 0; i < 6; ++i) if (step == steps[i]) return i;
+		return -1;
+	}
 }

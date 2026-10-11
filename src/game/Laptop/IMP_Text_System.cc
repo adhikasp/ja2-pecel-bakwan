@@ -328,9 +328,20 @@ std::vector<ImpQuestion> ImpQuiz(bool const female)
 std::vector<ST::string> ImpPageText(int const page)
 {
 	static INT32 const first[] = { IMP_HOME_1, IMP_ABOUT_US_1, IMP_MAIN_1, IMP_BEGIN_1, IMP_PERS_1, IMP_ATTRIB_1, IMP_POR_1, IMP_VOC_1, IMP_FIN_1 };
-	static INT32 const last[]  = { IMP_HOME_10, IMP_ABOUT_US_12, IMP_MAIN_9, IMP_BEGIN_11, IMP_PERS_12, IMP_ATTRIB_8, IMP_POR_7, IMP_VOC_7, IMP_FIN_10 };
+	static INT32 const last[]  = { IMP_HOME_10, IMP_ABOUT_US_12, IMP_MAIN_2, IMP_BEGIN_11, IMP_PERS_12, IMP_ATTRIB_8, IMP_POR_7, IMP_VOC_7, IMP_FIN_10 };
 	std::vector<ST::string> r;
 	if (page < 0 || page >= int(std::size(first))) return r;
+	if (page == 1)
+	{
+		// About Us: each heading sits above its paragraph, as the legacy page lays them out
+		static int const order[] = { 1, 2, 3, 10, 4, 11, 5, 8, 6, 9, 7 };
+		for (int const n : order)
+		{
+			ST::string const t = ImpRecord(IMP_ABOUT_US_1 + n - 1);
+			if (!t.empty()) r.push_back(t);
+		}
+		return r;
+	}
 	for (INT32 i = first[page]; i <= last[page]; ++i)
 	{
 		ST::string const t = ImpRecord(i);

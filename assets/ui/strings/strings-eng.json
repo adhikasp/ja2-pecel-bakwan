@@ -851,6 +851,8 @@
   "laptop.merc_no_funds": "Transfer failed. No funds available.",
   "laptop.order_placed": "Order placed.",
   "laptop.imp_invalid": "The profile is not complete.",
+  "laptop.imp_points_left": "Spend all {} bonus points before continuing.",
+  "laptop.imp_portrait_n": "Portrait {}",
   "laptop.flowers_sent": "Flowers sent.",
   "laptop.imp_step_begin": "Begin",
   "laptop.imp_step_personality": "Personality",

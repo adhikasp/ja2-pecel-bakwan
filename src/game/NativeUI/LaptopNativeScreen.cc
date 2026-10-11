@@ -41,7 +41,7 @@ void LaptopViewModel::ReadImp()
 	if (impAttrValues.size() != 10) { impAttrValues.assign(10, 55); impBonus = LaptopNative::ImpBonusPoints(); }
 
 	static char const* const steps[] = { "begin", "personality", "attributes", "portrait", "voice", "finish" };
-	int const stepIndex = int(std::find(std::begin(steps), std::end(steps), impStep) - std::begin(steps));
+	int const stepIndex = ImpStepIndex(impStep);
 	impSteps.clear();
 	for (int i = 0; i < 6; ++i)
 	{
@@ -88,7 +88,7 @@ void LaptopViewModel::ReadImp()
 	impPortraits.clear();
 	for (auto const& p : LaptopNative::ImpPortraits(impFemale))
 	{
-		Row r; r.index = p.index; r.id = std::to_string(p.face); r.icon = "face-" + std::to_string(p.face); r.on = p.index == impPortrait;
+		Row r; r.index = p.index; r.id = std::to_string(p.face); r.title = ST::format(Str("laptop.imp_portrait_n").c_str(), p.index + 1).to_std_string(); r.icon = "face-" + std::to_string(p.face); r.on = p.index == impPortrait;
 		impPortraits.push_back(r);
 	}
 	impVoices.clear();
