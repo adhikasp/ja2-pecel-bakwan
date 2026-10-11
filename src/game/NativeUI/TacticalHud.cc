@@ -23,8 +23,12 @@
 #include "Interface.h"
 #include "Interface_Dialogue.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "SquadRoster.h"
 #include "InventoryAdapter.h"
+#include "PointerRouter.h"
+#include "TacticalCommands.h"
+#include "TacticalCommandsAdapter.h"
 #include "PopupAdapter.h"
 #include "Strategic_Exit_GUI.h"
 #include "Tactical_Placement_GUI.h"
@@ -62,6 +66,7 @@
 #include <SDL3/SDL.h>
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 
 extern ScreenID guiCurrentScreen;
@@ -111,27 +116,21 @@ namespace
 		y = std::clamp(y, 0.f, std::max(0.f, float(dim.y) - hDp * dp));
 	}
 
-	/** Presses a legacy hotkey (down and up), as the keyboard would: the legacy handler runs with all its checks. */
-	void PressKey(SDL_Keycode const key, SDL_Keymod const mods = SDL_KMOD_NONE)
-	{
-		auto send = [](SDL_Keycode const k, SDL_Keymod const m, bool const down) {
-			SDL_KeyboardEvent e{};
-			e.type = down ? SDL_EVENT_KEY_DOWN : SDL_EVENT_KEY_UP;
-			e.key  = k;
-			e.mod  = m;
-			e.down = down;
-			if (down) KeyDown(&e); else KeyUp(&e);
-		};
-		if (mods & SDL_KMOD_SHIFT) send(SDLK_LSHIFT, mods, true);
-		if (mods & SDL_KMOD_CTRL)  send(SDLK_LCTRL, mods, true);
-		send(key, mods, true);
-		send(key, mods, false);
-		if (mods & SDL_KMOD_CTRL)  send(SDLK_LCTRL, SDL_KMOD_NONE, false);
-		if (mods & SDL_KMOD_SHIFT) send(SDLK_LSHIFT, SDL_KMOD_NONE, false);
-	}
-
 	/** The second command argument is the mouse button (RmlUi: 0 left, 1 right). */
 	bool Right(Args const& a) { return a.size() > 1 && std::atoi(a[1].c_str()) == 1; }
+
+	/** The picture name of a soldier's small face with the eyes and mouth the face is showing now ("sfacef-<face>-
+	 * <eyes xy>-<mouth xy>-<eyes frame>-<mouth frame>", MockWorld.cc composes it); the plain "sface-<n>" when both
+	 * are at rest. */
+	std::string SoldierFacePicture(SOLDIERTYPE const& s)
+	{
+		int const face = s.ubProfile != NO_PROFILE ? GetProfile(s.ubProfile).ubFaceIndex : 0;
+		FaceFrame const fr = SoldierFaceFrame(s);
+		if (fr.eyes == 0 && fr.mouth == 0) return "sface-" + std::to_string(face);
+		int ex = 0, ey = 0, mx = 0, my = 0;
+		SoldierFaceOffsets(s, &ex, &ey, &mx, &my);
+		return ST::format("sfacef-{}-{}-{}-{}-{}-{}-{}", face, ex, ey, mx, my, fr.eyes, fr.mouth).to_std_string();
+	}
 
 	std::string Stance(SOLDIERTYPE const& s)
 	{
@@ -158,10 +157,10 @@ namespace
 	struct CardRow
 	{
 		int slot = 0;
-		std::string name, face, sub, hand, ammo, handName;
+		std::string name, face, sub, hand, ammo, handName, title;
 		int fw = 0, fh = 0, hw = 0, hh = 0;
 		int hp = 0, hpw = 0, lostw = 0, en = 0, mo = 0, ap = 0;
-		bool empty = true, sel = false, done = false, crit = false, talking = false, low = false;
+		bool empty = true, sel = false, done = false, crit = false, talking = false, low = false, enemy = false, dying = false, skull = false;
 		bool bleeding = false, asleep = false, stealth = false, drunk = false, dead = false, vehicle = false;
 		std::string drop; // while something is held: "ok" when it can be handed to this merc, "no" when not
 		static void Describe(RowFields<CardRow>& f)
@@ -173,7 +172,7 @@ namespace
 			 ("ap", &CardRow::ap)("empty", &CardRow::empty)("sel", &CardRow::sel)("done", &CardRow::done)
 			 ("crit", &CardRow::crit)("talking", &CardRow::talking)("low", &CardRow::low)("bleeding", &CardRow::bleeding)
 			 ("asleep", &CardRow::asleep)("stealth", &CardRow::stealth)("drunk", &CardRow::drunk)("dead", &CardRow::dead)
-			 ("vehicle", &CardRow::vehicle)("drop", &CardRow::drop);
+			 ("vehicle", &CardRow::vehicle)("drop", &CardRow::drop)("enemy", &CardRow::enemy)("dying", &CardRow::dying)("skull", &CardRow::skull)("title", &CardRow::title);
 		}
 	};
 
@@ -318,6 +317,8 @@ namespace
 	// ------------------------------------------------------------------ the view model
 	// a drop on a squad card happened this click: the click that follows is not a selection
 	bool g_swallowClick = false;
+		// a release on the hand strip or the enemy mark of a card is not a release on the card
+		bool g_swallowCardUp = false;
 	bool g_swallowUp = false; // a cancelled drag: the button's release is not a click on the pocket under it
 	bool g_escWasDown = false;
 	bool g_releaseSeen = false;
@@ -409,62 +410,82 @@ namespace
 		std::string lTake, lTakeAll, lKeyRing, lUse, lGive, lNoKeys, lClose, lTalkWho, lTravel, lCancel, lGo, lPutKey, lExitNone;
 		std::string lEndTurn, lTurnBased, lMap, lDone, lUnload, lPros, lCons, lAttachments, lAmmo, lWeapon, lLog, lLoadout;
 
+		// the command table's state (TacticalCommands.h): enabled, and the tooltip: label, key and the reason when off
+		std::array<bool, TacticalCommands::COUNT> cmdOn{};
+		std::array<std::string, TacticalCommands::COUNT> cmdTitle;
+
 		std::string signature;
 
 		TacticalViewModel() : ViewModel("tactical", TOPIC_ALL)
 		{
+			// the buttons: each one names a command of the table (NativeUI/TacticalCommands.h) and runs it through the
+			// command adapter, which says why a command is not available (a disabled button's tooltip too)
+			Command("cmd", [](Args const& a) {
+				if (a.empty()) return;
+				if (TacticalCommands::Command const* const c = TacticalCommands::Find(a[0])) RunTacticalCommand(c->id);
+			});
+			// a click on a card: select, locate, or continue his move (what a click on the face always did)
 			Command("select", [](Args const& a) {
 				if (a.empty()) return;
 				// the drop on this card already happened: the click that follows it is not a selection
 				if (g_swallowClick) { g_swallowClick = false; return; }
 				int const slot = std::atoi(a[0].c_str());
-				if (slot >= 0 && slot < 10) PressKey(SDL_Keycode(SDLK_F1 + slot));
+				if (slot >= 0 && slot < SquadRosterSlots()) SquadRosterCardClick(slot);
 			});
+			// a second click: the merc's details beside the squad
 			Command("details", [](Args const& a) {
 				if (a.empty()) return;
 				int const slot = std::atoi(a[0].c_str());
-				SOLDIERTYPE* const s = slot >= 0 && slot < NUM_TEAM_SLOTS ? GetPlayerFromInterfaceTeamSlot(UINT8(slot)) : nullptr;
+				SOLDIERTYPE* const s = slot >= 0 && slot < SquadRosterSlots() ? SquadRosterAt(slot) : nullptr;
 				if (!s) return;
-				if (GetSelectedMan() != s && slot < 10) PressKey(SDL_Keycode(SDLK_F1 + slot));
-				if (gsCurInterfacePanel != SM_PANEL) PressKey(SDLK_GRAVE);
+				if (gsCurInterfacePanel != SM_PANEL || gpSMCurrentMerc != s) SquadRosterCardDetails(slot);
+			});
+			// the context action on a card (the right button): the merc's details
+			Command("card_menu", [](Args const& a) {
+				if (!a.empty()) SquadRosterCardDetails(std::atoi(a[0].c_str()));
+			});
+			// the enemy mark on a card: cycle through the enemies he sees
+			Command("card_enemy", [](Args const& a) {
+				if (a.empty()) return;
+				g_swallowClick = true; // the click on the mark is not a click on the card
+				SquadRosterCardEnemyClick(std::atoi(a[0].c_str()));
+			});
+			// the hand strip of a card (hand 0 or 1, mouse button 0 left, 1 right)
+			Command("card_hand", [](Args const& a) {
+				if (a.size() < 3 || InventoryHand().item != NOTHING) return; // with the hand full a release gives it
+				g_swallowCardUp = true;
+				g_swallowClick = true;
+				SquadRosterHandClick(std::atoi(a[0].c_str()), std::atoi(a[1].c_str()), std::atoi(a[2].c_str()) == 1);
 			});
 			Command("squad", [](Args const& a) {
 				if (a.empty()) return;
 				int const n = std::atoi(a[0].c_str());
-				if (n >= 1 && n <= 10) PressKey(SDL_Keycode(n == 10 ? SDLK_0 : SDLK_1 + (n - 1)));
+				if (n >= 1 && n <= 10) RunTacticalCommand(TacticalCommands::Id(int(TacticalCommands::Id::Squad1) + n - 1));
 			});
-			Command("next_squad", [](Args const&) { PressKey(SDLK_SPACE, SDL_KMOD_LSHIFT); });
-			// buttons: the legacy hotkey of each (Turn_Based_Input.cc)
-			Command("key", [](Args const& a) {
-				if (a.empty()) return;
-				std::string const k = a[0];
-				if (k == "tab")        PressKey(SDLK_TAB);
-				else if (k == "grave") PressKey(SDLK_GRAVE);
-				else if (k == "insert") PressKey(SDLK_INSERT);
-				else if (k.size() == 1) PressKey(SDL_Keycode(k[0]));
-			});
-			Command("talk", [](Args const&) { ToggleTalkCursorMode(&guiCurrentEvent); });
-			Command("options", [](Args const&) { PressKey(SDLK_O); });
-			Command("overhead", [](Args const&) { if (!InOverheadMap()) GoIntoOverheadMap(); });
 			Command("money_region", [](Args const&) { InventoryCashButton(); });
-			Command("keyring", [](Args const&) { if (InKeyRingPopup()) KeyRingClose(); else InventoryKeyRing(); });
 			// slot(index, mouse button): left picks up or puts down, right shows the description (the inventory core decides)
 			Command("slot", [](Args const& a) {
 				if (g_swallowUp) { g_swallowUp = false; return; }
 				if (!a.empty()) InventorySlotClick(gpSMCurrentMerc, std::atoi(a[0].c_str()), Right(a), _KeyDown(CTRL));
 			});
-			// card_drop(slot): the hand is let go over a squad card - give, or on his own card drop at his feet
-			Command("card_drop", [](Args const& a) {
-				if (a.empty() || InventoryHand().item == NOTHING) return;
+			// card_up(slot, mouse button): the hand is let go over a squad card - give, or on his own card drop at his
+			// feet; with the right button and nothing in the hand, the merc's details
+			Command("card_up", [](Args const& a) {
+				if (a.empty()) return;
+				if (g_swallowCardUp) { g_swallowCardUp = false; return; }
 				int const slot = std::atoi(a[0].c_str());
-				SOLDIERTYPE* const s = slot >= 0 && slot < NUM_TEAM_SLOTS ? GetPlayerFromInterfaceTeamSlot(UINT8(slot)) : nullptr;
+				SOLDIERTYPE* const s = slot >= 0 && slot < SquadRosterSlots() ? SquadRosterAt(slot) : nullptr;
 				if (!s) return;
+				if (InventoryHand().item == NOTHING)
+				{
+					if (Right(a)) { SquadRosterCardDetails(slot); g_swallowClick = false; }
+					return;
+				}
+				if (Right(a)) return;
 				DropOnCard(s);
 				// a click-to-pick then click on the card ends in a click event too; a drag from a pocket does not
 				g_swallowClick = g_downCard == slot;
 			});
-			Command("detail_close", [](Args const&) { if (gsCurInterfacePanel == SM_PANEL) PressKey(SDLK_GRAVE); });
-			Command("prev_merc", [](Args const&) { PressKey(SDLK_SPACE); });
 			Command("att", [](Args const& a) { if (!a.empty()) InventoryAttachClick(std::atoi(a[0].c_str()), Right(a)); });
 			Command("unload", [](Args const&) { InventoryUnload(); });
 			Command("desc_done", [](Args const&) { ItemDescNativeClose(); });
@@ -511,10 +532,6 @@ namespace
 			Command("exit_load", [](Args const&) { ExitToggleLoad(); });
 			Command("exit_go", [](Args const&) { ExitGo(); });
 			Command("exit_cancel", [](Args const&) { ExitCancel(); });
-			Command("mute", [](Args const&) { NativeSMMuteClick(); });
-			Command("swap_hands", [](Args const&) { PressKey(SDLK_Q, SDL_KMOD_CTRL); });
-			Command("readout", [](Args const&) { OpenWeaponReadout(); });
-			Command("loadout", [](Args const&) { OpenLoadout(); });
 
 			lEndTurn = Str("tac.end_turn");
 			lTurnBased = Str("tac.turn_based");
@@ -547,6 +564,14 @@ namespace
 
 		void Describe(Fields& f) override
 		{
+			// "stance.crouch" is c_stance_crouch (enabled) and t_stance_crouch (its tooltip)
+			for (TacticalCommands::Command const& c : TacticalCommands::All())
+			{
+				std::string n = c.name;
+				std::replace(n.begin(), n.end(), '.', '_');
+				f.Field(("c_" + n).c_str(), cmdOn[size_t(c.id)]);
+				f.Field(("t_" + n).c_str(), cmdTitle[size_t(c.id)]);
+			}
 			f.Rows("cards", cards);
 			f.Rows("squads", squads);
 			f.Field("combat", combat); f.Field("our_turn", ourTurn); f.Field("can_end", canEnd);
@@ -617,6 +642,7 @@ namespace
 
 		void Refresh() override
 		{
+			ReadCommands();
 			ReadSquad();
 			ReadStatus();
 			ReadMessages();
@@ -629,25 +655,46 @@ namespace
 			if (logOpen) ReadLog();
 		}
 
+		/** The state of every command, as the buttons show it. */
+		void ReadCommands()
+		{
+			TacticalCommands::Context const ctx = ReadTacticalContext();
+			for (TacticalCommands::Command const& c : TacticalCommands::All())
+			{
+				TacticalCommands::Availability const a = TacticalCommands::Check(ctx, c.id);
+				size_t const i = size_t(c.id);
+				// the stance you are in is on, not off
+				cmdOn[i] = a.enabled || a.why == TacticalCommands::Why::Already;
+				std::string label = Str(c.label);
+				// "End turn" in a battle, "Start turn-based combat" outside one
+				if (c.id == TacticalCommands::Id::EndTurn && !ctx.combat) label = Str("tac.cmd.turn.start");
+				std::string t = label;
+				if (c.key[0] != '\0') t += " (" + TacticalCommands::KeyLabel(c.key) + ")";
+				if (!a.enabled && a.why != TacticalCommands::Why::None)
+					t += " â " + Str(std::string("tac.cmd.why.") + TacticalCommands::WhyName(a.why));
+				cmdTitle[i] = std::move(t);
+			}
+		}
+
 		void ReadSquad()
 		{
 			cards.clear();
 			combat = (gTacticalStatus.uiFlags & INCOMBAT) != 0;
 			ourTurn = !combat || gTacticalStatus.ubCurrentTeam == OUR_TEAM;
 			SOLDIERTYPE const* const sel = GetSelectedMan();
-			int const n = std::min<int>(NUM_TEAM_SLOTS, 12);
+			int const n = std::min<int>(SquadRosterSlots(), 12);
 			int filled = 0;
 			for (int i = 0; i < n; ++i)
 			{
 				CardRow r;
 				r.slot = i;
-				SOLDIERTYPE const* const s = GetPlayerFromInterfaceTeamSlot(UINT8(i));
+				SOLDIERTYPE const* const s = SquadRosterAt(UINT8(i));
 				if (s)
 				{
 					++filled;
 					r.empty = false;
 					r.name = S(s->name);
-					Pic const f = MakePic("sface-" + std::to_string(s->ubProfile != NO_PROFILE ? GetProfile(s->ubProfile).ubFaceIndex : 0), 2);
+					Pic const f = MakePic(SoldierFacePicture(*s), 2);
 					r.face = f.src; r.fw = f.w; r.fh = f.h;
 					r.hp = s->bLife;
 					r.hpw = std::clamp(int(s->bLife) * 100 / std::max<int>(1, s->bLifeMax), 0, 100);
@@ -665,6 +712,19 @@ namespace
 					r.drunk = GetDrunkLevel(s) != SOBER;
 					r.vehicle = (s->uiStatusFlags & SOLDIER_VEHICLE) != 0;
 					r.talking = s->face && s->face->fTalking;
+					r.enemy = s->bOppCnt > 0 && !(s->uiStatusFlags & (SOLDIER_DRIVER | SOLDIER_PASSENGER));
+					r.dying = s->fClosePanel || s->fClosePanelToDie;
+					r.skull = s->fDeadPanel;
+					// his vital figures: what the bars of the legacy panel said on hover
+					if (s->bLife != 0)
+					{
+						if (s->uiStatusFlags & SOLDIER_VEHICLE)
+							r.title = S(st_format_printf(TacticalStr[VEHICLE_VITAL_STATS_POPUPTEXT], s->bLife, s->bLifeMax, s->bBreath, s->bBreathMax));
+						else if (s->uiStatusFlags & SOLDIER_ROBOT)
+							r.title = S(st_format_printf(gzLateLocalizedString[STR_LATE_16], s->bLife, s->bLifeMax));
+						else
+							r.title = S(st_format_printf(TacticalStr[MERC_VITAL_STATS_POPUPTEXT], s->bLife, s->bLifeMax, s->bBreath, s->bBreathMax, GetMoraleString(*s)));
+					}
 					if (InventoryHand().item != NOTHING) r.drop = PlanDropOnCard(s).Ok() ? "ok" : "no";
 					// "|Stand/Walk", "|Crouch/Crouched Move", "Stand/|Run", "|Prone/Crawl": the stance is before the slash
 					r.sub = S(pTacticalPopupButtonStrings[Stance(*s) == "prone" ? 3 : Stance(*s) == "crouch" ? 1 : 0]);
@@ -1545,7 +1605,7 @@ namespace
 			int const slot = card < 0 ? IndexOf(hover, "tac.inv.slot[") : -1;
 			if (card >= 0)
 			{
-				SOLDIERTYPE* const s = card < NUM_TEAM_SLOTS ? GetPlayerFromInterfaceTeamSlot(UINT8(card)) : nullptr;
+				SOLDIERTYPE* const s = card < SquadRosterSlots() ? SquadRosterAt(UINT8(card)) : nullptr;
 				if (s)
 				{
 					Equipment::DropVerdict const v = PlanDropOnCard(s);
@@ -1619,14 +1679,10 @@ namespace
 	};
 	Hud g_hud;
 
-	/** The bar reaches up to the top of the legacy panel it hides: that panel is on the canvas, which the window scales and
-	 * letterboxes, so its top is a canvas point in output pixels (not the panel height times the UI scale). */
+	/** The squad bar is 156 dp tall; the world fills the whole output under it. */
 	float BarHeightPx()
 	{
-		int const panelH = gsCurInterfacePanel == SM_PANEL ? INV_INTERFACE_HEIGHT : TEAMPANEL_HEIGHT;
-		float const panelTop = CanvasToOutput(0, float(SCREEN_HEIGHT - panelH)).y;
-		float const legacy = std::ceil(float(Context()->GetDimensions().y) - panelTop);
-		return std::max(legacy, std::round(156 * DpScale()));
+		return std::round(156 * DpScale());
 	}
 
 	std::string Signature(TacticalViewModel& vm)
@@ -1637,7 +1693,6 @@ namespace
 	bool Wanted()
 	{
 		if (guiCurrentScreen != GAME_SCREEN) return false;
-		if (ResolveMode("tactical") != UiMode::Native) return false;
 		return true;
 	}
 
@@ -1698,6 +1753,16 @@ void TacticalHudUpdate()
 		g_hud.signature.clear();
 		SetRenderFlags(RENDER_FLAG_FULL);
 	}
+	// the world fills the output; the camera centres on what the bar leaves free (UILayout::setHudReserve)
+	{
+		int const scale = std::max<int>(1, g_ui.m_uiScale);
+		UINT16 const reserve = UINT16(std::ceil(BarHeightPx() / float(scale)));
+		if (g_ui.m_hudReserve != reserve)
+		{
+			g_ui.setHudReserve(reserve);
+			SetRenderFlags(RENDER_FLAG_FULL);
+		}
+	}
 	g_hud.vm->Refresh();
 	g_hud.vm->Place(g_hud.doc, BarHeightPx());
 	UpdateDrag();
@@ -1754,6 +1819,17 @@ void TacticalHudUpdate()
 				e->SetProperty(Rml::PropertyId::Bottom, Rml::Property(want + std::round(8 * DpScale()), Rml::Unit::PX));
 		}
 	}
+	// the pointer over a card: the path the merc would continue on is plotted while it is there
+	{
+		static int hoverCard = -1;
+		int const card = IndexOf(Context()->GetHoverElement(), "tac.squad[");
+		if (card != hoverCard)
+		{
+			if (hoverCard >= 0) SquadRosterCardHover(hoverCard, false);
+			if (card >= 0) SquadRosterCardHover(card, true);
+			hoverCard = card;
+		}
+	}
 	// what letting go of a held item would do, over a pocket or a card
 	UpdateDropChip(*g_hud.vm);
 	// the marker, path and chip over the world, and the pointer's shape
@@ -1766,6 +1842,12 @@ void TacticalHudUpdate()
 bool TacticalHudWantsMouse()
 {
 	if (!g_hud.active || !g_hud.doc) return false;
+	// the outer 2 output pixels are the world's: the view scrolls and the exit arrows show there (PointerRouter.h)
+	{
+		MousePosF const p = GetMousePosF();
+		if (PointerRouter::EdgesOf(p.x, p.y, float(SCREEN_WIDTH), float(SCREEN_HEIGHT), PointerRouter::EdgeStripCanvas(g_ui.m_uiScale)).Any())
+			return false;
+	}
 	Rml::Element* e = Context()->GetHoverElement();
 	for (; e; e = e->GetParentNode())
 	{

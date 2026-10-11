@@ -52,11 +52,11 @@ TakeVerdict InventoryCore::PlanTake(InvParty const& holder, int const slot, uint
 	return { TakeKind::Take, InvWhy::None };
 }
 
-PlaceVerdict InventoryCore::PlanPlace(InvParty const& target, int const slot, uint16_t const occupant,
+PlaceVerdict InventoryCore::PlanPlace(HeldStack const& hand, InvParty const& target, int const slot, uint16_t const occupant,
 	bool const hostSlot, bool const ctrl) const
 {
 	PlaceVerdict v;
-	if (hand_.Empty())
+	if (hand.Empty())
 	{
 		v.why = InvWhy::HandEmpty;
 		return v;
@@ -70,32 +70,32 @@ PlaceVerdict InventoryCore::PlanPlace(InvParty const& target, int const slot, ui
 
 	// Passing an item between two mercs: each conscious one needs 3 AP to start and pays 2 to finish.
 	// A hand that came off the ground or the map has no merc behind it and costs nothing.
-	bool const crossing = hand_.from.merc >= 0 && hand_.from.merc != target.merc;
+	bool const crossing = hand.from.merc >= 0 && hand.from.merc != target.merc;
 	if (crossing)
 	{
-		if (hand_.from.conscious && !hand_.from.canPay) { v.why = InvWhy::NoAP; return v; }
+		if (hand.from.conscious && !hand.from.canPay) { v.why = InvWhy::NoAP; return v; }
 		if (target.conscious && !target.canPay)         { v.why = InvWhy::NoAPTarget; return v; }
 	}
 
-	if (rules_.fetish && rules_.fetish(target, slot, hand_.item))
+	if (rules_.fetish && rules_.fetish(target, slot, hand.item))
 	{
 		v.why    = InvWhy::NailsVest;
 		v.fetish = true;
 		return v;
 	}
 
-	int const apFrom = crossing && hand_.from.conscious ? PASS_COST_AP : 0;
+	int const apFrom = crossing && hand.from.conscious ? PASS_COST_AP : 0;
 	int const apTo   = crossing && target.conscious     ? PASS_COST_AP : 0;
 
 	if (hostSlot && occupant != 0)
 	{
 		// dropping on a worn or held item attaches it, else merges it (after a question)
-		if (rules_.canAttach && rules_.canAttach(hand_.item, occupant))
+		if (rules_.canAttach && rules_.canAttach(hand.item, occupant))
 		{
 			v.kind = PlaceKind::Attach;
 			return v;
 		}
-		if (rules_.canMerge && rules_.canMerge(hand_.item, occupant))
+		if (rules_.canMerge && rules_.canMerge(hand.item, occupant))
 		{
 			v.kind   = PlaceKind::AskMerge;
 			v.apFrom = apFrom;
@@ -111,7 +111,7 @@ PlaceVerdict InventoryCore::PlanPlace(InvParty const& target, int const slot, ui
 		return v;
 	}
 
-	if (rules_.fits && !rules_.fits(target, slot, hand_.item))
+	if (rules_.fits && !rules_.fits(target, slot, hand.item))
 	{
 		v.why = InvWhy::DoesNotFit;
 		return v;
@@ -132,9 +132,9 @@ ActivateKind InventoryCore::PlanActivate(uint16_t const item, int const count, i
 	return ActivateKind::Describe;
 }
 
-InvWhy InventoryCore::PlanApply(InvParty const& target) const
+InvWhy InventoryCore::PlanApply(HeldStack const& hand, InvParty const& target) const
 {
-	if (hand_.Empty()) return InvWhy::HandEmpty;
+	if (hand.Empty()) return InvWhy::HandEmpty;
 	if (!target.conscious) return InvWhy::Unconscious;
 	return InvWhy::None;
 }

@@ -586,7 +586,6 @@ static void KillTacticalPlacementGUI(void)
 	//Leave the overhead map.
 	KillOverheadMap();
 	//Recreate the tactical panel.
-	gRadarRegion.Enable();
 	SetCurrentInterfacePanel( TEAM_PANEL );
 	//Initialize the rest of the map (AI, enemies, civs, etc.)
 

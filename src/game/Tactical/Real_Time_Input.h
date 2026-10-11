@@ -10,6 +10,6 @@ extern BOOLEAN gfRTClickLeftHoldIntercepted;
 
 void GetRTMouseButtonInput(UIEventKind* puiNewEvent);
 void GetRTMousePositionInput(UIEventKind* puiNewEvent);
-void TacticalViewPortTouchCallbackRT(MOUSE_REGION* region, UINT32 reason);
+void TacticalViewPortTouchCallbackRT(UINT32 reason);
 
 #endif

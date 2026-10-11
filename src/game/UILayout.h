@@ -231,6 +231,10 @@ public:
 
 	UINT16                m_VIEWPORT_WINDOW_END_Y;
 
+	/** The height, in UI pixels, of what the native HUD's bar covers at the bottom of the world (issue #319). The world
+	 * fills the whole screen under it; the camera centres on the part above it. 0 where there is no HUD. */
+	UINT16                m_hudReserve = 0;
+
 	SGPRect               m_worldClippingRect;                            /**< In WORLD pixels. */
 
 	// Layers (see VideoLayout::LayerLayout). Not layered: the world is drawn into the same
@@ -313,10 +317,15 @@ public:
 
 	/** Convert a position in UI pixels (the mouse, regions, everything UI code deals in) to world pixels (tile
 	 * rendering and picking), and back. Identity without layers. */
+	/** The native HUD's bar covers @a px UI pixels at the bottom: the camera centre moves up by half of it. */
+	void setHudReserve(UINT16 px);
 	LayerPoint uiToWorld(INT32 x, INT32 y) const;
 	LayerPoint worldToUi(INT32 x, INT32 y) const;
 	INT32      uiToWorld(INT32 v) const;
 	INT32      worldToUi(INT32 v) const;
+	/** A position in UI pixels with a fraction (the window system reports one) in world pixels: the exact
+	 * VideoLayout::UiToWorldQ, so that the pointer picks at output resolution. */
+	LayerPoint uiToWorldF(float x, float y) const;
 
 	/** Position of a w x h rectangle attached to the given anchor of a screen_w x screen_h screen, shifted by (dx, dy).
 	 * Pure function, no dependency on game state. */

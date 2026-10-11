@@ -181,23 +181,17 @@ public:
 
 	void SetRules(InvRelations rules) { rules_ = std::move(rules); }
 
-	// the hand
-	HeldStack const& Hand() const { return hand_; }
-	bool Holding() const          { return !hand_.Empty(); }
-	/** Whatever the adapter put in the hand (or the map's cursor): the one place that says what it is. */
-	void SetHand(HeldStack const& s) { hand_ = s; }
-	void ClearHand()                 { hand_ = HeldStack{}; }
-
-	// the verdicts. They look; they never change the hand.
+	// the verdicts. They look; they never change anything. The hand is an input: the adapter reads it off the item
+	// pointer when it asks, the core keeps no copy of it.
 	/** Picking up from @a slot of @a holder, which holds @a item. */
 	TakeVerdict  PlanTake(InvParty const& holder, int slot, uint16_t item, bool ctrl) const;
 	/** Putting the hand down into @a slot of @a target, which holds @a occupant (0 when empty).
 	 *  @a hostSlot: the pocket is one that takes attachments (hands, helmet, vest, legs). */
-	PlaceVerdict PlanPlace(InvParty const& target, int slot, uint16_t occupant, bool hostSlot, bool ctrl) const;
+	PlaceVerdict PlanPlace(HeldStack const& hand, InvParty const& target, int slot, uint16_t occupant, bool hostSlot, bool ctrl) const;
 	/** The right click on a pocket: a stack opens the popup, everything else its description. */
 	ActivateKind PlanActivate(uint16_t item, int count, int slotLimit, bool popupAllowed) const;
 	/** Dropping the hand on a merc's portrait: camo, a canteen, a drug. */
-	InvWhy       PlanApply(InvParty const& target) const;
+	InvWhy       PlanApply(HeldStack const& hand, InvParty const& target) const;
 	/** The sheet's attachment position: attach the hand, or take the attachment out. */
 	SheetAttachVerdict PlanSheetAttach(SheetAttachRequest const& r) const;
 	/** The sheet's unload button. */
@@ -212,7 +206,6 @@ public:
 
 private:
 	InvRelations rules_;
-	HeldStack    hand_;
 	Question     pending_;
 };
 

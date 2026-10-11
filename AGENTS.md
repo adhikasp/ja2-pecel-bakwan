@@ -64,7 +64,7 @@ For a UI change, this default is enough — you do not need the full matrix in e
 
 ```bash
 ctest -L resolution --output-on-failure       # the default: 1080p only
-ctest -R resolution_ --output-on-failure      # full matrix: 640x480, 1280x720, 1920x1080, 2560x1080, 3440x1440
+ctest -R resolution_ --output-on-failure      # full matrix: 1280x720, 1920x1080, 2560x1080, 3440x1440
 ```
 
 Ordinary UI work — labels, wiring, click handling, a screen's own logic — is not a rendering change and does not need the full sweep. Regenerate goldens with `JA2_UPDATE_GOLDEN=1` (or `check_resolution.py --update`); see `tests/e2e/golden/README.md`.
@@ -215,7 +215,7 @@ A PR that changes anything the player can see (rendering, layout, UI, screens, v
 
 1. **Take them from the real game.** Drive the build with `python tools/ja2ctl.py` (or a `--show` window) and use `ja2ctl shot`.
 2. **Look at every one before opening the PR.** Open each PNG and check it. If a screen looks wrong, fix it; don't explain it away.
-3. **Cover the affected screens at 640x480 and at least one widescreen size.** For example 1920x1080, plus 2560x1080 or 3440x1440 when the layout depends on width. When a PR adds or regenerates golden images, include the widescreen goldens it changes.
+3. **Cover the affected screens at 1280x720 (the smallest output the game runs at) and at least one widescreen size.** For example 1920x1080, plus 2560x1080 or 3440x1440 when the layout depends on width. When a PR adds or regenerates golden images, include the widescreen goldens it changes.
 4. **Host them on the `pr-screenshots` branch.** It is an orphan branch that only holds images, so they never enter `master`'s history:
    ```bash
    git fetch origin pr-screenshots || true

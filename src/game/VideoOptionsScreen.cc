@@ -95,7 +95,6 @@ static void TearDownScreen(ScreenID const screen)
 		case GAME_SCREEN:
 			RemoveMouseRegionForPauseOfClock(); // it moves with the layout
 			ResetInterfaceAndUI();
-			ShutdownCurrentPanel();
 			gRadarRegion.Disable();
 			break;
 
@@ -175,7 +174,6 @@ bool ChangeVideoSettings(VideoDisplaySettings const& want, VideoScaleQuality con
 	// The game's own buffers follow. Contents are lost: everything is drawn again.
 	ResizeGameVideoObjects();
 	ResizeZBuffer();
-	ResizeTopMessage();
 	InitializeBackgroundRects(); // also the dirty clipping rectangle
 	InvalidateBackgroundRects();
 	SetFontDestBuffer(FRAME_BUFFER, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -411,7 +409,7 @@ static void EnterVideoOptions(void)
 	gPendingQuality = VideoGetScaleQuality();
 	gPendingFPS = VideoGetTargetFPS();
 
-	gResolutions = { {0, 0}, {640, 480}, {800, 600}, {1024, 768}, {1280, 720}, {1366, 768}, {1600, 900},
+	gResolutions = { {0, 0}, {1280, 720}, {1366, 768}, {1600, 900},
 			{1920, 1080}, {2560, 1080}, {2560, 1440}, {3440, 1440}, {3840, 2160} };
 	bool known = false;
 	for (auto const& r : gResolutions) if (r.w == gPending.resX && r.h == gPending.resY) known = true;

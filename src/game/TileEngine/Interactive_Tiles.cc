@@ -37,6 +37,7 @@
 #include "GameInstance.h"
 #include "ContentManager.h"
 #include "ShippingDestinationModel.h"
+#include "WorldPointer.h"
 
 #define MAX_INTTILE_STACK 10
 
@@ -318,8 +319,7 @@ void LogMouseOverInteractiveTile(INT16 const sGridNo)
 
 	// Set mouse stuff
 	// The rectangles of the nodes are in world pixels, the cursor in UI pixels
-	auto const uiCursorPosition{ GetCursorPos() };
-	LayerPoint const cursor = g_ui.uiToWorld(uiCursorPosition.iX, uiCursorPosition.iY);
+	LayerPoint const cursor = WorldPointer::World();
 
 	for (LEVELNODE const* n = gpWorldLevelData[sGridNo].pStructHead; n; n = n->pNext)
 	{

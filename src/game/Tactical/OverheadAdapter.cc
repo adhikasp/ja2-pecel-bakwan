@@ -244,7 +244,8 @@ namespace
 
 bool NativeOverheadWanted()
 {
-	return NativeUI::ResolveMode("tactical") == NativeUI::UiMode::Native;
+	// the native HUD is the only tactical UI (the editor, which has none, keeps the legacy overhead)
+	return NativeUI::TacticalHudActive();
 }
 
 bool NativeOverheadOpen() { return g_open; }

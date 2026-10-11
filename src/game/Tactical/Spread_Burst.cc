@@ -130,68 +130,6 @@ void AIPickBurstLocations( SOLDIERTYPE *pSoldier, INT8 bTargets, SOLDIERTYPE *pT
 }
 
 
-void RenderAccumulatedBurstLocations( )
-{
-	INT32 cnt;
-	INT16 sGridNo;
-
-	if ( !gfBeginBurstSpreadTracking )
-	{
-		return;
-	}
-
-	if ( gbNumBurstLocations == 0 )
-	{
-		return;
-	}
-
-	// Loop through each location...
-
-	// If on screen, render
-
-	// Check if it already exists!
-	for ( cnt = 0; cnt < gbNumBurstLocations; cnt++ )
-	{
-		sGridNo = gsBurstLocations[ cnt ].sGridNo;
-
-		if ( GridNoOnScreen( sGridNo ) )
-		{
-			FLOAT dOffsetX, dOffsetY;
-			FLOAT dTempX_S, dTempY_S;
-			INT16 sXPos, sYPos;
-
-			dOffsetX = (FLOAT)( gsBurstLocations[ cnt ].sX - gsRenderCenterX );
-			dOffsetY = (FLOAT)( gsBurstLocations[ cnt ].sY - gsRenderCenterY );
-
-			// Calculate guy's position
-			FloatFromCellToScreenCoordinates( dOffsetX, dOffsetY, &dTempX_S, &dTempY_S );
-
-			sXPos = ( g_ui.m_tacticalMapCenterX ) + (INT16)dTempX_S;
-			sYPos = ( g_ui.m_tacticalMapCenterY ) + (INT16)dTempY_S - gpWorldLevelData[ sGridNo ].sHeight;
-
-			// Adjust for offset position on screen
-			sXPos -= gsRenderWorldOffsetX;
-			sYPos -= gsRenderWorldOffsetY;
-
-			// Adjust for render height
-			sYPos += gsRenderHeight;
-
-			//sScreenY -= gpWorldLevelData[ sGridNo ].sHeight;
-
-			// Center circle!
-			//sXPos -= 10;
-			//sYPos -= 10;
-
-			sXPos = g_ui.worldToUi(sXPos);
-			sYPos = g_ui.worldToUi(sYPos);
-			RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
-
-			BltVideoObject(FRAME_BUFFER, guiBURSTACCUM, 1, sXPos, sYPos);
-		}
-	}
-}
-
-
 std::vector<INT16> AccumulatedBurstGridNos()
 {
 	std::vector<INT16> out;

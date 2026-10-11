@@ -11,7 +11,7 @@
 #include "Message.h"
 #include "World_Items.h"
 #include <string_theory/format>
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "Items.h"
 #include "Overhead.h"
 #include "Points.h"
@@ -65,8 +65,10 @@ Equipment::InvParty InventoryPartyOf(SOLDIERTYPE const* const s)
 	return p;
 }
 
-void SyncInventoryHand()
+Equipment::HeldStack InventoryHand()
 {
+	// the item pointer is the hand: some legacy screens (the map, the shopkeeper) write it directly, so it is read
+	// when it is asked for and no copy of it is kept
 	Equipment::HeldStack h;
 	if (gpItemPointer && gpItemPointer->usItem != NOTHING)
 	{
@@ -75,14 +77,7 @@ void SyncInventoryHand()
 		h.from     = InventoryPartyOf(gpItemPointerSoldier);
 		h.fromSlot = gbItemPointerSrcSlot;
 	}
-	TacticalInventory().SetHand(h);
-}
-
-Equipment::HeldStack const& InventoryHand()
-{
-	// some legacy screens still write the pointer directly (the map, the shopkeeper): re-read it
-	SyncInventoryHand();
-	return TacticalInventory().Hand();
+	return h;
 }
 
 InventoryOutcome const& LastInventoryOutcome() { return g_lastOutcome; }
@@ -223,8 +218,7 @@ bool InventoryDetach(SOLDIERTYPE& s, int const host, int const index, int const 
 Equipment::DropVerdict PlanDropOnCard(SOLDIERTYPE const* const target)
 {
 	Equipment::DropVerdict none;
-	SyncInventoryHand();
-	if (!target || !gpItemPointer || !gpItemPointerSoldier || TacticalInventory().Hand().Empty())
+	if (!target || !gpItemPointer || !gpItemPointerSoldier || InventoryHand().Empty())
 	{
 		none.why = Equipment::InvWhy::HandEmpty;
 		return none;
@@ -282,7 +276,6 @@ InventoryOutcome DropOnCard(SOLDIERTYPE* const target)
 		done = PassHeldItemTo(target) != FALSE;
 		if (done) { gfDontChargeAPsToPickup = FALSE; EndItemPointer(); }
 	}
-	SyncInventoryHand();
 	out.ok     = done;
 	out.action = done ? move.action : "refused";
 	out.why    = done ? "" : "no room";

@@ -29,7 +29,7 @@
 #include "English.h"
 #include "MapScreen.h"
 #include "Radar_Screen.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "WordWrap.h"
 #include "Button_System.h"
 #include "ScreenIDs.h"

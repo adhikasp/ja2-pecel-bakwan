@@ -59,7 +59,7 @@ ja2.waitScreen("GAME_SCREEN", 600000)
 campaign.dismissHelp()
 ja2.debug("clearenemies")
 ja2.waitIdle()
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 campaign.dismissHelp()
 dump("m10_default")

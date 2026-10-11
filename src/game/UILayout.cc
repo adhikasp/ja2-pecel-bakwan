@@ -1,7 +1,10 @@
 #include "UILayout.h"
 
+#include <cmath>
+
 #include "ContentManager.h"
 #include "GameInstance.h"
+#include "GameMode.h"
 #include "GamePolicy.h"
 #include "JAScreens.h"
 #include "MapScreen.h"
@@ -63,6 +66,25 @@ LayerPoint UILayout::uiToWorld(INT32 const x, INT32 const y) const
 LayerPoint UILayout::worldToUi(INT32 const x, INT32 const y) const
 {
 	return { worldToUi(x), worldToUi(y) };
+}
+
+
+void UILayout::setHudReserve(UINT16 const px)
+{
+	if (px == m_hudReserve) return;
+	m_hudReserve = px;
+	recalculatePositions();
+}
+
+
+LayerPoint UILayout::uiToWorldF(float const x, float const y) const
+{
+	if (!m_layered || m_worldZoomQ <= 0 || m_uiScale == 0)
+	{
+		return { static_cast<INT32>(std::floor(x)), static_cast<INT32>(std::floor(y)) };
+	}
+	float const k = static_cast<float>(m_uiScale * VideoLayout::WORLD_ZOOM_STEPS) / static_cast<float>(m_worldZoomQ);
+	return { static_cast<INT32>(std::floor(x * k)), static_cast<INT32>(std::floor(y * k)) };
 }
 
 
@@ -313,25 +335,29 @@ void UILayout::recalculatePositions()
 	m_moneyButtonLoc.set(startX + 343, startInvY + 11);
 	m_MoneyButtonLocMap.set(m_mapLeftX + 174, m_mapTopY + 115);
 
+	// The world fills the whole screen: the native HUD is drawn over it (issue #319). Only the editor keeps its
+	// taskbar below the world.
+	UINT16 const below = GameMode::getInstance()->isEditorMode() ? EDITOR_TASKBAR_HEIGHT : 0;
 	m_VIEWPORT_START_X            = 0;
 	m_VIEWPORT_START_Y            = 0;
 	m_VIEWPORT_WINDOW_START_Y     = 0;
 	m_VIEWPORT_END_X              = m_screenWidth;
-	m_VIEWPORT_END_Y              = m_screenHeight - 120;
-	m_VIEWPORT_WINDOW_END_Y       = m_screenHeight - 120;
+	m_VIEWPORT_END_Y              = m_screenHeight - below;
+	m_VIEWPORT_WINDOW_END_Y       = m_screenHeight - below;
+	// "Centre" is the centre of the part the HUD does not cover, so that locating a merc puts him in the middle of
+	// what the player can see.
+	UINT16 const visibleHeight    = m_VIEWPORT_END_Y - m_VIEWPORT_START_Y - std::min<UINT16>(m_hudReserve, m_VIEWPORT_END_Y / 2);
 	if (m_layered)
 	{
-		// The world fills its whole buffer, under the HUD. "Centre" is the centre of the part the HUD does
-		// not cover, so that locating a merc puts him in the middle of what the player can see.
 		m_tacticalMapCenterX      = m_worldWidth / 2;
-		m_tacticalMapCenterY      = uiToWorld(m_VIEWPORT_END_Y - m_VIEWPORT_START_Y) / 2;
+		m_tacticalMapCenterY      = uiToWorld(visibleHeight) / 2;
 		m_worldClippingRect.set(0, 0, m_worldWidth, m_worldHeight);
 	}
 	else
 	{
 		m_tacticalMapCenterX      = (m_VIEWPORT_END_X - m_VIEWPORT_START_X) / 2;
-		m_tacticalMapCenterY      = (m_VIEWPORT_END_Y - m_VIEWPORT_START_Y) / 2;
-		m_worldClippingRect.set(0, 0, m_screenWidth, m_screenHeight - 120);
+		m_tacticalMapCenterY      = visibleHeight / 2;
+		m_worldClippingRect.set(0, 0, m_screenWidth, m_screenHeight - below);
 	}
 
 	m_contractPosition.set(       m_mapLeftX + 120, m_mapTopY +  50);

@@ -31,6 +31,7 @@
 #include "ContentManager.h"
 #include "GameInstance.h"
 #include "policy/GamePolicy.h"
+#include "WorldPointer.h"
 
 static BOOLEAN gfStartLookingForRubberBanding = FALSE;
 static UINT16  gusRubberBandX                 = 0;
@@ -64,13 +65,13 @@ static void QueryRTMiddleButton(UIEventKind* const puiNewEvent)
 	static BOOLEAN fDoubleClickIntercepted = FALSE;
 	static BOOLEAN fValidDoubleClickPossible = FALSE;
 
-	if ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )
+	if ( WorldPointer::In() )
 	{
 		const GridNo usMapPos = guiCurrentCursorGridNo;
 		if (usMapPos == NOWHERE) return;
 
 		// MIDDLE MOUSE BUTTON
-		if ( gViewportRegion.ButtonState & MSYS_MIDDLE_BUTTON )
+		if ( (WorldPointer::Buttons() & MSYS_MIDDLE_BUTTON) )
 		{
 			if ( !fMiddleButtonDown )
 			{
@@ -130,14 +131,14 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 	SOLDIERTYPE* const sel = GetSelectedMan();
 
 	// LEFT MOUSE BUTTON
-	if ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )
+	if ( WorldPointer::In() )
 	{
 		if (sel != NULL && sel->pTempObject != NULL) return;
 
 		const GridNo usMapPos = guiCurrentCursorGridNo;
-		if (usMapPos == NOWHERE && !(gfScrolledToBottom && gusMouseYPos >= SCREEN_HEIGHT - NO_PX_SHOW_EXIT_CURS)) return;
+		if (usMapPos == NOWHERE && !(gfScrolledToBottom && WorldPointer::Edges().bottom)) return;
 
-		if ( gViewportRegion.ButtonState & MSYS_LEFT_BUTTON )
+		if ( (WorldPointer::Buttons() & MSYS_LEFT_BUTTON) )
 		{
 			if ( !fLeftButtonDown )
 			{
@@ -795,13 +796,13 @@ static void QueryRTRightButton(UIEventKind* const puiNewEvent)
 	static BOOLEAN fDoubleClickIntercepted = FALSE;
 	static BOOLEAN fValidDoubleClickPossible = FALSE;
 
-	if ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )
+	if ( WorldPointer::In() )
 	{
 		const GridNo usMapPos = guiCurrentCursorGridNo;
 		if (usMapPos == NOWHERE) return;
 
 		// RIGHT MOUSE BUTTON
-		if ( gViewportRegion.ButtonState & MSYS_RIGHT_BUTTON )
+		if ( (WorldPointer::Buttons() & MSYS_RIGHT_BUTTON) )
 		{
 			if ( !fRightButtonDown )
 			{
@@ -1340,7 +1341,7 @@ void GetRTMousePositionInput(UIEventKind* const puiNewEvent)
 	usOldMapPos = usMapPos;
 }
 
-void TacticalViewPortTouchCallbackRT(MOUSE_REGION* region, UINT32 reason) {
+void TacticalViewPortTouchCallbackRT(UINT32 reason) {
 	static GridNo gLastUpGridNo = NOWHERE;
 	static SOLDIERTYPE* gLastDownUIFullTarget = NULL;
 

@@ -37,7 +37,7 @@
 #include "IMP_Portraits.h"
 #include "Interface_Dialogue.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "Interface_Utils.h"
 #include "Interface.h"
 #include "JAScreens.h"
@@ -1072,8 +1072,7 @@ void LoadSavedGame(const ST::string &saveName)
 
 	// If we are in tactical
 	if (guiScreenToGotoAfterLoadingSavedGame == GAME_SCREEN)
-	{ //Initialize the current panel
-		InitializeCurrentPanel();
+	{
 		SOLDIERTYPE* const sel = GetSelectedMan();
 		if (sel) SelectSoldier(sel, SELSOLDIER_FORCE_RESELECT);
 	}
@@ -1995,8 +1994,7 @@ static void LoadGeneralInfo(HWFILE const f, UINT32 const savegame_version)
 	UINT8 sm_current_merc;
 	EXTR_U8(   d, sm_current_merc)
 	gpSMCurrentMerc = sm_current_merc != 255 ? &GetMan(sm_current_merc) : 0;
-	// Set the interface panel to the team panel
-	ShutdownCurrentPanel();
+	// the view the HUD shows follows what was saved
 	gsCurInterfacePanel = static_cast<InterfacePanelKind>(cur_interface_panel); // XXX TODO001A unchecked conversion
 	EXTR_SKIP( d, 1)
 	EXTR_BOOL( d, fDisableDueToBattleRoster)

@@ -232,8 +232,8 @@ extern BOOLEAN gfUIForceReExamineCursorData;
 void GetKeyboardInput(UIEventKind* puiNewEvent);
 void GetPolledKeyboardInput(UIEventKind* puiNewEvent);
 
-void TacticalViewPortMovementCallback(MOUSE_REGION* region, UINT32 reason);
-void TacticalViewPortTouchCallback(MOUSE_REGION* region, UINT32 reason);
+void TacticalViewPortMovementCallback(INT16 x, INT16 y, UINT32 reason);
+void TacticalViewPortTouchCallback(UINT32 reason);
 void ResetCurrentCursorTarget();
 
 void GetTBMouseButtonInput(UIEventKind* puiNewEvent);

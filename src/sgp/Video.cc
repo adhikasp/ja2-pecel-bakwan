@@ -231,8 +231,21 @@ static void UpdatePresentation(bool force);
 static void CreateLayerTextures();
 static void CreateTextures();
 
-void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targetFPS, VideoDisplaySettings const& settings)
+/** What the user asked for, at least the minimum output (VideoLayout::MIN_OUTPUT_WIDTH x MIN_OUTPUT_HEIGHT). */
+static VideoDisplaySettings AtLeastMinimum(VideoDisplaySettings s)
 {
+	if (s.resX > 0 && s.resY > 0)
+	{
+		s.resX = VideoLayout::AtLeastMinOutputWidth(s.resX);
+		s.resY = VideoLayout::AtLeastMinOutputHeight(s.resY);
+	}
+	return s;
+}
+
+
+void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targetFPS, VideoDisplaySettings const& requested)
+{
+	VideoDisplaySettings const settings = AtLeastMinimum(requested);
 	VideoSetTargetFPS(targetFPS);
 	CurrentSettings = settings;
 	Layered = g_ui.isLayered();
@@ -265,7 +278,7 @@ void InitializeVideoManager(const VideoScaleQuality quality, const int32_t targe
 		throw std::runtime_error(std::string("Failed to create the game window: ") + SDL_GetError());
 	}
 	SDL_SetWindowMinimumSize(g_game_window,
-		toPoints(VideoLayout::MIN_LOGICAL_WIDTH), toPoints(VideoLayout::MIN_LOGICAL_HEIGHT));
+		toPoints(VideoLayout::MIN_OUTPUT_WIDTH), toPoints(VideoLayout::MIN_OUTPUT_HEIGHT));
 
 	if (settings.windowMode == WindowMode::Fullscreen && settings.resX > 0 && settings.resY > 0)
 	{
@@ -436,8 +449,9 @@ static SDL_FRect CanvasPresentationRectPoints()
 }
 
 
-VideoLayout::LayerLayout VideoApplyWindow(VideoDisplaySettings const& want, VideoScaleQuality const quality, bool const resizeWindow)
+VideoLayout::LayerLayout VideoApplyWindow(VideoDisplaySettings const& requested, VideoScaleQuality const quality, bool const resizeWindow)
 {
+	VideoDisplaySettings const want = AtLeastMinimum(requested);
 	ScaleQuality = quality;
 	CurrentSettings = want;
 

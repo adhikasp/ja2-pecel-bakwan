@@ -13,6 +13,7 @@
 #include "EditorMercs.h"
 #include "EditorBuildings.h"
 #include "Debug.h"
+#include "WorldPointer.h"
 
 #include <string_theory/string>
 
@@ -147,7 +148,7 @@ void UpdateCursorAreas()
 	//Determine if the mouse is currently in the world.
 	INT16 sGridX;
 	INT16 sGridY;
-	if( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA && GetMouseXY( &sGridX, &sGridY ) )
+	if( WorldPointer::In() && GetMouseXY( &sGridX, &sGridY ) )
 	{
 		iMapIndex = MAPROWCOLTOPOS( sGridY, sGridX );
 		if( gpBuildingLayoutList )

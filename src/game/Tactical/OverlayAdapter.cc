@@ -185,3 +185,20 @@ void UpdateOverlayFrame()
 
 	f.paused = gfPauseDueToPlayerGamePause && gfGamePaused;
 }
+
+
+void ShowRadioLocator(SOLDIERTYPE* const s, UINT8 const ubLocatorSpeed)
+{
+	//LocateSoldier(s, FALSE); // IC - this is already being done outside of this function :)
+	s->fFlashLocator = TRUE;
+	s->sLocatorFrame = 0;
+
+	s->ubNumLocateCycles = ubLocatorSpeed == SHOW_LOCATOR_NORMAL ? 5 : 3;
+}
+
+
+void EndRadioLocator(SOLDIERTYPE* const s)
+{
+	s->fFlashLocator = FALSE;
+	s->fShowLocator = FALSE;
+}

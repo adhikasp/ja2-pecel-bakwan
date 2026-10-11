@@ -1,8 +1,6 @@
 -- Widescreen menus (Phase 3, treatment B): main menu, Preferences, game
 -- settings, credits, a message box, a loading screen, the save/load screens,
 -- and the pre-battle panel and auto resolve on the strategic map.
--- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
-ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
@@ -31,7 +29,7 @@ ja2.key("ESC")
 ja2.waitScreen("MAINMENU_SCREEN")
 
 campaign.startWithMerc("Barry")
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 campaign.dismissHelp()
 

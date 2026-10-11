@@ -25,7 +25,8 @@
 #include "Overhead.h"
 #include "Cursors.h"
 #include "SysUtil.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "ShopMercPanel.h"
 #include "Radar_Screen.h"
 #include "Interface_Items.h"
 #include "Interface_Utils.h"
@@ -3752,7 +3753,7 @@ void SetSkiCursor( UINT16 usCursor )
 
 		gpItemPointer = NULL;
 
-		DisableTacticalTeamPanelButtons( FALSE );
+		LockTacticalButtons( FALSE );
 
 		//EnableSMPanelButtons( TRUE, FALSE );
 		//CheckForDisabledForGiveItem( );

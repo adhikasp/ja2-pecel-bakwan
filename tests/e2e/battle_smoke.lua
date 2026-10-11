@@ -14,13 +14,6 @@ ja2.waitScreen("MAINMENU_SCREEN")
 campaign.startWithTeam({ "Barry", "Grunty", "Grizzly" })
 ja2.expect(ja2.screen() == "GAME_SCREEN", "the team landed in tactical, got " .. ja2.screen())
 
-if not ja2.nativeUi().running or ja2.screenSize().w < 1280 then
-	-- below 1280x720 the native HUD cannot run; tactical_parity.lua covers the fallback
-	ja2.expect(not ja2.exists{ id = "tac.bar" }, "below 1280x720 the legacy tactical HUD runs")
-	shots.take("legacy.png", "small")
-	return
-end
-
 -- Deck out the team: a G11, spectra armour, 100 health and top marksmanship, plus a
 -- medkit each. Ten administrators with pistols stand around the team; the team faces
 -- north and the smoke test takes the fight all the way to a win.

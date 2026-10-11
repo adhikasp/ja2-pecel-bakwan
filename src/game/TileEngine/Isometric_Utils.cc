@@ -11,6 +11,7 @@
 #include "Random.h"
 #include "PathAI.h"
 #include "UILayout.h"
+#include "WorldPointer.h"
 
 
 // GLOBALS
@@ -160,19 +161,27 @@ BOOLEAN GetMouseXY( INT16 *psMouseX, INT16 *psMouseY )
 BOOLEAN GetMouseWorldCoords( INT16 *psMouseX, INT16 *psMouseY )
 {
 	// Convert mouse screen coords into offset from center
-	if ( ! ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA ) )
+	if ( ! ( WorldPointer::In() ) )
 	{
 		*psMouseX = 0;
 		*psMouseY = 0;
 		return( FALSE );
 	}
 
-	auto const cursorPosition{ GetCursorPos() };
-	return GetWorldCoordsAtScreenPos(cursorPosition.iX, cursorPosition.iY, psMouseX, psMouseY);
+	// the pointer picks at output resolution: its position in world pixels (WorldPointer.h)
+	LayerPoint const world = WorldPointer::World();
+	return GetWorldCoordsAtWorldPos(world, psMouseX, psMouseY);
 }
 
 
 BOOLEAN GetWorldCoordsAtScreenPos(INT16 const sScreenX, INT16 const sScreenY, INT16 *psWorldX, INT16 *psWorldY)
+{
+	// The position is in UI pixels (like the mouse); the world is in world pixels
+	return GetWorldCoordsAtWorldPos(g_ui.uiToWorld(sScreenX, sScreenY), psWorldX, psWorldY);
+}
+
+
+BOOLEAN GetWorldCoordsAtWorldPos(LayerPoint const world, INT16 *psWorldX, INT16 *psWorldY)
 {
 	INT16 * const psMouseX = psWorldX;
 	INT16 * const psMouseY = psWorldY;
@@ -180,8 +189,6 @@ BOOLEAN GetWorldCoordsAtScreenPos(INT16 const sScreenX, INT16 const sScreenY, IN
 	INT16 sTempPosX_W, sTempPosY_W;
 	INT16 sStartPointX_W, sStartPointY_W;
 
-	// The position is in UI pixels (like the mouse); the world is in world pixels
-	LayerPoint const world = g_ui.uiToWorld(sScreenX, sScreenY);
 	sOffsetX = world.x - ( g_ui.m_tacticalMapCenterX ); // + gsRenderWorldOffsetX;
 	sOffsetY = world.y - ( g_ui.m_tacticalMapCenterY ) + 10;// + gsRenderWorldOffsetY;
 

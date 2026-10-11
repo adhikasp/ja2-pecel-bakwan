@@ -258,7 +258,7 @@ MSG_BOX_SCREEN); a message box is open: "Surrender? YES NO"`.
 Screens and overlays redesigned for [native-modern-game.md](plan/native-modern-game.md) run on RmlUi over the legacy
 game (`src/game/NativeUI/`). Which UI a screen uses is its `ui_mode`, resolved when the screen is entered:
 `ja2.setUiMode(key)` override > `"ui_mode"` in `ja2.json` > the default. Keys: `credits`, `mainmenu`, `options`, `saveload`,
-`newgame`, `loadscreen`, `mapscreen`, `autoresolve`, `shopkeeper`, `tactical` (default native), `msgbox`, `tooltip`, `toasts`, `cursor` (default legacy). The native UI needs a 1280x720 output: below that everything is legacy.
+`newgame`, `loadscreen`, `mapscreen`, `autoresolve`, `shopkeeper`, `msgbox`, `tooltip`, `toasts`, `cursor` (default legacy). The smallest output the game runs at is 1280x720 (a smaller resolution starts at it), so the native UI always has room.
 
 Headless (and in every automation session) the native layer is drawn in software and blended into the frame, so
 screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas pixels as everything else.

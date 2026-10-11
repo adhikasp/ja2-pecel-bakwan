@@ -184,12 +184,12 @@ Things worth knowing:
   makes a test flaky, teach `NothingInFlight()` about it rather than adding
   `ja2.wait()`.
 - **Pixels** (`ja2.pixelIs`, `ja2.waitPixel`) still work, but depend on the
-  resolution; the tests run at 640x480.
+  resolution; the tests run at 1280x720, the smallest output the game runs at (a smaller `--res` starts at it).
 
 ## Resolution matrix
 
 `ctest -L resolution` is the default sweep: every tour at 1920x1080. The other
-resolutions (640x480, 1280x720, 2560x1080, 3440x1440) are opt-in with
+resolutions (1280x720, 2560x1080, 3440x1440) are opt-in with
 `ctest -R resolution_` (or `ctest -L matrix`). Reserve the full matrix for
 changes that alter how the game renders (a new menu, a texture/asset, the
 renderer itself). Scripts take screenshots with

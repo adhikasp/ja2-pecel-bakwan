@@ -38,7 +38,7 @@
 #include "History.h"
 #include "Interactive_Tiles.h"
 #include "Interface_Control.h"
-#include "Interface_Panels.h"
+#include "OverlayAdapter.h"
 #include "Isometric_Utils.h"
 #include "ItemModel.h"
 #include "Items.h"
@@ -4265,26 +4265,6 @@ static BOOLEAN NPCOpenThing(SOLDIERTYPE* pSoldier, BOOLEAN fDoor)
 
 	return( TRUE );
 
-}
-
-
-static void TextRegionClickCallback(MOUSE_REGION* pRegion, UINT32 iReason)
-{
-	static BOOLEAN fLButtonDown = FALSE;
-
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_DWN )
-	{
-		fLButtonDown = TRUE;
-	}
-
-	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP && fLButtonDown )
-	{
-		InternalShutupaYoFace(gTalkPanel.face, FALSE);
-	}
-	else if (iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
-	{
-		fLButtonDown = FALSE;
-	}
 }
 
 

@@ -14,6 +14,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/RangeLane.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/ScenarioItems.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/StockScenario.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/TacticalScenario.cc
 )
 
 if (WITH_UNITTESTS)

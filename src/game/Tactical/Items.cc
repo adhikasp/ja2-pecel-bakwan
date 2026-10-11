@@ -22,7 +22,7 @@
 #include "Random.h"
 #include "Campaign.h"
 #include "Interface.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "Explosion_Control.h"
 #include "Keys.h"
 #include "WCheck.h"

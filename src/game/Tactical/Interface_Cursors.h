@@ -208,7 +208,6 @@ void HideUICursor(void);
 
 extern UINT16 gusCurMousePos;
 
-UINT16 GetSnapCursorIndex( UINT16 usAdditionalData );
 
 
 #endif

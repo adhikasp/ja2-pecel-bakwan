@@ -16,6 +16,7 @@
 #include "OverlayScenario.h"
 #include "OverheadScenario.h"
 #include "PopupScenario.h"
+#include "TacticalScenario.h"
 
 #include "Assignments.h"
 #include "Font_Control.h"
@@ -940,6 +941,9 @@ namespace
 		ja2.set_function("popupOp", [](std::string const& op, sol::optional<sol::table> spec) {
 			return Guarded([&] { return PopupOp(g_lua, op, spec); });
 		});
+		// The tactical commands, the squad roster and the world pointer as data (issue #319): ja2.tactical.commands(),
+		// .run(name), .key(combo), .roster(), .pointer(). See TacticalScenario.h.
+		RegisterTacticalLua(g_lua, ja2);
 		ja2.set_function("inventoryOp", [](std::string const& op, sol::optional<sol::table> spec) {
 			return Guarded([&] { return InventoryOp(g_lua, op, spec); });
 		});

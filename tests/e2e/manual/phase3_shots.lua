@@ -52,7 +52,7 @@ ja2.waitScreen("MAINMENU_SCREEN")
 -- a game with two saves
 ja2.setUiScale(1)
 campaign.startWithMerc("Barry")
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 campaign.dismissHelp()
 ja2.save("shots-quick", "Before leaving Omerta")

@@ -10,7 +10,7 @@
 /** @file
  * The adapter between the inventory core (Equipment/InventoryCore.h) and the legacy soldier / item
  * pointer globals (issue #317). The core decides; this fills its plain inputs from the live
- * soldiers, keeps the core's hand in step with `gpItemPointer` (the mirror #324 removes), records
+ * soldiers, reads the core's hand off `gpItemPointer`, records
  * what the last click did, and raises the Observables. The moves themselves run in
  * `Interface_Panels.cc` (pockets) and `Interface_Items.cc` (the item sheet), where the legacy
  * statics they apply the verdict through live.
@@ -53,10 +53,9 @@ Equipment::InventoryCore& TacticalInventory();
  *  whether the pockets of the panel showing him are within reach. */
 Equipment::InvParty InventoryPartyOf(SOLDIERTYPE const* s);
 
-/** Re-reads `gpItemPointer` into the core's hand. Called by the item pointer's writers. */
-void SyncInventoryHand();
-/** The hand, current: what is held, whose pocket it came out of. Read this, not `gpItemPointer`. */
-Equipment::HeldStack const& InventoryHand();
+/** The hand, current: what is held, whose pocket it came out of, read off the item pointer when asked. The core
+ * keeps no copy of it (issue #324). */
+Equipment::HeldStack InventoryHand();
 
 InventoryOutcome const& LastInventoryOutcome();
 void RecordInventoryOutcome(InventoryOutcome const& o);

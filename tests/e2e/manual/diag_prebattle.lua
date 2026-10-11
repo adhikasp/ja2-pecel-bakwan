@@ -3,7 +3,7 @@ package.path = (debug.getinfo(1, "S").source:match("^@(.*[/\\])") or "") .. "../
 local campaign = require("lib.campaign")
 
 campaign.startWithMerc("Barry")
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 ja2.waitIdle()
 ja2.debug("prebattle")

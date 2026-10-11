@@ -2,7 +2,7 @@
 #include "Campaign_Types.h"
 #include "Directories.h"
 #include "Interface_Control.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "LoadSaveMercProfile.h"
 #include "MapScreen.h"
 #include "Merc_Hiring.h"

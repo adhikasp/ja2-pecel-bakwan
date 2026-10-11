@@ -4,7 +4,16 @@
 // and hands it to the OverlayModel core as one Frame. The native view (NativeUI/TacticalOverlays.cc) and Lua
 // (ja2.overlays) read the frame.
 
+#include "JA2Types.h"
 #include "OverlayModel.h"
+
+#define SHOW_LOCATOR_NORMAL			1
+#define SHOW_LOCATOR_FAST			2
+
+/** Starts a soldier's locator ring: the pulse the overlay layer draws over him (a few cycles, more when normal). */
+void ShowRadioLocator(SOLDIERTYPE* s, UINT8 ubLocatorSpeed);
+/** Ends it. */
+void EndRadioLocator(SOLDIERTYPE* s);
 
 /** Builds the frame for this game frame from the legacy globals. Called by RenderTopmostTacticalInterface when the
  * native HUD is up (it does the legacy draws otherwise). */
