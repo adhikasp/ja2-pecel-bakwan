@@ -80,6 +80,7 @@ unsigned SquadRosterMask() { return g_roster.Mask(); }
 
 static void LeaveSlot(SOLDIERTYPE* const s)
 {
+	if (!s) return;
 	if (!(s->uiStatusFlags & SOLDIER_DEAD))
 	{
 		// Set Id to close

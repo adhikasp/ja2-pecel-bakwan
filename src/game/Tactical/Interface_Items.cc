@@ -1429,7 +1429,7 @@ void DegradeNewlyAddedItems( )
 
 	guiNewlyPlacedItemTimer = uiTime;
 
-	for (UINT32 cnt2 = 0; cnt2 < SquadRosterSlots(); ++cnt2)
+	for (int cnt2 = 0; cnt2 < SquadRosterSlots(); ++cnt2)
 	{
 		SOLDIERTYPE* const s = SquadRosterAt(cnt2);
 		if (s == NULL) continue;
@@ -3917,7 +3917,6 @@ void InitItemStackPopup(SOLDIERTYPE* const pSoldier, UINT8 const ubPosition, INT
 }
 
 
-static void DeleteItemStackPopup(void);
 
 
 static void EndItemStackPopupWithItemInHand(void)

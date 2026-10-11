@@ -686,17 +686,6 @@ catch (...)
 }
 
 
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNextMercCallback(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnPrevMercCallback(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
-static void BtnNothing(GUI_BUTTON* btn, UINT32 reason);
 static void BtnPrevMercCallback(GUI_BUTTON* btn, UINT32 reason);
 static void BtnNextMercCallback(GUI_BUTTON* btn, UINT32 reason);
 // The panel under the trade screen is not tactical: only "previous / next merc" works, the rest is for show

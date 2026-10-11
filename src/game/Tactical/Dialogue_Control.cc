@@ -851,7 +851,7 @@ static void CreateTalkingUI(DialogueHandler bUIHandlerID, FACETYPE& f, UINT8 ubC
 		g_speech.shown = true;
 		g_speech.profile = ubCharacterNum;
 		g_speech.face = ubCharacterNum != NO_PROFILE ? GetProfile(ubCharacterNum).ubFaceIndex : 0;
-		g_speech.who = ubCharacterNum != NO_PROFILE ? GetProfile(ubCharacterNum).zNickname : ST::string();
+		if (ubCharacterNum != NO_PROFILE) g_speech.who = GetProfile(ubCharacterNum).zNickname;
 		// with subtitles off and a voice to hear, the face is shown without the words
 		if (gGameSettings.fOptions[TOPTION_SUBTITLES] || !f.fValidSpeech) g_speech.line = ST::format("\"{}\"", zQuoteStr);
 		SOLDIERTYPE const* const s = ubCharacterNum != NO_PROFILE ? FindSoldierByProfileID(ubCharacterNum) : nullptr;

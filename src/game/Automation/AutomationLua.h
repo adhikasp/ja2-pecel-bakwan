@@ -3,7 +3,15 @@
 #define SOL_CHECK_ARGUMENTS 1
 #define SOL_PRINT_ERRORS 0
 #define SOL_ALL_SAFETIES_ON 1
+// sol2's optional/get_optional paths trip GCC's -Wnull-dereference in every TU that binds a lambda
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnull-dereference"
+#endif
 #include <sol/sol.hpp>
+#if defined(__GNUC__) && !defined(__clang__)
+#pragma GCC diagnostic pop
+#endif
 
 #include <string>
 #include <vector>

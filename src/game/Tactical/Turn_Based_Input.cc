@@ -104,7 +104,6 @@ static void GroupAutoReload();
 static void SwitchHeadGear(bool dayGear);
 
 void HandleTBReload( void );
-void HandleTBSwapHands( void );
 void HandleTBClimbWindow( void );
 
 void GetTBMouseButtonInput(UIEventKind* const puiNewEvent)
