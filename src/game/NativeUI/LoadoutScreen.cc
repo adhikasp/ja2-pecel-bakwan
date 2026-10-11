@@ -473,8 +473,6 @@ namespace
 
 			SlotPolicy const policy = TogglesFrom(GCM->getGamePolicy());
 			Platform const platform = SlotsFor(*model, policy);
-			uint16_t present[MAX_HOST_SLOTS] = {};
-			for (int i = 0; i < platform.slotCount; ++i) present[i] = gun.usAttachItem[i];
 			for (int i = 0; i < platform.slotCount; ++i)
 			{
 				GunSlotRow r;

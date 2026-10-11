@@ -479,7 +479,7 @@ TalkPopup CurrentTalkPopup()
 	v.open = true;
 	v.profile = pid;
 	v.face = pid != NO_PROFILE ? GetProfile(pid).ubFaceIndex : 0;
-	v.name = pid != NO_PROFILE ? GetProfile(pid).zNickname : ST::string();
+	if (pid != NO_PROFILE) v.name = GetProfile(pid).zNickname;
 	v.line = gTalkPanel.zQuoteStr;
 	v.speaking = !TalkIsFree();
 	if (gpSrcSoldier) v.asker = gpSrcSoldier->name;

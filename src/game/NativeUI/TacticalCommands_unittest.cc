@@ -37,7 +37,7 @@ TEST(TacticalCommands, noTwoCommandsShareAKeyOrAName)
 	for (Command const& c : All())
 	{
 		EXPECT_TRUE(names.insert(c.name).second) << "name " << c.name;
-		if (c.key[0] != '\0') EXPECT_TRUE(keys.insert(c.key).second) << "key " << c.key << " of " << c.name;
+		if (c.key[0] != '\0') { EXPECT_TRUE(keys.insert(c.key).second) << "key " << c.key << " of " << c.name; }
 	}
 }
 
@@ -57,7 +57,7 @@ TEST(TacticalCommands, hudButtonsNameDistinctCommands)
 {
 	std::set<std::string> huds;
 	for (Command const& c : All())
-		if (c.hud[0] != '\0') EXPECT_TRUE(huds.insert(c.hud).second) << c.hud;
+		if (c.hud[0] != '\0') { EXPECT_TRUE(huds.insert(c.hud).second) << c.hud; }
 	// the buttons of the bar
 	for (char const* name : { "stance.stand", "stance.crouch", "stance.prone", "move.run", "move.stealth", "act.burst", "act.look",
 		"act.talk", "move.climb", "level.toggle", "turn.end", "nav.map", "panel.detail", "nav.options", "nav.overhead" })

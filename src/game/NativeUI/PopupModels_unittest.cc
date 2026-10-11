@@ -216,7 +216,7 @@ TEST(PopupModels, diagonalLeavesOnlyOpenAndCancel)
 	{
 		bool const free = r.cmd == int(DoorCmd::Open) || r.cmd == int(DoorCmd::Cancel);
 		EXPECT_EQ(r.enabled, free) << DoorCmdName(r.cmd);
-		if (!free) EXPECT_EQ(r.why, Why::Diagonal);
+		if (!free) { EXPECT_EQ(r.why, Why::Diagonal); }
 	}
 }
 
