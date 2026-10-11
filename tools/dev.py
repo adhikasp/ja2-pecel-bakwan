@@ -494,18 +494,51 @@ def cmd_run(args):
     sys.exit(subprocess.run(argv, cwd=str(build_dir), env=binary_env()).returncode)
 
 
+def source_fingerprint():
+    """HEAD plus the state of every uncommitted file; None when git cannot say.
+
+    Equal fingerprints mean the tree is what the last successful bootstrap built,
+    so the session hook can skip the whole cmake/ninja/cargo pass.
+    """
+    def git(*argv):
+        r = subprocess.run(["git", "-C", str(REPO), *argv], capture_output=True, text=True)
+        return r.stdout if r.returncode == 0 else None
+
+    head = git("rev-parse", "HEAD")
+    status = git("status", "--porcelain", "-z", "--untracked-files=all")
+    if head is None or status is None:
+        return None
+    h = hashlib.sha1(head.encode())
+    for entry in sorted(e for e in status.split("\0") if len(e) > 3):
+        h.update(entry.encode())
+        try:
+            st = (REPO / entry[3:]).stat()
+            h.update(f"{st.st_mtime_ns}:{st.st_size}".encode())
+        except OSError:
+            pass  # deleted or a rename's old path: the status entry already says so
+    return h.hexdigest()
+
+
+def read_bootstrap_db(db: Path) -> dict:
+    try:
+        return json.loads(db.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+
+
 def bootstrap_auto():
     """Hook mode: never block the session, never double up, quiet on success."""
     state = state_dir()
     state.mkdir(parents=True, exist_ok=True)
     db = state / "bootstrap.json"
-    try:
-        stamps = json.loads(db.read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        stamps = {}
+    stamps = read_bootstrap_db(db)
     key = str(REPO)
-    if time.time() - stamps.get(key, {}).get("time", 0) < 120:
+    entry = stamps.get(key, {})
+    if time.time() - entry.get("time", 0) < 120:
         return  # this worktree was just bootstrapped (or is being, right now)
+    fingerprint = source_fingerprint()
+    if fingerprint and entry.get("built") == fingerprint and (REPO / BUILD_DIR_NAME / "CMakeCache.txt").exists():
+        return  # nothing changed since the last successful bootstrap: no build, no process spawns
     digest = hashlib.sha1(key.encode()).hexdigest()[:8]
     logs = state / "logs"
     logs.mkdir(parents=True, exist_ok=True)
@@ -513,10 +546,13 @@ def bootstrap_auto():
     log_file = logs / f"bootstrap-{REPO.name}-{digest}-{stamp}.log"
     for stale in sorted(logs.glob(f"bootstrap-{REPO.name}-{digest}-*.log"))[:-4]:
         stale.unlink(missing_ok=True)  # keep the newest few, one file per run so they never interleave
-    stamps[key] = {"time": time.time(), "log": str(log_file)}
+    stamps[key] = {**entry, "time": time.time(), "log": str(log_file)}
     db.write_text(json.dumps(stamps, indent=2), encoding="utf-8")
     argv = [sys.executable, str(Path(__file__).resolve()), "bootstrap"]
-    flags = {"creationflags": 0x00000008 | 0x00000200} if IS_WINDOWS else {"start_new_session": True}  # DETACHED_PROCESS
+    # CREATE_NO_WINDOW | CREATE_NEW_PROCESS_GROUP: the job gets one hidden console
+    # that every tool it starts shares. DETACHED_PROCESS had no console at all, so
+    # each bash/cmake/ninja/cc1plus child opened (and flashed) its own window.
+    flags = {"creationflags": 0x08000000 | 0x00000200} if IS_WINDOWS else {"start_new_session": True}
     try:
         with open(log_file, "ab") as out:
             subprocess.Popen(argv, cwd=str(REPO), stdin=subprocess.DEVNULL, stdout=out,
@@ -532,8 +568,15 @@ def cmd_bootstrap(args):
         bootstrap_auto()
         return
     build_dir = REPO / BUILD_DIR_NAME
+    fingerprint = source_fingerprint()  # taken before building: edits made meanwhile force the next run
     setup(REPO, build_dir)
-    sys.exit(build_binary(REPO, build_dir, args.jobs))
+    rc = build_binary(REPO, build_dir, args.jobs)
+    if rc == 0 and fingerprint:
+        db = state_dir() / "bootstrap.json"
+        stamps = read_bootstrap_db(db)
+        stamps.setdefault(str(REPO), {})["built"] = fingerprint
+        db.write_text(json.dumps(stamps, indent=2), encoding="utf-8")
+    sys.exit(rc)
 
 
 ROADMAP_TOOL = Path(__file__).resolve().parent / "roadmap.py"
