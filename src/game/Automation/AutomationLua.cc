@@ -9,6 +9,11 @@
 #include "StockScenario.h"
 #include "InventoryScenario.h"
 #include "CursorScenario.h"
+#include "Civ_Quotes.h"
+#include "OverlayAdapter.h"
+#include "Real_Time_Input.h"
+#include "Spread_Burst.h"
+#include "OverlayScenario.h"
 #include "PopupScenario.h"
 
 #include "Assignments.h"
@@ -919,6 +924,9 @@ namespace
 		// The tactical cursor as data (issue #318): { shown, mode, shape, tone, marker, ap, apLeft, hit, aim, why, target,
 		// tile, id, chip, lines, path, markerAt, destAt } (see CursorScenario.h).
 		ja2.set_function("cursor", [] { return Guarded([&] { return CursorState(g_lua); }); });
+		// The tactical world overlays as data (issue #322): { paused, locators, bursts, arrows, band, pools }
+		// (see OverlayScenario.h).
+		ja2.set_function("overlays", [] { return Guarded([&] { return OverlayState(g_lua); }); });
 		// The tactical popups as data (issue #321): ja2.popup() reads what is open, ja2.popupOp(op, spec) makes one
 		// choice and returns { ok, why }. See PopupScenario.h.
 		ja2.set_function("popup", [] { return Guarded([&] { return PopupState(g_lua); }); });
@@ -1465,6 +1473,46 @@ namespace
 					OBJECTTYPE o;
 					CreateItem(UINT16(b && b->is<int>() ? b->as<int>() : 1), 100, &o);
 					AddItemToPool(INT16(a->as<int>()), &o, VISIBLE, 0, 0, -1);
+					SetRenderFlags(RENDER_FLAG_FULL);
+				}
+				else if (what == "arrows")
+				{
+					// the up/down arrows over the selected merc: a = the ARROWS_* flags of Interface.h
+					// (the UI resets its own flags every frame, so this is a standing override; no flags clears it)
+					ForceOverlayArrows(a && a->is<int>() ? a->as<int>() : -1);
+				}
+				else if (what == "burst")
+				{
+					// a burst impact on tile a (the spread's tracking is switched on); no grid clears them
+					ResetBurstLocations();
+					gfBeginBurstSpreadTracking = FALSE;
+					if (a && a->is<int>())
+					{
+						gfBeginBurstSpreadTracking = TRUE;
+						AccumulateBurstLocation(INT16(a->as<int>()));
+						if (b && b->is<int>()) AccumulateBurstLocation(INT16(b->as<int>()));
+					}
+				}
+				else if (what == "civquote")
+				{
+					// the first anonymous civilian in the sector says his line (a bubble over his head)
+					SOLDIERTYPE* civ = nullptr;
+					FOR_EACH_IN_TEAM(i, CIV_TEAM)
+					{
+						SOLDIERTYPE& c = *i;
+						if (c.bInSector && c.bLife > 0 && c.ubProfile == NO_PROFILE && !civ) civ = &c;
+					}
+					if (!civ) throw std::runtime_error("no civilian in the sector (ja2.debug(\"npcs\", {count = 1}))");
+					StartCivQuote(civ);
+				}
+				else if (what == "flashitem")
+				{
+					// an unseen item (b = item index, default 1) at grid a that is then spotted: the new-item locator
+					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"flashitem\", grid, [item])");
+					OBJECTTYPE o;
+					CreateItem(UINT16(b && b->is<int>() ? b->as<int>() : 1), 100, &o);
+					AddItemToPool(INT16(a->as<int>()), &o, INVISIBLE, 0, 0, -1);
+					SetItemsVisibilityOn(INT16(a->as<int>()), 0, INVISIBLE, TRUE);
 					SetRenderFlags(RENDER_FLAG_FULL);
 				}
 				else if (what == "corpse")

@@ -192,6 +192,15 @@ void RenderAccumulatedBurstLocations( )
 }
 
 
+std::vector<INT16> AccumulatedBurstGridNos()
+{
+	std::vector<INT16> out;
+	if (!gfBeginBurstSpreadTracking) return out;
+	for (INT32 cnt = 0; cnt < gbNumBurstLocations; ++cnt) out.push_back(gsBurstLocations[cnt].sGridNo);
+	return out;
+}
+
+
 void DeleteSpreadBurstGraphics()
 {
 	RemoveVObject(guiBURSTACCUM);

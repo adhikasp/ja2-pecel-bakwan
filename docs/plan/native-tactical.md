@@ -158,7 +158,7 @@ already drops cards that do not fit). The 640x480 tactical goldens and `< 1280` 
 |---|---|---|---|
 | #317 | Inventory core + adapter; detail panel, item sheet, money and loadout call it; `Native*Click` shims gone | #316 | the legacy panels still exist but nothing native clicks them; `tactical_parity.lua` passes through the core |
 | #318 | Native cursor for every mode, target chip, path line | #316 | legacy cursor drawing switched off on `GAME_SCREEN` only; state machine untouched |
-| #322 | Native world overlays | #316 | each overlay switches individually; legacy draw deleted per overlay |
+| #322 | Native world overlays. **Landed:** `NativeUI/OverlayModel`, `Tactical/OverlayAdapter`, `NativeUI/TacticalOverlays`, `ja2.overlays()`, `tests/e2e/tactical_overlays.lua` | #316 | each overlay switches individually; legacy draw deleted per overlay |
 | #323 | Native overhead map, placement, minimap | #316 | Insert and placement open the native views; legacy deleted |
 | #321 | Native popups: stack, key ring, talk (with external speaking faces and subtitles), sector exit — **plus the action, door and pick-up menus as models instead of hidden legacy buttons** (scope added here). **Landed:** `NativeUI/PopupModels`, `Tactical/PopupAdapter`, `ja2.popup()` / `ja2.popupOp()`, `tests/e2e/tactical_popups.lua` | #317 (stack, key ring) | each popup replaces its legacy one; `Wanted()` never hides the HUD again |
 | #319 | No legacy panels: TacticalCommands, `TacticalInput`/`WorldPointer`, SquadRoster, face animation on cards, world fills the output, native message boxes in tactical | #317, #321 (stack/key ring) | the battle e2e tests and the 1080p suite pass with no panel created |

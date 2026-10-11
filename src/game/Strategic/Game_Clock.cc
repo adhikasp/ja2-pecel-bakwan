@@ -882,6 +882,8 @@ static void ScreenMaskForGamePauseBtnCallBack(MOUSE_REGION* pRegion, UINT32 iRea
 
 void RenderPausedGameBox( void )
 {
+	// the native HUD shows the pause banner itself (NativeUI/TacticalOverlays.cc)
+	if (NativeUI::TacticalHudActive()) return;
 	if (gfPauseDueToPlayerGamePause && gfGamePaused && g_paused_popup_box)
 	{
 		const INT32 x = (SCREEN_WIDTH - usPausedActualWidth)  / 2;

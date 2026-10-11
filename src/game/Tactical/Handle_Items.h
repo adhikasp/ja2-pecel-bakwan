@@ -4,6 +4,7 @@
 #include "JA2Types.h"
 #include "World_Items.h"
 
+#include <string>
 #include <vector>
 
 
@@ -88,6 +89,27 @@ BOOLEAN SetItemsVisibilityOn(GridNo, UINT8 level, Visibility bAllGreaterThan, BO
 void SetItemsVisibilityHidden(GridNo, UINT8 level);
 
 void RenderTopmostFlashingItems(void);
+
+/** A new-item locator that is showing (the native overlay draws it; RenderTopmostFlashingItems is the legacy draw). */
+struct FlashingItemView
+{
+	GridNo            gridNo;
+	INT8              level;
+	INT8              z;     // height above the level the item lies at
+	INT8              frame; // the pulse frame, 0..4
+	ITEM_POOL const*  pool;
+};
+std::vector<FlashingItemView> FlashingItemsToShow();
+
+/** One visible item of a pool, for a list beside the cursor or a locator. */
+struct ItemPoolListRow
+{
+	int         item;
+	std::string name;
+	int         count;
+};
+/** The items of @a pool that show at @a zLevel (-1: all). Also lights the squad cards of mercs this fits. */
+std::vector<ItemPoolListRow> ItemPoolListRows(ITEM_POOL const* pool, INT8 zLevel);
 
 void RemoveAllUnburiedItems( INT16 sGridNo, UINT8 ubLevel );
 

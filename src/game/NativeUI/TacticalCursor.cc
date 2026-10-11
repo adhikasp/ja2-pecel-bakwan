@@ -10,6 +10,7 @@
 //
 // World points go through WorldToOutput: world pixels -> UI (canvas) pixels by the layer layout -> output pixels.
 #include "NativeUIRuntime.h"
+#include "UiMesh.h"
 
 #include "CursorAdapter.h"
 #include "CursorModel.h"
@@ -54,76 +55,6 @@ namespace
 	constexpr int WARN[3] = { 0xF0, 0xE4, 0x42 };
 	constexpr int AMBER[3] = { 0xF0, 0xA8, 0x38 }; // the path beyond this turn's points
 	constexpr int FOE[3] = { 0xFF, 0x6B, 0x3D };
-
-	struct MeshBuilder
-	{
-		Rml::Mesh mesh;
-
-		void Tri(Rml::Vector2f a, Rml::Vector2f b, Rml::Vector2f c, Rml::ColourbPremultiplied col)
-		{
-			int const i = int(mesh.vertices.size());
-			for (Rml::Vector2f p : { a, b, c })
-			{
-				Rml::Vertex v;
-				v.position = p;
-				v.colour = col;
-				v.tex_coord = { 0, 0 };
-				mesh.vertices.push_back(v);
-			}
-			mesh.indices.insert(mesh.indices.end(), { i, i + 1, i + 2 });
-		}
-
-		void Quad(Rml::Vector2f a, Rml::Vector2f b, Rml::Vector2f c, Rml::Vector2f d, Rml::ColourbPremultiplied col)
-		{
-			Tri(a, b, c, col);
-			Tri(a, c, d, col);
-		}
-
-		void Line(Rml::Vector2f a, Rml::Vector2f b, float width, Rml::ColourbPremultiplied col)
-		{
-			Rml::Vector2f d = b - a;
-			float const len = std::sqrt(d.x * d.x + d.y * d.y);
-			if (len < 0.01f) return;
-			d = d * (1.f / len);
-			Rml::Vector2f const n{ -d.y * width * 0.5f, d.x * width * 0.5f };
-			Quad(a + n, b + n, b - n, a - n, col);
-		}
-
-		// a dashed line: `dash` on, `gap` off, along a -> b
-		void Dashed(Rml::Vector2f a, Rml::Vector2f b, float width, float dash, float gap, Rml::ColourbPremultiplied col)
-		{
-			Rml::Vector2f d = b - a;
-			float const len = std::sqrt(d.x * d.x + d.y * d.y);
-			if (len < 0.01f) return;
-			d = d * (1.f / len);
-			for (float t = 0; t < len; t += dash + gap)
-				Line(a + d * t, a + d * std::min(t + dash, len), width, col);
-		}
-
-		void Disc(Rml::Vector2f c, float r, Rml::ColourbPremultiplied col)
-		{
-			constexpr int N = 14;
-			for (int i = 0; i < N; ++i)
-			{
-				float const a0 = 6.2831853f * i / N, a1 = 6.2831853f * (i + 1) / N;
-				Tri(c, c + Rml::Vector2f{ std::cos(a0) * r, std::sin(a0) * r }, c + Rml::Vector2f{ std::cos(a1) * r, std::sin(a1) * r }, col);
-			}
-		}
-
-		// the diamond of a tile: filled, then the outline
-		void Diamond(Rml::Vector2f c, float w, float h, float lineW, Rml::ColourbPremultiplied fill, Rml::ColourbPremultiplied line)
-		{
-			Rml::Vector2f const t{ c.x, c.y - h * 0.5f }, r{ c.x + w * 0.5f, c.y }, b{ c.x, c.y + h * 0.5f }, l{ c.x - w * 0.5f, c.y };
-			Quad(t, r, b, l, fill);
-			Line(t, r, lineW, line);
-			Line(r, b, lineW, line);
-			Line(b, l, lineW, line);
-			Line(l, t, lineW, line);
-			// the joins
-			float const j = lineW * 0.5f;
-			Disc(t, j, line); Disc(r, j, line); Disc(b, j, line); Disc(l, j, line);
-		}
-	};
 
 	/** The layer element: draws g_layer. It fills its parent, takes no mouse. */
 	class CursorLayer final : public Rml::Element
@@ -217,19 +148,7 @@ namespace
 
 	bool g_registered = false;
 
-	// world pixels (what the world renderer draws in) -> output pixels
-	Rml::Vector2f WorldToOutput(CursorPoint const p)
-	{
-		float ux = p.x, uy = p.y;
-		if (g_ui.isLayered())
-		{
-			// the world is a layer of its own: a world pixel is zoomQ / (uiScale * 8) UI pixels (VideoLayout::WorldToUiQ, exact)
-			float const k = float(g_ui.m_worldZoomQ) / float(g_ui.m_uiScale * 8);
-			ux = p.x * k;
-			uy = p.y * k;
-		}
-		return CanvasToOutput(ux, uy);
-	}
+	Rml::Vector2f WorldToOutput(CursorPoint const p) { return NativeUI::WorldToOutput(p.x, p.y); }
 
 	std::string Fill(std::string fmt, std::string const& a, std::string const& b = {}, std::string const& c = {})
 	{

@@ -3,6 +3,8 @@
 
 #include "JA2Types.h"
 
+#include <string_theory/string>
+
 
 #define CIV_TYPE_NA		0
 #define CIV_TYPE_ADULT		1
@@ -86,5 +88,8 @@ void LoadCivQuotesFromLoadGameFile(HWFILE);
 BOOLEAN ShutDownQuoteBoxIfActive(void);
 
 void BeginCivQuote( SOLDIERTYPE *pCiv, UINT8 ubCivQuoteID, UINT8 ubEntryID, INT16 sX, INT16 sY );
+
+/** The civilian quote the native overlay draws as a bubble (set when the quote began under the native HUD). */
+bool CivQuoteBubble(ST::string* text, SOLDIERTYPE const** civ);
 
 #endif

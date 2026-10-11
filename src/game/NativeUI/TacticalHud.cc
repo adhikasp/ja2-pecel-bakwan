@@ -1756,6 +1756,7 @@ void TacticalHudUpdate()
 	UpdateDropChip(*g_hud.vm);
 	// the marker, path and chip over the world, and the pointer's shape
 	TacticalCursorUpdate(g_hud.doc);
+	TacticalOverlaysUpdate(g_hud.doc);
 }
 
 bool TacticalHudWantsMouse()

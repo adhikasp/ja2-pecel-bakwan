@@ -2,6 +2,7 @@
 // overlays, input, both render paths, and what automation sees.
 #include "NativeUI.h"
 #include "NativeUIRuntime.h"
+#include "UILayout.h"
 #include "NativeImages.h"
 #include "ViewModel.h"
 
@@ -400,6 +401,7 @@ bool Start()
 		g_loadingTimeLabel = Str("loading.time_label");
 
 		RegisterTacticalCursor();
+		RegisterTacticalOverlays();
 		g_rt.overlays = LoadDocument("overlays/overlays.rml");
 		g_rt.overlays->Show(Rml::ModalFlag::None, Rml::FocusFlag::None);
 		VideoSetOverlay(&g_rt);
@@ -469,6 +471,19 @@ Rml::Vector2f MousePosition() { return { g_rt.mouseX, g_rt.mouseY }; }
 Rml::Vector2f CanvasToOutput(float const x, float const y)
 {
 	return { x * g_rt.map.sx + g_rt.map.ox, y * g_rt.map.sy + g_rt.map.oy };
+}
+
+Rml::Vector2f WorldToOutput(float const x, float const y)
+{
+	float ux = x, uy = y;
+	if (g_ui.isLayered())
+	{
+		// the world is a layer of its own: a world pixel is zoomQ / (uiScale * 8) UI pixels (VideoLayout::WorldToUiQ, exact)
+		float const k = float(g_ui.m_worldZoomQ) / float(g_ui.m_uiScale * 8);
+		ux = x * k;
+		uy = y * k;
+	}
+	return CanvasToOutput(ux, uy);
 }
 
 float CanvasScale() { return g_rt.map.sy; }

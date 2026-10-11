@@ -188,6 +188,11 @@ void ResizeTopMessage(void);
 void BeginMultiPurposeLocator(INT16 sGridNo, INT8 bLevel);
 void HandleMultiPurposeLocator(void);
 void RenderTopmostMultiPurposeLocator(void);
+/** The multi-purpose locator, if it is on: its tile, level and pulse frame (0..4). */
+bool MultiPurposeLocatorState(INT16* gridNo, INT8* level, INT8* frame);
+/** Runs a merc's locator timer (game flow: the legacy and the native overlay both use it). True while the locator
+ * is flashing; s.sLocatorFrame is then the pulse frame. */
+bool UpdateMercLocator(SOLDIERTYPE& s);
 
 void GetSoldierAboveGuyPositions(const SOLDIERTYPE* s, INT16* psX, INT16* psY, BOOLEAN fRadio);
 

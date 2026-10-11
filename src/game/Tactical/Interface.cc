@@ -806,53 +806,59 @@ static void PrintAboveGuy(INT16 const x, INT16 const y, const ST::string& text)
 static void DrawBarsInUIBox(const SOLDIERTYPE* pSoldier, INT16 sXPos, INT16 sYPos, INT16 sWidth, INT16 sHeight);
 
 
+bool UpdateMercLocator(SOLDIERTYPE& s)
+{
+	if (!s.fFlashLocator) return false;
+	if (s.bVisible == -1)
+	{
+		s.fFlashLocator = FALSE;
+		return false;
+	}
+
+	if (TIMECOUNTERDONE(s.BlinkSelCounter, 80ms))
+	{
+		s.fShowLocator = TRUE;
+		if (++s.sLocatorFrame == 5)
+		{
+			// Update time we do this
+			++s.fFlashLocator;
+			s.sLocatorFrame = 0;
+		}
+	}
+
+	if (s.fFlashLocator == s.ubNumLocateCycles)
+	{
+		s.fFlashLocator = FALSE;
+		s.fShowLocator  = FALSE;
+	}
+	// still flashing (the cycle that just ended draws one last time, as it always did)
+	return true;
+}
+
+
 void DrawSelectedUIAboveGuy(SOLDIERTYPE& s)
 {
 	if (s.bVisible == -1 && !(gTacticalStatus.uiFlags & SHOW_ALL_MERCS)) return;
 
 	if (s.sGridNo == NOWHERE) return;
 
-	if (s.fFlashLocator)
+	if (UpdateMercLocator(s))
 	{
-		if (s.bVisible == -1)
-		{
-			s.fFlashLocator = FALSE;
-		}
-		else
-		{
-			if (TIMECOUNTERDONE(s.BlinkSelCounter, 80ms))
-			{
-				s.fShowLocator = TRUE;
-				if (++s.sLocatorFrame == 5)
-				{
-					// Update time we do this
-					++s.fFlashLocator;
-					s.sLocatorFrame = 0;
-				}
-			}
+		// Render the beastie
+		INT16 sXPos;
+		INT16 sYPos;
+		GetSoldierAboveGuyPositions(&s, &sXPos, &sYPos, TRUE);
 
-			if (s.fFlashLocator == s.ubNumLocateCycles)
-			{
-				s.fFlashLocator = FALSE;
-				s.fShowLocator  = FALSE;
-			}
+		// Adjust for bars
+		sXPos += 25;
+		sYPos += 25;
 
-			// Render the beastie
-			INT16 sXPos;
-			INT16 sYPos;
-			GetSoldierAboveGuyPositions(&s, &sXPos, &sYPos, TRUE);
+		// Add bars
+		RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
 
-			// Adjust for bars
-			sXPos += 25;
-			sYPos += 25;
-
-			// Add bars
-			RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
-
-			SGPVObject const* const gfx = s.bNeutral || s.bSide == Side::FRIENDLY ?
-							guiRADIO : guiRADIO2;
-			BltVideoObject(FRAME_BUFFER, gfx, s.sLocatorFrame, sXPos, sYPos);
-		}
+		SGPVObject const* const gfx = s.bNeutral || s.bSide == Side::FRIENDLY ?
+						guiRADIO : guiRADIO2;
+		BltVideoObject(FRAME_BUFFER, gfx, s.sLocatorFrame, sXPos, sYPos);
 	}
 
 	// If he is in the middle of a certain animation, ignore
@@ -2063,6 +2069,16 @@ void HandleMultiPurposeLocator( )
 	}
 }
 
+
+
+bool MultiPurposeLocatorState(INT16* const gridNo, INT8* const level, INT8* const frame)
+{
+	if (!gfMultipurposeLocatorOn) return false;
+	*gridNo = gsMultiPurposeLocatorGridNo;
+	*level  = gbMultiPurposeLocatorLevel;
+	*frame  = gbMultiPurposeLocatorFrame;
+	return true;
+}
 
 
 void RenderTopmostMultiPurposeLocator( )
