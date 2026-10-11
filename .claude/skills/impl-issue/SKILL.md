@@ -36,7 +36,7 @@ Don't ask about things with a conventional default or that the code answers. Ask
 ## 4. Open the PR
 
 - Commit, push to `origin`, `gh pr create -R adhikasp/ja2-pecel-bakwan` with `Closes #N`, the issue's milestone, and a body covering: what changed, how it was tested, "Also fixed".
-- Visible change → screenshots at 1280x720 + a widescreen size from the real game via `ja2ctl shot`, hosted on the `pr-screenshots` branch and embedded (AGENTS.md "Every PR needs screenshot proof"). **Look at every image yourself.** No visible change → write "No visual change".
+- Visible change → screenshots at 1280x720 + a widescreen size from the real game via `ja2ctl shot`, published with `python tools/dev.py shots <branch> <png...>` (it pushes to the `pr-screenshots` branch and prints the links to embed) and embedded (AGENTS.md "Every PR needs screenshot proof"). **Look at every image yourself.** No visible change → write "No visual change".
 - Bind the PR with the ccd_pr tools if the desktop app is in use.
 
 ## 5. QA subagent review (end product, not code)
@@ -63,7 +63,7 @@ Only when **all** are true:
 - GitHub CI on the PR is green (`gh pr checks`; use the ccd_pr tools to read CI — don't poll yourself);
 - no unresolved review comments; branch is current with `master` (sync, re-test if conflicts).
 
-Then `gh pr merge --squash --delete-branch -R adhikasp/ja2-pecel-bakwan`, set the board item to `Done`, confirm the issue closed, and clean up the worktree.
+Then `gh pr merge --squash --delete-branch -R adhikasp/ja2-pecel-bakwan`, set the board item to `Done`, confirm the issue closed, and clean up the worktree (`git worktree remove <path>`, or `python tools/dev.py worktrees --prune` to collect every finished one on the machine).
 
 ## 8. Report
 

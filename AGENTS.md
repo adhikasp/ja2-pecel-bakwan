@@ -13,9 +13,14 @@ python tools/dev.py run [..]  # play the game (default -res 1280x720)
 python tools/dev.py status    # what dev.py sees: paths, tools, build state
 python tools/dev.py roadmap   # regenerate docs/roadmap/roadmap.html from the issues
 python tools/dev.py dep <n> --blocked-by "#1,#2"   # set an issue's dependency relations
+python tools/dev.py shots <branch> <png...>       # publish PR screenshots, print the links
+python tools/dev.py worktrees [--prune]           # list the worktrees, collect the finished ones
+ctest -L tooling                                 # the dev.py tooling tests (Python + git)
 ```
 
-`roadmap` and `dep` are host-side and need no build: `roadmap` reads the GitHub issues through `gh` and writes the dependency view (see [The roadmap page](#the-roadmap-page)), `dep` sets an issue's native relations.
+`roadmap` and `dep` are host-side and need no build: `roadmap` reads the GitHub issues through `gh` and writes the dependency view (see [The roadmap page](#the-roadmap-page)), `dep` sets an issue's native relations. `shots` and `worktrees` are host-side too and need no build either; both have their own `--help`.
+
+- The `tooling` tests drive real git against throwaway repositories. They need `git` on the PATH of the process ctest starts — CI has it, and on Windows run them from PowerShell (`cd _bin; ctest -L tooling`), because `dev.py`'s MSYS2 environment can hide the Git for Windows install and they then fail rather than silently skip.
 
 - The build directory is `build` on macOS and `_bin` on Windows; the wrapper creates, configures and updates it (Ninja + sccache + lld when the machine has them, see [Faster builds](COMPILATION.md#faster-builds)).
 - **The compiler cache is shared between worktrees.** `tools/dev.py` sets `SCCACHE_BASEDIR` to the worktree root, so sccache rewrites those paths to be relative before hashing and two checkouts at different absolute paths get the same key: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects, minutes instead of a full recompile. Worktrees build side by side — there is no shared build path to queue behind. Builds that bypass `tools/dev.py` do not set it and share nothing.
@@ -26,6 +31,12 @@ python tools/dev.py dep <n> --blocked-by "#1,#2"   # set an issue's dependency r
 ### Worktree bootstrap runs itself
 
 `python tools/dev.py bootstrap --auto` fires at session start — the OpenCode plugin in `.opencode/plugins/dev-bootstrap/` and the Claude Code `SessionStart` hook in `.claude/settings.json` both run it. It configures the worktree and builds it **in the background** (log: `~/.ja2-dev/logs/bootstrap-*.log`, `%LOCALAPPDATA%\ja2-dev\logs\` on Windows), and it dedupes, so several sessions starting at once are fine. A fresh worktree is buildable without asking; `python tools/dev.py status` shows where the build is.
+
+### Finished worktrees are collected, not deleted by hand
+
+Every worktree carries its own multi-GB `_bin`, so a machine where many agents have worked accumulates tens of them. `python tools/dev.py worktrees` lists each one with its size, how old its last commit is, and whether its work reached master; `--sizes` measures the trees (slow, cached for later runs) and `--json` is there for other agents to read.
+
+`python tools/dev.py worktrees --prune` removes the finished ones. It asks first and prints what it would delete and how much disk that frees. A worktree is only removed when its work is **in master already** (its HEAD is an ancestor of `origin/master`, or its PR is merged — this repo squash-merges, so the PR is often the only evidence), it has no uncommitted changes, no PR is open on it, no build of ours is running in it, and it is not the main checkout or the worktree you are standing in. A detached HEAD or a deleted branch whose commits never reached master is unmerged work and is listed as such instead of being deleted. `--dry-run` shows the plan, `--yes` skips the question (for unattended runs) and `--keep-branches` keeps the local branches.
 
 ## Platform notes
 
@@ -216,16 +227,11 @@ A PR that changes anything the player can see (rendering, layout, UI, screens, v
 1. **Take them from the real game.** Drive the build with `python tools/ja2ctl.py` (or a `--show` window) and use `ja2ctl shot`.
 2. **Look at every one before opening the PR.** Open each PNG and check it. If a screen looks wrong, fix it; don't explain it away.
 3. **Cover the affected screens at 1280x720 (the smallest output the game runs at) and at least one widescreen size.** For example 1920x1080, plus 2560x1080 or 3440x1440 when the layout depends on width. When a PR adds or regenerates golden images, include the widescreen goldens it changes.
-4. **Host them on the `pr-screenshots` branch.** It is an orphan branch that only holds images, so they never enter `master`'s history:
+4. **Publish them with one command.** `pr-screenshots` is an orphan branch that only holds images, so proof never enters `master`'s history; `shots` fetches it, makes the worktree, copies, commits, pushes and prints the links to paste:
    ```bash
-   git fetch origin pr-screenshots || true
-   git worktree add ../pr-shots pr-screenshots 2>/dev/null || (git worktree add --detach ../pr-shots && cd ../pr-shots && git checkout --orphan pr-screenshots && git rm -rf . -q)
-   mkdir -p ../pr-shots/<branch-name> && cp <shots>.png ../pr-shots/<branch-name>/
-   cd ../pr-shots && git add . && git commit -m "Screenshots for <branch-name>" && git push origin pr-screenshots
+   python tools/dev.py shots <branch-name> map_1280x720.png map_1920x1080.png
    ```
-   Embed them in the PR body with
-   `![map 1920x1080](https://raw.githubusercontent.com/adhikasp/ja2-pecel-bakwan/pr-screenshots/<branch-name>/map_1920x1080.png)`.
-   Give each one a short caption saying what to look at.
+   Give each pasted image a short caption saying what to look at. The command is safe to re-run: identical images are not committed twice, and a push that loses a race is rebased onto the new tip instead of overwriting someone else's. There is one worktree for this, machine-wide, so it works from any checkout.
 5. **Reviewers open the images.** Don't merge a UI PR without doing so. If an image is missing or shows a problem, send the PR back.
 
 A PR with no visible change (build, tests, tooling) says "No visual change" instead.

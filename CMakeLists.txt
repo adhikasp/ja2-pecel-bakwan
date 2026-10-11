@@ -411,6 +411,14 @@ if (WITH_UNITTESTS)
     endif()
 
     if (Python3_Interpreter_FOUND)
+        # The developer tooling behind `dev.py worktrees` and `dev.py shots`.
+        # Pure Python and git, no game data and no build: the rules that decide
+        # which worktree may be deleted, and the screenshots branch they publish
+        # to, are asserted against throwaway repositories rather than this one.
+        add_test(NAME dev_tooling
+            COMMAND "${Python3_EXECUTABLE}" -m unittest discover -s "${CMAKE_CURRENT_SOURCE_DIR}/tools/tests")
+        set_tests_properties(dev_tooling PROPERTIES LABELS tooling)
+
         set(JA2CTL "${CMAKE_CURRENT_SOURCE_DIR}/tools/ja2ctl.py")
         file(GLOB E2E_SCRIPTS
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.lua"

@@ -266,7 +266,9 @@ that follows:
    Add the issue to the board first if it is missing:
    `gh project item-add 1 --owner adhikasp --url <issue-url>`.
 4. **Clean up the worktree**: `git worktree remove <path>` once the agent is
-   done with it.
+   done with it. `python tools/dev.py worktrees --prune` does this for every
+   finished worktree on the machine at once (merged, clean, not yours, not the
+   main checkout); it asks first and never touches unmerged work.
 5. **Re-sync your own checkout** — do this before you touch the next task, or
    every later judgement you make is about a tree that no longer exists:
    ```bash

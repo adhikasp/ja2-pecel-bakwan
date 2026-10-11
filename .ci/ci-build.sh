@@ -118,6 +118,9 @@ if [[ "$RUN_TESTS" == "true" ]]; then
   fi
   # Phase 0 spikes that need no game data (UI toolkits headless, render path, world raster rules, asset tools)
   ctest -L '^spike$' --output-on-failure
+  # The developer tooling tests (dev.py worktrees / shots): Python and git only,
+  # no build and no game data, and they touch nothing in this checkout.
+  ctest -L '^tooling$' --output-on-failure
 fi
 
 if [[ "$CI_TARGET" == "linux" ]]; then
