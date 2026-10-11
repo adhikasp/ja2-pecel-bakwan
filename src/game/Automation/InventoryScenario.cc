@@ -233,7 +233,9 @@ void StageHand(std::string const& mercName, std::string const& item, int const c
 	// a player holds an item with the details panel open
 	ShowPanelFor(s);
 	if (gpItemPointer) EndItemPointer();
-	CreateItems(id, 100, static_cast<UINT8>(count > 0 ? count : 1), &gItemPointer);
+	// money is one object that holds an amount: count is the amount
+	if (id == MONEY) CreateMoney(static_cast<UINT32>(count > 0 ? count : 1), &gItemPointer);
+	else             CreateItems(id, 100, static_cast<UINT8>(count > 0 ? count : 1), &gItemPointer);
 	SetItemPointer(&gItemPointer, s);
 	gbItemPointerSrcSlot = NO_SLOT;
 }

@@ -566,6 +566,13 @@ body.p4 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .desc-text { display: block; font-size: var(--fs-sm); color: var(--c-text); line-height: 20dp; margin-bottom: var(--sp-3); }
 .desc-attach { display: flex; margin: var(--sp-1) 0 var(--sp-2); }
 .aslot { margin-right: var(--sp-2); }
+.desc-unload { margin-bottom: var(--sp-3); }
+.money-split { display: block; margin: 0 0 var(--sp-3); }
+.money-split .amt { display: flex; align-items: center; height: 44dp; margin: var(--sp-2) 0; padding: 0 var(--sp-3); background-color: var(--c-bg); border: 2dp var(--c-select); }
+.money-split .amt .k { display: block; margin-right: var(--sp-3); font-family: var(--font-display); font-weight: 600; font-size: var(--fs-2xs); text-transform: uppercase; color: var(--c-text-faint); }
+.money-split .amt span { display: block; font-family: var(--font-mono); font-size: var(--fs-xl); color: var(--c-text-strong); }
+.money-split .chips { display: flex; }
+.money-split .chips .btn { margin-right: var(--sp-1); font-family: var(--font-mono); }
 .stack-grid { display: flex; flex-wrap: wrap; }
 .sslot { margin: 0 var(--sp-2) var(--sp-2) 0; }
 .hint-text { display: block; font-size: var(--fs-2xs); color: var(--c-text-faint); }

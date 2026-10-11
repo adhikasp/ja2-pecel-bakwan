@@ -4995,7 +4995,8 @@ MOUSE_REGION* MapBridgeInvSlotRegion(int const invPos)
 
 // ---------------------------------------------------------------------------------------------------------------
 // The native map screen draws the item description box and the stack popup itself (Interface_Items.h,
-// ItemDescNativeView); its clicks reach the regions above.
+// ItemDescNativeView); its clicks are the inventory core's (InventoryAttachClick, InventoryUnload,
+// InventoryMoneyStep below), the same ones the native tactical HUD makes.
 
 ItemDescNativeView GetItemDescNativeView()
 {
@@ -5009,6 +5010,7 @@ ItemDescNativeView GetItemDescNativeView()
 	v.money     = o.usItem == MONEY ? o.uiMoneyAmount : 0;
 	v.shotsLeft = -1;
 	ItemModel const* const item = GCM->getItem(o.usItem, ItemSystem::nothrow);
+	v.gun       = item != nullptr && item->isGun();
 	WeaponModel const* const weapon = item != nullptr ? item->asWeapon() : nullptr;
 	if (item && item->isWeapon() && weapon != nullptr && weapon->ubMagSize > 0)
 	{
@@ -5019,7 +5021,7 @@ ItemDescNativeView GetItemDescNativeView()
 	{
 		v.attachments[i]     = o.usAttachItem[i];
 		v.attachStatus[i]    = o.bAttachStatus[i];
-		v.attachEnabled[i]   = (gItemDescAttachmentRegions[i].uiFlags & MSYS_REGION_EXISTS) != 0;
+		v.attachEnabled[i]   = o.usItem != MONEY; // money has no attachment positions
 	}
 	// Typed slots: the platform says which roles the positions serve.
 	if (item)
@@ -5032,13 +5034,6 @@ ItemDescNativeView GetItemDescNativeView()
 		}
 	}
 	return v;
-}
-
-void ItemDescNativeAttachmentClick(int const i, bool const right)
-{
-	if (i < 0 || i >= MAX_ATTACHMENTS || !(gItemDescAttachmentRegions[i].uiFlags & MSYS_REGION_EXISTS)) return;
-	if (right) SheetAttachInspect(static_cast<UINT32>(i));
-	else       SheetAttachPrimary(static_cast<UINT32>(i));
 }
 
 void ItemDescNativeClose()

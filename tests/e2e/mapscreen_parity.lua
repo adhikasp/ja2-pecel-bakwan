@@ -258,6 +258,57 @@ shots.take("mapscreen_description.png", true)
 ja2.click(id("map.desc.done"))
 ja2.waitIdle()
 ja2.expect(not vm().desc_open, "Done closes it")
+-- the description's unload is the shared inventory core's: the magazine leaves the gun and lands in the hand
+ja2.rclick(id("map.inv.slot[" .. SLOT_HAND .. "]"))
+ja2.waitIdle()
+ja2.expect(vm().desc_open and vm().desc_gun, "the gun's description offers unload")
+local rounds = vm().desc_ammo
+ja2.expect(rounds ~= "" and not rounds:match("^0 /"), "the gun is loaded (" .. rounds .. ")")
+ja2.click(id("map.desc.unload"))
+ja2.waitIdle()
+local held = ja2.inventory("Ivan").hand
+ja2.expect(held and held.item:find("CLIP"), "the magazine is in the hand after unload")
+ja2.expect(vm().desc_ammo:match("^0 /"), "the gun is empty (" .. vm().desc_ammo .. ")")
+ja2.click(id("map.desc.done"))
+ja2.waitIdle()
+-- put the magazine into a pocket again
+ja2.click(id("map.inv.slot[" .. SLOT_BIG_POCKET .. "]"))
+ja2.waitIdle()
+ja2.expect(ja2.inventory("Ivan").hand == nil, "the magazine goes into a pocket")
+-- money: split 1500 into 1000 + 100 and take the 100 back, the same steps as the tactical sheet
+-- The pockets are typed, so offer the cash to the empty ones until one takes it.
+ja2.debug("hand", { merc = "Ivan", item = "MONEY", count = 1500 })
+local cashPos
+for _, g in ipairs(vm().gear) do
+	if not cashPos and g.pos >= SLOT_POCK_FIRST and g.art == "" then
+		ja2.click(id("map.inv.slot[" .. math.tointeger(g.pos) .. "]"))
+		ja2.waitIdle()
+		if ja2.inventory("Ivan").hand == nil then cashPos = math.tointeger(g.pos) end
+	end
+end
+ja2.expect(cashPos, "an empty pocket takes the cash")
+ja2.rclick(id("map.inv.slot[" .. cashPos .. "]"))
+ja2.waitIdle()
+ja2.expect(vm().desc_open and vm().desc_money, "the cash opens the money split")
+local function split() return ja2.inventory("Ivan").sheet.money end
+ja2.expect(split().total == 1500 and split().removing == 0, "nothing is split off yet")
+ja2.click(id("map.money.add1000"))
+ja2.click(id("map.money.add100"))
+ja2.waitIdle()
+ja2.expect(split().removing == 1100 and split().remaining == 400, "+1000 and +100 split off 1100 (" .. split().removing .. ")")
+ja2.expect(vm().desc_removing:find("1,?100"), "the screen shows it (" .. vm().desc_removing .. ")")
+shots.take("mapscreen_money.png", true)
+ja2.rclick(id("map.money.add100"))
+ja2.waitIdle()
+ja2.expect(split().removing == 1000, "right click takes 100 back (" .. split().removing .. ")")
+ja2.click(id("map.desc.done"))
+ja2.waitIdle()
+ja2.expect(not vm().desc_open, "Done closes the money split")
+held = ja2.inventory("Ivan").hand
+ja2.expect(held and held.item == "MONEY", "the split-off cash is on the cursor (" .. (held and (held.item .. " x" .. tostring(held.count)) or "nothing") .. ")")
+ja2.click(id("map.inv.slot[" .. cashPos .. "]"))
+ja2.waitIdle()
+ja2.expect(ja2.inventory("Ivan").hand == nil, "the 1000 goes back into the pocket")
 -- the stack popup (right-click a stack of two clips), take one, put it back
 local stackPos
 for _, g in ipairs(vm().gear) do if g.count ~= "" then stackPos = math.tointeger(g.pos) end end

@@ -485,8 +485,12 @@ public:
 		Command("stock_drop",   [this](Args const&)   { SectorStock::DropAll(); Poke(); });
 		Command("stack", [this](Args const&) { StackAndMerge(); Poke(); });
 		Command("desc_close", [this](Args const&) { ItemDescNativeClose(); Poke(); });
-		Command("desc_attach",   [this](Args const& a) { if (!a.empty()) ItemDescNativeAttachmentClick(std::atoi(a[0].c_str()), false); Poke(); });
-		Command("desc_attach_r", [this](Args const& a) { if (!a.empty()) ItemDescNativeAttachmentClick(std::atoi(a[0].c_str()), true); Poke(); });
+		// the item description's actions are the shared inventory core's, as the tactical sheet's are
+		Command("desc_attach",   [this](Args const& a) { if (!a.empty()) InventoryAttachClick(std::atoi(a[0].c_str()), false); Poke(); });
+		Command("desc_attach_r", [this](Args const& a) { if (!a.empty()) InventoryAttachClick(std::atoi(a[0].c_str()), true); Poke(); });
+		Command("desc_unload",   [this](Args const&) { InventoryUnload(); Poke(); });
+		Command("desc_money",    [this](Args const& a) { if (!a.empty()) InventoryMoneyStep(std::atoi(a[0].c_str()), false); Poke(); });
+		Command("desc_money_r",  [this](Args const& a) { if (!a.empty()) InventoryMoneyStep(std::atoi(a[0].c_str()), true); Poke(); });
 		Command("stack_pick",   [this](Args const& a) { if (!a.empty()) ItemStackNativeClick(std::atoi(a[0].c_str()), false); Poke(); });
 		Command("stack_pick_r", [this](Args const& a) { if (!a.empty()) ItemStackNativeClick(std::atoi(a[0].c_str()), true); Poke(); });
 		Command("stack_close", [this](Args const&) { ItemStackNativeClose(); Poke(); });
@@ -545,7 +549,7 @@ public:
 			"log_all", "log_combat", "log_team", "log_money", "search", "search_items", "sort_type", "sort_name", "sort_cond", "sort_count",
 			"stack", "marked", "take", "drop", "load_mags", "repair", "select_all", "select_none", "select_invert", "stock_hint",
 			"take_hint", "drop_hint", "load_hint", "repair_hint", "merge_hint",
-			"desc_cond", "desc_weight", "desc_ammo", "desc_attach", "desc_hint", "stack_hint", "move_all", "close", "loadout",
+			"desc_cond", "desc_weight", "desc_ammo", "desc_unload", "desc_total", "desc_amount", "desc_remaining", "desc_attach", "desc_hint", "stack_hint", "move_all", "close", "loadout",
 			"pb_sector", "pb_involved", "pb_uninvolved", "pb_auto", "pb_enter", "pb_retreat",
 			"militia_unassigned", "militia_green", "militia_regular", "militia_elite", "militia_auto", "militia_hint", "militia_pick" })
 		{
@@ -584,6 +588,9 @@ public:
 		f.Field("pool_locked", poolBlocked);
 		f.Field("desc_open", descOpen); f.Field("desc_name", descName); f.Field("desc_text", descText); f.Field("desc_art", descArt);
 		f.Field("desc_art_style", descArtStyle); f.Field("desc_cond", descCond); f.Field("desc_weight", descWeight); f.Field("desc_ammo", descAmmo);
+		f.Field("desc_gun", descGun); f.Field("desc_money", descMoney); f.Field("desc_total", descTotal);
+		f.Field("desc_remaining", descRemaining); f.Field("desc_removing", descRemoving);
+		f.Field("desc_m1000", descM1000); f.Field("desc_m100", descM100); f.Field("desc_m10", descM10);
 		f.Rows("desc_attach", descAttach);
 		f.Field("stack_open", stackOpen); f.Field("stack_name", stackName); f.Rows("stack", stack);
 		f.Rows("menus", menus); f.Rows("mlines", mlines);
@@ -676,7 +683,9 @@ public:
 	int poolEmptyIndex = -1, poolMarked = 0;
 	std::string poolWeight, poolNote;
 	bool poolBlocked = false; // no live merc in the sector: the operations that need one are off
-	bool descOpen = false, stackOpen = false;
+	bool descOpen = false, stackOpen = false, descGun = false, descMoney = false;
+	bool descM1000 = false, descM100 = false, descM10 = false;
+	std::string descTotal, descRemaining, descRemoving;
 	std::string descName, descText, descArt, descArtStyle, descCond, descWeight, descAmmo, stackName;
 	std::vector<DescAttachment> descAttach;
 	std::vector<PoolItem> stack;
@@ -1287,8 +1296,20 @@ private:
 		ItemDescNativeView const d = GetItemDescNativeView();
 		descOpen = d.open;
 		descAttach.clear();
+		descGun = descMoney = descM1000 = descM100 = descM10 = false;
+		descTotal = descRemaining = descRemoving = "";
 		if (d.open)
 		{
+			descGun = d.gun;
+			descMoney = d.item == MONEY;
+			if (descMoney)
+			{
+				InventoryMoneySplit const m = InventoryMoneyState();
+				descTotal = S(SPrintMoney(m.total));
+				descRemaining = S(SPrintMoney(m.remaining));
+				descRemoving = S(SPrintMoney(m.removing));
+				descM1000 = m.total >= 1000; descM100 = m.total >= 100; descM10 = m.total >= 10;
+			}
 			ItemModel const* const item = GCM->getItem(d.item, ItemSystem::nothrow);
 			descName = item ? S(item->getName()) : "";
 			descText = item ? S(item->getDescription()) : "";

@@ -270,14 +270,25 @@
 		<div class="modal-body">
 			<div class="desc-art" id="map.desc.art"><img data-if="desc_art != ''" data-attr-src="desc_art" data-attr-style="desc_art_style"/></div>
 			<div class="desc-stats">
-				<div class="kv2"><span class="k">{{l_desc_cond}}</span><span class="v"><span>{{desc_cond}}</span></span></div>
+				<div class="kv2" data-if="!desc_money"><span class="k">{{l_desc_cond}}</span><span class="v"><span>{{desc_cond}}</span></span></div>
 				<div class="kv2"><span class="k">{{l_desc_weight}}</span><span class="v"><span>{{desc_weight}}</span></span></div>
-				<div class="kv2" data-if="desc_ammo != ''"><span class="k">{{l_desc_ammo}}</span><span class="v"><span>{{desc_ammo}}</span></span></div>
+				<div class="kv2" data-if="desc_ammo != ''"><span class="k">{{l_desc_ammo}}</span><span class="v"><span id="map.desc.rounds">{{desc_ammo}}</span></span></div>
+			</div>
+			<button class="btn btn-sm desc-unload" id="map.desc.unload" data-if="desc_gun" data-label="Unload" data-event-click="desc_unload"><img class="icon" src="icon-reload"/><span class="label">{{l_desc_unload}}</span></button>
+			<div class="money-split" id="map.money" data-if="desc_money">
+				<div class="kv2"><span class="k">{{l_desc_total}}</span><span class="v" id="map.money.total">{{desc_total}}</span></div>
+				<div class="kv2"><span class="k">{{l_desc_remaining}}</span><span class="v" id="map.money.remaining">{{desc_remaining}}</span></div>
+				<div class="amt"><span class="k">{{l_desc_amount}}</span><span id="map.money.amount">{{desc_removing}}</span></div>
+				<div class="chips">
+					<button class="btn btn-sm" id="map.money.add1000" data-label="+1000" data-class-is-disabled="!desc_m1000" title="Right click: take back" data-event-click="desc_money(0)" data-attr-rclick="'desc_money_r(0)'"><span class="label">+1000</span></button>
+					<button class="btn btn-sm" id="map.money.add100" data-label="+100" data-class-is-disabled="!desc_m100" title="Right click: take back" data-event-click="desc_money(1)" data-attr-rclick="'desc_money_r(1)'"><span class="label">+100</span></button>
+					<button class="btn btn-sm" id="map.money.add10" data-label="+10" data-class-is-disabled="!desc_m10" title="Right click: take back" data-event-click="desc_money(2)" data-attr-rclick="'desc_money_r(2)'"><span class="label">+10</span></button>
+				</div>
 			</div>
 			<span class="desc-text">{{desc_text}}</span>
 			<span class="sec-title" data-if="desc_attach.size &gt; 0">{{l_desc_attach}}</span>
 			<div class="desc-attach"><div data-for="a : desc_attach" class="slot aslot" data-attr-id="'map.desc.attach[' + a.slot + ']'" data-event-click="desc_attach(a.slot)" data-attr-rclick="'desc_attach_r(' + a.slot + ')'" data-attr-title="a.name"><img class="art" data-if="a.art != ''" data-attr-src="a.art" data-attr-style="a.art_style"/><img class="ghost" src="icon-add" data-if="a.art == ''"/></div></div>
-			<span class="hint-text">{{l_desc_hint}}</span>
+			<span class="hint-text" data-if="!desc_money">{{l_desc_hint}}</span>
 		</div>
 		<div class="modal-foot"><button class="btn btn-primary" id="map.desc.done" data-label="Done" data-event-click="desc_close"><img class="icon" src="icon-confirm"/><span class="label">{{l_done}}</span></button></div>
 	</div>
