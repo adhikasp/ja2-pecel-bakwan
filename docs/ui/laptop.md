@@ -184,7 +184,8 @@ motion (`--t-slow` panel transitions).
 
 - [x] No mercs (Personnel shows "Current Team (0)"), no mail, no files beyond the R.I.S. report
 - [ ] 18 mercs (hire limit messages on A.I.M. and M.E.R.C.), 10-item Bobby Ray's limit, long ledgers (pages → scroll)
-- [ ] Dead mercs (A.I.M. "Deceased", departed list), mercs away on assignment (answering machine)
+- [ ] Dead mercs (A.I.M. "Deceased", departed list)
+- [x] Mercs away on assignment: answering machine, leave message, mail back, refusal (`laptop_parity.lua`)
 - [ ] M.E.R.C. server down (broken link), Bobby Ray's not open yet, Speck's unpaid account
 - [ ] Rain delay; insufficient funds on every purchase path
 - [ ] Long translations: German page titles, Russian quiz answers (quiz answers wrap)

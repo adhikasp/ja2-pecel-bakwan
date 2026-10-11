@@ -226,6 +226,7 @@ void LaptopViewModel::AimShow(int const pid)
 	amMedical = p.bMedicalDeposit ? ST::format("{} {}", SPrintMoney(p.sMedicalDepositAmount), CharacterInfo[AIM_MEMBER_MEDICAL_DEPOSIT_REQ]).to_std_string() : "";
 	amGearCost = Money(p.usOptionalGearCost);
 	amStatus = IsMercDead(p) ? labels["deceased"] : FindSoldierByProfileIDOnPlayerTeam(ProfileID(pid)) ? labels["on_team"] : !IsMercHireable(p) ? labels["away"] : "";
+	amCanCall = !IsMercDead(p) && !FindSoldierByProfileIDOnPlayerTeam(ProfileID(pid));
 	INT8 const v[] = { p.bLifeMax, p.bAgility, p.bDexterity, p.bStrength, p.bLeadership, p.bWisdom, p.bExpLevel, p.bMarksmanship, p.bMechanical, p.bExplosive, p.bMedical };
 	amStats.clear();
 	for (int i = 0; i < 11; ++i)
@@ -526,7 +527,9 @@ void LaptopViewModel::DescribeSites(Fields& f)
 	f.Rows("aim_members", aimMembers); f.Rows("aim_sort_chips", aimSortChips); f.Field("aim_available_only", aimAvailableOnly);
 	f.Field("aim_profile", aimProfile); f.Field("am_name", amName); f.Field("am_full", amFull); f.Field("am_face", amFace);
 	f.Field("am_fee1", amFee1); f.Field("am_fee7", amFee7); f.Field("am_fee14", amFee14); f.Field("am_medical", amMedical);
-	f.Field("am_gear_cost", amGearCost); f.Field("am_status", amStatus); f.Rows("am_stats", amStats); f.Rows("am_gear", amGear);
+	f.Field("am_gear_cost", amGearCost); f.Field("am_status", amStatus); f.Field("am_can_call", amCanCall);
+	bool messageLeft = aimProfile >= 0 && (GetProfile(ProfileID(aimProfile)).ubMiscFlags3 & PROFILE_MISC_FLAG3_PLAYER_LEFT_MSG_FOR_MERC_AT_AIM) != 0;
+	f.Field("am_message_left", messageLeft); f.Rows("am_stats", amStats); f.Rows("am_gear", amGear);
 	f.List("am_bio", amBio); f.List("aim_text", aimText);
 	f.Field("hire_state", hireState); f.Field("hire_length", hireLength); f.Field("hire_gear", hireGear); f.Field("hire_quote", hireQuote);
 	f.Field("hire_contract", hireContract); f.Field("hire_equipment", hireEquipment); f.Field("hire_deposit", hireDeposit);

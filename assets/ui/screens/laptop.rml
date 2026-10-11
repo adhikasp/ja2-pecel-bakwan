@@ -244,7 +244,7 @@
 			<div class="aim-page" data-if="page == 'member'" id="aim.member">
 				<div class="aim-face"><div class="ph" id="aim.member.face"><img data-attr-src="am_face"/></div>
 					<div class="nav"><button class="btn" id="aim.member.prev" data-label="Previous" data-event-click="aim_step(-1)"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button><button class="btn" id="aim.member.next" data-label="Next" data-event-click="aim_step(1)"><img class="icon" src="icon-chevron-right"/><span class="label">{{l_next}}</span></button></div>
-					<button class="btn-site wide" id="aim.contact" data-label="Contact" data-if="hire_state == '' &amp;&amp; am_status == ''" data-event-click="aim_call"><img class="icon" src="icon-video"/><span>{{l_contact}}</span></button>
+					<button class="btn-site wide" id="aim.contact" data-label="Contact" data-if="hire_state == '' &amp;&amp; am_can_call" data-event-click="aim_call"><img class="icon" src="icon-video"/><span>{{l_contact}}</span></button>
 					<span class="tag" data-if="am_status != ''">{{am_status}}</span>
 				</div>
 				<div class="aim-info">
