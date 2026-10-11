@@ -205,11 +205,27 @@ def normalize(path: str | Path) -> str:
 
 
 def shorten(path: str, main_path: str, home: str) -> str:
-    """The shortest unambiguous form: relative to the checkout, or `~`."""
+    """The shortest unambiguous form: relative to the checkout, or `~`.
+
+    Whether a path is under a root is decided on resolved paths (two spellings
+    of one directory must match), but the shortened text comes from
+    `os.path.relpath` on the paths as given: `realpath` rewrites a
+    relative-looking path against the current directory, so slicing with the
+    resolved length empties the path - which is what the Linux CI run caught.
+    """
     norm = normalize(path)
-    for root, prefix in ((normalize(main_path), ""), (normalize(home), "~/")):
-        if root and norm.startswith(root.rstrip("/\\") + os.sep):
-            return prefix + path[len(root.rstrip("/\\")) + 1:]
+    for root, prefix in ((main_path, ""), (home, "~/")):
+        root = str(root).rstrip("/\\")   # callers pass a str or a Path
+        if not root or not normalize(root):
+            continue
+        if not norm.startswith(normalize(root) + os.sep):
+            continue
+        try:
+            # Forward slashes everywhere, because that is what git prints and
+            # the table should read the same on both platforms.
+            return prefix + os.path.relpath(path, root).replace(os.sep, "/")
+        except ValueError:      # different drives on Windows: no shorter form
+            return path
     return path
 
 

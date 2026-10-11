@@ -104,6 +104,16 @@ class Formatting(unittest.TestCase):
         self.assertEqual("~/wt/one",
                          worktrees.shorten("C:/Users/x/wt/one", "C:/repo", "C:/Users/x"))
 
+    def test_a_root_that_realpath_expands_still_slices_the_path_correctly(self):
+        # `realpath` resolves a relative-looking root against the current
+        # directory, so on Linux the resolved root is much longer than the text
+        # the path is written with. Slicing with the resolved length empties
+        # the path, which is what the Linux CI run caught.
+        self.assertEqual(".claude/worktrees/x",
+                         worktrees.shorten("repo/.claude/worktrees/x", "./repo", "/nowhere"))
+        self.assertEqual("wt/one", worktrees.shorten("/a/wt/one", "/a", "/nowhere"))
+        self.assertEqual("/elsewhere/wt", worktrees.shorten("/elsewhere/wt", "/a", "/nowhere"))
+
     def test_table_puts_the_prunable_rows_first_and_flags_them(self):
         rows = worktrees.parse_worktrees(PORCELAIN)
         rows[0].main = True
