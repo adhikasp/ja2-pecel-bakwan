@@ -336,6 +336,10 @@ player-facing.
 
 ### Phase 9 — HD content art
 
+> **Superseded in part by [open-art.md](open-art.md).** Open, clean-room art is the default and
+> the way the game gets better art; the upscale below is generated locally for players who own
+> the game's files.
+
 Per the asset methodology, in usage order:
 1. Merc faces (the most-seen content). Upscale + cleanup, with Hand repaint for the most-seen
    mercs.
@@ -363,6 +367,8 @@ The original art belongs to the JA2 rights holders. Pecel Bakwan ships no game d
   The default is to generate it on the player's machine from their own game files with a
   deterministic pipeline. A separately distributed pack remains possible later, outside this repo.
   Test fixtures use only our own art.
+- **Open art.** The game's own art is a clean-room replacement set (CC BY-SA 4.0, separate repo),
+  not derived from the originals. Policy, provenance and gates: [open-art.md](open-art.md).
 
 ## Cross-cutting concerns
 
