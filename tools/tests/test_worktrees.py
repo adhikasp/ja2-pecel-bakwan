@@ -10,6 +10,7 @@ only way to know the rules hold together is to run them against git.
     python -m unittest discover -s tools/tests
 """
 
+import io
 import os
 import shutil
 import sys
@@ -48,6 +49,12 @@ HEAD 5555555555555555555555555555555555555555
 branch refs/heads/claude/gone
 prunable gitdir file points to non-existent location
 """
+
+
+def captured_say():
+    """A `say` callback that collects the plan, one line per entry."""
+    buffer = io.StringIO()
+    return buffer, lambda line="": buffer.write(line + "\n")
 
 
 class ParseWorktrees(unittest.TestCase):
@@ -175,6 +182,54 @@ class PruneSafety(unittest.TestCase):
         self.assertEqual("unmerged work", payload["blocked_because"])
 
 
+class BranchDeletion(unittest.TestCase):
+    """`git branch -d` judges against HEAD, which is never master when an agent
+    prunes from its own worktree; the merge test is made against master here."""
+
+    def setUp(self):
+        if not shutil.which("git"):
+            self.skipTest("git not on PATH")
+        isolate_git(self.addCleanup)
+        self.tmp = Path(tempfile.mkdtemp(prefix="ja2-branch-test-"))
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        self.repo, self.origin = make_repo(self.tmp)
+        run("checkout", "-q", "-b", "feat", cwd=self.repo)
+        (self.repo / "feature.txt").write_text("work\n", encoding="utf-8")
+        run("add", "feature.txt", cwd=self.repo)
+        run("commit", "-q", "-m", "feature", cwd=self.repo)
+        run("checkout", "-q", "master", cwd=self.repo)
+        run("merge", "-q", "--ff-only", "feat", cwd=self.repo)
+        run("push", "-q", "origin", "master", cwd=self.repo)  # master has to be master *on the remote*
+        run("fetch", "-q", "origin", cwd=self.repo)
+        # Stand where an agent stands: not on master.
+        run("checkout", "-q", "--detach", "HEAD~1", cwd=self.repo)
+        self.row = worktrees.Row(path=str(self.repo), head=run("rev-parse", "HEAD", cwd=self.repo).strip(),
+                                 branch="feat", exists=True, merged=True)
+
+    def branches(self):
+        return run("branch", "--list", "feat", cwd=self.repo).strip()
+
+    def test_a_branch_merged_into_master_goes(self):
+        said = io.StringIO()
+        worktrees.delete_branch(self.repo, self.row, "refs/remotes/origin/master", said.write)
+        self.assertEqual("", self.branches())
+        self.assertIn("deleted branch feat", said.getvalue())
+
+    def test_a_branch_that_is_not_in_master_stays(self):
+        self.row.branch = "nothing-here"
+        self.row.pr = None
+        said = io.StringIO()
+        worktrees.delete_branch(self.repo, self.row, "refs/remotes/origin/master", said.write)
+        self.assertIn("kept branch nothing-here", said.getvalue())
+        self.assertIn("not in", said.getvalue())
+
+    def test_without_a_base_nothing_is_deleted(self):
+        said = io.StringIO()
+        worktrees.delete_branch(self.repo, self.row, None, said.write)
+        self.assertEqual("feat", self.branches().split()[0].strip("* "))
+        self.assertIn("kept branch feat", said.getvalue())
+
+
 class BuildLockDetection(unittest.TestCase):
     def test_a_fresh_lock_file_means_a_build_is_running(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -232,15 +287,17 @@ class AgainstRealGit(unittest.TestCase):
         self.state = self.tmp / "state"
         self.rows = {}
 
-    def add_worktree(self, name, *, commit="second", branch=None, detached=False):
+    def add_worktree(self, name, *, commit=None, branch=None, detached=False):
         path = self.tmp / name
         if detached:
             run("worktree", "add", "--detach", str(path), "HEAD", cwd=self.repo)
         else:
             run("worktree", "add", "-b", branch or name, str(path), "HEAD", cwd=self.repo)
-            (path / "file.txt").write_text(commit + "\n", encoding="utf-8")
+            # Content per branch: a worktree branched after a merge would
+            # otherwise have nothing to commit.
+            (path / "file.txt").write_text(f"{name}\n", encoding="utf-8")
             run("add", "file.txt", cwd=path)
-            run("commit", "-m", commit, cwd=path)
+            run("commit", "-m", commit or f"work on {name}", cwd=path)
         self.rows[name] = str(path)
         return path
 
@@ -291,10 +348,28 @@ class AgainstRealGit(unittest.TestCase):
         self.merge_to_master("dirty")
         (dirty / "scratch.txt").write_text("not committed\n", encoding="utf-8")
         rows = self.collect()
-        doomed = worktrees.plan_prune(rows)
-        self.assertNotIn(str(dirty), [r.path for r in doomed])
+        doomed, kept = worktrees.plan_prune(rows)
+        self.assertNotIn(self.at("dirty"), [worktrees.normalize(r.path) for r in doomed])
+        self.assertIn(self.at("dirty"), [worktrees.normalize(r.path) for r in kept])
         quiet(worktrees.prune, self.repo, rows, yes=True)
         self.assertTrue(dirty.exists())
+
+    def test_the_prune_plan_says_which_rows_the_dirty_check_turned_away(self):
+        # A listing that says "37 prunable" and a plan that says "36" with no
+        # explanation reads as a bug in the tool.
+        dirty = self.add_worktree("dirty")
+        self.merge_to_master("dirty")
+        (dirty / "scratch.txt").write_text("not committed\n", encoding="utf-8")
+        self.add_worktree("clean")
+        self.merge_to_master("clean")
+        said, say = captured_say()
+        quiet(worktrees.prune, self.repo, self.collect(), dry_run=True, say=say)
+        text = said.getvalue()
+        self.assertIn("About to remove 1 worktree(s)", text)
+        kept = [line for line in text.splitlines() if "(kept)" in line]
+        self.assertEqual(1, len(kept))
+        self.assertIn("uncommitted changes", kept[0])
+        self.assertNotIn("clean", kept[0])
 
     def test_keeps_a_locked_worktree_even_when_merged(self):
         locked = self.add_worktree("locked")
@@ -345,6 +420,35 @@ class AgainstRealGit(unittest.TestCase):
         self.assertFalse(row.merged, "ancestry alone does not see a squash merge")
         self.assertTrue(row.in_master)
         self.assertIsNone(worktrees.prune_blocker(row))
+
+    def test_a_merged_branch_is_deleted_from_a_worktree_that_is_not_master(self):
+        # `git branch -d` judges against HEAD, and an agent prunes from its own
+        # worktree, whose branch does not contain anyone else's commits. The
+        # merge test has to be made against master, or no branch is ever
+        # collected and the output blames git for a refusal it never made.
+        done = self.add_worktree("done")
+        self.merge_to_master("done")
+        agent = self.add_worktree("agent")
+        self.add_worktree("other")            # unmerged, so it survives the prune
+        rows, _ = worktrees.collect(self.repo, here=agent, fetch=False, prs={})
+        said, say = captured_say()
+        quiet(worktrees.prune, agent, rows, yes=True, say=say)
+        self.assertEqual("", run("branch", "--list", "done", cwd=self.repo).strip())
+        self.assertEqual("agent", run("rev-parse", "--abbrev-ref", "HEAD", cwd=agent).strip())
+
+    def test_a_branch_merged_by_pull_request_is_deleted_even_without_ancestry(self):
+        # After a squash merge the branch head is not an ancestor of master, so
+        # the merged pull request is the only evidence - and enough.
+        orphan = self.add_worktree("orphan")
+        rows = [row for row in self.collect()
+                if worktrees.normalize(row.path) == self.at("orphan")]
+        self.assertEqual(1, len(rows))
+        rows[0].pr = {"number": 9, "state": "MERGED"}
+        self.assertIsNone(worktrees.prune_blocker(rows[0]))
+        said, say = captured_say()
+        quiet(worktrees.prune, self.repo, rows, yes=True, say=say)
+        self.assertEqual("", run("branch", "--list", "orphan", cwd=self.repo).strip())
+        self.assertFalse(orphan.exists())
 
 
 if __name__ == "__main__":

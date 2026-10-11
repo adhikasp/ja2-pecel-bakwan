@@ -462,14 +462,17 @@ def collect(repo: Path, *, here: Path | None = None, fetch: bool = True, slug: s
 
 # --- pruning -----------------------------------------------------------------
 
-def plan_prune(rows: list[Row]) -> list[Row]:
-    """The rows `--prune` would remove, with the dirty check filled in.
+def plan_prune(rows: list[Row]) -> tuple[list[Row], list[Row]]:
+    """What `--prune` would remove, and what the dirty check turned away.
 
     Dirtiness is only worth asking about for a row everything else has already
-    cleared, so it is the last gate - and never a gate that is skipped.
+    cleared, so it is the last gate - and never a gate that is skipped. Both
+    lists come back because a listing says "37 prunable" and this says "36,
+    and here is the one that changed its mind": without the second list the
+    two numbers look like a bug.
     """
-    doomed = [row for row in rows if prune_blocker(row) is None]
-    todo = [row for row in doomed if row.exists]
+    candidates = [row for row in rows if prune_blocker(row) is None]
+    todo = [row for row in candidates if row.exists]
     if todo:
         def check_dirty(row: Row) -> bool:
             proc = git("status", "--porcelain", cwd=row.path, check=False)
@@ -478,14 +481,50 @@ def plan_prune(rows: list[Row]) -> list[Row]:
         with ThreadPoolExecutor(max_workers=8) as pool:
             for row, dirty in zip(todo, pool.map(check_dirty, todo)):
                 row.dirty = dirty
-    return [row for row in doomed if prune_blocker(row) is None]
+    return [row for row in candidates if prune_blocker(row) is None], \
+        [row for row in candidates if row.dirty]
+
+
+def delete_branch(repo: Path, row: Row, base: str | None, log) -> None:
+    """Delete a pruned worktree's local branch, or say why it stays.
+
+    `git branch -d` judges a branch against **HEAD**, and this runs from
+    whichever worktree the caller stands in - an agent's own branch, whose
+    history does not contain anyone else's commits - so `-d` refuses nearly
+    every time, even when the work is in master, and blames git for a refusal
+    it was asked to make. So the merge test is made here, against master:
+    ancestry first, and failing that the merged pull request, which in this
+    repository is often the only evidence there is (PRs are squash merged, so a
+    merged PR's branch is never an ancestor of master). Anything else keeps
+    its branch.
+
+    `-D` follows that test and nothing else. The refusal that still matters -
+    a branch checked out in another worktree - git makes on its own.
+    """
+    name = row.branch
+    if not name:
+        return
+    if base and git("merge-base", "--is-ancestor", name, base, cwd=repo,
+                    check=False).returncode == 0:
+        why = ""
+    elif row.pr_state == "MERGED":
+        why = f" (merged as PR #{row.pr.get('number')})"
+    else:
+        log(f"kept branch {name}: its commits are not in {base or 'master'}")
+        return
+    verdict = git("branch", "-D", name, cwd=repo, check=False)
+    if verdict.returncode == 0:
+        log(f"deleted branch {name}{why}")
+        return
+    message = (verdict.stderr or verdict.stdout).strip().splitlines()
+    log(f"kept branch {name}: {message[-1] if message else 'git refused'}")
 
 
 def prune(repo: Path, rows: list[Row], log=print, *, dry_run: bool = False, yes: bool = False,
           keep_branches: bool = False, home: str | None = None, say=print) -> int:
     """Remove the worktrees `prune_blocker` cleared, then their merged branches."""
     home = home or str(Path.home())
-    doomed = plan_prune(rows)
+    doomed, dirty_rows = plan_prune(rows)
     if not doomed:
         log("nothing to prune: every worktree still holds work, or is in use")
         return 0
@@ -502,6 +541,9 @@ def prune(repo: Path, rows: list[Row], log=print, *, dry_run: bool = False, yes:
     for row in gone:
         say(f"  {'(gone)':>8}  {row.head[:8]}  {row.name:<40}  {shorten(row.path, repo, home)}"
             "  - only the git record")
+    for row in dirty_rows:
+        say(f"  {'(kept)':>8}  {row.head[:8]}  {row.name:<40}  {shorten(row.path, repo, home)}"
+            "  - uncommitted changes")
 
     if dry_run:
         say("dry run: nothing was removed")
@@ -533,19 +575,9 @@ def prune(repo: Path, rows: list[Row], log=print, *, dry_run: bool = False, yes:
 
     if keep_branches:
         return 0
-    # `-d` with master as the merge base, so git - not this script - has the
-    # last word on whether a branch is merged. A branch checked out in another
-    # worktree, or unmerged, is kept and reported.
     base = resolve_base(repo)
     for row in sorted(removed, key=lambda r: r.name):
-        if not row.branch:
-            continue
-        proc = git("branch", "-d", row.branch, *([base] if base else []), cwd=repo, check=False)
-        message = (proc.stderr or proc.stdout).strip().splitlines()
-        if proc.returncode != 0:
-            log(f"kept branch {row.branch}: {message[-1] if message else 'git refused'}")
-        else:
-            log(f"deleted branch {row.branch}")
+        delete_branch(repo, row, base, log)
     return 0
 
 
@@ -562,7 +594,10 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
                         help="with --prune: remove the worktrees but keep their local branches")
     parser.add_argument("--no-fetch", action="store_true",
                         help="do not fetch; decide 'merged' against the origin/master we already have")
-    parser.add_argument("--no-pr", action="store_true", help="skip the pull requests (one `gh` call)")
+    parser.add_argument("--no-pr", action="store_true",
+                        help="skip the pull requests (one `gh` call). This repository squash-merges, "
+                             "so the merged PR is often the only evidence that a branch's work is in "
+                             "master: without it, far fewer worktrees count as prunable")
     parser.add_argument("--dirty", action="store_true",
                         help="also ask every worktree for uncommitted work (one `git status` each; --prune "
                              "always does this for the rows it considers)")
@@ -588,6 +623,9 @@ def main(argv: list[str] | None = None, *, repo: Path, here: Path | None = None,
         return 1
     if base is None:
         note("warning: no origin/master and no local master; nothing can be called merged")
+    if args.no_pr:
+        note("warning: pull requests skipped - where PRs are squash merged, the merged PR is the only"
+             " evidence that a branch's work reached master, so fewer worktrees look prunable")
 
     cache_file = (state_dir / "worktree-sizes.json") if state_dir else None
     cache = load_size_cache(cache_file) if cache_file else {}
@@ -621,9 +659,11 @@ def main(argv: list[str] | None = None, *, repo: Path, here: Path | None = None,
     prunable = [row for row in rows if prune_blocker(row) is None]
     known = sum(1 for row in rows if row.size is not None)
     total = sum(row.size for row in rows if row.size is not None)
+    missing = len(rows) - known
+    measured = (f", {format_size(total)} measured" + (f" over {known} of them" if missing else ""))
     print()
     print(f"{len(rows)} worktrees, {len(prunable)} prunable"
-          + (f", {format_size(total)} measured over {known} of them (`--sizes` measures the rest)"
+          + (measured + (" (`--sizes` measures the rest)" if missing else "")
              if known else ", sizes not measured (`--sizes`)"))
     if prunable:
         print("`dev.py worktrees --prune` removes them; it asks first and never takes unmerged work.")
