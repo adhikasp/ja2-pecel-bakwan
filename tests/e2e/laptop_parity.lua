@@ -172,6 +172,7 @@ click("imp.portrait[1]"); ja2.expect(vm().imp_portrait == 1, "portrait chosen")
 click("imp.portrait.next")
 ja2.expect(vm().page == "voice", "voice page")
 local voice = vm().imp_voices[2]
+ja2.expect(voice.title:find("2") and not voice.title:find("%%"), "voice rows are numbered: " .. voice.title)
 click("imp.voice[1]"); ja2.expect(vm().imp_voice == 1, "voice chosen")
 click("imp.voice.next")
 ja2.expect(vm().page == "finish", "finish page")
@@ -203,6 +204,9 @@ click("laptop.app.finances")
 ja2.expect(vm().ledger_count == ledger + 1, "ledger has the I.M.P. payment")
 click("laptop.app.web"); click("web.bookmark.imp")
 ja2.expect(vm().imp_can_create == false, "only one I.M.P. character per campaign")
+if vm().page == "home" then ja2.click{id = "imp.code.input"}; ja2.type("XEP624"); click("imp.enter") end
+click("imp.cancel")
+ja2.expect(vm().page == "home" and vm().imp_full == "" and vm().imp_code == "", "hanging up clears the profile and the code")
 
 -- 150% scale layout, then leave
 ja2.setUiScale(1.5); ja2.waitIdle(); for _, p in ipairs(ja2.layoutProblems()) do ja2.log("150% layout note: " .. p) end; ja2.setUiScale(1)

@@ -94,7 +94,7 @@ void LaptopViewModel::ReadImp()
 	impVoices.clear();
 	for (auto const& v : LaptopNative::ImpVoices(impFemale))
 	{
-		Row r; r.index = v.index; r.id = std::to_string(v.profile); r.title = ST::format(pImpButtonText[5].c_str(), v.index + 1).to_std_string(); r.on = v.index == impVoice;
+		Row r; r.index = v.index; r.id = std::to_string(v.profile); r.title = st_format_printf(pImpButtonText[5], v.index + 1).to_std_string(); r.on = v.index == impVoice;
 		impVoices.push_back(r);
 	}
 	impSkills.clear();

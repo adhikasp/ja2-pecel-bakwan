@@ -43,7 +43,16 @@ void LaptopViewModel::RegisterSiteCommands()
 		if (!LaptopNative::ImpCodeValid(ST::string(impCode))) { impError = labels["imp_bad_code"]; Changed(); return; }
 		impError.clear(); impStep = "main"; GoPage("main");
 	});
-	Command("imp_step", [this](Args const& a) { if (!a.empty()) { impStep = a[0]; GoPage(a[0]); } });
+	Command("imp_step", [this](Args const& a) {
+		if (a.empty()) return;
+		if (a[0] == "home")
+		{
+			// hanging up abandons the profile: the next call starts from scratch
+			impCode.clear(); impFull.clear(); impNick.clear(); impFemale = false; impQuestion = 0; impPortrait = 0; impVoice = 0;
+			impAttrValues.clear(); impSkillPick.clear(); impAnswers.clear();
+		}
+		impStep = a[0]; GoPage(a[0]);
+	});
 	Command("imp_name", [this](Args const& a) { impFull = a.empty() ? "" : a[0]; Changed(); });
 	Command("imp_nick", [this](Args const& a) { impNick = a.empty() ? "" : a[0]; Changed(); });
 	Command("imp_gender", [this](Args const& a) { impFemale = !a.empty() && a[0] == "female"; impPortrait = 0; impVoice = 0; ReadImp(); });
@@ -86,7 +95,11 @@ void LaptopViewModel::RegisterSiteCommands()
 	});
 	Command("imp_portrait", [this](Args const& a) { if (!a.empty()) { impPortrait = std::atoi(a[0].c_str()); ReadImp(); } });
 	Command("imp_voice", [this](Args const& a) { if (!a.empty()) { impVoice = std::atoi(a[0].c_str()); LaptopNative::ImpPlayVoice(impVoice); ReadImp(); } });
-	Command("imp_finish", [this](Args const&) { if (onAsk) onAsk("imp_create", ""); });
+	Command("imp_finish", [this](Args const&) {
+		// an unfinished profile is turned down before the player is asked to pay
+		if (impFull.empty() || impNick.empty()) { if (onToast) onToast(Str("laptop.imp_invalid"), 3); return; }
+		if (onAsk) onAsk("imp_create", "");
+	});
 
 	// florist
 	Command("flower", [this](Args const& a) { if (!a.empty()) { flowerSel = std::atoi(a[0].c_str()); GoPage("order"); } });
@@ -467,7 +480,11 @@ void LaptopViewModel::Confirm(std::string const& what, std::string const& arg)
 		c.portrait = impPortrait; c.voice = impVoice; c.skills = impSkillPick;
 		switch (LaptopNative::ImpCreate(c))
 		{
-			case LaptopNative::ImpResult::Created: impStep = "done"; GoPage("done"); break;
+			case LaptopNative::ImpResult::Created:
+				// the profile is made: the next call starts from scratch
+				impCode.clear(); impFull.clear(); impNick.clear(); impFemale = false; impQuestion = 0; impPortrait = 0; impVoice = 0;
+				impAttrValues.clear(); impSkillPick.clear(); impAnswers.clear();
+				impStep = "done"; GoPage("done"); break;
 			case LaptopNative::ImpResult::NoFunds: if (onToast) onToast(labels["no_funds"], 3); break;
 			default: if (onToast) onToast(Str("laptop.imp_invalid"), 3); break;
 		}
