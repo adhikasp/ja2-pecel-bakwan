@@ -134,6 +134,7 @@ namespace NativeUI
 		std::vector<Row> aimSortChips;
 		int aimProfile = -1;
 		std::string amName, amFull, amFace, amFee1, amFee7, amFee14, amMedical, amGearCost, amStatus;
+		bool amCanCall = false; // Contact is offered: anyone but the dead and the hired (an away merc has the answering machine)
 		std::vector<Row> amStats, amGear; std::vector<std::string> amBio;
 		int hireLength = 1; bool hireGear = false;
 		std::string hireQuote, hireContract, hireEquipment, hireDeposit, hireTotal, hireAfter, hireMessage;

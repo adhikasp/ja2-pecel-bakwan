@@ -1312,6 +1312,42 @@ namespace
 					if (!found) throw std::runtime_error("no A.I.M. merc named " + want);
 					ReBuildCharactersList();
 				}
+				else if (what == "aimaway" || what == "aimmood")
+				{
+					// Test aids for the A.I.M. call paths. a = a merc's nickname.
+					// "aimaway": the merc is away on assignment for b days (default 2): the call gets the
+					// answering machine, and MercDailyUpdate brings them back (and mails if a message was left).
+					// "aimmood": the merc is home but sulking for b days (default 2): hiring is refused with
+					// the lame excuse (the refuse path; the other refusals need a team or a death rate).
+					std::string const name = a && a->is<std::string>() ? a->as<std::string>() : "";
+					int const days = b && b->is<int>() ? b->as<int>() : 2;
+					bool found = false;
+					for (auto profile : GCM->listMercProfiles())
+					{
+						if (!profile->isAIMMerc() && !profile->isMERCMerc()) continue;
+						MERCPROFILESTRUCT& p = profile->getStruct();
+						if (p.zNickname.to_std_string() != name) continue;
+						found = true;
+						if (what == "aimaway")
+						{
+							p.bMercStatus          = MERC_WORKING_ELSEWHERE;
+							p.uiDayBecomesAvailable = UINT32(days);
+						}
+						else
+						{
+							p.bMercStatus          = MERC_OK;
+							p.uiDayBecomesAvailable = 0;
+							p.ubDaysOfMoraleHangover = UINT8(days);
+						}
+					}
+					if (!found) throw std::runtime_error("no A.I.M. merc named " + name);
+				}
+				else if (what == "mercdaily")
+				{
+					// Test aid: the midnight update of the mercs (away mercs count down and return, a left
+					// message is mailed). It does nothing on day 1, as in the game: stage a later day first.
+					MercDailyUpdate();
+				}
 				else if (what == "hiretransit")
 				{
 					// Test aid: an A.I.M. merc (a: profile id) hired for a week, arriving in b minutes (default 600)

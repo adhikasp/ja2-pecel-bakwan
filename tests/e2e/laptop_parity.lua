@@ -83,6 +83,61 @@ click("laptop.app.personnel")
 ja2.expect(vm().roster_count == 1 and vm().pd_has and vm().pd_name:find("Barry"), "personnel lists Barry")
 layout("personnel")
 
+-- A.I.M. answering machine: a merc who is away is still called, takes a message and mails back when he returns
+local function pickMerc(skip)
+	for _, r in ipairs(vm().aim_members) do
+		if r.cls == "" and r.title ~= "Barry" and r.title ~= skip then return r.title end
+	end
+	error("no available A.I.M. merc to call")
+end
+local away = pickMerc()
+local moody = pickMerc(away)
+local function openMember(name)
+	click("laptop.app.web"); click("web.bookmark.aim")
+	if vm().page ~= "members" then click("aim.nav.members") end
+	ja2.click{text = name, exact = true}; ja2.waitIdle()
+	ja2.expect(vm().page == "member" and vm().am_name == name, "member page of " .. name)
+end
+ja2.debug("campaign", {day = 3}); ja2.debug("aimaway", away, 2); ja2.debug("aimmood", moody, 9); ja2.step(2)
+openMember(away)
+ja2.expect(vm().am_status ~= "" and vm().am_can_call and not vm().am_message_left, away .. " is away but can be called")
+click("aim.contact")
+v = vm()
+ja2.expect(v.hire_state == "machine" and #v.hire_quote > 0, "the call gets the answering machine and its recorded message: " .. v.hire_quote)
+shots.take("laptop_aim_machine.png")
+layout("answering machine")
+click("aim.hire.leavemessage")
+v = vm()
+ja2.expect(v.hire_state == "recorded" and #v.hire_message > 0 and v.am_message_left, "Leave message records the message and sets the flag")
+click("aim.hire.done")
+ja2.expect(vm().hire_state == "" and vm().am_message_left, "the message stays left after hanging up")
+click("laptop.app.email")
+local mails = vm().mail_count
+local mailed = vm().unread_mail
+ja2.debug("mercdaily"); ja2.step(2)
+click("laptop.app.email")
+ja2.expect(vm().mail_count == mails, "the merc is still away after one day: no mail yet")
+ja2.debug("mercdaily"); ja2.step(2)
+click("laptop.app.email")
+ja2.expect(vm().mail_count == mails + 1 and vm().unread_mail == mailed + 1, "the merc mails back when he returns")
+openMember(away)
+ja2.expect(vm().am_status == "" and not vm().am_message_left, "back and available, the left message is consumed")
+click("aim.contact")
+ja2.expect(vm().hire_state == "talk", away .. " answers himself now")
+click("aim.hire.cancel")
+
+-- refuse path: a merc who is home but sulking talks, then turns the contract down with his excuse
+openMember(moody)
+money = ja2.state().money
+click("aim.contact")
+ja2.expect(vm().hire_state == "talk", moody .. " picks up")
+click("aim.hire.tohire")
+v = vm()
+ja2.expect(v.hire_state == "refused" and #v.hire_quote > 0, moody .. " refuses with his excuse: " .. v.hire_quote)
+shots.take("laptop_aim_refused.png")
+click("aim.hire.done")
+ja2.expect(ja2.state().money == money and #ja2.state().mercs == 1, "a refusal costs nothing and hires nobody")
+
 -- (M.E.R.C. account and hire: not covered yet, see the PR gaps)
 click("laptop.app.web"); ja2.debug("bookmarks"); ja2.waitIdle(); click("laptop.app.email"); click("laptop.app.web")
 local money
