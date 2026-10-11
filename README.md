@@ -32,25 +32,36 @@ Every screen is being redesigned for modern displays (16:9, 16:10, 21:9; 1280x72
 
 ## Where we are headed
 
-The goal is a **modern Jagged Alliance 2 with a richer game underneath**: one that looks and plays like it was made for a 1440p/4K monitor today, with tactics and a strategic world that push back harder than the 1999 original. Four directions pull in the same line:
+The goal is a **modern Jagged Alliance 2 with a richer game underneath**: one that looks and plays like it was made for a 1440p/4K monitor today, with tactics and a strategic world that push back harder than the 1999 original. Five directions pull in the same line:
 
 - **A native, modern presentation.** Every screen is redesigned for widescreen and high DPI instead of stretching a 640x480 box, and the world is drawn by a GPU renderer.
 - **A rich tactical layer.** Equipment is a system (attachments, ammo, condition), combat is a simulation (aim, recoil, suppression, morale, stances, detection, light), and the soldier is a character (traits, medical, encumbrance, melee, breaching).
 - **A rich strategic layer.** A living world that remembers what you did: towns, factions and NPCs react to a deed ledger that says whether you are the savior or the next dictator, while militia, facilities, economy and sector inventory give the map teeth.
-- **An opponent with a mind.** The Queen gets an emotional drive state and a policy layer. An optional LLM gives her a voice and turns your free text into a bounded set of intents; it never writes game state.
+- **An opponent with a mind.** The Queen is an LLM agent with a life, resources and fog of war. She acts on the strategic game only through a bounded, validated tool API, starts out busy with court life and grows aware of you as you get loud. It runs on the player's own API key; the LLM never writes game state, and tests run on a scripted Brain.
+- **More than one way to win.** Classic JA2 is a one-way ratchet: clear a town, hold it, collect mine income, buy gear, repeat. The revamp makes ambush, infiltration, disguise and working with townsfolk better than the default. Territory is a liability that pays rent, a raiding band is an asset that builds nothing, and neither dominates. See [docs/plan/revamp-gameplay.md](docs/plan/revamp-gameplay.md).
 
-What is being worked on right now, and in what order, is on the [issue tracker](https://github.com/adhikasp/ja2-pecel-bakwan/issues), the [milestones](https://github.com/adhikasp/ja2-pecel-bakwan/milestones) and the [JA2 Modernization Roadmap](https://github.com/users/adhikasp/projects/1) board. They change often; this README does not try to track them. The reasoning lives in [docs/plan/](docs/plan) and [docs/ui/](docs/ui).
+### What the revamp changes in play
+
+- **Defeat is forgiving, and it is content.** Death only ever comes from a player's coup de grace. HP 0 means *downed*; a lost fight becomes capture and a rescue mission. The stakes are the squad's position and information, not a merc's life.
+- **Mercs stop being heroes.** Enemies fight as a force with roles (officer, radio, medic, heavy, sniper) on a visible reinforcement clock, so decapitation and timed objectives beat attrition, and armor is a choice rather than a wall.
+- **Stealth is forgiving, smart and observable.** An alarm is a visible message with a carrier, not a global flag; enemies search from belief, not truth; you plan from what you observed, and outcomes are seeded per action so reloading does not reroll.
+- **Towns have a front door and back doors.** You hold one "how hard is it" readout and three verbs: *Scout*, *Soften*, *Take*. How you take a town decides whether you get it intact or damaged.
+- **Holding has a price.** Net income, not gross; your squad is the fire brigade; visibility draws the Queen's attention; one required HQ anchors a raiding band.
+
+### What is being worked on
+
+Status changes too fast to track here. Work is organized as milestones of shippable increments: see the [milestones](https://github.com/adhikasp/ja2-pecel-bakwan/milestones) for what is in flight, the [issue tracker](https://github.com/adhikasp/ja2-pecel-bakwan/issues) and the [JA2 Modernization Roadmap](https://github.com/users/adhikasp/projects/1) board for the order, and the [roadmap page](https://adhikasp.github.io/ja2-pecel-bakwan/roadmap/) for the dependency view. The reasoning lives in [docs/plan/](docs/plan) and [docs/ui/](docs/ui).
 
 ## Design principles
 
 These break ties when a plan and a PR disagree (full text in [AGENTS.md](AGENTS.md#game-design-principles)):
 
-1. **The revamp is the game.** This is not a preservation project. New mechanics ship on by default, with no vanilla mode and no obligation to keep old saves or old behavior.
-2. **Native-first.** Gameplay systems are C++ in the engine, not runtime JSON rules. `src/externalized/` is for the data the original game shipped with; only a few leaf tunables are exposed as toggles.
+1. **The revamp is the game.** This is not a preservation project. New mechanics ship on by default, with no vanilla mode, no byte-compatible saves and no obligation to keep old behavior.
+2. **Native-first.** Gameplay systems and balance values are compiled C++, not runtime JSON or Lua rules. `assets/externalized/` only holds the original game's data until its system is revamped.
 3. **Testable by construction.** Every system has a unit-test surface and a deterministic headless driving surface. If a mechanic cannot be asserted headless, it is not done.
 4. **Curate.** Take the design idea and ship a small, balanced set with unit-tested invariants, not a catalog.
 5. **Reimplement ideas, never port code.** Other JA2 projects (1.13 and friends) inspire; their code, UI and data files are not imported.
-6. **Moddable stays a feature.** VFS layering and the Lua scripting API remain the mod surface.
+6. **Agent-drivable, not moddable.** The game is built to be developed and played headless through `ja2ctl` and Lua. There is no mod surface to preserve: the Lua mod-scripting API and `assets/mods/` are slated for removal.
 
 ## How it's built: agents with a test harness
 
@@ -58,7 +69,7 @@ This repository is developed **primarily by AI coding agents**; a human owner se
 
 - **Headless and scriptable.** The game runs on a virtual clock and is driven from the shell or Lua: `python tools/ja2ctl.py click "New Game"`, `ja2ctl shot`, `ja2ctl state`. Native UI is addressed by element id, not pixel position. See [docs/automation.md](docs/automation.md).
 - **Agents look at the result.** Golden screenshots and layout audits cover every screen at every reference resolution, and every PR that changes visuals carries real-game screenshots at 640x480 and widescreen that a reviewer opens.
-- **Tests play the game.** Unit tests (`ja2 -unittests`) plus `ctest -L e2e`: per-screen parity tours, deterministic tactical battles, and campaign state authoring that jumps straight to any point in a campaign.
+- **Tests play the game.** Unit tests (`python tools/dev.py test`) plus `ctest -L e2e`: per-screen parity tours, deterministic tactical battles, and campaign state authoring that jumps straight to any point in a campaign.
 - **Issues are the unit of work.** One issue per slice, one PR that closes it, a board for ordering, milestones for shippable increments. Plans stay in `docs/plan/`.
 - **The owner's gate is taste.** Style and wireframes are product decisions; everything else has to prove itself.
 
@@ -81,13 +92,17 @@ Supported localizations: `DUTCH`, `ENGLISH`, `FRENCH`, `GERMAN`, `ITALIAN`, `POL
 
 ## Building from source
 
-See [COMPILATION.md](COMPILATION.md) for toolchains and IDE setup. The short version:
+See [COMPILATION.md](COMPILATION.md) for toolchains and IDE setup. `tools/dev.py` is the one entry point on macOS and Windows (on Windows it shells into MSYS2 MinGW64 itself):
 
-- **macOS:** `cmake -S . -B build && cmake --build build -- -j$(sysctl -n hw.logicalcpu)`.
-- **Windows (MSYS2 MinGW64):** configure with the `MSYS Makefiles` generator into `_bin`, then `make -j$(nproc)`.
-- **Tests:** `./ja2 -unittests`, and `ctest -L e2e` from the build directory.
+```bash
+python tools/dev.py setup   # once per worktree: build dir, uv sync, game_dir check
+python tools/dev.py build   # incremental build
+python tools/dev.py test    # C++ unit tests
+python tools/dev.py e2e     # e2e tests (ctest -L e2e)
+python tools/dev.py run     # play the game
+```
 
-Per-machine commands, the automation workflow and the repo layout are documented in [AGENTS.md](AGENTS.md).
+Per-machine notes, the automation workflow and the repo layout are documented in [AGENTS.md](AGENTS.md).
 
 ## History of the project
 
