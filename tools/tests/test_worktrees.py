@@ -363,7 +363,7 @@ class AgainstRealGit(unittest.TestCase):
         self.add_worktree("clean")
         self.merge_to_master("clean")
         said, say = captured_say()
-        quiet(worktrees.prune, self.repo, self.collect(), dry_run=True, say=say)
+        quiet(worktrees.prune, self.repo, self.collect(), dry_run=True, say=say, log=say)
         text = said.getvalue()
         self.assertIn("About to remove 1 worktree(s)", text)
         kept = [line for line in text.splitlines() if "(kept)" in line]
@@ -427,18 +427,20 @@ class AgainstRealGit(unittest.TestCase):
         # merge test has to be made against master, or no branch is ever
         # collected and the output blames git for a refusal it never made.
         done = self.add_worktree("done")
-        self.merge_to_master("done")
-        agent = self.add_worktree("agent")
-        self.add_worktree("other")            # unmerged, so it survives the prune
+        agent = self.add_worktree("agent")       # our own worktree, created first
+        self.add_worktree("other")               # unmerged, so it survives the prune
+        self.merge_to_master("done")             # in master now, but NOT in agent's HEAD
         rows, _ = worktrees.collect(self.repo, here=agent, fetch=False, prs={})
         said, say = captured_say()
-        quiet(worktrees.prune, agent, rows, yes=True, say=say)
+        quiet(worktrees.prune, agent, rows, yes=True, say=say, log=say)
         self.assertEqual("", run("branch", "--list", "done", cwd=self.repo).strip())
         self.assertEqual("agent", run("rev-parse", "--abbrev-ref", "HEAD", cwd=agent).strip())
+        self.assertIn("deleted branch done", said.getvalue())
 
     def test_a_branch_merged_by_pull_request_is_deleted_even_without_ancestry(self):
         # After a squash merge the branch head is not an ancestor of master, so
-        # the merged pull request is the only evidence - and enough.
+        # the merged pull request is the only evidence - and enough, and the
+        # message has to say that is why.
         orphan = self.add_worktree("orphan")
         rows = [row for row in self.collect()
                 if worktrees.normalize(row.path) == self.at("orphan")]
@@ -446,9 +448,24 @@ class AgainstRealGit(unittest.TestCase):
         rows[0].pr = {"number": 9, "state": "MERGED"}
         self.assertIsNone(worktrees.prune_blocker(rows[0]))
         said, say = captured_say()
-        quiet(worktrees.prune, self.repo, rows, yes=True, say=say)
+        quiet(worktrees.prune, self.repo, rows, yes=True, say=say, log=say)
         self.assertEqual("", run("branch", "--list", "orphan", cwd=self.repo).strip())
         self.assertFalse(orphan.exists())
+        self.assertIn("deleted branch orphan (merged as PR #9)", said.getvalue())
+
+    def test_a_branch_another_worktree_holds_is_kept(self):
+        # git refuses this one on its own, and the message has to say so: the
+        # branch is alive precisely because some other checkout is using it.
+        self.add_worktree("held")
+        self.merge_to_master("held")
+        holder = self.tmp / "holder"
+        run("worktree", "add", "--force", str(holder), "held", cwd=self.repo)
+        rows, _ = worktrees.collect(self.repo, here=holder, fetch=False, prs={})
+        said, say = captured_say()
+        quiet(worktrees.prune, self.repo, rows, yes=True, say=say, log=say)
+        self.assertIn("held", run("branch", "--list", "held", cwd=self.repo))
+        self.assertIn("kept branch held", said.getvalue())
+        self.assertIn("worktree", said.getvalue())
 
 
 if __name__ == "__main__":

@@ -176,13 +176,20 @@ def collect_images(paths: list[str], cwd: Path) -> list[Path]:
     return list(seen.values())
 
 
+def check_names(images: list[Path]) -> None:
+    """Refuse images that would land on top of each other.
+
+    Checked before the worktree is created, not while staging: a rejected run
+    that has already made a checkout leaves one behind every time.
+    """
+    names = [image.name for image in images]
+    if len({name.lower() for name in names}) != len(names):
+        raise ShotError("two of these images have the same file name; rename one before publishing")
+
+
 def stage(work: Path, branch_dir: str, images: list[Path]) -> list[str]:
     """Copy the images in and add them; returns their names in the branch."""
     names = [image.name for image in images]
-    # Two shots of different screens are often both called map.png; copying
-    # them would leave one file and two identical links.
-    if len({name.lower() for name in names}) != len(names):
-        raise ShotError("two of these images have the same file name; rename one before publishing")
     target = work / branch_dir
     target.mkdir(parents=True, exist_ok=True)
     for image in images:
@@ -228,6 +235,7 @@ def publish(repo: Path, work: Path, branch: str, images: list[Path], *, message:
     """Put `images` on the screenshots branch under `branch`; return markdown."""
     branch_dir = safe_branch_dir(branch)
     message = message or f"Screenshots for {branch}"
+    check_names(images)
     prepare_worktree(repo, work, log)
     names = stage(work, branch_dir, images)
     if nothing_to_commit(work, branch_dir):

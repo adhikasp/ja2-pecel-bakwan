@@ -110,15 +110,6 @@ class CollectingImages(unittest.TestCase):
         path = self.write("a.png")
         self.assertEqual([path.resolve()], shots.collect_images([str(path), str(path)], self.tmp))
 
-    def test_two_images_with_one_name_are_refused(self):
-        # Copying them would leave a single file and two identical links.
-        first = self.write("one/map.png")
-        second = self.write("two/map.png")
-        self.assertEqual([first.resolve(), second.resolve()],
-                         shots.collect_images([str(first), str(second)], self.tmp))
-        with self.assertRaises(shots.ShotError):
-            shots.stage(self.tmp, "b", [first.resolve(), second.resolve()])
-
 
 class Publishing(unittest.TestCase):
     """The whole flow, against a real repository and a real (local) remote."""
@@ -216,6 +207,18 @@ class Publishing(unittest.TestCase):
         self.assertIn("pr-screenshots/issue-170/map_1920x1080.png", links[0])
         self.assertTrue(git_fails("rev-parse", "--verify", "pr-screenshots", cwd=self.origin),
                         "the branch must not exist on the remote after a dry run")
+
+    def test_two_images_with_one_name_are_refused_before_any_worktree_is_made(self):
+        # Copying them would leave a single file and two identical links - and
+        # refusing only once the worktree exists leaks a checkout every call.
+        first = self.tmp / "one" / "map.png"
+        second = self.tmp / "two" / "map.png"
+        for path, payload in ((first, PNG), (second, PNG + b"2")):
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(payload)
+        with self.assertRaises(shots.ShotError):
+            self.publish(first, second)
+        self.assertFalse(self.work.exists(), "a refused run must not leave a checkout behind")
 
     def test_a_directory_in_the_way_is_refused_rather_than_deleted(self):
         self.work.mkdir(parents=True)

@@ -660,7 +660,7 @@ def main(argv: list[str] | None = None, *, repo: Path, here: Path | None = None,
     known = sum(1 for row in rows if row.size is not None)
     total = sum(row.size for row in rows if row.size is not None)
     missing = len(rows) - known
-    measured = (f", {format_size(total)} measured" + (f" over {known} of them" if missing else ""))
+    measured = f", {format_size(total)} measured" + (f" over {known} of them" if missing else "")
     print()
     print(f"{len(rows)} worktrees, {len(prunable)} prunable"
           + (measured + (" (`--sizes` measures the rest)" if missing else "")
