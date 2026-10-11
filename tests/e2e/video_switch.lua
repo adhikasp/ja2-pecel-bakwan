@@ -2,8 +2,6 @@
 -- world zoom on the tactical screen, the map screen and the laptop, through classic, widescreen, ultrawide and a
 -- layered mode (UI at 2x over a world at 1x). After every change every region and button must lie inside the
 -- new screen and the screen must be usable at its new size.
--- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
-ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
@@ -11,7 +9,6 @@ local MODES = {
 	{name = "1280x720",   res = "1280x720",  uiscale = 1, worldzoom = 0, w = 1280, h = 720},
 	{name = "2560x1080",  res = "2560x1080", uiscale = 1, worldzoom = 0, w = 2560, h = 1080},
 	{name = "layered",    res = "2560x1440", uiscale = 2, worldzoom = 1, w = 1280, h = 720, layered = true},
-	{name = "640x480",    res = "640x480",   uiscale = 1, worldzoom = 0, w = 640,  h = 480},
 }
 
 local function switch(mode, where)
@@ -35,11 +32,11 @@ for _, mode in ipairs(MODES) do
 	ja2.expect(merc.screenX, mode.name .. ": Barry is on screen")
 	ja2.click(merc.screenX, merc.screenY)
 	ja2.waitIdle()
-	ja2.expect(ja2.exists("Map Screen"), mode.name .. ": the bottom panel is there")
+	ja2.expect(ja2.exists{ id = "tac.bar" }, mode.name .. ": the squad bar is there")
 end
 
 -- Map screen
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 campaign.dismissHelp()
 for _, mode in ipairs(MODES) do

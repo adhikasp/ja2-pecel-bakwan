@@ -50,7 +50,10 @@
 #include "Auto_Bandage.h"
 #include "Options_Screen.h"
 #include "Squads.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "SquadRoster.h"
+#include "TacticalCommandsAdapter.h"
+#include "WorldPointer.h"
 #include "Soldier_Tile.h"
 #include "Soldier_Functions.h"
 #include "English.h"
@@ -120,11 +123,11 @@ static void QueryTBMiddleButton(UIEventKind* const puiNewEvent)
 	const GridNo usMapPos = guiCurrentCursorGridNo;
 	if (usMapPos == NOWHERE) return;
 
-	if ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )
+	if ( WorldPointer::In() )
 	{
 
 		// MIDDLE MOUSE BUTTON
-		if ( gViewportRegion.ButtonState & MSYS_MIDDLE_BUTTON )
+		if ( (WorldPointer::Buttons() & MSYS_MIDDLE_BUTTON) )
 		{
 			if ( !fMiddleButtonDown )
 			{
@@ -172,12 +175,12 @@ static void QueryTBLeftButton(UIEventKind* const puiNewEvent)
 	static BOOLEAN fCanCheckForSpeechAdvance = FALSE;
 
 	// LEFT MOUSE BUTTON
-	if ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )
+	if ( WorldPointer::In() )
 	{
 		const GridNo usMapPos = guiCurrentCursorGridNo;
-		if (usMapPos == NOWHERE && !(gfScrolledToBottom && gusMouseYPos >= SCREEN_HEIGHT - NO_PX_SHOW_EXIT_CURS)) return;
+		if (usMapPos == NOWHERE && !(gfScrolledToBottom && WorldPointer::Edges().bottom)) return;
 
-		if ( gViewportRegion.ButtonState & MSYS_LEFT_BUTTON )
+		if ( (WorldPointer::Buttons() & MSYS_LEFT_BUTTON) )
 		{
 			if ( !fLeftButtonDown )
 			{
@@ -579,11 +582,11 @@ static void QueryTBRightButton(UIEventKind* const puiNewEvent)
 	const GridNo usMapPos = guiCurrentCursorGridNo;
 	if (usMapPos == NOWHERE) return;
 
-	if (gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA)
+	if (WorldPointer::In())
 	{
 
 		// RIGHT MOUSE BUTTON
-		if (gViewportRegion.ButtonState & MSYS_RIGHT_BUTTON)
+		if ((WorldPointer::Buttons() & MSYS_RIGHT_BUTTON))
 		{
 			if (!fRightButtonDown)
 			{
@@ -1179,7 +1182,7 @@ void GetPolledKeyboardInput(UIEventKind* puiNewEvent)
 	}
 }
 
-void TacticalViewPortTouchCallbackTB(MOUSE_REGION* region, UINT32 reason) {
+void TacticalViewPortTouchCallbackTB(UINT32 reason) {
 	static SOLDIERTYPE* gLastDownUIFullTarget = NULL;
 
 	if (reason & MSYS_CALLBACK_REASON_TFINGER_DWN) {
@@ -1316,7 +1319,6 @@ void TacticalViewPortTouchCallbackTB(MOUSE_REGION* region, UINT32 reason) {
 }
 
 
-static void ChangeCurrentSquad(INT32 iSquad);
 static void ChangeSoldiersBodyType(SoldierBodyType, BOOLEAN fCreateNewPalette);
 static void CreateNextCivType(void);
 static void CreatePlayerControlledMonster(void);
@@ -1328,16 +1330,12 @@ static void HandleItemMenuKeys(InputAtom*, UIEventKind*);
 static void HandleMenuKeys(InputAtom*, UIEventKind*);
 static void HandleOpenDoorMenuKeys(InputAtom*, UIEventKind*);
 static void HandleSectorExitMenuKeys(InputAtom*, UIEventKind*);
-static void HandleSelectMercSlot(UINT8 ubPanelSlot, bool force_select);
-static void HandleStealthChangeFromUIKeys();
 static void HandleTalkingMenuKeys(InputAtom*, UIEventKind*);
 static void ObliterateSector();
 static void RefreshSoldier(void);
-static void SetBurstMode(void);
 static void TeleportSelectedSoldier(void);
 static void TestCapture();
 static void ToggleCliffDebug();
-static void ToggleTreeTops(void);
 static void ToggleViewAllItems(void);
 static void ToggleViewAllMercs(void);
 static void ToggleWireFrame(void);
@@ -1350,37 +1348,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 {
 	switch (key)
 	{
-		case SDLK_TAB:
-			// Nothing in hand and either not in SM panel, or the matching button
-			// is enabled if we are in SM panel
-			if (!gpItemPointer &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[UPDOWN_BUTTON]->Enabled()))
-			{
-				UIHandleChangeLevel(0);
-			}
-			break;
-
-		case SDLK_SPACE:
-			// Nothing in hand and either not in SM panel, or the matching button
-			// is enabled if we are in SM panel
-			if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV) &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[NEXTMERC_BUTTON]->Enabled()) &&
-				!InKeyRingPopup())
-			{
-				SOLDIERTYPE* const sel = GetSelectedMan();
-				if (sel)
-				{
-					// Select next merc
-					SOLDIERTYPE* const next = FindNextMercInTeamPanel(sel);
-					HandleLocateSelectMerc(next, true);
-					// Center to guy
-					LocateSoldier(GetSelectedMan(), SETLOCATOR);
-				}
-
-				*new_event = M_ON_TERRAIN;
-			}
-			break;
-
 		case '*':
 		case ',':
 			gTacticalStatus.uiFlags ^= RED_ITEM_GLOW_ON;
@@ -1399,26 +1366,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 				if (_KeyDown(SDLK_END))
 					ChangeSizeOfLOS(gGameSettings.ubSizeOfLOS - 1);
 			}
-			break;
-
-		case '/':
-		{
-			SOLDIERTYPE* const sel = GetSelectedMan();
-			if (sel) LocateSoldier(sel, 10);
-			break;
-		}
-
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-			ChangeCurrentSquad(key == '0' ? 9 : key - '1');
 			break;
 
 		case '=':
@@ -1444,43 +1391,7 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			}
 			break;
 
-		case '`': ToggleTacticalPanels(); break;
-
 		case 'a': BeginAutoBandage(); break;
-
-		case 'b':
-			// Nothing in hand and either not in SM panel, or the matching button is enabled if we are in SM panel
-			if (!gpItemPointer &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[BURSTMODE_BUTTON]->Enabled()))
-			{
-				SetBurstMode();
-			}
-			break;
-
-		case 'c': HandleStanceChangeFromUIKeys(ANIM_CROUCH); break;
-
-		case 'd':
-			// End turn only if in combat and it is the player's turn
-			if ((gTacticalStatus.uiFlags & INCOMBAT) &&
-				gTacticalStatus.ubCurrentTeam == OUR_TEAM &&
-				// Nothing in hand and the Done button for whichever panel we're in must be enabled
-				!gpItemPointer &&
-				!gfDisableTacticalPanelButtons &&
-				(
-					(gsCurInterfacePanel == SM_PANEL && iSMPanelButtons[SM_DONE_BUTTON]->Enabled()) ||
-					(gsCurInterfacePanel == TEAM_PANEL && iTEAMPanelButtons[TEAM_DONE_BUTTON]->Enabled())
-				))
-			{
-				*new_event = I_ENDTURN;
-			}
-
-			// Go through the regular entry point so the battle state gets set up
-			// properly. It refuses when there is nothing in the sector to fight.
-			if (gamepolicy(can_enter_turnbased) && !(gTacticalStatus.uiFlags & INCOMBAT))
-			{
-				EnterCombatMode(OUR_TEAM);
-			}
-			break;
 
 		case 'e':
 			if (SOLDIERTYPE* const sel = GetSelectedMan())
@@ -1506,44 +1417,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			break;
 
 		case 'g': HandlePlayerTogglingLightEffects(TRUE);                      break;
-		case 'h':
-			// with the native HUD, H opens the message log and Shift+H the help screen
-			if (NativeUI::TacticalHudActive()) NativeUI::TacticalHudToggleLog();
-			else ShouldTheHelpScreenComeUp(HELP_SCREEN_TACTICAL, TRUE);
-			break;
-		case 'i': ToggleItemGlow(!gGameSettings.fOptions[TOPTION_GLOW_ITEMS]); break;
-		case 'j':
-			if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_None, 'j')))
-			{
-				ClimbUpOrDown();
-			}
-			break;
-		case 'k': BeginKeyPanelFromKeyShortcut();                              break;
-
-		case 'l':
-			// Nothing in hand and either not in SM panel, or the matching button
-			//is enabled if we are in SM panel
-			if (!gpItemPointer &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[LOOK_BUTTON]->Enabled()))
-			{
-				*new_event = LC_CHANGE_TO_LOOK;
-			}
-			break;
-
-		case 'm':
-			// Nothing in hand and the Map Screen button for whichever panel we're in must be enabled
-			if (!gpItemPointer &&
-				!gfDisableTacticalPanelButtons &&
-				!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV) &&
-				(
-					(gsCurInterfacePanel == SM_PANEL   && iSMPanelButtons[SM_MAP_SCREEN_BUTTON]->Enabled()) ||
-					(gsCurInterfacePanel == TEAM_PANEL && iTEAMPanelButtons[TEAM_MAP_SCREEN_BUTTON]->Enabled())
-				))
-			{
-				GoToMapScreenFromTactical();
-			}
-			break;
-
 		case 'n':
 		{
 			GridNo const map_pos = guiCurrentCursorGridNo;
@@ -1554,53 +1427,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			break;
 		}
 
-		case 'o':
-			// nothing in hand and the Options Screen button for whichever panel we're in must be enabled
-			if (!gpItemPointer                       &&
-				!gfDisableTacticalPanelButtons   &&
-				!fDisableMapInterfaceDueToBattle &&
-				!gfInMeanwhile                   &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[OPTIONS_BUTTON]->Enabled()))
-			{
-				// Go to Options screen
-				guiPreviousOptionScreen = GAME_SCREEN;
-				LeaveTacticalScreen(OPTIONS_SCREEN);
-			}
-			break;
-
-		case 'p': HandleStanceChangeFromUIKeys(ANIM_PRONE); break;
-
-		case 'r':
-		{
-			SOLDIERTYPE* const sel = GetSelectedMan();
-			if (sel && !MercInWater(sel) && !(sel->uiStatusFlags & SOLDIER_ROBOT))
-			{
-				// Change selected merc to run
-				if (sel->usUIMovementMode != WALKING && sel->usUIMovementMode != RUNNING)
-				{
-					UIHandleSoldierStanceChange(sel, ANIM_STAND);
-				}
-				else
-				{
-					sel->usUIMovementMode = RUNNING;
-					gfPlotNewMovement     = TRUE;
-				}
-				sel->fUIMovementFast = 1;
-			}
-			break;
-		}
-
-		case 's':
-			if (GetSelectedMan())
-			{
-				gfPlotNewMovement = TRUE;
-				HandleStanceChangeFromUIKeys(ANIM_STAND);
-			}
-			break;
-
-		case 't':
-			ToggleTreeTops();
-			break;
 		case 'u':
 			if (GetSelectedMan())
 				*new_event = M_CHANGE_TO_ACTION;
@@ -1636,14 +1462,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 				*new_event = I_LOSDEBUG;
 			}
 			break;
-		case 'z':
-			if (!gpItemPointer) HandleStealthChangeFromUIKeys();
-			break;
-
-		case SDLK_INSERT:
-			GoIntoOverheadMap();
-			break;
-
 		case SDLK_HOME:
 		{
 			BOOLEAN& cursor3d = gGameSettings.fOptions[TOPTION_3D_CURSOR];
@@ -1666,38 +1484,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			break;
 		}
 
-		case SDLK_PAGEUP:
-			if (guiCurrentScreen != DEBUG_SCREEN)
-			{
-				SOLDIERTYPE* const sel = GetSelectedMan();
-				if (sel && !gpItemPointer) GotoHigherStance(sel);
-			}
-			break;
-
-		case SDLK_PAGEDOWN:
-			if (guiCurrentScreen != DEBUG_SCREEN)
-			{
-				SOLDIERTYPE* const sel = GetSelectedMan();
-				if (sel && !gpItemPointer) GotoLowerStance(sel);
-			}
-			break;
-
-		case SDLK_F1:
-		case SDLK_F2:
-		case SDLK_F3:
-		case SDLK_F4:
-		case SDLK_F5:
-		case SDLK_F6:
-		case SDLK_F7:
-		case SDLK_F8:
-		case SDLK_F9:
-		case SDLK_F10:
-		{
-			UINT const idx = key - SDLK_F1;
-			HandleSelectMercSlot(idx, true);
-			break;
-		}
-
 		case SDLK_F11:
 			if (DEBUG_CHEAT_LEVEL())
 			{
@@ -1717,35 +1503,6 @@ static void HandleModShift(UINT32 const key, UIEventKind* const new_event)
 {
 	switch (key)
 	{
-		case SDLK_SPACE:
-			// Nothing in hand and either not in SM panel, or the matching button
-			// is enabled if we are in SM panel
-			if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV) &&
-				(gsCurInterfacePanel != SM_PANEL || iSMPanelButtons[NEXTMERC_BUTTON]->Enabled()) &&
-				!InKeyRingPopup())
-			{
-				if (SOLDIERTYPE* const sel = GetSelectedMan())
-				{
-					// Only allow if nothing in hand and if in SM panel, the Change Squad button must be enabled
-					if (gsCurInterfacePanel != TEAM_PANEL ||
-						iTEAMPanelButtons[CHANGE_SQUAD_BUTTON]->Enabled())
-					{ // Select next squad
-						INT32        const current_squad = CurrentSquad();
-						SOLDIERTYPE* const new_soldier   = FindNextActiveSquad(sel);
-						if (new_soldier->bAssignment != current_squad)
-						{
-							HandleLocateSelectMerc(new_soldier, true);
-							ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, st_format_printf(pMessageStrings[MSG_SQUAD_ACTIVE], CurrentSquad() + 1));
-							// Center to guy
-							LocateSoldier(GetSelectedMan(), SETLOCATOR);
-						}
-					}
-				}
-
-				*new_event = M_ON_TERRAIN;
-			}
-			break;
-
 	case 'h':
 		if (NativeUI::TacticalHudActive()) ShouldTheHelpScreenComeUp(HELP_SCREEN_TACTICAL, TRUE);
 		break;
@@ -1756,21 +1513,6 @@ static void HandleModShift(UINT32 const key, UIEventKind* const new_event)
 		}
 		break;
 
-		case SDLK_F1:
-		case SDLK_F2:
-		case SDLK_F3:
-		case SDLK_F4:
-		case SDLK_F5:
-		case SDLK_F6:
-		case SDLK_F7:
-		case SDLK_F8:
-		case SDLK_F9:
-		case SDLK_F10:
-		{
-			UINT const idx = key - SDLK_F1;
-			HandleSelectMercSlot(idx, false);
-			break;
-		}
 	}
 }
 
@@ -1838,12 +1580,6 @@ static void HandleModCtrl(UINT32 const key, UIEventKind* const new_event)
 
 		case 'o': if (CHEATER_CHEAT_LEVEL()) CreatePlayerControlledMonster(); break;
 
-		case 'q':
-			if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_CTRL, 'q')))
-			{
-				HandleTBSwapHands();
-			}
-			break;
 		case 's':
 			if (!fDisableMapInterfaceDueToBattle && !(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
 			{
@@ -2004,7 +1740,6 @@ static void HandleModAlt(UINT32 const key, UIEventKind* const new_event)
 				if (s->bAssignment != CurrentSquad()) continue;
 				if (AM_A_ROBOT(s))                    continue;
 
-				if (gpSMCurrentMerc == s) gfUIStanceDifferent = TRUE;
 				s->bStealthMode = stealth_on;
 			}
 
@@ -2050,13 +1785,9 @@ static void HandleModAltCheats(UINT32 const key, UIEventKind * const new_event)
 		case 'd':
 			if 	((gTacticalStatus.uiFlags & INCOMBAT) &&
 				gTacticalStatus.ubCurrentTeam == OUR_TEAM &&
-				// Nothing in hand and the Done button for whichever panel we're in must be enabled
+				// Nothing in hand and the Done button must be enabled
 				!gpItemPointer &&
-				!gfDisableTacticalPanelButtons &&
-				(
-					(gsCurInterfacePanel == SM_PANEL   && iSMPanelButtons[SM_DONE_BUTTON]->Enabled()) ||
-					(gsCurInterfacePanel == TEAM_PANEL && iTEAMPanelButtons[TEAM_DONE_BUTTON]->Enabled())
-				))
+				!gfDisableTacticalPanelButtons)
 			{
 				FOR_EACH_IN_TEAM(s, OUR_TEAM)
 				{
@@ -2433,6 +2164,9 @@ void GetKeyboardInput(UIEventKind* const puiNewEvent)
 			}
 
 			if (gubCheatLevel < cheatCode.size()) RESET_CHEAT_LEVEL();
+
+			// the commands of the HUD (TacticalCommands) own their keys
+			if (RunTacticalKey(key, mod)) continue;
 
 			switch (mod)
 			{
@@ -2841,7 +2575,7 @@ static void TeleportSelectedSoldier(void)
 }
 
 
-static void ToggleTreeTops(void)
+void ToggleTreeTops(void)
 {
 	UINT8& show_trees = gGameSettings.fOptions[TOPTION_TOGGLE_TREE_TOPS];
 	show_trees = !show_trees;
@@ -2861,7 +2595,7 @@ static void ToggleZBuffer(void)
 }
 
 
-static void SetBurstMode(void)
+void SetBurstMode(void)
 {
 	SOLDIERTYPE* const sel = GetSelectedMan();
 	if (sel != NULL) ChangeWeaponMode(sel);
@@ -3257,11 +2991,10 @@ BOOLEAN HandleUIReloading(SOLDIERTYPE* pSoldier)
 	return( FALSE );
 }
 
-static void ChangeCurrentSquad(INT32 iSquad)
+void ChangeCurrentSquad(INT32 iSquad)
 {
-	// only allow if nothing in hand and the Change Squad button for whichever panel we're in must be enabled
-	if ( ( gpItemPointer == NULL ) && !gfDisableTacticalPanelButtons &&
-			(gsCurInterfacePanel != TEAM_PANEL || iTEAMPanelButtons[CHANGE_SQUAD_BUTTON]->Enabled()))
+	// only allow if nothing in hand and the buttons are not locked
+	if ( ( gpItemPointer == NULL ) && !gfDisableTacticalPanelButtons )
 	{
 		if ( IsSquadOnCurrentTacticalMap( iSquad ) )
 		{
@@ -3270,17 +3003,6 @@ static void ChangeCurrentSquad(INT32 iSquad)
 	}
 }
 
-
-static void HandleSelectMercSlot(UINT8 const ubPanelSlot, bool const force_select)
-{
-	SOLDIERTYPE* const s = GetPlayerFromInterfaceTeamSlot(ubPanelSlot);
-	if (s != NULL)
-	{
-		HandleLocateSelectMerc(s, force_select);
-		ErasePath();
-		gfPlotNewMovement = TRUE;
-	}
-}
 
 static void EscapeUILock(void)
 {
@@ -3335,11 +3057,6 @@ void HandleStanceChangeFromUIKeys( UINT8 ubAnimHeight )
 
 static void ToggleStealthMode(SOLDIERTYPE& s)
 {
-	if (gsCurInterfacePanel == SM_PANEL && !giSMStealthButton->Enabled()) return;
-	// Either not in SM panel or the matching button is enabled
-
-	if (&s == gpSMCurrentMerc) gfUIStanceDifferent = TRUE;
-
 	gfPlotNewMovement    = TRUE;
 	fInterfacePanelDirty = DIRTYLEVEL2;
 	s.bStealthMode       = !s.bStealthMode;
@@ -3350,7 +3067,7 @@ static void ToggleStealthMode(SOLDIERTYPE& s)
 }
 
 
-static void HandleStealthChangeFromUIKeys()
+void HandleStealthChangeFromUIKeys()
 {
 	// If we have multiple guys selected, make all change stance!
 	if (gTacticalStatus.fAtLeastOneGuyOnMultiSelect)

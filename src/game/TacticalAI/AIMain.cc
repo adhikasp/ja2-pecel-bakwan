@@ -30,7 +30,7 @@
 #include "Soldier_Macros.h"
 #include "Bullets.h"
 #include "Physics.h"
-#include "Interface_Panels.h"
+#include "OverlayAdapter.h"
 #include "Sound_Control.h"
 #include "Civ_Quotes.h"
 #include "Quests.h"

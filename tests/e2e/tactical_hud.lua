@@ -1,9 +1,6 @@
--- The tactical HUD at any resolution: team panel, a message-queue line,
--- single-merc inventory panel and the overhead map. At wide resolutions the
--- bottom bar is flanked by skinned fillers (no black bars) and everything
--- stays on screen (shots.take runs ja2.assertInsideScreen).
--- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
-ja2.setUiMode("tactical", "legacy")
+-- The tactical HUD at any resolution: squad bar, a message-queue line, the merc details with the inventory and the
+-- placement. The world fills the screen under the bar, and everything stays on screen (shots.take runs
+-- ja2.assertInsideScreen).
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
@@ -11,10 +8,10 @@ campaign.startWithMerc("Barry")
 ja2.waitIdle()
 shots.take("team_panel.png", "small")
 
--- Park the mouse over the middle of the world on wide screens. Where landing leaves it depends on the map screen
--- layout, and it decides whether the 3D cursor is drawn. (Classic 640x480 keeps its old, golden position.)
+-- Park the mouse over the middle of the world. Where landing leaves it depends on the map screen layout, and it
+-- decides whether the 3D cursor is drawn.
 local size = ja2.screenSize()
-if size.w > 640 then ja2.move(size.w // 2, size.h // 2 - 100) end
+ja2.move(size.w // 2, size.h // 2 - 100)
 
 -- A line in the message queue (Home toggles the 3D cursor and says so).
 ja2.key("home")
@@ -54,13 +51,6 @@ ja2.wait(800)
 shots.take("dialogue.png", "small")
 ja2.wait(9000)
 ja2.waitIdle()
-
--- The sector exit menu is native only (tactical_popups.lua covers it): with the legacy HUD nothing draws it, so it
--- resolves to what it opened with and leaves no popup (and no modal state) behind.
-ja2.debug("exitmenu")
-ja2.wait(500)
-ja2.expect(ja2.popup().kind == "none", "the legacy HUD leaves no exit menu open, got " .. ja2.popup().kind)
-ja2.expect(ja2.screen() == "GAME_SCREEN", "and the squad stays in the sector")
 
 -- The tactical placement GUI, anchored to the bottom of the screen (last: it needs a battle to end properly).
 ja2.debug("placement")

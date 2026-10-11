@@ -1,7 +1,5 @@
 -- Start a campaign through the real UI, hire a merc, land in Omerta, then
 -- check that saving and loading the game round-trips.
--- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
-ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
@@ -26,13 +24,13 @@ local landed = ja2.state()
 ja2.expect(landed.screen == "GAME_SCREEN", "in tactical after landing")
 ja2.expect(landed.sector == "A9", "landed in A9 (Omerta), got " .. landed.sector)
 ja2.expect(landed.mercs[1].inSector, "Barry is in the sector")
-ja2.expect(ja2.exists("A9: Omerta"), "the sector name is shown on the tactical panel")
+ja2.expect(ja2.viewModel("tactical").sector == "A9" and ja2.viewModel("tactical").town:find("Omerta"), "the sector name is shown on the sector card")
 shots.take("landed.png", "small")
 
 -- Save, wander off, load: the game comes back as it was.
 ja2.save("e2e-landed", "e2e: landed in Omerta")
 ja2.expect(ja2.state().mercs[1].gridNo == landed.mercs[1].gridNo, "saving does not move anyone")
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 ja2.load("e2e-landed")
 local loaded = ja2.state()

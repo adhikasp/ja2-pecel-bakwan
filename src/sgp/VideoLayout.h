@@ -16,6 +16,15 @@ constexpr int MIN_LOGICAL_HEIGHT = 480;
 constexpr int AUTO_MIN_LOGICAL_WIDTH  = 1280;
 constexpr int AUTO_MIN_LOGICAL_HEIGHT = 720;
 
+/** The smallest output the game runs at (issue #324): the native tactical HUD, like every native screen, has no
+ * layout below it. A smaller window or a smaller configured resolution starts at this size. */
+constexpr int MIN_OUTPUT_WIDTH  = 1280;
+constexpr int MIN_OUTPUT_HEIGHT = 720;
+
+/** A requested output size (0 x 0 is "auto") brought up to the minimum. */
+constexpr int AtLeastMinOutputWidth(int const w)  { return w <= 0 ? w : (w < MIN_OUTPUT_WIDTH  ? MIN_OUTPUT_WIDTH  : w); }
+constexpr int AtLeastMinOutputHeight(int const h) { return h <= 0 ? h : (h < MIN_OUTPUT_HEIGHT ? MIN_OUTPUT_HEIGHT : h); }
+
 constexpr int MAX_UI_SCALE = 4;
 
 // UI scale value meaning "pick for me"

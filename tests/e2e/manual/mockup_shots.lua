@@ -15,7 +15,6 @@ local function shot(name)
 	for _, p in ipairs(ja2.layoutProblems()) do ja2.log(name .. suffix .. ": " .. p) end
 end
 
-ja2.setUiMode("tactical", "native")
 
 -- the front end
 ja2.waitScreen("MAINMENU_SCREEN")

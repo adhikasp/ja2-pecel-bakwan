@@ -3,7 +3,7 @@
 #include "Overhead_Types.h"
 #include "GridSquare.h"
 #include "Isometric_Utils.h"
-#include "Interface_Panels.h"
+#include "SquadRoster.h"
 #include "Soldier_Macros.h"
 #include "Strategic.h"
 #include "Animation_Control.h"
@@ -708,7 +708,7 @@ static void InternalAddSoldierToSector(SOLDIERTYPE* const s, BOOLEAN calculate_d
 	if (s->uiStatusFlags & SOLDIER_DRIVER)    return;
 	if (s->uiStatusFlags & SOLDIER_PASSENGER) return;
 
-	CheckForAndAddMercToTeamPanel(s);
+	SquadRosterAdd(s);
 
 	s->usQuoteSaidFlags &= ~SOLDIER_QUOTE_SAID_SPOTTING_CREATURE_ATTACK;
 	s->usQuoteSaidFlags &= ~SOLDIER_QUOTE_SAID_SMELLED_CREATURE;

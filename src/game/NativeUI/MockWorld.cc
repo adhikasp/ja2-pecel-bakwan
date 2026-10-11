@@ -100,6 +100,34 @@ namespace
 		{
 			return LoadStiFrame(ST::format(FACESDIR "/{02d}.sti", std::atoi(name.c_str() + 6)).to_std_string(), 0);
 		}
+		if (name.rfind("sfacef-", 0) == 0)
+		{
+			// a small face with the eyes and mouth frames of the moment: "sfacef-<face>-<ex>-<ey>-<mx>-<my>-<eyes>-<mouth>"
+			int face = 0, ex = 0, ey = 0, mx = 0, my = 0, eyes = 0, mouth = 0;
+			if (std::sscanf(name.c_str() + 7, "%d-%d-%d-%d-%d-%d-%d", &face, &ex, &ey, &mx, &my, &eyes, &mouth) != 7) return nullptr;
+			std::string const file = ST::format(FACESDIR "/{02d}.sti", face).to_std_string();
+			SDL_Surface* const base = LoadStiFrame(file, 0);
+			if (!base) return nullptr;
+			if (eyes > 0)
+			{
+				if (SDL_Surface* const e = LoadStiFrame(file, eyes))
+				{
+					SDL_Rect const to{ ex, ey, e->w, e->h };
+					SDL_BlitSurface(e, nullptr, base, &to);
+					SDL_DestroySurface(e);
+				}
+			}
+			if (mouth > 0)
+			{
+				if (SDL_Surface* const m = LoadStiFrame(file, 4 + mouth))
+				{
+					SDL_Rect const to{ mx, my, m->w, m->h };
+					SDL_BlitSurface(m, nullptr, base, &to);
+					SDL_DestroySurface(m);
+				}
+			}
+			return base;
+		}
 		if (name.rfind("bface-", 0) == 0)
 		{
 			// the big face of the talk panel
@@ -152,6 +180,7 @@ void RegisterTacticalMockImages()
 	RegisterImageSource("nitem-", Provide);
 	RegisterImageSource("nitembig-", Provide);
 	RegisterImageSource("sface-", Provide);
+	RegisterImageSource("sfacef-", Provide);
 	RegisterImageSource("bface-", Provide);
 	RegisterImageSource("overhead-snap", Provide);
 }

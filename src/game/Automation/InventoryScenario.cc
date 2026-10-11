@@ -4,7 +4,7 @@
 #include "GameInstance.h"
 #include "Interface.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "InventoryAdapter.h"
 #include "ItemModel.h"
 #include "Items.h"

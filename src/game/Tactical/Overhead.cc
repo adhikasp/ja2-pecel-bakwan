@@ -30,7 +30,8 @@
 #include "Interface_Control.h"
 #include "Interface_Dialogue.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "SquadRoster.h"
+#include "OverlayAdapter.h"
 #include "Interface_Utils.h"
 #include "Isometric_Utils.h"
 #include "ItemModel.h"
@@ -4578,7 +4579,6 @@ BOOLEAN CheckForEndOfBattle( BOOLEAN fAnEnemyRetreated )
 							pTeamSoldier->usQuoteSaidExtFlags &= ~SOLDIER_QUOTE_SAID_BUDDY_3_WITNESSED;
 
 							// toggle stealth mode....
-							gfUIStanceDifferent = TRUE;
 							pTeamSoldier->bStealthMode = FALSE;
 							fInterfacePanelDirty = DIRTYLEVEL2;
 

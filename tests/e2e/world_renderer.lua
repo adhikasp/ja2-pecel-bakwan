@@ -129,15 +129,26 @@ if ja2.args[2] == "scenes" then -- only the equivalence scenes (slow windows wit
 end
 
 -- 6. The renderers running the game: the same frame and the same picking
+local function nearColour(a, b, tolerance)
+	if a == b then return true end
+	for i = 2, 6, 2 do
+		local ca, cb = tonumber(a:sub(i, i + 1), 16), tonumber(b:sub(i, i + 1), 16)
+		if not ca or not cb or math.abs(ca - cb) > tolerance then return false end
+	end
+	return true
+end
+local pixelAt
 local function frameOf(renderer)
 	ja2.expect(ja2.setWorldRenderer(renderer) == renderer, renderer .. " renderer is active (" .. ja2.worldRenderer().error .. ")")
+	ja2.waitIdle() -- a merc speaking up (the picks below let game time pass) is not part of the frame
 	ja2.move(30, 60) -- the same cursor position for every renderer
 	ja2.step(3)
 	ja2.screenshot("world/frame_" .. renderer .. ".png")
-	local pixels = {}
-	for y = 0, h - 1, 7 do
-		for x = 0, w - 1, 11 do pixels[#pixels + 1] = ja2.pixel(x, y) end
+	local pixels, where = {}, {}
+	for y = 0, h - 200, 7 do -- above the squad bar: its faces blink and its clock ticks, which is not the world
+		for x = 0, w - 1, 11 do pixels[#pixels + 1] = ja2.pixel(x, y); where[#pixels] = x .. "," .. y end
 	end
+	pixelAt = where
 	local picks = {}
 	for y = 80, h - 220, 29 do -- away from the edges, which scroll the map in a window
 		for x = 80, w - 80, 53 do
@@ -156,7 +167,14 @@ ja2.expect(not needGpu or #renderers == 2, "the GPU renderer starts")
 for _, renderer in ipairs(renderers) do
 	local picks, pixels = frameOf(renderer)
 	local differ = 0
-	for i = 1, #pixels do if pixels[i] ~= softwarePixels[i] then differ = differ + 1 end end
+	for i = 1, #pixels do
+		-- the pipeline applies the dynamic lights its own way (the scenes above bound that); a sample differs
+		-- when it is more than a shade off, not by a rounding of the light
+		if not nearColour(pixels[i], softwarePixels[i], 24) then
+			differ = differ + 1
+			ja2.log("  differs at " .. pixelAt[i] .. ": " .. softwarePixels[i] .. " vs " .. pixels[i])
+		end
+	end
 	ja2.log(("frame with %s: %d of %d sampled pixels differ from software"):format(renderer, differ, #pixels))
 	-- The frames are taken a few game frames apart, so animations (item glow, idle mercs) may have moved on; the exact
 	-- comparison is the scenes above. This checks that the runtime path (static cache, presentation) shows the same world.

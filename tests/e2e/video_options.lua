@@ -1,15 +1,17 @@
 -- The Video sub-screen of the options: reachable from Options, its settings apply at once (no restart) and the
 -- screen builds itself again for the new size; Done goes back to Options.
+-- This is the legacy Video screen (the native options screen has the video settings on a page of its own, covered by
+-- options_parity.lua).
+ja2.setUiMode("options", "legacy")
 local shots = require("lib.shots")
 
 ja2.click("Preferences")
 ja2.waitScreen("OPTIONS_SCREEN")
-ja2.key("v") -- (a button too on screens wider than 640x480)
+ja2.key("v")
 ja2.waitScreen("VIDEO_OPTIONS_SCREEN")
 ja2.expect(ja2.exists("Resolution"), "the resolution setting is listed")
 ja2.expect(ja2.exists("UI scale"), "the UI scale setting is listed")
 ja2.expect(ja2.exists("World zoom"), "the world zoom setting is listed")
-shots.take("video_classic.png", true)
 
 local function cycle(label, times)
 	for _ = 1, times do
@@ -18,14 +20,9 @@ local function cycle(label, times)
 	end
 end
 
--- 640x480 -> 800x600 -> 1024x768 -> 1280x720
-cycle("Resolution", 3)
+-- 1280x720 is the smallest output the game runs at
 ja2.expect(ja2.exists("Resolution: 1280x720"), "the resolution button shows the choice")
-ja2.click("Apply")
-ja2.waitIdle()
-ja2.expect(ja2.screenSize().w == 1280 and ja2.screenSize().h == 720, "the screen is now 1280x720")
-ja2.expect(ja2.screen() == "VIDEO_OPTIONS_SCREEN", "still on the video screen")
-ja2.expect(ja2.exists("Resolution: 1280x720"), "the screen is built again")
+ja2.expect(ja2.screenSize().w == 1280 and ja2.screenSize().h == 720, "the screen is 1280x720")
 shots.take("video_1280x720.png", true)
 
 -- 1280x720 -> 1366x768, 1600x900, 1920x1080, 2560x1080

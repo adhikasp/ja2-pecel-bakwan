@@ -18,6 +18,7 @@
 #include "MouseSystem.h"
 #include "Cursors.h"
 #include "Handle_UI.h"
+#include "WorldPointer.h"
 #include "Isometric_Utils.h"
 #include "Input.h"
 #include "Overhead.h"
@@ -312,7 +313,6 @@ BOOLEAN gUIUseReverse = FALSE;
 SGPRect gRubberBandRect = { 0, 0, 0, 0 };
 BOOLEAN gRubberBandActive = FALSE;
 BOOLEAN gfIgnoreOnSelectedGuy = FALSE;
-static BOOLEAN gfViewPortAdjustedForSouth = FALSE;
 
 // FLAGS
 // These flags are set for a single frame execution and then are reset for the next iteration.
@@ -564,7 +564,7 @@ ScreenID HandleTacticalUI(void)
 	{
 		// ATE: OK - don't revert to single event if our mouse is not
 		// in viewport - rather use m_on_t event
-		if ( ( gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )  )
+		if (WorldPointer::In())
 		{
 			guiCurrentEvent = guiOldEvent;
 		}
@@ -631,9 +631,9 @@ void UpdateCurrentCursorTarget() {
 	}
 }
 
-void TacticalViewPortMovementCallback(MOUSE_REGION* region, UINT32 reason) {
+void TacticalViewPortMovementCallback(INT16 const x, INT16 const y, UINT32 const reason) {
 	if (reason & MSYS_CALLBACK_REASON_MOVE && !(reason & MSYS_CALLBACK_REASON_LOST_MOUSE)) {
-		RegisterViewPortPointerPosition(region->MouseXPos, region->MouseYPos);
+		RegisterViewPortPointerPosition(x, y);
 	}
 	// Update cursor state
 	if (reason & MSYS_CALLBACK_REASON_LOST_MOUSE) {
@@ -644,7 +644,7 @@ void TacticalViewPortMovementCallback(MOUSE_REGION* region, UINT32 reason) {
 			}
 			ResetCurrentCursorTarget();
 		} else {
-			SetManualCursorPos(SGPPoint {(UINT16)region->MouseXPos, (UINT16)region->MouseYPos});
+			SetManualCursorPos(SGPPoint {(UINT16)x, (UINT16)y});
 			// Dont update target soldier when clicking on touch ui
 			return;
 		}
@@ -653,16 +653,16 @@ void TacticalViewPortMovementCallback(MOUSE_REGION* region, UINT32 reason) {
 	}
 }
 
-void TacticalViewPortTouchCallback(MOUSE_REGION* region, UINT32 reason) {
+void TacticalViewPortTouchCallback(UINT32 const reason) {
 	UpdateCurrentCursorTarget();
 
 	if (!(gTacticalStatus.uiFlags & INCOMBAT))
 	{
-		TacticalViewPortTouchCallbackRT(region, reason);
+		TacticalViewPortTouchCallbackRT(reason);
 	}
 	else
 	{
-		TacticalViewPortTouchCallbackTB(region, reason);
+		TacticalViewPortTouchCallbackTB(reason);
 	}
 }
 
@@ -688,7 +688,7 @@ static void SetUIMouseCursor(void)
 		}
 
 
-		if ( gfScrolledToRight && gusMouseXPos >= SCREEN_WIDTH - NO_PX_SHOW_EXIT_CURS )
+		if ( gfScrolledToRight && WorldPointer::Edges().right )
 		{
 			gfUIDisplayActionPoints = FALSE;
 			ErasePath();
@@ -710,7 +710,7 @@ static void SetUIMouseCursor(void)
 			}
 		}
 
-		if ( gfScrolledToLeft && gusMouseXPos < NO_PX_SHOW_EXIT_CURS )
+		if ( gfScrolledToLeft && WorldPointer::Edges().left )
 		{
 			gfUIDisplayActionPoints = FALSE;
 			ErasePath();
@@ -732,7 +732,7 @@ static void SetUIMouseCursor(void)
 			}
 		}
 
-		if ( gfScrolledToTop && gusMouseYPos <  NO_PX_SHOW_EXIT_CURS )
+		if ( gfScrolledToTop && WorldPointer::Edges().top )
 		{
 			gfUIDisplayActionPoints = FALSE;
 			ErasePath();
@@ -755,8 +755,8 @@ static void SetUIMouseCursor(void)
 		}
 
 
-		auto comp = !gfIsUsingTouch ? SCREEN_HEIGHT : gViewportRegion.RegionBottomRightY;
-		if ( gfScrolledToBottom && gusMouseYPos >= comp - NO_PX_SHOW_EXIT_CURS )
+		// the exit arrows show at the very edge of the screen: the edge strip is the world's whatever the HUD has there
+		if ( gfScrolledToBottom && WorldPointer::Edges().bottom )
 		{
 			gfUIDisplayActionPoints = FALSE;
 			ErasePath();
@@ -775,52 +775,6 @@ static void SetUIMouseCursor(void)
 			else
 			{
 				guiNewUICursor = NOEXIT_SOUTH_UICURSOR;
-			}
-
-			if (gusMouseYPos < comp - NO_PX_SHOW_EXIT_CURS)
-			{
-				// Define region for viewport
-				MSYS_RemoveRegion( &gViewportRegion );
-
-				MSYS_DefineRegion(&gViewportRegion, 0, 0 ,gsVIEWPORT_END_X, gsVIEWPORT_WINDOW_END_Y,
-							MSYS_PRIORITY_NORMAL,
-							VIDEO_NO_CURSOR, TacticalViewPortMovementCallback, TacticalViewPortTouchCallback);
-
-
-				// Adjust where we blit our cursor!
-				gsGlobalCursorYOffset = 0;
-				SetCurrentCursorFromDatabase( CURSOR_NORMAL );
-			}
-			else if (!gfScrollPending && !g_scroll_inertia && !gfIsUsingTouch)
-			{
-				// Adjust viewport to edge of screen!
-				// Define region for viewport
-				MSYS_RemoveRegion(&gViewportRegion);
-				MSYS_DefineRegion(&gViewportRegion, 0, 0, gsVIEWPORT_END_X, SCREEN_HEIGHT, MSYS_PRIORITY_NORMAL, VIDEO_NO_CURSOR, TacticalViewPortMovementCallback, TacticalViewPortTouchCallback);
-
-				gsGlobalCursorYOffset = SCREEN_HEIGHT - gsVIEWPORT_WINDOW_END_Y;
-				SetCurrentCursorFromDatabase(gUICursors[guiNewUICursor].usFreeCursorName);
-
-				gfViewPortAdjustedForSouth = TRUE;
-			}
-		}
-		else
-		{
-			if ( gfViewPortAdjustedForSouth )
-			{
-				// Define region for viewport
-				MSYS_RemoveRegion( &gViewportRegion );
-
-				MSYS_DefineRegion(&gViewportRegion, 0, 0 ,gsVIEWPORT_END_X, gsVIEWPORT_WINDOW_END_Y,
-							MSYS_PRIORITY_NORMAL,
-							VIDEO_NO_CURSOR, TacticalViewPortMovementCallback, TacticalViewPortTouchCallback);
-
-
-				// Adjust where we blit our cursor!
-				gsGlobalCursorYOffset = 0;
-				SetCurrentCursorFromDatabase( CURSOR_NORMAL );
-
-				gfViewPortAdjustedForSouth = FALSE;
 			}
 		}
 
@@ -2890,7 +2844,6 @@ void UIHandleSoldierStanceChange(SOLDIERTYPE* s, INT8 bNewStance)
 	// Set UI value for soldier
 	SetUIbasedOnStance(s, bNewStance);
 
-	gfUIStanceDifferent = TRUE;
 
 	// ATE: If we are being serviced...stop...
 	// InternalReceivingSoldierCancelServices(s, FALSE);
@@ -4045,7 +3998,7 @@ ScreenID UIHandleLUIEndLock(UI_EVENT* pUIEvent)
 
 		UIHandleMOnTerrain( NULL );
 
-		if ( !gfIsUsingTouch && gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )
+		if ( !gfIsUsingTouch && WorldPointer::In() )
 		{
 			SetCurrentCursorFromDatabase( gUICursors[ guiNewUICursor ].usFreeCursorName );
 		}
@@ -4501,7 +4454,7 @@ static ScreenID UIHandleLAEndLockOurTurn(UI_EVENT* pUIEvent)
 
 		UIHandleMOnTerrain( NULL );
 
-		if ( !gfIsUsingTouch && gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA )
+		if ( !gfIsUsingTouch && WorldPointer::In() )
 		{
 			SetCurrentCursorFromDatabase( gUICursors[ guiNewUICursor ].usFreeCursorName );
 		}

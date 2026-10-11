@@ -1,4 +1,6 @@
 #include "AutomationSession.h"
+#include "RenderWorld.h"
+#include "Isometric_Utils.h"
 #include "NativeUI.h"
 #include "Automation.h"
 
@@ -217,6 +219,9 @@ namespace
 		{
 			if (gTacticalStatus.ubAttackBusyCount > 0) return false;
 			if (HeliDropInProgress()) return false;
+			// the view is sliding to a merc (a click on a card centres him) or scrolling
+			if (gTacticalStatus.sSlideTarget != NOWHERE) return false;
+			if (gfScrollPending || g_scroll_inertia) return false;
 			if (gTacticalStatus.uiFlags & INCOMBAT && gTacticalStatus.ubCurrentTeam != OUR_TEAM) return false;
 			CFOR_EACH_IN_TEAM(s, OUR_TEAM)
 			{
@@ -704,6 +709,7 @@ std::vector<Element> OffscreenElements()
 		// Degenerate regions (zero-sized placeholders) cannot be clicked.
 		if (e.rect.w <= 0 || e.rect.h <= 0) continue;
 		if (e.kind == "native") continue; // NativeUI::LayoutAudit checks those
+		if (!e.enabled) continue; // nobody can click a disabled region (the radar's, which tactical no longer uses)
 		if (e.rect.x < 0 || e.rect.y < 0 || e.rect.x + e.rect.w > sw || e.rect.y + e.rect.h > sh)
 		{
 			bad.push_back(e);

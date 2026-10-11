@@ -12,7 +12,8 @@
 #include "Random.h"
 #include "Smell.h"
 #include "Squads.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "SquadRoster.h"
 #include "StrategicMap.h"
 #include "Inventory_Choosing.h"
 #include "Soldier_Add.h"
@@ -1020,7 +1021,7 @@ void InternalTacticalRemoveSoldier(SOLDIERTYPE& s, BOOLEAN const fRemoveVehicle)
 	if (guiCurrentScreen != AUTORESOLVE_SCREEN)
 	{
 		RemoveCharacterFromSquads(&s);
-		RemovePlayerFromTeamSlot(&s);
+		SquadRosterRemove(&s);
 		RemoveSoldierFromGridNo(s);
 
 		// Delete shadow of crow....

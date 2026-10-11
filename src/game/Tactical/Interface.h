@@ -66,7 +66,6 @@ enum InterfacePanelKind
 };
 
 
-extern BOOLEAN            gfUIStanceDifferent;
 extern InterfacePanelKind gsCurInterfacePanel;
 
 
@@ -75,7 +74,6 @@ extern SGPVObject* guiHATCH;
 extern SGPVObject* guiRADIO;
 
 
-extern MOUSE_REGION gViewportRegion;
 extern MOUSE_REGION gRadarRegion;
 
 #define MOVEMENT_MENU_LOOK		1
@@ -121,21 +119,15 @@ void CancelOpenDoorMenu(void);
 void HandleInterfaceBackgrounds(void);
 
 
-void DrawSelectedUIAboveGuy(SOLDIERTYPE&);
 
-void CreateCurrentTacticalPanelButtons(void);
-void RemoveCurrentTacticalPanelButtons(void);
 void SetCurrentTacticalPanelCurrentMerc(SOLDIERTYPE* s);
 void SetCurrentInterfacePanel(InterfacePanelKind);
 BOOLEAN IsMercPortraitVisible(const SOLDIERTYPE* s);
 
-void InitializeCurrentPanel(void);
-void ShutdownCurrentPanel(void);
 
 void ClearInterface(void);
 void RestoreInterface(void);
 
-void RenderArrows(void);
 void EraseRenderArrows(void);
 void DirtyMercPanelInterface(SOLDIERTYPE const*, DirtyLevel);
 
@@ -183,11 +175,9 @@ void ToggleTacticalPanels(void);
 
 void DirtyTopMessage(void);
 /** The screen has another width: the pre-rendered top message bar has to follow. */
-void ResizeTopMessage(void);
 
 void BeginMultiPurposeLocator(INT16 sGridNo, INT8 bLevel);
 void HandleMultiPurposeLocator(void);
-void RenderTopmostMultiPurposeLocator(void);
 /** The multi-purpose locator, if it is on: its tile, level and pulse frame (0..4). */
 bool MultiPurposeLocatorState(INT16* gridNo, INT8* level, INT8* frame);
 /** Runs a merc's locator timer (game flow: the legacy and the native overlay both use it). True while the locator

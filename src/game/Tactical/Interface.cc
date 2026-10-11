@@ -21,7 +21,9 @@
 #include "Interface_Control.h"
 #include "Interface_Cursors.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "SquadRoster.h"
+#include "ShopMercPanel.h"
 #include "Isometric_Utils.h"
 #include "ItemModel.h"
 #include "Items.h"
@@ -81,11 +83,8 @@ static UINT8   gubProgCurEnemy   = 0;
 
 struct TOP_MESSAGE
 {
-	SGPVSurface* uiSurface;
 	UINT32  uiTimeSinceLastBeep;
 	BOOLEAN fCreated;
-	INT16   sWorldRenderX;
-	INT16   sWorldRenderY;
 };
 
 static TOP_MESSAGE gTopMessage;
@@ -101,7 +100,6 @@ static MercPopUpBox* g_ui_message_box;
 UINT32 guiUIMessageTimeDelay = 0;
 static BOOLEAN       gfUseSkullIconMessage = FALSE;
 
-static BOOLEAN gfPanelAllocated = FALSE;
 
 
 enum
@@ -158,7 +156,6 @@ SGPVObject* guiRADIO;
 static SGPVObject* guiRADIO2;
 
 // UI Globals
-MOUSE_REGION	gViewportRegion;
 MOUSE_REGION	gRadarRegion;
 
 
@@ -184,66 +181,9 @@ void InitializeTacticalInterface()
 	guiRADIO        = AddVideoObjectFromFile(INTERFACEDIR "/radio.sti");
 	guiRADIO2       = AddVideoObjectFromFile(INTERFACEDIR "/radio2.sti");
 
-	gTopMessage.uiSurface = AddVideoSurface(SCREEN_WIDTH, 20, PIXEL_DEPTH);
-
 	InitRadarScreen( );
 
-	InitTEAMSlots( );
-}
-
-
-void InitializeCurrentPanel()
-{
-	MoveRadarScreen( );
-
-	switch( gsCurInterfacePanel )
-	{
-		case SM_PANEL:
-			// Set new viewport
-			gsVIEWPORT_WINDOW_END_Y = INV_INTERFACE_START_Y;
-
-			// Render full
-			SetRenderFlags(RENDER_FLAG_FULL);
-			InitializeSMPanel();
-			break;
-
-		case TEAM_PANEL:
-			gsVIEWPORT_WINDOW_END_Y = INTERFACE_START_Y;
-			// Render full
-			SetRenderFlags(RENDER_FLAG_FULL);
-			InitializeTEAMPanel();
-			break;
-
-		default:
-			throw std::logic_error("Tried to initialise invalid tactical panel");
-	}
-
-	//RefreshMouseRegions( );
-	gfPanelAllocated = TRUE;
-}
-
-
-void ShutdownCurrentPanel( )
-{
-	if ( gfPanelAllocated )
-	{
-
-		switch( gsCurInterfacePanel )
-		{
-			case SM_PANEL:
-				ShutdownSMPanel( );
-				break;
-
-			case TEAM_PANEL:
-				ShutdownTEAMPanel( );
-				break;
-			default:
-				break;
-		}
-
-		gfPanelAllocated = FALSE;
-
-	}
+	SquadRosterInit();
 }
 
 
@@ -261,73 +201,38 @@ void SetCurrentTacticalPanelCurrentMerc(SOLDIERTYPE* s)
 		}
 	}
 
-	switch( gsCurInterfacePanel )
-	{
-		case SM_PANEL:
-			gSelectSMPanelToMerc = s;
-			break;
-		case TEAM_PANEL:
-			SetTEAMPanelCurrentMerc();
-			break;
-		default:
-			break;
-	}
+	// the detail panel follows the selection
+	if (gsCurInterfacePanel == SM_PANEL) gSelectSMPanelToMerc = s;
 }
 
 
-void CreateCurrentTacticalPanelButtons(void)
-{
-	switch (gsCurInterfacePanel)
-	{
-		case SM_PANEL:
-			CreateSMPanelButtons();
-			break;
-		case TEAM_PANEL:
-			CreateTEAMPanelButtons();
-			break;
-		default:
-			break;
-	}
-}
-
-
+/** Which of the two views the HUD shows: the squad alone (TEAM_PANEL) or the squad with the merc's details (SM_PANEL).
+ * It is a state now; nothing is created or destroyed with it (issue #319). */
 void SetCurrentInterfacePanel(InterfacePanelKind const ubNewPanel)
 {
-	if(gfEnteringMapScreen)
-		return;
-	if(gfPanelAllocated && gsCurInterfacePanel == ubNewPanel)
-		return;
+	if (gfEnteringMapScreen) return;
+	if (gsCurInterfacePanel == ubNewPanel) return;
 
-	ShutdownCurrentPanel( );
+	if (gsCurInterfacePanel == SM_PANEL)
+	{
+		// CJC: delete key ring if open
+		DeleteKeyRingPopup(); // function will abort if key ring is not up
 
-	// INit new panel
+		// ATE: Delete desc panel if it was open....
+		if (gfInItemDescBox) DeleteItemDescriptionBox();
+
+		gSelectSMPanelToMerc = NULL;
+	}
+
 	gsCurInterfacePanel = ubNewPanel;
-
-	InitializeCurrentPanel( );
-
-
+	SetRenderFlags(RENDER_FLAG_FULL);
+	fInterfacePanelDirty = DIRTYLEVEL2;
 }
 
 
 void ToggleTacticalPanels( )
 {
 	SetNewPanel(gsCurInterfacePanel == SM_PANEL ? 0 : GetSelectedMan());
-}
-
-
-void RemoveCurrentTacticalPanelButtons(void)
-{
-	switch (gsCurInterfacePanel)
-	{
-		case SM_PANEL:
-			RemoveSMPanelButtons();
-			break;
-		case TEAM_PANEL:
-			RemoveTEAMPanelButtons();
-			break;
-		default:
-			break;
-	}
 }
 
 
@@ -558,81 +463,6 @@ static void HandleUpDownArrowBackgrounds(void)
 
 }
 
-void RenderArrows( )
-{
-
-	if ( guiShowUPDownArrows & ARROWS_HIDE_UP && guiShowUPDownArrows & ARROWS_HIDE_DOWN )
-	{
-		return;
-	}
-
-	auto BltArrow = [](TileDefines tile, short yOffset = 0)
-	{
-		auto const& TileElem{ gTileDatabase[tile] };
-		BltVideoObject(FRAME_BUFFER, TileElem.hTileSurface, TileElem.usRegionIndex, gsUpArrowX, gsUpArrowY + yOffset);
-	};
-
-	auto BltArrowDown = [](TileDefines tile, short yOffset = 0)
-	{
-		auto const& TileElem{ gTileDatabase[tile] };
-		BltVideoObject(FRAME_BUFFER, TileElem.hTileSurface, TileElem.usRegionIndex, gsDownArrowX, gsDownArrowY + yOffset);
-	};
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_UP_BESIDE )
-	{
-		BltArrow(SECONDPOINTERS3);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_UP_ABOVE_Y )
-	{
-		BltArrow(SECONDPOINTERS3);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_UP_ABOVE_YY )
-	{
-		BltArrow(SECONDPOINTERS3);
-		BltArrow(SECONDPOINTERS3, 20);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_UP_ABOVE_CLIMB )
-	{
-		BltArrow(SECONDPOINTERS8);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_DOWN_BESIDE )
-	{
-		BltArrowDown(SECONDPOINTERS4);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_DOWN_BELOW_Y )
-	{
-		BltArrowDown(SECONDPOINTERS4);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_DOWN_CLIMB )
-	{
-		BltArrowDown(SECONDPOINTERS7);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_DOWN_BELOW_YG )
-	{
-		BltArrowDown(SECONDPOINTERS2);
-		BltArrowDown(SECONDPOINTERS4, 20);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_DOWN_BELOW_GG )
-	{
-		BltArrowDown(SECONDPOINTERS2);
-		BltArrowDown(SECONDPOINTERS2, 20);
-	}
-
-	if ( guiShowUPDownArrows & ARROWS_SHOW_DOWN_BELOW_YY )
-	{
-		BltArrowDown(SECONDPOINTERS4);
-		BltArrowDown(SECONDPOINTERS4, 20);
-	}
-}
-
 void EraseRenderArrows( )
 {
 	if (giUpArrowRect != NO_BGND_RECT)
@@ -794,16 +624,8 @@ void GetSoldierAboveGuyPositions(SOLDIERTYPE const* const s, INT16* const psX, I
 }
 
 
-static void PrintAboveGuy(INT16 const x, INT16 const y, const ST::string& text)
-{
-	INT16 cx;
-	INT16 cy;
-	FindFontCenterCoordinates(x, y, 80, 1, text, TINYFONT1, &cx, &cy);
-	GDirtyPrint(cx, cy, text);
-}
 
 
-static void DrawBarsInUIBox(const SOLDIERTYPE* pSoldier, INT16 sXPos, INT16 sYPos, INT16 sWidth, INT16 sHeight);
 
 
 bool UpdateMercLocator(SOLDIERTYPE& s)
@@ -835,224 +657,6 @@ bool UpdateMercLocator(SOLDIERTYPE& s)
 	return true;
 }
 
-
-void DrawSelectedUIAboveGuy(SOLDIERTYPE& s)
-{
-	if (s.bVisible == -1 && !(gTacticalStatus.uiFlags & SHOW_ALL_MERCS)) return;
-
-	if (s.sGridNo == NOWHERE) return;
-
-	if (UpdateMercLocator(s))
-	{
-		// Render the beastie
-		INT16 sXPos;
-		INT16 sYPos;
-		GetSoldierAboveGuyPositions(&s, &sXPos, &sYPos, TRUE);
-
-		// Adjust for bars
-		sXPos += 25;
-		sYPos += 25;
-
-		// Add bars
-		RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
-
-		SGPVObject const* const gfx = s.bNeutral || s.bSide == Side::FRIENDLY ?
-						guiRADIO : guiRADIO2;
-		BltVideoObject(FRAME_BUFFER, gfx, s.sLocatorFrame, sXPos, sYPos);
-	}
-
-	// If he is in the middle of a certain animation, ignore
-	if (gAnimControl[s.usAnimState].uiFlags & ANIM_NOSHOW_MARKER) return;
-
-	// Do not show if we are dead
-	if (s.uiStatusFlags & SOLDIER_DEAD) return;
-
-	UINT16                   usGraphicToUse;
-	SOLDIERTYPE const* const sel = GetSelectedMan();
-	if (&s == sel && !gRubberBandActive)
-	{
-		usGraphicToUse = THIRDPOINTERS2;
-	}
-	else if (s.fShowLocator ||
-		s.uiStatusFlags & SOLDIER_MULTI_SELECTED ||
-		(&s == gSelectedGuy && !gfIgnoreOnSelectedGuy))
-	{
-		usGraphicToUse = THIRDPOINTERS1;
-	}
-	else
-	{
-		return;
-	}
-
-	INT16 sXPos;
-	INT16 sYPos;
-	GetSoldierAboveGuyPositions(&s, &sXPos, &sYPos, FALSE);
-
-	// Display name
-	SetFontAttributes(TINYFONT1, FONT_MCOLOR_WHITE);
-
-	if (s.ubProfile != NO_PROFILE || s.uiStatusFlags & SOLDIER_VEHICLE)
-	{
-		ST::string action;
-		if (&s == gUIValidCatcher && gfUIMouseOnValidCatcher == 1)
-		{
-			action = TacticalStr[CATCH_STR];
-		}
-		else if (&s == gUIValidCatcher && gfUIMouseOnValidCatcher == 3)
-		{
-			action = TacticalStr[RELOAD_STR];
-		}
-		else if (&s == gUIValidCatcher && gfUIMouseOnValidCatcher == 4)
-		{
-			action = pMessageStrings[MSG_PASS];
-		}
-		else if (s.bAssignment >= ON_DUTY)
-		{
-			SetFontForeground(FONT_YELLOW);
-			action = ST::format("({})", pAssignmentStrings[s.bAssignment]);
-		}
-		else if (s.bTeam == OUR_TEAM &&
-			s.bAssignment < ON_DUTY &&
-			s.bAssignment != CurrentSquad() &&
-			!(s.uiStatusFlags & SOLDIER_MULTI_SELECTED))
-		{
-			action = st_format_printf(gzLateLocalizedString[STR_LATE_34], s.bAssignment + 1);
-		}
-
-		bool raise_name = false;
-		if (!action.empty())
-		{
-			PrintAboveGuy(sXPos, sYPos, action);
-			raise_name = true;
-		}
-
-		// If not in a squad
-		if (s.uiStatusFlags & SOLDIER_VEHICLE)
-		{
-			if (GetNumberInVehicle(GetVehicle(s.bVehicleID)) == 0)
-			{
-				SetFontForeground(FONT_GRAY4);
-			}
-		}
-		else if (s.bAssignment >= ON_DUTY)
-		{
-			SetFontForeground(FONT_YELLOW);
-		}
-
-		PrintAboveGuy(sXPos, raise_name ? sYPos - 10 : sYPos, s.name);
-
-		if ((s.ubProfile != NO_PROFILE && MercProfile(s.ubProfile).isPlayerMerc()) ||
-			RPC_RECRUITED(&s) ||
-			AM_AN_EPC(&s) ||
-			s.uiStatusFlags & SOLDIER_VEHICLE)
-		{
-			// Adjust for bars!
-			if (&s == sel)
-			{
-				sXPos += 28;
-				sYPos += 5;
-			}
-			else
-			{
-				sXPos += 30;
-				sYPos += 7;
-			}
-
-			// Add bars
-			RegisterBackgroundRectSingleFilled(sXPos, sYPos, 34, 11);
-			TILE_ELEMENT const& TileElem = gTileDatabase[usGraphicToUse];
-			BltVideoObject(FRAME_BUFFER, TileElem.hTileSurface, TileElem.usRegionIndex, sXPos, sYPos);
-
-			// Draw life, breath
-			if (&s == sel)
-			{
-				sXPos += 1;
-				sYPos += 2;
-			}
-			DrawBarsInUIBox(&s, sXPos, sYPos, 16, 1);
-			return;
-		}
-		else
-		{
-			sYPos += 10;
-
-			if (gfUIMouseOnValidCatcher == 2 && &s == gUIValidCatcher)
-			{
-				SetFontForeground(FONT_MCOLOR_WHITE);
-				PrintAboveGuy(sXPos, sYPos, TacticalStr[GIVE_STR]);
-				return;
-			}
-		}
-	}
-	else if (s.bLevel != 0)
-	{
-		SetFontForeground(FONT_YELLOW);
-		PrintAboveGuy(sXPos, sYPos + 10, gzLateLocalizedString[STR_LATE_15]);
-	}
-
-	SetFontForeground(FONT_MCOLOR_DKRED);
-	PrintAboveGuy(sXPos, sYPos, GetSoldierHealthString(&s));
-}
-
-
-static void DrawBarsInUIBox(const SOLDIERTYPE* pSoldier, INT16 sXPos, INT16 sYPos, INT16 sWidth, INT16 sHeight)
-{
-	FLOAT  dWidth, dPercentage;
-	//UINT16 usLineColor;
-	UINT16 usLineColor;
-	INT8   bBandage;
-
-	// Draw breath points
-
-	// Draw new size
-	SGPVSurface::Lock l(FRAME_BUFFER);
-	UINT16* const pDestBuf = l.Buffer<UINT16>();
-	SetClippingRegionAndImageWidth(l.Pitch(), 0, gsVIEWPORT_WINDOW_START_Y, SCREEN_WIDTH, gsVIEWPORT_WINDOW_END_Y - gsVIEWPORT_WINDOW_START_Y);
-
-	// get amt bandaged
-	bBandage = pSoldier->bLifeMax - pSoldier->bLife - pSoldier->bBleeding;
-
-
-
-	// NOW DO BLEEDING
-	if ( pSoldier->bBleeding )
-	{
-		dPercentage = (FLOAT)( pSoldier->bBleeding +  pSoldier->bLife + bBandage )/ (FLOAT)100;
-		dWidth = dPercentage * sWidth;
-		usLineColor = Get16BPPColor(FROMRGB(240, 240, 20));
-		RectangleDraw(TRUE, sXPos + 3, sYPos + 1, (INT32)(sXPos + dWidth + 3), sYPos + 1, usLineColor, pDestBuf);
-	}
-
-	if( bBandage )
-	{
-		dPercentage = (FLOAT)( pSoldier->bLife + bBandage ) / (FLOAT)100;
-		dWidth = dPercentage * sWidth;
-		usLineColor = Get16BPPColor( FROMRGB( 222, 132, 132 ) );
-		RectangleDraw(TRUE, sXPos + 3, sYPos + 1, (INT32)(sXPos + dWidth + 3), sYPos + 1, usLineColor, pDestBuf);
-	}
-
-	dPercentage = (FLOAT)pSoldier->bLife / (FLOAT)100;
-	dWidth = dPercentage * sWidth;
-	usLineColor = Get16BPPColor(FROMRGB(200, 0, 0));
-	RectangleDraw(TRUE, sXPos + 3, sYPos + 1, (INT32)(sXPos + dWidth + 3), sYPos + 1, usLineColor, pDestBuf);
-
-	dPercentage = (FLOAT)( pSoldier->bBreathMax ) / (FLOAT)100;
-	dWidth = dPercentage * sWidth;
-	usLineColor = Get16BPPColor(FROMRGB(20, 20, 150));
-	RectangleDraw(TRUE, sXPos + 3, sYPos + 4, (INT32)(sXPos + dWidth + 3), sYPos + 4, usLineColor, pDestBuf);
-
-	dPercentage = (FLOAT)( pSoldier->bBreath ) / (FLOAT)100;
-	dWidth = dPercentage * sWidth;
-	usLineColor = Get16BPPColor(FROMRGB(100, 100, 220));
-	RectangleDraw(TRUE, sXPos + 3, sYPos + 4, (INT32)(sXPos + dWidth + 3), sYPos + 4, usLineColor, pDestBuf);
-
-	/*
-	// morale
-	dPercentage = (FLOAT)pSoldier->bMorale / (FLOAT)100;
-	dWidth = dPercentage * sWidth;
-	usLineColor = Get16BPPColor(FROMRGB(0, 250, 0));
-	RectangleDraw(TRUE, sXPos + 1, sYPos + 7, (INT32)(sXPos + dWidth + 1), sYPos + 7, usLineColor, pDestBuf);*/
-}
 
 void ClearInterface( )
 {
@@ -1099,17 +703,10 @@ void ClearInterface( )
 	// Erase Interface cursors
 	HideUICursor( );
 
-	gViewportRegion.ChangeCursor(VIDEO_NO_CURSOR);
 
 	// Hide lock UI cursors...
 	gDisableRegion.ChangeCursor(VIDEO_NO_CURSOR);
 	gUserTurnRegion.ChangeCursor(VIDEO_NO_CURSOR);
-
-	// Remove special thing for south arrow...
-	if (gsGlobalCursorYOffset == SCREEN_HEIGHT - gsVIEWPORT_WINDOW_END_Y)
-	{
-		SetCurrentCursorFromDatabase( VIDEO_NO_CURSOR );
-	}
 
 }
 
@@ -1608,116 +1205,7 @@ void AddTopMessage(const MESSAGE_TYPES ubType)
 
 static void CreateTopMessage(void)
 {
-	const TacticalStatusType* const ts  = &gTacticalStatus;
-	SGPVSurface*              const dst = gTopMessage.uiSurface;
-
-	SetFontDestBuffer(dst);
-
-	const char* bar_file;
-	UINT16      bar_gfx     = 0;
-	BOOLEAN     fDoLimitBar = FALSE;
-	UINT8       foreground;
-	UINT8       shadow;
-	switch (ts->ubTopMessageType)
-	{
-		case COMPUTER_TURN_MESSAGE:
-		case COMPUTER_INTERRUPT_MESSAGE:
-		case MILITIA_INTERRUPT_MESSAGE:
-		case AIR_RAID_TURN_MESSAGE:
-			bar_file    = INTERFACEDIR "/rect.sti";
-			foreground  = FONT_MCOLOR_WHITE;
-			shadow      = DEFAULT_SHADOW;
-			fDoLimitBar = TRUE;
-			break;
-
-		case PLAYER_INTERRUPT_MESSAGE:
-			bar_file   = INTERFACEDIR "/timebaryellow.sti";
-			foreground = FONT_MCOLOR_BLACK;
-			shadow     = NO_SHADOW;
-			if (gGameOptions.fTurnTimeLimit) fDoLimitBar = TRUE;
-			break;
-
-		case PLAYER_TURN_MESSAGE:
-			bar_file   = INTERFACEDIR "/timebargreen.sti";
-			foreground = FONT_MCOLOR_BLACK;
-			shadow     = NO_SHADOW;
-			if (gGameOptions.fTurnTimeLimit)
-			{
-				fDoLimitBar = TRUE;
-			}
-			else
-			{
-				//bar_gfx     = 13;
-			}
-			break;
-
-		default:
-			abort();
-	}
-	SetFontAttributes(TINYFONT1, foreground, shadow);
-
-	const SGPBox* const bar = &g_ui.m_progress_bar_box;
-	{
-		AutoSGPVObject bar_vo(AddVideoObjectFromFile(bar_file));
-
-		BltVideoObject(dst, bar_vo.get(), bar_gfx, STD_SCREEN_X, 0);
-
-		if (fDoLimitBar)
-		{
-			INT32 bar_x = bar->x;
-			// Render end piece
-			BltVideoObject(dst, bar_vo.get(), 1, bar_x, bar->y);
-
-			INT32  gfx    = 2;
-			// -3 for the end pieces
-			UINT32 length = (bar->w - 3) * ts->usTactialTurnLimitCounter / ts->usTactialTurnLimitMax;
-			while (length-- != 0)
-			{
-				BltVideoObject(dst, bar_vo.get(), gfx, ++bar_x, bar->y);
-				if (++gfx == 12) gfx = 2;
-			}
-
-			if (ts->usTactialTurnLimitCounter == ts->usTactialTurnLimitMax)
-			{
-				// Render end piece
-				BltVideoObject(dst, bar_vo.get(), gfx, ++bar_x, bar->y);
-				BltVideoObject(dst, bar_vo.get(), 12,  ++bar_x, bar->y);
-			}
-		}
-	}
-
-	ST::string msg;
-	switch (ts->ubTopMessageType)
-	{
-		case COMPUTER_TURN_MESSAGE:
-		{
-			const UINT8 team = ts->ubCurrentTeam;
-			msg = team == CREATURE_TEAM && HostileBloodcatsPresent() ?
-					g_langRes->Message[STR_BLOODCATS_TURN] :
-					TeamTurnString[team];
-			break;
-		}
-
-		case COMPUTER_INTERRUPT_MESSAGE:
-		case PLAYER_INTERRUPT_MESSAGE:
-		case MILITIA_INTERRUPT_MESSAGE:
-			msg = g_langRes->Message[STR_INTERRUPT];
-			break;
-		case AIR_RAID_TURN_MESSAGE:
-			msg = TacticalStr[AIR_RAID_TURN_MESSAGE];
-			break;
-		case PLAYER_TURN_MESSAGE:
-			msg = TeamTurnString[OUR_TEAM];
-			break;
-
-		default: abort();
-	}
-
-	MPrint(bar->x, bar->y, msg, HCenterVCenterAlign(bar->w, bar->h));
-
-	SetFontDestBuffer(FRAME_BUFFER);
-	SetFontShadow(DEFAULT_SHADOW);
-
+	// the native HUD draws the banner (NativeUI/TacticalHud.cc, from ubTopMessageType and the turn limit counters)
 	gfTopMessageDirty = TRUE;
 }
 
@@ -1815,27 +1303,8 @@ void HandleTopMessages(void)
 	}
 
 	// the native HUD shows the turn banner itself, over the world
-	if (NativeUI::TacticalHudActive())
-	{
-		if (gsVIEWPORT_WINDOW_START_Y != 0) SetRenderFlags(RENDER_FLAG_FULL);
-		gsVIEWPORT_WINDOW_START_Y = 0;
-		return;
-	}
-	gsVIEWPORT_WINDOW_START_Y = 20;
-
-	if (gfTopMessageDirty ||
-		gTopMessage.sWorldRenderX != gsRenderCenterX ||
-		gTopMessage.sWorldRenderY != gsRenderCenterY)
-	{
-		gfTopMessageDirty         = FALSE;
-		gTopMessage.sWorldRenderX = gsRenderCenterX;
-		gTopMessage.sWorldRenderY = gsRenderCenterY;
-
-		SGPVSurface* const src = gTopMessage.uiSurface;
-		BltVideoSurface(FRAME_BUFFER,  src, 0, 0, 0);
-		BltVideoSurface(guiSAVEBUFFER, src, 0, 0, 0);
-		InvalidateRegion(0, 0, SCREEN_WIDTH, 20);
-	}
+	if (gsVIEWPORT_WINDOW_START_Y != 0) SetRenderFlags(RENDER_FLAG_FULL);
+	gsVIEWPORT_WINDOW_START_Y = 0;
 }
 
 
@@ -1993,15 +1462,6 @@ void ResetPhysicsTrajectoryUI( )
 
 }
 
-void ResizeTopMessage()
-{
-	if (!gTopMessage.uiSurface) return;
-	gTopMessage.uiSurface->Resize(SCREEN_WIDTH, 20);
-	gTopMessage.sWorldRenderX = -1; // draw it again
-	if (gTacticalStatus.fInTopMessage) CreateTopMessage();
-}
-
-
 void DirtyTopMessage( )
 {
 	gTopMessage.fCreated = FALSE;
@@ -2081,50 +1541,3 @@ bool MultiPurposeLocatorState(INT16* const gridNo, INT8* const level, INT8* cons
 }
 
 
-void RenderTopmostMultiPurposeLocator( )
-{
-	FLOAT dOffsetX, dOffsetY;
-	FLOAT dTempX_S, dTempY_S;
-	INT16 sX, sY, sXPos, sYPos;
-
-	if ( !gfMultipurposeLocatorOn )
-	{
-		return;
-	}
-
-	ConvertGridNoToCenterCellXY( gsMultiPurposeLocatorGridNo, &sX, &sY );
-
-	dOffsetX = (FLOAT)( sX - gsRenderCenterX );
-	dOffsetY = (FLOAT)( sY - gsRenderCenterY );
-
-	// Calculate guy's position
-	FloatFromCellToScreenCoordinates( dOffsetX, dOffsetY, &dTempX_S, &dTempY_S );
-
-	sXPos = ( g_ui.m_tacticalMapCenterX ) + (INT16)dTempX_S;
-	sYPos = ( g_ui.m_tacticalMapCenterY ) + (INT16)dTempY_S - gpWorldLevelData[ gsMultiPurposeLocatorGridNo ].sHeight;
-
-	// Adjust for offset position on screen
-	sXPos -= gsRenderWorldOffsetX;
-	sYPos -= gsRenderWorldOffsetY;
-
-	// Adjust for render height
-	sYPos += gsRenderHeight;
-
-	// Adjust for level height
-	if ( gbMultiPurposeLocatorLevel )
-	{
-		sYPos -= ROOF_LEVEL_HEIGHT;
-	}
-
-	// The locator is UI: at the UI position of the tile
-	sXPos = g_ui.worldToUi(sXPos);
-	sYPos = g_ui.worldToUi(sYPos);
-
-	// Center circle!
-	sXPos -= 20;
-	sYPos -= 20;
-
-	RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
-
-	BltVideoObject(FRAME_BUFFER, guiRADIO, gbMultiPurposeLocatorFrame, sXPos, sYPos);
-}

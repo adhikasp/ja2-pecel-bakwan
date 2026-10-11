@@ -44,6 +44,7 @@ void LoadingStep(std::string const&) {}
 bool LoadingProgress(double) { return false; }
 bool TacticalHudActive() { return false; }
 void TacticalHudToggleLog() {}
+std::string UiString(std::string const&) { return {}; }
 void OpenWeaponReadout() {}
 void CloseWeaponReadout() {}
 bool WeaponReadoutActive() { return false; }

@@ -1,5 +1,5 @@
 #include "GameLoop.h"
-#include "Interface_Panels.h"
+#include "SquadRoster.h"
 #include "VSurface.h"
 #include "Overhead.h"
 #include "Event_Pump.h"
@@ -155,9 +155,6 @@ void EnterTacticalScreen(void)
 		SetCurrentInterfacePanel(TEAM_PANEL);
 	}
 
-	if (!gfTacticalPlacementGUIActive) gRadarRegion.Enable();
-	gViewportRegion.Enable();
-
 	// set default squad on sector entry
 	// ATE: moved these 2 call after initalizing the interface!
 	//SetDefaultSquadOnSectorEntry( FALSE );
@@ -241,12 +238,6 @@ void InternalLeaveTacticalScreen(ScreenID const uiNewScreen)
 	gsGlobalCursorYOffset = 0;
 	SetCurrentCursorFromDatabase( VIDEO_NO_CURSOR );
 
-	// Shutdown panel
-	ShutdownCurrentPanel( );
-
-	//disable the radar map
-	gRadarRegion.Disable();
-	//gViewportRegion.Disable();
 
 	// We are leaving... turn off pedning autobadage...
 	SetAutoBandagePending( FALSE );
@@ -508,9 +499,6 @@ ScreenID MainGameScreenHandle(void)
 	// Render Interface
 	RenderTopmostTacticalInterface( );
 
-	// Render view window
-	RenderRadarScreen( );
-
 	ResetInterface( );
 
 	if ( gfScrollPending  )
@@ -617,12 +605,12 @@ static void TacticalScreenLocateToSoldier(void)
 void UpdateTeamPanelAssignments( )
 {
 	// Remove all players
-	RemoveAllPlayersFromSlot( );
+	SquadRosterClear( );
 
 	FOR_EACH_IN_TEAM(s, OUR_TEAM)
 	{
 		// Setup team interface
-		CheckForAndAddMercToTeamPanel(s);
+		SquadRosterAdd(s);
 	}
 }
 
@@ -673,7 +661,6 @@ static void HandleModalTactical(void)
 	RestoreBackgroundRects();
 
 	RenderWorld( );
-	RenderRadarScreen( );
 	ExecuteVideoOverlays( );
 
 	// Handle dialogue queue system

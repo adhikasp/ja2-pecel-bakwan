@@ -16,6 +16,7 @@
 #include "Interactive_Tiles.h"
 #include "Message.h"
 #include "Text.h"
+#include "WorldPointer.h"
 
 #include <memory>
 
@@ -86,8 +87,8 @@ void TacticalTouchUI::rebuiltButtons() {
 		RemoveButton(button);
 	}
 	buttons.clear();
-	auto const x = gViewportRegion.RegionBottomRightX - TACTICAL_TOUCH_UI_BUTTON_SIZE;
-	auto y = gViewportRegion.RegionBottomRightY - TACTICAL_TOUCH_UI_BUTTON_SIZE;
+	auto const x = WorldPointer::ViewportRight() - TACTICAL_TOUCH_UI_BUTTON_SIZE;
+	auto y = WorldPointer::ViewportBottom() - TACTICAL_TOUCH_UI_BUTTON_SIZE;
 
 	buttons.push_back(CreateTextButton("Do", FONT12POINT1, FONT_BLACK, FONT_BLACK, x, y, TACTICAL_TOUCH_UI_BUTTON_SIZE, TACTICAL_TOUCH_UI_BUTTON_SIZE, MSYS_PRIORITY_HIGH, TacticalTouchUIConfirmCallback));
 	y -= TACTICAL_TOUCH_UI_BUTTON_SIZE;

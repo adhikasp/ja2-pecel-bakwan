@@ -128,14 +128,29 @@ static void QueueKeyEvent(UINT16 ubInputEvent, SDL_Keycode Key, SDL_Keymod Mod, 
 	gusTailIndex = (gusTailIndex + 1) % lengthof(gEventQueue);
 }
 
-void SetSafeMousePosition(int x, int y) {
+// The pointer in canvas pixels with the fraction SDL reports: the world is picked at output resolution
+static float gfMouseXPos = 0.f;
+static float gfMouseYPos = 0.f;
+
+void SetSafeMousePositionF(float x, float y) {
 	if (x < 0) x = 0;
 	if (y < 0) y = 0;
 	if (x > SCREEN_WIDTH) x = SCREEN_WIDTH;
 	if (y > SCREEN_HEIGHT) y = SCREEN_HEIGHT;
 
-	gusMouseXPos = x;
-	gusMouseYPos = y;
+	gfMouseXPos = x;
+	gfMouseYPos = y;
+	gusMouseXPos = static_cast<UINT16>(x);
+	gusMouseYPos = static_cast<UINT16>(y);
+}
+
+void SetSafeMousePosition(int x, int y) {
+	SetSafeMousePositionF(static_cast<float>(x), static_cast<float>(y));
+}
+
+MousePosF GetMousePosF()
+{
+	return { gfMouseXPos, gfMouseYPos };
 }
 
 BOOLEAN DequeueSpecificEvent(InputAtom* Event, UINT32 uiMaskFlags)
@@ -171,7 +186,7 @@ void MouseMove(const SDL_MouseMotionEvent* event) {
 	if (event->which == SDL_TOUCH_MOUSEID) return;
 	gfIsUsingTouch = FALSE;
 
-	SetSafeMousePosition(event->x, event->y);
+	SetSafeMousePositionF(event->x, event->y);
 }
 
 void MouseButtonDown(const SDL_MouseButtonEvent* BtnEv)
@@ -179,7 +194,7 @@ void MouseButtonDown(const SDL_MouseButtonEvent* BtnEv)
 	if (BtnEv->which == SDL_TOUCH_MOUSEID) return;
 	gfIsUsingTouch = FALSE;
 
-	SetSafeMousePosition(BtnEv->x, BtnEv->y);
+	SetSafeMousePositionF(BtnEv->x, BtnEv->y);
 	switch (BtnEv->button)
 	{
 		case SDL_BUTTON_LEFT:
@@ -227,7 +242,7 @@ void MouseButtonUp(const SDL_MouseButtonEvent* BtnEv)
 	if (BtnEv->which == SDL_TOUCH_MOUSEID) return;
 	gfIsUsingTouch = false;
 
-	SetSafeMousePosition(BtnEv->x, BtnEv->y);
+	SetSafeMousePositionF(BtnEv->x, BtnEv->y);
 	switch (BtnEv->button)
 	{
 		case SDL_BUTTON_LEFT:

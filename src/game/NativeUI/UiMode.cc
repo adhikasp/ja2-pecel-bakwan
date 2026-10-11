@@ -44,7 +44,6 @@ std::vector<ModeKey> const& ModeKeys()
 		{ "mapscreen",  "the strategic map screen",                     UiMode::Native },
 		{ "autoresolve","the auto-resolve battle panel",                UiMode::Native },
 		{ "shopkeeper", "the arms-dealer trade screen",                 UiMode::Native },
-		{ "tactical",   "the tactical HUD (squad bar, inventory, item description, message log)", UiMode::Native },
 		{ "laptop",     "the laptop (e-mail, web sites, finances, ...)", UiMode::Native },
 		{ "intro",      "the intro/ending cinematic (splash, opening, ending)", UiMode::Native },
 		{ "epilogue",   "the victory epilogue at the end of the campaign", UiMode::Native },

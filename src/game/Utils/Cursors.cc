@@ -10,6 +10,7 @@
 #include "Sound_Control.h"
 #include "Video.h"
 #include "VSurface.h"
+#include "WorldPointer.h"
 
 #include <string_theory/format>
 #include <string_theory/string>
@@ -1184,19 +1185,11 @@ void InitCursors(void)
 }
 
 
-static void UpdateFlashingCursorFrames(UINT32 uiCursorIndex);
-
-
 void HandleAnimatedCursors(void)
 {
+	// the pointer over the world is the native pointer: only the lock regions still animate a legacy cursor
 	if (COUNTERDONE(CURSORCOUNTER))
 	{
-		if (gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA)
-		{
-			UpdateAnimatedCursorFrames(gViewportRegion.Cursor);
-			SetCurrentCursorFromDatabase(gViewportRegion.Cursor);
-		}
-
 		if (gDisableRegion.uiFlags & MSYS_MOUSE_IN_AREA)
 		{
 			UpdateAnimatedCursorFrames(gDisableRegion.Cursor);
@@ -1209,15 +1202,6 @@ void HandleAnimatedCursors(void)
 			SetCurrentCursorFromDatabase(gUserTurnRegion.Cursor);
 		}
 	}
-
-	if (COUNTERDONE(CURSORFLASHUPDATE))
-	{
-		if (gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA)
-		{
-			UpdateFlashingCursorFrames(gViewportRegion.Cursor);
-			SetCurrentCursorFromDatabase(gViewportRegion.Cursor);
-		}
-	}
 }
 
 
@@ -1226,7 +1210,7 @@ static void DrawMouseText(void);
 
 static void BltJA2CursorData(void)
 {
-	if (gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA || IsPointerOnTacticalTouchUI())
+	if (WorldPointer::In() || IsPointerOnTacticalTouchUI())
 	{
 		DrawMouseText();
 	}
@@ -1417,25 +1401,6 @@ void UpdateAnimatedCursorFrames(UINT32 uiCursorIndex)
 			{
 				pCurImage->uiCurrentFrame = 0;
 			}
-		}
-	}
-}
-
-
-static void UpdateFlashingCursorFrames(UINT32 uiCursorIndex)
-{
-	uiCursorIndex = ModifyCursorIndex(uiCursorIndex);
-	if (uiCursorIndex == VIDEO_NO_CURSOR) return;
-
-	CursorData* pCurData = &CursorDatabase[uiCursorIndex];
-	if (pCurData->bFlags & (CURSOR_TO_FLASH | CURSOR_TO_FLASH2))
-	{
-		pCurData->bFlashIndex = !pCurData->bFlashIndex;
-
-		// Should we play a sound?
-		if (pCurData->bFlags & CURSOR_TO_PLAY_SOUND && pCurData->bFlashIndex)
-		{
-			PlayJA2Sample(TARGET_OUT_OF_RANGE, MIDVOLUME, 1, MIDDLEPAN);
 		}
 	}
 }

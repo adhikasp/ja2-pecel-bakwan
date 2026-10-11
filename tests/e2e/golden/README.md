@@ -25,8 +25,9 @@ comparison run still runs those tests — they still check the layout. Pass
 `--force` to run them under `--update` too.
 
 Full-screen tactical shots (`landed.png`, `moved.png`) are stored only at
-640x480 and 1280x720: at wider sizes they are 4-10 MB each. At every resolution
+1280x720: at wider sizes they are 4-10 MB each. At every resolution
 the tours still run and call `ja2.assertInsideScreen()`.
+The smallest output the game runs at is 1280x720 (issue #324): there are no 640x480 goldens.
 
 ## Why a golden image is portable
 

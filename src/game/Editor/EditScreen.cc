@@ -74,6 +74,7 @@
 
 #include "ContentManager.h"
 #include "GameInstance.h"
+#include "WorldPointer.h"
 
 #include <string_theory/format>
 #include <string_theory/string>
@@ -236,7 +237,6 @@ static void EditModeInit(void)
 	gTacticalStatus.uiTimeSinceDemoOn = gTacticalStatus.uiTimeOfLastInput;
 
 	//Remove the radar from the interface.
-	RemoveCurrentTacticalPanelButtons( );
 	gRadarRegion.Disable();
 
 	CreateEditorTaskbar();
@@ -409,7 +409,6 @@ static BOOLEAN EditModeShutdown(void)
 	InvalidateScreen( );
 
 	gRadarRegion.Enable();
-	CreateCurrentTacticalPanelButtons( );
 
 	// Make sure to turn off demo mode!
 	gTacticalStatus.uiTimeOfLastInput = GetJA2Clock();
@@ -2734,7 +2733,7 @@ static void HandleMouseClicksInGameScreen()
 	if (iCurrentTaskbar == TASK_NONE)    return;
 
 	// If mouse cursor not in the game screen.
-	if (!(gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA)) return;
+	if (!(WorldPointer::In())) return;
 
 	BOOLEAN const prev_state = gfRenderWorld;
 

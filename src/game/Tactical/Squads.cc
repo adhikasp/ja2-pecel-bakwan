@@ -6,7 +6,7 @@
 #include "GameInstance.h"
 #include "GamePolicy.h"
 #include "Interface.h"
-#include "Interface_Panels.h"
+#include "SquadRoster.h"
 #include "JA2Types.h"
 #include "JAScreens.h"
 #include "LoadSaveData.h"
@@ -199,7 +199,7 @@ BOOLEAN AddCharacterToSquad(SOLDIERTYPE* const s, INT8 const bSquadValue)
 		// update selected squad if the old one is emptied
 		if (iCurrentTacticalSquad == NO_CURRENT_SQUAD || SquadIsEmpty(iCurrentTacticalSquad)) SetCurrentSquad(bSquadValue, TRUE);
 
-		if (bSquadValue == iCurrentTacticalSquad) CheckForAndAddMercToTeamPanel(s);
+		if (bSquadValue == iCurrentTacticalSquad) SquadRosterAdd(s);
 
 		if (s == GetSelectedMan()) SetCurrentSquad(bSquadValue, TRUE);
 
@@ -453,7 +453,7 @@ static void AddSquadMercsToTeamPanel(INT32 const iSquad)
 
 	FOR_EACH_IN_SQUAD(i, iSquad)
 	{
-		CheckForAndAddMercToTeamPanel(*i);
+		SquadRosterAdd(*i);
 	}
 
 	for (INT32 iCounter = 0; iCounter < NUMBER_OF_DEAD_SOLDIERS_ON_SQUAD; ++iCounter)
@@ -464,7 +464,7 @@ static void AddSquadMercsToTeamPanel(INT32 const iSquad)
 		SOLDIERTYPE* const dead_soldier = FindSoldierByProfileIDOnPlayerTeam(dead_id);
 		if (!dead_soldier) continue;
 
-		CheckForAndAddMercToTeamPanel(dead_soldier);
+		SquadRosterAdd(dead_soldier);
 	}
 }
 
@@ -487,7 +487,7 @@ BOOLEAN SetCurrentSquad( INT32 iCurrentSquad, BOOLEAN fForce )
 		iCurrentTacticalSquad = iCurrentSquad;
 
 		// cleat list
-		RemoveAllPlayersFromSlot( );
+		SquadRosterClear( );
 
 		// set all auto faces inactive
 		SetAllAutoFacesInactive( );
@@ -513,7 +513,7 @@ BOOLEAN SetCurrentSquad( INT32 iCurrentSquad, BOOLEAN fForce )
 	iCurrentTacticalSquad = iCurrentSquad;
 
 	// cleat list
-	RemoveAllPlayersFromSlot( );
+	SquadRosterClear( );
 
 	// set all auto faces inactive
 	SetAllAutoFacesInactive( );
@@ -546,7 +546,7 @@ void RebuildCurrentSquad( void )
 	SetDefaultSquadOnSectorEntry( TRUE );
 
 	// cleat list
-	RemoveAllPlayersFromSlot( );
+	SquadRosterClear( );
 
 	// set all auto faces inactive
 	SetAllAutoFacesInactive( );

@@ -7,7 +7,7 @@
 #include "ContentManager.h"
 #include "GameInstance.h"
 #include "Handle_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "InventorySlots.h"
 #include "Isometric_Utils.h"
 #include "ItemModel.h"

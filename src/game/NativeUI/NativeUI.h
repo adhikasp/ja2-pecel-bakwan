@@ -145,6 +145,8 @@ namespace NativeUI
 	bool TacticalHudActive();
 	/** H: open or close the message log of the native HUD. */
 	void TacticalHudToggleLog();
+	/** A string of the native UI's table (assets/ui/strings), "" when there is none (or the runtime is not up). */
+	std::string UiString(std::string const& key);
 
 	// ---- weapon readout (issue #141, docs/plan/equipment-revamp.md) --------------------------------------------
 	/** The range and ballistics readout: a compact comparison of two weapons over

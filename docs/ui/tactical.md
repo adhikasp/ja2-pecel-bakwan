@@ -2,11 +2,12 @@
 
 | | |
 |---|---|
-| Legacy code | `src/game/Tactical/Interface.cc` (panels, movement/door menus, above-guy names and bars, top banners), `Interface_Panels.cc` (team panel and single-merc panel), `Interface_Items.cc` (inventory slots, item description box, money split, stack/key-ring popups, pick-up menu, item cursor), `Interface_Dialogue.cc` (NPC talk panel), `Dialogue_Control.cc` + `Faces.cc` (talking faces, subtitles), `Interface_Control.cc`, `Interface_Cursors.cc`, `Handle_UI.cc` (cursor modes), `Turn_Based_Input.cc` / `Real_Time_Input.cc` (keys and mouse), `TileEngine/Overhead_Map.cc`, `TileEngine/Radar_Screen.cc`, `TileEngine/Tactical_Placement_GUI.cc`, `Utils/Message.cc` (message lines) |
+| Legacy code (gone) | the team and single-merc panels (`Interface_Panels.cc`), their regions, buttons, cursors and popups, the viewport region |
+| Rules kept | `Tactical/InventoryActions.cc` (the merc the inventory view shows, the pocket click rules, key ring, money), `Tactical/SquadRoster.cc` (slot order, a click on a card), `Handle_UI.cc` (what the pointer means), `Turn_Based_Input.cc` / `Real_Time_Input.cc` (the world's clicks) |
 | Screen id | `GAME_SCREEN` (overhead map and placement are modes of it) |
 | Reached from | map screen (Esc / sector), loading a save, sector entry |
-| Native code | `src/game/NativeUI/TacticalHud.cc` (`TacticalViewModel`, "tactical"), `assets/ui/screens/tactical.rml`/`.rcss`; legacy hooks `Native*` in `Interface_Items.cc`, `Interface_Panels.cc`, `Message.cc`. Mocks: `assets/ui/mocks/phase5/*.rml` (generator `tools/ui/phase5_mocks.py`), shown over the real world by `src/game/NativeUI/MockWorld.cc` |
-| ui_mode key | `tactical` (default native from 1280x720; legacy below) |
+| Native code | `src/game/NativeUI/TacticalHud.cc` (`TacticalViewModel`, "tactical"), `assets/ui/screens/tactical.rml`/`.rcss`; cores `NativeUI/TacticalCommands`, `SquadRosterModel`, `PointerRouter`, `PopupModels`, `CursorModel`, `OverlayModel`, `OverheadModel`; adapters `Tactical/TacticalCommandsAdapter`, `SquadRoster`, `WorldPointer`, `PopupAdapter`, `CursorAdapter`, `OverlayAdapter`, `OverheadAdapter`. Wireframes: `assets/ui/mocks/tactical/*.rml` (generator `tools/ui/native_tactical_mocks.py`) |
+| ui_mode key | none: the native HUD is the only tactical UI. The game runs at 1280x720 at the least (a smaller resolution starts there) |
 | Status | M3 (see "Implementation status"); wireframes approved |
 
 ## 1. How it was audited
@@ -133,22 +134,52 @@ locator, cursor AP text, sounds on buttons and drops. All stay; face animation m
 
 ## Implementation status (Phase 5)
 
-How it works: the native HUD is an overlay over `GAME_SCREEN`, not a screen. The legacy tactical screen keeps running
-with its panels and regions under the native bar and draws nothing the HUD shows (names over mercs, message lines,
-turn bar). Every native control acts through the legacy code, so the rules cannot drift:
-- buttons press the legacy hotkey (`PressKey`: same handler, same checks);
+How it works: the native HUD is an overlay over `GAME_SCREEN`, not a screen. The tactical screen's game logic (soldiers,
+AI, the UI state machine in `Handle_UI.cc`) runs as ever, and the world fills the whole output under the HUD; no panel,
+button or mouse region of the legacy interface exists in tactical. Every native control acts through the same game
+functions the legacy buttons and keys called, so the rules cannot drift:
+- buttons and keys are the **commands** of one table (`NativeUI/TacticalCommands.h`, #319): an id, a name
+  (`stance.crouch`), a label, an icon, a default key and an availability function that answers `{enabled, why}`. The
+  adapter (`Tactical/TacticalCommandsAdapter.cc`) fills the table's `Context` from the soldier and interface globals and
+  runs a command through the legacy action function (`HandleStanceChangeFromUIKeys`, `UIHandleChangeLevel`,
+  `GoToMapScreenFromTactical`, ...), never through a key event. A disabled button says why in its tooltip; a key
+  that cannot run says why in a screen message. Lua: `ja2.tactical.commands()`, `.run(name)`, `.key(combo)`;
 - inventory slots, the description's attachments, Unload, Done and the money buttons go through the inventory core
   (`Equipment/InventoryCore.h`, issue #317): the core decides what a click means (take, put, pass between mercs with
   its AP, attach, merge as a question, stack popup, refusals with their reason), `InventorySlotClick`,
   `InventoryAttachClick`, `InventoryUnload` and `InventoryMoneyStep` apply the verdict. Nothing clicks a hidden legacy
   region. A merge, or an attachment that cannot come off again, is a question the HUD shows (`tac.ask`) and answers
-  with `ask_yes` / `ask_no`; the held item is the core's hand (`InventoryHand()`), mirrored into `gpItemPointer`
-  until #324;
+  with `ask_yes` / `ask_no`; the held item is the hand (`InventoryHand()`), read off the item pointer when asked, the
+  core keeps no copy;
 - the item description shows `NativeItemDescData()`, the values the legacy box prints;
-- the action, door and pick-up menus show the menus the legacy code built — same labels, AP costs and enable/disable
-  rules (`NativeMovementMenuView`, `NativeDoorMenuView`, `NativeItemPickupView`) — and press their buttons
-  (`NativeMenuClick`, `NativePickupClick`, `NativePickupOK`, …) while the legacy drawing of those menus is off.
-The detail panel is open exactly when the legacy single-merc panel is (`, double click on a card).
+- the action, door and pick-up menus are models (`NativeUI/PopupModels`, #321) the HUD draws; no button or region is made;
+- the squad bar's slot order and "next merc" are the `SquadRosterModel` (#319); a click on a card is
+  `SquadRosterCardClick` (select, locate, or continue his move), a double click or the right button opens his details,
+  the enemy mark cycles the enemies he sees, a click on the hand strip swaps hands (or leaves the vehicle), and the
+  pointer over a card plots the path he would continue on. Lua: `ja2.tactical.roster()`.
+The detail panel is open when the view `gsCurInterfacePanel` is `SM_PANEL` (a state now: nothing is created or
+destroyed with it); the backtick key, a double click on a card and the details button open it.
+
+### Who owns the mouse (#319)
+
+`NativeUI/PointerRouter.h` decides, once per frame (`Tactical/WorldPointer.cc`): a modal native layer first; else the HUD
+when the pointer is over one of its `hit` elements; else the world - and the outer 2 output pixels of the screen are
+the world's whatever the HUD has there (the view scrolls and the sector exit arrows show). There is no
+`gViewportRegion`: `Handle_UI.cc`, `Turn_Based_Input.cc` and `Real_Time_Input.cc` read `WorldPointer::In()` and
+`WorldPointer::Buttons()`, picking takes the pointer's output position (`WorldPointer::World()`, the exact inverse of
+the camera's integer math, so the tile under a click is the same at 4K as at 1x), and the move, wheel and touch events
+the world reacts to come from `WorldPointer::Event`. Lua: `ja2.tactical.pointer()`.
+
+The world fills the output: `UILayout` keeps the viewport at the full screen and the camera centres on the part the
+bar leaves free (`setHudReserve`). The squad bar is 156 dp tall at every size.
+
+The face on a card blinks and talks: `Faces.cc` steps the blink and mouth timing of every soldier's face without
+drawing, and the card shows the frame (`sfacef-...` pictures, `MockWorld.cc`). A merc going down closes his card and
+shows the skull (`HandlePanelFaceAnimations`), which also handles his death when it is done.
+
+What is still legacy and shared: `Interface_Items.cc` (the slot drawing and the item description box, used by the
+legacy map screen and the shopkeeper) and `Tactical/ShopMercPanel.cc` (the single-merc panel the legacy shopkeeper draws
+under its own screen). Both go with those screens (#36).
 
 The native UI draws in output pixels, and the window scales and letterboxes the game's canvas: everything anchored to
 the world (names over the mercs, the action, door and pick-up menus) and the bar's height over the legacy panel go
@@ -227,24 +258,19 @@ and over a pocket or a card the chip beside the pointer says what letting go doe
 | Talk panel (the Phase 5 layout, centred over the bar): the NPC's face and line, the six approaches with keys 1-6, *Done* (Esc), the name asks who they are; the merc's own line as a subtitle over his head and the speaking face as a card | A20 |
 | Sector exit menu: who leaves (selected merc / the squad), load the next sector now or travel on the map, what is off and why, the trip; Esc cancels, Enter goes | A21 |
 
-Gaps, still legacy or not done in this PR:
-- The popups need the native HUD (1280x720 and up, `ui_mode tactical=native`). Without it nothing can draw them, so
-  each one takes its safe default: the action menu cancels, the door opens, the pick-up list takes everything, the
-  sector exit goes as the dialogue opened, and a conversation says its first line and closes. The quest debug
-  screen's talk panel no longer draws.
-- The talk panel shows the NPC's face as a picture: no mouth or eyes animation yet (that is the squad card's work in
-  #319). Recruit is never greyed out: whether she will join is the conversation's answer, not a rule the panel knows.
-- The overhead map and the placement need the native HUD as well; with the legacy HUD (`ui_mode tactical=legacy`)
-  they stay the legacy 640x320 views until #324 deletes them. The picture is the legacy small-tile art at
-  1/5 scale: sharper than the legacy picture (24-bit colour, integer scale) but not HD art (#35).
+Gaps, still not done:
+- The popups need the native HUD, which is up whenever the tactical screen is. If it is not (a build without the
+  native runtime), nothing can draw them, so each one takes its safe default: the action menu cancels, the door
+  opens, the pick-up list takes everything, the sector exit goes as the dialogue opened, and a conversation says its
+  first line and closes.
+- The talk panel shows the NPC's face as a picture: no mouth or eyes animation yet (the squad cards have it).
+  Recruit is never greyed out: whether she will join is the conversation's answer, not a rule the panel knows.
+- The overhead picture is the legacy small-tile art at 1/5 scale: sharper than the legacy picture (24-bit colour,
+  integer scale) but not HD art (#35). The map editor keeps its legacy overhead.
 - The overhead picture is redrawn about every 3 s while it is open and every 8 s for the minimap, not on every
   change; a door or a fire shows up with that delay.
-- The detail panel's inventory stays click-to-pick, click-to-put; the dedicated loadout screen
-  (`docs/ui/loadout.md`, the inventory button in the panel header) has real drag and drop, the LBE
-  windows and the weapon platform. There is no "drop on a card to give" yet.
-- The hit chance / AP chip at the target and the path cost of the wireframes are not done.
-- Legacy/native equivalence is by construction (the native controls run the legacy handlers); there is no save-dump
-  comparison test yet.
+- The "compatible ammo" highlight when the pointer rests on a gun in the detail panel is not ported (the pick-up row
+  hover still runs it).
 
 The menus follow the approved wireframes with two deliberate deviations: the item labels are the game's own strings
 (`pTacticalPopupButtonStrings`, so they are localised and match the legacy tooltips — "Stand/Walk" instead of "Walk"),
@@ -253,7 +279,7 @@ new bindings). The pick-up row hover still runs the legacy "compatible ammo" hig
 
 ## 9. Parity tour
 
-`tests/e2e/tactical_parity.lua` (every resolution of `ctest -R resolution_`; goldens at 1280x720: `hud`, `detail`,
+`tests/e2e/tactical_parity.lua` (every resolution of `ctest -R resolution_` from 1280x720 up; goldens at 1280x720: `hud`, `detail`,
 `desc`, `money`, `log`, `menu_action`, `menu_door`, `menu_pickup`):
 
 | Row | Covered by |
@@ -272,4 +298,4 @@ new bindings). The pick-up row hover still runs the legacy "compatible ammo" hig
 | A17 | `ja2.debug("pickupmenu")`: the pick-up menu lists the items; a row selects; Take 1 takes it |
 | I14, A10 | turn-based: AP on the cards (when there is a fight) |
 | layout | UI scale 150% and 200%: layout audit (`shots.take`) |
-| < 1280x720 | the legacy HUD runs |
+| #319 | `tactical_commands.lua`: every command's availability and its reason, the keys, the roster, the pointer |

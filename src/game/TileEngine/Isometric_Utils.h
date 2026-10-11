@@ -2,6 +2,7 @@
 #define __ISOMETRIC_UTILSH
 
 #include "JA2Types.h"
+#include "UILayout.h"
 #include "Overhead_Types.h"
 #include "Types.h"
 #include "WorldDef.h"
@@ -66,6 +67,8 @@ BOOLEAN GetMouseXY( INT16 *psMouseX, INT16 *psMouseY );
 BOOLEAN GetMouseWorldCoords( INT16 *psMouseX, INT16 *psMouseY );
 // Like GetMouseWorldCoords(), for an arbitrary point in the tactical viewport.
 BOOLEAN GetWorldCoordsAtScreenPos(INT16 sScreenX, INT16 sScreenY, INT16 *psWorldX, INT16 *psWorldY);
+/** The tile under a position in world pixels (what the pointer gives, WorldPointer.h). */
+BOOLEAN GetWorldCoordsAtWorldPos(LayerPoint world, INT16* psWorldX, INT16* psWorldY);
 
 void   GetAbsoluteScreenXYFromMapPos(GridNo pos, INT16* psWorldScreenX, INT16* psWorldScreenY);
 GridNo GetMapPosFromAbsoluteScreenXY(INT16 sWorldScreenX, INT16 sWorldScreenY);

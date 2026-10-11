@@ -18,7 +18,8 @@
 #include "Interface.h"
 #include "Interface_Control.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "ShopMercPanel.h"
 #include "Isometric_Utils.h"
 #include "LightEffects.h"
 #include "Line.h"
@@ -452,7 +453,7 @@ void GoIntoOverheadMap( )
 		{
 			// Handle switch of panel....
 			HandleTacticalPanelSwitch( );
-			DisableTacticalTeamPanelButtons( TRUE );
+			LockTacticalButtons( TRUE );
 		}
 
 		EmptyBackgroundRects( );
@@ -507,7 +508,7 @@ void KillOverheadMap()
 	RemoveVObject(uiPERSONS);
 
 	HandleTacticalPanelSwitch( );
-	DisableTacticalTeamPanelButtons( FALSE );
+	LockTacticalButtons( FALSE );
 
 }
 

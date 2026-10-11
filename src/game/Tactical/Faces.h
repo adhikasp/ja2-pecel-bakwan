@@ -214,6 +214,25 @@ void DeleteSoldierFace( SOLDIERTYPE *pSoldier );
 // status and does not require eye blinking or mouth movements, call
 void ExternRenderFace(SGPVSurface* buffer, FACETYPE&, INT16 x, INT16 y);
 
+// The faces of the squad bar's cards are not drawn by the autoface code: their blink, expression and mouth are
+// stepped without drawing, and the native card shows the frame (issue #319).
+struct FaceFrame
+{
+	int  eyes = 0;  // 0 open, 1-2 blink, 3 frown, 4 surprised: the face file's frame is eyes (1..4)
+	int  mouth = 0; // 0 closed, 1-3 open: the face file's frame is 4 + mouth
+	bool talking = false;
+};
+void StepSoldierFaceAnimation(FACETYPE&);
+/** Steps every face of our team that the autoface code does not run. Once per frame. */
+void StepSoldierFaces();
+FaceFrame SoldierFaceFrame(SOLDIERTYPE const&);
+/** Where the eyes and the mouth go on the small face picture (the face file's frames are drawn there). */
+void SoldierFaceOffsets(SOLDIERTYPE const&, int* eyesX, int* eyesY, int* mouthX, int* mouthY);
+
+// A merc going down: his card closes, shows the skull, and the death is handled when it is done.
+void HandlePanelFaceAnimations(SOLDIERTYPE*);
+void FinishAnySkullPanelAnimations(void);
+
 void LoadFacesGraphics();
 void DeleteFacesGraphics();
 

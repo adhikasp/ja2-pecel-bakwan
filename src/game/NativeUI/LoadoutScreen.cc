@@ -27,7 +27,7 @@
 #include "GameSettings.h"
 #include "Handle_Items.h"
 #include "Interface.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
 #include "InventoryAdapter.h"
 #include "InventorySlots.h"
 #include "ItemModel.h"

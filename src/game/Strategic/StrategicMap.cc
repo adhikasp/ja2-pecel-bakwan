@@ -39,7 +39,7 @@
 #include "History.h"
 #include "Interface.h"
 #include "Interface_Dialogue.h"
-#include "Interface_Panels.h"
+#include "SquadRoster.h"
 #include "Isometric_Utils.h"
 #include "Items.h"
 #include "JAScreens.h"
@@ -914,7 +914,7 @@ static void EnterSector(const SGPSector& sector)
 void UpdateMercsInSector()
 {
 	// Remove from interface slot
-	RemoveAllPlayersFromSlot();
+	SquadRosterClear();
 
 	// Remove tactical interface stuff
 	guiPendingOverrideEvent = I_CHANGE_TO_IDLE;

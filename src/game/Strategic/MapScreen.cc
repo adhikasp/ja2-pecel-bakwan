@@ -36,7 +36,8 @@
 #include "HImage.h"
 #include "Interface_Control.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "ShopMercPanel.h"
 #include "Interface_Utils.h"
 #include "ItemModel.h"
 #include "Items.h"
@@ -1452,7 +1453,6 @@ ScreenID MapScreenHandle(void)
 		// ATE: Init tactical interface interface ( always to team panel )
 		//SetCurrentInterfacePanel( TEAM_PANEL );
 		// Do some things to this now that it's initialized
-		//gViewportRegion.Disable();
 		//gRadarRegion.Disable();
 		//Disable all faces
 		SetAllAutoFacesInactive( );
@@ -3109,7 +3109,6 @@ void EndMapScreen( BOOLEAN fDuringFade )
 	fLeavingMapScreen = FALSE;
 
 	SetRenderFlags( RENDER_FLAG_FULL );
-	//gViewportRegion.Enable();
 	//gRadarRegion.Enable();
 	// ATE: Shutdown tactical interface panel
 //	ShutdownCurrentPanel( );

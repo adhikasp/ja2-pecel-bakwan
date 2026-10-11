@@ -68,13 +68,6 @@ ja2.waitScreen("MAINMENU_SCREEN")
 campaign.startWithMerc("Barry")
 ja2.expect(ja2.screen() == "GAME_SCREEN", "the merc landed in tactical, got " .. ja2.screen())
 
-if not ja2.nativeUi().running or ja2.screenSize().w < 1280 then
-	-- below 1280x720 the native HUD cannot run; tactical_parity.lua covers the fallback
-	ja2.expect(not ja2.exists{ id = "tac.bar" }, "below 1280x720 the legacy tactical HUD runs")
-	shots.take("legacy.png", "small")
-	return
-end
-
 -- A rural sector: E11 is woods - grass, a forest and a river - with no town.
 campaign.enterSector{ sector = "E11", clear_enemies = true }
 ja2.expect(ja2.state().sector == "E11", "the team is in E11, got " .. ja2.state().sector)

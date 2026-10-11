@@ -42,15 +42,13 @@ namespace
 	}
 }
 
-TEST(InventoryCore, HandIsEmptyUntilSet)
+TEST(InventoryCore, AHeldStackIsEmptyUntilItHoldsAnItem)
 {
-	InventoryCore c(Rules());
-	EXPECT_FALSE(c.Holding());
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	EXPECT_TRUE(c.Holding());
-	EXPECT_EQ(c.Hand().item, RIFLE);
-	c.ClearHand();
-	EXPECT_FALSE(c.Holding());
+	HeldStack h;
+	EXPECT_TRUE(h.Empty());
+	h = Hold(RIFLE, Merc(1));
+	EXPECT_FALSE(h.Empty());
+	EXPECT_EQ(h.item, RIFLE);
 }
 
 TEST(InventoryCore, TakeFromEmptyPocketIsRefused)
@@ -81,19 +79,21 @@ TEST(InventoryCore, NailsKeepsHisVest)
 TEST(InventoryCore, NailsTakesOnlyHisJacketIntoTheVestSlot)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(VEST_ITEM, Merc(NAILS)));
-	PlaceVerdict const v = c.PlanPlace(Merc(NAILS), VEST_SLOT, 0, true, false);
+	HeldStack hand;
+	hand = (Hold(VEST_ITEM, Merc(NAILS)));
+	PlaceVerdict const v = c.PlanPlace(hand, Merc(NAILS), VEST_SLOT, 0, true, false);
 	EXPECT_EQ(v.kind, PlaceKind::Refused);
 	EXPECT_TRUE(v.fetish);
-	c.SetHand(Hold(JACKET, Merc(NAILS)));
-	EXPECT_EQ(c.PlanPlace(Merc(NAILS), VEST_SLOT, 0, true, false).kind, PlaceKind::Put);
+	hand = (Hold(JACKET, Merc(NAILS)));
+	EXPECT_EQ(c.PlanPlace(hand, Merc(NAILS), VEST_SLOT, 0, true, false).kind, PlaceKind::Put);
 }
 
 TEST(InventoryCore, PlacingOnYourselfCostsNothing)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	PlaceVerdict const v = c.PlanPlace(Merc(1), POCKET + 1, 0, false, false);
+	HeldStack hand;
+	hand = (Hold(RIFLE, Merc(1)));
+	PlaceVerdict const v = c.PlanPlace(hand, Merc(1), POCKET + 1, 0, false, false);
 	EXPECT_EQ(v.kind, PlaceKind::Put);
 	EXPECT_EQ(v.apFrom, 0);
 	EXPECT_EQ(v.apTo, 0);
@@ -103,8 +103,9 @@ TEST(InventoryCore, PlacingOnYourselfCostsNothing)
 TEST(InventoryCore, PassingToAnotherMercCostsTwoEach)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	PlaceVerdict const v = c.PlanPlace(Merc(2), POCKET, 0, false, false);
+	HeldStack hand;
+	hand = (Hold(RIFLE, Merc(1)));
+	PlaceVerdict const v = c.PlanPlace(hand, Merc(2), POCKET, 0, false, false);
 	EXPECT_EQ(v.kind, PlaceKind::Put);
 	EXPECT_EQ(v.apFrom, PASS_COST_AP);
 	EXPECT_EQ(v.apTo, PASS_COST_AP);
@@ -114,25 +115,27 @@ TEST(InventoryCore, PassingToAnotherMercCostsTwoEach)
 TEST(InventoryCore, PassingNeedsThreeApOnBothSides)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(RIFLE, Merc(1, true, false)));
-	EXPECT_EQ(c.PlanPlace(Merc(2), POCKET, 0, false, false).why, InvWhy::NoAP);
+	HeldStack hand;
+	hand = (Hold(RIFLE, Merc(1, true, false)));
+	EXPECT_EQ(c.PlanPlace(hand, Merc(2), POCKET, 0, false, false).why, InvWhy::NoAP);
 
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	EXPECT_EQ(c.PlanPlace(Merc(2, true, false), POCKET, 0, false, false).why, InvWhy::NoAPTarget);
+	hand = (Hold(RIFLE, Merc(1)));
+	EXPECT_EQ(c.PlanPlace(hand, Merc(2, true, false), POCKET, 0, false, false).why, InvWhy::NoAPTarget);
 }
 
 TEST(InventoryCore, UnconsciousMercsNeitherPayNorCheck)
 {
 	InventoryCore c(Rules());
+	HeldStack hand;
 	// the giver is down: no check, no charge on his side
-	c.SetHand(Hold(RIFLE, Merc(1, false, false)));
-	PlaceVerdict v = c.PlanPlace(Merc(2), POCKET, 0, false, false);
+	hand = (Hold(RIFLE, Merc(1, false, false)));
+	PlaceVerdict v = c.PlanPlace(hand, Merc(2), POCKET, 0, false, false);
 	EXPECT_EQ(v.kind, PlaceKind::Put);
 	EXPECT_EQ(v.apFrom, 0);
 	EXPECT_EQ(v.apTo, PASS_COST_AP);
 	// the receiver is down: the giver pays, the receiver does not
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	v = c.PlanPlace(Merc(2, false, false), POCKET, 0, false, false);
+	hand = (Hold(RIFLE, Merc(1)));
+	v = c.PlanPlace(hand, Merc(2, false, false), POCKET, 0, false, false);
 	EXPECT_EQ(v.kind, PlaceKind::Put);
 	EXPECT_EQ(v.apFrom, PASS_COST_AP);
 	EXPECT_EQ(v.apTo, 0);
@@ -141,8 +144,9 @@ TEST(InventoryCore, UnconsciousMercsNeitherPayNorCheck)
 TEST(InventoryCore, ItemFromTheGroundCostsNothing)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(RIFLE, Merc(-1)));
-	PlaceVerdict const v = c.PlanPlace(Merc(2), POCKET, 0, false, false);
+	HeldStack hand;
+	hand = (Hold(RIFLE, Merc(-1)));
+	PlaceVerdict const v = c.PlanPlace(hand, Merc(2), POCKET, 0, false, false);
 	EXPECT_EQ(v.kind, PlaceKind::Put);
 	EXPECT_EQ(v.apFrom + v.apTo, 0);
 	EXPECT_FALSE(v.passed);
@@ -151,23 +155,26 @@ TEST(InventoryCore, ItemFromTheGroundCostsNothing)
 TEST(InventoryCore, DroppingOnAHeldGunAttaches)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(SCOPE, Merc(1)));
-	EXPECT_EQ(c.PlanPlace(Merc(1), HAND_SLOT, RIFLE, true, false).kind, PlaceKind::Attach);
+	HeldStack hand;
+	hand = (Hold(SCOPE, Merc(1)));
+	EXPECT_EQ(c.PlanPlace(hand, Merc(1), HAND_SLOT, RIFLE, true, false).kind, PlaceKind::Attach);
 }
 
 TEST(InventoryCore, AttachOnlyOnHostPockets)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(SCOPE, Merc(1)));
+	HeldStack hand;
+	hand = (Hold(SCOPE, Merc(1)));
 	// a plain pocket swaps instead
-	EXPECT_EQ(c.PlanPlace(Merc(1), POCKET, RIFLE, false, false).kind, PlaceKind::Put);
+	EXPECT_EQ(c.PlanPlace(hand, Merc(1), POCKET, RIFLE, false, false).kind, PlaceKind::Put);
 }
 
 TEST(InventoryCore, MergeAsksAQuestionFirst)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(ARMOUR_PLATE, Merc(1)));
-	PlaceVerdict const v = c.PlanPlace(Merc(1), HAND_SLOT, ARMOUR_PLATE, true, false);
+	HeldStack hand;
+	hand = (Hold(ARMOUR_PLATE, Merc(1)));
+	PlaceVerdict const v = c.PlanPlace(hand, Merc(1), HAND_SLOT, ARMOUR_PLATE, true, false);
 	EXPECT_EQ(v.kind, PlaceKind::AskMerge);
 	EXPECT_FALSE(c.Asking());
 	Question q;
@@ -188,21 +195,24 @@ TEST(InventoryCore, AttachBeatsMergeWhenBothApply)
 	r.canAttach = [](uint16_t, uint16_t) { return true; };
 	r.canMerge  = [](uint16_t, uint16_t) { return true; };
 	InventoryCore c(r);
-	c.SetHand(Hold(ARMOUR_PLATE, Merc(1)));
-	EXPECT_EQ(c.PlanPlace(Merc(1), HAND_SLOT, ARMOUR_PLATE, true, false).kind, PlaceKind::Attach);
+	HeldStack hand;
+	hand = (Hold(ARMOUR_PLATE, Merc(1)));
+	EXPECT_EQ(c.PlanPlace(hand, Merc(1), HAND_SLOT, ARMOUR_PLATE, true, false).kind, PlaceKind::Attach);
 }
 
 TEST(InventoryCore, CtrlClickGathersTheStack)
 {
 	InventoryCore c(Rules());
-	c.SetHand(Hold(CANTEEN, Merc(1), 2));
-	EXPECT_EQ(c.PlanPlace(Merc(1), POCKET, CANTEEN, false, true).kind, PlaceKind::CleanUp);
+	HeldStack hand;
+	hand = (Hold(CANTEEN, Merc(1), 2));
+	EXPECT_EQ(c.PlanPlace(hand, Merc(1), POCKET, CANTEEN, false, true).kind, PlaceKind::CleanUp);
 }
 
 TEST(InventoryCore, PlacingWithAnEmptyHandIsRefused)
 {
 	InventoryCore c(Rules());
-	EXPECT_EQ(c.PlanPlace(Merc(1), POCKET, 0, false, false).why, InvWhy::HandEmpty);
+	HeldStack hand;
+	EXPECT_EQ(c.PlanPlace(hand, Merc(1), POCKET, 0, false, false).why, InvWhy::HandEmpty);
 }
 
 TEST(InventoryCore, ARefusedFitSaysSo)
@@ -210,23 +220,25 @@ TEST(InventoryCore, ARefusedFitSaysSo)
 	InvRelations r = Rules();
 	r.fits = [](InvParty const&, int slot, uint16_t item) { return !(slot == POCKET && item == RIFLE); };
 	InventoryCore c(r);
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	PlaceVerdict const v = c.PlanPlace(Merc(1), POCKET, 0, false, false);
+	HeldStack hand;
+	hand = (Hold(RIFLE, Merc(1)));
+	PlaceVerdict const v = c.PlanPlace(hand, Merc(1), POCKET, 0, false, false);
 	EXPECT_EQ(v.kind, PlaceKind::Refused);
 	EXPECT_EQ(v.why, InvWhy::DoesNotFit);
 	// the same item is fine in the hand slot, and Ctrl never needs it to fit
-	EXPECT_EQ(c.PlanPlace(Merc(1), HAND_SLOT, 0, true, false).kind, PlaceKind::Put);
-	EXPECT_EQ(c.PlanPlace(Merc(1), POCKET, RIFLE, false, true).kind, PlaceKind::CleanUp);
+	EXPECT_EQ(c.PlanPlace(hand, Merc(1), HAND_SLOT, 0, true, false).kind, PlaceKind::Put);
+	EXPECT_EQ(c.PlanPlace(hand, Merc(1), POCKET, RIFLE, false, true).kind, PlaceKind::CleanUp);
 }
 
 TEST(InventoryCore, ARemoteMercCannotBeReached)
 {
 	InventoryCore c(Rules());
+	HeldStack hand;
 	InvParty far = Merc(2);
 	far.inReach = false;
 	EXPECT_EQ(c.PlanTake(far, POCKET, RIFLE, false).why, InvWhy::OutOfReach);
-	c.SetHand(Hold(RIFLE, Merc(1)));
-	EXPECT_EQ(c.PlanPlace(far, POCKET, 0, false, false).why, InvWhy::OutOfReach);
+	hand = (Hold(RIFLE, Merc(1)));
+	EXPECT_EQ(c.PlanPlace(hand, far, POCKET, 0, false, false).why, InvWhy::OutOfReach);
 }
 
 TEST(InventoryCore, ActivateOpensStackOrDescription)
@@ -243,10 +255,11 @@ TEST(InventoryCore, ActivateOpensStackOrDescription)
 TEST(InventoryCore, ApplyNeedsAHandAndAConsciousMerc)
 {
 	InventoryCore c(Rules());
-	EXPECT_EQ(c.PlanApply(Merc(1)), InvWhy::HandEmpty);
-	c.SetHand(Hold(CANTEEN, Merc(1)));
-	EXPECT_EQ(c.PlanApply(Merc(1, false)), InvWhy::Unconscious);
-	EXPECT_EQ(c.PlanApply(Merc(1)), InvWhy::None);
+	HeldStack hand;
+	EXPECT_EQ(c.PlanApply(hand, Merc(1)), InvWhy::HandEmpty);
+	hand = (Hold(CANTEEN, Merc(1)));
+	EXPECT_EQ(c.PlanApply(hand, Merc(1, false)), InvWhy::Unconscious);
+	EXPECT_EQ(c.PlanApply(hand, Merc(1)), InvWhy::None);
 }
 
 TEST(InventoryCore, SheetAttachRules)

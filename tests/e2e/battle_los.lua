@@ -12,13 +12,6 @@ ja2.waitScreen("MAINMENU_SCREEN")
 campaign.startWithTeam({ "Barry", "Grunty", "Grizzly" })
 ja2.expect(ja2.screen() == "GAME_SCREEN", "the team landed in tactical, got " .. ja2.screen())
 
-if not ja2.nativeUi().running or ja2.screenSize().w < 1280 then
-	-- below 1280x720 the native HUD cannot run; tactical_parity.lua covers the fallback
-	ja2.expect(not ja2.exists{ id = "tac.bar" }, "below 1280x720 the legacy tactical HUD runs")
-	shots.take("legacy.png", "small")
-	return
-end
-
 local stats = { marksmanship = 99, agility = 95, dexterity = 95, strength = 95, level = 9, health = 100, morale = 50 }
 local MERCS = { { name = "Barry", grid = 4871 }, { name = "Grunty", grid = 4711 }, { name = "Grizzly", grid = 5030 } }
 -- front/mid line in the open, at increasing distance; back line behind the east building

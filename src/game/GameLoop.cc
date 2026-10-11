@@ -29,6 +29,7 @@
 #include "FPS.h"
 #include "Logger.h"
 #include "VideoOptionsScreen.h"
+#include "WorldPointer.h"
 
 #include <string_theory/format>
 #include <string_theory/string>
@@ -123,6 +124,8 @@ try
 	NativeUI::BeginFrame();
 	NativeUI::MouseMoved(MousePos.iX, MousePos.iY);
 	bool const nativeMouse = NativeUI::CapturesMouse();
+	// who owns the pointer over the tactical world: the world, or the HUD (WorldPointer.h)
+	WorldPointer::Frame();
 	// Hook into mouse stuff for MOVEMENT MESSAGES
 	if (!nativeMouse) MouseSystemHook(MOUSE_POS, 0, MousePos.iX, MousePos.iY);
 	MusicPoll();
@@ -148,12 +151,14 @@ try
 		else
 		{
 			MouseSystemHook(InputEvent.usEvent, InputEvent.usParam, MousePos.iX, MousePos.iY);
+			WorldPointer::Event(InputEvent);
 			if (isButton && button >= 0) legacyButtonDown[button] = InputEvent.usEvent == MOUSE_BUTTON_DOWN;
 		}
 	}
 	while (DequeueSpecificEvent(&InputEvent, TOUCH_EVENTS))
 	{
 		MouseSystemHook(InputEvent.usEvent, InputEvent.usParam, MousePos.iX, MousePos.iY);
+		WorldPointer::Event(InputEvent);
 	}
 
 

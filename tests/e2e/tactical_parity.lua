@@ -1,5 +1,4 @@
 -- Parity tour of the native tactical HUD (docs/ui/tactical.md, section 9) by element id, with game-state assertions.
--- Below 1280x720 the legacy HUD runs (tactical_hud.lua covers it) and the tour only checks that.
 package.path = (debug.getinfo(1, "S").source:match("^@(.*[/\\])") or "") .. "?.lua;" .. package.path
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
@@ -12,12 +11,6 @@ ja2.waitIdle()
 local function vm() return ja2.viewModel("tactical") end
 local function slot(i) return { id = ("tac.inv.slot[%d]"):format(math.floor(i)) } end
 local function hand() return ja2.state().mercs[1] end
-
-if not ja2.nativeUi().running or ja2.screenSize().w < 1280 then
-	ja2.expect(not ja2.exists{ id = "tac.bar" }, "below 1280x720 the legacy tactical HUD runs")
-	shots.take("legacy.png", "small")
-	return
-end
 
 -- squad bar: the merc's card, his face and what is in his hand
 ja2.expect(ja2.exists{ id = "tac.bar" }, "the native squad bar is shown")
@@ -210,9 +203,14 @@ ja2.waitIdle()
 ja2.expect(not vm().pick_open, "take closes the pick-up menu")
 
 -- I14, A10: turn-based combat (Omerta has enemies) and the turn banner
-ja2.click{ id = "tac.endturn" }
-ja2.wait(2000)
-ja2.waitIdle()
+-- real time with can_enter_turnbased off (the default): the button says why it is off and does nothing
+local endTurn = ja2.find{ id = "tac.endturn" }
+ja2.expect(endTurn, "the end turn button is on the bar")
+if endTurn.enabled then
+	ja2.click{ id = "tac.endturn" }
+	ja2.wait(2000)
+	ja2.waitIdle()
+end
 if ja2.state().tactical.inCombat then
 	ja2.expect(vm().combat and vm().cards[1].ap > 0, "in combat the card shows the AP")
 	shots.take("combat.png", "small")

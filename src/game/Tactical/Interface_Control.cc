@@ -21,7 +21,9 @@
 #include "Font_Control.h"
 #include "Render_Dirty.h"
 #include "Interface_Cursors.h"
-#include "Interface_Panels.h"
+#include "ShopMercPanel.h"
+#include "InventoryActions.h"
+#include "SquadRoster.h"
 #include "VObject_Blitters.h"
 #include "Faces.h"
 #include "Interface_Control.h"
@@ -42,9 +44,6 @@
 
 #include <string_theory/format>
 
-
-static SGPRect gOldClippingRect;
-static SGPRect gOldDirtyClippingRect;
 
 static UINT16 gusUICurIntTileEffectIndex;
 static INT16  gsUICurIntTileEffectGridNo;
@@ -93,17 +92,14 @@ void HandleTacticalPanelSwitch()
 
 static void RenderPanel(void)
 {
-	switch (gsCurInterfacePanel)
+	// the legacy trade screen still draws the single-merc panel under its own drawing (ShopMercPanel.cc)
+	if (guiCurrentScreen == SHOPKEEPER_SCREEN)
 	{
-		case SM_PANEL:
-			RenderSMPanel(&fInterfacePanelDirty);
-			break;
-		case TEAM_PANEL:
-			RenderTEAMPanel(fInterfacePanelDirty);
-			break;
-		default:
-			break;
+		if (gsCurInterfacePanel == SM_PANEL && ShopPanelUp()) RenderSMPanel(&fInterfacePanelDirty);
+		return;
 	}
+	// in tactical there is nothing to draw here: the native HUD is the panel
+	UpdateInventoryView(&fInterfacePanelDirty);
 }
 
 
@@ -130,7 +126,12 @@ void RenderTacticalInterface( )
 	RenderPanel();
 
 	// Handle faces
-	if (guiCurrentScreen != SHOPKEEPER_SCREEN) HandleAutoFaces();
+	if (guiCurrentScreen != SHOPKEEPER_SCREEN)
+	{
+		HandleAutoFaces();
+		// the faces on the cards: blink and mouth, not drawn
+		StepSoldierFaces();
+	}
 }
 
 
@@ -159,6 +160,7 @@ void RenderTacticalInterfaceWhileScrolling( )
 	RenderButtons();
 	RenderPanel();
 	HandleAutoFaces();
+	StepSoldierFaces();
 }
 
 
@@ -210,22 +212,6 @@ add_node:
 			n->ubShadeLevel        = DEFAULT_SHADE_LEVEL;
 			n->ubNaturalShadeLevel = DEFAULT_SHADE_LEVEL;
 			break;
-	}
-
-	// the native cursor draws the tile the merc walks to itself (CursorAdapter, TacticalCursor.cc)
-	if (gfUIHandleShowMoveGrid && !NativeUI::TacticalHudActive())
-	{
-		SOLDIERTYPE const* const sel = GetSelectedMan();
-		if (sel && sel->sGridNo != gsUIHandleShowMoveGridLocation)
-		{
-			UINT16 const idx = gfUIHandleShowMoveGrid == 2 ? FIRSTPOINTERS4 :
-						sel->bStealthMode ? FIRSTPOINTERS9 :
-						FIRSTPOINTERS2;
-			LEVELNODE* (&add)(UINT32, UINT16) = gsInterfaceLevel == 0 ? AddTopmostToHead : AddOnRoofToHead;
-			LEVELNODE* const n                = add(gsUIHandleShowMoveGridLocation, GetSnapCursorIndex(idx));
-			n->ubShadeLevel        = DEFAULT_SHADE_LEVEL;
-			n->ubNaturalShadeLevel = DEFAULT_SHADE_LEVEL;
-		}
 	}
 
 	if (gfUIShowCurIntTile)
@@ -292,82 +278,6 @@ void ResetInterface()
 }
 
 
-static UINT32 const guiColors[] =
-{
-	FROMRGB(198, 163, 0),
-	FROMRGB(185, 150, 0),
-	FROMRGB(172, 136, 0),
-	FROMRGB(159, 123, 0),
-	FROMRGB(146, 110, 0),
-	FROMRGB(133,  96, 0),
-	FROMRGB(120,  83, 0),
-	FROMRGB(133,  96, 0),
-	FROMRGB(146, 110, 0),
-	FROMRGB(159, 123, 0),
-	FROMRGB(172, 136, 0),
-	FROMRGB(185, 150, 0)
-};
-
-
-static void RenderRubberBanding(void)
-{
-	static INT32 flash_colour        = 0;
-	static INT32 time_of_last_update = 0;
-
-	if (!gRubberBandActive) return;
-
-	INT16 l = gRubberBandRect.iLeft;
-	INT16 r = gRubberBandRect.iRight;
-	INT16 t = gRubberBandRect.iTop;
-	INT16 b = gRubberBandRect.iBottom;
-
-	if (l == r && t == b) return;
-
-	UINT32 const now = GetJA2Clock();
-	if (now - time_of_last_update > 60)
-	{
-		time_of_last_update = now;
-		if (++flash_colour == lengthof(guiColors)) flash_colour = 0;
-	}
-	UINT16 const colour = Get16BPPColor(guiColors[flash_colour]);
-
-	// Keep the box inside the viewport. The lines are clipped there anyway, but
-	// the background rects are not, and restoring them over the bottom panel
-	// corrupts it.
-	if (l > r) std::swap(l, r);
-	if (t > b) std::swap(t, b);
-	l = std::max(l, INT16(0));
-	t = std::max(t, INT16(0));
-	r = std::min(r, INT16(gsVIEWPORT_END_X - 1));
-	b = std::min(b, INT16(gsVIEWPORT_WINDOW_END_Y - 1));
-
-	// Draw rectangle.....
-	SGPVSurface::Lock lock(FRAME_BUFFER);
-	UINT16* const pDestBuf = lock.Buffer<UINT16>();
-	SetClippingRegionAndImageWidth(lock.Pitch(), 0, 0, gsVIEWPORT_END_X, gsVIEWPORT_WINDOW_END_Y);
-
-	if (l != r)
-	{
-		LineDraw(TRUE, l, t, r, t, colour, pDestBuf);
-		RegisterBackgroundRectSingleFilled(l, t, r - l + 1, 1);
-		LineDraw(TRUE, l, b, r, b, colour, pDestBuf);
-		RegisterBackgroundRectSingleFilled(l, b, r - l + 1, 1);
-	}
-
-	if (t != b)
-	{
-		LineDraw(TRUE, l, t, l, b, colour, pDestBuf);
-		RegisterBackgroundRectSingleFilled(l, t, 1, b - t + 1);
-		LineDraw(TRUE, r, t, r, b, colour, pDestBuf);
-		RegisterBackgroundRectSingleFilled(r, t, 1, b - t + 1);
-	}
-}
-
-
-static void EndViewportOverlays(void);
-static void StartViewportOverlays(void);
-
-
 void RenderTopmostTacticalInterface()
 {
 	if (gfRerenderInterfaceFromHelpText)
@@ -385,133 +295,18 @@ void RenderTopmostTacticalInterface()
 		return;
 	}
 
-	// the native HUD draws the stack popup, the key ring and the menus (PopupAdapter.h)
-	if (InItemStackPopup() && !NativeUI::TacticalHudActive())
-	{
-		RenderItemStackPopup(fInterfacePanelDirty == DIRTYLEVEL2);
-	}
-
-	if (InKeyRingPopup() && !InItemDescriptionBox() && !NativeUI::TacticalHudActive())
-	{
-		RenderKeyRingPopup(fInterfacePanelDirty == DIRTYLEVEL2);
-	}
-
-	// the native HUD draws the world overlays itself, from the frame the adapter builds (OverlayAdapter.h)
-	bool const nativeHud = NativeUI::TacticalHudActive();
-	if (nativeHud) UpdateOverlayFrame();
-	else           ClearOverlayFrame();
-
-	if (!nativeHud)
-	{
-		// Setup system for video overlay (text and blitting) Sets clipping rects, etc
-		StartViewportOverlays();
-
-		RenderTopmostFlashingItems();
-		RenderTopmostMultiPurposeLocator();
-		RenderAccumulatedBurstLocations();
-
-		FOR_EACH_MERC(i)
-		{
-			SOLDIERTYPE& s = **i;
-			DrawSelectedUIAboveGuy(s);
-
-			if (!s.fDisplayDamage)    continue;
-			if (s.sGridNo == NOWHERE) continue;
-			if (s.bVisible == -1)     continue;
-
-			INT16 sMercScreenX;
-			INT16 sMercScreenY;
-			GetSoldierTRUEScreenPos(&s, &sMercScreenX, &sMercScreenY);
-			sMercScreenX = g_ui.worldToUi(sMercScreenX);
-			sMercScreenY = g_ui.worldToUi(sMercScreenY);
-
-			INT16 x = sMercScreenX + s.sDamageX;
-			INT16 y = sMercScreenY + s.sDamageY;
-			if (s.ubBodyType == QUEENMONSTER)
-			{
-				x += 25;
-				y += 10;
-			}
-			else
-			{
-				x += 2 * 30 / 3;
-				y += -5;
-
-				if (y < gsVIEWPORT_WINDOW_START_Y)
-				{
-					y = sMercScreenY - s.sBoundingBoxOffsetY;
-				}
-			}
-
-			SetFontAttributes(TINYFONT1, FONT_MCOLOR_WHITE);
-			GDirtyPrint(x, y, ST::format("-{}", s.sDamage));
-		}
-
-		// FOR THE MOST PART, DISABLE INTERFACE STUFF WHEN IT'S ENEMY'S TURN
-		if (gTacticalStatus.ubCurrentTeam == OUR_TEAM)
-		{
-			RenderArrows();
-		}
-
-		EndViewportOverlays();
-		RenderRubberBanding();
-	}
+	// the native HUD draws the stack popup, the key ring, the menus (PopupAdapter.h) and the world overlays
+	// (locators, items, burst marks, arrows, the rubber band, the lists, the pause box) itself, from the frame the
+	// adapter builds (OverlayAdapter.h)
+	UpdateOverlayFrame();
 
 	if (!gfInItemPickupMenu && !gpItemPointer)
 	{
 		HandleAnyMercInSquadHasCompatibleStuff(NULL);
 	}
 
-	if (!nativeHud)
-	{
-		// CHECK IF OUR CURSOR IS OVER AN INV POOL
-		GridNo       const usMapPos = guiCurrentCursorGridNo;
-		SOLDIERTYPE* const sel      = GetSelectedMan();
-		if (usMapPos != NOWHERE && gfUIOverItemPoolGridNo != NOWHERE && sel)
-		{
-			// Check if we are over an item pool
-			INT8             level     = sel->bLevel;
-			ITEM_POOL const* item_pool = GetItemPool(gfUIOverItemPoolGridNo, level);
-			if (!item_pool)
-			{
-				// ATE: Allow to see list if a different level....
-				level     = (level == 0 ? 1 : 0);
-				item_pool = GetItemPool(gfUIOverItemPoolGridNo, level);
-			}
-
-			if (item_pool)
-			{
-				STRUCTURE* pStructure;
-				INT16      sIntTileGridNo;
-				INT16 const sActionGridNo =
-					ConditionalGetCurInteractiveTileGridNoAndStructure(&sIntTileGridNo, &pStructure, FALSE) ?
-						sIntTileGridNo : usMapPos;
-
-				INT8 const bZLevel = GetZLevelOfItemPoolGivenStructure(sActionGridNo, level, pStructure);
-				if (AnyItemsVisibleOnLevel(item_pool, bZLevel))
-				{
-					DrawItemPoolList(item_pool, bZLevel, gusMouseXPos, gusMouseYPos);
-					// ATE: If over items, remove locator....
-					RemoveFlashItemSlot(item_pool);
-				}
-			}
-		}
-	}
-
-	if (fRenderRadarScreen)
-	{
-		// the native sector card has the clock and the town; the native banner is the pause box
-		if (!nativeHud)
-		{
-			RenderClock();
-			RenderTownIDString();
-		}
-		CreateMouseRegionForPauseOfClock();
-	}
-	else
-	{
-		RemoveMouseRegionForPauseOfClock();
-	}
+	// the native sector card shows the clock and the town; a click on the clock pauses (TacticalCommands)
+	RemoveMouseRegionForPauseOfClock();
 
 	// If we want to rederaw whole screen, dirty all buttons!
 	if (fInterfacePanelDirty == DIRTYLEVEL2) MarkButtonsDirty();
@@ -528,40 +323,6 @@ void RenderTopmostTacticalInterface()
 }
 
 
-static void StartViewportOverlays(void)
-{
-	// Set Clipping Rect to be the viewscreen
-	// Save old one
-	gOldClippingRect = ClippingRect;
-
-	// Save old dirty clipping rect
-	gOldDirtyClippingRect = ClippingRect;
-
-	// Set bottom clipping value for blitter clipping rect
-	ClippingRect.iLeft   = gsVIEWPORT_START_X;
-	ClippingRect.iTop    = gsVIEWPORT_WINDOW_START_Y;
-	ClippingRect.iRight  = SCREEN_WIDTH;
-	ClippingRect.iBottom = gsVIEWPORT_WINDOW_END_Y;
-
-	// Set values for dirty rect clipping rect
-	gDirtyClipRect.iLeft   = gsVIEWPORT_START_X;
-	gDirtyClipRect.iTop    = gsVIEWPORT_WINDOW_START_Y;
-	gDirtyClipRect.iRight  = SCREEN_WIDTH;
-	gDirtyClipRect.iBottom = gsVIEWPORT_WINDOW_END_Y;
-
-	SaveFontSettings( );
-	SetFontDestBuffer(FRAME_BUFFER, 0, gsVIEWPORT_WINDOW_START_Y, SCREEN_WIDTH, gsVIEWPORT_WINDOW_END_Y);
-}
-
-
-static void EndViewportOverlays(void)
-{
-	// Reset clipping rect
-	ClippingRect = gOldClippingRect;
-	gDirtyClipRect = gOldDirtyClippingRect;
-	RestoreFontSettings( );
-
-}
 
 
 void EraseInterfaceMenus( BOOLEAN fIgnoreUIUnLock )

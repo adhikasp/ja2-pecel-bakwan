@@ -32,7 +32,7 @@
 #include "Dialogue_Control.h"
 #include "AI.h"
 #include "Soldier_Macros.h"
-#include "Interface_Panels.h"
+#include "OverlayAdapter.h"
 #include "Soldier_Functions.h"
 #include "FOV.h"
 #include "MessageBoxScreen.h"
@@ -2198,64 +2198,6 @@ void HandleFlashingItems()
 	}
 
 	RecountFlashItemSlots();
-}
-
-
-void RenderTopmostFlashingItems(void)
-{
-	for (UINT32 cnt = 0; cnt < guiNumFlashItemSlots; ++cnt)
-	{
-		ITEM_POOL_LOCATOR const* const l  = &FlashItemSlots[cnt];
-		ITEM_POOL         const* const ip = l->pItemPool;
-		if (!ip)
-			continue;
-
-		if (l->ubFlags & ITEM_LOCATOR_LOCKED)
-			continue;
-
-		WORLDITEM const& wi = GetWorldItem(ip->iItemIndex);
-
-		// Update radio locator
-		INT16 sX;
-		INT16 sY;
-		ConvertGridNoToCenterCellXY(wi.sGridNo, &sX, &sY);
-
-		const FLOAT dOffsetX = sX - gsRenderCenterX;
-		const FLOAT dOffsetY = sY - gsRenderCenterY;
-
-		// Calculate guy's position
-		FLOAT dTempX_S;
-		FLOAT dTempY_S;
-		FloatFromCellToScreenCoordinates(dOffsetX, dOffsetY, &dTempX_S, &dTempY_S);
-
-		INT16 sXPos = g_ui.m_tacticalMapCenterX + (INT16)dTempX_S;
-		INT16 sYPos = g_ui.m_tacticalMapCenterY + (INT16)dTempY_S - gpWorldLevelData[wi.sGridNo].sHeight;
-
-		// Adjust for offset position on screen
-		sXPos -= gsRenderWorldOffsetX;
-		sYPos -= gsRenderWorldOffsetY;
-		sYPos -= wi.bRenderZHeightAboveLevel;
-
-		// Adjust for render height
-		sYPos += gsRenderHeight;
-
-		// Adjust for level height
-		if (wi.ubLevel)
-			sYPos -= ROOF_LEVEL_HEIGHT;
-
-		sXPos = g_ui.worldToUi(sXPos);
-		sYPos = g_ui.worldToUi(sYPos);
-
-		// Center circle!
-		sXPos -= 20;
-		sYPos -= 20;
-
-		RegisterBackgroundRectSingleFilled(sXPos, sYPos, 40, 40);
-
-		BltVideoObject(FRAME_BUFFER, guiRADIO, l->bRadioFrame, sXPos, sYPos);
-
-		DrawItemPoolList(ip, wi.bRenderZHeightAboveLevel, sXPos, sYPos);
-	}
 }
 
 

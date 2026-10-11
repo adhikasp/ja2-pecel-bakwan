@@ -30,7 +30,11 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Cursors.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Dialogue.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Items.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Panels.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/InventoryActions.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/ShopMercPanel.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/SquadRoster.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/TacticalCommandsAdapter.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/WorldPointer.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Utils.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/InventoryAdapter.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/PopupAdapter.cc
@@ -98,12 +102,15 @@ set_property(
     PROPERTY UNITY_GROUP "Tactical"
 )
 
-# Interface_Panels has enum values that clash with Interface.cc
+# ShopMercPanel has enum values that clash with Interface.cc
 # PathAI defines some macros that cause problems in other source files.
 set_property(
     SOURCE
         ${CMAKE_CURRENT_SOURCE_DIR}/FOV.cc
-        ${CMAKE_CURRENT_SOURCE_DIR}/Interface_Panels.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/InventoryActions.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/ShopMercPanel.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/SquadRoster.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/TacticalCommandsAdapter.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/PathAI.cc
     DIRECTORY ${CMAKE_SOURCE_DIR}
     PROPERTY UNITY_GROUP "Tactical_Others"

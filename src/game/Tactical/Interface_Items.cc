@@ -36,7 +36,9 @@
 #include "Equipment/Slots.h"
 #include "Font_Control.h"
 #include "Render_Dirty.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "SquadRoster.h"
+#include "ShopMercPanel.h"
 #include "Animation_Control.h"
 #include "Soldier_Control.h"
 #include "PathAI.h"
@@ -1427,9 +1429,9 @@ void DegradeNewlyAddedItems( )
 
 	guiNewlyPlacedItemTimer = uiTime;
 
-	for (UINT32 cnt2 = 0; cnt2 < NUM_TEAM_SLOTS; ++cnt2)
+	for (UINT32 cnt2 = 0; cnt2 < SquadRosterSlots(); ++cnt2)
 	{
-		SOLDIERTYPE* const s = GetPlayerFromInterfaceTeamSlot(cnt2);
+		SOLDIERTYPE* const s = SquadRosterAt(cnt2);
 		if (s == NULL) continue;
 
 		for (UINT32 cnt = 0; cnt < NUM_INV_SLOTS; ++cnt)
@@ -1911,7 +1913,6 @@ static void ReloadItemDesc(void)
 static void SheetUnload()
 {
 	Equipment::InventoryCore& core = TacticalInventory();
-	SyncInventoryHand();
 	ItemModel const* const item = gpItemDescObject ? GCM->getItem(gpItemDescObject->usItem) : nullptr;
 	Equipment::UnloadVerdict const v = core.PlanUnload(item && item->isGun(),
 		gpItemDescObject && gpItemDescObject->ubGunShotsLeft > 0, gpItemPointer != nullptr);
@@ -2036,7 +2037,6 @@ static void PermanantAttachmentMessageBoxCallBack(MessageBoxReturnValue const ub
 static void SheetAttachPrimary(UINT32 const uiItemPos)
 {
 	Equipment::InventoryCore& core = TacticalInventory();
-	SyncInventoryHand();
 
 	Equipment::SheetAttachRequest r;
 	r.sheetIsAttachment = gfItemDescObjectIsAttachment;
@@ -2100,7 +2100,6 @@ static void SheetAttachPrimary(UINT32 const uiItemPos)
 			m.action = "attach";
 			BeforeInventoryMove(m);
 			DoAttachment();
-			SyncInventoryHand();
 			OnInventoryMoved(m);
 			o.ok     = true;
 			o.action = "attach";
@@ -2904,7 +2903,6 @@ void EndItemPointer( )
 		gfReEvaluateEveryonesNothingToDo = TRUE;
 		// nothing in the hand: a question about it is moot
 		TacticalInventory().Answer();
-		SyncInventoryHand();
 	}
 }
 
@@ -3228,7 +3226,6 @@ void DrawItemTileCursor( )
 		}
 
 		//Erase any cursor in viewport
-		//gViewportRegion.ChangeCursor(VIDEO_NO_CURSOR);
 
 		// Get tile graphic fro item
 		UINT16 const usIndex = GetTileGraphicForItem(GCM->getItem(gpItemPointer->usItem));
@@ -3243,7 +3240,6 @@ void DrawItemTileCursor( )
 			uiOldCursorId = uiCursorId;
 		}
 
-		gViewportRegion.ChangeCursor(uiCursorId);
 
 		// what the native cursor shows of it: a drop or throw, one that cannot get there, a give
 		giHeldItemCursorKind = fGiveItem ? 3 : uiCursorId == CURSOR_ITEM_BAD_THROW ? 2 : 1;
@@ -4539,7 +4535,7 @@ void InitializeItemPickupMenu(SOLDIERTYPE* const pSoldier, INT16 const sGridNo, 
 	HandleAnyMercInSquadHasCompatibleStuff(NULL);
 	gSelectSMPanelToMerc = pSoldier;
 	ReEvaluateDisabledINVPanelButtons();
-	DisableTacticalTeamPanelButtons(TRUE);
+	LockTacticalButtons(TRUE);
 
 	PopupEvent e;
 	e.kind = PopupKind::Pickup;
@@ -4586,7 +4582,7 @@ void RemoveItemPickupMenu( )
 
 		// Turn off Ignore scrolling
 		gfIgnoreScrolling = FALSE;
-		DisableTacticalTeamPanelButtons( FALSE );
+		LockTacticalButtons( FALSE );
 		gSelectSMPanelToMerc = gpSMCurrentMerc;
 
 		gItemPickupMenu.pool.clear();
@@ -4944,7 +4940,6 @@ void SetItemPointer(OBJECTTYPE* const o, SOLDIERTYPE* const s)
 {
 	gpItemPointer        = o;
 	gpItemPointerSoldier = s;
-	SyncInventoryHand();
 }
 
 

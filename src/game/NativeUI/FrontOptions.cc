@@ -104,7 +104,7 @@ namespace
 	std::vector<Res> Resolutions()
 	{
 		std::vector<Res> r = { {0, 0}, {1280, 720}, {1366, 768}, {1600, 900}, {1920, 1080}, {2560, 1080}, {2560, 1440},
-			{3440, 1440}, {3840, 2160}, {640, 480}, {800, 600}, {1024, 768} };
+			{3440, 1440}, {3840, 2160} };
 		VideoDisplaySettings const now = VideoGetDisplaySettings();
 		if (std::none_of(r.begin(), r.end(), [&](Res const& x) { return x.w == now.resX && x.h == now.resY; })) r.push_back({ now.resX, now.resY });
 		return r;

@@ -482,8 +482,14 @@ int main(int argc, char* argv[])
 		// The map editor draws its taskbar over the world at one scale: no layers.
 		if (GameMode::getInstance()->isEditorMode()) displaySettings.worldZoom = VideoLayout::WORLD_ZOOM_MATCH_UI;
 		bool const autoResolution = displaySettings.resX == 0 || displaySettings.resY == 0;
-		uint16_t width = autoResolution ? 640 : displaySettings.resX;
-		uint16_t height = autoResolution ? 480 : displaySettings.resY;
+		if (!autoResolution)
+		{
+			// the native UI has no layout below the minimum output: a smaller resolution starts at it
+			displaySettings.resX = VideoLayout::AtLeastMinOutputWidth(displaySettings.resX);
+			displaySettings.resY = VideoLayout::AtLeastMinOutputHeight(displaySettings.resY);
+		}
+		uint16_t width = autoResolution ? VideoLayout::MIN_OUTPUT_WIDTH : displaySettings.resX;
+		uint16_t height = autoResolution ? VideoLayout::MIN_OUTPUT_HEIGHT : displaySettings.resY;
 		g_ui.setScreenSize(width, height);
 		if (sgp::IsHeadless() && (displaySettings.worldZoom != VideoLayout::WORLD_ZOOM_MATCH_UI || VideoForceLayered()) && !autoResolution)
 		{

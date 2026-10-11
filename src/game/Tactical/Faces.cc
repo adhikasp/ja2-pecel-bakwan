@@ -15,7 +15,11 @@
 #include "Interface.h"
 #include "Interface_Control.h"
 #include "Interface_Items.h"
-#include "Interface_Panels.h"
+#include "InventoryActions.h"
+#include "SquadRoster.h"
+#include "Soldier_Ani.h"
+#include "Message.h"
+#include "Text.h"
 #include "Isometric_Utils.h"
 #include "JAScreens.h"
 #include "Line.h"
@@ -1335,6 +1339,181 @@ static void SetupFinalTalkingDelay(FACETYPE& f)
 	}
 
 	f.fValidSpeech = FALSE;
+}
+
+
+// ---- the faces on the squad bar's cards ---------------------------------------------------------------------------
+// Nothing is drawn for them: the card of the native HUD shows the frame this reports. The timing is the autoface
+// code's (blink, expression, mouth), stepped here for every face that is not drawn by the autoface code itself.
+
+void StepSoldierFaceAnimation(FACETYPE& f)
+{
+	if (!f.fAllocated || f.fInvalidAnim) return;
+
+	UINT32 const now = GetJA2Clock();
+	SOLDIERTYPE const* const s = f.soldier;
+	bool const closed = s && (s->fMercAsleep || s->bLife < OKLIFE || s->bAssignment == ASSIGNMENT_POW);
+	if (closed)
+	{
+		f.sEyeFrame = 0;
+		f.ubExpression = NO_EXPRESSION;
+		f.sMouthFrame = 0;
+		return;
+	}
+
+	if (f.ubExpression == NO_EXPRESSION)
+	{
+		if (now - f.uiLastBlink > f.uiBlinkFrequency)
+		{
+			f.uiLastBlink  = now;
+			f.ubExpression = BLINKING;
+			f.uiEyelast    = now;
+		}
+		if (f.fAnimatingTalking && now - f.uiLastExpression > f.uiExpressionFrequency)
+		{
+			f.uiLastExpression = now;
+			f.ubExpression     = Random(2) == 0 ? ANGRY : SURPRISED;
+		}
+	}
+	if (f.ubExpression != NO_EXPRESSION && now - f.uiEyelast > f.uiEyeDelay)
+	{
+		f.uiEyelast = now;
+		NewEye(f);
+		if (f.sEyeFrame <= 0) f.ubExpression = NO_EXPRESSION;
+	}
+
+	if (f.fTalking && f.fAnimatingTalking)
+	{
+		if (PollAudioGap(f.uiSoundID, &f.GapList))
+		{
+			f.sMouthFrame = 0;
+		}
+		else if (now - f.uiMouthlast > 120)
+		{
+			f.uiMouthlast = now;
+			NewMouth(f);
+		}
+	}
+	else
+	{
+		f.sMouthFrame = 0;
+	}
+}
+
+
+void StepSoldierFaces()
+{
+	CFOR_EACH_IN_TEAM(s, OUR_TEAM)
+	{
+		if (!s->bActive || !s->face) continue;
+		// a face the autoface code runs steps itself (HandleAutoFaces)
+		if (!s->face->fDisabled) continue;
+		StepSoldierFaceAnimation(*s->face);
+	}
+}
+
+
+void SoldierFaceOffsets(SOLDIERTYPE const& s, int* const eyesX, int* const eyesY, int* const mouthX, int* const mouthY)
+{
+	*eyesX = *eyesY = *mouthX = *mouthY = 0;
+	if (!s.face || !s.face->fAllocated || s.ubProfile == NO_PROFILE) return;
+	UINT16 ex, ey, mx, my;
+	GetFaceRelativeCoordinates(*s.face, &ex, &ey, &mx, &my);
+	*eyesX = ex; *eyesY = ey; *mouthX = mx; *mouthY = my;
+}
+
+
+FaceFrame SoldierFaceFrame(SOLDIERTYPE const& s)
+{
+	FaceFrame r;
+	if (!s.face || !s.face->fAllocated) return r;
+	FACETYPE const& f = *s.face;
+	r.eyes  = f.fInvalidAnim ? 0 : f.sEyeFrame;
+	r.mouth = f.fInvalidAnim ? 0 : f.sMouthFrame;
+	r.talking = f.fTalking;
+	return r;
+}
+
+
+// ---- the closing and dying of a card ------------------------------------------------------------------------------
+// A merc going down: the card closes frame by frame, then shows the skull and says so. The frames are the legacy
+// panel's (close 0..5, skull 0..5, 160 ms each); the card draws them, this keeps the time.
+
+void FinishAnySkullPanelAnimations(void)
+{
+	FOR_EACH_IN_TEAM(s, OUR_TEAM)
+	{
+		if (s->bLife == 0 &&
+			(s->fUIdeadMerc || s->fClosePanelToDie))
+		{
+			HandlePlayerTeamMemberDeathAfterSkullAnimation(s);
+
+			s->fUIdeadMerc      = FALSE;
+			s->fClosePanelToDie = FALSE;
+		}
+	}
+}
+
+
+void HandlePanelFaceAnimations(SOLDIERTYPE* const pSoldier)
+{
+	if (pSoldier->bTeam != OUR_TEAM) return;
+	if (!pSoldier->bActive) return;
+	// Don't do this for a vehicle.
+	if (pSoldier->uiStatusFlags & SOLDIER_VEHICLE) return;
+
+	if (pSoldier->fUICloseMerc) pSoldier->fUICloseMerc = FALSE;
+
+	if (pSoldier->fUIdeadMerc)
+	{
+		pSoldier->fUIdeadMerc = FALSE;
+		pSoldier->fClosePanel = TRUE;
+		pSoldier->fClosePanelToDie = TRUE;
+		pSoldier->ubClosePanelFrame = 0;
+		pSoldier->ubDeadPanelFrame = 0;
+		RESETTIMECOUNTER(pSoldier->PanelAnimateCounter, 160);
+	}
+
+	if (pSoldier->fClosePanel)
+	{
+		if (TIMECOUNTERDONE(pSoldier->PanelAnimateCounter, 160))
+		{
+			pSoldier->ubClosePanelFrame++;
+
+			if (pSoldier->ubClosePanelFrame > 5)
+			{
+				pSoldier->fClosePanel = FALSE;
+				pSoldier->ubClosePanelFrame = 5;
+
+				if (pSoldier->fClosePanelToDie) pSoldier->fDeadPanel = TRUE;
+			}
+		}
+	}
+
+	if (pSoldier->fDeadPanel)
+	{
+		if (TIMECOUNTERDONE(pSoldier->PanelAnimateCounter, 160))
+		{
+			pSoldier->ubDeadPanelFrame++;
+
+			if (pSoldier->ubDeadPanelFrame == 4)
+			{
+				ScreenMsg(FONT_RED, MSG_SKULL_UI_FEEDBACK, st_format_printf(pMercDeadString, pSoldier->name));
+
+				PlayJA2Sample(DOORCR_1, HIGHVOLUME, 1, MIDDLEPAN);
+				PlayJA2Sample(HEADCR_1, HIGHVOLUME, 1, MIDDLEPAN);
+			}
+
+			if (pSoldier->ubDeadPanelFrame > 5)
+			{
+				pSoldier->fDeadPanel = FALSE;
+				pSoldier->ubDeadPanelFrame = 5;
+				pSoldier->fClosePanelToDie = FALSE;
+
+				HandlePlayerTeamMemberDeathAfterSkullAnimation(pSoldier);
+			}
+		}
+	}
 }
 
 

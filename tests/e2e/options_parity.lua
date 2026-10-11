@@ -1,7 +1,5 @@
 -- Parity tour of the native options screen (docs/ui/options.md, section 9), driven by element id, with the game
 -- settings checked through a fresh view model (it reads gGameSettings, the volumes and the video settings).
--- the legacy tactical HUD (from 1280x720 up the native one runs; tactical_parity.lua covers it)
-ja2.setUiMode("tactical", "legacy")
 local shots = require("lib.shots")
 
 ja2.waitScreen("MAINMENU_SCREEN")
@@ -112,7 +110,7 @@ ja2.expect(settings().effects == 50, "the effects volume stays after leaving")
 -- In game: Save is available, Quit asks, the campaign panel shows the new game's settings
 local campaign = require("lib.campaign")
 campaign.startWithMerc("Barry")
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 campaign.dismissHelp()
 ja2.key("o")

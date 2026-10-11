@@ -14,6 +14,7 @@
 #include "TileDef.h"
 #include "UILayout.h"
 #include "WorldDef.h"
+#include "WorldPointer.h"
 
 #include <algorithm>
 
@@ -48,7 +49,7 @@ void UpdateCursorFrame(UICursorID const uiCursor, int const heldItem)
 	g_frame = CursorFrame{};
 	bool const busy = gfDisableRegionActive || gfUserTurnRegionActive;
 	// the legacy tile under the pointer stays at the last one while the pointer is off the world's region
-	bool const inWorld = gViewportRegion.uiFlags & MSYS_MOUSE_IN_AREA;
+	bool const inWorld = WorldPointer::In();
 	GridNo const pos = inWorld ? guiCurrentCursorGridNo : GridNo(NOWHERE);
 	// the pointer is over a part of the HUD (or a native modal): the world has no cursor there
 	bool const overHud = NativeUI::CapturesMouse();

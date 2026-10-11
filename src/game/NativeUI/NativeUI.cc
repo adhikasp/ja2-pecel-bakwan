@@ -449,6 +449,13 @@ std::string Str(std::string const& key)
 	return it != g_rt.strings.end() ? it->second : key;
 }
 
+std::string UiString(std::string const& key)
+{
+	if (!g_rt.running && g_rt.strings.empty()) return {};
+	std::string const s = Str(key);
+	return s == key ? std::string() : s;
+}
+
 std::string Escape(std::string const& text)
 {
 	std::string out;
@@ -614,7 +621,7 @@ void BeginFrame()
 	if (!g_rt.running)
 	{
 		// screens and overlays start the runtime; the tactical HUD starts it on the tactical screen
-		if (guiCurrentScreen != GAME_SCREEN || ConfiguredMode("tactical") != UiMode::Native || !Available()) return;
+		if (guiCurrentScreen != GAME_SCREEN || !Available()) return;
 		if (!Start()) return;
 	}
 	g_rt.Sync();
@@ -1170,6 +1177,8 @@ void HideFastHelp()
 bool MessageBoxWanted()
 {
 	if (g_rt.screen) return Start();
+	// tactical has one UI: its message boxes are native too, whatever "msgbox" says for the other screens
+	if (TacticalHudActive()) return Start();
 	return ResolveMode("msgbox") == UiMode::Native && Start();
 }
 

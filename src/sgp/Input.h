@@ -59,6 +59,9 @@ void FingerDown(const SDL_TouchFingerEvent*);
 void FingerUp(const SDL_TouchFingerEvent*);
 
 SGPPoint GetMousePos();
+/** The pointer in canvas pixels with the fraction the window system reports (picking in output pixels). */
+struct MousePosF { float x; float y; };
+MousePosF GetMousePosF();
 // TRUE = specified mouse button is down, FALSE = specified mouse button is up
 bool IsMouseButtonDown(UINT32 mouseButton);
 // TRUE = Main finger is down. Multitouch gesture is not detected, FALSE = Main finger is up or multitouch gesture is in progress
@@ -73,6 +76,7 @@ extern BOOLEAN DequeueSpecificEvent(InputAtom *Event, UINT32 uiMaskFlags );
 extern void					RestrictMouseToXYXY(UINT16 usX1, UINT16 usY1, UINT16 usX2, UINT16 usY2);
 void RestrictMouseCursor(const SGPRect* pRectangle);
 extern void					SetSafeMousePosition(int x, int y);
+extern void					SetSafeMousePositionF(float x, float y);
 extern void					FreeMouseCursor(void);
 extern BOOLEAN			IsCursorRestricted( void );
 extern void					GetRestrictedClipCursor( SGPRect *pRectangle );

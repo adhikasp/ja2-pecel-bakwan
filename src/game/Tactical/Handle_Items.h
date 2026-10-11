@@ -88,7 +88,6 @@ BOOLEAN SetItemsVisibilityOn(GridNo, UINT8 level, Visibility bAllGreaterThan, BO
 
 void SetItemsVisibilityHidden(GridNo, UINT8 level);
 
-void RenderTopmostFlashingItems(void);
 
 /** A new-item locator that is showing (the native overlay draws it; RenderTopmostFlashingItems is the legacy draw). */
 struct FlashingItemView

@@ -49,7 +49,7 @@ ja2.click{ text = "Cancel", exact = true }
 ja2.waitScreen("MAINMENU_SCREEN")
 
 campaign.startWithMerc("Barry")
-ja2.click("Map Screen")
+ja2.click{ id = "tac.map" }
 ja2.waitScreen("MAP_SCREEN")
 campaign.dismissHelp()
 ja2.save("audit-1", "Audit save one")

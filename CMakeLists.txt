@@ -423,7 +423,7 @@ if (WITH_UNITTESTS)
             add_test(
                 NAME e2e_${n}
                 COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${f}" --isolated
-                    --res 640x480 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/${n}"
+                    --res 1280x720 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/${n}"
             )
         endforeach()
         # Tactical with the world as a layer of its own: (window, UI scale, world zoom)
@@ -516,7 +516,7 @@ if (WITH_UNITTESTS)
         # `ctest -L resolution` is the default sweep and runs 1080p only; the
         # other resolutions are opt-in under the `matrix` label, or all of them
         # by name with `ctest -R resolution_`.
-        set(RESOLUTION_MATRIX 640x480 1280x720 1920x1080 2560x1080 3440x1440)
+        set(RESOLUTION_MATRIX 1280x720 1920x1080 2560x1080 3440x1440)
         set(RESOLUTION_DEFAULT 1920x1080)
         # Longest tour first, so a parallel run fills its slots with the expensive tests instead of
         # leaving one slot to grind through the last long test alone. This order is what ctest uses on
