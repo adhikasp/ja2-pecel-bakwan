@@ -123,6 +123,7 @@ struct ItemDescNativeView
 	INT8   status = 0;
 	UINT8  count = 0;
 	UINT32 money = 0;
+	bool   gun = false;
 	INT32  shotsLeft = -1, magSize = 0;
 	UINT16 attachments[4]{};
 	INT8   attachStatus[4]{};
@@ -133,7 +134,6 @@ struct ItemDescNativeView
 	const char* attachRole[4]{};
 };
 ItemDescNativeView GetItemDescNativeView();
-void ItemDescNativeAttachmentClick(int slot, bool right);
 void ItemDescNativeClose();
 struct ItemStackNativeView
 {
