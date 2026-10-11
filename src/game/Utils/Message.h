@@ -70,6 +70,8 @@ struct MessageLine { ST::string text; UINT16 colour; };
 std::vector<MessageLine> GetTacticalScrollLines();
 /** Every message kept for the map screen log, oldest first (wrapped lines joined). */
 std::vector<MessageLine> GetMessageHistory();
+/** Every UI feedback line ScreenMsg was given (they are not kept in the message log), oldest first. */
+std::vector<ST::string> const& GetUIFeedbackLog();
 void EnableScrollMessages( void );
 
 extern UINT8 gubStartOfMapScreenMessageList;

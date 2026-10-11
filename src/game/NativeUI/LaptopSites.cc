@@ -51,6 +51,29 @@ void LaptopViewModel::RegisterSiteCommands()
 			impCode.clear(); impFull.clear(); impNick.clear(); impFemale = false; impQuestion = 0; impPortrait = 0; impVoice = 0;
 			impAttrValues.clear(); impSkillPick.clear(); impAnswers.clear();
 		}
+		// the points are spent before the profile moves on: left over they would be lost on creation
+		if (impStep == "attributes" && ImpStepIndex(a[0]) > ImpStepIndex("attributes") && impBonus > 0)
+		{
+			if (onToast) onToast(ST::format(Str("laptop.imp_points_left").c_str(), impBonus).to_std_string(), 3);
+			return;
+		}
+		impStep = a[0]; GoPage(a[0]);
+	});
+	// Previous: one step back through the flow, one question back inside the quiz
+	Command("imp_back", [this](Args const&) {
+		int const last = std::max(0, int(impAnswers.size()) - 1);
+		if (impStep == "personality" && impQuestion > 0) { --impQuestion; ReadImp(); return; }
+		static char const* const before[] = { "main", "begin", "personality", "attributes", "portrait", "voice" };
+		int const i = ImpStepIndex(impStep);
+		if (i < 0) return;
+		if (before[i] == std::string("personality")) impQuestion = last; // back from attributes lands on the last answer
+		impStep = before[i]; GoPage(before[i]);
+	});
+	// the step bar: any step already passed
+	Command("imp_goto", [this](Args const& a) {
+		if (a.empty()) return;
+		int const to = ImpStepIndex(a[0]), from = ImpStepIndex(impStep);
+		if (to < 0 || from < 0 || to >= from) return;
 		impStep = a[0]; GoPage(a[0]);
 	});
 	Command("imp_name", [this](Args const& a) { impFull = a.empty() ? "" : a[0]; Changed(); });

@@ -275,6 +275,8 @@ screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas
 | `ja2.toast(text, [kind])` | Show a toast (`info`, `ok`, `warn`, `danger`). |
 | `ja2.debug("mock", "phase3/mainmenu")` | Show a static design mock (`assets/ui/mocks/<name>.rml`) through the native runtime until Esc. |
 | `ja2.debug("shopkeeper", [dealerId])` | Open the arms-dealer trade screen (`SHOPKEEPER_SCREEN`) with a dealer (default Tony), spawning the dealer next to the selected merc if he is not in the sector. |
+| `ja2.feedback()` | The UI feedback lines (placement refusals like "X does not fit here: ...") as an array of strings, oldest first; they are not in `ja2.messages()`. |
+| `ja2.messages()` | The message log as an array of strings, oldest first (the map screen log / tactical scroll). Assert feedback such as "does not fit here" without a screenshot. |
 | `ja2.debug("msgbox", text, [kind])` | Open a message box from the current screen (`ok`, `yesno`, `yesnolie`, `okskip`, `four`); `ja2.lastMessageBoxResult()` is what it returned. |
 
 **Element ids.** Every element with an `id` in a native document is addressable: `ja2.click{id="credits.back"}`,

@@ -1916,6 +1916,22 @@ namespace
 			});
 		});
 		ja2.set_function("lastMessageBoxResult", [] { return g_lastMessageBoxResult; });
+		// ja2.feedback(): the UI feedback lines ("X does not fit here: ..."), which the message log does not keep
+		ja2.set_function("feedback", [](sol::this_state ts) {
+			sol::state_view lua(ts);
+			sol::table t = lua.create_table();
+			int i = 1;
+			for (ST::string const& m : GetUIFeedbackLog()) t[i++] = std::string(m.c_str());
+			return t;
+		});
+		// ja2.messages(): the message log (what the map screen log and tactical scroll show), oldest first
+		ja2.set_function("messages", [](sol::this_state ts) {
+			sol::state_view lua(ts);
+			sol::table t = lua.create_table();
+			int i = 1;
+			for (MessageLine const& m : GetMessageHistory()) t[i++] = std::string(m.text.c_str());
+			return t;
+		});
 		ja2.set_function("toast", [](std::string const& text, sol::optional<std::string> kind) {
 			Guarded([&] {
 				std::string const k = kind.value_or("info");

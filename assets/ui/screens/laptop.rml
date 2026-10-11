@@ -405,7 +405,7 @@
 			<div class="site-head"><span class="wm">I.M.P.</span><span class="wm-sub">Institute for Mercenary Profiling</span><span class="grow"></span>
 				<button class="btn btn-ghost" data-if="page != 'home' &amp;&amp; page != 'about'" id="imp.cancel" data-label="Cancel" data-event-click="imp_step('home')"><img class="icon" src="icon-close"/><span class="label">{{l_hangup}}</span></button></div>
 			<div class="imp-steps" id="imp.steps" data-if="page != 'home' &amp;&amp; page != 'about' &amp;&amp; page != 'main' &amp;&amp; page != 'done'">
-				<div class="step" data-for="s : imp_steps" data-class-done="s.alt" data-class-on="s.on"><span class="n">{{s.index + 1}}</span><span>{{s.title}}</span></div></div>
+				<div class="step" data-for="s : imp_steps" data-attr-id="'imp.step[' + s.index + ']'" data-attr-data-label="s.title" data-class-done="s.alt" data-class-on="s.on" data-event-click="imp_goto(s.id)"><span class="n">{{s.index + 1}}</span><span>{{s.title}}</span></div></div>
 			<div class="quiz" data-if="page == 'home' || page == 'about'">
 				<div class="quiz-main prose"><p data-for="t : imp_text">{{t}}</p>
 					<div data-if="page == 'home'" class="row imp-code"><input type="text" class="field-input" id="imp.code.input" maxlength="10" data-value="imp_code"/><button class="btn btn-primary" id="imp.enter" data-label="Enter" data-event-click="imp_enter"><span class="label">{{l_imp_enter}}</span><span class="kbd">Enter</span></button>
@@ -423,8 +423,8 @@
 					<span class="section">{{l_imp_name}}</span><input type="text" class="field-input imp-in" id="imp.name.input" maxlength="29" data-value="imp_full"/>
 					<span class="section">{{l_imp_nick}}</span><input type="text" class="field-input imp-in" id="imp.nick.input" maxlength="9" data-value="imp_nick"/>
 					<span class="section">{{l_imp_gender}}</span>
-					<div class="seg"><div class="o" id="imp.male" data-class-on="!imp_female" data-event-click="imp_gender('male')"><span class="a">{{l_imp_male}}</span></div><div class="o" id="imp.female" data-class-on="imp_female" data-event-click="imp_gender('female')"><span class="a">{{l_imp_female}}</span></div></div>
-					<div class="q-act"><span class="grow"></span><button class="btn btn-primary" id="imp.begin.next" data-label="Next" data-event-click="imp_step('personality')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
+					<div class="seg imp-seg"><div class="o" id="imp.male" data-class-on="!imp_female" data-event-click="imp_gender('male')"><span class="a">{{l_imp_male}}</span></div><div class="o" id="imp.female" data-class-on="imp_female" data-event-click="imp_gender('female')"><span class="a">{{l_imp_female}}</span></div></div>
+					<div class="q-act"><button class="btn" id="imp.begin.back" data-label="Previous" data-event-click="imp_back"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button><span class="grow"></span><button class="btn btn-primary" id="imp.begin.next" data-label="Next" data-event-click="imp_step('personality')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
 				</div></div>
 			<div class="quiz" data-if="page == 'personality'">
 				<div class="quiz-main">
@@ -433,7 +433,7 @@
 					<span class="q-text" id="imp.question">{{imp_question_text}}</span>
 					<div id="imp.answers"><div class="ans" data-for="a : imp_answers" data-attr-id="'imp.answer[' + a.index + ']'" data-attr-data-label="a.title" data-class-on="a.on" data-event-click="imp_answer(a.index)"><span class="kbd">{{a.id}}</span><span class="t">{{a.title}}</span></div></div>
 					<div class="q-act">
-						<button class="btn" id="imp.prev" data-label="Previous" data-event-click="imp_question(imp_question - 1)"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button>
+						<button class="btn" id="imp.prev" data-label="Previous" data-event-click="imp_back"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button>
 						<button class="btn btn-ghost" id="imp.restart" data-label="Start over" data-event-click="imp_restart"><img class="icon" src="icon-reload"/><span class="label">{{l_imp_restart}}</span></button>
 						<span class="grow"></span>
 						<button class="btn btn-primary" id="imp.confirm" data-label="Confirm" data-event-click="imp_confirm"><img class="icon" src="icon-confirm"/><span class="label">{{l_imp_confirm}}</span></button>
@@ -447,22 +447,22 @@
 						<div class="bar"><div class="fill" data-style-width="a.m + '%'"></div></div>
 						<button class="icon-btn" data-attr-id="'imp.attr[' + a.index + '].more'" title="More" data-event-click="imp_attr(a.index, 1)"><img class="icon" src="icon-add"/></button><span class="v">{{a.value}}</span></div>
 					<div data-if="imp_skills.size &gt; 0"><span class="section">{{l_imp_pick_skills}}</span><div class="row wrap"><div class="chip" data-for="s : imp_skills" data-class-on="s.on" data-event-click="imp_skill(s.index)"><span>{{s.title}}</span></div></div></div>
-					<div class="q-act"><span class="grow"></span><button class="btn btn-primary" id="imp.attr.next" data-label="Next" data-event-click="imp_step('portrait')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
+					<div class="q-act"><button class="btn" id="imp.attr.back" data-label="Previous" data-event-click="imp_back"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button><span class="grow"></span><button class="btn btn-primary" id="imp.attr.next" data-label="Next" data-event-click="imp_step('portrait')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
 				</div></div>
 			<div class="quiz" data-if="page == 'portrait'">
 				<div class="quiz-main">
-					<div class="imp-faces" id="imp.portraits"><div class="iface" data-for="p : imp_portraits" data-attr-id="'imp.portrait[' + p.index + ']'" data-class-on="p.on" data-event-click="imp_portrait(p.index)"><img data-attr-src="p.icon"/></div></div>
-					<div class="q-act"><span class="grow"></span><button class="btn btn-primary" id="imp.portrait.next" data-label="Next" data-event-click="imp_step('voice')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
+					<div class="imp-faces" id="imp.portraits"><div class="iface" data-for="p : imp_portraits" data-attr-id="'imp.portrait[' + p.index + ']'" data-attr-data-label="p.title" data-class-on="p.on" data-event-click="imp_portrait(p.index)"><img data-attr-src="p.icon"/></div></div>
+					<div class="q-act"><button class="btn" id="imp.portrait.back" data-label="Previous" data-event-click="imp_back"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button><span class="grow"></span><button class="btn btn-primary" id="imp.portrait.next" data-label="Next" data-event-click="imp_step('voice')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
 				</div></div>
 			<div class="quiz" data-if="page == 'voice'">
 				<div class="quiz-main">
-					<div class="ans" data-for="v : imp_voices" data-attr-id="'imp.voice[' + v.index + ']'" data-class-on="v.on" data-event-click="imp_voice(v.index)"><img class="icon" src="icon-play"/><span class="t">{{v.title}}</span></div>
-					<div class="q-act"><span class="grow"></span><button class="btn btn-primary" id="imp.voice.next" data-label="Next" data-event-click="imp_step('finish')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
+					<div class="ans" data-for="v : imp_voices" data-attr-id="'imp.voice[' + v.index + ']'" data-attr-data-label="v.title" data-class-on="v.on" data-event-click="imp_voice(v.index)"><img class="icon" src="icon-play"/><span class="t">{{v.title}}</span></div>
+					<div class="q-act"><button class="btn" id="imp.voice.back" data-label="Previous" data-event-click="imp_back"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button><span class="grow"></span><button class="btn btn-primary" id="imp.voice.next" data-label="Next" data-event-click="imp_step('finish')"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button></div>
 				</div></div>
 			<div class="quiz" data-if="page == 'finish'">
 				<div class="quiz-main">
 					<div class="panel pad"><div class="kv"><span class="k">{{l_imp_name}}</span><span class="v">{{imp_full}}</span></div><div class="kv"><span class="k">{{l_imp_nick}}</span><span class="v">{{imp_nick}}</span></div><div class="kv"><span class="k">{{l_imp_gender}}</span><span class="v">{{imp_female ? l_imp_female : l_imp_male}}</span></div><div class="kv"><span class="k">{{l_imp_points}}</span><span class="v">{{imp_bonus}}</span></div></div>
-					<div class="q-act"><button class="btn" data-event-click="imp_step('personality')" id="imp.finish.back"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button><span class="grow"></span><span class="dim">{{l_imp_cost}}</span>
+					<div class="q-act"><button class="btn" data-event-click="imp_back" id="imp.finish.back" data-label="Previous"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button><span class="grow"></span><span class="dim imp-fee">{{l_imp_cost}}</span>
 						<button class="btn btn-primary" id="imp.finish" data-label="Finish" data-event-click="imp_finish"><img class="icon" src="icon-confirm"/><span class="label">{{l_imp_finish}}</span></button></div>
 				</div></div>
 			<div class="quiz" data-if="page == 'done'"><div class="quiz-main prose"><p>{{l_imp_done}}</p></div></div>
