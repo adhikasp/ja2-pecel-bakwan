@@ -671,7 +671,7 @@ namespace
 				std::string t = label;
 				if (c.key[0] != '\0') t += " (" + TacticalCommands::KeyLabel(c.key) + ")";
 				if (!a.enabled && a.why != TacticalCommands::Why::None)
-					t += " â " + Str(std::string("tac.cmd.why.") + TacticalCommands::WhyName(a.why));
+					t += " — " + Str(std::string("tac.cmd.why.") + TacticalCommands::WhyName(a.why));
 				cmdTitle[i] = std::move(t);
 			}
 		}
