@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -95,13 +96,17 @@ def main() -> int:
 
     # One agent per worktree: refuse to double up.
     branch = git(str(worktree), "rev-parse", "--abbrev-ref", "HEAD")
-    slug = f"{branch.replace('/', '-')}-{int(time.time())}"
+    title = args.title or f"orchestrate {branch}"
+    safe = re.sub(r"[^A-Za-z0-9._-]+", "-", title).strip("-")
+    # The log name must be unique per run. A timestamp alone collides when two
+    # agents launch in the same second -- and every researcher worktree is a
+    # detached HEAD, so they all slug to "HEAD-<ts>" and overwrite each other.
+    slug = f"{safe}-{os.getpid()}-{int(time.time())}"
     log_dir = Path.home() / ".ja2-orch" / "logs"
     log_dir.mkdir(parents=True, exist_ok=True)
     log = log_dir / f"{slug}.log"
 
     cli = os.environ.get("OPENCODE_CLI") or find_cli()
-    title = args.title or f"orchestrate {branch}"
 
     # The prompt goes in a file the agent reads; only this short line is passed
     # on the command line, so no quoting or newline can corrupt it.
