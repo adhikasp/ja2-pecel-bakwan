@@ -216,36 +216,48 @@ def job_slots(kind: str, requested=None):
 
 
 @contextlib.contextmanager
-def build_lock(build_dir: Path):
-    """One builder per build directory (ninja/make are not safe to run twice)."""
-    lock = build_dir / ".dev-build.lock"
+def file_lock(path: Path, what: str = ""):
+    """One holder at a time for a named file; a dead holder's lock expires.
+
+    Same shape as the build lock, generalised: anything that mutates a shared
+    resource several agents can reach at once (a build directory, the
+    pr-screenshots worktree) takes this instead of a machine-wide semaphore,
+    because the conflict is about *which* resource, not how much CPU is free.
+    """
+    what = what or path.name
+    path.parent.mkdir(parents=True, exist_ok=True)
     owner = json.dumps({"pid": os.getpid(), "started": time.time()})
     waiting_since = None
     while True:
         try:
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+            fd = os.open(path, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
             os.write(fd, owner.encode())
             os.close(fd)
             break
         except FileExistsError:
             try:
-                pid = json.loads(lock.read_text(encoding="utf-8")).get("pid")
+                pid = json.loads(path.read_text(encoding="utf-8")).get("pid")
             except (OSError, ValueError):
                 pid = None
             if not pid_alive(pid):
-                lock.unlink(missing_ok=True)
+                path.unlink(missing_ok=True)
                 continue
             if waiting_since is None:
                 waiting_since = time.time()
-                log(f"waiting for the other build in this worktree (pid {pid}) ...")
+                log(f"waiting for the other {what} (pid {pid}) ...")
             elif time.time() - waiting_since > 30:
                 waiting_since = time.time()
-                log(f"still waiting for pid {pid} to finish building ...")
+                log(f"still waiting for pid {pid} to finish {what} ...")
             time.sleep(2)
     try:
         yield
     finally:
-        lock.unlink(missing_ok=True)
+        path.unlink(missing_ok=True)
+
+
+def build_lock(build_dir: Path):
+    """One builder per build directory (ninja/make are not safe to run twice)."""
+    return file_lock(build_dir / ".dev-build.lock", "build in this worktree")
 
 
 # --- setup ------------------------------------------------------------------
@@ -681,6 +693,19 @@ def cmd_status(args):
     print(f"{'cache:':<12}SCCACHE_BASEDIR={REPO} (shared with every worktree)")
 
 
+# --- worktrees and PR screenshots --------------------------------------------
+
+def tool_module(name: str):
+    """One of the helper scripts next to dev.py, importable from any cwd."""
+    tools = Path(__file__).resolve().parent
+    if str(tools) not in sys.path:
+        sys.path.insert(0, str(tools))
+    try:
+        return __import__(name)
+    except OSError as exc:  # a broken tools/ tree is our fault, not the caller's
+        die(f"could not load tools/{name}.py: {exc}")
+
+
 # --- command line -----------------------------------------------------------
 
 # dev.py's own flags for `test`, `e2e` and `run`; anything else is passed on to
@@ -709,10 +734,38 @@ def split_tail(tail):
     return dev, child
 
 
+# Commands whose flags belong to a script of their own, dispatched before the
+# parser is built so that `--help` reaches them instead of a dev.py subparser.
+TOOL_COMMANDS = {
+    "worktrees": "list this repo's worktrees (size, age, merged/PR state); --prune collects the dead ones",
+    "shots": "publish a PR's screenshots to the orphan pr-screenshots branch and print the links",
+}
+
+
+def dispatch_tool_command(name: str, rest: list[str]):
+    """Run one of TOOL_COMMANDS, or None if this is not one."""
+    if name == "worktrees":
+        return tool_module("worktrees").main(rest, repo=REPO, here=REPO,
+                                             state_dir=state_dir(), log=log)
+    if name == "shots":
+        work = state_dir() / "pr-screenshots"
+        # One publisher at a time machine-wide: two agents racing on the same
+        # branch and worktree is exactly the collision this command exists to stop.
+        with file_lock(state_dir() / "pr-screenshots.lock", "pr-screenshots publish"):
+            return tool_module("shots").main(rest, repo=REPO, work=work, log=log)
+    return None
+
+
 def main():
+    argv = sys.argv[1:]
+    if argv and argv[0] in TOOL_COMMANDS:
+        sys.exit(dispatch_tool_command(argv[0], argv[1:]))
+
     parser = argparse.ArgumentParser(
         prog="tools/dev.py",
         description="one entry point for building, testing and running ja2-pecel-bakwan (macOS and Windows)",
+        epilog="other commands: " + "; ".join(f"{name} - {text}" for name, text in TOOL_COMMANDS.items())
+               + "  (their own --help has the flags)",
     )
     sub = parser.add_subparsers(dest="command", required=True)
 
@@ -773,6 +826,8 @@ def main():
     p.add_argument("--repo", default="ja2-pecel-bakwan", help="repository name")
     p.set_defaults(func=cmd_dep)
 
+    # `worktrees` and `shots` were dispatched above, before this parser existed:
+    # a subparser here would eat their `--help`. They are in the epilog instead.
     argv = sys.argv[1:]
     if argv and argv[0] in {"test", "e2e", "run", "ai-eval"}:
         dev, child = split_tail(argv[1:])
