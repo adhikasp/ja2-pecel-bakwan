@@ -440,6 +440,7 @@ span, div { display: block; }
 .imp-code { margin-top: var(--sp-4); }
 .imp-seg .o { display: flex; align-items: center; justify-content: center; }
 .imp-fee { margin-right: var(--sp-4); }
+.quiz-main.prose .btn { margin-bottom: var(--sp-2); }
 .step.done, .step.on { cursor: pointer; }
 .imp-code .field-input { width: 220dp; margin-right: var(--sp-2); }
 .imp-code .btn { margin-right: var(--sp-2); }
