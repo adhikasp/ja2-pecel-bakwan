@@ -1,5 +1,5 @@
 -- Parity tour of the native laptop (docs/ui/laptop.md, section 9), driven by element id, with game state checked:
--- programs, mail, files, finances, A.I.M. hire, M.E.R.C. hire, Bobby Ray's order, insurance, florist, I.M.P. quiz, keys.
+-- programs, mail, files, finances, A.I.M. hire, M.E.R.C. hire, Bobby Ray's order, insurance, florist, I.M.P. character, keys.
 -- Below 1280x720 the legacy laptop runs and only the hire path is checked.
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
@@ -121,18 +121,95 @@ click("florist.send")
 if ja2.screen() == "MSG_BOX_SCREEN" then ja2.click{id = "msgbox.yes"}; ja2.waitIdle() end
 ja2.expect(ja2.state().money <= money, "flowers do not add money")
 
--- I.M.P.: the code gate, then the quiz page
-click("web.bookmark.imp")
+-- I.M.P.: the code gate, then the whole flow
+click("laptop.app.finances"); local ledger = vm().ledger_count
+click("laptop.app.web"); click("web.bookmark.imp")
 ja2.expect(vm().page == "home", "I.M.P. home")
 ja2.click{id = "imp.code.input"}; ja2.type("XEP624"); click("imp.enter")
 ja2.expect(vm().page == "main", "the activation code opens the site")
-click("imp.begin"); click("imp.begin.next")
+-- begin: names and gender; the cost is on the main page
+click("imp.begin")
+ja2.expect(vm().page == "begin", "begin page")
+ja2.click{id = "imp.name.input"}; ja2.type("Zed Quark")
+ja2.click{id = "imp.nick.input"}; ja2.type("Zed")
+click("imp.female")
+ja2.expect(vm().imp_female, "gender chosen")
+click("imp.begin.next")
 ja2.expect(vm().page == "personality" and #vm().imp_answers >= 2, "quiz question with answers")
 click("imp.answer[0]"); ja2.expect(vm().imp_answers[1].on, "answer selected")
 layout("imp")
+
+-- quiz: answer every question with the first answer and confirm; the last confirm leaves for the attributes
+local questions = 0
+while vm().page == "personality" do
+	click("imp.answer[0]")
+	-- the longest question (8 answers) must still show its Confirm button inside the screen
+	if #vm().imp_answers >= 8 then layout("imp quiz, 8 answers"); shots.take("laptop_imp_quiz8.png") end
+	click("imp.confirm")
+	questions = questions + 1
+	ja2.expect(questions <= 20, "the quiz ends")
+end
+ja2.expect(questions >= 10 and vm().page == "attributes", "the quiz ran " .. questions .. " questions into the attributes page")
+
+-- attributes: spend the 40 bonus points on agility, marksmanship and medical (15 + 15 + 10)
+local function attr(i) return vm().imp_attrs[i + 1].n end
+local base = {}
+for i = 0, 9 do base[i] = attr(i) end
+for _ = 1, 15 do click("imp.attr[1].more") end
+for _ = 1, 15 do click("imp.attr[6].more") end
+for _ = 1, 10 do click("imp.attr[7].more") end
+ja2.expect(attr(1) == base[1] + 15 and attr(6) == base[6] + 15 and attr(7) == base[7] + 10, "points go to the stats")
+ja2.expect(vm().imp_bonus == 0, "all bonus points spent")
+shots.take("laptop_imp_attributes.png")
+local want = {}
+for i = 0, 9 do want[i] = attr(i) end
+click("imp.attr.next")
+
+-- portrait and voice: take the second of each, as the model lists them
+ja2.expect(vm().page == "portrait", "portrait page")
+local face = vm().imp_portraits[2]
+click("imp.portrait[1]"); ja2.expect(vm().imp_portrait == 1, "portrait chosen")
+click("imp.portrait.next")
+ja2.expect(vm().page == "voice", "voice page")
+local voice = vm().imp_voices[2]
+ja2.expect(voice.title:find("2") and not voice.title:find("%%"), "voice rows are numbered: " .. voice.title)
+click("imp.voice[1]"); ja2.expect(vm().imp_voice == 1, "voice chosen")
+click("imp.voice.next")
+ja2.expect(vm().page == "finish", "finish page")
+shots.take("laptop_imp_finish.png")
+
+-- finish: the money goes, the character joins the team with what was chosen
+money = ja2.state().money
+local team = #ja2.state().mercs
+click("imp.finish")
+if ja2.screen() == "MSG_BOX_SCREEN" then ja2.click{id = "msgbox.yes"}; ja2.waitIdle() end
+ja2.expect(vm().page == "done", "the I.M.P. site confirms the character")
+s = ja2.state()
+ja2.expect(s.money == money - 3000, "the $3,000 is charged (" .. money .. " -> " .. s.money .. ")")
+ja2.expect(#s.mercs == team + 1, "the new character is on the team")
+local imp
+for _, m in ipairs(s.mercs) do if m.profileData and m.profileData.nickName == "Zed" then imp = m end end
+ja2.expect(imp ~= nil, "a character called Zed exists")
+local p = imp.profileData
+ja2.expect(p.fullName == "Zed Quark" and p.female, "name and gender")
+ja2.expect(p.health == want[0] and p.agility == want[1] and p.dexterity == want[2] and p.strength == want[3] and
+	p.leadership == want[4] and p.wisdom == want[5], "base stats")
+ja2.expect(p.marksmanship == want[6] and p.medical == want[7] and p.mechanical == want[8] and p.explosives == want[9], "skill stats")
+ja2.expect(p.face == tonumber(face.id) and face.icon == "face-" .. face.id, "portrait " .. face.id)
+ja2.expect(p.voice == tonumber(voice.id), "voice " .. voice.id)
+ja2.expect(p.skill1 >= 0 and p.skill2 >= 0 and p.personality >= 0 and p.attitude >= 0, "skills, personality and attitude come out of the quiz")
+ja2.expect(imp.sector ~= "" and imp.life > 0, "the character has arrived in " .. imp.sector)
+ja2.expect(vm().team == tostring(team + 1), "system bar shows the team")
+click("laptop.app.finances")
+ja2.expect(vm().ledger_count == ledger + 1, "ledger has the I.M.P. payment")
+click("laptop.app.web"); click("web.bookmark.imp")
+ja2.expect(vm().imp_can_create == false, "only one I.M.P. character per campaign")
+if vm().page == "home" then ja2.click{id = "imp.code.input"}; ja2.type("XEP624"); click("imp.enter") end
+click("imp.cancel")
+ja2.expect(vm().page == "home" and vm().imp_full == "" and vm().imp_code == "", "hanging up clears the profile and the code")
 
 -- 150% scale layout, then leave
 ja2.setUiScale(1.5); ja2.waitIdle(); for _, p in ipairs(ja2.layoutProblems()) do ja2.log("150% layout note: " .. p) end; ja2.setUiScale(1)
 click("laptop.app.web"); click("laptop.close")
 ja2.waitScreen("MAP_SCREEN")
-ja2.expect(#ja2.state().mercs == 1, "Barry is on the map screen")
+ja2.expect(#ja2.state().mercs == 2, "Barry and the I.M.P. character are on the map screen")

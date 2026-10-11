@@ -513,6 +513,32 @@ namespace
 			sol::table t = L.create_table();
 			t["name"]       = m->name.to_std_string();
 			t["profile"]    = static_cast<int>(m->ubProfile);
+			if (m->ubProfile != NO_PROFILE)
+			{
+				// the profile as the game holds it: what an I.M.P. creation test asserts (issue #173)
+				MERCPROFILESTRUCT const& p = GetProfile(m->ubProfile);
+				sol::table pt = L.create_table();
+				pt["fullName"]    = p.zName.to_std_string();
+				pt["nickName"]    = p.zNickname.to_std_string();
+				pt["female"]      = p.bSex == FEMALE;
+				pt["health"]      = static_cast<int>(p.bLifeMax);
+				pt["agility"]     = static_cast<int>(p.bAgility);
+				pt["dexterity"]   = static_cast<int>(p.bDexterity);
+				pt["strength"]    = static_cast<int>(p.bStrength);
+				pt["leadership"]  = static_cast<int>(p.bLeadership);
+				pt["wisdom"]      = static_cast<int>(p.bWisdom);
+				pt["marksmanship"] = static_cast<int>(p.bMarksmanship);
+				pt["mechanical"]  = static_cast<int>(p.bMechanical);
+				pt["explosives"]  = static_cast<int>(p.bExplosive);
+				pt["medical"]     = static_cast<int>(p.bMedical);
+				pt["skill1"]      = static_cast<int>(p.bSkillTrait);
+				pt["skill2"]      = static_cast<int>(p.bSkillTrait2);
+				pt["personality"] = static_cast<int>(p.bPersonalityTrait);
+				pt["attitude"]    = static_cast<int>(p.bAttitude);
+				pt["face"]        = static_cast<int>(p.ubFaceIndex);
+				pt["voice"]       = static_cast<int>(p.ubVoiceId);
+				t["profileData"]  = pt;
+			}
 			t["sector"]     = m->sSector.AsShortString().to_std_string();
 			t["assignment"] = static_cast<int>(m->bAssignment);
 			if (m->bAssignment >= 0 && m->bAssignment <= ASSIGNMENT_EMPTY)
