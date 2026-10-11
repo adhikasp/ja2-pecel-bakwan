@@ -401,3 +401,71 @@ ImpResult ImpCreate(ImpChoices const& c)
 }
 
 }
+
+
+#ifdef WITH_UNITTESTS
+#include "DefaultContentManagerUT.h"
+#include "gtest/gtest.h"
+
+// The gates of ImpCreate (issue #173). The created path touches the team, the books and the event queue, so the
+// e2e parity tour (tests/e2e/laptop_parity.lua) proves it; the gates return before any of that.
+class ImpCreateGateTest : public DefaultContentManagerUT::BaseTest
+{
+protected:
+	void SetUp() override
+	{
+		BaseTest::SetUp();
+		for (ProfileID i = 0; i != NUM_PROFILES; ++i) gMercProfiles[i].impSlotState = IMPSlotState::FREE;
+		balance = LaptopSaveInfo.iCurrentBalance;
+		LaptopSaveInfo.iCurrentBalance = 10 * COST_OF_PROFILE;
+	}
+	void TearDown() override
+	{
+		LaptopSaveInfo.iCurrentBalance = balance;
+		for (ProfileID i = 0; i != NUM_PROFILES; ++i) gMercProfiles[i].impSlotState = IMPSlotState::FREE;
+		BaseTest::TearDown();
+	}
+	static LaptopNative::ImpChoices Named()
+	{
+		LaptopNative::ImpChoices c;
+		c.fullName = "Testy McTestface";
+		c.nickName = "Testy";
+		return c;
+	}
+	INT32 balance = 0;
+};
+
+TEST_F(ImpCreateGateTest, aNameAndANicknameAreRequired)
+{
+	LaptopNative::ImpChoices c = Named();
+	c.fullName = "";
+	EXPECT_EQ(LaptopNative::ImpCreate(c), LaptopNative::ImpResult::Invalid);
+	c = Named();
+	c.nickName = "";
+	EXPECT_EQ(LaptopNative::ImpCreate(c), LaptopNative::ImpResult::Invalid);
+	EXPECT_EQ(LaptopSaveInfo.iCurrentBalance, 10 * COST_OF_PROFILE) << "an invalid request is not charged";
+}
+
+TEST_F(ImpCreateGateTest, withoutAFreeProfileNobodyCanBeMade)
+{
+	for (ProfileID i = 0; i != NUM_PROFILES; ++i) gMercProfiles[i].impSlotState = IMPSlotState::TAKEN;
+	EXPECT_FALSE(LaptopNative::ImpCanCreate());
+	EXPECT_EQ(LaptopNative::ImpCreate(Named()), LaptopNative::ImpResult::Invalid);
+	EXPECT_EQ(LaptopSaveInfo.iCurrentBalance, 10 * COST_OF_PROFILE);
+}
+
+TEST_F(ImpCreateGateTest, tooLittleMoneyIsNoFundsAndChangesNothing)
+{
+	ASSERT_TRUE(LaptopNative::ImpCanCreate());
+	LaptopSaveInfo.iCurrentBalance = COST_OF_PROFILE - 1;
+	ProfileID const slot = GetIMPSlotInProgress();
+	EXPECT_EQ(LaptopNative::ImpCreate(Named()), LaptopNative::ImpResult::NoFunds);
+	EXPECT_EQ(LaptopSaveInfo.iCurrentBalance, COST_OF_PROFILE - 1);
+	EXPECT_EQ(GetIMPSlotInProgress(), slot) << "the profile slot stays free";
+}
+
+TEST_F(ImpCreateGateTest, theCostIsThreeThousand)
+{
+	EXPECT_EQ(LaptopNative::ImpCost(), 3000);
+}
+#endif

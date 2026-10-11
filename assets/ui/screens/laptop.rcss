@@ -263,7 +263,7 @@ span, div { display: block; }
 .q-prog .p { flex: 1 1 0; height: 4dp; margin-right: 3dp; background-color: #1F3A40; }
 .q-prog .p.done { background-color: #3C8C96; } .q-prog .p.on { background-color: var(--site-imp); }
 .q-text { font-family: var(--font-body); font-weight: 600; font-size: var(--fs-xl); line-height: 34dp; color: #E9F6F8; margin-bottom: var(--sp-5); }
-.ans { display: flex; align-items: center; min-height: 56dp; padding: var(--sp-2) var(--sp-4); margin-bottom: var(--sp-2); background-color: var(--site-imp-band); border: var(--border) #1F3A40; border-radius: var(--r-1); }
+.ans { display: flex; align-items: center; min-height: 40dp; padding: var(--sp-1) var(--sp-4); margin-bottom: var(--sp-1); background-color: var(--site-imp-band); border: var(--border) #1F3A40; border-radius: var(--r-1); }
 .ans:hover { border-color: #3C8C96; }
 .ans .kbd { margin-right: var(--sp-4); }
 .ans .t { flex: 1 1 0; color: #CFE3E6; line-height: 23dp; }
@@ -441,6 +441,7 @@ span, div { display: block; }
 .imp-code .field-input { width: 220dp; margin-right: var(--sp-2); }
 .imp-code .btn { margin-right: var(--sp-2); }
 .imp-in { width: 520dp; margin-bottom: var(--sp-4); }
+.imp-attr { flex: 0 0 40dp; height: 40dp; }
 .imp-attr .icon-btn { margin: 0 var(--sp-1); }
 .imp-attr .k { flex: 0 0 180dp; }
 .imp-faces { display: flex; flex-wrap: wrap; }

@@ -88,13 +88,13 @@ void LaptopViewModel::ReadImp()
 	impPortraits.clear();
 	for (auto const& p : LaptopNative::ImpPortraits(impFemale))
 	{
-		Row r; r.index = p.index; r.icon = "face-" + std::to_string(p.face); r.on = p.index == impPortrait;
+		Row r; r.index = p.index; r.id = std::to_string(p.face); r.icon = "face-" + std::to_string(p.face); r.on = p.index == impPortrait;
 		impPortraits.push_back(r);
 	}
 	impVoices.clear();
 	for (auto const& v : LaptopNative::ImpVoices(impFemale))
 	{
-		Row r; r.index = v.index; r.title = ST::format(pImpButtonText[5].c_str(), v.index + 1).to_std_string(); r.on = v.index == impVoice;
+		Row r; r.index = v.index; r.id = std::to_string(v.profile); r.title = ST::format(pImpButtonText[5].c_str(), v.index + 1).to_std_string(); r.on = v.index == impVoice;
 		impVoices.push_back(r);
 	}
 	impSkills.clear();
