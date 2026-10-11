@@ -48,20 +48,9 @@ The goal is a **modern Jagged Alliance 2 with a richer game underneath**: one th
 - **Towns have a front door and back doors.** You hold one "how hard is it" readout and three verbs: *Scout*, *Soften*, *Take*. How you take a town decides whether you get it intact or damaged.
 - **Holding has a price.** Net income, not gross; your squad is the fire brigade; visibility draws the Queen's attention; one required HQ anchors a raiding band.
 
-### Status
+### What is being worked on
 
-Work is organized as milestones of shippable increments ([all milestones](https://github.com/adhikasp/ja2-pecel-bakwan/milestones), dependency view on the [roadmap page](https://adhikasp.github.io/ja2-pecel-bakwan/roadmap/)). A snapshot of where each direction stands:
-
-| Direction | Milestones | Landed | Next |
-|---|---|---|---|
-| Native modern presentation | [Native Modern Graphic](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/9) | GPU UI runtime, native front end and setup screen, strategic map, laptop, pre-battle/auto-resolve/shop screens, tactical HUD, inventory with drag and drop, popups, world overlays, overhead map | Retire the legacy tactical UI, laptop parity, HD art, legacy removal |
-| Testable by construction | [Testable Gameplay](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/7), [CI & Build tooling](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/18) | Deterministic tactical-battle harness and AI regression corpus, campaign state authoring, the `tools/dev.py` loop | Campaign soak and full-arc e2e, faster e2e tiers, game-data-free CI |
-| Tactical systems | [Tactical revamp signature systems](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/10), [Tactical depth](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/12) | Modular attachments and load-bearing gear, damage pipeline, NCTH aim/recoil/auto-fire, loadout screen | Ammo, condition and repair, traits and IMP, suppression and morale, stances and detection, explosives, sniper |
-| Revamp gameplay | [Downed, not dead](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/19), [Raids & ambushes](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/20), [Stealth & disguise](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/21), [Taking a town](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/22), [Holding vs raiding](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/23) | Design settled in the plan doc and broken into issues; build order is downed, raids, stealth, towns, holding | Downed state and wounds first, then the radio clock and enemy roles |
-| The Queen | [Queen's Mind](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/13) | Policy layer over strategic actions | Event bus and facts API, belief store, court and field actors, Brain and LLM integration |
-| Living world | [NPC](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/11), [reputation & alignment](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/14), [strategic management](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/16), [Combined arms](https://github.com/adhikasp/ja2-pecel-bakwan/milestone/15) | Town loyalty, native people and quest registry, strategic sector inventory | Deed ledger, citizens who remember, militia, facilities, economy, vehicles and support fire |
-
-The live order of work is on the [issue tracker](https://github.com/adhikasp/ja2-pecel-bakwan/issues) and the [JA2 Modernization Roadmap](https://github.com/users/adhikasp/projects/1) board; this table is a snapshot and the board wins when they disagree. The reasoning lives in [docs/plan/](docs/plan) and [docs/ui/](docs/ui).
+Status changes too fast to track here. Work is organized as milestones of shippable increments: see the [milestones](https://github.com/adhikasp/ja2-pecel-bakwan/milestones) for what is in flight, the [issue tracker](https://github.com/adhikasp/ja2-pecel-bakwan/issues) and the [JA2 Modernization Roadmap](https://github.com/users/adhikasp/projects/1) board for the order, and the [roadmap page](https://adhikasp.github.io/ja2-pecel-bakwan/roadmap/) for the dependency view. The reasoning lives in [docs/plan/](docs/plan) and [docs/ui/](docs/ui).
 
 ## Design principles
 
