@@ -1,0 +1,102 @@
+---
+# .clang-format for ja2-pecel-bakwan.
+#
+# This file describes the style the tree *actually* has today; it is not a
+# reformat in disguise. It is applied to *changed lines only* in CI with
+# git-clang-format, so it never rewrites untouched code. A whole-tree reformat
+# is deliberately NOT part of the change that introduced this file.
+#
+# BIG CAVEAT, measured, not assumed: the tree was never clang-formatted and it
+# carries (at least) two hand styles that no single config can describe. The
+# legacy JA2 sources (`Soldier_Control.cc`, most of `src/game/Tactical` and
+# `src/game/Strategic`) use `foo( x )`, `T *p`, `if (c)` on its own line and
+# tab-aligned `#define`s; the fork's own newer code (`src/game/Automation`,
+# `src/nativeui`, `src/game/Content`, `src/game/Equipment`) uses `foo(x)`,
+# `T* p` / `T& r`, one-line short bodies, and is itself split between an
+# attached flat `namespace n {` and an Allman indented `namespace n\n{`.
+# The settings below therefore describe the *dominant* choices and take the
+# value that produced the least whole-tree churn where the two styles fight.
+# The churn is reported in the PR that added this file; it is large, which is
+# exactly why CI checks changed lines only.
+Language: Cpp
+
+# LLVM is the base: where this fork has no strong habit, ordinary modern C++
+# formatting is what the new code already looks like.
+BasedOnStyle: LLVM
+
+# --- Indentation: tabs, and .editorconfig already says so -------------------
+# .editorconfig declares `indent_style = tab` for *.{cc,h,lua} and predates this
+# file, so spaces would contradict a committed file. 79.7% of lines are
+# tab-led. Tabs for indentation, spaces for alignment, a tab is 4 wide.
+UseTab: ForIndentation
+IndentWidth: 4
+TabWidth: 4
+ContinuationIndentWidth: 4
+
+# --- Line width -------------------------------------------------------------
+# Measured with tabs at width 4 over code lines: p95 = 99, p99 = 137, only
+# 1.95% of lines exceed 120. 120 trims the tail without touching the body.
+ColumnLimit: 120
+
+# --- Braces: Allman ---------------------------------------------------------
+# 42,521 opening braces sit alone on their own line against 1,305 attached
+# function braces. Unambiguous; the attached `namespace n {` and
+# `class Foo {` in a few newer files are the minority.
+BreakBeforeBraces: Allman
+
+# --- Namespaces -------------------------------------------------------------
+# The legacy sources do not use namespaces at all; the fork's newer code is
+# split, and the flat attached form (`namespace nui {` with unindented
+# contents) is the more common of the two. Indenting namespace contents
+# reformats more lines than it saves, so follow the flat form.
+NamespaceIndentation: None
+
+# --- Pointers and references: left ------------------------------------------
+# `T* p`, `T& r`, `char const*`. This is *the opposite* of the recovered Step 1
+# comment, whose regex only matched a single `*` and so missed `char** argv`.
+# Re-counted across src/ with the full patterns: stars 9,177 left vs 2,293
+# right; references 5,450 left vs 284 right. Left it is.
+PointerAlignment: Left
+
+# --- Short bodies -----------------------------------------------------------
+# The tree leans on short one-line bodies far more than the LLVM base allows:
+# the counts are ~6,500 braceless `if (c) stmt;`, ~2,800 braceless short
+# returns, ~2,600 one-line `{ }` and ~1,500 one-line `{ stmt; }`. Tuned against
+# those counts, not copied from a preset:
+#   - ifs without an else may stay on one line (`WithoutElse`);
+#   - loops may stay on one line;
+#   - blocks may not (forcing them on to one line churns more than it saves,
+#     because the legacy code writes its bodies over several lines);
+#   - only in-class functions stay on one line: the tree's free one-liners are
+#     outnumbered by legacy multi-line bodies that must not be collapsed.
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: true
+AllowShortBlocksOnASingleLine: Never
+AllowShortFunctionsOnASingleLine: InlineOnly
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortEnumsOnASingleLine: false
+
+# --- Spacing ----------------------------------------------------------------
+# No spaces inside call/control parentheses or empty braces. The legacy
+# `foo( x )` style exists but is the minority by line count.
+SpaceBeforeParens: ControlStatements
+SpaceInEmptyBlock: false
+# `{ x, y }` with spaces, which is what the newer tables and initializer lists
+# already use.
+Cpp11BracedListStyle: false
+
+# --- Alignment --------------------------------------------------------------
+# Off. Both the fork's newest code and the legacy sources align things by hand
+# in ways clang-format's greedy grouping reproduces badly; every one of these
+# set to `Consecutive` measured *more* whole-tree churn than `None`.
+AlignConsecutiveAssignments: None
+AlignConsecutiveDeclarations: None
+AlignConsecutiveMacros: None
+
+# --- Includes and comments --------------------------------------------------
+# The tree has its own include order and its own `//comment` spacing; both are
+# left exactly as written. `} // namespace n` is not appended.
+SortIncludes: Never
+ReflowComments: false
+FixNamespaceComments: false
+...
