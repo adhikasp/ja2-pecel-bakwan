@@ -121,6 +121,13 @@ if [[ "$RUN_TESTS" == "true" ]]; then
   # The developer tooling tests (dev.py worktrees / shots): Python and git only,
   # no build and no game data, and they touch nothing in this checkout.
   ctest -L '^tooling$' --output-on-failure
+  # Diff-scoped C++ lint: clang-format on the changed lines, clang-tidy on the
+  # changed translation units. Never whole-tree — see .ci/ci-lint-cpp.sh for
+  # the measured reason. Runs where the tools are present and the change has a
+  # base to diff against; skips itself otherwise.
+  if [[ "$CI_TARGET" == "linux" ]]; then
+    "$(dirname "${BASH_SOURCE[0]}")/ci-lint-cpp.sh" .. .
+  fi
 fi
 
 if [[ "$CI_TARGET" == "linux" ]]; then

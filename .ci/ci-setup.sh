@@ -39,6 +39,12 @@ if [[ "$CI_TARGET" == "linux" ]]; then
     # sccache for compilation caching
     linux-install-sccache
 
+    # clang-format / clang-tidy for the diff-scoped C++ lint in ci-build.sh
+    # (.ci/ci-lint-cpp.sh). The distribution package is older than the
+    # clang-format 22 the tree is developed with on MSYS2; the .clang-format
+    # settings are stable across those releases.
+    linux-install-via-apt-get clang-format clang-tidy
+
     # Rust via Rustup
     unix-install-rustup
 
