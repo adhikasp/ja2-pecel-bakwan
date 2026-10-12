@@ -101,7 +101,14 @@ for line in diff.splitlines():
         if current == "/dev/null":
             current = None
             continue
-        filter_entries.append({"name": os.path.abspath(current), "lines": []})
+        # clang-tidy matches the filter name against the path it prints in a
+        # diagnostic, which uses the host's separator. On Windows that is a
+        # backslash; `git diff` and the POSIX hosts CI runs on use a forward
+        # slash, so only the drive-letter form needs rewriting.
+        name = os.path.abspath(current)
+        if len(name) > 1 and name[1] == ":":
+            name = name.replace("/", "\\")
+        filter_entries.append({"name": name, "lines": []})
     elif line.startswith("@@") and filter_entries:
         # @@ -a,b +c,d @@  ->  new lines c .. c+d-1
         try:
