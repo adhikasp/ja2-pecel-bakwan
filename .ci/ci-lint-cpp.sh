@@ -18,6 +18,11 @@ set -e
 
 repo="${1:-.}"
 build="${2:-ci-build}"
+# Resolve both before changing directory, so a relative build dir (the CI
+# caller passes `.. .` from inside the build directory) still points at
+# compile_commands.json.
+repo="$(cd "$repo" && pwd)"
+build="$(cd "$build" && pwd)"
 cd "$repo"
 
 # --- what changed, relative to what -----------------------------------------

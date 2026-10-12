@@ -126,7 +126,7 @@ if [[ "$RUN_TESTS" == "true" ]]; then
   # the measured reason. Runs where the tools are present and the change has a
   # base to diff against; skips itself otherwise.
   if [[ "$CI_TARGET" == "linux" ]]; then
-    "$(dirname "${BASH_SOURCE[0]}")/ci-lint-cpp.sh" .. .
+    "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/ci-lint-cpp.sh" .. .
   fi
 fi
 
