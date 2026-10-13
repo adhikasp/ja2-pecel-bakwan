@@ -58,6 +58,36 @@ ja2.click{id = "msgbox.yes"}
 ja2.waitScreen("MAP_SCREEN")
 ja2.expect(#ja2.saves() == 2, "still two saves")
 
+-- A2 / §5: the version/mods warning as the game asks it (docs/ui/saveload.md section 5). ja2.saveVersion reads
+-- the version stored in the save's header, so the test restores exactly what it found instead of hardcoding
+-- one; rewinding it one step makes the real SaveLoadCompatibility comparison fire (bit 1). Bit 2 (a different
+-- mod set) is the same box, the same widgets and the same walk - only its bullet differs - and staging it needs
+-- a fake-mod session, so it stays a note here.
+local old = ja2.saveVersion(first)
+ja2.expect(old and old > 0, "ja2.saveVersion reads the stored version (" .. tostring(old) .. ")")
+ja2.debug("saveversion", first, old - 1)
+ja2.click{text = "Options", exact = true}
+ja2.waitScreen("OPTIONS_SCREEN")
+ja2.click{id = "options.load"}
+ja2.waitScreen("SAVE_LOAD_SCREEN")
+local patched
+for _, r in ipairs(vm().rows) do if r.file == first then patched = r.index end end
+ja2.expect(patched, "the older-version save is still listed")
+ja2.click{id = "saveload.save[" .. math.floor(patched) .. "]"}
+ja2.click{id = "saveload.confirm"}
+ja2.waitScreen("MSG_BOX_SCREEN")
+ja2.expect(ja2.state().messageBoxText:find("Attention", 1, true), "the saved-game issue box")
+ja2.expect(ja2.state().messageBoxText:find("version in the saved game file", 1, true), "with the version bullet")
+shots.take("load_compat_warning.png", true)
+ja2.click{id = "msgbox.no"}
+ja2.waitScreen("SAVE_LOAD_SCREEN")
+ja2.debug("saveversion", first, old) -- restore before the real load below
+ja2.key("ESC")
+ja2.key("ESC")
+ja2.waitScreen("OPTIONS_SCREEN")
+ja2.click{id = "options.done"}
+ja2.waitScreen("MAP_SCREEN")
+
 -- load mode: sorting, filter, details
 ja2.click{text = "Options", exact = true}
 ja2.waitScreen("OPTIONS_SCREEN")

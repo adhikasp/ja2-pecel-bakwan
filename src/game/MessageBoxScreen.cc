@@ -127,6 +127,40 @@ static std::vector<NativeUI::MessageBoxButton> NativeButtons(MessageBoxFlags con
 }
 
 
+/** The legacy texts carry the coded-text markers U+00B1..U+00B5 (WordWrap.h). The native box shows plain
+ *  text, so NEWLINE becomes a real line break and the other markers are dropped, the same treatment
+ *  HelpScreen's CleanHelpText gives its records. */
+static std::string PlainMessageBoxText(ST::string const& str)
+{
+	std::string const in = str.to_std_string();
+	std::string out;
+	out.reserve(in.size());
+	for (size_t i = 0; i < in.size();)
+	{
+		unsigned char const c = static_cast<unsigned char>(in[i]);
+		if (c == 0xC2 && i + 1 < in.size() && static_cast<unsigned char>(in[i + 1]) >= 0xB1 && static_cast<unsigned char>(in[i + 1]) <= 0xB5)
+		{
+			bool const new_line = static_cast<unsigned char>(in[i + 1]) == 0xB1;
+			bool const new_color = static_cast<unsigned char>(in[i + 1]) == 0xB4;
+			i += 2;
+			if (new_color && i < in.size())
+			{
+				// NEWCOLOR is followed by a colour code point
+				unsigned char const d = static_cast<unsigned char>(in[i]);
+				i += d >= 0xF0 ? 4 : d >= 0xE0 ? 3 : d >= 0xC0 ? 2 : 1;
+			}
+			else if (new_line)
+			{
+				out += '\n';
+			}
+			continue;
+		}
+		out += in[i++];
+	}
+	return out;
+}
+
+
 /** DoMessageBox with the native UI: the same modal flow (MSG_BOX_SCREEN, pause, callback), drawn natively. */
 static void DoNativeMessageBox(MessageBoxStyleID const style, ST::string const& str, ScreenID const uiExitScreen,
 	MessageBoxFlags const usFlags, MSGBOX_CALLBACK const ReturnCallback)
@@ -155,7 +189,7 @@ static void DoNativeMessageBox(MessageBoxStyleID const style, ST::string const& 
 		FreeMouseCursor();
 	}
 
-	NativeUI::OpenMessageBox(str.to_std_string(), NativeButtons(usFlags), style == MSG_BOX_RED_ON_WHITE);
+	NativeUI::OpenMessageBox(PlainMessageBoxText(str), NativeButtons(usFlags), style == MSG_BOX_RED_ON_WHITE);
 
 	InterruptTime();
 	PauseGame();

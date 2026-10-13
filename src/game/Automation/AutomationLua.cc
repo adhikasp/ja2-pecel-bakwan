@@ -38,6 +38,7 @@
 #include "WorldDef.h"
 #include "Laptop.h"
 #include "LaptopSave.h"
+#include "SaveLoadGame.h"
 #include "Logger.h"
 #include "MessageBoxScreen.h"
 #include "Overhead.h"
@@ -1165,6 +1166,14 @@ namespace
 					DoMessageBox(MSG_BOX_BASIC_STYLE, ST::string(a && a->is<std::string>() ? a->as<std::string>() : "Debug message box"),
 						guiCurrentScreen, flags, [](MessageBoxReturnValue r) { g_lastMessageBoxResult = int(r); });
 				}
+				else if (what == "saveversion")
+				{
+					// Rewrite a save's stored version in place, so a tour can walk the real version
+					// warning (ja2.saveVersion reads it back). A test aid: nothing else changes.
+					if (!a || !a->is<std::string>()) throw std::runtime_error("ja2.debug(\"saveversion\", name, version)");
+					if (!b || !b->is<int>()) throw std::runtime_error("ja2.debug(\"saveversion\", name, version)");
+					SetSaveGameStoredVersion(a->as<std::string>(), static_cast<UINT32>(b->as<int>()));
+				}
 				else if (what == "loadscreen")
 				{
 					// A loading screen with its progress bar half full (a = loading screen id).
@@ -1847,6 +1856,11 @@ namespace
 		});
 		ja2.set_function("save", [](std::string const& name, sol::optional<std::string> desc) {
 			Guarded([&] { Session::Save(name, desc.value_or(name)); });
+		});
+		// ja2.saveVersion(name): the version stored in a save's header (ja2.debug("saveversion") rewrites
+		// it). A script reads it before rewinding, so it restores the exact value it found.
+		ja2.set_function("saveVersion", [](std::string const& name) {
+			return Guarded([&] { return SaveGameStoredVersion(name); });
 		});
 		ja2.set_function("quit", [] { Session::Quit(); });
 
