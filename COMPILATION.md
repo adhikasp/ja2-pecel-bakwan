@@ -372,6 +372,12 @@ to build 32-bit:
 pacman -S mingw-w64-i686-toolchain mingw-w64-i686-rust mingw-w64-i686-cmake mingw-w64-i686-SDL3 mingw-w64-i686-fltk
 ```
 
+`clang-tidy` comes from `mingw-w64-x86_64-clang-tools-extra` (157 MB) and is
+what `.ci/ci-lint-cpp.sh` runs on a pull request's changed lines, alongside
+`clang-format` (which ships with the `mingw-w64-x86_64-clang` package that is
+already installed). Add it with `pacman -S mingw-w64-x86_64-clang-tools-extra`.
+Neither is needed to build.
+
 Get ja2-pecel-bakwan, cd into it, and build the package:
 
 ```sh

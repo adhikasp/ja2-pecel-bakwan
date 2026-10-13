@@ -140,6 +140,11 @@ jobs:
 
     - name: Checkout
       uses: actions/checkout@v5
+      with:
+        # The diff-scoped C++ lint (.ci/ci-lint-cpp.sh) diffs against the pull
+        # request's base branch, which needs the common ancestor in the clone.
+        # A depth-1 checkout has neither.
+        fetch-depth: 0
 
     # The -vN suffix tracks the sccache version installed by ci-setup.sh: bump it
     # whenever that pin changes so a run never restores a cache written by a
@@ -207,6 +212,9 @@ jobs:
         CI_OS: ${{ matrix.cfg.os }}
         CI_TARGET: ${{ matrix.cfg.target }}
         CI_REF: ${{ github.ref }}
+        # The base branch of a pull request, for the diff-scoped C++ lint; empty
+        # on a push, where ci-lint-cpp.sh falls back to origin/master.
+        CI_BASE_REF: ${{ github.base_ref }}
         GITHUB_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     # Saved after the build so the entries it just produced are included, and

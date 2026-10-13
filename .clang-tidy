@@ -1,0 +1,115 @@
+---
+# .clang-tidy for ja2-pecel-bakwan — a *small, high-value* check list, not a
+# grab-bag. It runs in CI on the pull-request diff only (clang-tidy-diff.py),
+# because a whole-tree run over ~587 translation units takes ~30 minutes and
+# is far too noisy to be a gate (both numbers are in the PR that added this
+# file). Whole-tree cost is why this is diff-scoped; the tree itself is not
+# tidy-clean and never claimed to be.
+#
+# Each check below is here because it catches a class of defect this tree can
+# actually have. Nothing is enabled "because it comes with clang-tidy".
+#
+# FormatStyle: file  -> --fix, if ever run, applies .clang-format.
+FormatStyle: file
+UseColor: false
+SystemHeaders: false
+
+# Start from nothing. clang-tidy's default profile drags in the whole
+# clang-analyzer-* suite (slow and noisy) and the full bugprone-*,
+# performance-* and modernize-* families; `-*` then opt in to exactly the
+# checks below. This also means compiler diagnostics (clang-diagnostic-*) are
+# not doubled into the tidy output.
+Checks: '-*,
+  bugprone-use-after-move,
+  bugprone-unchecked-optional-access,
+  bugprone-sizeof-expression,
+  bugprone-string-constructor,
+  bugprone-macro-repeated-side-effects,
+  bugprone-move-forwarding-reference,
+  performance-move-const-arg,
+  performance-for-range-copy,
+  performance-noexcept-move-constructor,
+  performance-unnecessary-copy-initialization,
+  performance-unnecessary-value-param,
+  modernize-use-nullptr,
+  modernize-use-override,
+  modernize-use-bool-literals,
+  modernize-use-equals-default'
+
+# Justification, check by check:
+#
+#   bugprone-use-after-move          The fork moves std::string/std::unique_ptr
+#                                    all over the automation and UI layers; a
+#                                    use after std::move is a real crash or a
+#                                    silent empty value.
+#   bugprone-unchecked-optional-access
+#                                    std::optional is used for config and
+#                                    content lookups; dereferencing one without
+#                                    a check crashes. Found real unguarded
+#                                    `->` on optionals in the legacy laptop
+#                                    screens.
+#   bugprone-sizeof-expression       The classic `sizeof(ptr)` / `sizeof(expr)`
+#                                    mistakes; near-zero false positives.
+#   bugprone-string-constructor      Off-by-one and `std::string(nullptr)`
+#                                    constructions.
+#   bugprone-macro-repeated-side-effects
+#                                    Macros that evaluate an argument twice.
+#   bugprone-move-forwarding-reference
+#                                    `std::forward<T>(x)` on a non-forwarding
+#                                    reference, which silently moves.
+#   performance-move-const-arg       `std::move` on a const value does nothing
+#                                    and hides the copy.
+#   performance-for-range-copy       Copies in range-for; the fix is `auto&`.
+#   performance-noexcept-move-constructor
+#                                    A move constructor that can throw stops
+#                                    std::vector from moving; cheap to enforce.
+#   performance-unnecessary-copy-initialization
+#                                    A copy where a reference would do.
+#   performance-unnecessary-value-param
+#                                    Non-trivial parameters copied per call
+#                                    (std::function, std::string); the UI layer
+#                                    passes std::function callbacks by value
+#                                    often enough that this pays for itself.
+#   modernize-use-nullptr            NULL/0 as a pointer; the new code is all
+#                                    nullptr and the legacy uses NULL.
+#   modernize-use-override           Missing `override`, which lets a renamed
+#                                    virtual silently stop overriding.
+#   modernize-use-bool-literals      `(bool)0` / `(bool)1`.
+#   modernize-use-equals-default     `{}` bodies that should be `= default`.
+#
+# Deliberately NOT enabled:
+#   bugprone-narrowing-conversions        309 findings on a 28-TU probe, mostly
+#                                         intentional int->float in the legacy
+#                                         code; too noisy to gate on.
+#   bugprone-implicit-widening-of-multiplication-result
+#                                         would be reasonable, but the above
+#                                         already fills the "handful".
+#   clang-analyzer-*, misc-*, readability-*, cppcoreguidelines-*
+#                                         large, opinionated, or slow; the
+#                                         point is a gate that stays green on
+#                                         new code, not a second style guide.
+
+# Only headers that belong to this project are reported. A non-matching header
+# is treated as external and produces no findings, which is how the vendored
+# and generated headers stay quiet. clang-tidy uses LLVM's regex engine, which
+# has no negation, so this matches the project's own source directories rather
+# than trying to subtract the dependencies.
+#
+# Where the vendored headers actually live (include paths from the build's
+# compile_commands.json; they are fetched into the build dir, not committed
+# under dependencies/):
+#   sol2            _bin/lib-sol2/src/include
+#   lua             _bin/lib-lua/src/src
+#   miniaudio       _bin/lib-miniaudio/src
+#   RmlUi           _bin/_deps/rmlui-src/Include
+#   gtest           _bin/lib-gtest/src/googletest{,/include}
+#   string_theory   _bin/lib-string_theory/include
+#   magic_enum      _bin/dependencies/lib-magic_enum/.../get-magic_enum/include
+# None of these contains `src/<externalized|game|nativeui|sgp|spike>/`, so the
+# pattern below excludes all of them (and every system header) by construction.
+HeaderFilterRegex: '[/\\]src[/\\](externalized|game|nativeui|sgp|spike)[/\\]'
+
+# A finding is a failure. CI runs the diff through clang-tidy-diff.py, which
+# already exits non-zero on a remaining finding; this makes a direct
+# `clang-tidy` run behave the same way.
+WarningsAsErrors: '*'
