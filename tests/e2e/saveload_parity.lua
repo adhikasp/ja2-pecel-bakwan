@@ -120,3 +120,40 @@ shots.take("mainmenu_lastsave.png", true)
 ja2.key("c")
 ja2.waitScreen("MAP_SCREEN", 120000)
 ja2.expect(ja2.state().sector == "A9", "Continue loaded the game")
+
+-- A2 / I8: a Dead is Dead new game asks for the save name first (docs/ui/newgame.md A2, saveload.md section 4).
+-- Back to the main menu (the block above quits the same way), then through the whole chain: the mode's
+-- warning, the difficulty confirmation, the "taken to the save screen" box, and the name in the new-save row.
+campaign.dismissHelp()
+ja2.key("o")
+ja2.waitScreen("OPTIONS_SCREEN")
+ja2.click{id = "options.quit"}
+ja2.waitScreen("MSG_BOX_SCREEN")
+ja2.click{id = "msgbox.yes"}
+ja2.waitScreen("MAINMENU_SCREEN")
+ja2.waitIdle()
+ja2.click("New Game")
+ja2.waitScreen("GAME_INIT_OPTIONS_SCREEN")
+ja2.click{id = "newgame.saving[2]"}
+ja2.expect(ja2.viewModel("newgame").saving == 2, "Dead is Dead is chosen")
+ja2.click{id = "newgame.start"}
+ja2.waitScreen("MSG_BOX_SCREEN")
+ja2.expect(ja2.state().messageBoxText:find("DEAD IS DEAD", 1, true), "the Dead is Dead warning")
+ja2.click{id = "msgbox.yes"}
+ja2.waitScreen("MSG_BOX_SCREEN") -- the difficulty confirmation
+ja2.click{id = "msgbox.yes"}
+ja2.waitScreen("MSG_BOX_SCREEN")
+ja2.expect(ja2.state().messageBoxText:find("save screen", 1, true), "then the save-name prompt")
+ja2.click{id = "msgbox.ok"}
+ja2.waitScreen("SAVE_LOAD_SCREEN")
+ja2.expect(vm().save_mode, "the save screen asks for the name")
+ja2.click{id = "saveload.new.name"}
+ja2.type("Dead is Dead run")
+shots.take("save_did_name.png", true)
+-- Naming alone writes nothing: the first real Dead is Dead save fires later (DoDeadIsDeadSaveIfNecessary,
+-- at turn boundaries and on leaving screens), so this is counted before any time compression.
+local before = #ja2.saves()
+ja2.key("enter")
+ja2.waitScreen("LAPTOP_SCREEN", 120000)
+ja2.expect(ja2.viewModel("options").saving == "Dead is Dead", "the campaign is Dead is Dead")
+ja2.expect(#ja2.saves() == before, "naming alone wrote no save file")
