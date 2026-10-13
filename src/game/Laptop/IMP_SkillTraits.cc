@@ -209,7 +209,7 @@ void ExitIMPSkillTrait( void )
 	for(iCnt = 0; iCnt < IMP_SKILL_TRAITS__NUMBER_SKILLS; iCnt++)
 	{
 		//if there is a button allocated
-		if (giIMPSkillTraitAnswerButton[iCnt] != NULL)
+		if (giIMPSkillTraitAnswerButton[iCnt] != nullptr)
 		{
 			RemoveButton(giIMPSkillTraitAnswerButton[ iCnt ] );
 			UnloadButtonImage(giIMPSkillTraitAnswerButtonImage[ iCnt ] );

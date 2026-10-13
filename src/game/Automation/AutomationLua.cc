@@ -1179,7 +1179,7 @@ namespace
 					// a tour looks at it (tests/e2e/manual/transition_shots.lua).
 					double const t = a ? a->as<double>() : 0.5;
 					if (t < 0.0 || t > 1.0) throw std::runtime_error("ja2.debug(\"transition\", t): progress must be 0..1");
-					BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL); // the frame it starts from
+					BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr); // the frame it starts from
 					DrawSectorLoadTransitionFrame(t);
 				}
 				else if (what == "prebattle")

@@ -146,7 +146,7 @@ FACETYPE& InitFace(const ProfileID id, SOLDIERTYPE* const s, const UINT32 uiInit
 	f.uiFlags               = uiInitFlags;
 	f.fAllocated            = TRUE;
 	f.fDisabled             = TRUE; // default to off!
-	f.video_overlay         = NULL;
+	f.video_overlay         = nullptr;
 	f.soldier               = s;
 	f.ubCharacterNum        = id;
 	f.sEyeFrame             = 0;
@@ -217,13 +217,13 @@ FACETYPE& InitFace(const ProfileID id, SOLDIERTYPE* const s, const UINT32 uiInit
 void DeleteSoldierFace( SOLDIERTYPE *pSoldier )
 {
 	DeleteFace(pSoldier->face);
-	pSoldier->face = NULL;
+	pSoldier->face = nullptr;
 }
 
 
 void DeleteFace(FACETYPE* const pFace)
 {
-	CHECKV(pFace != NULL);
+	CHECKV(pFace != nullptr);
 
 	// Check for a valid slot!
 	CHECKV(pFace->fAllocated);
@@ -378,7 +378,7 @@ void SetAutoFaceInActive(FACETYPE& f)
 	if (f.uiFlags & FACE_MAKEACTIVE_ONCE_DONE)
 	{
 		SOLDIERTYPE const* const pSoldier = f.soldier;
-		if (pSoldier != NULL)
+		if (pSoldier != nullptr)
 		{
 			// IF we are in tactical
 			if ( pSoldier->bAssignment == iCurrentTacticalSquad && guiCurrentScreen == GAME_SCREEN )
@@ -438,7 +438,7 @@ static void BlinkAutoFace(FACETYPE& f)
 
 	// CHECK IF BUDDY IS DEAD, UNCONSCIOUS, ASLEEP, OR POW!
 	SOLDIERTYPE const* const s = f.soldier;
-	if (s != NULL && (
+	if (s != nullptr && (
 		s->fMercAsleep ||
 		s->bLife < OKLIFE ||
 		s->bAssignment == ASSIGNMENT_POW))
@@ -530,7 +530,7 @@ static void HandleFaceHilights(FACETYPE const& f, SGPVSurface* const uiBuffer, c
 		else if (f.uiFlags & FACE_SHOW_MOVING_HILIGHT)
 		{
 			SOLDIERTYPE const* const s = f.soldier;
-			if (s != NULL && s->bLife >= OKLIFE)
+			if (s != nullptr && s->bLife >= OKLIFE)
 			{
 				const UINT32 color = (s->bStealthMode ? FROMRGB(158, 158, 12) : FROMRGB(8, 12, 118));
 				DrawFaceRect(f, uiBuffer, sFaceX, sFaceY, color);
@@ -653,7 +653,7 @@ static void HandleTalkingAutoFace(FACETYPE& f)
 static void SetFaceShade(FACETYPE const& f, BOOLEAN const fExternBlit)
 {
 	SOLDIERTYPE const* const s = f.soldier;
-	if (s == NULL) return;
+	if (s == nullptr) return;
 
 	UINT32 shade;
 	if (!fExternBlit && // ATE: Don't shade for damage if blitting extern face
@@ -723,7 +723,7 @@ static void HandleRenderFaceAdjustments(FACETYPE& f, BOOLEAN const fDisplayBuffe
 
 	// BLIT HATCH
 	SOLDIERTYPE* const s = f.soldier;
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		if (s->bLife < CONSCIOUSNESS || s->fDeadPanel)
 		{
@@ -895,7 +895,7 @@ static void HandleRenderFaceAdjustments(FACETYPE& f, BOOLEAN const fDisplayBuffe
 						break;
 
 					case TRAIN_TEAMMATE:
-						sPtsAvailable = GetBonusTrainingPtsDueToInstructor(s, NULL , s->bTrainStat, fAtGunRange, &usMaximumPts);
+						sPtsAvailable = GetBonusTrainingPtsDueToInstructor(s, nullptr , s->bTrainStat, fAtGunRange, &usMaximumPts);
 						break;
 				}
 				fShowNumber = TRUE;
@@ -919,7 +919,7 @@ static void HandleRenderFaceAdjustments(FACETYPE& f, BOOLEAN const fDisplayBuffe
 		}
 
 		// Check for being serviced...
-		if (s->service_partner != NULL) sIconIndex = 1; // Doctor
+		if (s->service_partner != nullptr) sIconIndex = 1; // Doctor
 		if (s->ubServiceCount  != 0)    sIconIndex = 2; // Patient
 
 		if (sIconIndex != -1)
@@ -1080,7 +1080,7 @@ void HandleAutoFaces(void)
 		if (f.fDisabled) continue;
 
 		SOLDIERTYPE* const s = f.soldier;
-		if (s != NULL)
+		if (s != nullptr)
 		{
 			BOOLEAN render = FALSE;
 
@@ -1129,7 +1129,7 @@ void HandleAutoFaces(void)
 				render              = TRUE;
 			}
 
-			if (f.fOldCompatibleItems != f.fCompatibleItems || gfInItemPickupMenu || gpItemPointer != NULL)
+			if (f.fOldCompatibleItems != f.fCompatibleItems || gfInItemPickupMenu || gpItemPointer != nullptr)
 			{
 				f.fOldCompatibleItems = f.fCompatibleItems;
 				render                = TRUE;
@@ -1251,7 +1251,7 @@ void ExternSetFaceTalking(FACETYPE& f, UINT32 const sound_id)
 
 void InternalShutupaYoFace(FACETYPE* const pFace, const BOOLEAN fForce)
 {
-	CHECKV(pFace != NULL);
+	CHECKV(pFace != nullptr);
 
 	if ( pFace->fTalking )
 	{

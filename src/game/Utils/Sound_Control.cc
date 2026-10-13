@@ -47,10 +47,10 @@ static char const* const szSoundEffects[NUM_SAMPLES] =
 	SOUNDSDIR "/picking lock.wav",                              // 28
 	SOUNDSDIR "/garage door open.wav",                          // 29
 	SOUNDSDIR "/garage door close.wav",                         // 30
-	NULL,                                                       // 31
-	NULL,                                                       // 32
-	NULL,                                                       // 33
-	NULL,                                                       // 34
+	nullptr,                                                       // 31
+	nullptr,                                                       // 32
+	nullptr,                                                       // 33
+	nullptr,                                                       // 34
 	SOUNDSDIR "/curtains door open.wav",                        // 35
 	SOUNDSDIR "/curtains door close.wav",                       // 36
 	SOUNDSDIR "/metal door open.wav",                           // 37
@@ -127,51 +127,51 @@ static char const* const szSoundEffects[NUM_SAMPLES] =
 	SOUNDSDIR "/weapons/rifle lnl.wav",                         // 108  RIFLE
 	SOUNDSDIR "/weapons/shotgun lnl.wav",                       // 109  SHOTGUN
 	SOUNDSDIR "/weapons/lmg lnl.wav",                           // 110  LMG
-	NULL,                                                       // 111
-	NULL,                                                       // 112
-	NULL,                                                       // 113
-	NULL,                                                       // 114
-	NULL,                                                       // 115
-	NULL,                                                       // 116
-	NULL,                                                       // 117
-	NULL,                                                       // 118
-	NULL,                                                       // 119
-	NULL,                                                       // 120
-	NULL,                                                       // 121
-	NULL,                                                       // 122
-	NULL,                                                       // 123
-	NULL,                                                       // 124
-	NULL,                                                       // 125
-	NULL,                                                       // 126
-	NULL,                                                       // 127
-	NULL,                                                       // 128
-	NULL,                                                       // 129
-	NULL,                                                       // 130
-	NULL,                                                       // 131
-	NULL,                                                       // 132
-	NULL,                                                       // 133
-	NULL,                                                       // 134
-	NULL,                                                       // 135
-	NULL,                                                       // 136
-	NULL,                                                       // 137
-	NULL,                                                       // 138
-	NULL,                                                       // 139
-	NULL,                                                       // 140
-	NULL,                                                       // 141
-	NULL,                                                       // 142
-	NULL,                                                       // 143
-	NULL,                                                       // 144
-	NULL,                                                       // 145
-	NULL,                                                       // 146
-	NULL,                                                       // 147
-	NULL,                                                       // 148
-	NULL,                                                       // 149
-	NULL,                                                       // 150
-	NULL,                                                       // 151
-	NULL,                                                       // 152
-	NULL,                                                       // 153
-	NULL,                                                       // 154
-	NULL,                                                       // 155
+	nullptr,                                                       // 111
+	nullptr,                                                       // 112
+	nullptr,                                                       // 113
+	nullptr,                                                       // 114
+	nullptr,                                                       // 115
+	nullptr,                                                       // 116
+	nullptr,                                                       // 117
+	nullptr,                                                       // 118
+	nullptr,                                                       // 119
+	nullptr,                                                       // 120
+	nullptr,                                                       // 121
+	nullptr,                                                       // 122
+	nullptr,                                                       // 123
+	nullptr,                                                       // 124
+	nullptr,                                                       // 125
+	nullptr,                                                       // 126
+	nullptr,                                                       // 127
+	nullptr,                                                       // 128
+	nullptr,                                                       // 129
+	nullptr,                                                       // 130
+	nullptr,                                                       // 131
+	nullptr,                                                       // 132
+	nullptr,                                                       // 133
+	nullptr,                                                       // 134
+	nullptr,                                                       // 135
+	nullptr,                                                       // 136
+	nullptr,                                                       // 137
+	nullptr,                                                       // 138
+	nullptr,                                                       // 139
+	nullptr,                                                       // 140
+	nullptr,                                                       // 141
+	nullptr,                                                       // 142
+	nullptr,                                                       // 143
+	nullptr,                                                       // 144
+	nullptr,                                                       // 145
+	nullptr,                                                       // 146
+	nullptr,                                                       // 147
+	nullptr,                                                       // 148
+	nullptr,                                                       // 149
+	nullptr,                                                       // 150
+	nullptr,                                                       // 151
+	nullptr,                                                       // 152
+	nullptr,                                                       // 153
+	nullptr,                                                       // 154
+	nullptr,                                                       // 155
 	SOUNDSDIR "/weapons/silencer 02.wav",                       // 156
 	SOUNDSDIR "/weapons/silencer 03.wav",                       // 157
 	SOUNDSDIR "/swoosh 01.wav",                                 // 158
@@ -195,7 +195,7 @@ static char const* const szSoundEffects[NUM_SAMPLES] =
 	SOUNDSDIR "/baby dying 01.wav",                             // 176
 	SOUNDSDIR "/baby dragging 01.wav",                          // 177
 	SOUNDSDIR "/baby shriek 01.wav",                            // 178
-	NULL,                                                       // 179
+	nullptr,                                                       // 179
 	SOUNDSDIR "/larvae movement 01.wav",                        // 180
 	SOUNDSDIR "/larvae rupture 01.wav",                         // 181
 	SOUNDSDIR "/queen shriek 01.wav",                           // 182
@@ -232,15 +232,15 @@ static char const* const szSoundEffects[NUM_SAMPLES] =
 	SOUNDSDIR "/big switch 03 out.wav",                         // 213
 	SOUNDSDIR "/alarm.wav",                                     // 214
 	SOUNDSDIR "/fight bell.wav",                                // 215
-	NULL,                                                       // 216
+	nullptr,                                                       // 216
 	SOUNDSDIR "/attachment.wav",                                // 217
 	SOUNDSDIR "/ceramic armor insert.wav",                      // 218
 	SOUNDSDIR "/detonator beep.wav",                            // 219
 	SOUNDSDIR "/grab roof.wav",                                 // 220
 	SOUNDSDIR "/land on roof.wav",                              // 221
-	NULL,                                                       // 222
-	NULL,                                                       // 223
-	NULL,                                                       // 224
+	nullptr,                                                       // 222
+	nullptr,                                                       // 223
+	nullptr,                                                       // 224
 	SOUNDSDIR "/fridge door open.wav",                          // 225
 	SOUNDSDIR "/fridge door close.wav",                         // 226
 	SOUNDSDIR "/fire 03 loop.wav",                              // 227
@@ -343,10 +343,10 @@ UINT32 PlayJA2Sample(SoundID const usNum, UINT32 const ubVolume, UINT32 const ub
 
 UINT32 PlayJA2Sample(const char *sample, UINT32 const ubVolume, UINT32 const ubLoops, UINT32 const uiPan)
 {
-	if((sample != NULL) && strcmp(sample, ""))
+	if((sample != nullptr) && strcmp(sample, ""))
 	{
 		UINT32 const vol = CalculateSoundEffectsVolume(ubVolume);
-		return SoundPlay(sample, vol, uiPan, ubLoops, NULL, NULL);
+		return SoundPlay(sample, vol, uiPan, ubLoops, nullptr, nullptr);
 	}
 	return SOUND_ERROR;
 }
@@ -356,7 +356,7 @@ UINT32 PlayJA2SampleFromFile(char const* const szFileName, UINT32 const ubVolume
 {
 	// does the same thing as PlayJA2Sound, but one only has to pass the filename, not the index of the sound array
 	UINT32 const vol = CalculateSoundEffectsVolume(ubVolume);
-	return SoundPlay(szFileName, vol, uiPan, ubLoops, NULL, NULL);
+	return SoundPlay(szFileName, vol, uiPan, ubLoops, nullptr, nullptr);
 }
 
 
@@ -364,14 +364,14 @@ UINT32 PlayJA2StreamingSampleFromFile(char const* const szFileName, UINT32 const
 {
 	// does the same thing as PlayJA2Sound, but one only has to pass the filename, not the index of the sound array
 	UINT32 const vol = CalculateSoundEffectsVolume(ubVolume);
-	return SoundPlay(szFileName, vol, uiPan, ubLoops, EndsCallback, NULL);
+	return SoundPlay(szFileName, vol, uiPan, ubLoops, EndsCallback, nullptr);
 }
 
 
 UINT32 PlayJA2Ambient(AmbientSoundID const usNum, UINT32 const ubVolume, UINT32 const ubLoops)
 {
 	UINT32 const vol = CalculateSoundEffectsVolume(ubVolume);
-	return SoundPlay(szAmbientEffects[usNum], vol, MIDDLEPAN, ubLoops, NULL, NULL);
+	return SoundPlay(szAmbientEffects[usNum], vol, MIDDLEPAN, ubLoops, nullptr, nullptr);
 }
 
 UINT32 PlayLocationJA2SampleFromFile(UINT16 const grid_no, char const* const filename, UINT32 const base_vol, UINT32 const loops)

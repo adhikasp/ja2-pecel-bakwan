@@ -104,7 +104,7 @@ const StrategicMapSecretModel* GetMapSecretBySectorID(UINT8 const ubSectorID)
 	{
 		if (s->sectorID == ubSectorID) return s;
 	}
-	return NULL;
+	return nullptr;
 }
 
 

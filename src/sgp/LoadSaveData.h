@@ -211,7 +211,7 @@ static inline void INJ_AUTO(DataWriter & D, auto const& S) { D.write(S); }
 #define EXTR_U32(S, D)    (D) = (S).readU32();
 #define EXTR_FLOAT(S, D)  (D) = (S).read<FLOAT>();
 #define EXTR_DOUBLE(S, D) (D) = (S).read<DOUBLE>();
-#define EXTR_PTR(S, D) (D) = NULL; (S).skip(4);
+#define EXTR_PTR(S, D) (D) = nullptr; (S).skip(4);
 #define EXTR_ENUM_U8(S, D, T)   (D) = static_cast<T>((S).readU8());
 #define EXTR_SKIP(S, Size) (S).skip((Size));
 #define EXTR_SKIP_I16(S)   (S).skip(2);

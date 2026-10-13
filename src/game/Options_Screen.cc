@@ -176,7 +176,7 @@ ScreenID OptionsScreenHandle()
 		RenderOptionsScreen();
 
 		//Blit the background to the save buffer
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 		InvalidateScreen();
 	}
 
@@ -698,7 +698,7 @@ void DoOptionsMessageBoxWithRect(const ST::string& str, ScreenID uiExitScreen, M
 
 static void DoOptionsMessageBox(const ST::string& str, ScreenID uiExitScreen, MessageBoxFlags usFlags, MSGBOX_CALLBACK ReturnCallback)
 {
-	DoOptionsMessageBoxWithRect(str, uiExitScreen, usFlags, ReturnCallback, NULL);
+	DoOptionsMessageBoxWithRect(str, uiExitScreen, usFlags, ReturnCallback, nullptr);
 }
 
 
@@ -774,7 +774,7 @@ static void HandleSliderBarMovementSounds(void)
 		guiSpeechSliderMoving = 0xffffffff;
 
 		if( !SoundIsPlaying( uiLastPlayingSpeechID ) )
-			uiLastPlayingSpeechID = PlayJA2GapSample(BATTLESNDSDIR "/m_cool.wav", HIGHVOLUME, 1, MIDDLEPAN, NULL);
+			uiLastPlayingSpeechID = PlayJA2GapSample(BATTLESNDSDIR "/m_cool.wav", HIGHVOLUME, 1, MIDDLEPAN, nullptr);
 	}
 	else
 		uiLastSpeechTime = GetJA2Clock();

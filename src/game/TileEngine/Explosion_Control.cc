@@ -80,7 +80,7 @@ static EXPLOSIONTYPE* GetFreeExplosion(void)
 	{
 		if (!e->fAllocated) return e;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -114,7 +114,7 @@ void InternalIgniteExplosion(SOLDIERTYPE* const owner, const INT16 sX, const INT
 	SLOGD("Incrementing Attack: Explosion gone off, Count now {}", gTacticalStatus.ubAttackBusyCount);
 
 	EXPLOSIONTYPE* const e = GetFreeExplosion();
-	if (e == NULL) {
+	if (e == nullptr) {
 		SLOGE("Could not get free explosion pointer in InternalIgniteExplosion");
 		return;
 	}
@@ -171,7 +171,7 @@ static void GenerateExplosionFromExplosionPointer(EXPLOSIONTYPE* pExplosion)
 		sZ = ROOF_LEVEL_HEIGHT;
 	}
 
-	pExplosion->light = NULL;
+	pExplosion->light = nullptr;
 
 	auto explosionAnimation = GCM->getExplosionAnimation(pExplosion->ubTypeID);
 
@@ -213,14 +213,14 @@ static void GenerateExplosionFromExplosionPointer(EXPLOSIONTYPE* pExplosion)
 	CreateAnimationTile( &AniParams );
 
 	//  set light source....
-	if (pExplosion->light == NULL)
+	if (pExplosion->light == nullptr)
 	{
 		// DO ONLY IF WE'RE AT A GOOD LEVEL
 		if ( ubAmbientLightLevel >= MIN_AMB_LEVEL_FOR_MERC_LIGHTS )
 		{
 			LIGHT_SPRITE* const l = LightSpriteCreate("L-R04.LHT");
 			pExplosion->light = l;
-			if (l != NULL)
+			if (l != nullptr)
 			{
 				LightSpritePower(l, TRUE);
 				LightSpritePosition(l, sX / CELL_X_SIZE, sY / CELL_Y_SIZE);
@@ -250,7 +250,7 @@ void RemoveExplosionData(EXPLOSIONTYPE* const e)
 	Assert(e->fAllocated);
 
 	e->fAllocated = FALSE;
-	if (e->light != NULL) LightSpriteDestroy(e->light);
+	if (e->light != nullptr) LightSpriteDestroy(e->light);
 }
 
 
@@ -366,7 +366,7 @@ static bool ExplosiveDamageStructureAtGridNo(STRUCTURE* const pCurrent, STRUCTUR
 		// Damage structure!
 		INT16 const sX = CenterX(grid_no);
 		INT16 const sY = CenterY(grid_no);
-		INT8 bDamageReturnVal = DamageStructure(pCurrent, wound_amt, STRUCTURE_DAMAGE_EXPLOSION, grid_no, sX, sY, NULL);
+		INT8 bDamageReturnVal = DamageStructure(pCurrent, wound_amt, STRUCTURE_DAMAGE_EXPLOSION, grid_no, sX, sY, nullptr);
 		if (bDamageReturnVal == STRUCTURE_NOT_DAMAGED) return true;
 
 		BOOLEAN fDestroyed = (bDamageReturnVal == STRUCTURE_DESTROYED);
@@ -614,7 +614,7 @@ static void ExplosiveDamageGridNo(const INT16 sGridNo, const INT16 sWoundAmt, co
 
 	// This code gets a little hairy because
 	// (1) we might need to destroy the currently-examined structure
-	while (pCurrent != NULL)
+	while (pCurrent != nullptr)
 	{
 		// ATE: These are for the chacks below for multi-structs....
 		STRUCTURE * const pBaseStructure = FindBaseStructure(pCurrent);
@@ -735,7 +735,7 @@ static BOOLEAN DamageSoldierFromBlast(SOLDIERTYPE* const pSoldier, SOLDIERTYPE* 
 
 	pSoldier->ubMiscSoldierFlags |= SOLDIER_MISC_HURT_BY_EXPLOSION;
 
-	if (owner != NULL && owner->bTeam == OUR_TEAM && pSoldier->bTeam != OUR_TEAM)
+	if (owner != nullptr && owner->bTeam == OUR_TEAM && pSoldier->bTeam != OUR_TEAM)
 	{
 		ProcessImplicationsOfPCAttack(owner, pSoldier, REASON_EXPLOSION);
 	}
@@ -841,13 +841,13 @@ BOOLEAN DishOutGasDamage(SOLDIERTYPE* const pSoldier, const SmokeEffectModel* sm
 				break;
 		}
 		// a gas effect, take damage directly...
-		SoldierTakeDamage(pSoldier, sWoundAmt, sBreathAmt, TAKE_DAMAGE_GAS, NULL);
+		SoldierTakeDamage(pSoldier, sWoundAmt, sBreathAmt, TAKE_DAMAGE_GAS, nullptr);
 		if ( pSoldier->bLife >= CONSCIOUSNESS )
 		{
 			DoMercBattleSound(pSoldier, BATTLE_SOUND_HIT1);
 		}
 
-		if (owner != NULL && owner->bTeam == OUR_TEAM && pSoldier->bTeam != OUR_TEAM)
+		if (owner != nullptr && owner->bTeam == OUR_TEAM && pSoldier->bTeam != OUR_TEAM)
 		{
 			ProcessImplicationsOfPCAttack(owner, pSoldier, REASON_EXPLOSION);
 		}
@@ -1011,7 +1011,7 @@ static BOOLEAN ExpAffect(const INT16 sBombGridNo, const INT16 sGridNo, const UIN
 		{
 			// don't hurt anyone who is already dead & waiting to be removed
 			SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, bLevel);
-			if (tgt != NULL)
+			if (tgt != nullptr)
 			{
 				DamageSoldierFromBlast(tgt, owner, sBombGridNo, sWoundAmt, sBreathAmt, uiDist, usItem);
 			}
@@ -1019,7 +1019,7 @@ static BOOLEAN ExpAffect(const INT16 sBombGridNo, const INT16 sGridNo, const UIN
 			if ( bLevel == 1 )
 			{
 				SOLDIERTYPE* const tgt_below = WhoIsThere2(sGridNo, 0);
-				if (tgt_below != NULL)
+				if (tgt_below != nullptr)
 				{
 					if ( (sWoundAmt / 2) > 20 )
 					{
@@ -1032,7 +1032,7 @@ static BOOLEAN ExpAffect(const INT16 sBombGridNo, const INT16 sGridNo, const UIN
 		}
 		if (smokeEffect) {
 			SOLDIERTYPE* const pSoldier = WhoIsThere2(sGridNo, bLevel);
-			if (pSoldier == NULL) return fRecompileMovementCosts;
+			if (pSoldier == nullptr) return fRecompileMovementCosts;
 			// someone is here, and they're gonna get hurt
 			fRecompileMovementCosts = DishOutGasDamage(pSoldier, smokeEffect->smokeEffect, sSubsequent, fRecompileMovementCosts, owner);
 		}
@@ -1060,7 +1060,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 
 	if ( IS_TRAVELCOST_DOOR( ubMovementCost ) )
 	{
-		ubMovementCost = DoorTravelCost( NULL, uiNewSpot, ubMovementCost, FALSE, NULL );
+		ubMovementCost = DoorTravelCost( nullptr, uiNewSpot, ubMovementCost, FALSE, nullptr );
 		// If we have hit a wall, STOP HERE
 		if (ubMovementCost >= TRAVELCOST_BLOCKED)
 		{
@@ -1159,7 +1159,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 					fBlowWindowSouth = TRUE;
 				}
 
-				if ( pBlockingStructure != NULL )
+				if ( pBlockingStructure != nullptr )
 				{
 					WindowHit( (INT16)uiNewSpot, pBlockingStructure->usStructureID, fBlowWindowSouth, TRUE );
 				}
@@ -1177,7 +1177,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 			}
 			if ( BlockingTemp == BLOCKING_TOPRIGHT_WINDOW || BlockingTemp == BLOCKING_TOPLEFT_WINDOW )
 			{
-				if ( pBlockingStructure != NULL )
+				if ( pBlockingStructure != nullptr )
 				{
 					WindowHit( sNewGridNo, pBlockingStructure->usStructureID, FALSE, TRUE );
 				}
@@ -1193,7 +1193,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 			}
 			if ( BlockingTemp == BLOCKING_TOPRIGHT_WINDOW || BlockingTemp == BLOCKING_TOPLEFT_WINDOW )
 			{
-				if ( pBlockingStructure != NULL )
+				if ( pBlockingStructure != nullptr )
 				{
 					WindowHit( sNewGridNo, pBlockingStructure->usStructureID, FALSE, TRUE );
 				}
@@ -1263,7 +1263,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 	{
 		// We check for roof-level and structure to prevent smoke spreading over roof
 		STRUCTURE * pStructure = FindStructure( uiNewSpot, STRUCTURE_ROOF );
-		if (pStructure == NULL)
+		if (pStructure == nullptr)
 		{
 			// no structure found therefore we can't spread
 			(*pubKeepGoing) = FALSE;
@@ -1284,7 +1284,7 @@ void SpreadEffect(const INT16 sGridNo, const UINT8 ubRadius, const UINT16 usItem
 
 	if (usItem != NOTHING) {
 		auto explosive = GCM->getExplosive(usItem);
-		fSmokeEffect = explosive->getSmokeEffect() != NULL && smoke != NULL;
+		fSmokeEffect = explosive->getSmokeEffect() != nullptr && smoke != nullptr;
 	}
 
 	// Set values for recompile region to optimize area we need to recompile for MPs
@@ -1468,7 +1468,7 @@ void SpreadEffect(const INT16 sGridNo, const UINT8 ubRadius, const UINT16 usItem
 
 	if ( fSubsequent != BLOOD_SPREAD_EFFECT && usItem != NOTHING )
 	{
-		MakeNoise(NULL, sGridNo, bLevel, GCM->getExplosive(usItem)->getNoise(), NOISE_EXPLOSION);
+		MakeNoise(nullptr, sGridNo, bLevel, GCM->getExplosive(usItem)->getNoise(), NOISE_EXPLOSION);
 	}
 }
 
@@ -1564,11 +1564,11 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				{
 					if (pStructure->fFlags & STRUCTURE_BASE_TILE)
 					{
-						HandleDoorChangeFromGridNo( NULL, sGridNo, FALSE );
+						HandleDoorChangeFromGridNo( nullptr, sGridNo, FALSE );
 					}
 					else
 					{
-						HandleDoorChangeFromGridNo( NULL, pStructure->sBaseGridNo, FALSE );
+						HandleDoorChangeFromGridNo( nullptr, pStructure->sBaseGridNo, FALSE );
 					}
 					gfExplosionQueueMayHaveChangedSight = TRUE;
 				}
@@ -1587,11 +1587,11 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				{
 					if (pStructure->fFlags & STRUCTURE_BASE_TILE)
 					{
-						HandleDoorChangeFromGridNo( NULL, sGridNo , FALSE );
+						HandleDoorChangeFromGridNo( nullptr, sGridNo , FALSE );
 					}
 					else
 					{
-						HandleDoorChangeFromGridNo( NULL, pStructure->sBaseGridNo, FALSE );
+						HandleDoorChangeFromGridNo( nullptr, pStructure->sBaseGridNo, FALSE );
 					}
 					gfExplosionQueueMayHaveChangedSight = TRUE;
 				}
@@ -1613,11 +1613,11 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 			{
 				if (pStructure->fFlags & STRUCTURE_BASE_TILE)
 				{
-					HandleDoorChangeFromGridNo( NULL, sGridNo, FALSE );
+					HandleDoorChangeFromGridNo( nullptr, sGridNo, FALSE );
 				}
 				else
 				{
-					HandleDoorChangeFromGridNo( NULL, pStructure->sBaseGridNo , FALSE );
+					HandleDoorChangeFromGridNo( nullptr, pStructure->sBaseGridNo , FALSE );
 				}
 				gfExplosionQueueMayHaveChangedSight = TRUE;
 			}
@@ -1824,7 +1824,7 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				UINT8		ubDirection;
 
 				SOLDIERTYPE* tgt = WhoIsThere2(sGridNo, 0);
-				if (tgt != NULL)
+				if (tgt != nullptr)
 					if (tgt->bTeam == OUR_TEAM)
 					{
 						UINT8 const room     = GetRoom(sGridNo);
@@ -1894,12 +1894,12 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				UINT8 ubRoom;
 				if ( InAHiddenRoom( sGridNo, &ubRoom ) )
 				{
-					RemoveRoomRoof( sGridNo, ubRoom, NULL );
+					RemoveRoomRoof( sGridNo, ubRoom, nullptr );
 				}
 			}
 			break;
 		case ACTION_ITEM_LOCAL_ALARM:
-			MakeNoise(NULL, sGridNo, 0, 30, NOISE_SILENT_ALARM);
+			MakeNoise(nullptr, sGridNo, 0, 30, NOISE_SILENT_ALARM);
 			break;
 		case ACTION_ITEM_GLOBAL_ALARM:
 			CallAvailableEnemiesTo( sGridNo );
@@ -2080,7 +2080,7 @@ void DecayBombTimers( void )
 					}
 					else
 					{
-						gPersonToSetOffExplosions = NULL;
+						gPersonToSetOffExplosions = nullptr;
 					}
 
 					if (o.usItem != ACTION_ITEM || o.bActionValue == ACTION_ITEM_BLOW_UP)
@@ -2362,7 +2362,7 @@ void LoadExplosionTableFromSavedGameFile(HWFILE const hFile)
 // see if they get angry
 static void HandleBuldingDestruction(const INT16 sGridNo, const SOLDIERTYPE* const owner)
 {
-	if (owner == NULL || owner->bTeam != OUR_TEAM) return;
+	if (owner == nullptr || owner->bTeam != OUR_TEAM) return;
 
 	FOR_EACH_IN_TEAM(pSoldier, CIV_TEAM)
 	{

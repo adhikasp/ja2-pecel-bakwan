@@ -506,7 +506,7 @@ void MercComplainAboutEquipment(ProfileID ubProfile)
 	}
 	// Are we dead/ does merc still exist?
 	SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(ubProfile);
-	if ( pSoldier != NULL )
+	if ( pSoldier != nullptr )
 	{
 		if (!pSoldier->fMercAsleep          &&
 			pSoldier->bLife       >= OKLIFE &&

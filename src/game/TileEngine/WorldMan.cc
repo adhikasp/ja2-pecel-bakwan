@@ -28,8 +28,8 @@ static LEVELNODE* CreateLevelNode(void)
 	LEVELNODE* const Node = new LEVELNODE{};
 	Node->ubShadeLevel        = LightGetAmbient();
 	Node->ubNaturalShadeLevel = LightGetAmbient();
-	Node->pSoldier            = NULL;
-	Node->pNext               = NULL;
+	Node->pSoldier            = nullptr;
+	Node->pNext               = nullptr;
 	Node->sRelativeX          = 0;
 	Node->sRelativeY          = 0;
 	return Node;
@@ -43,7 +43,7 @@ static void CountLevelNodes(int (&guiLNCount)[9])
 		// start at 1 to skip land head ptr; 0 stores total
 		for (UINT32 uiLoop2 = 1; uiLoop2 < 9; uiLoop2++)
 		{
-			for (const LEVELNODE* pLN = pME->pLevelNodes[uiLoop2]; pLN != NULL; pLN = pLN->pNext)
+			for (const LEVELNODE* pLN = pME->pLevelNodes[uiLoop2]; pLN != nullptr; pLN = pLN->pNext)
 			{
 				guiLNCount[uiLoop2]++;
 			}
@@ -107,7 +107,7 @@ LEVELNODE* AddObjectToTail(const UINT32 iMapIndex, const UINT16 usIndex)
 
 	// Append node to list
 	LEVELNODE** anchor = &gpWorldLevelData[iMapIndex].pObjectHead;
-	while (*anchor != NULL) anchor = &(*anchor)->pNext;
+	while (*anchor != nullptr) anchor = &(*anchor)->pNext;
 	*anchor = n;
 
 	ResetSpecificLayerOptimizing(TILES_DYNAMIC_OBJECTS);
@@ -133,14 +133,14 @@ LEVELNODE* AddObjectToHead(const UINT32 iMapIndex, const UINT16 usIndex)
 BOOLEAN RemoveObject(UINT32 iMapIndex, UINT16 usIndex)
 {
 	// Look through all objects and remove index if found
-	LEVELNODE* pOldObject = NULL;
-	for (LEVELNODE* pObject = gpWorldLevelData[iMapIndex].pObjectHead; pObject != NULL; pObject = pObject->pNext)
+	LEVELNODE* pOldObject = nullptr;
+	for (LEVELNODE* pObject = gpWorldLevelData[iMapIndex].pObjectHead; pObject != nullptr; pObject = pObject->pNext)
 	{
 		if (pObject->usIndex == usIndex)
 		{
 			// OK, set links
 			// Check for head or tail
-			if (pOldObject == NULL)
+			if (pOldObject == nullptr)
 			{
 				// It's the head
 				gpWorldLevelData[iMapIndex].pObjectHead = pObject->pNext;
@@ -239,7 +239,7 @@ BOOLEAN RemoveAllObjectsOfTypeRange( UINT32 iMapIndex, UINT32 fStartType, UINT32
 	BOOLEAN fRetVal = FALSE;
 
 	// Look through all objects and Search for type
-	for (LEVELNODE* pObject = gpWorldLevelData[iMapIndex].pObjectHead; pObject != NULL;)
+	for (LEVELNODE* pObject = gpWorldLevelData[iMapIndex].pObjectHead; pObject != nullptr;)
 	{
 		LEVELNODE* Next = pObject->pNext;
 
@@ -269,9 +269,9 @@ LEVELNODE* AddLandToTail(const UINT32 iMapIndex, const UINT16 usIndex)
 	n->usIndex = usIndex;
 
 	// Append node to list
-	LEVELNODE*  prev   = NULL;
+	LEVELNODE*  prev   = nullptr;
 	LEVELNODE** anchor = &gpWorldLevelData[iMapIndex].pLandHead;
-	while (*anchor != NULL)
+	while (*anchor != nullptr)
 	{
 		prev   = *anchor;
 		anchor = &prev->pNext;
@@ -290,9 +290,9 @@ void AddLandToHead(const UINT32 iMapIndex, const UINT16 usIndex)
 	n->usIndex		= usIndex;
 
 	LEVELNODE** const head = &gpWorldLevelData[iMapIndex].pLandHead;
-	if (*head != NULL) (*head)->pPrevNode = n;
+	if (*head != nullptr) (*head)->pPrevNode = n;
 	n->pNext     = *head;
-	n->pPrevNode = NULL;
+	n->pPrevNode = nullptr;
 	*head = n;
 
 	if (usIndex < NUMBEROFTILES && gTileDatabase[usIndex].ubFullTile)
@@ -318,12 +318,12 @@ void RemoveLand(UINT32 const map_idx, UINT16 const idx)
 static void RemoveLandEx(UINT32 iMapIndex, UINT16 usIndex)
 {
 	// Look through all Lands and remove index if found
-	for (LEVELNODE* pLand = gpWorldLevelData[iMapIndex].pLandHead; pLand != NULL; pLand = pLand->pNext)
+	for (LEVELNODE* pLand = gpWorldLevelData[iMapIndex].pLandHead; pLand != nullptr; pLand = pLand->pNext)
 	{
 		if (pLand->usIndex == usIndex)
 		{
 			// Check for head
-			if (pLand->pPrevNode == NULL)
+			if (pLand->pPrevNode == nullptr)
 			{
 				// It's the head
 				gpWorldLevelData[iMapIndex].pLandHead = pLand->pNext;
@@ -334,7 +334,7 @@ static void RemoveLandEx(UINT32 iMapIndex, UINT16 usIndex)
 			}
 
 			// Check for tail
-			if (pLand->pNext != NULL)
+			if (pLand->pNext != nullptr)
 			{
 				pLand->pNext->pPrevNode = pLand->pPrevNode;
 			}
@@ -348,7 +348,7 @@ static void RemoveLandEx(UINT32 iMapIndex, UINT16 usIndex)
 
 static BOOLEAN AdjustForFullTile(UINT32 iMapIndex)
 {
-	for (LEVELNODE* pLand = gpWorldLevelData[iMapIndex].pLandHead; pLand != NULL; pLand = pLand->pNext)
+	for (LEVELNODE* pLand = gpWorldLevelData[iMapIndex].pLandHead; pLand != nullptr; pLand = pLand->pNext)
 	{
 		if (pLand->usIndex < NUMBEROFTILES)
 		{
@@ -380,7 +380,7 @@ static BOOLEAN AdjustForFullTile(UINT32 iMapIndex)
 void ReplaceLandIndex(UINT32 const iMapIndex, UINT16 const usOldIndex, UINT16 const usNewIndex)
 {
 	// Look through all Lands and remove index if found
-	for (LEVELNODE* pLand = gpWorldLevelData[iMapIndex].pLandHead; pLand != NULL; pLand = pLand->pNext)
+	for (LEVELNODE* pLand = gpWorldLevelData[iMapIndex].pLandHead; pLand != nullptr; pLand = pLand->pNext)
 	{
 		if (pLand->usIndex == usOldIndex)
 		{
@@ -415,7 +415,7 @@ BOOLEAN RemoveAllLandsOfTypeRange( UINT32 iMapIndex, UINT32 fStartType, UINT32 f
 	BOOLEAN fRetVal = FALSE;
 
 	// Look through all objects and Search for type
-	while (pLand != NULL)
+	while (pLand != nullptr)
 	{
 		auto const fTileType{ GetTileTypeSafe(pLand->usIndex).value_or(UINT32_MAX) };
 		const LEVELNODE* Next = pLand->pNext;
@@ -437,7 +437,7 @@ void DeleteAllLandLayers(UINT32 iMapIndex)
 {
 	const LEVELNODE* pLand = gpWorldLevelData[iMapIndex].pLandHead;
 
-	while (pLand != NULL)
+	while (pLand != nullptr)
 	{
 		const LEVELNODE* pOldLand = pLand;
 		pLand = pLand->pNext;
@@ -445,8 +445,8 @@ void DeleteAllLandLayers(UINT32 iMapIndex)
 	}
 
 	// Set world data values
-	gpWorldLevelData[iMapIndex].pLandHead = NULL;
-	gpWorldLevelData[iMapIndex].pLandStart = NULL;
+	gpWorldLevelData[iMapIndex].pLandHead = nullptr;
+	gpWorldLevelData[iMapIndex].pLandStart = nullptr;
 }
 
 
@@ -479,7 +479,7 @@ void InsertLandIndexAtLevel(const UINT32 iMapIndex, const UINT16 usIndex, const 
 	pLand->pNext = n;
 
 	// Check for tail
-	if (n->pNext != NULL) n->pNext->pPrevNode = n;
+	if (n->pNext != nullptr) n->pNext->pPrevNode = n;
 
 	AdjustForFullTile(iMapIndex);
 
@@ -680,15 +680,15 @@ static void RemoveShadowBuddy(UINT32 iMapIndex, UINT16 usIndex)
 
 void ForceRemoveStructFromTail(UINT32 const iMapIndex)
 {
-	LEVELNODE* pPrevStruct	= NULL;
+	LEVELNODE* pPrevStruct	= nullptr;
 
 	// GOTO TAIL
-	for (LEVELNODE* pStruct = gpWorldLevelData[iMapIndex].pStructHead; pStruct != NULL; pStruct = pStruct->pNext)
+	for (LEVELNODE* pStruct = gpWorldLevelData[iMapIndex].pStructHead; pStruct != nullptr; pStruct = pStruct->pNext)
 	{
 		// AT THE TAIL
-		if (pStruct->pNext == NULL)
+		if (pStruct->pNext == nullptr)
 		{
-			if (pPrevStruct != NULL)
+			if (pPrevStruct != nullptr)
 			{
 				pPrevStruct->pNext = pStruct->pNext;
 			}
@@ -930,7 +930,7 @@ void AddShadowToTail(UINT32 const iMapIndex, UINT16 const usIndex)
 
 	// Append node to list
 	LEVELNODE** anchor = &gpWorldLevelData[iMapIndex].pShadowHead;
-	while (*anchor != NULL) anchor = &(*anchor)->pNext;
+	while (*anchor != nullptr) anchor = &(*anchor)->pNext;
 	*anchor = n;
 
 	ResetSpecificLayerOptimizing(TILES_DYNAMIC_SHADOWS);
@@ -1007,7 +1007,7 @@ BOOLEAN RemoveAllShadows( UINT32 iMapIndex )
 {
 	BOOLEAN fRetVal = FALSE;
 
-	for (LEVELNODE* pShadow = gpWorldLevelData[iMapIndex].pShadowHead; pShadow != NULL;)
+	for (LEVELNODE* pShadow = gpWorldLevelData[iMapIndex].pShadowHead; pShadow != nullptr;)
 	{
 		auto * const next{ pShadow->pNext };
 		if (pShadow->usIndex != NO_TILE)
@@ -1064,14 +1064,14 @@ BOOLEAN AddMercStructureInfoFromAnimSurface(const INT16 sGridNo, SOLDIERTYPE* co
 	s->uiStatusFlags &= ~SOLDIER_MULTITILE;
 
 	LEVELNODE* const n = s->pLevelNode;
-	if (n == NULL || usAnimSurface == INVALID_ANIMATION_SURFACE) return FALSE;
+	if (n == nullptr || usAnimSurface == INVALID_ANIMATION_SURFACE) return FALSE;
 
 	// Remove existing structs
 	DeleteStructureFromWorld(n->pStructureData);
-	n->pStructureData = NULL;
+	n->pStructureData = nullptr;
 
 	const STRUCTURE_FILE_REF* const sfr = GetAnimationStructureRef(s, usAnimSurface, usAnimState);
-	if (sfr == NULL) return TRUE; // XXX why TRUE?
+	if (sfr == nullptr) return TRUE; // XXX why TRUE?
 
 	const DB_STRUCTURE_REF* const sr =
 		s->ubBodyType == QUEENMONSTER ? // Queen uses only one direction
@@ -1105,7 +1105,7 @@ BOOLEAN OKToAddMercToWorld( SOLDIERTYPE *pSoldier, INT8 bDirection )
 
 		// Now check if we have multi-tile info!
 		const STRUCTURE_FILE_REF* const pStructFileRef = GetAnimationStructureRef(pSoldier, usAnimSurface, pSoldier->usAnimState);
-		if (pStructFileRef != NULL)
+		if (pStructFileRef != nullptr)
 		{
 			//Try adding struct to this location, if we can it's good!
 			UINT16 const usOKToAddStructID = GetStructureID(pSoldier);
@@ -1123,7 +1123,7 @@ BOOLEAN OKToAddMercToWorld( SOLDIERTYPE *pSoldier, INT8 bDirection )
 
 BOOLEAN UpdateMercStructureInfo(SOLDIERTYPE *pSoldier)
 {
-	if (pSoldier->pLevelNode == NULL)
+	if (pSoldier->pLevelNode == nullptr)
 	{
 		return FALSE;
 	}
@@ -1177,7 +1177,7 @@ LEVELNODE* AddRoofToTail(const UINT32 iMapIndex, const UINT16 usIndex)
 
 	// Append node to list
 	LEVELNODE** anchor = &gpWorldLevelData[iMapIndex].pRoofHead;
-	while (*anchor != NULL) anchor = &(*anchor)->pNext;
+	while (*anchor != nullptr) anchor = &(*anchor)->pNext;
 	*anchor = n;
 
 	return n;
@@ -1293,7 +1293,7 @@ LEVELNODE* AddOnRoofToTail(const UINT32 iMapIndex, const UINT16 usIndex)
 
 	// Append the node to the list
 	LEVELNODE** anchor = &gpWorldLevelData[iMapIndex].pOnRoofHead;
-	while (*anchor != NULL) anchor = &(*anchor)->pNext;
+	while (*anchor != nullptr) anchor = &(*anchor)->pNext;
 	*anchor = n;
 
 	return n;
@@ -1364,7 +1364,7 @@ LEVELNODE* AddTopmostToTail(const UINT32 iMapIndex, const UINT16 usIndex)
 
 	// Append node to list
 	LEVELNODE** anchor = &gpWorldLevelData[iMapIndex].pTopmostHead;
-	while (*anchor != NULL) anchor = &(*anchor)->pNext;
+	while (*anchor != nullptr) anchor = &(*anchor)->pNext;
 	*anchor = n;
 
 	ResetSpecificLayerOptimizing(TILES_DYNAMIC_TOPMOST);
@@ -1420,7 +1420,7 @@ BOOLEAN RemoveAllTopmostsOfTypeRange(UINT32 iMapIndex, UINT32 fStartType, UINT32
 	BOOLEAN fRetVal = FALSE;
 
 	// Look through all topmosts and Search for type
-	for (const LEVELNODE* pTopmost = gpWorldLevelData[iMapIndex].pTopmostHead; pTopmost != NULL;)
+	for (const LEVELNODE* pTopmost = gpWorldLevelData[iMapIndex].pTopmostHead; pTopmost != nullptr;)
 	{
 		const LEVELNODE* pOldTopmost = pTopmost;
 		pTopmost = pTopmost->pNext;
@@ -1449,7 +1449,7 @@ LEVELNODE* FindTypeInTopmostLayer(UINT32 const map_idx, UINT32 const type)
 BOOLEAN IsHeigherLevel(INT16 sGridNo)
 {
 	const STRUCTURE* pStructure = FindStructure(sGridNo, STRUCTURE_NORMAL_ROOF);
-	return pStructure != NULL;
+	return pStructure != nullptr;
 }
 
 
@@ -1459,7 +1459,7 @@ BOOLEAN IsRoofVisible(INT16 sMapPos)
 
 	const STRUCTURE* pStructure = FindStructure(sMapPos, STRUCTURE_ROOF);
 	return
-		pStructure != NULL &&
+		pStructure != nullptr &&
 		!(gpWorldLevelData[sMapPos].uiFlags & MAPELEMENT_REVEALED);
 }
 
@@ -1469,7 +1469,7 @@ BOOLEAN IsRoofVisible2(INT16 sMapPos)
 	if (!gfBasement)
 	{
 		const STRUCTURE* pStructure = FindStructure(sMapPos, STRUCTURE_ROOF);
-		if (pStructure == NULL) return FALSE;
+		if (pStructure == nullptr) return FALSE;
 	}
 
 	return !(gpWorldLevelData[sMapPos].uiFlags & MAPELEMENT_REVEALED);
@@ -1478,7 +1478,7 @@ BOOLEAN IsRoofVisible2(INT16 sMapPos)
 
 SOLDIERTYPE* WhoIsThere2(INT16 const gridno, INT8 const level)
 {
-	if (!GridNoOnVisibleWorldTile(gridno)) return NULL;
+	if (!GridNoOnVisibleWorldTile(gridno)) return nullptr;
 
 	for (STRUCTURE const* structure = gpWorldLevelData[gridno].pStructureHead; structure; structure = structure->pNext)
 	{
@@ -1497,7 +1497,7 @@ SOLDIERTYPE* WhoIsThere2(INT16 const gridno, INT8 const level)
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 
@@ -1589,12 +1589,12 @@ LEVELNODE* FindShadow(INT16 sGridNo, UINT16 usStructIndex)
 {
 	if (usStructIndex < FIRSTOSTRUCT1 || usStructIndex >= FIRSTSHADOW1)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	UINT16 usShadowIndex = usStructIndex - FIRSTOSTRUCT1 + FIRSTSHADOW1;
 	LEVELNODE* pLevelNode;
-	for (pLevelNode = gpWorldLevelData[sGridNo].pShadowHead; pLevelNode != NULL; pLevelNode = pLevelNode->pNext)
+	for (pLevelNode = gpWorldLevelData[sGridNo].pShadowHead; pLevelNode != nullptr; pLevelNode = pLevelNode->pNext)
 	{
 		if (pLevelNode->usIndex == usShadowIndex)
 		{
@@ -1609,7 +1609,7 @@ void WorldHideTrees(void)
 {
 	FOR_EACH_WORLD_TILE(i)
 	{
-		for (LEVELNODE* pNode = i->pStructHead; pNode != NULL; pNode = pNode->pNext)
+		for (LEVELNODE* pNode = i->pStructHead; pNode != nullptr; pNode = pNode->pNext)
 		{
 			if (pNode->uiFlags & LEVELNODE_ANIMATION) continue;
 			if (GetTileFlags(pNode->usIndex) & FULL3D_TILE)
@@ -1627,7 +1627,7 @@ void WorldShowTrees(void)
 {
 	FOR_EACH_WORLD_TILE(i)
 	{
-		for (LEVELNODE* pNode = i->pStructHead; pNode != NULL; pNode = pNode->pNext)
+		for (LEVELNODE* pNode = i->pStructHead; pNode != nullptr; pNode = pNode->pNext)
 		{
 			if (pNode->uiFlags & LEVELNODE_ANIMATION) continue;
 			if (GetTileFlags(pNode->usIndex) & FULL3D_TILE)
@@ -1643,9 +1643,9 @@ void WorldShowTrees(void)
 
 void SetWallLevelnodeFlags(UINT16 const sGridNo, LevelnodeFlags const uiFlags)
 {
-	for (LEVELNODE* pStruct = gpWorldLevelData[sGridNo].pStructHead; pStruct != NULL; pStruct = pStruct->pNext)
+	for (LEVELNODE* pStruct = gpWorldLevelData[sGridNo].pStructHead; pStruct != nullptr; pStruct = pStruct->pNext)
 	{
-		if (pStruct->pStructureData != NULL &&
+		if (pStruct->pStructureData != nullptr &&
 				pStruct->pStructureData->fFlags & STRUCTURE_WALLSTUFF) // See if we are a wall!
 		{
 			pStruct->uiFlags |= uiFlags;
@@ -1656,9 +1656,9 @@ void SetWallLevelnodeFlags(UINT16 const sGridNo, LevelnodeFlags const uiFlags)
 
 void RemoveWallLevelnodeFlags(UINT16 const sGridNo, LevelnodeFlags const uiFlags)
 {
-	for (LEVELNODE* pStruct = gpWorldLevelData[sGridNo].pStructHead; pStruct != NULL; pStruct = pStruct->pNext)
+	for (LEVELNODE* pStruct = gpWorldLevelData[sGridNo].pStructHead; pStruct != nullptr; pStruct = pStruct->pNext)
 	{
-		if (pStruct->pStructureData != NULL &&
+		if (pStruct->pStructureData != nullptr &&
 				pStruct->pStructureData->fFlags & STRUCTURE_WALLSTUFF) // See if we are a wall!
 		{
 			pStruct->uiFlags &= ~uiFlags;

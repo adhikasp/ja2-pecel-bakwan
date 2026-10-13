@@ -397,7 +397,7 @@ void HandleMoraleEvent(SOLDIERTYPE *pSoldier, INT8 bMoraleEvent, const SGPSector
 
 	// NOTE: Many morale events are NOT attached to a specific player soldier at all!
 	// Those that do need it have Asserts on a case by case basis below
-	if (pSoldier == NULL)
+	if (pSoldier == nullptr)
 	{
 		SLOGD("Handling morale event {} at {}", bMoraleEvent, sMap);
 	}

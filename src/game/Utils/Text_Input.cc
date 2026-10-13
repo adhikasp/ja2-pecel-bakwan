@@ -37,7 +37,7 @@ struct TextInputColors
 	UINT16 usDisabledTextFieldColor;
 };
 
-static TextInputColors* pColors = NULL;
+static TextInputColors* pColors = nullptr;
 
 //Internal nodes for keeping track of the text and user defined fields.
 struct TEXTINPUTNODE
@@ -65,17 +65,17 @@ struct STACKTEXTINPUTNODE
 	STACKTEXTINPUTNODE* next;
 };
 
-static STACKTEXTINPUTNODE* pInputStack = NULL;
+static STACKTEXTINPUTNODE* pInputStack = nullptr;
 
 //Internal list vars.  active always points to the currently edited field.
-static TEXTINPUTNODE* gpTextInputHead = NULL;
-static TEXTINPUTNODE* gpTextInputTail = NULL;
-static TEXTINPUTNODE* gpActive = NULL;
+static TEXTINPUTNODE* gpTextInputHead = nullptr;
+static TEXTINPUTNODE* gpTextInputTail = nullptr;
+static TEXTINPUTNODE* gpActive = nullptr;
 
 //Saving current mode
-static TEXTINPUTNODE* pSavedHead = NULL;
-static TEXTINPUTNODE* pSavedTail = NULL;
-static TextInputColors* pSavedColors = NULL;
+static TEXTINPUTNODE* pSavedHead = nullptr;
+static TEXTINPUTNODE* pSavedTail = nullptr;
+static TextInputColors* pSavedColors = nullptr;
 static UINT16 gusTextInputCursor = CURSOR_IBEAM;
 
 

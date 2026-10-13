@@ -163,7 +163,7 @@ static NPC_SAVE_INFO* GetFreeNPCSave(void)
 	{
 		return &gNPCSaveData[guiNumNPCSaves++];
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -231,7 +231,7 @@ static void BringupMeanwhileBox(void)
 		gCurrentMeanwhileDef.ubMeanwhileID != INTERROGATION
 		&& MeanwhileSceneSeen(gCurrentMeanwhileDef.ubMeanwhileID)
 		? MSG_BOX_FLAG_OKSKIP : MSG_BOX_FLAG_OK;
-	DoMessageBox(MSG_BOX_BASIC_STYLE, zStr, guiCurrentScreen, flags, BeginMeanwhileCallBack, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, zStr, guiCurrentScreen, flags, BeginMeanwhileCallBack, nullptr);
 }
 
 void CheckForMeanwhileOKStart( )
@@ -277,7 +277,7 @@ void CheckForMeanwhileOKStart( )
 static void SetNPCMeanwhile(const ProfileID pid, const SGPSector& sector)
 {
 	NPC_SAVE_INFO* const si = GetFreeNPCSave();
-	if (si == NULL) return;
+	if (si == nullptr) return;
 
 	MERCPROFILESTRUCT& p = GetProfile(pid);
 	si->ubProfile = pid;
@@ -625,7 +625,7 @@ void LocateToMeanwhileCharacter( )
 	if ( gfInMeanwhile )
 	{
 		SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(gCurrentMeanwhileDef.ubNPCNumber);
-		if (pSoldier != NULL) LocateSoldier(pSoldier, FALSE);
+		if (pSoldier != nullptr) LocateSoldier(pSoldier, FALSE);
 	}
 }
 

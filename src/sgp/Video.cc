@@ -366,7 +366,7 @@ static void CreateTextures()
 					SDL_PIXELFORMAT_RGB565,
 					SDL_TEXTUREACCESS_STREAMING,
 					SCREEN_WIDTH, SCREEN_HEIGHT);
-	if (ScreenTexture == NULL) {
+	if (ScreenTexture == nullptr) {
 		SLOGE("SDL_CreateTexture for ScreenTexture failed: {}\n", SDL_GetError());
 	}
 }
@@ -376,10 +376,10 @@ static void DestroyTextures()
 {
 	for (SDL_Texture** t : { &ScreenTexture, &ScaledScreenTexture, &WorldTexture, &UiTexture, &CanvasTexture })
 	{
-		if (*t != NULL)
+		if (*t != nullptr)
 		{
 			SDL_DestroyTexture(*t);
-			*t = NULL;
+			*t = nullptr;
 		}
 	}
 }
@@ -680,7 +680,7 @@ static void CreateSoftwareSurfaces()
 					SDL_PIXELFORMAT_RGB565
 	);
 
-	if (ScreenBuffer == NULL) {
+	if (ScreenBuffer == nullptr) {
 		SLOGE("SDL_CreateRGBSurface for ScreenBuffer failed: {}\n", SDL_GetError());
 	}
 
@@ -690,7 +690,7 @@ static void CreateSoftwareSurfaces()
 		SDL_PIXELFORMAT_RGB565
 	);
 
-	if (FrameBuffer == NULL)
+	if (FrameBuffer == nullptr)
 	{
 		SLOGE("SDL_CreateRGBSurface for FrameBuffer failed: {}\n", SDL_GetError());
 	}
@@ -703,7 +703,7 @@ static void CreateSoftwareSurfaces()
 			SDL_PIXELFORMAT_RGB565
 		);
 
-		if (WorldBuffer == NULL)
+		if (WorldBuffer == nullptr)
 		{
 			SLOGE("SDL_CreateRGBSurface for WorldBuffer failed: {}\n", SDL_GetError());
 		}
@@ -717,7 +717,7 @@ static void CreateSoftwareSurfaces()
 	);
 	SDL_SetSurfaceColorKey(MouseCursor, true, 0);
 
-	if (MouseCursor == NULL)
+	if (MouseCursor == nullptr)
 	{
 		SLOGE("SDL_CreateRGBSurface for MouseCursor failed: {}\n", SDL_GetError());
 	}
@@ -797,42 +797,42 @@ void ShutdownVideoManager(void)
 	}
 	VideoGpu::Shutdown();
 
-	if (ScreenTexture != NULL) {
+	if (ScreenTexture != nullptr) {
 		SDL_DestroyTexture(ScreenTexture);
-		ScreenTexture = NULL;
+		ScreenTexture = nullptr;
 	}
 
-	if (ScaledScreenTexture != NULL) {
+	if (ScaledScreenTexture != nullptr) {
 		SDL_DestroyTexture(ScaledScreenTexture);
-		ScaledScreenTexture = NULL;
+		ScaledScreenTexture = nullptr;
 	}
 
 	for (SDL_Texture** t : { &WorldTexture, &UiTexture, &CanvasTexture })
 	{
-		if (*t != NULL)
+		if (*t != nullptr)
 		{
 			SDL_DestroyTexture(*t);
-			*t = NULL;
+			*t = nullptr;
 		}
 	}
 	// WorldBuffer is freed by its SGPVSurface wrapper, like ScreenBuffer.
 	WorldBuffer = nullptr;
 	Layered = false;
 
-	if (GameRenderer != NULL) {
+	if (GameRenderer != nullptr) {
 		SDL_DestroyRenderer(GameRenderer);
-		GameRenderer = NULL;
+		GameRenderer = nullptr;
 	}
 
-	if (GpuDevice != NULL) {
+	if (GpuDevice != nullptr) {
 		// Not destroyed: the world renderer holds a pointer to the shared device and may be re-used after a
 		// video restart (the setup screen). Like the old SDL_Renderer path it lives until process exit.
-		GpuDevice = NULL;
+		GpuDevice = nullptr;
 	}
 
-	if (g_game_window != NULL) {
+	if (g_game_window != nullptr) {
 		SDL_DestroyWindow(g_game_window);
-		g_game_window = NULL;
+		g_game_window = nullptr;
 	}
 
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -1340,7 +1340,7 @@ static void ScrollJA2Background(INT16 sScrollXIncrement, INT16 sScrollYIncrement
 	}
 
 #ifdef SCROLL_TEST
-	SDL_FillRect(Dest, NULL, 0);
+	SDL_FillRect(Dest, nullptr, 0);
 #endif
 
 	SDL_BlitSurface(Dest, &SrcRect, Dest, &DstRect);
@@ -1650,7 +1650,7 @@ void RefreshScreen(void)
 	{
 		if (gfForceFullScreenRefresh)
 		{
-			SDL_BlitSurface(FrameBuffer, NULL, ScreenBuffer, NULL);
+			SDL_BlitSurface(FrameBuffer, nullptr, ScreenBuffer, nullptr);
 			ScreenTextureUpdateRect = { 0, 0, ScreenBuffer->w, ScreenBuffer->h };
 		}
 		else
@@ -1768,7 +1768,7 @@ void RefreshScreen(void)
 	}
 	else
 	{
-		SDL_RenderTexture(GameRenderer, ScreenTexture, NULL, NULL);
+		SDL_RenderTexture(GameRenderer, ScreenTexture, nullptr, nullptr);
 	}
 
 	RenderOverlayGpu();
@@ -1890,16 +1890,16 @@ static void SetPrimaryVideoSurfaces(void)
 static void DeletePrimaryVideoSurfaces(void)
 {
 	delete g_back_buffer;
-	g_back_buffer = NULL;
+	g_back_buffer = nullptr;
 
 	if (g_world_buffer != g_frame_buffer) delete g_world_buffer;
-	g_world_buffer = NULL;
+	g_world_buffer = nullptr;
 
 	delete g_frame_buffer;
-	g_frame_buffer = NULL;
+	g_frame_buffer = nullptr;
 
 	delete g_mouse_buffer;
-	g_mouse_buffer = NULL;
+	g_mouse_buffer = nullptr;
 }
 
 SGPVSurface* gpVSurfaceHead = 0;
@@ -1908,8 +1908,8 @@ void InitializeVideoSurfaceManager(void)
 {
 	//Shouldn't be calling this if the video surface manager already exists.
 	//Call shutdown first...
-	Assert(gpVSurfaceHead == NULL);
-	gpVSurfaceHead = NULL;
+	Assert(gpVSurfaceHead == nullptr);
+	gpVSurfaceHead = nullptr;
 
 	// Create primary and backbuffer from globals
 	SetPrimaryVideoSurfaces();

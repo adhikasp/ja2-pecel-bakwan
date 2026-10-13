@@ -182,7 +182,7 @@ std::vector<DEALER_ITEM_HEADER*> GetDealerInventory(UINT8 ubDealerID)
 
 void DoBasicMessageBox(const ST::string text)
 {
-	DoScreenIndependantMessageBox(text, MSG_BOX_FLAG_OK, NULL);
+	DoScreenIndependantMessageBox(text, MSG_BOX_FLAG_OK, nullptr);
 }
 
 void ExecuteTacticalTextBox(INT16 sLeftPosition, INT16 sTopPosition, const ST::string &pString);

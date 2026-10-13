@@ -23,32 +23,32 @@
 Screens const GameScreens[] =
 {
 	{ EditScreenInit,       EditScreenHandle,            EditScreenShutdown       },
-	{ NULL,                 NULL,                        NULL                     },
-	{ NULL,                 NULL,                        NULL                     },
-	{ NULL,                 ErrorScreenHandle,           NULL                     }, // Title Screen
-	{ NULL,                 InitScreenHandle,            NULL                     }, // Title Screen
+	{ nullptr,                 nullptr,                        nullptr                     },
+	{ nullptr,                 nullptr,                        nullptr                     },
+	{ nullptr,                 ErrorScreenHandle,           nullptr                     }, // Title Screen
+	{ nullptr,                 InitScreenHandle,            nullptr                     }, // Title Screen
 	{ MainGameScreenInit,   MainGameScreenHandle,        MainGameScreenShutdown   },
-	{ NULL,                 NULL,                        NULL                     }, // was AniEditScreen
-	{ NULL,                 PalEditScreenHandle,         NULL                     },
-	{ NULL,                 DebugScreenHandle,           NULL                     },
+	{ nullptr,                 nullptr,                        nullptr                     }, // was AniEditScreen
+	{ nullptr,                 PalEditScreenHandle,         nullptr                     },
+	{ nullptr,                 DebugScreenHandle,           nullptr                     },
 	{ MapScreenInit,        MapScreenHandle,             MapScreenShutdown        },
 	{ LaptopScreenInit,     LaptopScreenHandle,          LaptopScreenShutdown     },
-	{ NULL,                 LoadSaveScreenHandle,        NULL                     },
+	{ nullptr,                 LoadSaveScreenHandle,        nullptr                     },
 	{ nullptr,              HandleScreen<MAPUTILITY_SCREEN>, nullptr              },
-	{ NULL,                 FadeScreenHandle,            NULL                     },
-	{ NULL,                 MessageBoxScreenHandle,      MessageBoxScreenShutdown },
-	{ NULL,                 MainMenuScreenHandle,        NULL                     },
-	{ NULL,                 AutoResolveScreenHandle,     NULL                     },
-	{ NULL,                 SaveLoadScreenHandle,        NULL                     },
-	{ NULL,                 OptionsScreenHandle,         NULL                     },
+	{ nullptr,                 FadeScreenHandle,            nullptr                     },
+	{ nullptr,                 MessageBoxScreenHandle,      MessageBoxScreenShutdown },
+	{ nullptr,                 MainMenuScreenHandle,        nullptr                     },
+	{ nullptr,                 AutoResolveScreenHandle,     nullptr                     },
+	{ nullptr,                 SaveLoadScreenHandle,        nullptr                     },
+	{ nullptr,                 OptionsScreenHandle,         nullptr                     },
 	{ ShopKeeperScreenInit, ShopKeeperScreenHandle,      ShopKeeperScreenShutdown },
-	{ NULL,                 SexScreenHandle,             NULL                     },
+	{ nullptr,                 SexScreenHandle,             nullptr                     },
 	{ nullptr,              HandleScreen<GAME_INIT_OPTIONS_SCREEN>, nullptr       },
-	{ NULL,                 NULL,                        NULL                     },
-	{ NULL,                 IntroScreenHandle,           NULL                     },
+	{ nullptr,                 nullptr,                        nullptr                     },
+	{ nullptr,                 IntroScreenHandle,           nullptr                     },
 	{ nullptr,              HandleScreen<CREDIT_SCREEN>, nullptr                  },
-	{ QuestDebugScreenInit, QuestDebugScreenHandle,      NULL                     },
-	{ NULL,                 VideoOptionsScreenHandle,    NULL                     },
+	{ QuestDebugScreenInit, QuestDebugScreenHandle,      nullptr                     },
+	{ nullptr,                 VideoOptionsScreenHandle,    nullptr                     },
 	{ nullptr,              UiSpikeScreenHandle,         nullptr                  },
 	{ nullptr,              EpilogueScreenHandle,        nullptr                  }
 };

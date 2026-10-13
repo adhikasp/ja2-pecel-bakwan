@@ -625,7 +625,7 @@ static void BtnBobbyRAcceptOrderCallback(GUI_BUTTON* btn, UINT32 reason)
 				DoLapTopMessageBox(
 					MSG_BOX_LAPTOP_DEFAULT,
 					BobbyROrderFormText[BOBBYR_CANT_AFFORD_PURCHASE],
-					LAPTOP_SCREEN, MSG_BOX_FLAG_OK, NULL
+					LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr
 				);
 			}
 			else
@@ -702,7 +702,7 @@ void DisplayPurchasedItems( BOOLEAN fCalledFromOrderPage, UINT16 usGridX, UINT16
 	}
 
 
-	if( pBobbyRayPurchase == NULL )
+	if( pBobbyRayPurchase == nullptr )
 	{
 		return;
 	}
@@ -1238,7 +1238,7 @@ static void DisplayShippingLocationCity(void)
 	usPosY = BOBBYR_OVERNIGHT_EXPRESS_Y;
 
 	ST::string sTemp = "$0";
-	const ShippingDestinationModel* shippingDest = (gbSelectedCity != -1) ? GCM->getShippingDestination(gbSelectedCity) : NULL;
+	const ShippingDestinationModel* shippingDest = (gbSelectedCity != -1) ? GCM->getShippingDestination(gbSelectedCity) : nullptr;
 	if (shippingDest)
 	{
 		sTemp = SPrintMoney(shippingDest->chargeRateOverNight / GetWeightBasedOnMetricOption(1));

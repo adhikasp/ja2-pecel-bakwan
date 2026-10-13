@@ -118,7 +118,7 @@ std::vector<uint8_t> SGPFile::readToEnd()
     RustPointer<VecU8> vec;
     vec.reset(File_readToEnd(this->file));
 
-    if (vec.get() == NULL)
+    if (vec.get() == nullptr)
     {
         RustPointer<char> err{getRustError()};
         throw SGPFileException("readToEnd failed", name, err);

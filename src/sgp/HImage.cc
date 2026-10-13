@@ -62,7 +62,7 @@ SGPImage* CreateImage(const ST::string& filename, const UINT16 fContents)
 
 UINT16* Create16BPPPalette(const SGPPaletteEntry* pPalette)
 {
-	Assert(pPalette != NULL);
+	Assert(pPalette != nullptr);
 
 	UINT16* const p16BPPPalette = new UINT16[256]{};
 
@@ -104,7 +104,7 @@ Create16BPPPaletteShaded
 **********************************************************************************************/
 UINT16* Create16BPPPaletteShaded(const SGPPaletteEntry* pPalette, UINT32 rscale, UINT32 gscale, UINT32 bscale, BOOLEAN mono)
 {
-	Assert(pPalette != NULL);
+	Assert(pPalette != nullptr);
 
 	UINT16* const p16BPPPalette = new UINT16[256]{};
 

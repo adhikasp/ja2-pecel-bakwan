@@ -216,7 +216,7 @@ static MOUSE_REGION g_mail_scroll_region;
 
 
 // the message record list, for the currently displayed message
-static Record* pMessageRecordList = NULL;
+static Record* pMessageRecordList = nullptr;
 
 // video handles
 static SGPVObject* guiEmailBackground;
@@ -271,16 +271,16 @@ static void DeleteEmailMouseRegions()
 
 void GameInitEmail()
 {
-	pEmailList=NULL;
-	pPageList=NULL;
+	pEmailList=nullptr;
+	pPageList=nullptr;
 
-	CurrentMail = NULL;
-	PreviousMail = NULL;
+	CurrentMail = nullptr;
+	PreviousMail = nullptr;
 
 	iLastPage=-1;
 
 	iCurrentPage=0;
-	MailToDelete = NULL;
+	MailToDelete = nullptr;
 
 	// reset display message flag
 	fDisplayMessageFlag=FALSE;
@@ -350,13 +350,13 @@ void ExitEmail()
 	}
 	else
 	{
-		CurrentMail = NULL;
+		CurrentMail = nullptr;
 	}
 
 	// delete mail notice?...get rid of it
-	if (MailToDelete != NULL)
+	if (MailToDelete != nullptr)
 	{
-		MailToDelete = NULL;
+		MailToDelete = nullptr;
 		CreateDestroyDeleteNoticeMailButton();
 	}
 
@@ -394,7 +394,7 @@ void HandleEmail( void )
 	UpDateMessageRecordList( );
 
 	// does email list need to be draw, or can be drawn
-	if (!fDisplayMessageFlag && !fNewMailFlag && MailToDelete == NULL && !fEmailListBeenDrawAlready)
+	if (!fDisplayMessageFlag && !fNewMailFlag && MailToDelete == nullptr && !fEmailListBeenDrawAlready)
 	{
 		DisplayEmailList();
 		fEmailListBeenDrawAlready = TRUE;
@@ -438,7 +438,7 @@ void HandleEmail( void )
 	CreateDestroyDeleteNoticeMailButton();
 
 	// if delete notice needs to be displayed?...display it
-	if (MailToDelete != NULL) DisplayDeleteNotice(MailToDelete);
+	if (MailToDelete != nullptr) DisplayDeleteNotice(MailToDelete);
 
 
 	// update buttons
@@ -545,7 +545,7 @@ void AddEmailMessage(INT32 iMessageOffset, INT32 iMessageLength, INT32 iDate, UI
 	if(pEmail)
 	{
 		// list exists, place at end
-		while (pEmail->Next != NULL) pEmail = pEmail->Next;
+		while (pEmail->Next != nullptr) pEmail = pEmail->Next;
 		pEmail->Next = pTempEmail;
 	}
 	else
@@ -556,7 +556,7 @@ void AddEmailMessage(INT32 iMessageOffset, INT32 iMessageLength, INT32 iDate, UI
 	pTempEmail->Prev = pEmail;
 
 	// reset Next ptr
-	pTempEmail->Next=NULL;
+	pTempEmail->Next=nullptr;
 
 	// set flag that new mail has arrived
 	fNewMailFlag=TRUE;
@@ -573,8 +573,8 @@ static void RemoveEmailMessage(Email* Mail)
 {
 	Email* Next = Mail->Next;
 	Email* Prev = Mail->Prev;
-	if (Next != NULL) Next->Prev = Prev;
-	if (Prev != NULL)
+	if (Next != nullptr) Next->Prev = Prev;
+	if (Prev != nullptr)
 	{
 		Prev->Next = Next;
 	}
@@ -591,7 +591,7 @@ static void AddEmailPage(void)
 {
 	Page* const p = new Page{};
 	FOR_EACH(Email*, i, p->Mail) *i = 0;
-	p->Next = NULL;
+	p->Next = nullptr;
 
 	if (pPageList)
 	{
@@ -616,12 +616,12 @@ static void AddMessageToPages(Email* Mail)
 	if(!pPage)
 		AddEmailPage();
 	pPage=pPageList;
-	while (pPage->Next != NULL && pPage->Mail[MAX_MESSAGES_PAGE - 1] != NULL)
+	while (pPage->Next != nullptr && pPage->Mail[MAX_MESSAGES_PAGE - 1] != nullptr)
 		pPage=pPage->Next;
 	// if list is full, add new page
 	while(iCounter <MAX_MESSAGES_PAGE)
 	{
-		if (pPage->Mail[iCounter] == NULL) break;
+		if (pPage->Mail[iCounter] == nullptr) break;
 		iCounter++;
 	}
 	if(iCounter==MAX_MESSAGES_PAGE)
@@ -638,15 +638,15 @@ static void AddMessageToPages(Email* Mail)
 
 static void SortMessages(EMailSortCriteria Criterium)
 {
-	Email* NewList = NULL;
+	Email* NewList = nullptr;
 
-	for (Email* List = pEmailList; List != NULL;)
+	for (Email* List = pEmailList; List != nullptr;)
 	{
 		Email* Mail = List;
 		List = List->Next;
 
-		Email* InsAfter = NULL;
-		for (Email* Other = NewList; Other != NULL; Other = Other->Next)
+		Email* InsAfter = nullptr;
+		for (Email* Other = NewList; Other != nullptr; Other = Other->Next)
 		{
 			INT Order; // XXX HACK000E
 			switch (Criterium)
@@ -676,7 +676,7 @@ static void SortMessages(EMailSortCriteria Criterium)
 			InsAfter = Other;
 		}
 		Mail->Prev = InsAfter;
-		if (InsAfter == NULL)
+		if (InsAfter == nullptr)
 		{
 			Mail->Next = NewList;
 			NewList = Mail;
@@ -686,7 +686,7 @@ static void SortMessages(EMailSortCriteria Criterium)
 			Mail->Next = InsAfter->Next;
 			InsAfter->Next = Mail;
 		}
-		if (Mail->Next != NULL) Mail->Next->Prev = Mail;
+		if (Mail->Next != nullptr) Mail->Next->Prev = Mail;
 	}
 	pEmailList = NewList;
 
@@ -704,7 +704,7 @@ static void ClearPages(void)
 		i = next;
 	}
 
-	pPageList = NULL;
+	pPageList = nullptr;
 	iLastPage = -1;
 }
 
@@ -749,10 +749,10 @@ static void DrawEmailSummary(INT32 y, const Email* e)
 static Page* GetCurrentPage(void)
 {
 	Page* i = pPageList;
-	if (i == NULL) return i;
+	if (i == nullptr) return i;
 
 	INT32 PageID = 0;
-	while (i->Next != NULL && PageID++ != iCurrentPage) i = i->Next;
+	while (i->Next != nullptr && PageID++ != iCurrentPage) i = i->Next;
 	return i;
 }
 
@@ -765,7 +765,7 @@ static void DisplayEmailList(void)
 	if (iCurrentPage == -1) iCurrentPage = 0;
 
 	const Page* const p = GetCurrentPage();
-	if (p == NULL) return;
+	if (p == nullptr) return;
 
 	// now we have current page, display it
 	SetFontForeground(FONT_BLACK);
@@ -839,7 +839,7 @@ static void EmailBtnCallBackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 		return;
 
 	Page* pPage = GetCurrentPage();
-	if (pPage == NULL) return;
+	if (pPage == nullptr) return;
 
 	// error check
 	INT32 iCount = MSYS_GetRegionUserData(pRegion, 0);
@@ -847,7 +847,7 @@ static void EmailBtnCallBackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 	Email* Mail = pPage->Mail[iCount];
 
 	// invalid message
-	if (Mail == NULL)
+	if (Mail == nullptr)
 	{
 		fDisplayMessageFlag=FALSE;
 		return;
@@ -865,7 +865,7 @@ static void EmailBtnCallBackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
 		return;
 
 	Page* pPage = GetCurrentPage();
-	if (pPage == NULL)
+	if (pPage == nullptr)
 	{
 		HandleRightButtonUpEvent();
 		return;
@@ -876,7 +876,7 @@ static void EmailBtnCallBackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
 	giMessagePage = 0;
 
 	Email* Mail = pPage->Mail[iCount];
-	if (Mail == NULL)
+	if (Mail == nullptr)
 	{
 		// no mail here, handle right button up event
 		HandleRightButtonUpEvent( );
@@ -926,7 +926,7 @@ static Record* GetFirstRecordOnThisPage(Record* const RecordList, INT32 const iP
 {
 	// get the first record on this page - build pages up until this point
 
-	Record* CurrentRecord = NULL;
+	Record* CurrentRecord = nullptr;
 
 	INT32 iCurrentPositionOnThisPage = 0;
 	INT32 iCurrentPage =0;
@@ -934,7 +934,7 @@ static Record* GetFirstRecordOnThisPage(Record* const RecordList, INT32 const iP
 
 
 	// null record list, nothing to do
-	if( RecordList == NULL )
+	if( RecordList == nullptr )
 	{
 		return ( CurrentRecord );
 	}
@@ -958,7 +958,7 @@ static Record* GetFirstRecordOnThisPage(Record* const RecordList, INT32 const iP
 			CurrentRecord = CurrentRecord -> Next;
 
 			// check if we have gone too far?
-			if( CurrentRecord == NULL )
+			if( CurrentRecord == nullptr )
 			{
 				return( CurrentRecord );
 			}
@@ -1300,7 +1300,7 @@ static void BtnDeleteNoback(GUI_BUTTON* btn, UINT32 reason)
 {
 	if (reason & MSYS_CALLBACK_REASON_POINTER_UP)
 	{
-		MailToDelete = NULL;
+		MailToDelete = nullptr;
 		fReDrawScreenFlag = TRUE;
 	}
 }
@@ -1322,7 +1322,7 @@ static void BtnDeleteYesback(GUI_BUTTON* btn, UINT32 reason)
 void CreateDestroyDeleteNoticeMailButton()
 {
 	static BOOLEAN fOldDeleteMailFlag=FALSE;
-	if (MailToDelete != NULL && !fOldDeleteMailFlag)
+	if (MailToDelete != nullptr && !fOldDeleteMailFlag)
 	{
 		// confirm delete email buttons
 
@@ -1338,7 +1338,7 @@ void CreateDestroyDeleteNoticeMailButton()
 		fReDrawScreenFlag = TRUE;
 
 	}
-	else if (MailToDelete == NULL && fOldDeleteMailFlag)
+	else if (MailToDelete == nullptr && fOldDeleteMailFlag)
 	{
 		// clear out the buttons and screen mask
 		fOldDeleteMailFlag=FALSE;
@@ -1364,7 +1364,7 @@ static BOOLEAN DisplayDeleteNotice(Email* pMail)
 	}
 
 	// error check.. no valid message passed
-	if( pMail == NULL )
+	if( pMail == nullptr )
 	{
 		return ( FALSE );
 	}
@@ -1407,10 +1407,10 @@ static void DeleteEmail(void)
 {
 
 	// error check, invalid mail, or not time to delete mail
-	if (MailToDelete == NULL) return;
+	if (MailToDelete == nullptr) return;
 	// remove the message
 	RemoveEmailMessage(MailToDelete);
-	MailToDelete = NULL;
+	MailToDelete = nullptr;
 
 	// stop displaying message, if so
 	fDisplayMessageFlag = FALSE;
@@ -1601,25 +1601,25 @@ static void ClearOutEmailMessageRecordsList(void)
 
 	for( iCounter = 0; iCounter < MAX_NUMBER_EMAIL_PAGES; iCounter++ )
 	{
-		pEmailPageInfo[ iCounter ].pFirstRecord = NULL;
-		pEmailPageInfo[ iCounter ].pLastRecord = NULL;
+		pEmailPageInfo[ iCounter ].pFirstRecord = nullptr;
+		pEmailPageInfo[ iCounter ].pLastRecord = nullptr;
 		pEmailPageInfo[ iCounter ].iPageNumber = iCounter;
 	}
 
 	// null out list
-	pMessageRecordList = NULL;
+	pMessageRecordList = nullptr;
 }
 
 
 static void AddEmailRecordToList(const ST::string& text)
 {
 	Record* const e = new Record{};
-	e->Next = NULL;
+	e->Next = nullptr;
 	e->pRecord = text;
 
 	// Append node to list
 	Record** anchor = &pMessageRecordList;
-	while (*anchor != NULL) anchor = &(*anchor)->Next;
+	while (*anchor != nullptr) anchor = &(*anchor)->Next;
 	*anchor = e;
 }
 
@@ -1666,7 +1666,7 @@ static void ReDisplayBoxes(void)
 		DisplayEmailMessage(CurrentMail);
 	}
 
-	if (MailToDelete != NULL) DisplayDeleteNotice(MailToDelete);
+	if (MailToDelete != nullptr) DisplayDeleteNotice(MailToDelete);
 
 	if(fNewMailFlag)
 	{
@@ -1899,7 +1899,7 @@ static void HandleIMPCharProfileResultsMessage(Email const* const pMail)
 
 	INT32 iRand = Random(32767);
 
-	if (pMessageRecordList != NULL) return;
+	if (pMessageRecordList != nullptr) return;
 	// list doesn't exist, reload
 
 	// The mail carries the profile of the character it reports on, so with several
@@ -2267,7 +2267,7 @@ static void DisplayWhichPageOfEmailProgramIsDisplayed(void)
 static void OpenMostRecentUnreadEmail(void)
 {
 	// will open the most recent email the player has recieved and not read
-	Email* MostRecentMail = NULL;
+	Email* MostRecentMail = nullptr;
 	Email* pB = pEmailList;
 	UINT32 iLowestDate = 9999999;
 
@@ -2287,7 +2287,7 @@ static void OpenMostRecentUnreadEmail(void)
 	CurrentMail = MostRecentMail;
 
 	// valid message, show it
-	if (MostRecentMail != NULL) fDisplayMessageFlag = TRUE;
+	if (MostRecentMail != nullptr) fDisplayMessageFlag = TRUE;
 }
 
 

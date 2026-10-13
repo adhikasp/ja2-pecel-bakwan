@@ -239,7 +239,7 @@ try
 
 	RenderCreditScreen();
 	// blit everything to the save buffer (cause the save buffer can bleed through)
-	BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+	BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 
 	g_credits_active = TRUE;
 	return TRUE;
@@ -257,7 +257,7 @@ static void ExitCreditScreen(void)
 
 	gCreditsStrings = std::nullopt;
 
-	while (g_credits_head != NULL) DeleteFirstNode();
+	while (g_credits_head != nullptr) DeleteFirstNode();
 
 	MSYS_RemoveRegion( &gCrdtBackgroundRegion );
 	for (size_t i = 0; i != lengthof(gCrdtMouseRegions); ++i)
@@ -278,10 +278,10 @@ static void HandleCreditScreen(void)
 	HandleCreditEyeBlinking();
 
 	//is it time to get a new node
-	if (g_credits_tail == NULL || (CRDT_START_POS_Y - (g_credits_tail->sPosY + g_credits_tail->sHeightOfString - 16)) >= (INT16)guiGapTillReadNextCredit)
+	if (g_credits_tail == nullptr || (CRDT_START_POS_Y - (g_credits_tail->sPosY + g_credits_tail->sHeightOfString - 16)) >= (INT16)guiGapTillReadNextCredit)
 	{
 		//if there are no more credits in the file
-		if (!GetNextCreditFromTextFile() && g_credits_tail == NULL)
+		if (!GetNextCreditFromTextFile() && g_credits_tail == nullptr)
 		{
 			g_credits_active = FALSE;
 		}
@@ -330,7 +330,7 @@ static void DeleteFirstNode(void)
 
 	g_credits_head = del->next;
 
-	if (g_credits_tail == del) g_credits_tail = NULL;
+	if (g_credits_tail == del) g_credits_tail = nullptr;
 
 	DeleteVideoSurface(del->uiVideoSurfaceImage);
 	delete del;
@@ -372,9 +372,9 @@ static void AddCreditNode(UINT32 uiFlags, const ST::string& pString)
 	DisplayWrappedString(0, 1, CRDT_WIDTH_OF_TEXT_AREA, 2, uiFontToUse, uiColorToUse, pString, 0, gubCrdtJustification);
 	SetFontDestBuffer(FRAME_BUFFER);
 
-	if (g_credits_tail == NULL)
+	if (g_credits_tail == nullptr)
 	{
-		Assert(g_credits_head == NULL);
+		Assert(g_credits_head == nullptr);
 		g_credits_head = pNodeToAdd;
 	}
 	else
@@ -390,13 +390,13 @@ static void DisplayCreditNode(const CRDT_NODE*);
 
 static void HandleCreditNodes(void)
 {
-	if (g_credits_head == NULL) return;
+	if (g_credits_head == nullptr) return;
 
 	if (gfPauseCreditScreen) return;
 
 	if (!(GetJA2Clock() - guiCrdtLastTimeUpdatingNode > guiCrdtNodeScrollSpeed)) return;
 
-	for (CRDT_NODE* i = g_credits_head; i != NULL; i = i->next)
+	for (CRDT_NODE* i = g_credits_head; i != nullptr; i = i->next)
 	{
 		DisplayCreditNode(i);
 		i->sPosY -= CRDT_SCROLL_PIXEL_AMOUNT;
@@ -435,7 +435,7 @@ static void DisplayCreditNode(const CRDT_NODE* const pCurrent)
 	}
 	RestoreExternBackgroundRect(CRDT_TEXT_START_LOC, y, CRDT_WIDTH_OF_TEXT_AREA, h);
 
-	BltVideoSurface(FRAME_BUFFER, pCurrent->uiVideoSurfaceImage, CRDT_TEXT_START_LOC, pCurrent->sPosY, NULL);
+	BltVideoSurface(FRAME_BUFFER, pCurrent->uiVideoSurfaceImage, CRDT_TEXT_START_LOC, pCurrent->sPosY, nullptr);
 }
 
 

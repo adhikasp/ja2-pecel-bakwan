@@ -43,7 +43,7 @@ void NewWayOfLoadingEnemySoldiersFromTempFile()
 
 	// Count the number of enemies (elites, regulars, admins and creatures) that
 	// are in the temp file.
-	UNDERGROUND_SECTORINFO const* underground_info = NULL;
+	UNDERGROUND_SECTORINFO const* underground_info = nullptr;
 	UINT8                         ubNumElites      = 0;
 	UINT8                         ubNumTroops      = 0;
 	UINT8                         ubNumAdmins      = 0;

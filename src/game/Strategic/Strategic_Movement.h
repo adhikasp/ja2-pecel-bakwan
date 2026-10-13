@@ -120,7 +120,7 @@ extern GROUP *gpGroupList;
 
 
 #define BASE_FOR_EACH_GROUP(type, iter) \
-	for (type iter = gpGroupList; iter != NULL; iter = iter->next)
+	for (type iter = gpGroupList; iter != nullptr; iter = iter->next)
 #define FOR_EACH_GROUP(iter)  BASE_FOR_EACH_GROUP(      GROUP*, iter)
 #define CFOR_EACH_GROUP(iter) BASE_FOR_EACH_GROUP(const GROUP*, iter)
 
@@ -137,7 +137,7 @@ extern GROUP *gpGroupList;
 #define CFOR_EACH_PLAYER_GROUP(iter) BASE_FOR_EACH_PLAYER_GROUP(const GROUP*, iter)
 
 #define FOR_EACH_GROUP_SAFE(iter)                                                    \
-	for (GROUP* iter = gpGroupList, * iter##__next; iter != NULL; iter = iter##__next) \
+	for (GROUP* iter = gpGroupList, * iter##__next; iter != nullptr; iter = iter##__next) \
 		if (iter##__next = iter->next, FALSE) {} else                                    \
 
 

@@ -55,7 +55,7 @@ MERCListingModel* MERCListingModel::deserialize(uint8_t index, const JsonValue& 
 	auto reader = json.toObject();
 	ST::string profileName = reader.GetString("profile");
 	auto profile = mercSystem->getMercProfileInfoByName(profileName);
-	if (profile == NULL) {
+	if (profile == nullptr) {
 		throw DataError(ST::format("'{}' does not refer to a valid profile", profile));
 	}
 	if (profile->mercType != MercType::MERC) {
@@ -76,7 +76,7 @@ MERCListingModel* MERCListingModel::deserialize(uint8_t index, const JsonValue& 
 				throw DataError(ST::format("Profile '{}' has a CROSS_SELL quote without M.E.R.C. profile", profileName));
 			}
 			auto crossSellProfile = mercSystem->getMercProfileInfoByName(crossSellName);
-			if (crossSellProfile == NULL) {
+			if (crossSellProfile == nullptr) {
 				throw DataError(ST::format("Profile '{}' has a CROSS_SELL quote '{}' that does not refer to a valid profile", profileName, crossSellName));
 			}
 			if (crossSellProfile->mercType != MercType::MERC) {

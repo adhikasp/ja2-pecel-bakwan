@@ -259,7 +259,7 @@ static void DrawMercsFaceToScreen(const UINT8 ubMercID, const UINT16 usPosX, con
 		shaded = TRUE;
 		text   = pPOWStrings[0];
 	}
-	else if (s != NULL)
+	else if (s != nullptr)
 	{
 		// the merc is on our team
 		shaded = TRUE;

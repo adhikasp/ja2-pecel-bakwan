@@ -30,7 +30,7 @@ void SetupTextInputForMapInfo()
 
 	InitTextInputModeWithScheme( DEFAULT_SCHEME );
 
-	AddUserInputField( NULL );  //just so we can use short cut keys while not typing.
+	AddUserInputField( nullptr );  //just so we can use short cut keys while not typing.
 
 	//light rgb fields
 	str = ST::format("{}", gEditorLightColor.r);

@@ -248,7 +248,7 @@ void AddMercSlot(SOLDIERTYPE* pSoldier)
 
 BOOLEAN RemoveMercSlot(SOLDIERTYPE* pSoldier)
 {
-	CHECKF(pSoldier != NULL);
+	CHECKF(pSoldier != nullptr);
 
 	return Erase(MercSlots, pSoldier);
 }
@@ -268,7 +268,7 @@ void AddAwaySlot(SOLDIERTYPE* pSoldier)
 
 BOOLEAN RemoveAwaySlot(SOLDIERTYPE* pSoldier)
 {
-	CHECKF(pSoldier != NULL);
+	CHECKF(pSoldier != nullptr);
 
 	return Erase(AwaySlots, pSoldier);
 }
@@ -521,7 +521,7 @@ void ExecuteOverhead(void)
 		{
 			SOLDIERTYPE* pSoldier = MercSlots[cnt];
 
-			if (pSoldier != NULL)
+			if (pSoldier != nullptr)
 			{
 				HandlePanelFaceAnimations(pSoldier);
 
@@ -829,7 +829,7 @@ void ExecuteOverhead(void)
 
 											// LOOK FOR STRUCT OPENABLE
 											STRUCTURE* const pStructure = FindStructure(sGridNo, STRUCTURE_OPENABLE);
-											if (pStructure == NULL)
+											if (pStructure == nullptr)
 											{
 												SLOGW("Told to open struct at {} and none was found", sGridNo);
 												fKeepMoving = FALSE;
@@ -1066,7 +1066,7 @@ void ExecuteOverhead(void)
 			// the ONLY thing to do with away soldiers is process their schedule if they have one
 			// and there is an action for them to do (like go on-sector)
 			SOLDIERTYPE* const pSoldier = AwaySlots[guiAIAwaySlotToHandle];
-			if (pSoldier != NULL && pSoldier->fAIFlags & AI_CHECK_SCHEDULE)
+			if (pSoldier != nullptr && pSoldier->fAIFlags & AI_CHECK_SCHEDULE)
 			{
 				HandleSoldierAI(pSoldier);
 			}
@@ -1328,7 +1328,7 @@ BOOLEAN HandleGotoNewGridNo(SOLDIERTYPE* pSoldier, BOOLEAN* pfKeepMoving, BOOLEA
 
 		return FALSE;
 	}
-	else if (InternalDoorTravelCost(pSoldier, usNewGridNo, gubWorldMovementCosts[usNewGridNo][pSoldier->ubPathingData[pSoldier->ubPathIndex]][pSoldier->bLevel], pSoldier->bTeam == OUR_TEAM, NULL, TRUE) == TRAVELCOST_DOOR)
+	else if (InternalDoorTravelCost(pSoldier, usNewGridNo, gubWorldMovementCosts[usNewGridNo][pSoldier->ubPathingData[pSoldier->ubPathIndex]][pSoldier->bLevel], pSoldier->bTeam == OUR_TEAM, nullptr, TRUE) == TRAVELCOST_DOOR)
 	{
 		// OK, if we are here, we have been told to get a pth through a door.
 
@@ -1361,7 +1361,7 @@ BOOLEAN HandleGotoNewGridNo(SOLDIERTYPE* pSoldier, BOOLEAN* pfKeepMoving, BOOLEA
 
 		// Get door
 		STRUCTURE* const pStructure = FindStructure(sDoorGridNo, STRUCTURE_ANYDOOR);
-		if (pStructure == NULL)
+		if (pStructure == nullptr)
 		{
 			SLOGD("HandleGotoNewGridNo() Failed: Door does not exist");
 			HaltGuyFromNewGridNoBecauseOfNoAPs(*pSoldier);
@@ -1468,7 +1468,7 @@ BOOLEAN HandleGotoNewGridNo(SOLDIERTYPE* pSoldier, BOOLEAN* pfKeepMoving, BOOLEA
 				{
 					EVENT_StopMerc(pSoldier);
 					fDontContinue = TRUE;
-					DishOutGasDamage(pSoldier, smokeEffect, TRUE, FALSE, NULL);
+					DishOutGasDamage(pSoldier, smokeEffect, TRUE, FALSE, nullptr);
 				}
 			}
 
@@ -1675,7 +1675,7 @@ static void HandleJohnArrival(SOLDIERTYPE* pSoldier)
 			return;
 		}
 
-		SOLDIERTYPE* pSoldier2 = NULL;
+		SOLDIERTYPE* pSoldier2 = nullptr;
 		if (CheckFact(FACT_MARY_ALIVE, 0))
 		{
 			pSoldier2 = FindSoldierByProfileID(MARY);
@@ -1719,7 +1719,7 @@ static BOOLEAN HandleAtNewGridNo(SOLDIERTYPE* pSoldier, BOOLEAN* pfKeepMoving)
 			// Turn off
 			pSoldier->fBeginFade = FALSE;
 
-			if (pSoldier->bLevel > 0 && gpWorldLevelData[pSoldier->sGridNo].pRoofHead != NULL)
+			if (pSoldier->bLevel > 0 && gpWorldLevelData[pSoldier->sGridNo].pRoofHead != nullptr)
 			{
 				pSoldier->ubFadeLevel = gpWorldLevelData[pSoldier->sGridNo].pRoofHead->ubShadeLevel;
 			}
@@ -1919,11 +1919,11 @@ static BOOLEAN HandleAtNewGridNo(SOLDIERTYPE* pSoldier, BOOLEAN* pfKeepMoving)
 		{
 			if (CheckFact(FACT_JOHN_ALIVE, 0))
 			{
-				HandleJohnArrival(NULL);
+				HandleJohnArrival(nullptr);
 			}
 			else
 			{
-				HandleMaryArrival(NULL);
+				HandleMaryArrival(nullptr);
 			}
 		}
 
@@ -1975,7 +1975,7 @@ void SelectNextAvailSoldier(const SOLDIERTYPE* const last)
 		}
 	}
 
-	SetSelectedMan(NULL);
+	SetSelectedMan(nullptr);
 	// Change UI mode to reflact that we are selected
 	guiPendingOverrideEvent = I_ON_TERRAIN;
 }
@@ -2012,7 +2012,7 @@ void SelectSoldier(SOLDIERTYPE* const s, const SelSoldierFlags flags)
 	if (s == old_sel && !(flags & SELSOLDIER_FORCE_RESELECT)) return;
 
 	// Unselect old selected guy
-	if (old_sel != NULL)
+	if (old_sel != nullptr)
 	{
 		old_sel->fShowLocator  = FALSE;
 		old_sel->fFlashLocator = FALSE;
@@ -2187,7 +2187,7 @@ void HandlePlayerTeamMemberDeath(SOLDIERTYPE* pSoldier)
 	ReceivingSoldierCancelServices(pSoldier);
 
 	// look for all mercs on the same team,
-	SOLDIERTYPE* new_selected_soldier = NULL;
+	SOLDIERTYPE* new_selected_soldier = nullptr;
 	FOR_EACH_IN_TEAM(s, pSoldier->bTeam)
 	{
 		if (s->bLife >= OKLIFE && s->bInSector)
@@ -2197,10 +2197,10 @@ void HandlePlayerTeamMemberDeath(SOLDIERTYPE* pSoldier)
 		}
 	}
 
-	if (new_selected_soldier != NULL)
+	if (new_selected_soldier != nullptr)
 	{
 		if (gTacticalStatus.fAutoBandageMode &&
-				pSoldier->auto_bandaging_medic != NULL)
+				pSoldier->auto_bandaging_medic != nullptr)
 		{
 			CancelAIAction(pSoldier->auto_bandaging_medic);
 		}
@@ -2227,7 +2227,7 @@ void HandlePlayerTeamMemberDeath(SOLDIERTYPE* pSoldier)
 			{
 				// handle stuff for Carmen if Slay is killed
 				const SOLDIERTYPE* const s = FindSoldierByProfileID(CARMEN);
-				if (s && s->bAttitude == ATTACKSLAYONLY && ClosestPC(s, NULL) != NOWHERE)
+				if (s && s->bAttitude == ATTACKSLAYONLY && ClosestPC(s, nullptr) != NOWHERE)
 				{
 					// Carmen now becomes friendly again
 					TriggerNPCRecord(CARMEN, 29);
@@ -2263,7 +2263,7 @@ void HandlePlayerTeamMemberDeath(SOLDIERTYPE* pSoldier)
 		}
 		else
 		{
-			SetSelectedMan(NULL);
+			SetSelectedMan(nullptr);
 			// Change UI mode to reflact that we are selected
 			guiPendingOverrideEvent = I_ON_TERRAIN;
 		}
@@ -2449,7 +2449,7 @@ void HandleNPCTeamMemberDeath(SOLDIERTYPE* const pSoldierOld)
 	}
 	else // enemies and creatures... should any of this stuff not be called if a creature dies?
 	{
-		if (pSoldierOld->ubBodyType == QUEENMONSTER && killer != NULL)
+		if (pSoldierOld->ubBodyType == QUEENMONSTER && killer != nullptr)
 		{
 			BeginHandleQueenBitchDeath(killer, pSoldierOld->sGridNo, pSoldierOld->bLevel);
 		}
@@ -2460,7 +2460,7 @@ void HandleNPCTeamMemberDeath(SOLDIERTYPE* const pSoldierOld)
 			TrackEnemiesKilled(ENEMY_KILLED_IN_TACTICAL, pSoldierOld->ubSoldierClass);
 		}
 		// If enemy guy was killed by the player, give morale boost to player's team!
-		if (killer != NULL && killer->bTeam == OUR_TEAM)
+		if (killer != nullptr && killer->bTeam == OUR_TEAM)
 		{
 			HandleMoraleEvent(killer, MORALE_KILLED_ENEMY, gWorldSector);
 		}
@@ -2472,17 +2472,17 @@ void HandleNPCTeamMemberDeath(SOLDIERTYPE* const pSoldierOld)
 		if (gTacticalStatus.the_chosen_one == pSoldierOld)
 		{
 			// reset the chosen one!
-			gTacticalStatus.the_chosen_one = NULL;
+			gTacticalStatus.the_chosen_one = nullptr;
 		}
 
 		if (pSoldierOld->ubProfile == QUEEN)
 		{
-			HandleMoraleEvent(NULL, MORALE_DEIDRANNA_KILLED, gWorldSector);
+			HandleMoraleEvent(nullptr, MORALE_DEIDRANNA_KILLED, gWorldSector);
 			MaximizeLoyaltyForDeidrannaKilled();
 		}
 		else if (pSoldierOld->ubBodyType == QUEENMONSTER)
 		{
-			HandleMoraleEvent(NULL, MORALE_MONSTER_QUEEN_KILLED, gWorldSector);
+			HandleMoraleEvent(nullptr, MORALE_MONSTER_QUEEN_KILLED, gWorldSector);
 			IncrementTownLoyaltyEverywhere(LOYALTY_BONUS_KILL_QUEEN_MONSTER);
 
 			// Grant experience gain.....
@@ -2496,7 +2496,7 @@ void HandleNPCTeamMemberDeath(SOLDIERTYPE* const pSoldierOld)
 		pSoldierOld->ubLastDamageReason != TAKE_DAMAGE_BLOODLOSS)
 	{
 		// if it was a kill by a player's merc
-		if (killer != NULL && killer->bTeam == OUR_TEAM)
+		if (killer != nullptr && killer->bTeam == OUR_TEAM)
 		{
 			// EXPERIENCE CLASS GAIN:  Earned a kill
 			StatChange(*killer, EXPERAMT, 10 * pSoldierOld->bExpLevel, FROM_SUCCESS);
@@ -2507,14 +2507,14 @@ void HandleNPCTeamMemberDeath(SOLDIERTYPE* const pSoldierOld)
 		if (assister == killer) assister = pSoldierOld->next_to_previous_attacker;
 
 		// if it was assisted by a player's merc
-		if (assister != NULL && assister->bActive && assister->bTeam == OUR_TEAM)
+		if (assister != nullptr && assister->bActive && assister->bTeam == OUR_TEAM)
 		{
 			// EXPERIENCE CLASS GAIN:  Earned an assist
 			StatChange(*assister, EXPERAMT, 5 * pSoldierOld->bExpLevel, FROM_SUCCESS);
 		}
 	}
 
-	if (killer != NULL && killer->bTeam == MILITIA_TEAM)
+	if (killer != nullptr && killer->bTeam == MILITIA_TEAM)
 	{
 		killer->ubMilitiaKills++;
 	}
@@ -2684,9 +2684,9 @@ UINT8 CivilianGroupMembersChangeSidesWithinProximity(SOLDIERTYPE* pAttacked)
 
 		// if in LOS of this guy's attacker
 		const SOLDIERTYPE* const attacker = pAttacked->attacker;
-		if ((attacker != NULL && s->bOppList[attacker->ubID] == SEEN_CURRENTLY) ||
+		if ((attacker != nullptr && s->bOppList[attacker->ubID] == SEEN_CURRENTLY) ||
 			(PythSpacesAway(s->sGridNo, pAttacked->sGridNo) < MaxDistanceVisible()) ||
-			(attacker != NULL && PythSpacesAway(s->sGridNo, attacker->sGridNo) < MaxDistanceVisible()))
+			(attacker != nullptr && PythSpacesAway(s->sGridNo, attacker->sGridNo) < MaxDistanceVisible()))
 		{
 			MakeCivHostile(s);
 			if (s->bOppCnt > 0)
@@ -2899,7 +2899,7 @@ static SOLDIERTYPE* FindNextActiveSquadRange(INT8 begin, INT8 end)
 			return s;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -2909,11 +2909,11 @@ SOLDIERTYPE* FindNextActiveSquad(SOLDIERTYPE* s)
 	SOLDIERTYPE* res;
 
 	res = FindNextActiveSquadRange(assignment + 1, NUMBER_OF_SQUADS);
-	if (res != NULL) return res;
+	if (res != nullptr) return res;
 
 	// none found, now loop back
 	res = FindNextActiveSquadRange(0, assignment);
-	if (res != NULL) return res;
+	if (res != nullptr) return res;
 
 	// IF we are here, keep as we always were!
 	return s;
@@ -2958,7 +2958,7 @@ INT16 NewOKDestination(const SOLDIERTYPE* pCurrSoldier, INT16 sGridNo, BOOLEAN f
 	if (fPeopleToo)
 	{
 		const SOLDIERTYPE* const person = WhoIsThere2(sGridNo, bLevel);
-		if (person != NULL)
+		if (person != nullptr)
 		{
 			// we could be multitiled... if the person there is us, and the gridno is not
 			// our base gridno, skip past these checks
@@ -3015,7 +3015,7 @@ static INT16 NewOKDestinationAndDirection(const SOLDIERTYPE* pCurrSoldier, INT16
 	if (fPeopleToo)
 	{
 		const SOLDIERTYPE* const person = WhoIsThere2(sGridNo, bLevel);
-		if (person != NULL)
+		if (person != nullptr)
 		{
 			// we could be multitiled... if the person there is us, and the gridno is
 			// not our base gridno, skip past these checks
@@ -3080,7 +3080,7 @@ BOOLEAN FlatRoofAboveGridNo(INT32 iMapIndex)
 BOOLEAN IsLocationSittable( INT32 iMapIndex, BOOLEAN fOnRoof )
 {
 	INT16 sDesiredLevel;
-	if (WhoIsThere2(iMapIndex, 0) != NULL) return FALSE;
+	if (WhoIsThere2(iMapIndex, 0) != nullptr) return FALSE;
 	//Locations on roofs without a roof is not possible, so
 	//we convert the onroof intention to ground.
 	if( fOnRoof && !FlatRoofAboveGridNo( iMapIndex ) )
@@ -3286,7 +3286,7 @@ INT16 FindAdjacentGridEx(SOLDIERTYPE* pSoldier, INT16 sGridNo, UINT8* pubDirecti
 	}
 
 	// CHECK IF WE WANT TO FORCE GRIDNO TO PERSON
-	if (psAdjustedGridNo != NULL)
+	if (psAdjustedGridNo != nullptr)
 	{
 		*psAdjustedGridNo = sGridNo;
 	}
@@ -3308,7 +3308,7 @@ INT16 FindAdjacentGridEx(SOLDIERTYPE* pSoldier, INT16 sGridNo, UINT8* pubDirecti
 			// ATE: Added: Switch behave EXACTLY like doors
 			pDoor = FindStructure(sGridNo, STRUCTURE_ANYDOOR);
 
-			if (pDoor != NULL)
+			if (pDoor != nullptr)
 			{
 				// Get orinetation
 				ubWallOrientation = pDoor->ubWallOrientation;
@@ -3346,16 +3346,16 @@ INT16 FindAdjacentGridEx(SOLDIERTYPE* pSoldier, INT16 sGridNo, UINT8* pubDirecti
 	}
 	else
 	{
-		pDoor = NULL;
+		pDoor = nullptr;
 	}
 
 	if (fForceToPerson)
 	{
 		const SOLDIERTYPE* const s = FindSoldier(sGridNo, FIND_SOLDIER_GRIDNO);
-		if (s != NULL)
+		if (s != nullptr)
 		{
 			sGridNo = s->sGridNo;
-			if (psAdjustedGridNo != NULL)
+			if (psAdjustedGridNo != nullptr)
 			{
 				*psAdjustedGridNo = sGridNo;
 
@@ -3425,7 +3425,7 @@ INT16 FindAdjacentGridEx(SOLDIERTYPE* pSoldier, INT16 sGridNo, UINT8* pubDirecti
 		else
 		{
 			// this function returns original MP cost if not a door cost
-			if ( DoorTravelCost( pSoldier, sSpot, gubWorldMovementCosts[ sSpot ][ ubTestDirection ][ pSoldier->bLevel ], FALSE, NULL ) >= TRAVELCOST_BLOCKED )
+			if ( DoorTravelCost( pSoldier, sSpot, gubWorldMovementCosts[ sSpot ][ ubTestDirection ][ pSoldier->bLevel ], FALSE, nullptr ) >= TRAVELCOST_BLOCKED )
 			{
 			// obstacle or wall there!
 			continue;
@@ -3433,7 +3433,7 @@ INT16 FindAdjacentGridEx(SOLDIERTYPE* pSoldier, INT16 sGridNo, UINT8* pubDirecti
 		}
 
 		// Eliminate some directions if we are looking at doors!
-		if ( pDoor != NULL )
+		if ( pDoor != nullptr )
 		{
 			// Get orinetation
 			ubWallOrientation = pDoor->ubWallOrientation;
@@ -3549,12 +3549,12 @@ INT16 FindNextToAdjacentGridEx( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 *pub
 	UINT8     ubTestDirection;
 
 	// CHECK IF WE WANT TO FORCE GRIDNO TO PERSON
-	if (psAdjustedGridNo != NULL) *psAdjustedGridNo = sGridNo;
+	if (psAdjustedGridNo != nullptr) *psAdjustedGridNo = sGridNo;
 
 	// CHECK IF IT'S THE SAME ONE AS WE'RE ON, IF SO, RETURN THAT!
 	if (pSoldier->sGridNo == sGridNo)
 	{
-		if (pubDirection != NULL) *pubDirection = pSoldier->bDirection;
+		if (pubDirection != nullptr) *pubDirection = pSoldier->bDirection;
 		return sGridNo;
 	}
 
@@ -3565,16 +3565,16 @@ INT16 FindNextToAdjacentGridEx( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 *pub
 	}
 	else
 	{
-		pDoor = NULL;
+		pDoor = nullptr;
 	}
 
 	if (fForceToPerson)
 	{
 		const SOLDIERTYPE* const s = FindSoldier(sGridNo, FIND_SOLDIER_GRIDNO);
-		if (s != NULL)
+		if (s != nullptr)
 		{
 			sGridNo = s->sGridNo;
-			if (psAdjustedGridNo != NULL) *psAdjustedGridNo = sGridNo;
+			if (psAdjustedGridNo != nullptr) *psAdjustedGridNo = sGridNo;
 		}
 	}
 
@@ -3622,14 +3622,14 @@ INT16 FindNextToAdjacentGridEx( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 *pub
 		}
 
 		const SOLDIERTYPE* const tgt = WhoIsThere2(sSpot, pSoldier->bLevel);
-		if (tgt != NULL && tgt != pSoldier)
+		if (tgt != nullptr && tgt != pSoldier)
 		{
 			// skip this direction b/c it's blocked by another merc!
 			continue;
 		}
 
 		// Eliminate some directions if we are looking at doors!
-		if (pDoor != NULL)
+		if (pDoor != nullptr)
 		{
 			// Get orinetation
 			ubWallOrientation = pDoor->ubWallOrientation;
@@ -3652,14 +3652,14 @@ INT16 FindNextToAdjacentGridEx( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 *pub
 		// first tile is okay, how about the second?
 		sSpot2 = NewGridNo( sSpot, DirectionInc( sDirs[ cnt ] ) );
 		if (gubWorldMovementCosts[sSpot2][sDirs[cnt]][pSoldier->bLevel] >= TRAVELCOST_BLOCKED ||
-			DoorTravelCost(pSoldier, sSpot2, gubWorldMovementCosts[sSpot2][sDirs[cnt]][pSoldier->bLevel], pSoldier->bTeam == OUR_TEAM, NULL) == TRAVELCOST_DOOR) // closed door blocks!
+			DoorTravelCost(pSoldier, sSpot2, gubWorldMovementCosts[sSpot2][sDirs[cnt]][pSoldier->bLevel], pSoldier->bTeam == OUR_TEAM, nullptr) == TRAVELCOST_DOOR) // closed door blocks!
 		{
 			// obstacle or wall there!
 			continue;
 		}
 
 		const SOLDIERTYPE* const tgt2 = WhoIsThere2(sSpot2, pSoldier->bLevel);
-		if (tgt2 != NULL && tgt2 != pSoldier)
+		if (tgt2 != nullptr && tgt2 != pSoldier)
 		{
 			// skip this direction b/c it's blocked by another merc!
 			continue;
@@ -3764,13 +3764,13 @@ INT16 FindNextToAdjacentGridEx( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 *pub
 
 INT16 FindAdjacentPunchTarget(const SOLDIERTYPE* const pSoldier, const SOLDIERTYPE* const pTargetSoldier, INT16* const psAdjustedTargetGridNo)
 {
-	Assert(pTargetSoldier != NULL);
+	Assert(pTargetSoldier != nullptr);
 
 	for (UINT8 i = 0; i < NUM_WORLD_DIRECTIONS; ++i)
 	{
 		const INT16 sSpot = NewGridNo(pSoldier->sGridNo, DirectionInc(i));
 
-		if (DoorTravelCost(pSoldier, sSpot, gubWorldMovementCosts[sSpot][i][pSoldier->bLevel], FALSE, NULL) >= TRAVELCOST_BLOCKED)
+		if (DoorTravelCost(pSoldier, sSpot, gubWorldMovementCosts[sSpot][i][pSoldier->bLevel], FALSE, nullptr) >= TRAVELCOST_BLOCKED)
 		{
 			// blocked!
 			continue;
@@ -4017,7 +4017,7 @@ void EnterCombatMode( UINT8 ubStartingTeam )
 	{
 		// OK, make sure we have a selected guy
 		const SOLDIERTYPE* const sel = GetSelectedMan();
-		if (sel == NULL || sel->bOppCnt == 0)
+		if (sel == nullptr || sel->bOppCnt == 0)
 		{
 			// OK, look through and find one....
 			FOR_EACH_IN_TEAM(s, OUR_TEAM)
@@ -4480,7 +4480,7 @@ BOOLEAN CheckForEndOfBattle( BOOLEAN fAnEnemyRetreated )
 			ExitCombatMode();
 		}
 
-		HandleMoraleEvent(NULL, MORALE_HEARD_BATTLE_LOST, gWorldSector);
+		HandleMoraleEvent(nullptr, MORALE_HEARD_BATTLE_LOST, gWorldSector);
 		HandleGlobalLoyaltyEvent(GLOBAL_LOYALTY_BATTLE_LOST, gWorldSector);
 
 		// Play death music
@@ -4604,7 +4604,7 @@ BOOLEAN CheckForEndOfBattle( BOOLEAN fAnEnemyRetreated )
 				HandleGlobalLoyaltyEvent(GLOBAL_LOYALTY_BATTLE_WON, gWorldSector);
 
 				// Change music modes
-				if (gLastMercTalkedAboutKilling == NULL ||
+				if (gLastMercTalkedAboutKilling == nullptr ||
 					!(gLastMercTalkedAboutKilling->uiStatusFlags & SOLDIER_MONSTER))
 				{
 					SetMusicMode(MUSIC_TACTICAL_VICTORY);
@@ -4621,12 +4621,12 @@ BOOLEAN CheckForEndOfBattle( BOOLEAN fAnEnemyRetreated )
 				{
 					// OK, If we have just finished a battle with creatures........ play killed creature quote...
 					//
-					if (gLastMercTalkedAboutKilling != NULL &&
+					if (gLastMercTalkedAboutKilling != nullptr &&
 						gLastMercTalkedAboutKilling->uiStatusFlags & SOLDIER_MONSTER)
 					{
 
 					}
-					if (gLastMercTalkedAboutKilling != NULL &&
+					if (gLastMercTalkedAboutKilling != nullptr &&
 						gLastMercTalkedAboutKilling->ubBodyType == BLOODCAT)
 					{
 						SayBattleSoundFromAnyBodyInSector(BATTLE_SOUND_COOL1);
@@ -5241,7 +5241,7 @@ static void HandleSuppressionFire(const SOLDIERTYPE* const targeted_merc, SOLDIE
 					case ANIM_CROUCH:
 						if (ubTotalPointsLost >= AP_PRONE && IsValidStance( pSoldier, ANIM_PRONE ) )
 						{
-							sClosestOpponent = ClosestKnownOpponent( pSoldier, &sClosestOppLoc, NULL );
+							sClosestOpponent = ClosestKnownOpponent( pSoldier, &sClosestOppLoc, nullptr );
 							if (sClosestOpponent == NOWHERE || SpacesAway( pSoldier->sGridNo, sClosestOppLoc ) > 8)
 							{
 								// The stance change below is issued with
@@ -5262,7 +5262,7 @@ static void HandleSuppressionFire(const SOLDIERTYPE* const targeted_merc, SOLDIE
 						}
 						else if (ubTotalPointsLost >= (AP_CROUCH + AP_PRONE) && ( gAnimControl[ pSoldier->usAnimState ].ubEndHeight != ANIM_PRONE ) && IsValidStance( pSoldier, ANIM_PRONE ) )
 						{
-							sClosestOpponent = ClosestKnownOpponent( pSoldier, &sClosestOppLoc, NULL );
+							sClosestOpponent = ClosestKnownOpponent( pSoldier, &sClosestOppLoc, nullptr );
 							if ( sClosestOpponent == NOWHERE || SpacesAway( pSoldier->sGridNo, sClosestOppLoc ) > 8 )
 							{
 								if ( gAnimControl[ pSoldier->usAnimState ].ubEndHeight == ANIM_STAND )
@@ -5519,13 +5519,13 @@ static SOLDIERTYPE* InternalReduceAttackBusyCount(SOLDIERTYPE* const pSoldier, c
 	// of being attacked
 	BOOLEAN fEnterCombat = FALSE;
 
-	if (pSoldier == NULL)
+	if (pSoldier == nullptr)
 	{
-		pTarget = NULL;
+		pTarget = nullptr;
 	}
 	else
 	{
-		if (pTarget == NULL)
+		if (pTarget == nullptr)
 		{
 			SLOGD("Target ptr is null!");
 		}
@@ -5570,7 +5570,7 @@ static SOLDIERTYPE* InternalReduceAttackBusyCount(SOLDIERTYPE* const pSoldier, c
 	if (gTacticalStatus.uiFlags & INCOMBAT)
 	{
 		// Check to see if anyone was suppressed
-		const SOLDIERTYPE* const target = (pSoldier == NULL ? NULL : pSoldier->target);
+		const SOLDIERTYPE* const target = (pSoldier == nullptr ? nullptr : pSoldier->target);
 		HandleSuppressionFire(target, pSoldier);
 
 		//HandleAfterShootingGuy( pSoldier, pTarget );
@@ -5587,7 +5587,7 @@ static SOLDIERTYPE* InternalReduceAttackBusyCount(SOLDIERTYPE* const pSoldier, c
 	// this is so we DON'T call freeupattacker() which will cancel
 	// the AI guy's meanwhile NPC stuff.
 	// OK< let's NOT do this if it was the queen attacking....
-	if ( AreInMeanwhile( ) && pSoldier != NULL && pSoldier->ubProfile != QUEEN )
+	if ( AreInMeanwhile( ) && pSoldier != nullptr && pSoldier->ubProfile != QUEEN )
 	{
 		return( pTarget );
 	}
@@ -5794,8 +5794,8 @@ static SOLDIERTYPE* InternalReduceAttackBusyCount(SOLDIERTYPE* const pSoldier, c
 
 SOLDIERTYPE* ReduceAttackBusyCount(SOLDIERTYPE* const attacker, const BOOLEAN fCalledByAttacker)
 {
-	SOLDIERTYPE* const target = (attacker == NULL ? NULL : attacker->target);
-	SLOGD("Reducing Attack Busy Count of {}", attacker != NULL ? attacker->ubID : -1);
+	SOLDIERTYPE* const target = (attacker == nullptr ? nullptr : attacker->target);
+	SLOGD("Reducing Attack Busy Count of {}", attacker != nullptr ? attacker->ubID : -1);
 	return InternalReduceAttackBusyCount(attacker, fCalledByAttacker, target);
 }
 
@@ -5941,7 +5941,7 @@ void RemoveSoldierFromTacticalSector(SOLDIERTYPE& s)
 				else
 				{
 					// if here, make nobody
-					SetSelectedMan(NULL);
+					SetSelectedMan(nullptr);
 				}
 			}
 		}
@@ -5949,7 +5949,7 @@ void RemoveSoldierFromTacticalSector(SOLDIERTYPE& s)
 	}
 	else
 	{
-		SetSelectedMan(NULL);
+		SetSelectedMan(nullptr);
 	}
 }
 
@@ -5975,11 +5975,11 @@ void InitializeTacticalStatusAtBattleStart(void)
 
 	for (INT32 i = 0; i < MAXTEAMS; ++i)
 	{
-		gTacticalStatus.Team[i].last_merc_to_radio = NULL;
+		gTacticalStatus.Team[i].last_merc_to_radio = nullptr;
 		gTacticalStatus.Team[i].bAwareOfOpposition = FALSE;
 	}
 
-	gTacticalStatus.the_chosen_one = NULL;
+	gTacticalStatus.the_chosen_one = nullptr;
 
 	ClearIntList();
 
@@ -6009,7 +6009,7 @@ static void DeathTimerCallback(void)
 	{
 		text = LargeTacticalStr[LARGESTR_NOONE_LEFT_CAPABLE_OF_BATTLE_STR];
 	}
-	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback, nullptr);
 }
 
 
@@ -6024,7 +6024,7 @@ void CaptureTimerCallback(void)
 	{
 		text = LargeTacticalStr[LARGESTR_HAVE_BEEN_CAPTURED];
 	}
-	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback, nullptr);
 	gfSurrendered = FALSE;
 }
 
@@ -6217,7 +6217,7 @@ void HandleThePlayerBeNotifiedOfSomeoneElseInSector(void)
 		return;
 	}
 
-	DoMessageBox(MSG_BOX_BASIC_STYLE, *(GCM->getNewString(NS_SOMEONE_ELSE_IN_SECTOR)), GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, *(GCM->getNewString(NS_SOMEONE_ELSE_IN_SECTOR)), GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 }
 
 static void HandleBrothelWallDestroyed(INT16 const sSectorX, INT16 const sSectorY, INT8 const sSectorZ, INT16 const sGridNo, STRUCTURE* const s, UINT8 const ubDamage, BOOLEAN const fDestroyed)

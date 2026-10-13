@@ -54,7 +54,7 @@
 BOOLEAN gfTacticalDoHeliRun = FALSE;
 BOOLEAN	gfGameScreenLocateToSoldier = FALSE;
 BOOLEAN	gfEnteringMapScreen					= FALSE;
-SOLDIERTYPE* gPreferredInitialSelectedGuy = NULL;
+SOLDIERTYPE* gPreferredInitialSelectedGuy = nullptr;
 
 static BOOLEAN      gfTacticalIsModal             = FALSE;
 static MOUSE_REGION gTacticalDisableRegion;
@@ -139,7 +139,7 @@ void EnterTacticalScreen(void)
 
 	// CHECK IF OURGUY IS NOW OFF DUTY
 	const SOLDIERTYPE* sel = GetSelectedMan();
-	if (sel != NULL)
+	if (sel != nullptr)
 	{
 		if (!OK_CONTROLLABLE_MERC(sel))
 		{
@@ -147,7 +147,7 @@ void EnterTacticalScreen(void)
 			sel = GetSelectedMan();
 		}
 		// ATE: If the current guy is sleeping, change....
-		if (sel != NULL && sel->fMercAsleep) SelectNextAvailSoldier(sel);
+		if (sel != nullptr && sel->fMercAsleep) SelectNextAvailSoldier(sel);
 	}
 	else
 	{
@@ -215,7 +215,7 @@ void LeaveTacticalScreen(ScreenID const uiNewScreen)
 
 void InternalLeaveTacticalScreen(ScreenID const uiNewScreen)
 {
-	gpCustomizableTimerCallback = NULL;
+	gpCustomizableTimerCallback = nullptr;
 
 	// unload the sector they teleported out of
 	if ( !gfAutomaticallyStartAutoResolve )
@@ -293,7 +293,7 @@ ScreenID MainGameScreenHandle(void)
 
 	if ( gfBeginEndTurn )
 	{
-		UIHandleEndTurn( NULL );
+		UIHandleEndTurn( nullptr );
 		gfBeginEndTurn = FALSE;
 	}
 
@@ -387,7 +387,7 @@ ScreenID MainGameScreenHandle(void)
 		if( !gfTacticalPlacementGUIActive )
 		{
 			SOLDIERTYPE* const sel = GetSelectedMan();
-			if (sel != NULL && OK_INTERRUPT_MERC(sel))
+			if (sel != nullptr && OK_INTERRUPT_MERC(sel))
 			{
 				SelectSoldier(sel, SELSOLDIER_FORCE_RESELECT);
 			}
@@ -481,7 +481,7 @@ ScreenID MainGameScreenHandle(void)
 
 	RenderWorld( );
 
-	if ( gRenderOverride != NULL )
+	if ( gRenderOverride != nullptr )
 	{
 		gRenderOverride( );
 	}
@@ -578,9 +578,9 @@ void SetRenderHook( RENDER_HOOK pRenderOverride )
 static void TacticalScreenLocateToSoldier(void)
 {
 	SOLDIERTYPE* const prefer = gPreferredInitialSelectedGuy;
-	if (prefer != NULL)
+	if (prefer != nullptr)
 	{
-		gPreferredInitialSelectedGuy = NULL;
+		gPreferredInitialSelectedGuy = nullptr;
 		if (OK_CONTROLLABLE_MERC(prefer) && OK_INTERRUPT_MERC(prefer))
 		{
 			LocateSoldier(prefer, 10);
@@ -643,11 +643,11 @@ void EndModalTactical( )
 	}
 
 
-	if ( gModalDoneCallback != NULL )
+	if ( gModalDoneCallback != nullptr )
 	{
 		gModalDoneCallback( );
 
-		gModalDoneCallback = NULL;
+		gModalDoneCallback = nullptr;
 	}
 
 	gfTacticalIsModal = FALSE;

@@ -300,7 +300,7 @@ static void BtnIMPBeginScreenDoneCallback(GUI_BUTTON *btn, UINT32 reason)
 		{
 			if (!CanCreateAnotherIMPCharacter())
 			{
-				DoLapTopMessageBox(MSG_BOX_IMP_STYLE, pImpPopUpStrings[4], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+				DoLapTopMessageBox(MSG_BOX_IMP_STYLE, pImpPopUpStrings[4], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 				iCurrentProfileMode = 0;
 				return;
 			}
@@ -319,7 +319,7 @@ static void BtnIMPBeginScreenDoneCallback(GUI_BUTTON *btn, UINT32 reason)
 		else
 		{
 			// invalid name, reset current mode
-			DoLapTopMessageBox(MSG_BOX_IMP_STYLE, pImpPopUpStrings[2], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+			DoLapTopMessageBox(MSG_BOX_IMP_STYLE, pImpPopUpStrings[2], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 			iCurrentProfileMode = 0;
 		}
 	}

@@ -18,7 +18,7 @@ std::unique_ptr<AIMListingModel> AIMListingModel::deserialize(const JsonValue& j
 	auto reader = json.toObject();
 	ST::string profileName = reader.GetString("profile");
 	auto profile = mercSystem->getMercProfileInfoByName(profileName);
-	if (profile == NULL) {
+	if (profile == nullptr) {
 		throw DataError(ST::format("'{}' does not refer to a valid profile", profile));
 	}
 	if (profile->mercType != MercType::AIM) {

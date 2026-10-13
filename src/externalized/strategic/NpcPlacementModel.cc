@@ -16,7 +16,7 @@ NpcPlacementModel* NpcPlacementModel::deserialize(const JsonValue& json, const M
 	std::vector<uint8_t> sectorIds = JsonUtility::parseSectorList(json, "sectors");
 	auto profile = element.GetString("profile");
 	auto mercProfile = mercSystem->getMercProfileInfoByName(profile);
-	if (mercProfile == NULL) {
+	if (mercProfile == nullptr) {
 		throw DataError(ST::format("`{}` does not refer to a valid profile.", profile));
 	}
 

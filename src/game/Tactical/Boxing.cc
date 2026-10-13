@@ -167,8 +167,8 @@ static void CountPeopleInBoxingRingAndDoActions(void)
 {
 	UINT8       ubTotalInRing = 0;
 	UINT8       ubPlayersInRing = 0;
-	SOLDIERTYPE *pInRing[2] = { NULL, NULL };
-	SOLDIERTYPE *pNonBoxingPlayer = NULL;
+	SOLDIERTYPE *pInRing[2] = { nullptr, nullptr };
+	SOLDIERTYPE *pNonBoxingPlayer = nullptr;
 
 	FOR_EACH_MERC(i)
 	{
@@ -340,7 +340,7 @@ static UINT8 BoxersAvailable(void)
 
 	for( ubLoop = 0; ubLoop < NUM_BOXERS; ubLoop++ )
 	{
-		if (gBoxer[ubLoop] != NULL && !gfBoxerFought[ubLoop]) ubCount++;
+		if (gBoxer[ubLoop] != nullptr && !gfBoxerFought[ubLoop]) ubCount++;
 	}
 
 	return( ubCount );

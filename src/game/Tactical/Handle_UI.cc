@@ -190,8 +190,8 @@ static ScreenID UIHandleEXExitSectorMenu(UI_EVENT*);
 static ScreenID UIHandlePPanMode(UI_EVENT*);
 
 
-static SOLDIERTYPE* gpRequesterMerc        = NULL;
-static SOLDIERTYPE* gpRequesterTargetMerc  = NULL;
+static SOLDIERTYPE* gpRequesterMerc        = nullptr;
+static SOLDIERTYPE* gpRequesterTargetMerc  = nullptr;
 static INT16        gsRequesterGridNo;
 static INT16        gsOverItemsGridNo      = NOWHERE;
 static INT16        gsOverItemsLevel       = 0;
@@ -199,7 +199,7 @@ static BOOLEAN      gfUIInterfaceSetBusy   = FALSE;
 static UINT32       guiUIInterfaceBusyTime = 0;
 
 static UINT32     gfTacticalForceNoCursor         = FALSE;
-static LEVELNODE* gpInvTileThatCausedMoveConfirm  = NULL;
+static LEVELNODE* gpInvTileThatCausedMoveConfirm  = nullptr;
 BOOLEAN           gfResetUIMovementOptimization   = FALSE;
 static BOOLEAN    gfBeginVehicleCursor            = FALSE;
 static UINT16     gsOutOfRangeGridNo              = NOWHERE;
@@ -284,7 +284,7 @@ static UICursorID guiNewUICursor = NORMAL_SNAPUICURSOR;
 UIEventKind guiPendingOverrideEvent = I_DO_NOTHING;
 static UINT16 gusSavedMouseX;
 static UINT16 gusSavedMouseY;
-UIKEYBOARD_HOOK gUIKeyboardHook = NULL;
+UIKEYBOARD_HOOK gUIKeyboardHook = nullptr;
 BOOLEAN gUIActionModeChangeDueToMouseOver = FALSE;
 
 static BOOLEAN    gfDisplayTimerCursor = FALSE;
@@ -330,7 +330,7 @@ GridNo gfUIOverItemPoolGridNo = NOWHERE;
 INT16 gsCurrentActionPoints = 1;
 BOOLEAN gfUIHandlePhysicsTrajectory = FALSE;
 BOOLEAN gfUIMouseOnValidCatcher = FALSE;
-const SOLDIERTYPE* gUIValidCatcher = NULL;
+const SOLDIERTYPE* gUIValidCatcher = nullptr;
 
 
 BOOLEAN gfUIConfirmExitArrows = FALSE;
@@ -343,7 +343,7 @@ BOOLEAN gfUICanBeginAllMoveCycle = FALSE; // GEts set so we know that the next r
 
 INT16 gsSelectedGridNo = 0;
 INT16 gsSelectedLevel = I_GROUND_LEVEL;
-SOLDIERTYPE* gSelectedGuy = NULL;
+SOLDIERTYPE* gSelectedGuy = nullptr;
 
 BOOLEAN gfUIRefreshArrows = FALSE;
 
@@ -374,7 +374,7 @@ static void SetUIMouseCursor(void);
 ScreenID HandleTacticalUI(void)
 {
 	LEVELNODE *pIntTile;
-	static LEVELNODE *pOldIntTile = NULL;
+	static LEVELNODE *pOldIntTile = nullptr;
 
 
 	// RESET FLAGS
@@ -383,7 +383,7 @@ ScreenID HandleTacticalUI(void)
 	gfUIDisplayActionPointsBlack = FALSE;
 	gfUIDisplayActionPointsCenter = FALSE;
 	gfUIHandleSelection = NO_GUY_SELECTION;
-	gSelectedGuy = NULL;
+	gSelectedGuy = nullptr;
 	guiShowUPDownArrows = ARROWS_HIDE_UP | ARROWS_HIDE_DOWN;
 	SetHitLocationText({});
 	SetIntTileLocationText({});
@@ -395,7 +395,7 @@ ScreenID HandleTacticalUI(void)
 	gfUIOverItemPoolGridNo = NOWHERE;
 	gfUIHandlePhysicsTrajectory = FALSE;
 	gfUIMouseOnValidCatcher = FALSE;
-	gUIValidCatcher = NULL;
+	gUIValidCatcher = nullptr;
 	gfIgnoreOnSelectedGuy = FALSE;
 
 	// Set old event value
@@ -414,7 +414,7 @@ ScreenID HandleTacticalUI(void)
 			// Decrease global busy  counter...
 			gTacticalStatus.ubAttackBusyCount = 0;
 			guiPendingOverrideEvent = LU_ENDUILOCK;
-			UIHandleLUIEndLock( NULL );
+			UIHandleLUIEndLock( nullptr );
 		}
 	}
 
@@ -605,7 +605,7 @@ void ResetCurrentCursorTarget() {
 	ErasePath();
 
 	guiCurrentCursorGridNo = NOWHERE;
-	gUIFullTarget = NULL;
+	gUIFullTarget = nullptr;
 	guiUIFullTargetFlags = NO_MERC;
 }
 
@@ -787,7 +787,7 @@ static void SetUIMouseCursor(void)
 			if (usMapPos != NOWHERE)
 			{
 				const SOLDIERTYPE* const sel = GetSelectedMan();
-				if (sel != NULL && sel->bLevel == 0)
+				if (sel != nullptr && sel->bLevel == 0)
 				{
 					// ATE: Is this place revealed?
 					if (GetRoom(usMapPos) == NO_ROOM || gpWorldLevelData[usMapPos].uiFlags & MAPELEMENT_REVEALED)
@@ -1046,7 +1046,7 @@ static ScreenID UIHandleTestHit(UI_EVENT* pUIEvent)
 	INT8 bDamage;
 
 	// CHECK IF WE'RE ON A GUY ( EITHER SELECTED, OURS, OR THEIRS
-	if (gUIFullTarget != NULL)
+	if (gUIFullTarget != nullptr)
 	{
 		SOLDIERTYPE* const tgt = gUIFullTarget;
 
@@ -1070,7 +1070,7 @@ static ScreenID UIHandleTestHit(UI_EVENT* pUIEvent)
 
 		gTacticalStatus.ubAttackBusyCount++;
 
-		EVENT_SoldierGotHit(tgt, 1, bDamage, 10, tgt->bDirection, 320, NULL, FIRE_WEAPON_NO_SPECIAL, tgt->bAimShotLocation, NOWHERE);
+		EVENT_SoldierGotHit(tgt, 1, bDamage, 10, tgt->bDirection, 320, nullptr, FIRE_WEAPON_NO_SPECIAL, tgt->bAimShotLocation, NOWHERE);
 	}
 	return( GAME_SCREEN );
 }
@@ -1126,7 +1126,7 @@ static ScreenID UIHandleSelectMerc(UI_EVENT* pUIEvent)
 	INT32	iCurrentSquad;
 
 	// Get merc index at mouse and set current selection
-	if (gUIFullTarget != NULL)
+	if (gUIFullTarget != nullptr)
 	{
 		iCurrentSquad = CurrentSquad( );
 
@@ -1166,7 +1166,7 @@ static ScreenID UIHandleMOnTerrain(UI_EVENT* pUIEvent)
 
 	// If we are a vehicle..... just show an X
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel != NULL)
+	if (sel != nullptr)
 	{
 		if (OK_ENTERABLE_VEHICLE(sel))
 		{
@@ -1183,7 +1183,7 @@ static ScreenID UIHandleMOnTerrain(UI_EVENT* pUIEvent)
 	{
 		// Are we over items...
 		const ITEM_POOL* pItemPool = GetItemPool(usMapPos, (UINT8)gsInterfaceLevel);
-		if (pItemPool != NULL && IsItemPoolVisible(pItemPool))
+		if (pItemPool != nullptr && IsItemPoolVisible(pItemPool))
 		{
 			// Are we already in...
 			if ( fOverItems )
@@ -1222,7 +1222,7 @@ static ScreenID UIHandleMOnTerrain(UI_EVENT* pUIEvent)
 			fOverItems = FALSE;
 		}
 
-		if (sel != NULL)
+		if (sel != nullptr)
 		{
 			if (GetExitGrid(usMapPos, &ExitGrid) && sel->bLevel == 0)
 			{
@@ -1244,7 +1244,7 @@ static ScreenID UIHandleMOnTerrain(UI_EVENT* pUIEvent)
 		// DO SOME CURSOR POSITION FLAGS SETTING
 		MouseMoveState const uiCursorFlags = GetCursorMovementFlags();
 
-		if (sel != NULL)
+		if (sel != nullptr)
 		{
 			// Get interactvie tile node
 			const LEVELNODE* const pIntNode = GetCurInteractiveTile();
@@ -1260,7 +1260,7 @@ static ScreenID UIHandleMOnTerrain(UI_EVENT* pUIEvent)
 
 				SelectSoldier(FindNextActiveAndAliveMerc(sel, FALSE, FALSE), SELSOLDIER_NONE);
 			}
-			else if (UIOKMoveDestination(sel, usMapPos) != 1 && pIntNode == NULL)
+			else if (UIOKMoveDestination(sel, usMapPos) != 1 && pIntNode == nullptr)
 			{
 				// ERASE PATH
 				ErasePath();
@@ -1324,7 +1324,7 @@ static ScreenID UIHandleMOnTerrain(UI_EVENT* pUIEvent)
 static ScreenID UIHandleMovementMenu(UI_EVENT* pUIEvent)
 {
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 
 	// Popup Menu
 	if ( pUIEvent->fFirstTime )
@@ -1407,7 +1407,7 @@ static ScreenID UIHandleAOnTerrain(UI_EVENT* pUIEvent)
 	const GridNo usMapPos = guiCurrentCursorGridNo;
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
 
-	if ( gpItemPointer != NULL )
+	if ( gpItemPointer != nullptr )
 	{
 		return( GAME_SCREEN );
 	}
@@ -1416,7 +1416,7 @@ static ScreenID UIHandleAOnTerrain(UI_EVENT* pUIEvent)
 
 	// Get soldier to determine range
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 
 	// ATE: Add stuff here to display a system message if we are targeting smeothing and
 	//  are out of range.
@@ -1431,7 +1431,7 @@ static ScreenID UIHandleAOnTerrain(UI_EVENT* pUIEvent)
 		{
 			// Are we over a guy?
 			const SOLDIERTYPE* const tgt = gUIFullTarget;
-			if (tgt != NULL)
+			if (tgt != nullptr)
 			{
 				// No, ok display message IF this is the first time at this gridno
 				if (gsOutOfRangeGridNo != tgt->sGridNo || gubOutOfRangeMerc != SOLDIER2ID(sel))
@@ -1574,7 +1574,7 @@ static ScreenID UIHandleCMoveMerc(UI_EVENT* pUIEvent)
 	BOOLEAN fOldFastMove;
 
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel != NULL)
+	if (sel != nullptr)
 	{
 		fAllMove = gfUIAllMoveOn;
 		gfUIAllMoveOn = FALSE;
@@ -1662,7 +1662,7 @@ static ScreenID UIHandleCMoveMerc(UI_EVENT* pUIEvent)
 			pIntTile = GetCurInteractiveTileGridNoAndStructure(&sIntTileGridNo, &pStructure);
 
 			// We should not have null here if we are given this flag...
-			if (pIntTile != NULL)
+			if (pIntTile != nullptr)
 			{
 				if (pStructure->fFlags & (STRUCTURE_ANYDOOR | STRUCTURE_SWITCH))
 				{
@@ -1670,7 +1670,7 @@ static ScreenID UIHandleCMoveMerc(UI_EVENT* pUIEvent)
 				}
 				else
 				{
-					sActionGridNo = FindAdjacentGridEx(sel, sIntTileGridNo, &ubDirection, NULL, FALSE, TRUE);
+					sActionGridNo = FindAdjacentGridEx(sel, sIntTileGridNo, &ubDirection, nullptr, FALSE, TRUE);
 				}
 				if (sActionGridNo != -1)
 				{
@@ -1707,7 +1707,7 @@ static ScreenID UIHandleCMoveMerc(UI_EVENT* pUIEvent)
 				}
 			}
 
-			if (gTacticalStatus.fAtLeastOneGuyOnMultiSelect && pIntTile == NULL)
+			if (gTacticalStatus.fAtLeastOneGuyOnMultiSelect && pIntTile == nullptr)
 			{
 				HandleMultiSelectionMove(sDestGridNo);
 			}
@@ -1725,7 +1725,7 @@ static ScreenID UIHandleCMoveMerc(UI_EVENT* pUIEvent)
 				}
 
 				// HANDLE ANY INTERACTIVE OBJECTS HERE!
-				if (pIntTile != NULL)
+				if (pIntTile != nullptr)
 				{
 					StartInteractiveObject(sIntTileGridNo, *pStructure, *sel, ubDirection);
 				}
@@ -1738,7 +1738,7 @@ static ScreenID UIHandleCMoveMerc(UI_EVENT* pUIEvent)
 
 static ScreenID UIHandleMCycleMoveAll(UI_EVENT* pUIEvent)
 {
-	if (GetSelectedMan() == NULL)
+	if (GetSelectedMan() == nullptr)
 		return GAME_SCREEN;
 
 	if ( gfUICanBeginAllMoveCycle )
@@ -1753,7 +1753,7 @@ static ScreenID UIHandleMCycleMoveAll(UI_EVENT* pUIEvent)
 static ScreenID UIHandleMCycleMovement(UI_EVENT* pUIEvent)
 {
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 
 	gfUIAllMoveOn = FALSE;
 
@@ -1836,7 +1836,7 @@ static ScreenID UIHandleMAdjustStanceMode(UI_EVENT* pUIEvent)
 
 		// Get soldier current height of animation
 		const SOLDIERTYPE* const sel = GetSelectedMan();
-		if (sel != NULL)
+		if (sel != nullptr)
 		{
 			if (FindHigherLevel(sel)) ubNearHeigherLevel = TRUE;
 			if (FindLowerLevel(sel))  ubNearLowerLevel   = TRUE;
@@ -1912,7 +1912,7 @@ static ScreenID UIHandleMAdjustStanceMode(UI_EVENT* pUIEvent)
 	{
 		if ( gusAnchorMouseY > gusMouseYPos )
 		{
-			if (GetSelectedMan() != NULL)
+			if (GetSelectedMan() != nullptr)
 			{
 					if ( iPosDiff < GO_MOVE_ONE && ubUpHeight >= 1 )
 					{
@@ -1965,7 +1965,7 @@ static ScreenID UIHandleMAdjustStanceMode(UI_EVENT* pUIEvent)
 
 		if ( gusAnchorMouseY < gusMouseYPos )
 		{
-			if (GetSelectedMan() != NULL)
+			if (GetSelectedMan() != nullptr)
 			{
 					if ( iPosDiff < GO_MOVE_ONE && ubDownDepth >= 1 )
 					{
@@ -2031,7 +2031,7 @@ static ScreenID UIHandleMAdjustStanceMode(UI_EVENT* pUIEvent)
 static ScreenID UIHandleAChangeToConfirmAction(UI_EVENT* pUIEvent)
 {
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel != NULL) HandleLeftClickCursor(sel);
+	if (sel != nullptr) HandleLeftClickCursor(sel);
 
 	ResetBurstLocations( );
 
@@ -2045,7 +2045,7 @@ static ScreenID UIHandleCAOnTerrain(UI_EVENT* pUIEvent)
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
 
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 
 	guiNewUICursor = GetProperItemCursor(sel, usMapPos, TRUE);
 	UIHandleOnMerc( FALSE );
@@ -2096,7 +2096,7 @@ static void UIHandleMercAttack(SOLDIERTYPE* pSoldier, SOLDIERTYPE* pTargetSoldie
 	// ATE: Check if we are targeting an interactive tile, and adjust gridno accordingly...
 	pIntNode = GetCurInteractiveTileGridNoAndStructure( &sGridNo, &pStructure );
 
-	if ( pTargetSoldier != NULL )
+	if ( pTargetSoldier != nullptr )
 	{
 		sTargetGridNo = pTargetSoldier->sGridNo;
 		bTargetLevel  = pTargetSoldier->bLevel;
@@ -2106,7 +2106,7 @@ static void UIHandleMercAttack(SOLDIERTYPE* pSoldier, SOLDIERTYPE* pTargetSoldie
 		sTargetGridNo = usMapPos;
 		bTargetLevel  = (INT8)gsInterfaceLevel;
 
-		if ( pIntNode != NULL )
+		if ( pIntNode != nullptr )
 		{
 			// Change gridno....
 			sTargetGridNo = sGridNo;
@@ -2114,7 +2114,7 @@ static void UIHandleMercAttack(SOLDIERTYPE* pSoldier, SOLDIERTYPE* pTargetSoldie
 	}
 
 	// here, change gridno if we're targeting ourselves....
-	if ( pIntNode != NULL  )
+	if ( pIntNode != nullptr  )
 	{
 		// Are we in the same gridno?
 		if ( sGridNo == pSoldier->sGridNo && ubItemCursor != AIDCURS )
@@ -2143,7 +2143,7 @@ static void UIHandleMercAttack(SOLDIERTYPE* pSoldier, SOLDIERTYPE* pTargetSoldie
 		else
 		{
 			// ATE: Refine this a bit - if we have nobody as a target...
-			if ( pTargetSoldier == NULL )
+			if ( pTargetSoldier == nullptr )
 			{
 				sTargetGridNo = sGridNo;
 			}
@@ -2220,7 +2220,7 @@ static void AttackRequesterCallback(MessageBoxReturnValue const bExitValue)
 static ScreenID UIHandleCAMercShoot(UI_EVENT* pUIEvent)
 {
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 	// preinit to prevent false ap costs; actions which dont charge turning ap
 	// are coming after this line and put the value to true
 	sel->fDontChargeTurningAPs = FALSE;
@@ -2229,7 +2229,7 @@ static ScreenID UIHandleCAMercShoot(UI_EVENT* pUIEvent)
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
 
 	SOLDIERTYPE* const tgt = gUIFullTarget;
-	if (tgt != NULL)
+	if (tgt != nullptr)
 	{
 		// If this is one of our own guys.....pop up requiester...
 		if ((tgt->bTeam == OUR_TEAM || tgt->bTeam == MILITIA_TEAM) &&
@@ -2243,7 +2243,7 @@ static ScreenID UIHandleCAMercShoot(UI_EVENT* pUIEvent)
 			gsRequesterGridNo = usMapPos;
 
 			ST::string zStr = st_format_printf(TacticalStr[ATTACK_OWN_GUY_PROMPT], tgt->name);
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zStr, GAME_SCREEN, MSG_BOX_FLAG_YESNO, AttackRequesterCallback, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zStr, GAME_SCREEN, MSG_BOX_FLAG_YESNO, AttackRequesterCallback, nullptr);
 			return GAME_SCREEN;
 		}
 	}
@@ -2260,7 +2260,7 @@ static ScreenID UIHandleAEndAction(UI_EVENT* pUIEvent)
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
 
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel != NULL)
+	if (sel != nullptr)
 	{
 		if (!(gTacticalStatus.uiFlags & INCOMBAT))
 		{
@@ -2321,7 +2321,7 @@ static ScreenID UIHandlePADJAdjustStance(UI_EVENT* pUIEvent)
 	gfIgnoreScrolling = FALSE;
 
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL || gbAdjustStanceDiff == 0) return GAME_SCREEN;
+	if (sel == nullptr || gbAdjustStanceDiff == 0) return GAME_SCREEN;
 
 	if (gbClimbID	== 1)
 	{
@@ -2399,7 +2399,7 @@ static UINT8 GetAdjustedAnimHeight(UINT8 ubAnimHeight, INT8 bChange)
 BOOLEAN SelectedMercCanAffordAttack( )
 {
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return FALSE;
+	if (sel == nullptr) return FALSE;
 
 	const GridNo usMapPos = guiCurrentCursorGridNo;
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
@@ -2416,7 +2416,7 @@ BOOLEAN SelectedMercCanAffordAttack( )
 		{
 			// Look for a soldier at this position
 			const SOLDIERTYPE* const tgt           = gUIFullTarget;
-			const INT16              sTargetGridNo = (tgt != NULL ? tgt->sGridNo : usMapPos);
+			const INT16              sTargetGridNo = (tgt != nullptr ? tgt->sGridNo : usMapPos);
 			const INT16              sAPCost       = CalcTotalAPsToAttack(sel, sTargetGridNo, TRUE, sel->bShownAimTime / 2);
 
 			if (EnoughPoints(sel, sAPCost, 0, TRUE)) return TRUE;
@@ -2432,13 +2432,13 @@ BOOLEAN SelectedMercCanAffordAttack( )
 BOOLEAN SelectedMercCanAffordMove(  )
 {
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return FALSE;
+	if (sel == nullptr) return FALSE;
 
 	const GridNo usMapPos = guiCurrentCursorGridNo;
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
 
 	// IF WE ARE OVER AN INTERACTIVE TILE, GIVE GRIDNO OF POSITION
-	if (GetCurInteractiveTile() != NULL)
+	if (GetCurInteractiveTile() != nullptr)
 	{
 		// CHECK APS
 		return EnoughPoints(sel, gsCurrentActionPoints, 0, TRUE);
@@ -2471,7 +2471,7 @@ static ScreenID UIHandleHCOnTerrain(UI_EVENT* pUIEvent)
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
 
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 
 	// If we are out of breath, no cursor...
 	if (sel->bBreath < OKBREATH && sel->bCollapsed)
@@ -2591,7 +2591,7 @@ BOOLEAN UIHandleOnMerc( BOOLEAN fMovementMode )
 
 	// CHECK IF WE'RE ON A GUY ( EITHER SELECTED, OURS, OR THEIRS
 	SOLDIERTYPE* const pSoldier = gUIFullTarget;
-	if (pSoldier != NULL)
+	if (pSoldier != nullptr)
 	{
 		if ( uiMercFlags & OWNED_MERC )
 		{
@@ -2612,7 +2612,7 @@ BOOLEAN UIHandleOnMerc( BOOLEAN fMovementMode )
 						// Add highlight to guy in interface.c
 						gfUIHandleSelection = SELECTED_GUY_SELECTION;
 
-						if ( gpItemPointer == NULL )
+						if ( gpItemPointer == nullptr )
 						{
 							// Don't do this unless we want to
 
@@ -2900,7 +2900,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* pSoldier, UINT16 usMapPos, MoveUITar
 
 BOOLEAN HandleUIMovementCursor(SOLDIERTYPE* const pSoldier, MouseMoveState const uiCursorFlags, UINT16 const usMapPos, MoveUITarget const uiFlags)
 {
-	static const SOLDIERTYPE* target = NULL;
+	static const SOLDIERTYPE* target = nullptr;
 
 	BOOLEAN fSetCursor = FALSE;
 	BOOLEAN fTargetFoundAndLookingForOne = FALSE;
@@ -2934,7 +2934,7 @@ BOOLEAN HandleUIMovementCursor(SOLDIERTYPE* const pSoldier, MouseMoveState const
 			// Save for next time...
 			target = gUIFullTarget;
 
-			if (gUIFullTarget != NULL) fTargetFoundAndLookingForOne = TRUE;
+			if (gUIFullTarget != nullptr) fTargetFoundAndLookingForOne = TRUE;
 		}
 
 		if ( uiFlags == MOVEUI_TARGET_ITEMS )
@@ -3099,7 +3099,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 		pIntTile = GetCurInteractiveTileGridNoAndStructure( &sIntTileGridNo, &pStructure );
 
 		// We should not have null here if we are given this flag...
-		if ( pIntTile != NULL )
+		if ( pIntTile != nullptr )
 		{
 			if (pStructure->fFlags & (STRUCTURE_ANYDOOR | STRUCTURE_SWITCH))
 			{
@@ -3110,7 +3110,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 			}
 			else
 			{
-				sActionGridNo = FindAdjacentGridEx(pSoldier, sIntTileGridNo, NULL, NULL, FALSE, TRUE);
+				sActionGridNo = FindAdjacentGridEx(pSoldier, sIntTileGridNo, nullptr, nullptr, FALSE, TRUE);
 				sAPCost = doorAPs[HANDLE_DOOR_OPEN];
 			}
 
@@ -3136,7 +3136,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 	}
 	else if ( uiFlags == MOVEUI_TARGET_WIREFENCE )
 	{
-		sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, NULL, NULL, FALSE, TRUE);
+		sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, nullptr, nullptr, FALSE, TRUE);
 		if ( sActionGridNo == -1 )
 		{
 			sAPCost = 0;
@@ -3156,7 +3156,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 	}
 	else if ( uiFlags == MOVEUI_TARGET_JAR )
 	{
-		sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, NULL, NULL, FALSE, TRUE);
+		sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, nullptr, nullptr, FALSE, TRUE);
 		if ( sActionGridNo == -1 )
 		{
 			sActionGridNo = usMapPos;
@@ -3178,9 +3178,9 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 		pIntTile = GetCurInteractiveTileGridNoAndStructure( &sIntTileGridNo, &pStructure );
 
 		// We should not have null here if we are given this flag...
-		if ( pIntTile != NULL )
+		if ( pIntTile != nullptr )
 		{
-			sActionGridNo = FindAdjacentGridEx(pSoldier, sIntTileGridNo, NULL, NULL, FALSE, TRUE);
+			sActionGridNo = FindAdjacentGridEx(pSoldier, sIntTileGridNo, nullptr, nullptr, FALSE, TRUE);
 			if ( sActionGridNo != -1 )
 			{
 				sAPCost = AP_ATTACH_CAN;
@@ -3212,7 +3212,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 			}
 		}
 
-		sActionGridNo =  FindAdjacentGridEx(pSoldier, usMapPos, NULL, NULL, FALSE, TRUE);
+		sActionGridNo =  FindAdjacentGridEx(pSoldier, usMapPos, nullptr, nullptr, FALSE, TRUE);
 		if ( sActionGridNo == -1 )
 		{
 			sActionGridNo = usMapPos;
@@ -3232,7 +3232,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 	{
 		// For refueling, check if we are over a vehicle, then get gridno to edge of that vehicle!
 		const SOLDIERTYPE* const tgt = GetRefuelableStructAtGridNo(usMapPos);
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
 			const INT16 sNewGridNo = FindGridNoFromSweetSpotWithStructDataFromSoldier(pSoldier, pSoldier->usUIMovementMode, 5, 0, tgt);
 			if ( sNewGridNo != NOWHERE )
@@ -3241,7 +3241,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 			}
 		}
 
-		sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, NULL, NULL, FALSE, TRUE);
+		sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, nullptr, nullptr, FALSE, TRUE);
 		if ( sActionGridNo == -1 )
 		{
 			sActionGridNo = usMapPos;
@@ -3264,7 +3264,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 
 		// Check if we are on a target
 		const SOLDIERTYPE* const tgt = gUIFullTarget;
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
 			UINT8 cnt;
 			INT16 sSpot;
@@ -3292,7 +3292,7 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 
 				if ( sGotLocation == NOWHERE )
 				{
-				sActionGridNo = FindAdjacentGridEx(pSoldier, tgt->sGridNo, NULL, &sAdjustedGridNo, TRUE, FALSE);
+				sActionGridNo = FindAdjacentGridEx(pSoldier, tgt->sGridNo, nullptr, &sAdjustedGridNo, TRUE, FALSE);
 
 					if ( sActionGridNo == -1 )
 					{
@@ -3328,9 +3328,9 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 	{
 		// Check if we are on a target
 		const SOLDIERTYPE* const tgt = gUIFullTarget;
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
-			sActionGridNo = FindAdjacentGridEx(pSoldier, tgt->sGridNo, NULL, &sAdjustedGridNo, TRUE, FALSE);
+			sActionGridNo = FindAdjacentGridEx(pSoldier, tgt->sGridNo, nullptr, &sAdjustedGridNo, TRUE, FALSE);
 			if ( sActionGridNo == -1 )
 			{
 				sActionGridNo = sAdjustedGridNo;
@@ -3361,14 +3361,14 @@ static INT8 DrawUIMovementPath(SOLDIERTYPE* const pSoldier, UINT16 usMapPos, Mov
 	else if ( uiFlags == MOVEUI_TARGET_MERCSFORAID )
 	{
 		const SOLDIERTYPE* const tgt = gUIFullTarget;
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
-			sActionGridNo = FindAdjacentGridEx(pSoldier, tgt->sGridNo, NULL, &sAdjustedGridNo, TRUE, FALSE);
+			sActionGridNo = FindAdjacentGridEx(pSoldier, tgt->sGridNo, nullptr, &sAdjustedGridNo, TRUE, FALSE);
 
 			// Try again at another gridno...
 			if ( sActionGridNo == -1 )
 			{
-				sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, NULL, &sAdjustedGridNo, TRUE, FALSE);
+				sActionGridNo = FindAdjacentGridEx(pSoldier, usMapPos, nullptr, &sAdjustedGridNo, TRUE, FALSE);
 
 				if ( sActionGridNo == -1 )
 				{
@@ -3744,7 +3744,7 @@ static ScreenID UIHandleLCOnTerrain(UI_EVENT* pUIEvent)
 	guiNewUICursor = LOOK_UICURSOR;
 
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 
 	ShowTacticalTouchUI(TacticalTouchUIMode::ConfirmAction);
 
@@ -3835,7 +3835,7 @@ static ScreenID UIHandleLCLook(UI_EVENT* pUIEvent)
 	else
 	{
 		SOLDIERTYPE* const sel = GetSelectedMan();
-		if (sel == NULL) return GAME_SCREEN;
+		if (sel == nullptr) return GAME_SCREEN;
 
 		if (MakeSoldierTurn(sel, pos)) SetUIBusy(sel);
 	}
@@ -3850,7 +3850,7 @@ static ScreenID UIHandleTOnTerrain(UI_EVENT* pUIEvent)
 	ShowTacticalTouchUI(TacticalTouchUIMode::ConfirmMove);
 
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return GAME_SCREEN;
+	if (sel == nullptr) return GAME_SCREEN;
 
 	const GridNo usMapPos = guiCurrentCursorGridNo;
 	if (usMapPos == NOWHERE) return GAME_SCREEN;
@@ -3873,7 +3873,7 @@ static ScreenID UIHandleTOnTerrain(UI_EVENT* pUIEvent)
 
 	// USe cursor based on distance
 	// Get distance away
-	if (tgt != NULL) sTargetGridNo = tgt->sGridNo;
+	if (tgt != nullptr) sTargetGridNo = tgt->sGridNo;
 
 	const UINT32 uiRange = GetRangeFromGridNoDiff(sel->sGridNo, sTargetGridNo);
 
@@ -3885,7 +3885,7 @@ static ScreenID UIHandleTOnTerrain(UI_EVENT* pUIEvent)
 
 	if ( uiRange <= NPC_TALK_RADIUS )
 	{
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
 			guiNewUICursor = TALK_A_UICURSOR;
 		}
@@ -3896,7 +3896,7 @@ static ScreenID UIHandleTOnTerrain(UI_EVENT* pUIEvent)
 	}
 	else
 	{
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
 			//guiNewUICursor = TALK_OUT_RANGE_A_UICURSOR;
 			guiNewUICursor = TALK_A_UICURSOR;
@@ -3907,7 +3907,7 @@ static ScreenID UIHandleTOnTerrain(UI_EVENT* pUIEvent)
 		}
 	}
 
-	if (tgt != NULL)
+	if (tgt != nullptr)
 	{
 		if (!SoldierTo3DLocationLineOfSightTest(sel, sTargetGridNo, sel->bLevel, 3, sDistVisible, TRUE))
 		{
@@ -3957,7 +3957,7 @@ static ScreenID UIHandleLUIBeginLock(UI_EVENT* pUIEvent)
 {
 	// Don't let both versions of the locks to happen at the same time!
 	// ( They are mutually exclusive )!
-	UIHandleLAEndLockOurTurn( NULL );
+	UIHandleLAEndLockOurTurn( nullptr );
 
 	// Hide touch ui
 	HideTacticalTouchUI();
@@ -3996,7 +3996,7 @@ ScreenID UIHandleLUIEndLock(UI_EVENT* pUIEvent)
 
 		//SetCurrentCursorFromDatabase( guiCurrentUICursor );
 
-		UIHandleMOnTerrain( NULL );
+		UIHandleMOnTerrain( nullptr );
 
 		if ( !gfIsUsingTouch && WorldPointer::In() )
 		{
@@ -4102,7 +4102,7 @@ void EndMultiSoldierSelection(BOOLEAN acknowledge)
 
 	// loop through all guys who are 'multi-selected' and check if our currently
 	// selected guy is among them - if not, change to a guy who is
-	SOLDIERTYPE*             first = NULL;
+	SOLDIERTYPE*             first = nullptr;
 	const SOLDIERTYPE* const sel   = GetSelectedMan();
 	FOR_EACH_IN_TEAM(s, OUR_TEAM)
 	{
@@ -4113,7 +4113,7 @@ void EndMultiSoldierSelection(BOOLEAN acknowledge)
 
 		gTacticalStatus.fAtLeastOneGuyOnMultiSelect = TRUE;
 
-		if (s == sel || first == NULL)
+		if (s == sel || first == nullptr)
 			first = s;
 
 		if (acknowledge)
@@ -4124,7 +4124,7 @@ void EndMultiSoldierSelection(BOOLEAN acknowledge)
 	}
 
 	// If here, select the first guy...
-	if (first != NULL && first != sel)
+	if (first != nullptr && first != sel)
 	{
 		SelectSoldier(first, SELSOLDIER_ACKNOWLEDGE | SELSOLDIER_FORCE_RESELECT);
 	}
@@ -4347,7 +4347,7 @@ static ScreenID UIHandleRubberBandOnTerrain(UI_EVENT* pUIEvent)
 static ScreenID UIHandleJumpOverOnTerrain(UI_EVENT* pUIEvent)
 {
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL)
+	if (sel == nullptr)
 		return GAME_SCREEN;
 
 	const GridNo usMapPos = guiCurrentCursorGridNo;
@@ -4376,7 +4376,7 @@ static ScreenID UIHandleJumpOver(UI_EVENT* pUIEvent)
 {
 	// Here, first get map screen
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL)
+	if (sel == nullptr)
 		return GAME_SCREEN;
 
 	const GridNo usMapPos = guiCurrentCursorGridNo;
@@ -4410,7 +4410,7 @@ static ScreenID UIHandleLABeginLockOurTurn(UI_EVENT* pUIEvent)
 {
 	// Don't let both versions of the locks to happen at the same time!
 	// ( They are mutually exclusive )!
-	UIHandleLUIEndLock( NULL );
+	UIHandleLUIEndLock( nullptr );
 
 	if ( !gfUserTurnRegionActive )
 	{
@@ -4452,7 +4452,7 @@ static ScreenID UIHandleLAEndLockOurTurn(UI_EVENT* pUIEvent)
 
 		gfPlotNewMovement = TRUE;
 
-		UIHandleMOnTerrain( NULL );
+		UIHandleMOnTerrain( nullptr );
 
 		if ( !gfIsUsingTouch && WorldPointer::In() )
 		{
@@ -4503,10 +4503,10 @@ SOLDIERTYPE* GetValidTalkableNPCFromMouse(BOOLEAN fGive, BOOLEAN fAllowMercs, BO
 {
 	// Check if there is a guy here to talk to!
 	SOLDIERTYPE* const tgt = gUIFullTarget;
-	if (tgt == NULL)
-		return NULL;
+	if (tgt == nullptr)
+		return nullptr;
 	if (!IsValidTalkableNPC(tgt, fGive, fAllowMercs, fCheckCollapsed))
-		return NULL;
+		return nullptr;
 	return tgt;
 }
 
@@ -4516,7 +4516,7 @@ BOOLEAN IsValidTalkableNPC(const SOLDIERTYPE* pSoldier, BOOLEAN fGive, BOOLEAN f
 	BOOLEAN fValidGuy = FALSE;
 
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel != NULL && AM_A_ROBOT(sel)) return FALSE;
+	if (sel != nullptr && AM_A_ROBOT(sel)) return FALSE;
 
 	// CHECK IF ACTIVE!
 	if ( !pSoldier->bActive )
@@ -4605,7 +4605,7 @@ BOOLEAN HandleTalkInit(  )
 	UINT8 ubDiceRoll;
 
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL)
+	if (sel == nullptr)
 		return FALSE;
 
 	const GridNo usMapPos = guiCurrentCursorGridNo;
@@ -4614,7 +4614,7 @@ BOOLEAN HandleTalkInit(  )
 
 	// Check if there is a guy here to talk to!
 	const SOLDIERTYPE* const pTSoldier = gUIFullTarget;
-	if (pTSoldier != NULL)
+	if (pTSoldier != nullptr)
 	{
 		// Is he a valid NPC?
 		if (IsValidTalkableNPC(pTSoldier, FALSE, TRUE, FALSE))
@@ -4736,7 +4736,7 @@ BOOLEAN HandleTalkInit(  )
 			if ( uiRange > NPC_TALK_RADIUS )
 			{
 				// First get an adjacent gridno....
-				const INT16 sActionGridNo = FindAdjacentGridEx(sel, pTSoldier->sGridNo, NULL, NULL, FALSE, TRUE);
+				const INT16 sActionGridNo = FindAdjacentGridEx(sel, pTSoldier->sGridNo, nullptr, nullptr, FALSE, TRUE);
 
 				if ( sActionGridNo == -1 )
 				{
@@ -5039,7 +5039,7 @@ void HandleTacticalUILoseCursorFromOtherScreen( )
 BOOLEAN SelectedGuyInBusyAnimation( )
 {
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return FALSE;
+	if (sel == nullptr) return FALSE;
 
 	return sel->usAnimState == LOB_ITEM                       ||
 		sel->usAnimState == THROW_ITEM                     ||
@@ -5174,7 +5174,7 @@ BOOLEAN ValidQuickExchangePosition(void)
 
 	// Check if we over a civ
 	const SOLDIERTYPE* const pOverSoldier = gUIFullTarget;
-	if (pOverSoldier != NULL)
+	if (pOverSoldier != nullptr)
 	{
 		//KM: Replaced this older if statement for the new one which allows exchanging with militia
 		if ((pOverSoldier->bTeam != OUR_TEAM && pOverSoldier->bNeutral) ||
@@ -5185,7 +5185,7 @@ BOOLEAN ValidQuickExchangePosition(void)
 			{
 				// OK, we have a civ , now check if they are near selected guy.....
 				SOLDIERTYPE* const sel = GetSelectedMan();
-				if (sel != NULL && PythSpacesAway(sel->sGridNo, pOverSoldier->sGridNo) == 1)
+				if (sel != nullptr && PythSpacesAway(sel->sGridNo, pOverSoldier->sGridNo) == 1)
 				{
 					// Check if we have LOS to them....
 					const INT16 sDistVisible = DistanceVisible(sel, DIRECTION_IRRELEVANT, DIRECTION_IRRELEVANT, pOverSoldier->sGridNo, pOverSoldier->bLevel);
@@ -5254,11 +5254,11 @@ BOOLEAN IsValidJumpLocation(const SOLDIERTYPE* pSoldier, INT16 sGridNo, BOOLEAN 
 		ubOppMovementCost = gubWorldMovementCosts[sIntSpot][OppositeDirection(sDirs[cnt])][pSoldier->bLevel];
 		if ( IS_TRAVELCOST_DOOR( ubMovementCost ) )
 		{
-			ubMovementCost = DoorTravelCost(pSoldier, sIntSpot, ubMovementCost, pSoldier->bTeam == OUR_TEAM, NULL);
+			ubMovementCost = DoorTravelCost(pSoldier, sIntSpot, ubMovementCost, pSoldier->bTeam == OUR_TEAM, nullptr);
 		}
 		if (IS_TRAVELCOST_DOOR(ubOppMovementCost))
 		{
-			ubOppMovementCost = DoorTravelCost(pSoldier, sIntSpot, ubOppMovementCost, pSoldier->bTeam == OUR_TEAM, NULL);
+			ubOppMovementCost = DoorTravelCost(pSoldier, sIntSpot, ubOppMovementCost, pSoldier->bTeam == OUR_TEAM, nullptr);
 		}
 
 		// If we have hit an obstacle, STOP HERE
@@ -5285,7 +5285,7 @@ BOOLEAN IsValidJumpLocation(const SOLDIERTYPE* pSoldier, INT16 sGridNo, BOOLEAN 
 					const SOLDIERTYPE* const guy_there = WhoIsThere2(sIntSpot, pSoldier->bLevel);
 
 					// Is there a guy and is he prone?
-					if (guy_there != NULL &&
+					if (guy_there != nullptr &&
 						guy_there != pSoldier &&
 						gAnimControl[guy_there->usAnimState].ubHeight == ANIM_PRONE)
 					{

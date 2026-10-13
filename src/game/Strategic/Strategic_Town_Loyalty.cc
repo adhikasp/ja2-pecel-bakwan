@@ -359,7 +359,7 @@ void HandleMurderOfCivilian(const SOLDIERTYPE* const pSoldier)
 
 	// attacker CAN be NOBODY...  Don't treat is as murder if NOBODY killed us...
 	SOLDIERTYPE* const killer = pSoldier->attacker;
-	if (killer == NULL) return;
+	if (killer == nullptr) return;
 
 	// ignore murder of non-civilians!
 	if ( ( pSoldier->bTeam != CIV_TEAM ) || ( pSoldier->ubBodyType == CROW ) )

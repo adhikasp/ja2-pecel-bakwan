@@ -736,7 +736,7 @@ static INT8 CreatureDecideActionRed(SOLDIERTYPE* pSoldier, UINT8 ubUnconsciousOK
 			// need smell/visibility check?
 			if (PythSpacesAway( pSoldier->sGridNo, pSoldier->usActionData) < MAX_EAT_DIST )
 			{
-				const INT16 sGridNo = FindAdjacentGridEx(pSoldier, pSoldier->usActionData, NULL, NULL, FALSE, FALSE);
+				const INT16 sGridNo = FindAdjacentGridEx(pSoldier, pSoldier->usActionData, nullptr, nullptr, FALSE, FALSE);
 				if ( sGridNo != -1 )
 				{
 					pSoldier->usActionData = sGridNo;
@@ -761,7 +761,7 @@ static INT8 CreatureDecideActionRed(SOLDIERTYPE* pSoldier, UINT8 ubUnconsciousOK
 		{
 			// determine the location of the known closest opponent
 			// (don't care if he's conscious, don't care if he's reachable at all)
-			sClosestOpponent = ClosestKnownOpponent(pSoldier, NULL, NULL);
+			sClosestOpponent = ClosestKnownOpponent(pSoldier, nullptr, nullptr);
 
 			if (sClosestOpponent != NOWHERE)
 			{
@@ -1243,7 +1243,7 @@ static INT8 CreatureDecideActionBlack(SOLDIERTYPE* pSoldier)
 		{
 			// determine the location of the known closest opponent
 			// (don't care if he's conscious, don't care if he's reachable at all)
-			sClosestOpponent = ClosestKnownOpponent(pSoldier, NULL, NULL);
+			sClosestOpponent = ClosestKnownOpponent(pSoldier, nullptr, nullptr);
 			// if we have a closest reachable opponent
 			if (sClosestOpponent != NOWHERE)
 			{

@@ -99,8 +99,8 @@ UINT8 gubCursorGroupID = 0;
 INT8	gbSelectedMercID = -1;
 INT8	gbHilightedMercID = -1;
 INT8  gbCursorMercID = -1;
-SOLDIERTYPE *gpTacticalPlacementSelectedSoldier = NULL;
-SOLDIERTYPE *gpTacticalPlacementHilightedSoldier = NULL;
+SOLDIERTYPE *gpTacticalPlacementSelectedSoldier = nullptr;
+SOLDIERTYPE *gpTacticalPlacementHilightedSoldier = nullptr;
 
 static bool gfNorth;
 static bool gfEast;
@@ -444,7 +444,7 @@ void TacticalPlacementHandle()
 	{
 		gbSelectedMercID = -1;
 		gubSelectedGroupID = 0;
-		gpTacticalPlacementSelectedSoldier = NULL;
+		gpTacticalPlacementSelectedSoldier = nullptr;
 	}
 
 	while( DequeueSpecificEvent(&InputEvent, KEYBOARD_EVENTS) )
@@ -549,8 +549,8 @@ static void KillTacticalPlacementGUI(void)
 	gubSelectedGroupID = 0;
 	gubHilightedGroupID = 0;
 	gbCursorMercID = -1;
-	gpTacticalPlacementHilightedSoldier = NULL;
-	gpTacticalPlacementSelectedSoldier = NULL;
+	gpTacticalPlacementHilightedSoldier = nullptr;
+	gpTacticalPlacementSelectedSoldier = nullptr;
 
 	//Destroy the tactical placement gui.
 	gfEnterTacticalPlacementGUI = FALSE;

@@ -79,7 +79,7 @@ void BeginAutoBandage( )
 	// If we are in combat, we con't...
 	if ( (gTacticalStatus.uiFlags & INCOMBAT) || (NumEnemyInSector() != 0) )
 	{
-		DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SECTOR_NOT_CLEARED], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SECTOR_NOT_CLEARED], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 		return;
 	}
 
@@ -114,22 +114,22 @@ void BeginAutoBandage( )
 
 	if ( !fFoundAGuy )
 	{
-		DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[AUTOBANDAGE_NOT_NEEDED], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[AUTOBANDAGE_NOT_NEEDED], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 	}
 	else if ( !fFoundAMedKit )
 	{
-		DoMessageBox(MSG_BOX_BASIC_STYLE, gzLateLocalizedString[STR_LATE_09], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, gzLateLocalizedString[STR_LATE_09], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 	}
 	else
 	{
 		if ( ! CanAutoBandage( FALSE ) )
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[CANT_AUTOBANDAGE_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[CANT_AUTOBANDAGE_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 		}
 		else
 		{
 			// Confirm if we want to start or not....
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[BEGIN_AUTOBANDAGE_PROMPT_STR], GAME_SCREEN, MSG_BOX_FLAG_YESNO, BeginAutoBandageCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[BEGIN_AUTOBANDAGE_PROMPT_STR], GAME_SCREEN, MSG_BOX_FLAG_YESNO, BeginAutoBandageCallBack, nullptr);
 		}
 	}
 }
@@ -303,7 +303,7 @@ void AutoBandage( BOOLEAN fStart )
 		FOR_EACH_IN_TEAM(s, OUR_TEAM)
 		{
 			s->bSlotItemTakenFrom   = NO_SLOT;
-			s->auto_bandaging_medic = NULL;
+			s->auto_bandaging_medic = nullptr;
 		}
 
 		// build a mask
@@ -369,7 +369,7 @@ void AutoBandage( BOOLEAN fStart )
 		if( gfAutoBandageFailed )
 		{
 			// inform player some mercs could not be bandaged
-			DoScreenIndependantMessageBox(pDoctorWarningString[ 1 ], MSG_BOX_FLAG_OK, NULL );
+			DoScreenIndependantMessageBox(pDoctorWarningString[ 1 ], MSG_BOX_FLAG_OK, nullptr );
 			gfAutoBandageFailed = FALSE;
 		}
 	}
@@ -408,8 +408,8 @@ static void SetUpAutoBandageUpdatePanel(void)
 	if (next_patient == gpatient_list) next_doctor  = gdoctor_list;
 
 	// Clear the rest of the lists
-	while (next_doctor  != endof(gdoctor_list))  *next_doctor++  = NULL;
-	while (next_patient != endof(gpatient_list)) *next_patient++ = NULL;
+	while (next_doctor  != endof(gdoctor_list))  *next_doctor++  = nullptr;
+	while (next_patient != endof(gpatient_list)) *next_patient++ = nullptr;
 
 	// now add the faces
 	AddFacesToAutoBandageBox( );
@@ -443,20 +443,20 @@ static void DisplayAutoBandageUpdatePanel(void)
 	}
 
 	// make sure there is someone to doctor and patient
-	if (gdoctor_list[0] == NULL || gpatient_list[0] == NULL)
+	if (gdoctor_list[0] == nullptr || gpatient_list[0] == nullptr)
 	{
 		// nope, nobody here
 		return;
 	}
 
 	// grab number of doctors
-	for (iCounterA = 0; gdoctor_list[iCounterA] != NULL; ++iCounterA)
+	for (iCounterA = 0; gdoctor_list[iCounterA] != nullptr; ++iCounterA)
 	{
 		iNumberDoctors++;
 	}
 
 	// grab number of patients
-	for (iCounterA = 0; gpatient_list[iCounterA] != NULL; ++iCounterA)
+	for (iCounterA = 0; gpatient_list[iCounterA] != nullptr; ++iCounterA)
 	{
 		iNumberPatients++;
 	}
@@ -571,7 +571,7 @@ static void DisplayAutoBandageUpdatePanel(void)
 			iIndex = iCounterA * iNumberDoctorsWide + iCounterB;
 
 			const SOLDIERTYPE* const doctor = gdoctor_list[iIndex];
-			if (doctor != NULL)
+			if (doctor != nullptr)
 			{
 
 				sCurrentXPosition += TACT_UPDATE_MERC_FACE_X_OFFSET;
@@ -648,7 +648,7 @@ static void DisplayAutoBandageUpdatePanel(void)
 			iIndex = iCounterA * iNumberPatientsWide + iCounterB;
 
 			const SOLDIERTYPE* const patient = gpatient_list[iIndex];
-			if (patient != NULL)
+			if (patient != nullptr)
 			{
 
 				sCurrentXPosition += TACT_UPDATE_MERC_FACE_X_OFFSET;
@@ -823,7 +823,7 @@ static void AddFacesToAutoBandageBox(void)
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const doctor = gdoctor_list[iCounter];
-		if (doctor != NULL)
+		if (doctor != nullptr)
 		{
 			giAutoBandagesSoldierFaces[iCounter] = Load65Portrait(GetProfile(doctor->ubProfile));
 			iNumberOfDoctors++;
@@ -833,7 +833,7 @@ static void AddFacesToAutoBandageBox(void)
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const patient = gpatient_list[iCounter];
-		if (patient != NULL)
+		if (patient != nullptr)
 		{
 			giAutoBandagesSoldierFaces[iCounter + iNumberOfDoctors] = Load65Portrait(GetProfile(patient->ubProfile));
 		}
@@ -851,7 +851,7 @@ static void RemoveFacesForAutoBandage(void)
 
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
-		if (gdoctor_list[iCounter] != NULL)
+		if (gdoctor_list[iCounter] != nullptr)
 		{
 			DeleteVideoObject(giAutoBandagesSoldierFaces[iCounter]);
 			iNumberOfDoctors++;
@@ -861,7 +861,7 @@ static void RemoveFacesForAutoBandage(void)
 
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
-		if (gpatient_list[iCounter] != NULL)
+		if (gpatient_list[iCounter] != nullptr)
 		{
 			DeleteVideoObject(giAutoBandagesSoldierFaces[iCounter + iNumberOfDoctors]);
 		}
@@ -888,7 +888,7 @@ static BOOLEAN RenderSoldierSmallFaceForAutoBandagePanel(INT32 iIndex, INT16 sCu
 
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
-		if (gdoctor_list[iCounter] != NULL) ++iIndexCount;
+		if (gdoctor_list[iCounter] != nullptr) ++iIndexCount;
 	}
 
 	// see if we are looking into doctor or patient lists?

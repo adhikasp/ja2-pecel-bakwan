@@ -1636,12 +1636,12 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 			DeductPoints( pSoldier, AP_PULL_TRIGGER, 0 );
 
 			//gTacticalStatus.fPanicFlags					= 0; // turn all flags off
-			gTacticalStatus.the_chosen_one = NULL;
+			gTacticalStatus.the_chosen_one = nullptr;
 			break;
 
 		case AI_ACTION_USE_DETONATOR:
 			//gTacticalStatus.fPanicFlags					= 0; // turn all flags off
-			gTacticalStatus.the_chosen_one = NULL;
+			gTacticalStatus.the_chosen_one = nullptr;
 			//gTacticalStatus.sPanicTriggerGridno	= NOWHERE;
 
 			// grab detonator and set off bomb(s)
@@ -1661,7 +1661,7 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 					!gTacticalStatus.Team[pSoldier->bTeam].bAwareOfOpposition ||
 					(
 						gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE &&
-						gTacticalStatus.the_chosen_one == NULL
+						gTacticalStatus.the_chosen_one == nullptr
 					)
 				))
 			{
@@ -1762,7 +1762,7 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 				}
 
 				pStructure = FindStructure( sDoorGridNo, STRUCTURE_ANYDOOR );
-				if (pStructure == NULL)
+				if (pStructure == nullptr)
 				{
 					SLOGD("AI {} tried to open door it could not then find in {}",
 								pSoldier->ubID, sDoorGridNo );
@@ -1888,7 +1888,7 @@ void InitAttackType(ATTACKTYPE *pAttack)
 {
 	// initialize the given bestAttack structure fields to their default values
 	pAttack->ubPossible          = FALSE;
-	pAttack->opponent            = NULL;
+	pAttack->opponent            = nullptr;
 	pAttack->ubAimTime           = 0;
 	pAttack->ubChanceToReallyHit = 0;
 	pAttack->sTarget             = NOWHERE;

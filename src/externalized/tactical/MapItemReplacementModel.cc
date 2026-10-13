@@ -23,7 +23,7 @@ std::map<uint16_t, uint16_t> MapItemReplacementModel::deserialize(const JsonValu
 		const ItemModel* fromItem = GetItemFromValue(m["from"], items);
 		const ItemModel* toItem = GetItemFromValue(m["to"], items);
 
-		if (fromItem == NULL || toItem == NULL)
+		if (fromItem == nullptr || toItem == nullptr)
 		{
 			throw std::runtime_error("Item not found");
 		}

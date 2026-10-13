@@ -133,7 +133,7 @@ void KillBuilding( UINT32 iMapIndex )
 		RebuildRoof( iMapIndex, 0 );
 }
 
-BUILDINGLAYOUTNODE *gpBuildingLayoutList = NULL;
+BUILDINGLAYOUTNODE *gpBuildingLayoutList = nullptr;
 INT16 gsBuildingLayoutAnchorGridNo = -1;
 
 
@@ -148,7 +148,7 @@ void DeleteBuildingLayout()
 		gpBuildingLayoutList = gpBuildingLayoutList->next;
 		delete curr;
 	}
-	gpBuildingLayoutList = NULL;
+	gpBuildingLayoutList = nullptr;
 	gsBuildingLayoutAnchorGridNo = -1;
 }
 
@@ -205,7 +205,7 @@ void CopyBuilding( INT32 iMapIndex )
 	//Allocate the basic structure, then calculate the layout.  The head node is
 	gpBuildingLayoutList = new BUILDINGLAYOUTNODE{};
 	gpBuildingLayoutList->sGridNo = (INT16)iMapIndex;
-	gpBuildingLayoutList->next = NULL;
+	gpBuildingLayoutList->next = nullptr;
 
 	//Set the anchor point for this building -- this is where the user clicked.
 	gsBuildingLayoutAnchorGridNo = (INT16)iMapIndex;
@@ -226,18 +226,18 @@ void CopyBuilding( INT32 iMapIndex )
 //This will prevent overlapping problems.
 static void SortBuildingLayout(INT32 iMapIndex)
 {
-	BUILDINGLAYOUTNODE* prevBest = NULL; // XXX HACK000E
-	BUILDINGLAYOUTNODE* best     = NULL; // XXX HACK000E
+	BUILDINGLAYOUTNODE* prevBest = nullptr; // XXX HACK000E
+	BUILDINGLAYOUTNODE* best     = nullptr; // XXX HACK000E
 	BUILDINGLAYOUTNODE *head, *curr, *prev;
 	INT32 iBestIndex;
-	head = NULL;
+	head = nullptr;
 	if( iMapIndex < gsBuildingLayoutAnchorGridNo )
 	{	//Forward sort (in increasing order)
 		while( gpBuildingLayoutList )
 		{
 			iBestIndex = -1;
 			curr = gpBuildingLayoutList;
-			prev = NULL;
+			prev = nullptr;
 			while( curr )
 			{
 				if( iBestIndex < curr->sGridNo )
@@ -265,7 +265,7 @@ static void SortBuildingLayout(INT32 iMapIndex)
 		{
 			iBestIndex = 100000;
 			curr = gpBuildingLayoutList;
-			prev = NULL;
+			prev = nullptr;
 			while( curr )
 			{
 				if( iBestIndex > curr->sGridNo )
@@ -416,7 +416,7 @@ struct ROOFNODE
 	ROOFNODE* next;
 };
 
-static ROOFNODE* gpRoofList = NULL;
+static ROOFNODE* gpRoofList = nullptr;
 
 
 static void ReplaceRoof(INT32 iMapIndex, UINT16 usRoofType)
@@ -483,7 +483,7 @@ void ReplaceBuildingWithNewRoof( INT32 iMapIndex )
 		gpRoofList = gpRoofList->next;
 		delete curr;
 	}
-	gpRoofList = NULL;
+	gpRoofList = nullptr;
 }
 
 //internal door editing vars.
@@ -703,7 +703,7 @@ void SetupTextInputForBuildings()
 {
 	ST::string str;
 	InitTextInputModeWithScheme( DEFAULT_SCHEME );
-	AddUserInputField( NULL );  //just so we can use short cut keys while not typing.
+	AddUserInputField( nullptr );  //just so we can use short cut keys while not typing.
 	str = ST::format("{}", gubMaxRoomNumber);
 	AddTextInputField( 410, EDITOR_TASKBAR_POS_Y + 40, 25, 15, MSYS_PRIORITY_NORMAL, str, 3, INPUTTYPE_NUMERICSTRICT );
 }

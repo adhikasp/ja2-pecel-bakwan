@@ -29,7 +29,7 @@ void ExtractExplosionTypeFromFile(HWFILE const file, EXPLOSIONTYPE* const e)
 	EXTR_SKIP(s, 12)
 	Assert(s.getConsumed() == lengthof(src));
 
-	e->light = NULL;
+	e->light = nullptr;
 }
 
 

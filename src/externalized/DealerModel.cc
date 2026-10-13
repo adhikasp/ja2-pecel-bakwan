@@ -64,7 +64,7 @@ const DealerModel* DealerModel::deserialize(const JsonValue& json, const MercSys
 
 	ST::string profile = obj.GetString("profile");
 	auto mercProfile = mercSystem->getMercProfileInfoByName(profile);
-	if (mercProfile == NULL) {
+	if (mercProfile == nullptr) {
 		throw DataError(ST::format("dealer `{}` does not refer to a valid profile.", profile));
 	}
 	auto profileId = mercProfile->profileID;

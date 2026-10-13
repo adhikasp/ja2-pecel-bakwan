@@ -52,7 +52,7 @@ void MakeClosestEnemyChosenOne()
 	}
 
 	// consider every enemy, looking for the closest capable, unbusy one
-	SOLDIERTYPE* closest_enemy = NULL;
+	SOLDIERTYPE* closest_enemy = nullptr;
 	for (SOLDIERTYPE * const pSoldier : ActiveMercs())
 	{
 		// if this merc is unconscious, or dead
@@ -160,7 +160,7 @@ void MakeClosestEnemyChosenOne()
 	}
 
 	// if we found have an eligible enemy, make him our "chosen one"
-	if (closest_enemy != NULL)
+	if (closest_enemy != nullptr)
 	{
 		gTacticalStatus.the_chosen_one = closest_enemy; // flag him as the chosen one
 		if (closest_enemy->bAlertStatus < STATUS_RED)
@@ -344,7 +344,7 @@ INT8 PanicAI(SOLDIERTYPE *pSoldier, UINT8 ubCanMove)
 						else       // Oh oh, the chosen one can't get to the trigger!
 						{
 							SLOGD("!legalDest - ChosenOne can't get to the trigger!");
-							gTacticalStatus.the_chosen_one = NULL; // strip him of his Chosen One status
+							gTacticalStatus.the_chosen_one = nullptr; // strip him of his Chosen One status
 							MakeClosestEnemyChosenOne();     // and replace him!
 						}
 					}
@@ -358,7 +358,7 @@ INT8 PanicAI(SOLDIERTYPE *pSoldier, UINT8 ubCanMove)
 			else     // Oh oh, the chosen one can't get to the trigger!
 			{
 				SLOGD("!adjacentFound - ChosenOne can't get to the trigger!");
-				gTacticalStatus.the_chosen_one = NULL; // strip him of his Chosen One status
+				gTacticalStatus.the_chosen_one = nullptr; // strip him of his Chosen One status
 				MakeClosestEnemyChosenOne();   // and replace him!
 			}
 		}
@@ -371,7 +371,7 @@ INT8 PanicAI(SOLDIERTYPE *pSoldier, UINT8 ubCanMove)
 void InitPanicSystem( void )
 {
 	// start by assuming there is no panic bombs or triggers here
-	gTacticalStatus.the_chosen_one = NULL;
+	gTacticalStatus.the_chosen_one = nullptr;
 	FindPanicBombsAndTriggers();
 }
 
@@ -439,7 +439,7 @@ BOOLEAN NeedToRadioAboutPanicTrigger( void )
 	INT8			bLoop;
 
 	if (!(gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE) ||
-			gTacticalStatus.the_chosen_one != NULL)
+			gTacticalStatus.the_chosen_one != nullptr)
 	{
 		// already done!
 		return( FALSE );

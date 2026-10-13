@@ -34,7 +34,7 @@ static void RemoveMilitiaFromTactical(void)
 	{
 		if( curr->pBasicPlacement->bTeam == MILITIA_TEAM )
 		{
-			curr->pSoldier = NULL;
+			curr->pSoldier = nullptr;
 		}
 	}
 }

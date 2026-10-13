@@ -257,8 +257,8 @@ static void DoneFadeOutWarpCallback(void)
 
 	// OK, once down here, adjust the above map with crate info....
 	gfTacticalTraversal = FALSE;
-	gpTacticalTraversalGroup = NULL;
-	gpTacticalTraversalChosenSoldier = NULL;
+	gpTacticalTraversalGroup = nullptr;
+	gpTacticalTraversalChosenSoldier = nullptr;
 
 	gFadeInDoneCallback = DoneFadeInWarp;
 
@@ -292,7 +292,7 @@ void InitSectorExitMenu(UINT8 const ubDirection, INT16 const sAdditionalData)
 		{
 			// ATE: Check if we are in a creature lair and bring up box if so....
 			DoMessageBox(MSG_BOX_BASIC_STYLE, gzLateLocalizedString[STR_LATE_33], GAME_SCREEN,
-					MSG_BOX_FLAG_YESNO, WarpToSurfaceCallback, NULL);
+					MSG_BOX_FLAG_YESNO, WarpToSurfaceCallback, nullptr);
 			return;
 		}
 	}

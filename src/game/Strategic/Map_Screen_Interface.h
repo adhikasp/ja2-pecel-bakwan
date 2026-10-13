@@ -187,13 +187,13 @@ extern MapScreenCharacterSt gCharactersList[ ];
 
 #define BASE_FOR_EACH_IN_CHAR_LIST(type, iter)                                               \
 	for (type* iter = gCharactersList; iter != gCharactersList + MAX_CHARACTER_COUNT; ++iter) \
-		if (Assert(iter->merc == NULL || iter->merc->bActive), iter->merc == NULL) continue; else
+		if (Assert(iter->merc == nullptr || iter->merc->bActive), iter->merc == nullptr) continue; else
 #define FOR_EACH_IN_CHAR_LIST(iter)  BASE_FOR_EACH_IN_CHAR_LIST(      MapScreenCharacterSt, iter)
 #define CFOR_EACH_IN_CHAR_LIST(iter) BASE_FOR_EACH_IN_CHAR_LIST(const MapScreenCharacterSt, iter)
 
 #define BASE_FOR_EACH_SELECTED_IN_CHAR_LIST(type, iter)                                      \
 	for (type* iter = gCharactersList; iter != gCharactersList + MAX_CHARACTER_COUNT; ++iter) \
-		if (Assert(!iter->selected || iter->merc != NULL), Assert(iter->merc == NULL || iter->merc->bActive), !iter->selected) continue; else
+		if (Assert(!iter->selected || iter->merc != nullptr), Assert(iter->merc == nullptr || iter->merc->bActive), !iter->selected) continue; else
 #define FOR_EACH_SELECTED_IN_CHAR_LIST(iter)  BASE_FOR_EACH_SELECTED_IN_CHAR_LIST(      MapScreenCharacterSt, iter)
 #define CFOR_EACH_SELECTED_IN_CHAR_LIST(iter) BASE_FOR_EACH_SELECTED_IN_CHAR_LIST(const MapScreenCharacterSt, iter)
 

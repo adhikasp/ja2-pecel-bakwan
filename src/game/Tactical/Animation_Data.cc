@@ -27,7 +27,7 @@ constexpr UINT16 TO_INIT = 0;
 
 
 
-ANIM_PROF *gpAnimProfiles = NULL;
+ANIM_PROF *gpAnimProfiles = nullptr;
 static UINT8 gubNumAnimProfiles = 0;
 
 INT8 gbAnimUsageHistory[ NUMANIMATIONSURFACETYPES ][ MAX_NUM_SOLDIERS ];
@@ -475,12 +475,12 @@ struct AnimationStructureType
 
 #define ABCDEF(a, b, c, d, e, f)  \
 {                                 \
-	{ PATH_STRUCT a SUFFIX, NULL }, \
-	{ PATH_STRUCT b SUFFIX, NULL }, \
-	{ PATH_STRUCT c SUFFIX, NULL }, \
-	{ PATH_STRUCT d SUFFIX, NULL }, \
-	{ PATH_STRUCT e SUFFIX, NULL }, \
-	{ PATH_STRUCT f SUFFIX, NULL }  \
+	{ PATH_STRUCT a SUFFIX, nullptr }, \
+	{ PATH_STRUCT b SUFFIX, nullptr }, \
+	{ PATH_STRUCT c SUFFIX, nullptr }, \
+	{ PATH_STRUCT d SUFFIX, nullptr }, \
+	{ PATH_STRUCT e SUFFIX, nullptr }, \
+	{ PATH_STRUCT f SUFFIX, nullptr }  \
 }
 #define AAAAAA(a)          ABCDEF(a, a, a, a, a, a)
 #define AAAAAB(a, b)       ABCDEF(a, a, a, a, a, b)
@@ -615,14 +615,14 @@ static STRUCTURE_FILE_REF* InternalGetAnimationStructureRef(const SOLDIERTYPE* c
 
 	if ( usSurfaceIndex == INVALID_ANIMATION_SURFACE )
 	{
-		return( NULL );
+		return( nullptr );
 	}
 
 	bStructDataType = gAnimSurfaceDatabase[ usSurfaceIndex ].bStructDataType;
 
 	if ( bStructDataType == NO_STRUCT )
 	{
-		return( NULL );
+		return( nullptr );
 	}
 
 	// ATE: Alright - we all hate exception coding but ness here...
@@ -661,7 +661,7 @@ void LoadAnimationSurface(UINT16 const usSoldierID, UINT16 const usSurfaceIndex,
 	AnimationSurfaceType* const a = &gAnimSurfaceDatabase[usSurfaceIndex];
 
 	// Check if surface is loaded
-	if (a->hVideoObject != NULL)
+	if (a->hVideoObject != nullptr)
 	{
 		// just increment usage counter ( below )
 		SLOGD("Surface Database: Hit {}", usSurfaceIndex);
@@ -688,7 +688,7 @@ void LoadAnimationSurface(UINT16 const usSoldierID, UINT16 const usSurfaceIndex,
 
 			// get structure data if any
 			const STRUCTURE_FILE_REF* const pStructureFileRef = InternalGetAnimationStructureRef(ID2SOLDIER(usSoldierID), usSurfaceIndex, usAnimState, TRUE);
-			if (pStructureFileRef != NULL)
+			if (pStructureFileRef != nullptr)
 			{
 				INT16 sStartFrame = 0;
 				if (usSurfaceIndex == RGMPRONE)
@@ -759,9 +759,9 @@ void UnLoadAnimationSurface(const UINT16 usSoldierID, const UINT16 usSurfaceInde
 	{
 		SLOGD("Surface Database: Unloading Surface: {}", usSurfaceIndex);
 		SGPVObject** const vo = &a->hVideoObject;
-		CHECKV(*vo != NULL);
+		CHECKV(*vo != nullptr);
 		DeleteVideoObject(*vo);
-		*vo = NULL;
+		*vo = nullptr;
 	}
 }
 
@@ -848,7 +848,7 @@ void ZeroAnimSurfaceCounts( )
 	for ( cnt = 0; cnt < NUMANIMATIONSURFACETYPES; cnt++ )
 	{
 		gAnimSurfaceDatabase[ cnt ].bUsageCount   = 0;
-		gAnimSurfaceDatabase[ cnt ].hVideoObject  = NULL;
+		gAnimSurfaceDatabase[ cnt ].hVideoObject  = nullptr;
 	}
 
 	for (auto& i : gbAnimUsageHistory)

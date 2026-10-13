@@ -149,7 +149,7 @@ BOOLEAN		gfInvalidTraversal = FALSE;
 BOOLEAN		gfLoneEPCAttemptingTraversal = FALSE;
 BOOLEAN		gfRobotWithoutControllerAttemptingTraversal = FALSE;
 BOOLEAN   gubLoneMercAttemptingToAbandonEPCs = 0;
-const SOLDIERTYPE* gPotentiallyAbandonedEPC = NULL;
+const SOLDIERTYPE* gPotentiallyAbandonedEPC = nullptr;
 
 INT8 gbGreenToElitePromotions = 0;
 INT8 gbGreenToRegPromotions = 0;
@@ -239,7 +239,7 @@ void BeginLoadScreen( )
 
 	if( guiCurrentScreen == MAP_SCREEN && !(gTacticalStatus.uiFlags & LOADING_SAVED_GAME) && !AreInMeanwhile() )
 	{
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL); // the frame the transition starts from
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr); // the frame the transition starts from
 		PlayJA2SampleFromFile(SOUNDSDIR "/final psionic blast 01 (16-44).wav", HIGHVOLUME, 1, MIDDLEPAN);
 		sgp::RunAnimation(std::chrono::milliseconds{ 2000 }, DrawSectorLoadTransitionFrame);
 	}
@@ -658,7 +658,7 @@ void PrepareLoadedSector()
 		UnPauseGame( );
 	}
 
-	gpBattleGroup = NULL;
+	gpBattleGroup = nullptr;
 
 	if( gfTacticalTraversal )
 	{
@@ -786,9 +786,9 @@ void HandleQuestCodeOnSectorEntry(const SGPSector& sNewSector)
 
 	if (sector == SEC_D5)
 	{
-		gBoxer[0] = NULL;
-		gBoxer[1] = NULL;
-		gBoxer[2] = NULL;
+		gBoxer[0] = nullptr;
+		gBoxer[1] = nullptr;
+		gBoxer[2] = nullptr;
 	}
 
 	if (sector == SEC_P3)
@@ -923,7 +923,7 @@ void UpdateMercsInSector()
 	if (!(gTacticalStatus.uiFlags & LOADING_SAVED_GAME))
 	{
 		//DONT set these values
-		SetSelectedMan(NULL);
+		SetSelectedMan(nullptr);
 		gfGameScreenLocateToSoldier = TRUE;
 	}
 
@@ -986,7 +986,7 @@ void UpdateMercsInSector()
 			// ATE: If we are in i13 - pop up message!
 			if (gWorldSector == secI13)
 			{
-				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[POW_MERCS_ARE_HERE], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[POW_MERCS_ARE_HERE], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 			}
 			else
 			{
@@ -1383,7 +1383,7 @@ static int16_t PickGridNoNearestEdge(SOLDIERTYPE* pSoldier, uint8_t ubTacticalDi
 
 void JumpIntoAdjacentSector( UINT8 ubTacticalDirection, UINT8 ubJumpCode, INT16 sAdditionalData )
 {
-	SOLDIERTYPE *pValidSoldier = NULL;
+	SOLDIERTYPE *pValidSoldier = nullptr;
 	UINT32 uiTraverseTime=0;
 	UINT8 ubDirection = (UINT8)-1; // XXX HACK000E
 	EXITGRID ExitGrid;
@@ -1417,7 +1417,7 @@ void JumpIntoAdjacentSector( UINT8 ubTacticalDirection, UINT8 ubJumpCode, INT16 
 	{
 		// Use selected soldier...
 		// This guy should always be 1 ) selected and 2 ) close enough to exit sector to leave
-		if (sel != NULL)
+		if (sel != nullptr)
 		{
 			pValidSoldier = sel;
 			ubDirection = GetInsertionDataFromAdjacentMoveDirection( ubTacticalDirection, sAdditionalData );
@@ -1690,8 +1690,8 @@ void AllMercsWalkedToExitGrid()
 	if( gubAdjacentJumpCode == JUMP_ALL_NO_LOAD || gubAdjacentJumpCode == JUMP_SINGLE_NO_LOAD )
 	{
 		gfTacticalTraversal = FALSE;
-		gpTacticalTraversalGroup = NULL;
-		gpTacticalTraversalChosenSoldier = NULL;
+		gpTacticalTraversalGroup = nullptr;
+		gpTacticalTraversalChosenSoldier = nullptr;
 	}
 }
 
@@ -1745,8 +1745,8 @@ static void SetupTacticalTraversalInformation(void)
 	if( gubAdjacentJumpCode == JUMP_ALL_NO_LOAD || gubAdjacentJumpCode == JUMP_SINGLE_NO_LOAD )
 	{
 		gfTacticalTraversal = FALSE;
-		gpTacticalTraversalGroup = NULL;
-		gpTacticalTraversalChosenSoldier = NULL;
+		gpTacticalTraversalGroup = nullptr;
+		gpTacticalTraversalChosenSoldier = nullptr;
 	}
 }
 
@@ -1863,8 +1863,8 @@ static void DoneFadeOutExitGridSector(void)
 		}
 	}
 	gfTacticalTraversal = FALSE;
-	gpTacticalTraversalGroup = NULL;
-	gpTacticalTraversalChosenSoldier = NULL;
+	gpTacticalTraversalGroup = nullptr;
+	gpTacticalTraversalChosenSoldier = nullptr;
 	FadeInGameScreen( );
 }
 
@@ -1886,8 +1886,8 @@ static void DoneFadeOutAdjacentSector(void)
 		}
 	}
 	gfTacticalTraversal = FALSE;
-	gpTacticalTraversalGroup = NULL;
-	gpTacticalTraversalChosenSoldier = NULL;
+	gpTacticalTraversalGroup = nullptr;
+	gpTacticalTraversalChosenSoldier = nullptr;
 
 	if ( gfCaves )
 	{
@@ -2042,14 +2042,14 @@ BOOLEAN OKForSectorExit( INT8 bExitDirection, UINT16 usAdditionalData, UINT32 *p
 {
 	BOOLEAN     fAtLeastOneMercControllable = FALSE;
 	BOOLEAN     fOnlySelectedGuy = FALSE;
-	SOLDIERTYPE *pValidSoldier = NULL;
+	SOLDIERTYPE *pValidSoldier = nullptr;
 	UINT8       ubReturnVal = FALSE;
 	UINT8       ubNumMercs = 0, ubNumEPCs = 0;
 	UINT8       ubPlayerControllableMercsInSquad = 0;
 
 	const SOLDIERTYPE* const sel = GetSelectedMan();
 	// must have a selected soldier to be allowed to tactically traverse.
-	if (sel == NULL) return FALSE;
+	if (sel == nullptr) return FALSE;
 
 	/*
 	//Exception code for the two sectors in San Mona that are separated by a cliff.  We want to allow strategic
@@ -2070,7 +2070,7 @@ BOOLEAN OKForSectorExit( INT8 bExitDirection, UINT16 usAdditionalData, UINT32 *p
 	gfInvalidTraversal = FALSE;
 	gfLoneEPCAttemptingTraversal = FALSE;
 	gubLoneMercAttemptingToAbandonEPCs = 0;
-	gPotentiallyAbandonedEPC = NULL;
+	gPotentiallyAbandonedEPC = nullptr;
 
 	// Look through all mercs and check if they are within range of east end....
 	FOR_EACH_IN_TEAM(pSoldier, OUR_TEAM)
@@ -2318,7 +2318,7 @@ static void HandleAirspaceControlUpdated()
 		ST::string sMsgString = st_format_printf(pBullseyeStrings[ 4 ], sMsgSubString1, sMsgSubString2);
 
 		// confirm the change with overlay message
-		DoScreenIndependantMessageBox(sMsgString, MSG_BOX_FLAG_OK, NULL);
+		DoScreenIndependantMessageBox(sMsgString, MSG_BOX_FLAG_OK, nullptr);
 
 		// update position of bullseye
 		fMapPanelDirty = TRUE;
@@ -2876,7 +2876,7 @@ static INT16 PickGridNoToWalkIn(SOLDIERTYPE* pSoldier, UINT8 ubInsertionDirectio
 void HandleSlayDailyEvent( void )
 {
 	SOLDIERTYPE* const pSoldier = FindSoldierByProfileIDOnPlayerTeam(SLAY);
-	if( pSoldier == NULL )
+	if( pSoldier == nullptr )
 	{
 		return;
 	}

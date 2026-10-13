@@ -55,15 +55,15 @@ struct SLIDER
 };
 
 
-static SLIDER* pSliderHead     = NULL;
-static SLIDER* gpCurrentSlider = NULL;
+static SLIDER* pSliderHead     = nullptr;
+static SLIDER* gpCurrentSlider = nullptr;
 static cache_key_t const guiSliderBoxImage = INTERFACEDIR "/sliderbox.sti";
 
 
 void ShutDownSlider(void)
 {
 	//Do a cehck to see if there are still active nodes
-	for (SLIDER* i = pSliderHead; i != NULL;)
+	for (SLIDER* i = pSliderHead; i != nullptr;)
 	{
 		SLIDER* const remove = i;
 		i = i->pNext;
@@ -125,19 +125,19 @@ SLIDER* AddSlider(UINT8 ubStyle, UINT16 usCursor, UINT16 usPosX, UINT16 usPosY, 
 	r->SetUserPtr(s);
 
 	// Add the slider into the list
-	if (pSliderHead == NULL)
+	if (pSliderHead == nullptr)
 	{
 		pSliderHead = s;
-		s->pNext = NULL;
+		s->pNext = nullptr;
 	}
 	else
 	{
 		SLIDER* i = pSliderHead;
-		while (i->pNext != NULL) i = i->pNext;
+		while (i->pNext != nullptr) i = i->pNext;
 
 		i->pNext = s;
 		s->pPrev = i;
-		s->pNext = NULL;
+		s->pNext = nullptr;
 	}
 
 	CalculateNewSliderBoxPosition(s);
@@ -153,7 +153,7 @@ static void RenderSelectedSliderBar(SLIDER* s);
 void RenderAllSliderBars(void)
 {
 	// set the currently selectd slider bar
-	if ((IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMainFingerDown()) && gpCurrentSlider != NULL)
+	if ((IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMainFingerDown()) && gpCurrentSlider != nullptr)
 	{
 		SLIDER* const s = gpCurrentSlider;
 		const UINT16 pos = gusMouseYPos < s->usPosY ? 0 : gusMouseYPos - s->usPosY;
@@ -161,10 +161,10 @@ void RenderAllSliderBars(void)
 	}
 	else
 	{
-		gpCurrentSlider = NULL;
+		gpCurrentSlider = nullptr;
 	}
 
-	for (SLIDER* i = pSliderHead; i != NULL; i = i->pNext)
+	for (SLIDER* i = pSliderHead; i != nullptr; i = i->pNext)
 	{
 		RenderSelectedSliderBar(i);
 	}
@@ -258,7 +258,7 @@ void RemoveSliderBar(SLIDER* s)
 static void SelectedSliderMovementCallBack(MOUSE_REGION* r, UINT32 reason)
 {
 	//if we already have an anchored slider bar
-	if (gpCurrentSlider != NULL) return;
+	if (gpCurrentSlider != nullptr) return;
 
 	if (!IsMouseButtonDown(MOUSE_BUTTON_LEFT) && !IsMainFingerDown()) return;
 
@@ -298,7 +298,7 @@ static void SetSliderPos(SLIDER* s, INT32 pos)
 static void SelectedSliderButtonCallBack(MOUSE_REGION* r, UINT32 iReason)
 {
 	//if we already have an anchored slider bar
-	if (gpCurrentSlider != NULL) return;
+	if (gpCurrentSlider != nullptr) return;
 
 	if (iReason & MSYS_CALLBACK_REASON_POINTER_DWN ||
 			iReason & MSYS_CALLBACK_REASON_POINTER_REPEAT)

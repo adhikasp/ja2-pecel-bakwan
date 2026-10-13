@@ -54,7 +54,7 @@ static SMOKEEFFECT* GetFreeSmokeEffect(void)
 	{
 		return &gSmokeEffectData[guiNumSmokeEffects++];
 	}
-	return NULL;
+	return nullptr;
 }
 
 // Returns NO_SMOKE_EFFECT if none there...
@@ -144,7 +144,7 @@ bool IsSoldierAlreadyAffectedBySmokeEffect(const SOLDIERTYPE* soldier, const Smo
 void NewSmokeEffect(const INT16 sGridNo, const UINT16 usItem, const INT8 bLevel, SOLDIERTYPE* const owner)
 {
 	SMOKEEFFECT* const pSmoke = GetFreeSmokeEffect();
-	if (pSmoke == NULL) return;
+	if (pSmoke == nullptr) return;
 
 	*pSmoke = SMOKEEFFECT{};
 
@@ -258,7 +258,7 @@ void RemoveSmokeEffectFromTile( INT16 sGridNo, INT8 bLevel )
 
 	pAniTile = GetCachedAniTileOfType( sGridNo, ubLevelID, ANITILE_SMOKE_EFFECT );
 
-	if ( pAniTile != NULL )
+	if ( pAniTile != nullptr )
 	{
 		DeleteAniTile( pAniTile );
 
@@ -267,7 +267,7 @@ void RemoveSmokeEffectFromTile( INT16 sGridNo, INT8 bLevel )
 
 	// Unset flags in world....
 	// ( // check to see if we are the last one....
-	if ( GetCachedAniTileOfType( sGridNo, ubLevelID, ANITILE_SMOKE_EFFECT ) == NULL )
+	if ( GetCachedAniTileOfType( sGridNo, ubLevelID, ANITILE_SMOKE_EFFECT ) == nullptr )
 	{
 		gpWorldLevelData[ sGridNo ].ubExtFlags[ bLevel ] &= ( ~ANY_SMOKE_EFFECT );
 	}

@@ -690,7 +690,7 @@ void EraseBuilding( UINT32 iMapIndex )
 //gridno.
 static void EraseFloorOwnedBuildingPieces(UINT32 iMapIndex)
 {
-	LEVELNODE	*pStruct = NULL;
+	LEVELNODE	*pStruct = nullptr;
 
 	if( !gfBasement && !FloorAtGridNo( iMapIndex ) )
 	{	//We don't have ownership issues if there isn't a floor here.
@@ -699,7 +699,7 @@ static void EraseFloorOwnedBuildingPieces(UINT32 iMapIndex)
 	EraseBuilding( iMapIndex );
 	//FIRST, SEARCH AND DESTROY FOR A LEFT NEIGHBORING TILE WITH A TOP_RIGHT ORIENTED WALL
 	pStruct = gpWorldLevelData[ iMapIndex - 1 ].pStructHead;
-	while( pStruct != NULL )
+	while( pStruct != nullptr )
 	{
 		if ( pStruct->usIndex != NO_TILE )
 		{
@@ -721,7 +721,7 @@ static void EraseFloorOwnedBuildingPieces(UINT32 iMapIndex)
 	}
 	//FINALLY, SEARCH AND DESTROY FOR A TOP NEIGHBORING TILE WITH A TOP_LEFT ORIENTED WALL
 	pStruct = gpWorldLevelData[ iMapIndex - WORLD_COLS ].pStructHead;
-	while( pStruct != NULL )
+	while( pStruct != nullptr )
 	{
 		if ( pStruct->usIndex != NO_TILE )
 		{

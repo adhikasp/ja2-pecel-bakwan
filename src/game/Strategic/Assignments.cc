@@ -162,7 +162,7 @@ static MOUSE_REGION gVehicleMenuRegion[20];
 static MOUSE_REGION gAssignmentScreenMaskRegion;
 
 BOOLEAN fShownAssignmentMenu    = FALSE;
-SOLDIERTYPE* gAssignmentTargetSoldier = NULL;
+SOLDIERTYPE* gAssignmentTargetSoldier = nullptr;
 static BOOLEAN fShowVehicleMenu = FALSE;
 BOOLEAN fShowRepairMenu         = FALSE;
 BOOLEAN fShownContractMenu      = FALSE;
@@ -174,7 +174,7 @@ static INT8 gbTrainingMode = -1;
 
 static BOOLEAN gfAddDisplayBoxToWaitingQueue = FALSE;
 
-static SOLDIERTYPE* gpDismissSoldier = NULL;
+static SOLDIERTYPE* gpDismissSoldier = nullptr;
 
 BOOLEAN gfReEvaluateEveryonesNothingToDo = FALSE;
 
@@ -852,7 +852,7 @@ static BOOLEAN CanCharacterBeAwakened(SOLDIERTYPE* pSoldier, BOOLEAN fExplainWhy
 		if ( fExplainWhyNot )
 		{
 			sString = st_format_printf(zMarksMapScreenText[ 6 ], pSoldier->name);
-			DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, NULL );
+			DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, nullptr );
 		}
 
 		return( FALSE );
@@ -1063,7 +1063,7 @@ SOLDIERTYPE *AnyDoctorWhoCanHealThisPatient( SOLDIERTYPE *pPatient, BOOLEAN fThi
 	}
 
 	// there aren't any doctors, or the ones there can't do the job
-	return NULL;
+	return nullptr;
 }
 
 
@@ -1305,12 +1305,12 @@ static void HealCharacters(SOLDIERTYPE* const pDoctor)
 			do
 			{
 				// find the worst hurt patient
-				pWorstHurtSoldier = NULL;
+				pWorstHurtSoldier = nullptr;
 				FOR_EACH_IN_TEAM(s, OUR_TEAM)
 				{
 					if (CanSoldierBeHealedByDoctor(s, pDoctor, HEALABLE_THIS_HOUR, FALSE, FALSE))
 					{
-						if (pWorstHurtSoldier == NULL)
+						if (pWorstHurtSoldier == nullptr)
 						{
 							pWorstHurtSoldier = s;
 						}
@@ -1326,7 +1326,7 @@ static void HealCharacters(SOLDIERTYPE* const pDoctor)
 					}
 				}
 
-				if( pWorstHurtSoldier != NULL )
+				if( pWorstHurtSoldier != nullptr )
 				{
 					// heal the worst hurt guy
 					usOldLeftOvers = usRemainingHealingPts;
@@ -1338,7 +1338,7 @@ static void HealCharacters(SOLDIERTYPE* const pDoctor)
 						usRemainingHealingPts = 0;
 					}
 				}
-			} while( ( usRemainingHealingPts > 0 ) && ( pWorstHurtSoldier != NULL ) );
+			} while( ( usRemainingHealingPts > 0 ) && ( pWorstHurtSoldier != nullptr ) );
 		}
 
 
@@ -2181,7 +2181,7 @@ static void HandleTrainingInSector(const SGPSector& sector)
 						EnoughTimeOnAssignment(*pTrainer)       &&
 						!SleptThroughPastHour(*pTrainer))
 				{
-					sTrainingPtsDueToInstructor = GetBonusTrainingPtsDueToInstructor( pTrainer, NULL, ubStat, fAtGunRange, &usMaxPts );
+					sTrainingPtsDueToInstructor = GetBonusTrainingPtsDueToInstructor( pTrainer, nullptr, ubStat, fAtGunRange, &usMaxPts );
 
 					// if he's the best trainer so far for this stat
 					if (sTrainingPtsDueToInstructor > sBestTrainingPts)
@@ -2222,7 +2222,7 @@ static void HandleTrainingInSector(const SGPSector& sector)
 						const SOLDIERTYPE* const pTrainer = pStatTrainerList[pStudent->bTrainStat];
 
 						// if this stat HAS a trainer in sector at all
-						if (pTrainer != NULL)
+						if (pTrainer != nullptr)
 						{
 /* Assignment distance limits removed.  Sep/11/98.  ARM
 							// if this sector either ISN'T currently loaded, or it is but the trainer is close enough to the student
@@ -2332,7 +2332,7 @@ INT16 GetBonusTrainingPtsDueToInstructor(const SOLDIERTYPE* pInstructor, const S
 	// assume training impossible for max pts
 	*pusMaxPts = 0;
 
-	if( pInstructor == NULL )
+	if( pInstructor == nullptr )
 	{
 		// no instructor, leave
 		return ( 0 );
@@ -2386,7 +2386,7 @@ INT16 GetBonusTrainingPtsDueToInstructor(const SOLDIERTYPE* pInstructor, const S
 
 
 	// if there's no student
-	if( pStudent == NULL )
+	if( pStudent == nullptr )
 	{
 		// assume these default values
 		bTraineeEffWisdom = 100;
@@ -2846,7 +2846,7 @@ static void HandleHealingByNaturalCauses(SOLDIERTYPE* pSoldier)
 
 
 	// check if soldier valid
-	if( pSoldier == NULL )
+	if( pSoldier == nullptr )
 	{
 		return;
 	}
@@ -3641,7 +3641,7 @@ void DetermineWhichAssignmentMenusCanBeShown(void)
 			? gAssignmentTargetSoldier : GetSelectedAssignSoldier(TRUE);
 		if (fShowMapScreenMovementList)
 		{
-			if( s == NULL )
+			if( s == nullptr )
 			{
 				fCharacterNoLongerValid = TRUE;
 				HandleShowingOfMovementBox( );
@@ -3652,7 +3652,7 @@ void DetermineWhichAssignmentMenusCanBeShown(void)
 				fCharacterNoLongerValid = TRUE;
 			}
 		}
-		else if( s == NULL )
+		else if( s == nullptr )
 		{
 			fCharacterNoLongerValid = TRUE;
 		}
@@ -3665,7 +3665,7 @@ void DetermineWhichAssignmentMenusCanBeShown(void)
 	if (!fShowAssignmentMenu || fCharacterNoLongerValid)
 	{
 		// reset show assignment menus
-		gAssignmentTargetSoldier = NULL;
+		gAssignmentTargetSoldier = nullptr;
 		fShowAssignmentMenu = FALSE;
 		fShowVehicleMenu = FALSE;
 		fShowRepairMenu = FALSE;
@@ -4649,7 +4649,7 @@ static void SquadMenuBtnCallback(MOUSE_REGION* const pRegion, UINT32 const reaso
 		}
 		if (!buf.empty())
 		{
-			DoScreenIndependantMessageBox(buf, MSG_BOX_FLAG_OK, NULL);
+			DoScreenIndependantMessageBox(buf, MSG_BOX_FLAG_OK, nullptr);
 		}
 
 		SetAssignmentForList(value, 0);
@@ -4709,14 +4709,14 @@ static void TrainingMenuBtnCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason
 					if (!MilitiaTrainingAllowedInSector(sSector))
 					{
 						sString = st_format_printf(pMapErrorString[ 31 ], GCM->getTown(bTownId)->name);
-						DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, NULL );
+						DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, nullptr );
 						break;
 					}
 
 					// is the current loyalty high enough to train some?
 					if (!DoesSectorMercIsInHaveSufficientLoyaltyToTrainMilitia(pSoldier))
 					{
-						DoScreenIndependantMessageBox(zMarksMapScreenText[19], MSG_BOX_FLAG_OK, NULL);
+						DoScreenIndependantMessageBox(zMarksMapScreenText[19], MSG_BOX_FLAG_OK, nullptr);
 						break;
 					}
 				}
@@ -4734,14 +4734,14 @@ static void TrainingMenuBtnCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason
 						sString = st_format_printf(zMarksMapScreenText[20], GCM->getTown(bTownId)->name);
 					}
 
-					DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, NULL );
+					DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, nullptr );
 					break;
 				}
 
 				if ( CountMilitiaTrainersInSoldiersSector( pSoldier ) >= MAX_MILITIA_TRAINERS_PER_SECTOR )
 				{
 					sString = st_format_printf(gzLateLocalizedString[STR_LATE_47], MAX_MILITIA_TRAINERS_PER_SECTOR);
-					DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, NULL );
+					DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, nullptr );
 					break;
 				}
 
@@ -4837,7 +4837,7 @@ static void AttributesMenuBtnCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 {
 	// btn callback handler for assignment region
 	INT32 iValue = -1;
-	SOLDIERTYPE * pSoldier = NULL;
+	SOLDIERTYPE * pSoldier = nullptr;
 
 
 	pSoldier = gAssignmentTargetSoldier;
@@ -5042,7 +5042,7 @@ static void AssignmentMenuBtnCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReas
 					fMapScreenBottomDirty = TRUE;
 					sString = st_format_printf(zMarksMapScreenText[18], pSoldier->name);
 
-					DoScreenIndependantMessageBox( sString , MSG_BOX_FLAG_OK, NULL );
+					DoScreenIndependantMessageBox( sString , MSG_BOX_FLAG_OK, nullptr );
 				}
 
 			break;
@@ -5109,7 +5109,7 @@ static void AssignmentMenuBtnCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReas
 					fMapScreenBottomDirty = TRUE;
 					sString = st_format_printf(zMarksMapScreenText[17], pSoldier->name);
 
-					DoScreenIndependantMessageBox( sString , MSG_BOX_FLAG_OK, NULL );
+					DoScreenIndependantMessageBox( sString , MSG_BOX_FLAG_OK, nullptr );
 				}
 			break;
 			case( ASSIGN_MENU_TRAIN ):
@@ -5385,7 +5385,7 @@ static void CreateAssignmentsBox()
 		ST::string str = pAssignMenuStrings[i];
 		// if we have a soldier, and this is the squad line
 		ST::string buf;
-		if (i == ASSIGN_MENU_ON_DUTY && s != NULL && s->bAssignment < ON_DUTY)
+		if (i == ASSIGN_MENU_ON_DUTY && s != nullptr && s->bAssignment < ON_DUTY)
 		{
 			// show his squad # in brackets
 			buf = ST::format("{}({})", str, s->bAssignment + 1);
@@ -5475,7 +5475,7 @@ void DetermineBoxPositions()
 
 	SOLDIERTYPE const* const s = GetSelectedAssignSoldier(TRUE);
 	// no soldier is legal here!  Gets called during every mapscreen initialization even when nobody is assign char
-	if (s == NULL) return;
+	if (s == nullptr) return;
 
 	if (fInMapMode)
 	{
@@ -5838,18 +5838,18 @@ static SOLDIERTYPE* GetRobotSoldier(void)
 	{
 		if (AM_A_ROBOT(s)) return s;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
 // can soldier repair robot
 static BOOLEAN CanCharacterRepairRobot(SOLDIERTYPE const* const pSoldier)
 {
-	SOLDIERTYPE *pRobot = NULL;
+	SOLDIERTYPE *pRobot = nullptr;
 
 	// do we in fact have the robot on the team?
 	pRobot = GetRobotSoldier( );
-	if( pRobot == NULL )
+	if( pRobot == nullptr )
 	{
 		return( FALSE );
 	}
@@ -5875,7 +5875,7 @@ static UINT8 RepairRobot(SOLDIERTYPE* pRobot, UINT8 ubRepairPts, BOOLEAN* pfNoth
 
 static UINT8 HandleRepairOfRobotBySoldier(UINT8 const ubRepairPts, BOOLEAN* const pfNothingLeftToRepair)
 {
-	SOLDIERTYPE *pRobot = NULL;
+	SOLDIERTYPE *pRobot = nullptr;
 
 	pRobot = GetRobotSoldier( );
 
@@ -6383,7 +6383,7 @@ static void NotifyPlayerOfAssignmentAttemptFailure(INT8 bAssignment)
 	// notify player
 	if ( guiCurrentScreen != MSG_BOX_SCREEN )
 	{
-		DoScreenIndependantMessageBox( pMapErrorString[ 18 ], MSG_BOX_FLAG_OK, NULL);
+		DoScreenIndependantMessageBox( pMapErrorString[ 18 ], MSG_BOX_FLAG_OK, nullptr);
 	}
 	else
 	{
@@ -6427,7 +6427,7 @@ BOOLEAN HandleSelectedMercsBeingPutAsleep(BOOLEAN const wake_up, BOOLEAN const d
 		// inform player not everyone could be woken up/put to sleep
 		ST::string warning = wake_up ?
 			pMapErrorString[27] : pMapErrorString[26];
-		DoScreenIndependantMessageBox(warning, MSG_BOX_FLAG_OK, NULL);
+		DoScreenIndependantMessageBox(warning, MSG_BOX_FLAG_OK, nullptr);
 	}
 
 	return success;
@@ -6460,7 +6460,7 @@ void RebuildAssignmentsBox( void )
 
 void BandageBleedingDyingPatientsBeingTreated( )
 {
-	SOLDIERTYPE *pDoctor = NULL;
+	SOLDIERTYPE *pDoctor = nullptr;
 	INT32 iKitSlot;
 	UINT16 usKitPts;
 	UINT32 uiKitPtsUsed;
@@ -6491,7 +6491,7 @@ void BandageBleedingDyingPatientsBeingTreated( )
 				{
 					// see if there's a doctor around who can help him
 					pDoctor = AnyDoctorWhoCanHealThisPatient( pSoldier, HEALABLE_EVER );
-					if ( pDoctor != NULL )
+					if ( pDoctor != nullptr )
 					{
 						iKitSlot = FindObjClass( pDoctor, IC_MEDKIT );
 						if( iKitSlot != NO_SLOT )
@@ -6542,7 +6542,7 @@ void ReEvaluateEveryonesNothingToDo()
 				break;
 
 			case PATIENT:
-				fNothingToDo = !CanCharacterPatient(pSoldier) || AnyDoctorWhoCanHealThisPatient(pSoldier, HEALABLE_EVER) == NULL;
+				fNothingToDo = !CanCharacterPatient(pSoldier) || AnyDoctorWhoCanHealThisPatient(pSoldier, HEALABLE_EVER) == nullptr;
 				break;
 
 			case ASSIGNMENT_HOSPITAL:
@@ -6609,7 +6609,7 @@ void SetAssignmentForList(INT8 const bAssignment, INT8 const bParam)
 	if (!fInMapMode) return;
 
 	SOLDIERTYPE* const sel = bSelectedAssignChar != -1 ?
-		gCharactersList[bSelectedAssignChar].merc : NULL;
+		gCharactersList[bSelectedAssignChar].merc : nullptr;
 	Assert(sel && sel->bActive);
 
 	// sets assignment for the list
@@ -6880,9 +6880,9 @@ void UnEscortEPC(SOLDIERTYPE* const s)
 		{
 			case JOHN: other = FindSoldierByProfileIDOnPlayerTeam(MARY); break;
 			case MARY: other = FindSoldierByProfileIDOnPlayerTeam(JOHN); break;
-			default:   other = NULL;                                     break;
+			default:   other = nullptr;                                     break;
 		}
-		if (other != NULL) InternalUnescortEPC(other);
+		if (other != nullptr) InternalUnescortEPC(other);
 
 		// stop showing menu
 		giAssignHighLine = -1;
@@ -6995,7 +6995,7 @@ static BOOLEAN CanCharacterRepairAnotherSoldiersStuff(const SOLDIERTYPE* const p
 
 static SOLDIERTYPE* GetSelectedAssignSoldier(BOOLEAN fNullOK)
 {
-	SOLDIERTYPE *pSoldier = NULL;
+	SOLDIERTYPE *pSoldier = nullptr;
 
 	if (fInMapMode)
 	{
@@ -7016,7 +7016,7 @@ static SOLDIERTYPE* GetSelectedAssignSoldier(BOOLEAN fNullOK)
 		Assert( pSoldier );
 	}
 
-	if ( pSoldier != NULL )
+	if ( pSoldier != nullptr )
 	{
 		// better be an active person, not a vehicle
 		Assert( pSoldier->bActive );
@@ -7078,7 +7078,7 @@ static void RepairItemsOnOthers(SOLDIERTYPE* pSoldier, UINT8* pubRepairPtsLeft)
 		while ( *pubRepairPtsLeft > 0 )
 		{
 			bBestPriority = -1;
-			pBestOtherSoldier = NULL;
+			pBestOtherSoldier = nullptr;
 
 			// now look for items to repair on other mercs
 			FOR_EACH_IN_TEAM(pOtherSoldier, OUR_TEAM)
@@ -7100,7 +7100,7 @@ static void RepairItemsOnOthers(SOLDIERTYPE* pSoldier, UINT8* pubRepairPtsLeft)
 			}
 
 			// did we find anyone to repair on this pass?
-			if ( pBestOtherSoldier != NULL )
+			if ( pBestOtherSoldier != nullptr )
 			{
 				// yes, repair all items (for this pass type!) on this soldier that need repair
 				do

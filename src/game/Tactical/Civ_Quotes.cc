@@ -207,7 +207,7 @@ static void ShutDownQuoteBox(BOOLEAN fForce)
 		// do we need to do anything at the end of the civ quote?
 		if ( gCivQuoteData.pCiv && gCivQuoteData.pCiv->bAction == AI_ACTION_OFFER_SURRENDER )
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SURRENDER], GAME_SCREEN, MSG_BOX_FLAG_YESNO, SurrenderMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SURRENDER], GAME_SCREEN, MSG_BOX_FLAG_YESNO, SurrenderMessageBoxCallBack, nullptr);
 		}
 	}
 }
@@ -290,7 +290,7 @@ INT8 GetCivType(const SOLDIERTYPE* pCiv)
 
 static void RenderCivQuoteBoxOverlay(VIDEO_OVERLAY* pBlitter)
 {
-	if (gCivQuoteData.video_overlay == NULL)
+	if (gCivQuoteData.video_overlay == nullptr)
 		return;
 	RenderMercPopUpBox(gCivQuoteData.dialogue_box, pBlitter->sX, pBlitter->sY,  pBlitter->uiDestBuff);
 	InvalidateRegion(pBlitter->sX, pBlitter->sY, pBlitter->sX + gusCivQuoteBoxWidth,
@@ -348,7 +348,7 @@ void BeginCivQuote( SOLDIERTYPE *pCiv, UINT8 ubCivQuoteID, UINT8 ubEntryID, INT1
 	{
 		gCivQuoteData.native = true;
 		gCivQuoteData.text = gzCivQuote;
-		gCivQuoteData.video_overlay = NULL;
+		gCivQuoteData.video_overlay = nullptr;
 		gCivQuoteData.dialogue_box = 0;
 		gCivQuoteData.bActive = TRUE;
 		gCivQuoteData.uiTimeOfCreation = GetJA2Clock();
@@ -792,7 +792,7 @@ void InitCivQuoteSystem( )
 {
 	gCivQuoteData = QUOTE_SYSTEM_STRUCT{};
 	gCivQuoteData.bActive = FALSE;
-	gCivQuoteData.video_overlay = NULL;
+	gCivQuoteData.video_overlay = nullptr;
 	gCivQuoteData.dialogue_box  = 0;
 }
 

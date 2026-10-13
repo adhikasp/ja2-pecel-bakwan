@@ -2538,17 +2538,17 @@ char const* GetBodyTypePaletteSubstitution(SOLDIERTYPE const* const s, UINT8 con
 BOOLEAN SetSoldierAnimationSurface( SOLDIERTYPE *pSoldier, UINT16 usAnimState )
 {
 	// Delete any structure info!
-	if ( pSoldier->pLevelNode != NULL )
+	if ( pSoldier->pLevelNode != nullptr )
 	{
 		DeleteStructureFromWorld( pSoldier->pLevelNode->pStructureData );
-		pSoldier->pLevelNode->pStructureData = NULL;
+		pSoldier->pLevelNode->pStructureData = nullptr;
 	}
 
 
 	UINT16 const usAnimSurface = LoadSoldierAnimationSurface(*pSoldier, usAnimState);
 
 	// Add structure info!
-	if ( pSoldier->pLevelNode != NULL && !( pSoldier->uiStatusFlags & SOLDIER_PAUSEANIMOVE ) )
+	if ( pSoldier->pLevelNode != nullptr && !( pSoldier->uiStatusFlags & SOLDIER_PAUSEANIMOVE ) )
 	{
 		AddMercStructureInfoFromAnimSurface( pSoldier->sGridNo, pSoldier, usAnimSurface, usAnimState );
 	}
@@ -2830,7 +2830,7 @@ UINT16 GetSoldierAnimationSurface(SOLDIERTYPE const* const pSoldier)
 	if ( usAnimSurface != INVALID_ANIMATION_SURFACE )
 	{
 		// Ensure that it's loaded!
-		if ( gAnimSurfaceDatabase[usAnimSurface].hVideoObject == NULL )
+		if ( gAnimSurfaceDatabase[usAnimSurface].hVideoObject == nullptr )
 		{
 			SLOGW("Animation Surface for Body {}, animation {}, surface {} not loaded.",
 				pSoldier->ubBodyType, gAnimControl[pSoldier->usAnimState].zAnimStr, usAnimSurface);

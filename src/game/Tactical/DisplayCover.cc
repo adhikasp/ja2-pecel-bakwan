@@ -305,7 +305,7 @@ static INT8 CalcCoverForGridNoBasedOnTeamKnownEnemies(SOLDIERTYPE const* const p
 		}
 
 		INT32  const iGetThrough = SoldierToLocationChanceToGetThrough(pOpponent, sTargetGridNo,
-										pSoldier->bLevel, bStance, NULL);
+										pSoldier->bLevel, bStance, nullptr);
 		UINT16 const usMaxRange = WeaponInHand(pOpponent) ? GunRange(pOpponent->inv[HANDPOS]) :
 						GCM->getWeapon(GLOCK_18)->usRange;
 		INT32  const iBulletGetThrough = std::clamp(int(((usMaxRange - usRange) / (FLOAT)usMaxRange + .3) * 100), 0, 100);
@@ -445,7 +445,7 @@ void DisplayGridNoVisibleToSoldierGrid( )
 
 	const SOLDIERTYPE* const sel = GetSelectedMan();
 	//Only allowed in if there is someone selected
-	if (sel == NULL)
+	if (sel == nullptr)
 		return;
 
 	//if the cursor is in a the tactical map
@@ -704,7 +704,7 @@ static INT8 CalcIfSoldierCanSeeGridNo(const SOLDIERTYPE* pSoldier, INT16 sTarget
 	BOOLEAN bAware=FALSE;
 
 	const SOLDIERTYPE* const tgt = WhoIsThere2(sTargetGridNo, fRoof ? 1 : 0);
-	if (tgt != NULL)
+	if (tgt != nullptr)
 	{
 		const INT8* const pPersOL  = &pSoldier->bOppList[tgt->ubID];
 		const INT8* const pbPublOL = &gbPublicOpplist[pSoldier->bTeam][tgt->ubID];

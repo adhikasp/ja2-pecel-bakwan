@@ -158,7 +158,7 @@ void DequeueAllDemandGameEvents(void)
 
 static SOLDIERTYPE* GetSoldier(const UINT16 soldier_idx)
 {
-	if (soldier_idx >= TOTAL_SOLDIERS) return NULL; // XXX assert?
+	if (soldier_idx >= TOTAL_SOLDIERS) return nullptr; // XXX assert?
 	SOLDIERTYPE& s = GetMan(soldier_idx);
 	return s.bActive ? &s : 0;
 }
@@ -176,7 +176,7 @@ static void ExecuteGameEvent(EVENT* pEvent)
 		[](EV_S_GETNEWPATH const& SGetNewPath)
 		{
 			SOLDIERTYPE* pSoldier = GetSoldier(SGetNewPath.usSoldierID);
-			if (pSoldier == NULL)
+			if (pSoldier == nullptr)
 			{
 				// Handle Error?
 				SLOGE("Invalid Soldier ID");
@@ -195,7 +195,7 @@ static void ExecuteGameEvent(EVENT* pEvent)
 		[](EV_S_SETDESIREDDIRECTION const& SSetDesiredDirection)
 		{
 			SOLDIERTYPE* pSoldier = GetSoldier(SSetDesiredDirection.usSoldierID);
-			if (pSoldier == NULL)
+			if (pSoldier == nullptr)
 			{
 				// Handle Error?
 				SLOGE("Invalid Soldier ID");
@@ -215,7 +215,7 @@ static void ExecuteGameEvent(EVENT* pEvent)
 		[](EV_S_BEGINFIREWEAPON const& SBeginFireWeapon)
 		{
 			SOLDIERTYPE* pSoldier = GetSoldier(SBeginFireWeapon.usSoldierID);
-			if (pSoldier == NULL)
+			if (pSoldier == nullptr)
 			{
 				// Handle Error?
 				SLOGE("Invalid Soldier ID");
@@ -238,7 +238,7 @@ static void ExecuteGameEvent(EVENT* pEvent)
 		[](EV_S_FIREWEAPON const& SFireWeapon)
 		{
 			SOLDIERTYPE* pSoldier = GetSoldier(SFireWeapon.usSoldierID);
-			if (pSoldier == NULL)
+			if (pSoldier == nullptr)
 			{
 				// Handle Error?
 				SLOGE("Invalid Soldier ID");

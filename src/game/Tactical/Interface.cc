@@ -91,7 +91,7 @@ static TOP_MESSAGE gTopMessage;
 BOOLEAN gfTopMessageDirty = FALSE;
 
 
-VIDEO_OVERLAY*       g_ui_message_overlay = NULL;
+VIDEO_OVERLAY*       g_ui_message_overlay = nullptr;
 ST::string           g_ui_message_text; // what the message overlay says (the native map screen draws it)
 static UINT16        gusUIMessageWidth;
 static UINT16        gusUIMessageHeight;
@@ -221,7 +221,7 @@ void SetCurrentInterfacePanel(InterfacePanelKind const ubNewPanel)
 		// ATE: Delete desc panel if it was open....
 		if (gfInItemDescBox) DeleteItemDescriptionBox();
 
-		gSelectSMPanelToMerc = NULL;
+		gSelectSMPanelToMerc = nullptr;
 	}
 
 	gsCurInterfacePanel = ubNewPanel;
@@ -486,7 +486,7 @@ static void GetArrowsBackground(void)
 	}
 
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return;
+	if (sel == nullptr) return;
 
 	// Get screen position of our guy
 	GetSoldierTRUEScreenPos(sel, &sMercScreenX, &sMercScreenY);
@@ -1118,13 +1118,13 @@ void BeginUIMessage(BOOLEAN fUseSkullIcon, const ST::string& text)
 	// Prepare text box
 	g_ui_message_box = PrepareMercPopupBox(g_ui_message_box, BASIC_MERC_POPUP_BACKGROUND, BASIC_MERC_POPUP_BORDER, text, 200, 10, 0, 0, &gusUIMessageWidth, &gusUIMessageHeight, flags);
 
-	if (g_ui_message_overlay != NULL)
+	if (g_ui_message_overlay != nullptr)
 	{
 		RemoveVideoOverlay(g_ui_message_overlay);
-		g_ui_message_overlay = NULL;
+		g_ui_message_overlay = nullptr;
 	}
 
-	if (g_ui_message_overlay == NULL)
+	if (g_ui_message_overlay == nullptr)
 	{
 		INT16 const x = (SCREEN_WIDTH - gusUIMessageWidth) / 2;
 		g_ui_message_overlay = RegisterVideoOverlay(RenderUIMessage, x, 150, gusUIMessageWidth, gusUIMessageHeight);
@@ -1142,7 +1142,7 @@ void BeginMapUIMessage(INT16 delta_y, const ST::string& text)
 
 	g_ui_message_box = PrepareMercPopupBox(g_ui_message_box, BASIC_MERC_POPUP_BACKGROUND, BASIC_MERC_POPUP_BORDER, text, 200, 10, 0, 0, &gusUIMessageWidth, &gusUIMessageHeight, MERC_POPUP_PREPARE_FLAGS_TRANS_BACK);
 
-	if (g_ui_message_overlay == NULL)
+	if (g_ui_message_overlay == nullptr)
 	{
 		// centred on the (scaled) map, in screen pixels
 		INT16 const x = MapCanvasToScreenX(MAP_VIEW_START_X + 20) + (g_ui.m_map.canvasToScreen(MAP_VIEW_WIDTH)  - gusUIMessageWidth)  / 2;
@@ -1157,7 +1157,7 @@ void EndUIMessage( )
 {
 	UINT32	uiClock = GetJA2Clock();
 
-	if (g_ui_message_overlay != NULL)
+	if (g_ui_message_overlay != nullptr)
 	{
 		if ( gfUseSkullIconMessage )
 		{
@@ -1168,7 +1168,7 @@ void EndUIMessage( )
 		}
 
 		RemoveVideoOverlay(g_ui_message_overlay);
-		g_ui_message_overlay = NULL;
+		g_ui_message_overlay = nullptr;
 
 		// Remove popup as well....
 		if (g_ui_message_box)
@@ -1295,7 +1295,7 @@ void HandleTopMessages(void)
 					{
 						// ATE: increase this so that we don't go into here again...
 						++ts->usTactialTurnLimitCounter;
-						UIHandleEndTurn(NULL);
+						UIHandleEndTurn(nullptr);
 					}
 				}
 			}

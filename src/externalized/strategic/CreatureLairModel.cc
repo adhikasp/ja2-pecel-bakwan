@@ -125,7 +125,7 @@ const CreatureAttackSector* CreatureLairModel::chooseTownSectorToAttack() const
 	}
 
 	SLOGA("Some coding error with the random selection logic. We should never reach here");
-	return NULL;
+	return nullptr;
 }
 
 const CreatureAttackSector* CreatureLairModel::getTownAttackDetails(uint8_t sectorId) const
@@ -137,7 +137,7 @@ const CreatureAttackSector* CreatureLairModel::getTownAttackDetails(uint8_t sect
 			return &sec;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 CreatureLairModel* CreatureLairModel::deserialize(const JsonValue& json)

@@ -840,7 +840,7 @@ void AddLifeInsurancePayout(SOLDIERTYPE* const pSoldier)
 	UINT32 uiDaysToPay;
 
 
-	Assert(pSoldier != NULL);
+	Assert(pSoldier != nullptr);
 	Assert(pSoldier->ubProfile != NO_PROFILE);
 
 	MERCPROFILESTRUCT const& p = GetProfile(pSoldier->ubProfile);
@@ -1033,7 +1033,7 @@ static void EnableDisableInsuranceContractAcceptButtons(void)
 	{
 		const InsuranceInfo* const ins = &insurance_info[i];
 		const SOLDIERTYPE* const s = ins->soldier;
-		if (s == NULL) continue;
+		if (s == nullptr) continue;
 
 		EnableButton(ins->button, CanSoldierExtendInsuranceContract(s));
 	}
@@ -1119,9 +1119,9 @@ void PurchaseOrExtendInsuranceForSoldier( SOLDIERTYPE *pSoldier, UINT32 uiInsura
 		{
 			ST::string sText = GetInsuranceText(INS_MLTI_NOT_ENOUGH_FUNDS);
 			if( guiCurrentScreen == LAPTOP_SCREEN )
-				DoLapTopMessageBox( MSG_BOX_RED_ON_WHITE, sText, LAPTOP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+				DoLapTopMessageBox( MSG_BOX_RED_ON_WHITE, sText, LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 			else
-				DoMapMessageBox( MSG_BOX_RED_ON_WHITE, sText, MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+				DoMapMessageBox( MSG_BOX_RED_ON_WHITE, sText, MAP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 		}
 		else
 		{

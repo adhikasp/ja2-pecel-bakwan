@@ -34,7 +34,7 @@ UINT8 GetLoadScreenID(const SGPSector& sector)
 	if (DidGameJustStart()) return LOADINGSCREEN_HELI;
 
 	const LoadingScreen* screen = GCM->getLoadingScreenForSector(sector_id, sector.z, night);
-	if (screen != NULL)
+	if (screen != nullptr)
 	{
 		return screen->index;
 	}

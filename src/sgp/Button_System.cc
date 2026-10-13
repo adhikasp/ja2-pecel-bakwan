@@ -93,7 +93,7 @@ static BUTTON_PICS* FindFreeButtonSlot(void)
 	// Search for a slot
 	FOR_EACH(BUTTON_PICS, i, ButtonPictures)
 	{
-		if (i->vobj == NULL) return i;
+		if (i->vobj == nullptr) return i;
 	}
 	throw std::runtime_error("Out of button image slots");
 }
@@ -135,7 +135,7 @@ static void InitButtonImage(BUTTON_PICS* const pics, const HVOBJECT VObj, const 
 
 BUTTON_PICS* LoadButtonImage(const char* filename, INT32 Grayed, INT32 OffNormal, INT32 OffHilite, INT32 OnNormal, INT32 OnHilite)
 {
-	AssertMsg(filename != NULL, "Attempting to LoadButtonImage() with null filename.");
+	AssertMsg(filename != nullptr, "Attempting to LoadButtonImage() with null filename.");
 
 	if (Grayed    == BUTTON_NO_IMAGE &&
 			OffNormal == BUTTON_NO_IMAGE &&
@@ -191,7 +191,7 @@ BUTTON_PICS* UseLoadedButtonImage(BUTTON_PICS* const img, INT32 const off_normal
 
 void UnloadButtonImage(BUTTON_PICS* const pics)
 {
-	if (pics->vobj == NULL) return;
+	if (pics->vobj == nullptr) return;
 
 	// If this is a duplicated button image, then don't trash the vobject
 	if (!(pics->fFlags & GUI_BTN_DUPLICATE_VOBJ))
@@ -218,20 +218,20 @@ void UnloadButtonImage(BUTTON_PICS* const pics)
 	}
 
 remove_pic:
-	pics->vobj = NULL;
+	pics->vobj = nullptr;
 }
 
 
 void EnableButton(GUIButtonRef const b)
 {
-	CHECKV(b != NULL); // XXX HACK000C
+	CHECKV(b != nullptr); // XXX HACK000C
 	b->uiFlags |= BUTTON_ENABLED | BUTTON_DIRTY;
 }
 
 
 void DisableButton(GUIButtonRef const b)
 {
-	CHECKV(b != NULL); // XXX HACK000C
+	CHECKV(b != nullptr); // XXX HACK000C
 	b->uiFlags &= ~BUTTON_ENABLED;
 	b->uiFlags |= BUTTON_DIRTY;
 }
@@ -252,7 +252,7 @@ static void InitializeButtonImageManager(void)
 	for (int x = 0; x < MAX_BUTTON_PICS; ++x)
 	{
 		BUTTON_PICS* const pics = &ButtonPictures[x];
-		pics->vobj      = NULL;
+		pics->vobj      = nullptr;
 		pics->Grayed    = -1;
 		pics->OffNormal = -1;
 		pics->OffHilite = -1;
@@ -261,10 +261,10 @@ static void InitializeButtonImageManager(void)
 	}
 
 	// Blank out all Generic button data
-	GenericButtonOffNormal  = NULL;
-	GenericButtonOffHilite  = NULL;
-	GenericButtonOnNormal   = NULL;
-	GenericButtonOnHilite   = NULL;
+	GenericButtonOffNormal  = nullptr;
+	GenericButtonOffHilite  = nullptr;
+	GenericButtonOnNormal   = nullptr;
+	GenericButtonOnHilite   = nullptr;
 	GenericButtonFillColors = 0;
 
 	// Load the default generic button images
@@ -310,32 +310,32 @@ static void ShutdownButtonImageManager(void)
 	// Remove all QuickButton images
 	FOR_EACH(BUTTON_PICS, i, ButtonPictures)
 	{
-		if (i->vobj != NULL) UnloadButtonImage(i);
+		if (i->vobj != nullptr) UnloadButtonImage(i);
 	}
 
 	// Remove all GenericButton images
-	if (GenericButtonOffNormal != NULL)
+	if (GenericButtonOffNormal != nullptr)
 	{
 		DeleteVideoObject(GenericButtonOffNormal);
-		GenericButtonOffNormal = NULL;
+		GenericButtonOffNormal = nullptr;
 	}
 
-	if (GenericButtonOffHilite != NULL)
+	if (GenericButtonOffHilite != nullptr)
 	{
 		DeleteVideoObject(GenericButtonOffHilite);
-		GenericButtonOffHilite = NULL;
+		GenericButtonOffHilite = nullptr;
 	}
 
-	if (GenericButtonOnNormal != NULL)
+	if (GenericButtonOnNormal != nullptr)
 	{
 		DeleteVideoObject(GenericButtonOnNormal);
-		GenericButtonOnNormal = NULL;
+		GenericButtonOnNormal = nullptr;
 	}
 
-	if (GenericButtonOnHilite != NULL)
+	if (GenericButtonOnHilite != nullptr)
 	{
 		DeleteVideoObject(GenericButtonOnHilite);
-		GenericButtonOnHilite = NULL;
+		GenericButtonOnHilite = nullptr;
 	}
 
 	GenericButtonFillColors = 0;
@@ -404,7 +404,7 @@ static INT32 GetNextButtonNumber(void)
 	/* Never hand out ID 0.  Slot 0 is always a null pointer */
 	for (INT32 x = 1; x < MAX_BUTTONS; x++)
 	{
-		if (ButtonList[x] == NULL) return x;
+		if (ButtonList[x] == nullptr) return x;
 	}
 	throw std::runtime_error("No more button slots");
 }
@@ -682,7 +682,7 @@ void GUI_BUTTON::SetFastHelpText(const ST::string& str)
  */
 static void QuickButtonCallbackMMove(MOUSE_REGION* reg, UINT32 reason)
 {
-	Assert(reg != NULL);
+	Assert(reg != nullptr);
 	GUI_BUTTON* const b = reg->GetUserPtr<GUI_BUTTON>();
 
 	// ATE: New stuff for toggle buttons that work with new Win95 paradigm
@@ -710,7 +710,7 @@ static void QuickButtonCallbackMMove(MOUSE_REGION* reg, UINT32 reason)
  */
 static void QuickButtonCallbackMButn(MOUSE_REGION* reg, UINT32 reason)
 {
-	Assert(reg != NULL);
+	Assert(reg != nullptr);
 	GUI_BUTTON* const b = reg->GetUserPtr<GUI_BUTTON>();
 
 	// ATE: New stuff for toggle buttons that work with new Win95 paradigm
@@ -748,7 +748,7 @@ static void QuickButtonCallbackMButn(MOUSE_REGION* reg, UINT32 reason)
 	bool isDefaultCallback = false;
 	if (b->MoveCallback) {
 		auto moveCallbackPtr = b->MoveCallback.target<void(*)(GUI_BUTTON*, UINT32)>();
-		if (moveCallbackPtr != NULL) {
+		if (moveCallbackPtr != nullptr) {
 			isDefaultCallback = *moveCallbackPtr == DefaultMoveCallback;
 
 		}
@@ -904,7 +904,7 @@ void RenderButtons(void)
 void MarkAButtonDirty(GUIButtonRef const b)
 {
 	// surgical dirtying -> marks a user specified button dirty, without dirty the whole lot of them
-	CHECKV(b != NULL); // XXX HACK000C
+	CHECKV(b != nullptr); // XXX HACK000C
 	b->uiFlags |= BUTTON_DIRTY;
 }
 
@@ -920,7 +920,7 @@ void MarkButtonsDirty(void)
 
 void UnMarkButtonDirty(GUIButtonRef const b)
 {
-	CHECKV(b != NULL); // XXX HACK000C
+	CHECKV(b != nullptr); // XXX HACK000C
 	b->uiFlags &= ~BUTTON_DIRTY;
 }
 
@@ -936,7 +936,7 @@ void UnmarkButtonsDirty(void)
 
 void ForceButtonUnDirty(GUIButtonRef const b)
 {
-	CHECKV(b != NULL); // XXX HACK000C
+	CHECKV(b != nullptr); // XXX HACK000C
 	b->uiFlags &= ~BUTTON_DIRTY;
 	b->uiFlags |= BUTTON_FORCE_UNDIRTY;
 }
@@ -1437,7 +1437,7 @@ static void DrawGenericButton(const GUI_BUTTON* b)
 	}
 	else if (b->Clicked())
 	{
-		if  (b->Area.uiFlags & MSYS_MOUSE_IN_AREA && GenericButtonOnHilite != NULL && gfRenderHilights)
+		if  (b->Area.uiFlags & MSYS_MOUSE_IN_AREA && GenericButtonOnHilite != nullptr && gfRenderHilights)
 		{
 			BPic = GenericButtonOnHilite;
 		}
@@ -1448,7 +1448,7 @@ static void DrawGenericButton(const GUI_BUTTON* b)
 	}
 	else
 	{
-		if (b->Area.uiFlags & MSYS_MOUSE_IN_AREA && GenericButtonOffHilite != NULL && gfRenderHilights)
+		if (b->Area.uiFlags & MSYS_MOUSE_IN_AREA && GenericButtonOffHilite != nullptr && gfRenderHilights)
 		{
 			BPic = GenericButtonOffHilite;
 		}
@@ -1515,7 +1515,7 @@ static void DrawGenericButton(const GUI_BUTTON* b)
 
 GUIButtonRef CreateCheckBoxButton(INT16 x, INT16 y, const char* filename, INT16 Priority, GUI_CALLBACK ClickCallback)
 {
-	Assert(filename != NULL);
+	Assert(filename != nullptr);
 	BUTTON_PICS* const ButPic = LoadButtonImage(filename, -1, 0, 1, 2, 3);
 	GUIButtonRef const b      = QuickCreateButtonInternal(ButPic, x, y, BUTTON_CHECKBOX, Priority, MSYS_NO_CALLBACK, ClickCallback);
 
@@ -1592,7 +1592,7 @@ void GUI_BUTTON::Hide()
 
 void HideButton(GUIButtonRef const b)
 {
-	CHECKV(b != NULL); // XXX HACK000C
+	CHECKV(b != nullptr); // XXX HACK000C
 	b->Hide();
 }
 
@@ -1607,7 +1607,7 @@ void GUI_BUTTON::Show()
 
 void ShowButton(GUIButtonRef const b)
 {
-	CHECKV(b != NULL); // XXX HACK000C
+	CHECKV(b != nullptr); // XXX HACK000C
 	b->Show();
 }
 

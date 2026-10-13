@@ -94,7 +94,7 @@ INT8 HireMerc(MERC_HIRE_STRUCT& h)
 	MercCreateStruct.bTeam                 = OUR_TEAM;
 	MercCreateStruct.fCopyProfileItemsOver = h.fCopyProfileItemsOver;
 	SOLDIERTYPE* const s = TacticalCreateSoldier(MercCreateStruct);
-	if (s == NULL)
+	if (s == nullptr)
 	{
 		SLOGW("TacticalCreateSoldier in HireMerc():  Failed to Add Merc");
 		return MERC_HIRE_FAILED;
@@ -549,7 +549,7 @@ static void CheckForValidArrivalSector(void)
 
 		sString = st_format_printf(str_arrival_rerouted, g_merc_arrive_sector.AsShortString(), zShortTownIDString1);
 
-		DoScreenIndependantMessageBox(  sString, MSG_BOX_FLAG_OK, NULL );
+		DoScreenIndependantMessageBox(  sString, MSG_BOX_FLAG_OK, nullptr );
 
 	}
 }

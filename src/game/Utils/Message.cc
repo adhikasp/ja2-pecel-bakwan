@@ -81,16 +81,16 @@ static UINT32  uiStartOfPauseTime = 0;
 static void RemoveStringVideoOverlay(ScrollStringSt* pStringSt)
 {
 	// error check, remove one not there
-	if (pStringSt->video_overlay == NULL) return;
+	if (pStringSt->video_overlay == nullptr) return;
 	RemoveVideoOverlay(pStringSt->video_overlay);
-	pStringSt->video_overlay = NULL;
+	pStringSt->video_overlay = nullptr;
 }
 
 
 static void SetStringVideoOverlayPosition(ScrollStringSt* pStringSt, UINT16 usX, UINT16 usY)
 {
 	// Donot update if not allocated!
-	if (pStringSt->video_overlay == NULL) return;
+	if (pStringSt->video_overlay == nullptr) return;
 	SetVideoOverlayPos(pStringSt->video_overlay, usX, usY);
 }
 
@@ -148,7 +148,7 @@ void ScrollString(void)
 	INT32 iNumberOfMessagesOnQueue = pStringS.size();
 	INT32 iMaxAge = MAX_AGE;
 
-	BOOLEAN fDitchLastMessage = (iNumberOfMessagesOnQueue > 0 && gpDisplayList[MAX_LINE_COUNT - 1] != NULL);
+	BOOLEAN fDitchLastMessage = (iNumberOfMessagesOnQueue > 0 && gpDisplayList[MAX_LINE_COUNT - 1] != nullptr);
 
 	if (iNumberOfMessagesOnQueue * 1000 >= iMaxAge)
 	{
@@ -162,7 +162,7 @@ void ScrollString(void)
 	//AGE
 	for (UINT32 cnt = 0; cnt < MAX_LINE_COUNT; cnt++)
 	{
-		if (gpDisplayList[cnt] != NULL)
+		if (gpDisplayList[cnt] != nullptr)
 		{
 			if (fDitchLastMessage && cnt == MAX_LINE_COUNT - 1)
 			{
@@ -172,7 +172,7 @@ void ScrollString(void)
 			if (suiTimer - gpDisplayList[cnt]->uiTimeOfLastUpdate > (UINT32)(iMaxAge - 1000 * iNumberOfMessagesOnQueue))
 			{
 				RemoveStringVideoOverlay(gpDisplayList[cnt].get());
-				gpDisplayList[cnt] = NULL;
+				gpDisplayList[cnt] = nullptr;
 			}
 		}
 	}
@@ -212,7 +212,7 @@ void ScrollString(void)
 	for (UINT32 cnt = 0; cnt <= MAX_LINE_COUNT - 1; cnt++)
 	{
 		// Adjust position!
-		if (gpDisplayList[cnt] != NULL)
+		if (gpDisplayList[cnt] != nullptr)
 		{
 			SetStringVideoOverlayPosition(gpDisplayList[cnt].get(), X_START, Y_START - cnt * GetFontHeight(SMALLFONT1) - WIDTH_BETWEEN_NEW_STRINGS * iNumberOfNewStrings);
 
@@ -231,7 +231,7 @@ void ScrollString(void)
 
 	//check if new meesage we have not seen since mapscreen..if so, beep
 	if (fOkToBeepNewMessage &&
-			gpDisplayList[MAX_LINE_COUNT - 2] == NULL &&
+			gpDisplayList[MAX_LINE_COUNT - 2] == nullptr &&
 			(guiCurrentScreen == GAME_SCREEN || guiCurrentScreen == MAP_SCREEN) &&
 			!gfFacePanelActive)
 	{
@@ -445,7 +445,7 @@ void DisplayStringsInMapScreenMessageList(void)
 		}
 
 		const ScrollStringSt* const s = gMapScreenMessageList[ubCurrentStringIndex].get();
-		if (s == NULL) break;
+		if (s == nullptr) break;
 
 		SetFontForeground(s->usColor);
 		MPrint(20, sY, s->pString);

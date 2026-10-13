@@ -682,7 +682,7 @@ static void ChooseWeaponForSoldierCreateStruct(SOLDIERCREATE_STRUCT* pp, INT8 bW
 	{
 		CreateItem( usAttachIndex, 100, &Object );
 		Object.fFlags |= OBJECT_UNDROPPABLE;
-		AttachObject( NULL, &(pp->Inv[ HANDPOS ]), &Object );
+		AttachObject( nullptr, &(pp->Inv[ HANDPOS ]), &Object );
 	}
 }
 
@@ -1052,7 +1052,7 @@ static void ChooseArmourForSoldierCreateStruct(SOLDIERCREATE_STRUCT* pp, INT8 bH
 									{
 										CreateItem( CERAMIC_PLATES, (INT8)(70+Random(31)), &Object );
 										Object.fFlags |= OBJECT_UNDROPPABLE;
-										AttachObject( NULL, &(pp->Inv[ VESTPOS ]), &Object );
+										AttachObject( nullptr, &(pp->Inv[ VESTPOS ]), &Object );
 									}
 								}
 							}
@@ -1927,7 +1927,7 @@ static UINT16 SelectStandardArmyGun(UINT8 uiGunLevel)
 	UINT32 uiChoice;
 	UINT16 usGunIndex;
 
-	const std::vector<std::vector<const WeaponModel*> > * gunChoice = NULL;
+	const std::vector<std::vector<const WeaponModel*> > * gunChoice = nullptr;
 
 	if (gGameOptions.fGunNut)
 	{

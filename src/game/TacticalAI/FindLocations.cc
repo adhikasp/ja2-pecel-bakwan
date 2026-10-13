@@ -487,7 +487,7 @@ static UINT8 NumberOfTeamMatesAdjacent(SOLDIERTYPE* pSoldier, INT16 sGridNo)
 		if ( sTempGridNo != sGridNo )
 		{
 			const SOLDIERTYPE* const tgt = WhoIsThere2(sTempGridNo, pSoldier->bLevel);
-			if (tgt != NULL && tgt != pSoldier && tgt->bTeam == pSoldier->bTeam)
+			if (tgt != nullptr && tgt != pSoldier && tgt->bTeam == pSoldier->bTeam)
 			{
 				ubCount++;
 			}
@@ -1713,7 +1713,7 @@ INT16 FindClosestDoor( SOLDIERTYPE * pSoldier )
 		{
 			// calculate the next potential gridno
 			sGridNo = pSoldier->sGridNo + sXOffset + (MAXCOL * sYOffset);
-			if (FindStructure( sGridNo, STRUCTURE_ANYDOOR ) != NULL)
+			if (FindStructure( sGridNo, STRUCTURE_ANYDOOR ) != nullptr)
 			{
 				iDist = PythSpacesAway( pSoldier->sGridNo, sGridNo );
 				if (iDist < iClosestDist)
@@ -1920,7 +1920,7 @@ INT16 FindClosestBoxingRingSpot( SOLDIERTYPE * pSoldier, BOOLEAN fInRing )
 				((!fInRing && room != BOXING_RING) && LegalNPCDestination(pSoldier, sGridNo, IGNORE_PATH, NOWATER, 0)))
 			{
 				iDistance = std::abs(sXOffset) + std::abs(sYOffset);
-				if (iDistance < iClosestDistance && WhoIsThere2(sGridNo, 0) == NULL)
+				if (iDistance < iClosestDistance && WhoIsThere2(sGridNo, 0) == nullptr)
 				{
 					sClosestSpot = sGridNo;
 					iClosestDistance = iDistance;

@@ -702,13 +702,13 @@ BOOLEAN CheckFact(Fact const usFact, UINT8 const ubProfileID)
 
 		case FACT_SHANK_IN_SQUAD_BUT_NOT_SPEAKING:
 			gubFact[usFact] =
-				FindSoldierByProfileIDOnPlayerTeam(SHANK) != NULL              &&
+				FindSoldierByProfileIDOnPlayerTeam(SHANK) != nullptr              &&
 				gMercProfiles[SHANK].ubMiscFlags & PROFILE_MISC_FLAG_RECRUITED &&
-				(gpSrcSoldier == NULL || gpSrcSoldier->ubProfile != SHANK);
+				(gpSrcSoldier == nullptr || gpSrcSoldier->ubProfile != SHANK);
 			break;
 
 		case FACT_SHANK_NOT_IN_SECTOR:
-			gubFact[usFact] = FindSoldierByProfileID(SHANK) == NULL;
+			gubFact[usFact] = FindSoldierByProfileID(SHANK) == nullptr;
 			break;
 		case FACT_QUEEN_DEAD:
 			gubFact[usFact] = (gMercProfiles[ QUEEN ].bMercStatus == MERC_IS_DEAD);
@@ -739,7 +739,7 @@ BOOLEAN CheckFact(Fact const usFact, UINT8 const ubProfileID)
 			gubFact[usFact] = ( gMercProfiles[ DYNAMO ].bMercStatus != MERC_IS_DEAD );
 			break;
 		case FACT_DYNAMO_SPEAKING_OR_NEARBY:
-			gubFact[usFact] = ( gpSrcSoldier != NULL && (gpSrcSoldier->ubProfile == DYNAMO || ( CheckNPCWithin( gpSrcSoldier->ubProfile, DYNAMO, 10 ) && CheckGuyVisible( gpSrcSoldier->ubProfile, DYNAMO ) ) ) );
+			gubFact[usFact] = ( gpSrcSoldier != nullptr && (gpSrcSoldier->ubProfile == DYNAMO || ( CheckNPCWithin( gpSrcSoldier->ubProfile, DYNAMO, 10 ) && CheckGuyVisible( gpSrcSoldier->ubProfile, DYNAMO ) ) ) );
 			break;
 		case FACT_JOHN_AND_MARY_EPCS:
 			gubFact[usFact] = CheckNPCIsEPC( JOHN ) && CheckNPCIsEPC( MARY );
@@ -945,7 +945,7 @@ BOOLEAN CheckFact(Fact const usFact, UINT8 const ubProfileID)
 			break;
 
 		case FACT_ROCKET_RIFLE_EXISTS:
-			gubFact[usFact] = ItemTypeExistsAtLocation( 10472, ROCKET_RIFLE, 0, NULL );
+			gubFact[usFact] = ItemTypeExistsAtLocation( 10472, ROCKET_RIFLE, 0, nullptr );
 			break;
 
 		case FACT_DOREEN_ALIVE:
@@ -1062,7 +1062,7 @@ BOOLEAN CheckFact(Fact const usFact, UINT8 const ubProfileID)
 			break;
 
 		case FACT_DYNAMO_NOT_SPEAKER:
-			gubFact[usFact] = !( gpSrcSoldier != NULL && (gpSrcSoldier->ubProfile == DYNAMO ) );
+			gubFact[usFact] = !( gpSrcSoldier != nullptr && (gpSrcSoldier->ubProfile == DYNAMO ) );
 			break;
 
 		case FACT_PABLO_BRIBED:
@@ -1073,8 +1073,8 @@ BOOLEAN CheckFact(Fact const usFact, UINT8 const ubProfileID)
 			gubFact[usFact] =
 				CheckFact(FACT_OK_USE_HUMMER, ubProfileID) &&
 				(
-					FindSoldierByProfileIDOnPlayerTeam(PROF_HUMMER)   != NULL ||
-					FindSoldierByProfileIDOnPlayerTeam(PROF_ICECREAM) != NULL
+					FindSoldierByProfileIDOnPlayerTeam(PROF_HUMMER)   != nullptr ||
+					FindSoldierByProfileIDOnPlayerTeam(PROF_ICECREAM) != nullptr
 				);
 			break;
 

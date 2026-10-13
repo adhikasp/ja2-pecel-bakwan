@@ -115,7 +115,7 @@ enum{
 
 
 // the financial record list
-static FinanceUnit* pFinanceListHead = NULL;
+static FinanceUnit* pFinanceListHead = nullptr;
 
 // current page displayed
 static INT32 iCurrentPage = 0;
@@ -474,7 +474,7 @@ static void DrawRecordsText(void)
 	SetFontShadow(NO_SHADOW);
 
 	const FinanceUnit* fu = pFinanceListHead;
-	for (INT32 i = 0; i < NUM_RECORDS_PER_PAGE && fu != NULL; ++i, fu = fu->Next)
+	for (INT32 i = 0; i < NUM_RECORDS_PER_PAGE && fu != nullptr; ++i, fu = fu->Next)
 	{
 		const INT32 y = 12 + RECORD_Y + i * (GetFontHeight(FINANCE_TEXT_FONT) + 6);
 
@@ -666,14 +666,14 @@ static void ClearFinanceList(void)
 		// delete current node
 		delete pFinanceNode;
 	}
-	pFinanceListHead = NULL;
+	pFinanceListHead = nullptr;
 }
 
 
 static void ProcessAndEnterAFinancialRecord(const UINT8 ubCode, const UINT32 uiDate, const INT32 iAmount, const UINT8 ubSecondCode, const INT32 iBalanceToDate)
 {
 	FinanceUnit* const fu = new FinanceUnit{};
-	fu->Next           = NULL;
+	fu->Next           = nullptr;
 	fu->ubCode         = ubCode;
 	fu->ubSecondCode   = ubSecondCode;
 	fu->uiDate         = uiDate;
@@ -682,7 +682,7 @@ static void ProcessAndEnterAFinancialRecord(const UINT8 ubCode, const UINT32 uiD
 
 	// Append to end of list
 	FinanceUnit** i = &pFinanceListHead;
-	while (*i != NULL) i = &(*i)->Next;
+	while (*i != nullptr) i = &(*i)->Next;
 	*i = fu;
 }
 

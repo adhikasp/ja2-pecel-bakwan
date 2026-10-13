@@ -47,7 +47,7 @@
 #include <numeric>
 #include <stdint.h>
 
-UINT16* gpZBuffer = NULL;
+UINT16* gpZBuffer = nullptr;
 UINT16  gZBufferPitch = 0;
 
 static INT16 gsCurrentGlowFrame     = 0;
@@ -376,13 +376,13 @@ public:
 
 private: void Render(RenderTilesFlags const uiFlags, size_t const ubNumLevels, RenderLayerID const * const psLevelIDs) const
 {
-	HVOBJECT hVObject = NULL; // XXX HACK000E
+	HVOBJECT hVObject = nullptr; // XXX HACK000E
 	BOOLEAN fPixelate = FALSE;
 	INT16 sMultiTransShadowZBlitterIndex = -1;
 
 	INT16 sZOffsetX = -1;
 	INT16 sZOffsetY = -1;
-	const ROTTING_CORPSE* pCorpse = NULL;
+	const ROTTING_CORPSE* pCorpse = nullptr;
 	TileElementFlags uiTileElemFlags{};
 
 	UINT16          usImageIndex = 0;
@@ -1031,7 +1031,7 @@ zlevel_onroof:
 
 										// Set shade
 										// If a bad guy is highlighted
-										if (gSelectedGuy != NULL && gSelectedGuy->bSide != Side::FRIENDLY)
+										if (gSelectedGuy != nullptr && gSelectedGuy->bSide != Side::FRIENDLY)
 										{
 											if (gSelectedGuy == &s)
 											{
@@ -2756,7 +2756,7 @@ void BltTransZTransShadowIncObscure(ClipInfo const& ci, UINT16* pBuffer, UINT32 
 	INT32  LSCount;
 	UINT16 usZLevel, usZColsToGo, usZIndex;
 
-	Assert(pBuffer     != NULL);
+	Assert(pBuffer     != nullptr);
 
 	UINT32 uiLineFlag = ci.iTempY & 1;
 
@@ -2765,7 +2765,7 @@ void BltTransZTransShadowIncObscure(ClipInfo const& ci, UINT16* pBuffer, UINT32 
 	UINT8*       ZPtr    = (UINT8*)pZBuffer + uiDestPitchBYTES * (ci.iTempY + ci.topSkip) + (ci.iTempX + ci.leftSkip) * 2;
 	const UINT32 LineSkip = uiDestPitchBYTES - ci.blitLength * 2;
 
-	if (ci.vobject->ppZStripInfo == NULL)
+	if (ci.vobject->ppZStripInfo == nullptr)
 	{
 		SLOGW("Missing Z-Strip info on multi-Z object");
 		return;
@@ -2972,14 +2972,14 @@ void BltTransZTransShadowInc(ClipInfo const& ci, UINT16* pBuffer, UINT32 uiDestP
 	INT32  LSCount;
 	UINT16 usZLevel, usZColsToGo, usZIndex;
 
-	Assert(pBuffer     != NULL);
+	Assert(pBuffer     != nullptr);
 
 	UINT8 const * SrcPtr  = SkipLines(ci.srcPtr, ci.topSkip);
 	UINT8*       DestPtr  = (UINT8*)pBuffer  + uiDestPitchBYTES * (ci.iTempY + ci.topSkip) + (ci.iTempX + ci.leftSkip) * 2;
 	UINT8*       ZPtr     = (UINT8*)pZBuffer + uiDestPitchBYTES * (ci.iTempY + ci.topSkip) + (ci.iTempX + ci.leftSkip) * 2;
 	const UINT32 LineSkip = uiDestPitchBYTES - ci.blitLength * 2;
 
-	if (ci.vobject->ppZStripInfo == NULL)
+	if (ci.vobject->ppZStripInfo == nullptr)
 	{
 		SLOGW("Missing Z-Strip info on multi-Z object");
 		return;
@@ -3657,7 +3657,7 @@ static void ResetRenderParameters(void)
 
 static BOOLEAN IsTileRedundant(UINT16* pZBuffer, UINT16 usZValue, HVOBJECT hSrcVObject, INT32 iX, INT32 iY, UINT16 usIndex)
 {
-	Assert(hSrcVObject != NULL);
+	Assert(hSrcVObject != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav    = hSrcVObject->SubregionProperties(usIndex);

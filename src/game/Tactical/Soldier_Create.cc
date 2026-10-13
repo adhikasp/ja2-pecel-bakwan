@@ -486,8 +486,8 @@ catch (...) { return 0; }
 SOLDIERTYPE* TacticalCreateSoldierFromExisting(const SOLDIERTYPE* const existing)
 {
 	Assert(guiCurrentScreen != AUTORESOLVE_SCREEN);
-	Assert(existing->face  == NULL);
-	Assert(existing->light == NULL);
+	Assert(existing->face  == nullptr);
+	Assert(existing->light == nullptr);
 
 	SOLDIERTYPE& s = GetMan(existing->ubID);
 	s = *existing;
@@ -1772,7 +1772,7 @@ try
 			}
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 catch (...) { return 0; }
 
@@ -1977,7 +1977,7 @@ void QuickCreateProfileMerc( INT8 bTeam, UINT8 ubProfileID )
 	RandomizeNewSoldierStats(&MercCreateStruct);
 
 	SOLDIERTYPE* const s = TacticalCreateSoldier(MercCreateStruct);
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		AddSoldierToSector(s);
 
@@ -1997,7 +1997,7 @@ static BOOLEAN TryToAttach(SOLDIERTYPE* const s, OBJECTTYPE* const o)
 		OBJECTTYPE& tgt_o = s->inv[i];
 		if (tgt_o.usItem != NOTHING && ValidAttachment(o->usItem, tgt_o.usItem))
 		{
-			AttachObject(NULL, &tgt_o, o);
+			AttachObject(nullptr, &tgt_o, o);
 			return TRUE;
 		}
 	}

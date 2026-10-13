@@ -33,18 +33,18 @@
 
 BOOLEAN gfOriginalList = TRUE;
 
-SOLDIERINITNODE *gSoldierInitHead = NULL;
-SOLDIERINITNODE *gSoldierInitTail = NULL;
+SOLDIERINITNODE *gSoldierInitHead = nullptr;
+SOLDIERINITNODE *gSoldierInitTail = nullptr;
 
-SOLDIERINITNODE *gOriginalSoldierInitListHead = NULL;
-SOLDIERINITNODE *gAlternateSoldierInitListHead = NULL;
+SOLDIERINITNODE *gOriginalSoldierInitListHead = nullptr;
+SOLDIERINITNODE *gAlternateSoldierInitListHead = nullptr;
 
 void InitSoldierInitList()
 {
 	if( gSoldierInitHead )
 		KillSoldierInitList();
-	gSoldierInitHead = NULL;
-	gSoldierInitTail = NULL;
+	gSoldierInitHead = nullptr;
+	gSoldierInitTail = nullptr;
 }
 
 void KillSoldierInitList()
@@ -52,9 +52,9 @@ void KillSoldierInitList()
 	while( gSoldierInitHead )
 		RemoveSoldierNodeFromInitList( gSoldierInitTail );
 	if( gfOriginalList )
-		gOriginalSoldierInitListHead = NULL;
+		gOriginalSoldierInitListHead = nullptr;
 	else
-		gAlternateSoldierInitListHead = NULL;
+		gAlternateSoldierInitListHead = nullptr;
 }
 
 
@@ -114,7 +114,7 @@ void RemoveSoldierNodeFromInitList( SOLDIERINITNODE *pNode )
 	{
 		gSoldierInitHead = gSoldierInitHead->next;
 		if( gSoldierInitHead )
-			gSoldierInitHead->prev = NULL;
+			gSoldierInitHead->prev = nullptr;
 		if( gfOriginalList )
 			gOriginalSoldierInitListHead = gSoldierInitHead;
 		else
@@ -123,7 +123,7 @@ void RemoveSoldierNodeFromInitList( SOLDIERINITNODE *pNode )
 	else if( pNode == gSoldierInitTail )
 	{
 		gSoldierInitTail = gSoldierInitTail->prev;
-		gSoldierInitTail->next = NULL;
+		gSoldierInitTail->next = nullptr;
 	}
 	else
 	{
@@ -271,8 +271,8 @@ static void SortSoldierInitList(void)
 					gOriginalSoldierInitListHead = gSoldierInitHead;
 				else
 					gAlternateSoldierInitListHead = gSoldierInitHead;
-				gSoldierInitHead->prev = NULL;
-				temp->next = NULL;
+				gSoldierInitHead->prev = nullptr;
+				temp->next = nullptr;
 			}
 			curr = curr->prev;
 			//detach node from list
@@ -282,7 +282,7 @@ static void SortSoldierInitList(void)
 				temp->next->prev = temp->prev;
 			//add node to end of list
 			temp->prev = gSoldierInitTail;
-			temp->next = NULL;
+			temp->next = nullptr;
 			gSoldierInitTail->next = temp;
 			gSoldierInitTail = temp;
 		}
@@ -304,8 +304,8 @@ static void SortSoldierInitList(void)
 			{
 				//If we dealing with the tail, we need to move it now.
 				gSoldierInitTail = gSoldierInitTail->prev;
-				gSoldierInitTail->next = NULL;
-				temp->prev = NULL;
+				gSoldierInitTail->next = nullptr;
+				temp->prev = nullptr;
 			}
 			curr = curr->next;
 			//detach node from list
@@ -314,7 +314,7 @@ static void SortSoldierInitList(void)
 			if( temp->next )
 				temp->next->prev = temp->prev;
 			//add node to beginning of list
-			temp->prev = NULL;
+			temp->prev = nullptr;
 			temp->next = gSoldierInitHead;
 			gSoldierInitHead->prev = temp;
 			gSoldierInitHead = temp;
@@ -341,8 +341,8 @@ static void SortSoldierInitList(void)
 			{
 				//If we dealing with the tail, we need to move it now.
 				gSoldierInitTail = gSoldierInitTail->prev;
-				gSoldierInitTail->next = NULL;
-				temp->prev = NULL;
+				gSoldierInitTail->next = nullptr;
+				temp->prev = nullptr;
 			}
 			curr = curr->next;
 			//detach node from list
@@ -351,7 +351,7 @@ static void SortSoldierInitList(void)
 			if( temp->next )
 				temp->next->prev = temp->prev;
 			//add node to beginning of list
-			temp->prev = NULL;
+			temp->prev = nullptr;
 			temp->next = gSoldierInitHead;
 			gSoldierInitHead->prev = temp;
 			gSoldierInitHead = temp;
@@ -378,8 +378,8 @@ static void SortSoldierInitList(void)
 			{
 				//If we dealing with the tail, we need to move it now.
 				gSoldierInitTail = gSoldierInitTail->prev;
-				gSoldierInitTail->next = NULL;
-				temp->prev = NULL;
+				gSoldierInitTail->next = nullptr;
+				temp->prev = nullptr;
 			}
 			curr = curr->next;
 			//detach node from list
@@ -388,7 +388,7 @@ static void SortSoldierInitList(void)
 			if( temp->next )
 				temp->next->prev = temp->prev;
 			//add node to beginning of list
-			temp->prev = NULL;
+			temp->prev = nullptr;
 			temp->next = gSoldierInitHead;
 			gSoldierInitHead->prev = temp;
 			gSoldierInitHead = temp;
@@ -622,8 +622,8 @@ void AddSoldierInitListEnemyDefenceSoldiers( UINT8 ubTotalAdmin, UINT8 ubTotalTr
 	UINT8 ubTroopPDSlots = 0, ubTroopDSlots = 0, ubTroopPSlots = 0, ubTroopBSlots = 0;
 	UINT8 ubAdminPDSlots = 0, ubAdminDSlots = 0, ubAdminPSlots = 0, ubAdminBSlots = 0;
 	UINT8 ubFreeSlots;
-	UINT8 *pCurrSlots=NULL;
-	UINT8 *pCurrTotal=NULL;
+	UINT8 *pCurrSlots=nullptr;
+	UINT8 *pCurrTotal=nullptr;
 	UINT8 ubCurrClass;
 
 	ResetMortarsOnTeamCount();
@@ -714,7 +714,7 @@ void AddSoldierInitListEnemyDefenceSoldiers( UINT8 ubTotalAdmin, UINT8 ubTotalTr
 			if (ubMaxNum == 0 ||
 				*pCurrTotal == 0 ||
 				*pCurrSlots == 0 ||
-				curr->pDetailedPlacement == NULL ||
+				curr->pDetailedPlacement == nullptr ||
 				!curr->pBasicPlacement->fPriorityExistance)
 			{
 				break;
@@ -1036,8 +1036,8 @@ void AddSoldierInitListMilitia( UINT8 ubNumGreen, UINT8 ubNumRegs, UINT8 ubNumEl
 	UINT8 ubRegSlots = 0;
 	UINT8 ubGreenSlots = 0;
 	UINT8 ubFreeSlots;
-	UINT8 *pCurrSlots=NULL;
-	UINT8 *pCurrTotal=NULL;
+	UINT8 *pCurrSlots=nullptr;
+	UINT8 *pCurrTotal=nullptr;
 	UINT8 ubCurrClass;
 
 	ubMaxNum = ubNumGreen + ubNumRegs + ubNumElites;
@@ -1085,7 +1085,7 @@ void AddSoldierInitListMilitia( UINT8 ubNumGreen, UINT8 ubNumRegs, UINT8 ubNumEl
 				{
 					//delete the detailed placement information.
 					delete curr->pDetailedPlacement;
-					curr->pDetailedPlacement = NULL;
+					curr->pDetailedPlacement = nullptr;
 					curr->pBasicPlacement->fDetailedPlacement = FALSE;
 					RandomizeRelativeLevel( &( curr->pBasicPlacement->bRelativeAttributeLevel ), curr->pBasicPlacement->ubSoldierClass );
 					RandomizeRelativeLevel( &( curr->pBasicPlacement->bRelativeEquipmentLevel ), curr->pBasicPlacement->ubSoldierClass );
@@ -1240,7 +1240,7 @@ void AddSoldierInitListMilitia( UINT8 ubNumGreen, UINT8 ubNumRegs, UINT8 ubNumEl
 				{
 					//delete the detailed placement information.
 					delete curr->pDetailedPlacement;
-					curr->pDetailedPlacement = NULL;
+					curr->pDetailedPlacement = nullptr;
 					curr->pBasicPlacement->fDetailedPlacement = FALSE;
 					RandomizeRelativeLevel( &( curr->pBasicPlacement->bRelativeAttributeLevel), curr->pBasicPlacement->ubSoldierClass );
 					RandomizeRelativeLevel( &( curr->pBasicPlacement->bRelativeEquipmentLevel), curr->pBasicPlacement->ubSoldierClass );
@@ -1385,7 +1385,7 @@ void AddSoldierInitListCreatures(BOOLEAN fQueen, UINT8 ubNumLarvae, UINT8 ubNumI
 				if( curr->pDetailedPlacement )
 				{ //delete the detailed placement information.
 					delete curr->pDetailedPlacement;
-					curr->pDetailedPlacement = NULL;
+					curr->pDetailedPlacement = nullptr;
 					curr->pBasicPlacement->fDetailedPlacement = FALSE;
 				}
 				if( AddPlacementToWorld( curr ) )
@@ -1523,7 +1523,7 @@ void AddSoldierInitListBloodcats()
 		}
 
 		auto spawns = GCM->getBloodCatSpawnsOfSector( ubSectorID );
-		if( bBloodCatPlacements != pSector->bBloodCatPlacements && spawns == NULL )
+		if( bBloodCatPlacements != pSector->bBloodCatPlacements && spawns == nullptr )
 		{
 			pSector->bBloodCatPlacements = bBloodCatPlacements;
 			pSector->bBloodCats = -1;
@@ -1637,7 +1637,7 @@ static SOLDIERINITNODE* FindSoldierInitListNodeByProfile(UINT8 ubProfile)
 			return( curr );
 		}
 	}
-	return( NULL );
+	return( nullptr );
 }
 
 

@@ -56,7 +56,7 @@
 
 GROUP *gpGroupList;
 
-static GROUP* gpPendingSimultaneousGroup = NULL;
+static GROUP* gpPendingSimultaneousGroup = nullptr;
 
 extern BOOLEAN gubNumAwareBattles;
 extern INT8 SquadMovementGroups[ ];
@@ -90,12 +90,12 @@ static const char* const gszTerrain[NUM_TRAVTERRAIN_TYPES] =
 BOOLEAN gfUndergroundTacticalTraversal = FALSE;
 
 // remembers which player group is the Continue/Stop prompt about?  No need to save as long as you can't save while prompt ON
-static GROUP* gpGroupPrompting = NULL;
+static GROUP* gpGroupPrompting = nullptr;
 
 static UINT32 uniqueIDMask[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 
-static GROUP* gpInitPrebattleGroup = NULL;
+static GROUP* gpInitPrebattleGroup = nullptr;
 
 // waiting for input from user
 static BOOLEAN gfWaitingForInput = FALSE;
@@ -112,8 +112,8 @@ GROUP* CreateNewPlayerGroupDepartingFromSector(const SGPSector& sMap)
 {
 	AssertMsg(sMap.IsValid(), ST::format("CreateNewPlayerGroup with out of range sector values of {}", sMap));
 	GROUP* const pNew = new GROUP{};
-	pNew->pPlayerList = NULL;
-	pNew->pWaypoints = NULL;
+	pNew->pPlayerList = nullptr;
+	pNew->pWaypoints = nullptr;
 	pNew->ubSector = pNew->ubNext = sMap;
 	pNew->ubOriginalSector = sMap.AsByte();
 	pNew->fPlayer = TRUE;
@@ -133,14 +133,14 @@ GROUP* CreateNewVehicleGroupDepartingFromSector(const SGPSector& sMap)
 {
 	AssertMsg(sMap.IsValid(), ST::format("CreateNewVehicleGroupDepartingFromSector with out of range sector values of {}", sMap));
 	GROUP* const pNew = new GROUP{};
-	pNew->pWaypoints = NULL;
+	pNew->pWaypoints = nullptr;
 	pNew->ubSector = pNew->ubNext = sMap;
 	pNew->ubOriginalSector = sMap.AsByte();
 	pNew->ubMoveType = ONE_WAY;
 	pNew->ubNextWaypointID = 0;
 	pNew->fVehicle = TRUE;
 	pNew->fPlayer = TRUE;
-	pNew->pPlayerList = NULL;
+	pNew->pPlayerList = nullptr;
 	pNew->ubCreatedSectorID = pNew->ubOriginalSector;
 	pNew->ubSectorIDOfLastReassignment = 255;
 
@@ -478,7 +478,7 @@ GROUP* CreateNewEnemyGroupDepartingFromSector( UINT32 uiSector, UINT8 ubNumAdmin
 	AssertMsg(uiSector <= 255, ST::format("CreateNewEnemyGroup with out of range value of {}", uiSector));
 	GROUP* const pNew = new GROUP{};
 	pNew->pEnemyGroup = new ENEMYGROUP{};
-	pNew->pWaypoints = NULL;
+	pNew->pWaypoints = nullptr;
 	pNew->ubSector = SGPSector(uiSector);
 	pNew->ubOriginalSector = (UINT8)uiSector;
 	pNew->fPlayer = FALSE;
@@ -519,7 +519,7 @@ static UINT8 AddGroupToList(GROUP* const g)
 
 		// Append group to list
 		GROUP** i = &gpGroupList;
-		while (*i != NULL) i = &(*i)->next;
+		while (*i != nullptr) i = &(*i)->next;
 		*i = g;
 
 		return id;
@@ -532,7 +532,7 @@ static UINT8 AddGroupToList(GROUP* const g)
  * memory for the group */
 static void RemoveGroupFromList(GROUP* const g)
 {
-	for (GROUP** i = &gpGroupList; *i != NULL; i = &(*i)->next)
+	for (GROUP** i = &gpGroupList; *i != nullptr; i = &(*i)->next)
 	{
 		if (*i != g) continue;
 
@@ -560,7 +560,7 @@ GROUP* GetGroup( UINT8 ubGroupID )
 		if( curr->ubGroupID == ubGroupID )
 			return curr;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -703,7 +703,7 @@ static BOOLEAN PossibleToCoordinateSimultaneousGroupArrivals(GROUP* pFirstGroup)
 
 static BOOLEAN CheckConditionsForBattle(GROUP* pGroup)
 {
-	GROUP *pPlayerDialogGroup = NULL;
+	GROUP *pPlayerDialogGroup = nullptr;
 	SOLDIERTYPE *pSoldier;
 	BOOLEAN fBattlePending = FALSE;
 	BOOLEAN fAliveMerc = FALSE;
@@ -906,7 +906,7 @@ static void TriggerPrebattleInterface(MessageBoxReturnValue const ubResult)
 {
 	StopTimeCompression();
 	DialogueEvent::Add(new DialogueEventTriggerPrebattleInterface(gpInitPrebattleGroup));
-	gpInitPrebattleGroup = NULL;
+	gpInitPrebattleGroup = nullptr;
 }
 
 
@@ -1327,7 +1327,7 @@ void GroupArrivedAtSector(GROUP& g, BOOLEAN const check_for_battle, BOOLEAN cons
 			{
 				// ATE: Add a few corpse to the bloodcat lair
 				auto spawns = GCM->getBloodCatSpawnsOfSector(cSector.AsByte());
-				if ( spawns != NULL && spawns->isLair &&
+				if ( spawns != nullptr && spawns->isLair &&
 					!GetSectorFlagStatus(cSector, SF_ALREADY_VISITED))
 				{
 					AddCorpsesToBloodcatLair(cSector);
@@ -1928,11 +1928,11 @@ INT32 CalculateTravelTimeOfGroup(GROUP const* const pGroup)
 {
 	INT32 iDelta;
 	UINT32 uiEtaTime = 0;
-	WAYPOINT *pNode = NULL;
+	WAYPOINT *pNode = nullptr;
 	WAYPOINT pCurrent, pDest;
 
 	// check if valid group
-	if( pGroup == NULL )
+	if( pGroup == nullptr )
 	{
 		// return current time
 		return( uiEtaTime );
@@ -2458,7 +2458,7 @@ static void LoadWayPointList(HWFILE, GROUP*);
 
 void LoadStrategicMovementGroupsFromSavedGameFile(HWFILE const f)
 {
-	Assert(gpGroupList == NULL);
+	Assert(gpGroupList == nullptr);
 
 	// Load the number of nodes in the list
 	UINT32 uiNumberOfGroups;
@@ -2603,7 +2603,7 @@ static void LoadPlayerGroupList(HWFILE const f, GROUP* const g)
 		}
 
 		pg->pSoldier = s;
-		pg->next     = NULL;
+		pg->next     = nullptr;
 
 		*anchor = pg;
 		anchor  = &pg->next;
@@ -2669,13 +2669,13 @@ static void SaveWayPointList(HWFILE const f, GROUP const* const g)
 {
 	// Save the number of waypoints
 	UINT32 uiNumberOfWayPoints = 0;
-	for (const WAYPOINT* w = g->pWaypoints; w != NULL; w = w->next)
+	for (const WAYPOINT* w = g->pWaypoints; w != nullptr; w = w->next)
 	{
 		++uiNumberOfWayPoints;
 	}
 	f->write(&uiNumberOfWayPoints, sizeof(UINT32));
 
-	for (const WAYPOINT* w = g->pWaypoints; w != NULL; w = w->next)
+	for (const WAYPOINT* w = g->pWaypoints; w != nullptr; w = w->next)
 	{
 		BYTE  data[8];
 		DataWriter d{data};
@@ -2713,7 +2713,7 @@ static void LoadWayPointList(HWFILE const f, GROUP* const g)
 		*anchor = w;
 		anchor  = &w->next;
 	}
-	*anchor = NULL;
+	*anchor = nullptr;
 }
 
 
@@ -2836,7 +2836,7 @@ GROUP* FindEnemyMovementGroupInSector(const SGPSector& sMap)
 			return g;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -2856,7 +2856,7 @@ GROUP* FindPlayerMovementGroupInSector(const SGPSector& sMap)
 			return &g;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -2976,7 +2976,7 @@ void UpdatePersistantGroupsFromOldSave( UINT32 uiSavedGameVersion )
 		{
 			// create mvt groups
 			GROUP* const pGroup = GetGroup(cnt);
-			if( pGroup != NULL && pGroup->fPlayer )
+			if( pGroup != nullptr && pGroup->fPlayer )
 			{
 				pGroup->fPersistant = TRUE;
 			}
@@ -2990,7 +2990,7 @@ void UpdatePersistantGroupsFromOldSave( UINT32 uiSavedGameVersion )
 		{
 			// create mvt groups
 			GROUP* const pGroup = GetGroup(SquadMovementGroups[cnt]);
-			if ( pGroup != NULL )
+			if ( pGroup != nullptr )
 			{
 				pGroup->fPersistant = TRUE;
 			}
@@ -2999,7 +2999,7 @@ void UpdatePersistantGroupsFromOldSave( UINT32 uiSavedGameVersion )
 		for( cnt = 0; cnt <  MAX_VEHICLES; cnt++ )
 		{
 			GROUP* const pGroup = GetGroup(gubVehicleMovementGroups[cnt]);
-			if ( pGroup != NULL )
+			if ( pGroup != nullptr )
 			{
 				pGroup->fPersistant = TRUE;
 			}
@@ -3284,7 +3284,7 @@ static BOOLEAN TestForBloodcatAmbush(GROUP const* const pGroup)
 
 	bool bIsLair = false, bIsArena = false;
 	auto spawns = GCM->getBloodCatSpawnsOfSector( ubSectorID );
-	if (spawns != NULL) {
+	if (spawns != nullptr) {
 		bIsLair = spawns->isLair;   // SEC_I16
 		bIsArena = spawns->isArena; // SEC_N5
 	}

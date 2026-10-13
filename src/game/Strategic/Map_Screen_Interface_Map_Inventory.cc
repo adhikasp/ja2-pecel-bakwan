@@ -197,7 +197,7 @@ static BOOLEAN RenderItemInPoolSlot(INT32 iCurrentSlot, INT32 iFirstSlotOnPage)
 	SetFontDestBuffer(guiSAVEBUFFER);
 	const SGPBox* const item_box = &g_sector_inv_item_box;
 	const UINT16        outline  = fMapInventoryItemCompatable[iCurrentSlot] ? Get16BPPColor(FROMRGB(255, 255, 255)) : SGP_TRANSPARENT;
-	INVRenderItem(guiSAVEBUFFER, NULL, item.o, dx + item_box->x, dy + item_box->y, item_box->w, item_box->h, DIRTYLEVEL2, 0, outline);
+	INVRenderItem(guiSAVEBUFFER, nullptr, item.o, dx + item_box->x, dy + item_box->y, item_box->w, item_box->h, DIRTYLEVEL2, 0, outline);
 
 	// draw bar for condition
 	const UINT16 col0 = Get16BPPColor(DESC_STATUS_BAR);
@@ -208,7 +208,7 @@ static BOOLEAN RenderItemInPoolSlot(INT32 iCurrentSlot, INT32 iFirstSlotOnPage)
 	// if the item is not reachable, or if the selected merc is not in the current sector
 	const SOLDIERTYPE* const s = GetSelectedInfoChar();
 	if (!(item.usFlags & WORLD_ITEM_REACHABLE) ||
-			s           == NULL     ||
+			s           == nullptr     ||
 			s->sSector.x != sSelMap.x ||
 			s->sSector.y != sSelMap.y ||
 			s->sSector.z != iCurrentMapSectorZ)
@@ -522,21 +522,21 @@ static void MapInvenPoolSlotsPrimary(MOUSE_REGION* const pRegion, const UINT32 i
 	WORLDITEM& slot = pInventoryPoolList[iCurrentInventoryPoolPage * MAP_INVENTORY_POOL_SLOT_COUNT + slot_idx];
 
 	// Return if empty
-	if (gpItemPointer == NULL && slot.o.usItem == NOTHING) return;
+	if (gpItemPointer == nullptr && slot.o.usItem == NOTHING) return;
 
 	// is this item reachable
 	if (slot.o.usItem != NOTHING && !(slot.usFlags & WORLD_ITEM_REACHABLE))
 	{
 		// not reachable
-		DoMapMessageBox(MSG_BOX_BASIC_STYLE, gzLateLocalizedString[STR_LATE_38], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+		DoMapMessageBox(MSG_BOX_BASIC_STYLE, gzLateLocalizedString[STR_LATE_38], MAP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 		return;
 	}
 
 	// Valid character?
 	const SOLDIERTYPE* const s = GetSelectedInfoChar();
-	if (s == NULL)
+	if (s == nullptr)
 	{
-		DoMapMessageBox(MSG_BOX_BASIC_STYLE, pMapInventoryErrorString[0], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+		DoMapMessageBox(MSG_BOX_BASIC_STYLE, pMapInventoryErrorString[0], MAP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 		return;
 	}
 
@@ -546,22 +546,22 @@ static void MapInvenPoolSlotsPrimary(MOUSE_REGION* const pRegion, const UINT32 i
 			s->sSector.z != iCurrentMapSectorZ ||
 			s->fBetweenSectors)
 	{
-		ST::string msg = (gpItemPointer == NULL ? pMapInventoryErrorString[1] : pMapInventoryErrorString[4]);
+		ST::string msg = (gpItemPointer == nullptr ? pMapInventoryErrorString[1] : pMapInventoryErrorString[4]);
 		ST::string buf = st_format_printf(msg, s->name);
-		DoMapMessageBox(MSG_BOX_BASIC_STYLE, buf, MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+		DoMapMessageBox(MSG_BOX_BASIC_STYLE, buf, MAP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 		return;
 	}
 
 	// If in battle inform player they will have to do this in tactical
 	if (!CanPlayerUseSectorInventory())
 	{
-		ST::string msg = (gpItemPointer == NULL ? pMapInventoryErrorString[2] : pMapInventoryErrorString[3]);
-		DoMapMessageBox(MSG_BOX_BASIC_STYLE, msg, MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+		ST::string msg = (gpItemPointer == nullptr ? pMapInventoryErrorString[2] : pMapInventoryErrorString[3]);
+		DoMapMessageBox(MSG_BOX_BASIC_STYLE, msg, MAP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 		return;
 	}
 
 	// If we do not have an item in hand, start moving it
-	if (gpItemPointer == NULL)
+	if (gpItemPointer == nullptr)
 	{
 		sObjectSourceGridNo = slot.sGridNo;
 		BeginInventoryPoolPtr(&slot.o);
@@ -607,7 +607,7 @@ static void MapInvenPoolSlotsPrimary(MOUSE_REGION* const pRegion, const UINT32 i
 
 static void MapInvenPoolSlotsSecondary(MOUSE_REGION* const pRegion, const UINT32 iReason)
 {
-	if (gpItemPointer == NULL) fShowMapInventoryPool = FALSE;
+	if (gpItemPointer == nullptr) fShowMapInventoryPool = FALSE;
 }
 
 static void MapInvenPoolSlotsScroll(MOUSE_REGION* const pRegion, const UINT32 iReason)
@@ -720,7 +720,7 @@ static void BeginInventoryPoolPtr(OBJECTTYPE* pInventorySlot)
 	BOOLEAN fOk = FALSE;
 
 	// If not null return
-	if ( gpItemPointer != NULL )
+	if ( gpItemPointer != nullptr )
 	{
 		return;
 	}
@@ -748,7 +748,7 @@ static void BeginInventoryPoolPtr(OBJECTTYPE* pInventorySlot)
 		if (fShowInventoryFlag)
 		{
 			SOLDIERTYPE* const s = GetSelectedInfoChar();
-			if (s != NULL)
+			if (s != nullptr)
 			{
 				ReevaluateItemHatches(s, FALSE);
 				fTeamPanelDirty = TRUE;
@@ -1157,7 +1157,7 @@ static void ResetMapSectorInventoryPoolHighLights();
 
 static void HandleMouseInCompatableItemForMapSectorInventory(INT32 iCurrentSlot)
 {
-	SOLDIERTYPE *pSoldier = NULL;
+	SOLDIERTYPE *pSoldier = nullptr;
 	static BOOLEAN fItemWasHighLighted = FALSE;
 
 	if( iCurrentSlot == -1 )

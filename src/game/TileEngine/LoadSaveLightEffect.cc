@@ -20,7 +20,7 @@ void ExtractLightEffectFromFile(HWFILE const file, LIGHTEFFECT* const l)
 	EXTR_U32(d, l->uiTimeOfLastUpdate)
 	Assert(d.getConsumed() == lengthof(data));
 
-	l->light = NULL;
+	l->light = nullptr;
 }
 
 

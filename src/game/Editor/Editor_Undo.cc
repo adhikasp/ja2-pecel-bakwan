@@ -81,7 +81,7 @@ struct undo_stack
 	undo_stack*  pNext;
 	INT32										iUndoType;
 };
-undo_stack			*gpTileUndoStack = NULL;
+undo_stack			*gpTileUndoStack = nullptr;
 
 
 BOOLEAN fNewUndoCmd = TRUE;
@@ -97,7 +97,7 @@ struct MapIndexBinaryTree
 	UINT16 usMapIndex;
 };
 
-MapIndexBinaryTree *top = NULL;
+MapIndexBinaryTree *top = nullptr;
 
 
 //Recursively deletes all nodes below the node passed including itself.
@@ -108,7 +108,7 @@ static void DeleteTreeNode(MapIndexBinaryTree** node)
 	if( (*node)->right )
 		DeleteTreeNode( &((*node)->right) );
 	delete *node;
-	*node = NULL;
+	*node = nullptr;
 }
 
 
@@ -127,12 +127,12 @@ static BOOLEAN AddMapIndexToTree(UINT16 usMapIndex)
 	{
 		top = new MapIndexBinaryTree{};
 		top->usMapIndex = usMapIndex;
-		top->left = NULL;
-		top->right = NULL;
+		top->left = nullptr;
+		top->right = nullptr;
 		return TRUE;
 	}
 	curr = top;
-	parent = NULL;
+	parent = nullptr;
 	//Traverse down the tree and attempt to find a matching mapindex.
 	//If one is encountered, then we fail, and don't add the mapindex to the
 	//tree.
@@ -149,8 +149,8 @@ static BOOLEAN AddMapIndexToTree(UINT16 usMapIndex)
 	//Create the new node and fill in the information.
 	curr = new MapIndexBinaryTree{};
 	curr->usMapIndex = usMapIndex;
-	curr->left = NULL;
-	curr->right = NULL;
+	curr->left = nullptr;
+	curr->right = nullptr;
 	//Now link the new node to the parent.
 	if( curr->usMapIndex < parent->usMapIndex )
 		parent->left = curr;
@@ -167,7 +167,7 @@ static undo_stack* DeleteStackNode(undo_stack* const del)
 	delete del;
 
 	MAP_ELEMENT* const me = undo->pMapTile;
-	if (me != NULL) // light was saved -- mapelement, too?
+	if (me != nullptr) // light was saved -- mapelement, too?
 	{
 		// Free the memory associated with the map tile lists
 		FreeLevelNodeList(&me->pLandHead);
@@ -179,7 +179,7 @@ static undo_stack* DeleteStackNode(undo_stack* const del)
 		FreeLevelNodeList(&me->pOnRoofHead);
 		FreeLevelNodeList(&me->pTopmostHead);
 
-		for (STRUCTURE* s = me->pStructureHead; s != NULL;)
+		for (STRUCTURE* s = me->pStructureHead; s != nullptr;)
 		{
 			STRUCTURE* const next = s->pNext;
 			if (s->usStructureID > INVALID_STRUCTURE_ID)
@@ -190,7 +190,7 @@ static undo_stack* DeleteStackNode(undo_stack* const del)
 			}
 			s = next;
 		}
-		me->pStructureHead = NULL;
+		me->pStructureHead = nullptr;
 
 		delete me;
 		delete undo;
@@ -215,10 +215,10 @@ static void CropStackToMaxLength(INT32 iMaxCmds)
 	pCurrent = gpTileUndoStack;
 
 	// If stack is empty, leave
-	if ( pCurrent == NULL )
+	if ( pCurrent == nullptr )
 		return;
 
-	while ( (iCmdCount <= (iMaxCmds - 1)) && (pCurrent != NULL) )
+	while ( (iCmdCount <= (iMaxCmds - 1)) && (pCurrent != nullptr) )
 	{
 		if ( pCurrent->iCmdCount == 1 )
 			iCmdCount++;
@@ -227,9 +227,9 @@ static void CropStackToMaxLength(INT32 iMaxCmds)
 
 	// If the max number of commands was reached, and there is something
 	// to crop, from the rest of the stack, remove it.
-	if ( (iCmdCount >= iMaxCmds) && pCurrent != NULL )
+	if ( (iCmdCount >= iMaxCmds) && pCurrent != nullptr )
 	{
-		while ( pCurrent->pNext != NULL )
+		while ( pCurrent->pNext != nullptr )
 			pCurrent->pNext = DeleteStackNode(pCurrent->pNext);
 	}
 }
@@ -258,7 +258,7 @@ void AddLightToUndoList(INT32 const iMapIndex, INT32 const iLightRadius)
 	 * because we will erase it when it comes time to execute the undo command. */
 	undo_info->ubLightRadius = iLightRadius;
 	undo_info->iMapIndex     = iMapIndex;
-	undo_info->pMapTile      = NULL;
+	undo_info->pMapTile      = nullptr;
 
 	//Add to undo stack
 	auto n = std::make_unique<undo_stack>();
@@ -357,7 +357,7 @@ void RemoveAllFromUndoList(void)
 {
 	ClearUndoMapIndexTree();
 
-	while ( gpTileUndoStack != NULL )
+	while ( gpTileUndoStack != nullptr )
 		DeleteTopStackNode();
 }
 
@@ -374,7 +374,7 @@ BOOLEAN ExecuteUndoList( void )
 		return FALSE;
 
 	// Is there something on the undo stack?
-	if ( gpTileUndoStack == NULL )
+	if ( gpTileUndoStack == nullptr )
 		return( TRUE );
 
 	// Get number of stack entries for this command (top node will tell this)
@@ -382,7 +382,7 @@ BOOLEAN ExecuteUndoList( void )
 
 	// Execute each stack node in command, and remove each from stack.
 	iCurCount = 0;
-	while ( (iCurCount < iCmdCount) && (gpTileUndoStack != NULL) )
+	while ( (iCurCount < iCmdCount) && (gpTileUndoStack != nullptr) )
 	{
 		iUndoMapIndex = gpTileUndoStack->pData->iMapIndex;
 
@@ -571,7 +571,7 @@ static void SwapMapElementWithWorld(INT32 const iMapIndex, MAP_ELEMENT* const pU
 	//that will replace it.  We do this, because mercs aren't associated with
 	//undo commands.
 	pUndoMapElement->pMercHead = gpWorldLevelData[ iMapIndex ].pMercHead;
-	gpWorldLevelData[ iMapIndex ].pMercHead = NULL;
+	gpWorldLevelData[ iMapIndex ].pMercHead = nullptr;
 
 	//Swap the mapelements
 	TempMapElement = *pCurrentMapElement;

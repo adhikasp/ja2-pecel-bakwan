@@ -308,7 +308,7 @@ static BOOLEAN CloseEnoughForGrenadeToss(INT16 sGridNo, INT16 sGridNo2)
 			ubMovementCost = gubWorldMovementCosts[ sTempGridNo ][ bDirection ][ 0 ];
 			if ( IS_TRAVELCOST_DOOR( ubMovementCost ) )
 			{
-				ubMovementCost = DoorTravelCost( NULL, sTempGridNo, ubMovementCost, FALSE, NULL );
+				ubMovementCost = DoorTravelCost( nullptr, sTempGridNo, ubMovementCost, FALSE, nullptr );
 			}
 			if ( ubMovementCost >= TRAVELCOST_BLOCKED)
 			{
@@ -338,7 +338,7 @@ static BOOLEAN CloseEnoughForGrenadeToss(INT16 sGridNo, INT16 sGridNo2)
 			ubMovementCost = gubWorldMovementCosts[ sTempGridNo ][ bDirection ][ 0 ];
 			if ( IS_TRAVELCOST_DOOR( ubMovementCost ) )
 			{
-				ubMovementCost = DoorTravelCost( NULL, sTempGridNo, ubMovementCost, FALSE, NULL );
+				ubMovementCost = DoorTravelCost( nullptr, sTempGridNo, ubMovementCost, FALSE, nullptr );
 			}
 			if ( ubMovementCost >= TRAVELCOST_BLOCKED)
 			{
@@ -1660,13 +1660,13 @@ static INT8 CountAdjacentSpreadTargets(SOLDIERTYPE* pSoldier, INT16 sFirstTarget
 
 	INT8 bDirLoop, bDir, bCheckDir, bTargetIndex, bTargets;
 	INT16 sTarget;
-	SOLDIERTYPE *pTargets[5] = {NULL};
+	SOLDIERTYPE *pTargets[5] = {nullptr};
 
 	bTargetIndex = -1;
 	bCheckDir = -1;
 
 	pTargets[2] = WhoIsThere2(sFirstTarget, bTargetLevel);
-	if (pTargets[2] == NULL)
+	if (pTargets[2] == nullptr)
 	{
 		return( 0 );
 	}
@@ -1764,7 +1764,7 @@ static INT8 CountAdjacentSpreadTargets(SOLDIERTYPE* pSoldier, INT16 sFirstTarget
 			// we're done!  otherwise we continue and try to find people in front/behind
 			break;
 		}
-		else if (pTargets[bTargetIndex] != NULL)
+		else if (pTargets[bTargetIndex] != nullptr)
 		{
 			continue;
 		}
@@ -1787,14 +1787,14 @@ INT16 CalcSpreadBurst( SOLDIERTYPE * pSoldier, INT16 sFirstTarget, INT8 bTargetL
 {
 	INT8	bDirLoop, bDir, bCheckDir, bTargetIndex = 0, bLoop, bTargets;
 	INT16	sTarget;
-	SOLDIERTYPE* pTargets[5] = {NULL};
+	SOLDIERTYPE* pTargets[5] = {nullptr};
 	INT8 bAdjacents, bOtherAdjacents;
 
 
 	bCheckDir = -1;
 
 	pTargets[2] = WhoIsThere2(sFirstTarget, bTargetLevel);
-	if (pTargets[2] == NULL)
+	if (pTargets[2] == nullptr)
 	{
 		return( sFirstTarget );
 	}
@@ -1893,7 +1893,7 @@ INT16 CalcSpreadBurst( SOLDIERTYPE * pSoldier, INT16 sFirstTarget, INT8 bTargetL
 			// we're done!  otherwise we continue and try to find people in front/behind
 			break;
 		}
-		else if (pTargets[bTargetIndex] != NULL)
+		else if (pTargets[bTargetIndex] != nullptr)
 		{
 			continue;
 		}
@@ -1916,27 +1916,27 @@ INT16 CalcSpreadBurst( SOLDIERTYPE * pSoldier, INT16 sFirstTarget, INT8 bTargetL
 	{
 		// Move all the locations down in the array if necessary
 		// Check the 4th position
-		if (pTargets[3] == NULL && pTargets[4] != NULL)
+		if (pTargets[3] == nullptr && pTargets[4] != nullptr)
 		{
 			pTargets[3] = pTargets[4];
-			pTargets[4] = NULL;
+			pTargets[4] = nullptr;
 		}
 		// Check the first two positions; we know the 3rd value is set because
 		// it's our initial target
-		if (pTargets[1] == NULL)
+		if (pTargets[1] == nullptr)
 		{
 			pTargets[1] = pTargets[2];
 			pTargets[2] = pTargets[3];
 			pTargets[3] = pTargets[4];
-			pTargets[4] = NULL;
+			pTargets[4] = nullptr;
 		}
-		if (pTargets[0] == NULL)
+		if (pTargets[0] == nullptr)
 		{
 			pTargets[0] = pTargets[1];
 			pTargets[1] = pTargets[2];
 			pTargets[2] = pTargets[3];
 			pTargets[3] = pTargets[4];
-			pTargets[4] = NULL;
+			pTargets[4] = nullptr;
 		}
 		// now 50% chance to reorganize to fire in reverse order
 		if (Random( 2 ))

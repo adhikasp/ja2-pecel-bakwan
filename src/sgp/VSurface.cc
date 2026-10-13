@@ -120,7 +120,7 @@ void SGPVSurface::SetPalette(const SGPPaletteEntry* const src_pal)
 	SDL_SetSurfacePalette(surface_.get(), palette);
 	SDL_DestroyPalette(palette);
 
-	if (p16BPPPalette != NULL) delete[] p16BPPPalette;
+	if (p16BPPPalette != nullptr) delete[] p16BPPPalette;
 	p16BPPPalette = Create16BPPPalette(src_pal);
 }
 
@@ -141,7 +141,7 @@ void SGPVSurface::SetTransparency(const COLORVAL colour)
 
 void SGPVSurface::Fill(const UINT16 colour)
 {
-	SDL_FillSurfaceRect(surface_.get(), NULL, colour);
+	SDL_FillSurfaceRect(surface_.get(), nullptr, colour);
 }
 
 
@@ -370,7 +370,7 @@ void BltStretchVideoSurface(SGPVSurface* const dst, SGPVSurface const* const src
 void BltVideoSurfaceOnce(SGPVSurface* const dst, const char* const filename, INT32 const x, INT32 const y)
 {
 	std::unique_ptr<SGPVSurface> src(AddVideoSurfaceFromFile(filename));
-	BltVideoSurface(dst, src.get(), x, y, NULL);
+	BltVideoSurface(dst, src.get(), x, y, nullptr);
 }
 
 /** Draw image on the video surface stretching the image if necessary. */

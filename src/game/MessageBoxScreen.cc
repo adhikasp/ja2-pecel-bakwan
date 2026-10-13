@@ -427,13 +427,13 @@ static ScreenID ExitMsgBox(MessageBoxReturnValue const ubExitCode)
 	gfInMsgBox = FALSE;
 
 	// Call done callback!
-	if (gMsgBox.ExitCallback != NULL) gMsgBox.ExitCallback(ubExitCode);
+	if (gMsgBox.ExitCallback != nullptr) gMsgBox.ExitCallback(ubExitCode);
 
 	//if you are in a non gamescreen and DONT want the msg box to use the save buffer, unset gfDontOverRideSaveBuffer in your callback
 	if (!native && (gMsgBox.uiExitScreen != GAME_SCREEN || fRestoreBackgroundForMessageBox) && gfDontOverRideSaveBuffer)
 	{
 		// restore what we have under here...
-		BltVideoSurface(FRAME_BUFFER, gMsgBox.uiSaveBuffer, gMsgBox.uX, gMsgBox.uY, NULL);
+		BltVideoSurface(FRAME_BUFFER, gMsgBox.uiSaveBuffer, gMsgBox.uX, gMsgBox.uY, nullptr);
 		InvalidateRegion(gMsgBox.uX, gMsgBox.uY, gMsgBox.uX + gMsgBox.usWidth, gMsgBox.uY + gMsgBox.usHeight);
 	}
 

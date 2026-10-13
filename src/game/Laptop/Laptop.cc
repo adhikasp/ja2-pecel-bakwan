@@ -617,9 +617,9 @@ void ExitLaptop(void)
 	// get rid of desktop
 	DeleteDesktopBackground();
 
-	if (MailToDelete != NULL)
+	if (MailToDelete != nullptr)
 	{
-		MailToDelete = NULL;
+		MailToDelete = nullptr;
 		CreateDestroyDeleteNoticeMailButton();
 	}
 	if (fNewMailFlag)
@@ -1029,7 +1029,7 @@ static void DrawLaptopPowerZoom(double const t, bool const poweringUp)
 		uWidth, uHeight
 	};
 
-	if (!poweringUp) BltVideoSurface(FRAME_BUFFER, guiEXTRABUFFER, 0, 0, NULL);
+	if (!poweringUp) BltVideoSurface(FRAME_BUFFER, guiEXTRABUFFER, 0, 0, nullptr);
 	BltStretchVideoSurface(FRAME_BUFFER, guiSAVEBUFFER, &Laptop, &Box);
 	InvalidateScreen();
 	RefreshScreen(); // the presented frame is the transition's end state: compose it here, as it is drawn
@@ -1065,8 +1065,8 @@ ScreenID LaptopScreenHandle()
 
 		//Step 2:  The mapscreen image is in the EXTRABUFFER, and laptop is in the SAVEBUFFER
 		//         Start transitioning the screen.
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER,   0, 0, NULL);
-		BltVideoSurface(FRAME_BUFFER,  guiEXTRABUFFER, 0, 0, NULL);
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER,   0, 0, nullptr);
+		BltVideoSurface(FRAME_BUFFER,  guiEXTRABUFFER, 0, 0, nullptr);
 		PlayJA2SampleFromFile(SOUNDSDIR "/laptop power up (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
 		sgp::RunAnimation(std::chrono::milliseconds{ 1000 }, [](double t) { DrawLaptopPowerZoom(t, true); });
 		fReDrawScreenFlag = TRUE;
@@ -1401,7 +1401,7 @@ static void LeaveLapTopScreen(void)
 
 			//Step 2:  The mapscreen image is in the EXTRABUFFER, and laptop is in the SAVEBUFFER
 			//         Start transitioning the screen.
-			BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+			BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 			PlayJA2SampleFromFile(SOUNDSDIR "/laptop power down (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
 			sgp::RunAnimation(std::chrono::milliseconds{ 1000 }, [](double t) { DrawLaptopPowerZoom(t, false); });
 		}
@@ -1998,10 +1998,10 @@ void HandleLapTopESCKey(void)
 		fNewMailFlag = FALSE;
 		CreateDestroyNewMailButton();
 	}
-	else if (MailToDelete != NULL)
+	else if (MailToDelete != nullptr)
 	{
 		// get rid of delete mail box
-		MailToDelete = NULL;
+		MailToDelete = nullptr;
 		CreateDestroyDeleteNoticeMailButton();
 	}
 	else if (gfShowBookmarks)
@@ -2033,10 +2033,10 @@ void HandleRightButtonUpEvent(void)
 		fNewMailFlag = FALSE;
 		CreateDestroyNewMailButton();
 	}
-	else if (MailToDelete != NULL)
+	else if (MailToDelete != nullptr)
 	{
 		// get rid of delete mail box
-		MailToDelete = NULL;
+		MailToDelete = nullptr;
 		CreateDestroyDeleteNoticeMailButton();
 	}
 	else if (gfShowBookmarks)
@@ -2630,7 +2630,7 @@ void BlitTitleBarIcons(void)
 
 static void DrawDeskTopBackground(void)
 {
-	BltVideoSurface(FRAME_BUFFER, guiDESKTOP, LAPTOP_SCREEN_UL_X - 2, LAPTOP_SCREEN_UL_Y - 4, NULL);
+	BltVideoSurface(FRAME_BUFFER, guiDESKTOP, LAPTOP_SCREEN_UL_X - 2, LAPTOP_SCREEN_UL_Y - 4, nullptr);
 }
 
 
@@ -3507,7 +3507,7 @@ void Exit()
 	fCurrentlyInLaptop = FALSE;
 	SetRenderFlags(RENDER_FLAG_FULL);
 	fNewMailFlag = FALSE;
-	MailToDelete = NULL;
+	MailToDelete = nullptr;
 	gfEnterLapTop = TRUE;
 	gfShowBookmarks = FALSE;
 	fNewWWW = TRUE;

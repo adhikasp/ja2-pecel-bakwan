@@ -661,7 +661,7 @@ void LoadSavedGame(const ST::string &saveName)
 	gfDontStartTransitionFromLaptop = TRUE;
 
 	// Reset timer callbacks
-	gpCustomizableTimerCallback = NULL;
+	gpCustomizableTimerCallback = nullptr;
 
 	//Set the fact that we are loading a saved game
 	gTacticalStatus.uiFlags |= LOADING_SAVED_GAME;
@@ -1427,7 +1427,7 @@ static void LoadSoldierStructure(HWFILE const f, UINT32 savegame_version)
 		}
 		else
 		{
-			Assert(s->pKeyRing == NULL);
+			Assert(s->pKeyRing == nullptr);
 		}
 
 		//if the soldier is an IMP character
@@ -1465,7 +1465,7 @@ static void LoadSoldierStructure(HWFILE const f, UINT32 savegame_version)
 		// JA2Gold: fix next-to-previous attacker value
 		if (savegame_version < 99)
 		{
-			s->next_to_previous_attacker = NULL;
+			s->next_to_previous_attacker = nullptr;
 		}
 
 		// Just in case this save encountered a rare bug or comes
@@ -1723,10 +1723,10 @@ static void LoadWatchedLocsFromSavedGame(HWFILE const hFile)
 void SaveMercPath(HWFILE const f, PathSt const* const head)
 {
 	UINT32 n_nodes = 0;
-	for (const PathSt* p = head; p != NULL; p = p->pNext) ++n_nodes;
+	for (const PathSt* p = head; p != nullptr; p = p->pNext) ++n_nodes;
 	f->write(&n_nodes, sizeof(UINT32));
 
-	for (const PathSt* p = head; p != NULL; p = p->pNext)
+	for (const PathSt* p = head; p != nullptr; p = p->pNext)
 	{
 		BYTE  data[20];
 		DataWriter d{data};
@@ -1746,7 +1746,7 @@ void LoadMercPath(HWFILE const hFile, PathSt** const head)
 	hFile->read(&uiNumOfNodes, sizeof(UINT32));
 
 	//load all the nodes
-	PathSt* path = NULL;
+	PathSt* path = nullptr;
 	for (UINT32 cnt = 0; cnt < uiNumOfNodes; ++cnt)
 	{
 		PathSt* const n = new PathSt{};
@@ -1760,10 +1760,10 @@ void LoadMercPath(HWFILE const hFile, PathSt** const head)
 		Assert(d.getConsumed() == lengthof(data));
 
 		n->pPrev = path;
-		n->pNext = NULL;
+		n->pNext = nullptr;
 
 		//Put the node into the list
-		if (path == NULL)
+		if (path == nullptr)
 		{
 			*head = n;
 		}
@@ -2158,7 +2158,7 @@ void GetBestPossibleSectorXYZValues(SGPSector& sSector)
 	if (iCurrentTacticalSquad != NO_CURRENT_SQUAD)
 	{
 		const SOLDIERTYPE* const s = Squad[iCurrentTacticalSquad][0];
-		if (s != NULL && s->bAssignment != IN_TRANSIT)
+		if (s != nullptr && s->bAssignment != IN_TRANSIT)
 		{
 			sSector = s->sSector;
 			return;
@@ -2383,7 +2383,7 @@ static void UpdateMercMercContractInfo(void)
 		SOLDIERTYPE* const pSoldier = FindSoldierByProfileIDOnPlayerTeam(ubMercID);
 
 		//if the merc is on the team
-		if( pSoldier == NULL )
+		if( pSoldier == nullptr )
 			continue;
 
 		gMercProfiles[ubMercID].iMercMercContractLength = pSoldier->iTotalContractLength;

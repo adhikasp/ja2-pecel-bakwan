@@ -143,7 +143,7 @@ static inline SOLDIERTYPE& GetMan(UINT const idx)
 
 static inline SoldierID Soldier2ID(const SOLDIERTYPE* const s)
 {
-	return s != NULL ? s->ubID : NOBODY;
+	return s != nullptr ? s->ubID : NOBODY;
 }
 
 static inline SOLDIERTYPE* ID2Soldier(const SoldierID id)
@@ -158,13 +158,13 @@ static inline SOLDIERTYPE* ID2Soldier(const SoldierID id)
 static inline SOLDIERTYPE* GetSelectedMan(void)
 {
 	SOLDIERTYPE* const sel = g_selected_man;
-	Assert(sel == NULL || sel->bActive);
+	Assert(sel == nullptr || sel->bActive);
 	return sel;
 }
 
 static inline void SetSelectedMan(SOLDIERTYPE* const s)
 {
-	Assert(s == NULL || s->bActive);
+	Assert(s == nullptr || s->bActive);
 	g_selected_man = s;
 }
 

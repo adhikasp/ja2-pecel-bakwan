@@ -53,7 +53,7 @@ static BOOLEAN ConvertToETRLE(UINT8** ppDest, UINT32* puiDestLen, std::vector<ST
 void WriteSTIFile(UINT8* const pData, SGPPaletteEntry* const pPalette, const INT16 sWidth, const INT16 sHeight, ST::string const& cOutputName, const UINT32 fFlags, const UINT32 uiAppDataSize)
 {
 	UINT32							uiOriginalSize;
-	UINT8 *							pOutputBuffer = NULL;
+	UINT8 *							pOutputBuffer = nullptr;
 	UINT32							uiCompressedSize=0; // Wmaybe-uninitialized
 
 	STCIHeader					Header;
@@ -112,7 +112,7 @@ void WriteSTIFile(UINT8* const pData, SGPPaletteEntry* const pPalette, const INT
 	// write palette and subimage structs, if any
 	if (Header.fFlags & STCI_INDEXED)
 	{
-		if (pPalette != NULL)
+		if (pPalette != nullptr)
 		{
 			// have to convert palette to STCI format!
 			pSGPPaletteEntry = pPalette;
@@ -142,7 +142,7 @@ void WriteSTIFile(UINT8* const pData, SGPPaletteEntry* const pPalette, const INT
 		f->write(&zero, sizeof(zero));
 	}
 
-	if( pOutputBuffer != NULL )
+	if( pOutputBuffer != nullptr )
 	{
 		delete[] pOutputBuffer;
 	}
@@ -733,5 +733,5 @@ static UINT8* CheckForDataInRowOrColumn(UINT8* pPixel, UINT16 usIncrement, UINT1
 			pPixel += usIncrement;
 		}
 	}
-	return( NULL );
+	return( nullptr );
 }

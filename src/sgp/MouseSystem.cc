@@ -84,8 +84,8 @@ struct DoubleDetectionState {
 				/* Sequential left tap on same button within the maximum time
 					* allowed for a double click.  Double click check succeeded,
 					* set flag and reset double click globals. */
-				lastDownRegion = NULL;
-				lastUpRegion   = NULL;
+				lastDownRegion = nullptr;
+				lastUpRegion   = nullptr;
 				lastDownTime = 0;
 				return TRUE;
 			}
@@ -111,8 +111,8 @@ struct DoubleDetectionState {
 			{
 				/* User released touch outside of current button, so kill any
 					* chance of a double tap happening. */
-				lastDownRegion = NULL;
-				lastUpRegion   = NULL;
+				lastDownRegion = nullptr;
+				lastUpRegion   = nullptr;
 				lastDownTime = 0;
 			}
 		}
@@ -131,10 +131,10 @@ static UINT32 MSYS_Action         = 0;
 
 static MOUSE_REGION* g_clicked_region;
 
-static MOUSE_REGION* MSYS_RegList = NULL;
+static MOUSE_REGION* MSYS_RegList = nullptr;
 
 static MOUSE_REGION* MSYS_PrevRegion = 0;
-static MOUSE_REGION* MSYS_CurrRegion = NULL;
+static MOUSE_REGION* MSYS_CurrRegion = nullptr;
 
 static const INT16 gsFastHelpDelay = 600; // In timer ticks
 
@@ -393,7 +393,7 @@ static void MSYS_DeleteRegionFromList(MOUSE_REGION* const r)
 static void MSYS_UpdateMouseRegion(void)
 {
 	MOUSE_REGION* cur;
-	for (cur = MSYS_RegList; cur != NULL; cur = cur->next)
+	for (cur = MSYS_RegList; cur != nullptr; cur = cur->next)
 	{
 		if (cur->uiFlags & (MSYS_REGION_ENABLED | MSYS_ALLOW_DISABLED_FASTHELP) &&
 			cur->RegionTopLeftX <= MSYS_CurrentMX && MSYS_CurrentMX <= cur->RegionBottomRightX &&
@@ -407,7 +407,7 @@ static void MSYS_UpdateMouseRegion(void)
 	MSYS_CurrRegion = cur;
 
 	MOUSE_REGION* prev = MSYS_PrevRegion;
-	if (cur != NULL && cur != prev && cur->uiFlags & MSYS_REGION_ENABLED) {
+	if (cur != nullptr && cur != prev && cur->uiFlags & MSYS_REGION_ENABLED) {
 		// Maintain values before calling any callbacks
 		cur->uiFlags |= MSYS_MOUSE_IN_AREA;
 	}
@@ -438,7 +438,7 @@ static void MSYS_UpdateMouseRegion(void)
 	}
 
 	// If a region was found in the list, update its data
-	if (cur != NULL)
+	if (cur != nullptr)
 	{
 		if (cur != prev)
 		{
@@ -471,7 +471,7 @@ static void MSYS_UpdateMouseRegion(void)
 			{
 				/* Addition Oct 10/1997 Carter, patch for mouse cursor
 				 * start at region and find another region encompassing */
-				for (const MOUSE_REGION* i = cur->next; i != NULL; i = i->next)
+				for (const MOUSE_REGION* i = cur->next; i != nullptr; i = i->next)
 				{
 					if (i->uiFlags & MSYS_REGION_ENABLED &&
 							i->RegionTopLeftX <= MSYS_CurrentMX && MSYS_CurrentMX <= i->RegionBottomRightX &&

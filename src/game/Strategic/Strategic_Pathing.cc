@@ -443,16 +443,16 @@ INT32 FindStratPath(INT16 const sStart, INT16 const sDestination, GROUP const& g
 
 PathSt* BuildAStrategicPath(INT16 const start_sector, INT16 const end_sector, GROUP const& g, BOOLEAN const fTacticalTraversal)
 {
-	if (end_sector < MAP_WORLD_X - 1) return NULL;
+	if (end_sector < MAP_WORLD_X - 1) return nullptr;
 
 	const INT32 path_len = FindStratPath(start_sector, end_sector, g, fTacticalTraversal);
-	if (path_len == 0) return NULL;
+	if (path_len == 0) return nullptr;
 
 	// start new path list
 	PathSt* const head = new PathSt{};
 	head->uiSectorId = start_sector;
-	head->pNext      = NULL;
-	head->pPrev      = NULL;
+	head->pNext      = nullptr;
+	head->pPrev      = nullptr;
 
 	INT32   cur_sector = start_sector;
 	INT32   delta      = 0;
@@ -472,13 +472,13 @@ PathSt* BuildAStrategicPath(INT16 const start_sector, INT16 const end_sector, GR
 		if (cur_sector < MAP_WORLD_X - 1)
 		{
 			ClearStrategicPathList(head, 0);
-			return NULL;
+			return nullptr;
 		}
 
 		PathSt* const n = new PathSt{};
 		n->uiSectorId = cur_sector;
 		n->pPrev      = path;
-		n->pNext      = NULL;
+		n->pNext      = nullptr;
 		path->pNext   = n;
 		path          = n;
 	}
@@ -494,7 +494,7 @@ PathSt* AppendStrategicPath(PathSt* pNewSection, PathSt* pHeadOfPathList)
 	PathSt* pNode = pHeadOfPathList;
 	// move to end of original section
 
-	if( pNewSection == NULL )
+	if( pNewSection == nullptr )
 	{
 		return pHeadOfPathList;
 	}
@@ -539,10 +539,10 @@ PathSt* ClearStrategicPathList(PathSt* const pHeadOfPath, const INT16 sMvtGroup)
 	// will clear out a strategic path and return head of list as NULL
 
 	// is there in fact a path?
-	if (pHeadOfPath == NULL) return NULL;
-	Assert(pHeadOfPath->pPrev == NULL);
+	if (pHeadOfPath == nullptr) return nullptr;
+	Assert(pHeadOfPath->pPrev == nullptr);
 
-	for (PathSt* n = pHeadOfPath; n != NULL;)
+	for (PathSt* n = pHeadOfPath; n != nullptr;)
 	{
 		PathSt* const del = n;
 		n = n->pNext;
@@ -553,7 +553,7 @@ PathSt* ClearStrategicPathList(PathSt* const pHeadOfPath, const INT16 sMvtGroup)
 	{
 		RemoveGroupWaypoints(*GetGroup(sMvtGroup));
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -568,7 +568,7 @@ PathSt* ClearStrategicPathListAfterThisSector(PathSt* pHeadOfPath, const SGPSect
 	INT16 sCurrentSector = -1;
 
 	// is there in fact a path?
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		// no path, leave
 		return ( pNode );
@@ -591,14 +591,14 @@ PathSt* ClearStrategicPathListAfterThisSector(PathSt* pHeadOfPath, const SGPSect
 		pNode = pNode -> pPrev;
 
 		// get current sector value
-		if( pNode != NULL )
+		if( pNode != nullptr )
 		{
 			sCurrentSector = ( INT16 )pNode -> uiSectorId;
 		}
 	}
 
 	// did we find the target sector?
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		// nope, leave
 		return ( pHeadOfPath );
@@ -609,7 +609,7 @@ PathSt* ClearStrategicPathListAfterThisSector(PathSt* pHeadOfPath, const SGPSect
 	pNode = pNode -> pNext;
 
 	// is nothing left?
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		// that's it, leave
 		return ( pHeadOfPath );
@@ -620,14 +620,14 @@ PathSt* ClearStrategicPathListAfterThisSector(PathSt* pHeadOfPath, const SGPSect
 	if( pNode -> pPrev )
 	{
 		// set next for tail to NULL
-		pNode -> pPrev -> pNext = NULL;
+		pNode -> pPrev -> pNext = nullptr;
 	}
 	else
 	{
 		// clear head, return NULL
 		pHeadOfPath = ClearStrategicPathList( pHeadOfPath, sMvtGroup );
 
-		return ( NULL );
+		return ( nullptr );
 	}
 
 	// clear list
@@ -643,7 +643,7 @@ PathSt* ClearStrategicPathListAfterThisSector(PathSt* pHeadOfPath, const SGPSect
 		if( pDeleteNode == pHeadOfPath )
 		{
 			// null out head
-			pHeadOfPath = NULL;
+			pHeadOfPath = nullptr;
 		}
 
 		// delete delete node
@@ -653,8 +653,8 @@ PathSt* ClearStrategicPathListAfterThisSector(PathSt* pHeadOfPath, const SGPSect
 
 	// clear out last node
 	delete pNode;
-	pNode = NULL;
-	pDeleteNode = NULL;
+	pNode = nullptr;
+	pDeleteNode = nullptr;
 
 	return( pHeadOfPath );
 }
@@ -665,9 +665,9 @@ static PathSt* MoveToEndOfPathList(PathSt* pList)
 	// move to end of list
 
 	// no list, return
-	if( pList == NULL )
+	if( pList == nullptr )
 	{
-		return ( NULL );
+		return ( nullptr );
 	}
 
 	// move to beginning of list
@@ -687,10 +687,10 @@ static PathSt* RemoveTailFromStrategicPath(PathSt* const pHeadOfList)
 	PathSt* pNode = pHeadOfList;
 	PathSt* pLastNode = pHeadOfList;
 
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		// no list, leave
-		return( NULL );
+		return( nullptr );
 	}
 
 	while( pNode -> pNext )
@@ -702,7 +702,7 @@ static PathSt* RemoveTailFromStrategicPath(PathSt* const pHeadOfList)
 	// end of list
 
 	// set next to null
-	pLastNode -> pNext = NULL;
+	pLastNode -> pNext = nullptr;
 
 	// now remove old last node
 	delete pNode;
@@ -719,10 +719,10 @@ PathSt* RemoveHeadFromStrategicPath(PathSt* pList)
 	PathSt* pNewHead = pList;
 
 	// check if there is a list
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		// no list, leave
-		return( NULL );
+		return( nullptr );
 	}
 
 	// move to head of list
@@ -736,13 +736,13 @@ PathSt* RemoveHeadFromStrategicPath(PathSt* pList)
 	pNewHead = pNode -> pNext;
 	if( pNewHead )
 	{
-		pNewHead -> pPrev = NULL;
+		pNewHead -> pPrev = nullptr;
 	}
 
 	// free old head
 	delete pNode;
 
-	pNode = NULL;
+	pNode = nullptr;
 
 	// return new head
 	return( pNewHead );
@@ -753,7 +753,7 @@ INT16 GetLastSectorIdInCharactersPath(const SOLDIERTYPE* pCharacter)
 {
 	// will return the last sector of the current path, or the current sector if there's no path
 	INT16 sLastSector = pCharacter->sSector.AsStrategicIndex();
-	PathSt* pNode = NULL;
+	PathSt* pNode = nullptr;
 
 	pNode = GetSoldierMercPathPtr( pCharacter );
 
@@ -769,18 +769,18 @@ INT16 GetLastSectorIdInCharactersPath(const SOLDIERTYPE* pCharacter)
 
 PathSt* CopyPaths(PathSt* src)
 {
-	if (src == NULL) return NULL;
+	if (src == nullptr) return nullptr;
 
 	PathSt* const head = new PathSt{};
 	head->uiSectorId = src->uiSectorId;
-	head->pPrev      = NULL;
+	head->pPrev      = nullptr;
 
 	for (PathSt* dst = head;;)
 	{
 		src = src->pNext;
-		if (src == NULL)
+		if (src == nullptr)
 		{
-			dst->pNext = NULL;
+			dst->pNext = nullptr;
 			break;
 		}
 
@@ -824,7 +824,7 @@ void RebuildWayPointsForGroupPath(PathSt* const pHeadOfPath, GROUP& g)
 
 
 	// if group has no path planned at all
-	if( ( pNode == NULL ) || ( pNode->pNext == NULL ) )
+	if( ( pNode == nullptr ) || ( pNode->pNext == nullptr ) )
 	{
 		// and it's a player group, and it's between sectors
 		// NOTE: AI groups never reverse direction between sectors, Kris cheats & teleports them back to their current sector!
@@ -900,7 +900,7 @@ void RebuildWayPointsForGroupPath(PathSt* const pHeadOfPath, GROUP& g)
 // clear strategic movement (mercpaths and waypoints) for this soldier, and his group (including its vehicles)
 void ClearMvtForThisSoldierAndGang( SOLDIERTYPE *pSoldier )
 {
-	GROUP *pGroup = NULL;
+	GROUP *pGroup = nullptr;
 
 
 	// check if valid grunt
@@ -918,7 +918,7 @@ BOOLEAN MoveGroupFromSectorToSector(GROUP& g, const SGPSector& sStart, const SGP
 {
 	PathSt* pNode = BuildAStrategicPath(sStart.AsStrategicIndex(), sDest.AsStrategicIndex(), g, FALSE);
 
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		return( FALSE );
 	}
@@ -937,7 +937,7 @@ static BOOLEAN MoveGroupFromSectorToSectorButAvoidLastSector(GROUP& g, const SGP
 {
 	PathSt* pNode = BuildAStrategicPath(sStart.AsStrategicIndex(), sDest.AsStrategicIndex(), g, FALSE);
 
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		return( FALSE );
 	}
@@ -971,7 +971,7 @@ BOOLEAN MoveGroupFromSectorToSectorButAvoidPlayerInfluencedSectors(GROUP& g, con
 	// turn off the avoid flag
 	gfPlotToAvoidPlayerInfuencedSectors = FALSE;
 
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		return MoveGroupFromSectorToSector(g, sStart, sDest);
 	}
@@ -1002,7 +1002,7 @@ BOOLEAN MoveGroupFromSectorToSectorButAvoidPlayerInfluencedSectorsAndStopOneSect
 	// turn off the avoid flag
 	gfPlotToAvoidPlayerInfuencedSectors = FALSE;
 
-	if( pNode == NULL )
+	if( pNode == nullptr )
 	{
 		return MoveGroupFromSectorToSectorButAvoidLastSector(g, sStart, sDest);
 	}
@@ -1037,7 +1037,7 @@ INT32 GetLengthOfPath(PathSt* pHeadPath)
 
 INT32 GetLengthOfMercPath(const SOLDIERTYPE* pSoldier)
 {
-	PathSt* pNode = NULL;
+	PathSt* pNode = nullptr;
 	INT32 iLength = 0;
 
 	pNode = GetSoldierMercPathPtr( pSoldier );
@@ -1096,13 +1096,13 @@ static void ClearPathForSoldier(SOLDIERTYPE* pSoldier);
 // clears this groups strategic movement (mercpaths and waypoints), include those in the vehicle structs(!)
 void ClearMercPathsAndWaypointsForAllInGroup(GROUP& g)
 {
-	SOLDIERTYPE *pSoldier = NULL;
+	SOLDIERTYPE *pSoldier = nullptr;
 
 	CFOR_EACH_PLAYER_IN_GROUP(pPlayer, &g)
 	{
 		pSoldier = pPlayer->pSoldier;
 
-		if ( pSoldier != NULL )
+		if ( pSoldier != nullptr )
 		{
 			ClearPathForSoldier( pSoldier );
 		}
@@ -1124,7 +1124,7 @@ void ClearMercPathsAndWaypointsForAllInGroup(GROUP& g)
 // clears the contents of the soldier's mercpPath, as well as his vehicle path if he is a / or is in a vehicle
 static void ClearPathForSoldier(SOLDIERTYPE* pSoldier)
 {
-	VEHICLETYPE *pVehicle = NULL;
+	VEHICLETYPE *pVehicle = nullptr;
 
 
 	// clear the soldier's mercpath
@@ -1142,7 +1142,7 @@ static void ClearPathForSoldier(SOLDIERTYPE* pSoldier)
 	}
 
 	// if there's an associate vehicle structure
-	if ( pVehicle != NULL )
+	if ( pVehicle != nullptr )
 	{
 		// clear its mercpath, too
 		pVehicle->pMercPath = ClearStrategicPathList( pVehicle->pMercPath, pVehicle->ubMovementGroup );
@@ -1155,13 +1155,13 @@ static void AddSectorToFrontOfMercPath(PathSt** ppMercPath, const SGPSector& sMa
 
 void AddSectorToFrontOfMercPathForAllSoldiersInGroup(GROUP *pGroup, const SGPSector& sMap)
 {
-	SOLDIERTYPE *pSoldier = NULL;
+	SOLDIERTYPE *pSoldier = nullptr;
 
 	CFOR_EACH_PLAYER_IN_GROUP(pPlayer, pGroup)
 	{
 		pSoldier = pPlayer->pSoldier;
 
-		if ( pSoldier != NULL )
+		if ( pSoldier != nullptr )
 		{
 			AddSectorToFrontOfMercPath(&(pSoldier->pMercPath), sMap);
 		}
@@ -1183,10 +1183,10 @@ static void AddSectorToFrontOfMercPath(PathSt** ppMercPath, const SGPSector& sMa
 	PathSt* const pNode = new PathSt{};
 	pNode->uiSectorId = sMap.AsStrategicIndex();
 	pNode->pNext = *ppMercPath;
-	pNode->pPrev = NULL;
+	pNode->pPrev = nullptr;
 
 	// if path wasn't null
-	if ( *ppMercPath != NULL )
+	if ( *ppMercPath != nullptr )
 	{
 		// hang the previous pointer of the old head to the new head
 		(*ppMercPath)->pPrev = pNode;

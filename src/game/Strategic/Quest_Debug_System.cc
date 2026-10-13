@@ -419,7 +419,7 @@ static INT32 giHaveSelectedNPC  = -1; // If it is not the first time in, dont re
 
 
 static INT32        giSelectedMercCurrentQuote = -1;
-static SOLDIERTYPE* gTalkingMercSoldier        = NULL;
+static SOLDIERTYPE* gTalkingMercSoldier        = nullptr;
 static BOOLEAN      gfPauseTalkingMercPopup    = FALSE;
 static BOOLEAN gfAddNpcToTeam                 = FALSE;
 static BOOLEAN gfRpcToSaySectorDesc           = FALSE;
@@ -590,7 +590,7 @@ ScreenID QuestDebugScreenHandle()
 		RenderQuestDebugSystem();
 
 		//At this point the background is pure, copy it to the save buffer
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 	}
 	RestoreBackgroundRects();
 
@@ -603,7 +603,7 @@ ScreenID QuestDebugScreenHandle()
 	{
 		if( gubTextEntryAction != QD_DROP_DOWN_NO_ACTION )
 		{
-			CreateDestroyDisplayTextEntryBox( gubTextEntryAction, {}, NULL );
+			CreateDestroyDisplayTextEntryBox( gubTextEntryAction, {}, nullptr );
 			gubTextEntryAction = QD_DROP_DOWN_NO_ACTION;
 		}
 
@@ -999,7 +999,7 @@ static void RenderQuestDebugSystem(void)
 	if( gfTextEntryActive )
 	{
 		gubTextEntryAction = QD_DROP_DOWN_DISPLAY;
-		CreateDestroyDisplayTextEntryBox( gubTextEntryAction, {}, NULL );
+		CreateDestroyDisplayTextEntryBox( gubTextEntryAction, {}, nullptr );
 		gubTextEntryAction = QD_DROP_DOWN_NO_ACTION;
 	}
 
@@ -1149,7 +1149,7 @@ static void GetUserInput(void)
 						// toggle whether dropped items are damaged or not
 						gfDropDamagedItems ^= 1;
 						ST::string zTemp = ST::format("Items dropped will be in {} condition", gfDropDamagedItems ? "DAMAGED" : "PERFECT");
-						DoQDSMessageBox(zTemp, QUEST_DEBUG_SCREEN, MSG_BOX_FLAG_OK, NULL);
+						DoQDSMessageBox(zTemp, QUEST_DEBUG_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 					}
 					break;
 			}
@@ -2146,7 +2146,7 @@ static void BtnQuestDebugNPCRefreshButtonButtonCallback(GUI_BUTTON* const btn, U
 			success ? QuestDebugText[QUEST_DBS_REFRESH_OK] :
 			QuestDebugText[QUEST_DBS_REFRESH_FAILED];
 		ST::string buf = ST::format("{} {}", msg, gMercProfiles[ubMercID].zNickname);
-		DoQDSMessageBox(buf, QUEST_DEBUG_SCREEN, MSG_BOX_FLAG_OK, NULL);
+		DoQDSMessageBox(buf, QUEST_DEBUG_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 	}
 }
 
@@ -2382,7 +2382,7 @@ static void AddNPCToGridNo(INT32 iGridNo)
 //	RandomizeNewSoldierStats( &MercCreateStruct );
 
 	SOLDIERTYPE* const s = TacticalCreateSoldier(MercCreateStruct);
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		AddSoldierToSector(s);
 
@@ -2718,7 +2718,7 @@ static void DoQDSMessageBox(const ST::string& zString, ScreenID uiExitScreen, Me
 	gfQuestDebugEntry = TRUE;
 
 	// do message box and return
-	DoMessageBox(MSG_BOX_BASIC_STYLE, zString, uiExitScreen, ubFlags, ReturnCallback, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, zString, uiExitScreen, ubFlags, ReturnCallback, nullptr);
 }
 
 
@@ -2840,7 +2840,7 @@ static void StartMercTalkingFromQuoteNum(INT32 iQuoteToStartTalkingFrom)
 	if( iQuoteToStartTalkingFrom < 0 || iQuoteToStartTalkingFrom > uiMaxNumberOfQuotes )
 	{
 		zTemp = ST::format("Please enter a value between 0 and {}", uiMaxNumberOfQuotes);
-		DoQDSMessageBox(zTemp, QUEST_DEBUG_SCREEN, MSG_BOX_FLAG_OK, NULL);
+		DoQDSMessageBox(zTemp, QUEST_DEBUG_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 	}
 	else
 	{
@@ -2896,7 +2896,7 @@ static void HandleQDSTalkingMerc(void)
 
 	if( giSelectedMercCurrentQuote != -1 )
 	{
-		if( gTalkingMercSoldier == NULL )
+		if( gTalkingMercSoldier == nullptr )
 			return;
 
 		//Call this function to enable or disable the flags in the faces struct ( without modifing the pause state )
@@ -2967,7 +2967,7 @@ static void SetQDSMercProfile(void)
 {
 	// Get selected soldier
 	gTalkingMercSoldier = GetSelectedMan();
-	if (gTalkingMercSoldier == NULL) return;
+	if (gTalkingMercSoldier == nullptr) return;
 
 	// Change guy!
 	ForceSoldierProfileID( gTalkingMercSoldier, (UINT8)gNpcListBox.sCurSelectedItem );
@@ -3060,7 +3060,7 @@ static void BtnQuestDebugRPCSaySectorDescToggleCallback(GUI_BUTTON* btn, UINT32 
 
 static UINT8 WhichPanelShouldTalkingMercUse(void)
 {
-	if ( gTalkingMercSoldier == NULL )
+	if ( gTalkingMercSoldier == nullptr )
 	{
 		return( QDS_NO_PANEL );
 	}
@@ -3126,7 +3126,7 @@ static ST::string GetDebugLocationString(UINT16 usProfileID)
 	const SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(usProfileID);
 
 	//if their is a soldier, the soldier is alive and the soldier is off the map
-	if (pSoldier != NULL && pSoldier->uiStatusFlags & SOLDIER_OFF_MAP)
+	if (pSoldier != nullptr && pSoldier->uiStatusFlags & SOLDIER_OFF_MAP)
 	{
 		//the soldier is on schedule
 		return "On Schdl.";
@@ -3139,7 +3139,7 @@ static ST::string GetDebugLocationString(UINT16 usProfileID)
 	}
 
 	//the soldier is in this sector
-	else if( pSoldier != NULL )
+	else if( pSoldier != nullptr )
 	{
 		return pSoldier->sSector.AsShortString();
 	}

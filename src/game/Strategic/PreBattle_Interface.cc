@@ -68,8 +68,8 @@ extern BOOLEAN gfDelayAutoResolveStart;
 
 
 BOOLEAN gfTacticalTraversal = FALSE;
-GROUP *gpTacticalTraversalGroup = NULL;
-SOLDIERTYPE *gpTacticalTraversalChosenSoldier = NULL;
+GROUP *gpTacticalTraversalGroup = nullptr;
+SOLDIERTYPE *gpTacticalTraversalChosenSoldier = nullptr;
 
 
 BOOLEAN gfAutomaticallyStartAutoResolve = FALSE;
@@ -102,7 +102,7 @@ enum //GraphicIDs for the panel
 
 bool gfDisplayPotentialRetreatPaths = false;
 
-GROUP *gpBattleGroup = NULL;
+GROUP *gpBattleGroup = nullptr;
 
 
 static MOUSE_REGION PBInterfaceBlanket;
@@ -594,7 +594,7 @@ static void DoTransitionFromMapscreenToPreBattleInterface(void)
 	sEndTop = MAPTOP_Y + 180;
 
 	//save the mapscreen buffer
-	BltVideoSurface(guiEXTRABUFFER, FRAME_BUFFER, 0, 0, NULL);
+	BltVideoSurface(guiEXTRABUFFER, FRAME_BUFFER, 0, 0, nullptr);
 
 	if( gfEnterAutoResolveMode )
 	{ //If we are intending on immediately entering autoresolve, change the global flag so that it will actually
@@ -627,7 +627,7 @@ static void DoTransitionFromMapscreenToPreBattleInterface(void)
 	{
 		DrawPreBattleZoom(t, sStartLeft, sStartTop, sEndLeft, sEndTop);
 	});
-	BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+	BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 }
 
 void KillPreBattleInterface()
@@ -1043,7 +1043,7 @@ static void GoToSectorCallback(GUI_BUTTON* btn, UINT32 reason)
 			}
 			else
 			{ //Clear the battlegroup pointer.
-				gpBattleGroup = NULL;
+				gpBattleGroup = nullptr;
 			}
 
 			// must come AFTER anything that needs gpBattleGroup, as it wipes it out
@@ -1082,7 +1082,7 @@ static void RetreatMercsCallback(GUI_BUTTON* btn, UINT32 reason)
 			RefreshScreen();
 			KillPreBattleInterface();
 			StopTimeCompression();
-			gpBattleGroup = NULL;
+			gpBattleGroup = nullptr;
 			gfBlitBattleSectorLocator = FALSE;
 
 			SetMusicMode( MUSIC_TACTICAL_NOTHING );
@@ -1472,7 +1472,7 @@ static void CheckForRobotAndIfItsControlled(void)
 			UpdateRobotControllerGivenRobot(s);
 
 			// if he has a controller, set controllers
-			if (s->robot_remote_holder != NULL)
+			if (s->robot_remote_holder != nullptr)
 			{
 				UpdateRobotControllerGivenController(s->robot_remote_holder);
 			}

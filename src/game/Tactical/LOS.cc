@@ -632,7 +632,7 @@ static INT32 LineOfSightTest(GridNo start_pos, FLOAT dStartZ, GridNo end_pos, FL
 
 	MAP_ELEMENT *pMapElement;
 	STRUCTURE *pStructure;
-	STRUCTURE *pRoofStructure = NULL;
+	STRUCTURE *pRoofStructure = nullptr;
 
 	BOOLEAN fCheckForRoof;
 	FIXEDPT qLastZ;
@@ -873,7 +873,7 @@ static INT32 LineOfSightTest(GridNo start_pos, FLOAT dStartZ, GridNo end_pos, FL
 			}
 			// check for the existence of structures
 			pStructure = pMapElement->pStructureHead;
-			if (pStructure == NULL)
+			if (pStructure == nullptr)
 			{	// no structures in this tile, AND THAT INCLUDES ROOFS! :-)
 
 				// new system; figure out how many steps until we cross the next edge
@@ -1000,7 +1000,7 @@ static INT32 LineOfSightTest(GridNo start_pos, FLOAT dStartZ, GridNo end_pos, FL
 						iCurrCubesAboveLevelZ -= STRUCTURE_ON_ROOF;
 					}
 					// check structures for collision
-					while (pStructure != NULL)
+					while (pStructure != nullptr)
 					{
 						// transparent structures should be skipped
 						// normal roof structures should be skipped
@@ -1132,7 +1132,7 @@ static INT32 LineOfSightTest(GridNo start_pos, FLOAT dStartZ, GridNo end_pos, FL
 										else if ( (pStructure->fFlags & STRUCTURE_WALLNWINDOW) && !(pStructure->fFlags & STRUCTURE_SPECIAL) && qCurrZ >= (gqStandardWindowBottomHeight + qLandHeight) && qCurrZ <= (gqStandardWindowTopHeight + qLandHeight))
 										{
 											// do nothing; windows are transparent (except ones marked as special)
-											if (psWindowGridNo != NULL)
+											if (psWindowGridNo != nullptr)
 											{
 												// we're supposed to note the location of this window!
 												// but if a location has already been set then there are two windows, in which case
@@ -1631,7 +1631,7 @@ INT32 SoldierToSoldierLineOfSightTest(const SOLDIERTYPE* const pStartSoldier, co
 		ubTreeReduction = gubTreeSightReduction[ gAnimControl[pEndSoldier->usAnimState].ubEndHeight ];
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, pEndSoldier->sGridNo, dEndZPos, ubTileSightLimit, ubTreeReduction, bAware, bEffectiveCamo, fSmell, NULL);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, pEndSoldier->sGridNo, dEndZPos, ubTileSightLimit, ubTreeReduction, bAware, bEffectiveCamo, fSmell, nullptr);
 }
 
 INT16 SoldierToLocationWindowTest(const SOLDIERTYPE* pStartSoldier, INT16 sEndGridNo)
@@ -1676,7 +1676,7 @@ INT32 SoldierTo3DLocationLineOfSightTest(const SOLDIERTYPE* pStartSoldier, INT16
 	else
 	{
 		const SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, bLevel);
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
 			// there's a merc there; do a soldier-to-soldier test
 			return SoldierToSoldierLineOfSightTest(pStartSoldier, tgt, ubTileSightLimit, bAware);
@@ -1687,7 +1687,7 @@ INT32 SoldierTo3DLocationLineOfSightTest(const SOLDIERTYPE* pStartSoldier, INT16
 		dEndZPos += CONVERT_PIXELS_TO_HEIGHTUNITS( gpWorldLevelData[ sGridNo ].sHeight );
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, NULL);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 INT32 SoldierToBodyPartLineOfSightTest( const SOLDIERTYPE * pStartSoldier, INT16 sGridNo, INT8 bLevel, UINT8 ubAimLocation, UINT8 ubTileSightLimit, INT8 bAware )
@@ -1698,7 +1698,7 @@ INT32 SoldierToBodyPartLineOfSightTest( const SOLDIERTYPE * pStartSoldier, INT16
 
 	const SOLDIERTYPE* const pEndSoldier = WhoIsThere2(sGridNo, bLevel);
 	// CJC August 13, 2002: for this routine to work there MUST be a target at the location specified
-	if (pEndSoldier == NULL) return 0;
+	if (pEndSoldier == nullptr) return 0;
 
 	CHECKF( pStartSoldier );
 
@@ -1727,7 +1727,7 @@ INT32 SoldierToBodyPartLineOfSightTest( const SOLDIERTYPE * pStartSoldier, INT16
 		return( FALSE );
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, NULL);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 
@@ -1763,7 +1763,7 @@ INT32 SoldierToVirtualSoldierLineOfSightTest(const SOLDIERTYPE* pStartSoldier, I
 		dEndZPos += WALL_HEIGHT_UNITS;
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, NULL);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 INT32 SoldierToLocationLineOfSightTest( SOLDIERTYPE * pStartSoldier, INT16 sGridNo, UINT8 ubTileSightLimit, INT8 bAware )
@@ -1776,7 +1776,7 @@ INT32 LocationToLocationLineOfSightTest( INT16 sStartGridNo, INT8 bStartLevel, I
 	FLOAT dStartZPos, dEndZPos;
 
 	const SOLDIERTYPE* const start_soldier = WhoIsThere2(sStartGridNo, bStartLevel);
-	if (start_soldier != NULL)
+	if (start_soldier != nullptr)
 	{
 		return SoldierTo3DLocationLineOfSightTest(start_soldier, sEndGridNo, bEndLevel, 0, ubTileSightLimit, bAware);
 	}
@@ -1790,7 +1790,7 @@ INT32 LocationToLocationLineOfSightTest( INT16 sStartGridNo, INT8 bStartLevel, I
 	// add in ground height
 	dEndZPos += CONVERT_PIXELS_TO_HEIGHTUNITS( gpWorldLevelData[ sEndGridNo ].sHeight );
 
-	return LineOfSightTest(sStartGridNo, dStartZPos, sEndGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, NULL);
+	return LineOfSightTest(sStartGridNo, dStartZPos, sEndGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 /*
@@ -2092,7 +2092,7 @@ static BOOLEAN BulletHitMerc(BULLET* pBullet, STRUCTURE* pStructure, BOOLEAN fIn
 	}
 
 	// check to see if someone was accidentally hit when no target was specified by the player
-	if (pFirer->bTeam == OUR_TEAM && pFirer->target == NULL && tgt.bNeutral)
+	if (pFirer->bTeam == OUR_TEAM && pFirer->target == nullptr && tgt.bNeutral)
 	{
 		if (tgt.ubCivilianGroup == KINGPIN_CIV_GROUP || tgt.ubCivilianGroup == HICKS_CIV_GROUP)
 		{
@@ -2442,7 +2442,7 @@ static UINT8 CalcChanceToGetThrough(BULLET* pBullet)
 
 	MAP_ELEMENT * pMapElement;
 	STRUCTURE * pStructure;
-	STRUCTURE * pRoofStructure = NULL;
+	STRUCTURE * pRoofStructure = nullptr;
 
 	FIXEDPT qLastZ = 0;
 
@@ -2489,7 +2489,7 @@ static UINT8 CalcChanceToGetThrough(BULLET* pBullet)
 		uiChanceOfHit = ChanceOfBulletHittingStructure( pBullet->iLoop, pBullet->iDistanceLimit, 0 );
 
 		// reset roof structure pointer each tile
-		pRoofStructure = NULL;
+		pRoofStructure = nullptr;
 
 		if (iGridNo == (INT32) pBullet->sTargetGridNo)
 		{
@@ -2615,7 +2615,7 @@ static UINT8 CalcChanceToGetThrough(BULLET* pBullet)
 				{
 					// could hit this corpse!
 					// but we should ignore the corpse if there is someone standing there
-					if ( FindStructure( (INT16) iGridNo, STRUCTURE_PERSON ) == NULL )
+					if ( FindStructure( (INT16) iGridNo, STRUCTURE_PERSON ) == nullptr )
 					{
 						gpLocalStructure[iNumLocalStructures] = pStructure;
 						iNumLocalStructures++;
@@ -2662,7 +2662,7 @@ static UINT8 CalcChanceToGetThrough(BULLET* pBullet)
 			}
 			// check for the existence of structures
 			pStructure = pMapElement->pStructureHead;
-			if (pStructure == NULL)
+			if (pStructure == nullptr)
 			{	// no structures in this tile, and THAT INCLUDES ROOFS AND PEOPLE! :-)
 				// new system; figure out how many steps until we cross the next edge
 				// and then fast forward that many steps.
@@ -2960,7 +2960,7 @@ UINT8 SoldierToLocationChanceToGetThrough(SOLDIERTYPE* const pStartSoldier, cons
 	CHECKF( pStartSoldier );
 
 	const SOLDIERTYPE* const pEndSoldier = WhoIsThere2(sGridNo, bLevel);
-	if (pEndSoldier != NULL)
+	if (pEndSoldier != nullptr)
 	{
 		return( SoldierToSoldierChanceToGetThrough( pStartSoldier, pEndSoldier ) );
 	}
@@ -3000,7 +3000,7 @@ UINT8 AISoldierToSoldierChanceToGetThrough(SOLDIERTYPE* const pStartSoldier, con
 
 	// set startsoldier's target ID ... need an ID stored in case this
 	// is the AI calculating cover to a location where he might not be any more
-	pStartSoldier->CTGTTarget = NULL;
+	pStartSoldier->CTGTTarget = nullptr;
 
 	ubChance = ChanceToGetThrough(pStartSoldier, pEndSoldier->sGridNo, dEndZPos);
 	pStartSoldier->usAnimState = usTrueState;
@@ -3016,7 +3016,7 @@ UINT8 AISoldierToLocationChanceToGetThrough( SOLDIERTYPE * pStartSoldier, INT16 
 	CHECKF( pStartSoldier );
 
 	const SOLDIERTYPE* const pEndSoldier = WhoIsThere2(sGridNo, bLevel);
-	if (pEndSoldier != NULL)
+	if (pEndSoldier != nullptr)
 	{
 		return( AISoldierToSoldierChanceToGetThrough( pStartSoldier, pEndSoldier ) );
 	}
@@ -3027,7 +3027,7 @@ UINT8 AISoldierToLocationChanceToGetThrough( SOLDIERTYPE * pStartSoldier, INT16 
 
 		// set startsoldier's target ID ... need an ID stored in case this
 		// is the AI calculating cover to a location where he might not be any more
-		pStartSoldier->CTGTTarget = NULL;
+		pStartSoldier->CTGTTarget = nullptr;
 
 		usTrueState = pStartSoldier->usAnimState;
 		pStartSoldier->usAnimState = STANDING;
@@ -3295,7 +3295,7 @@ INT8 FireBulletGivenTarget(SOLDIERTYPE* const pFirer, const FLOAT dEndX, const F
 				{
 					ubSpreadIndex = 1;
 				}
-				if (pFirer->target != NULL) pFirer->target->bNumPelletsHitBy = 0;
+				if (pFirer->target != nullptr) pFirer->target->bNumPelletsHitBy = 0;
 				usBulletFlags |= BULLET_FLAG_BUCKSHOT;
 			}
 			ubImpact = AMMO_DAMAGE_ADJUSTMENT_BUCKSHOT( ubImpact );
@@ -3306,7 +3306,7 @@ INT8 FireBulletGivenTarget(SOLDIERTYPE* const pFirer, const FLOAT dEndX, const F
 	for (ubLoop = 0; ubLoop < ubShots; ubLoop++)
 	{
 		BULLET* const pBullet = CreateBullet(pFirer, fFake, usBulletFlags);
-		if (pBullet == NULL)
+		if (pBullet == nullptr)
 		{
 			SLOGW("Failed to create bullet");
 			return FALSE;
@@ -3456,7 +3456,7 @@ void MoveBullet(BULLET* const pBullet)
 
 	MAP_ELEMENT * pMapElement;
 	STRUCTURE * pStructure;
-	STRUCTURE * pRoofStructure = NULL;
+	STRUCTURE * pRoofStructure = nullptr;
 
 	FIXEDPT qLastZ;
 
@@ -3737,7 +3737,7 @@ void MoveBullet(BULLET* const pBullet)
 				{
 					// could hit this corpse!
 					// but ignore if someone is here
-					if ( FindStructure( (INT16) iGridNo, STRUCTURE_PERSON ) == NULL )
+					if ( FindStructure( (INT16) iGridNo, STRUCTURE_PERSON ) == nullptr )
 					{
 						gpLocalStructure[iNumLocalStructures] = pStructure;
 						iNumLocalStructures++;
@@ -3790,7 +3790,7 @@ void MoveBullet(BULLET* const pBullet)
 					if ( gubWorldMovementCosts[ iAdjGridNo ][ bDir ][ sDesiredLevel ] < TRAVELCOST_BLOCKED)
 					{
 						SOLDIERTYPE* const pTarget = WhoIsThere2(iAdjGridNo, sDesiredLevel);
-						if (pTarget != NULL)
+						if (pTarget != nullptr)
 						{
 							if ( IS_MERC_BODY_TYPE( pTarget ) && pBullet->pFirer->bSide != pTarget->bSide )
 							{
@@ -3998,7 +3998,7 @@ void MoveBullet(BULLET* const pBullet)
 									else
 									{
 										// set pointer to null so that we don't consider hitting this person again
-										gpLocalStructure[iStructureLoop] = NULL;
+										gpLocalStructure[iStructureLoop] = nullptr;
 									}
 								}
 								else if (pStructure->fFlags & STRUCTURE_WALLNWINDOW && pBullet->qCurrZ >= qWindowBottomHeight && pBullet->qCurrZ <= qWindowTopHeight)
@@ -4076,7 +4076,7 @@ void MoveBullet(BULLET* const pBullet)
 											BulletHitWindow(pBullet, pBullet->iCurrTileX + pBullet->iCurrTileY * WORLD_COLS, pStructure->usStructureID, blow_south);
 											LocateBullet(pBullet);
 											// have to remove this window from future hit considerations so the deleted structure data can't be referenced!
-											gpLocalStructure[iStructureLoop] = NULL;
+											gpLocalStructure[iStructureLoop] = nullptr;
 											// but the bullet keeps on going!!!
 										}
 
@@ -4227,7 +4227,7 @@ void MoveBullet(BULLET* const pBullet)
 		}
 
 		// check to see if bullet is close to target
-		if (pBullet->pFirer->target != NULL &&
+		if (pBullet->pFirer->target != nullptr &&
 				!(pBullet->pFirer->uiStatusFlags & SOLDIER_ATTACK_NOTICED) &&
 				PythSpacesAway(pBullet->sGridNo, pBullet->sTargetGridNo) <= 3)
 		{

@@ -97,7 +97,7 @@ static INT32 iCurrentHistoryPage = 1;
 
 
 // the History record list
-static HistoryUnit* pHistoryListHead = NULL;
+static HistoryUnit* pHistoryListHead = nullptr;
 
 
 void ClearHistoryList( void );
@@ -305,7 +305,7 @@ static void BtnHistoryDisplayNextPageCallBack(GUI_BUTTON* btn, UINT32 reason)
 static void ProcessAndEnterAHistoryRecord(const UINT8 ubCode, const UINT32 uiDate, const UINT8 ubSecondCode, const SGPSector& sSector)
 {
 	HistoryUnit* const h = new HistoryUnit{};
-	h->Next         = NULL;
+	h->Next         = nullptr;
 	h->ubCode       = ubCode;
 	h->ubSecondCode = ubSecondCode;
 	h->uiDate       = uiDate;
@@ -313,7 +313,7 @@ static void ProcessAndEnterAHistoryRecord(const UINT8 ubCode, const UINT32 uiDat
 
 	// Append node to list
 	HistoryUnit** anchor = &pHistoryListHead;
-	while (*anchor != NULL) anchor = &(*anchor)->Next;
+	while (*anchor != nullptr) anchor = &(*anchor)->Next;
 	*anchor = h;
 }
 
@@ -347,13 +347,13 @@ static void OpenAndReadHistoryFile(void)
 
 void ClearHistoryList(void)
 {
-	for (HistoryUnit* h = pHistoryListHead; h != NULL;)
+	for (HistoryUnit* h = pHistoryListHead; h != nullptr;)
 	{
 		HistoryUnit* const next = h->Next;
 		delete h;
 		h = next;
 	}
-	pHistoryListHead = NULL;
+	pHistoryListHead = nullptr;
 }
 
 
@@ -414,7 +414,7 @@ static void DrawHistoryRecordsText(void)
 	SetFontShadow(NO_SHADOW);
 
 	UINT entry_count = 0;
-	for (const HistoryUnit* h = pHistoryListHead; h != NULL; h = h->Next)
+	for (const HistoryUnit* h = pHistoryListHead; h != nullptr; h = h->Next)
 	{
 		const UINT8 colour =
 			h->ubCode  == HISTORY_CHEAT_ENABLED ||
@@ -499,7 +499,7 @@ static void DisplayPageNumberAndDateRange(void)
 	UINT first_date;
 	UINT last_date;
 	const HistoryUnit* h = pHistoryListHead;
-	if (h == NULL)
+	if (h == nullptr)
 	{
 		current_page = 1;
 		count_pages  = 1;
@@ -513,7 +513,7 @@ static void DisplayPageNumberAndDateRange(void)
 		first_date       = h->uiDate / (24 * 60);
 
 		UINT entry_count = NUM_RECORDS_PER_PAGE;
-		while (--entry_count != 0 && h->Next != NULL) h = h->Next;
+		while (--entry_count != 0 && h->Next != nullptr) h = h->Next;
 
 		last_date        = h->uiDate / (24 * 60);
 	}
@@ -740,7 +740,7 @@ UINT32 GetTimeQuestWasStarted(const UINT8 ubCode)
 	OpenAndReadHistoryFile();
 
 	UINT32 uiTime = 0;
-	for (const HistoryUnit* h = pHistoryListHead; h != NULL; h = h->Next)
+	for (const HistoryUnit* h = pHistoryListHead; h != nullptr; h = h->Next)
 	{
 		if (h->ubSecondCode == ubCode && h->ubCode == HISTORY_QUEST_STARTED)
 		{

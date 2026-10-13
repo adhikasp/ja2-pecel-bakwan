@@ -92,7 +92,7 @@ void RenderMercPopUpBox(MercPopUpBox const* const box, INT16 const sDestX, INT16
 
 	// will render/transfer the image from the buffer in the data structure to the buffer specified by user
 	SGPVSurface* const vs = box->sourceBuffer.get();
-	BltVideoSurface(buffer, vs, sDestX, sDestY, NULL);
+	BltVideoSurface(buffer, vs, sDestX, sDestY, nullptr);
 
 	//Invalidate!
 	if (buffer == FRAME_BUFFER)

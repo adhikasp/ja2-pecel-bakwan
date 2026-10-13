@@ -582,12 +582,12 @@ static void GlowTrashCan(void)
 
 void DrawFace(void)
 {
-	static const SOLDIERTYPE* old_merc = NULL;
+	static const SOLDIERTYPE* old_merc = nullptr;
 
 	// draws the face of the currently selected merc, being displayed int he upper left hand corner
 
 	const SOLDIERTYPE* const pSoldier = GetSelectedInfoChar();
-	if( pSoldier == NULL )
+	if( pSoldier == nullptr )
 	{
 		return;
 	}
@@ -928,7 +928,7 @@ static bool CharacterIsInTransitAndHasItemPickedUp(SOLDIERTYPE const* const s)
 static void DisplayCharacterInfo(void)
 {
 	const SOLDIERTYPE* const s = GetSelectedInfoChar();
-	if (s == NULL) return;
+	if (s == nullptr) return;
 
 	SetFontDestBuffer(guiSAVEBUFFER);
 
@@ -967,8 +967,8 @@ INT32 GetPathTravelTimeDuringPlotting(PathSt* pPath)
 		return( 0 );
 	}
 
-	if (pPath == NULL) return 0;
-	Assert(pPath->pPrev == NULL);
+	if (pPath == nullptr) return 0;
+	Assert(pPath->pPrev == nullptr);
 
 	if (!fPlotForHelicopter)
 	{
@@ -979,7 +979,7 @@ INT32 GetPathTravelTimeDuringPlotting(PathSt* pPath)
 			ubGroupId = pVehicleList[s->iVehicleId].ubMovementGroup;
 			pGroup = GetGroup( ubGroupId );
 
-			if( pGroup == NULL )
+			if( pGroup == nullptr )
 			{
 				SetUpMvtGroupForVehicle(s);
 
@@ -993,7 +993,7 @@ INT32 GetPathTravelTimeDuringPlotting(PathSt* pPath)
 			ubGroupId = pVehicleList[s->bVehicleID].ubMovementGroup;
 			pGroup = GetGroup( ubGroupId );
 
-			if( pGroup == NULL )
+			if( pGroup == nullptr )
 			{
 				SetUpMvtGroupForVehicle(s);
 
@@ -1070,7 +1070,7 @@ static void DisplayGroundEta(void)
 	}
 
 	const SOLDIERTYPE* const s = gCharactersList[bSelectedDestChar].merc;
-	if (s == NULL) return;
+	if (s == nullptr) return;
 
 	const UINT32 iTotalTime = GetGroundTravelTimeOfSoldier(s);
 
@@ -1181,7 +1181,7 @@ static void HighLightSleepLine(void)
 
 static void AddCharacter(SOLDIERTYPE* const s)
 {
-	Assert(s != NULL);
+	Assert(s != nullptr);
 	Assert(s->bActive);
 
 	const size_t start = (s->uiStatusFlags & SOLDIER_VEHICLE ? FIRST_VEHICLE : 0);
@@ -1189,7 +1189,7 @@ static void AddCharacter(SOLDIERTYPE* const s)
 	{
 		Assert(i != gCharactersList + MAX_CHARACTER_COUNT);
 		if (i == gCharactersList + MAX_CHARACTER_COUNT) return;
-		if (i->merc == NULL)
+		if (i->merc == nullptr)
 		{
 			i->merc = s;
 			return;
@@ -1581,7 +1581,7 @@ ScreenID MapScreenHandle(void)
 		gMPanelRegion.Disable();
 
 		// create contract box
-		CreateContractBox( NULL );
+		CreateContractBox( nullptr );
 
 		// create the permanent boxes for assignment and its submenus
 		fShowAssignmentMenu = TRUE;
@@ -1601,7 +1601,7 @@ ScreenID MapScreenHandle(void)
 			RenderMapAreaBackdrop(FRAME_BUFFER);
 		}
 
-		if( gpCurrentTalkingFace != NULL )
+		if( gpCurrentTalkingFace != nullptr )
 		{
 			ContinueDialogue(gpCurrentTalkingFace->soldier, FALSE);
 		}
@@ -2398,7 +2398,7 @@ static UINT32 HandleMapUI(void)
 					}
 
 					// if item's owner is known
-					if ( gpItemPointerSoldier != NULL )
+					if ( gpItemPointerSoldier != nullptr )
 					{
 						// make sure it's the owner's sector that's selected
 						if (gpItemPointerSoldier->sSector != sSelMap)
@@ -2582,7 +2582,7 @@ static bool HandleKeyESC()
 	if (gfPreBattleInterfaceActive && !gfPersistantPBI)
 	{ //Non persistant PBI.  Allow ESC to close it and return to mapscreen.
 		KillPreBattleInterface();
-		gpBattleGroup = NULL;
+		gpBattleGroup = nullptr;
 		return true;
 	}
 
@@ -2592,11 +2592,11 @@ static bool HandleKeyESC()
 		BeginMapUIMessage(0, pBullseyeStrings[3]);
 	}
 	// ESC cancels MAP UI messages, unless we're in confirm map move mode
-	else if (g_ui_message_overlay != NULL && !gfInConfirmMapMoveMode)
+	else if (g_ui_message_overlay != nullptr && !gfInConfirmMapMoveMode)
 	{
 		CancelMapUIMessage();
 	}
-	else if (gpCurrentTalkingFace != NULL && gpCurrentTalkingFace->fTalking)
+	else if (gpCurrentTalkingFace != nullptr && gpCurrentTalkingFace->fTalking)
 	{
 		// ATE: We want to stop speech if somebody is talking...
 		StopAnyCurrentlyTalkingSpeech();
@@ -3341,7 +3341,7 @@ static void MapViewRegionPrimaryCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 	}
 
 	// left click cancels MAP UI messages, unless we're in confirm map move mode
-	if (g_ui_message_overlay != NULL && !gfInConfirmMapMoveMode)
+	if (g_ui_message_overlay != nullptr && !gfInConfirmMapMoveMode)
 	{
 		CancelMapUIMessage( );
 
@@ -3399,7 +3399,7 @@ static void MapViewRegionSecondaryCallback(MOUSE_REGION* pRegion, UINT32 iReason
 	}
 
 	// right click cancels MAP UI messages, unless we're in confirm map move mode
-	if (g_ui_message_overlay != NULL && !gfInConfirmMapMoveMode)
+	if (g_ui_message_overlay != nullptr && !gfInConfirmMapMoveMode)
 	{
 		CancelMapUIMessage( );
 		return;
@@ -3703,7 +3703,7 @@ static void MAPInvClickCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 	Assert(MapCharacterHasAccessibleInventory(*pSoldier));
 
 	// If we do not have an item in hand, start moving it
-	if ( gpItemPointer == NULL )
+	if ( gpItemPointer == nullptr )
 	{
 		// Return if empty
 		if ( pSoldier->inv[ uiHandPos ].usItem == NOTHING )
@@ -3719,7 +3719,7 @@ static void MAPInvClickCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 
 		if ( _KeyDown(CTRL) )
 		{
-			CleanUpStack( &( pSoldier->inv[ uiHandPos ] ), NULL );
+			CleanUpStack( &( pSoldier->inv[ uiHandPos ] ), nullptr );
 		}
 
 		// remember what it was
@@ -3880,7 +3880,7 @@ static void MAPInvClickCallbackCancelMessage(MOUSE_REGION* pRegion, UINT32 iReas
 	if (iReason & MSYS_CALLBACK_REASON_RBUTTON_DWN)
 	{
 		// if there is a map UI message being displayed
-		if (g_ui_message_overlay != NULL)
+		if (g_ui_message_overlay != nullptr)
 		{
 			CancelMapUIMessage( );
 			return;
@@ -3892,7 +3892,7 @@ static void MAPInvClickCallbackCancelMessage(MOUSE_REGION* pRegion, UINT32 iReas
 void InternalMAPBeginItemPointer(SOLDIERTYPE* pSoldier)
 {
 	// If not null return
-	if ( gpItemPointer != NULL )
+	if ( gpItemPointer != nullptr )
 	{
 		return;
 	}
@@ -3914,7 +3914,7 @@ static void MAPBeginItemPointer(SOLDIERTYPE* pSoldier, UINT8 ubHandPos)
 	BOOLEAN	fOk;
 
 	// If not null return
-	if ( gpItemPointer != NULL )
+	if ( gpItemPointer != nullptr )
 	{
 		return;
 	}
@@ -3939,9 +3939,9 @@ static void MAPBeginItemPointer(SOLDIERTYPE* pSoldier, UINT8 ubHandPos)
 
 void MAPEndItemPointer(void)
 {
-	if ( gpItemPointer != NULL )
+	if ( gpItemPointer != nullptr )
 	{
-		gpItemPointer = NULL;
+		gpItemPointer = nullptr;
 		gMPanelRegion.ChangeCursor(CURSOR_NORMAL);
 		MSYS_SetCurrentCursor( CURSOR_NORMAL );
 		fMapInventoryItem=FALSE;
@@ -3955,7 +3955,7 @@ void MAPEndItemPointer(void)
 		if (fShowInventoryFlag)
 		{
 			SOLDIERTYPE* const s = GetSelectedInfoChar();
-			if (s != NULL) ReevaluateItemHatches(s, FALSE);
+			if (s != nullptr) ReevaluateItemHatches(s, FALSE);
 		}
 	}
 }
@@ -4277,7 +4277,7 @@ static void TeamListInfoRegionBtnCallBackPrimary(MOUSE_REGION* pRegion, UINT32 i
 
 	// set to new info character...make sure is valid
 	const SOLDIERTYPE* const pSoldier = gCharactersList[iValue].merc;
-	if (pSoldier != NULL)
+	if (pSoldier != nullptr)
 	{
 		if ( HandleCtrlOrShiftInTeamPanel( ( INT8 ) iValue ) )
 		{
@@ -4332,7 +4332,7 @@ static void TeamListInfoRegionBtnCallBackSecondary(MOUSE_REGION* pRegion, UINT32
 	ResetAllSelectedCharacterModes();
 
 	const SOLDIERTYPE* const pSoldier = gCharactersList[iValue].merc;
-	if (pSoldier != NULL)
+	if (pSoldier != nullptr)
 	{
 		// select this character
 		ChangeSelectedInfoChar( ( INT8 ) iValue, TRUE );
@@ -4363,7 +4363,7 @@ static void TeamListInfoRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 iReason)
 
 	if (iReason & MSYS_CALLBACK_REASON_MOVE)
 	{
-		giHighLine = (gCharactersList[iValue].merc != NULL ? iValue : -1);
+		giHighLine = (gCharactersList[iValue].merc != nullptr ? iValue : -1);
 	}
 	else if( iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
 	{
@@ -4385,7 +4385,7 @@ static void TeamListAssignmentRegionBtnCallBackPrimary(MOUSE_REGION* pRegion, UI
 
 	// set to new info character...make sure is valid
 	const SOLDIERTYPE* const pSoldier = gCharactersList[iValue].merc;
-	if (pSoldier != NULL)
+	if (pSoldier != nullptr)
 	{
 		if ( HandleCtrlOrShiftInTeamPanel( ( INT8 ) iValue ) )
 		{
@@ -4400,7 +4400,7 @@ static void TeamListAssignmentRegionBtnCallBackPrimary(MOUSE_REGION* pRegion, UI
 		if ( ( pSoldier->bAssignment != ASSIGNMENT_DEAD ) && ( pSoldier->bLife > 0 ) && ( pSoldier->fBetweenSectors ) && !( pSoldier->uiStatusFlags & SOLDIER_VEHICLE ) )
 		{
 			// can't reassign mercs while between sectors
-			DoScreenIndependantMessageBox( pMapErrorString[ 41 ], MSG_BOX_FLAG_OK, NULL );
+			DoScreenIndependantMessageBox( pMapErrorString[ 41 ], MSG_BOX_FLAG_OK, nullptr );
 			return;
 		}
 
@@ -4473,7 +4473,7 @@ static void TeamListAssignmentRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 iR
 	if (iReason & MSYS_CALLBACK_REASON_MOVE)
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iValue].merc;
-		if (s != NULL)
+		if (s != nullptr)
 		{
 			giHighLine = iValue;
 
@@ -4508,7 +4508,7 @@ static void TeamListAssignmentRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 iR
 	else if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iValue].merc;
-		if (s != NULL && !(s->uiStatusFlags & SOLDIER_VEHICLE))
+		if (s != nullptr && !(s->uiStatusFlags & SOLDIER_VEHICLE))
 		{
 			// play click
 			PlayGlowRegionSound( );
@@ -4532,7 +4532,7 @@ static void TeamListDestinationRegionBtnCallBackPrimary(MOUSE_REGION* pRegion, U
 	}
 
 	SOLDIERTYPE* const s = gCharactersList[iValue].merc;
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		if ( HandleCtrlOrShiftInTeamPanel( ( INT8 ) iValue ) )
 		{
@@ -4632,7 +4632,7 @@ static void TeamListDestinationRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 i
 
 	if (iReason & MSYS_CALLBACK_REASON_MOVE)
 	{
-		if (gCharactersList[iValue].merc != NULL)
+		if (gCharactersList[iValue].merc != nullptr)
 		{
 			giHighLine = iValue;
 			giDestHighLine = iValue;
@@ -4658,7 +4658,7 @@ static void TeamListDestinationRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 i
 	}
 	else if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
 	{
-		if (gCharactersList[iValue].merc != NULL)
+		if (gCharactersList[iValue].merc != nullptr)
 		{
 			// play click
 			PlayGlowRegionSound( );
@@ -4678,7 +4678,7 @@ static void TeamListSleepRegionBtnCallBackPrimary(MOUSE_REGION* pRegion, UINT32 
 
 	// set to new info character...make sure is valid.. not in transit and alive and concious
 	SOLDIERTYPE* const pSoldier = gCharactersList[iValue].merc;
-	if (pSoldier != NULL)
+	if (pSoldier != nullptr)
 	{
 		if ( HandleCtrlOrShiftInTeamPanel( ( INT8 ) iValue ) )
 		{
@@ -4749,7 +4749,7 @@ static void TeamListSleepRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 iReason
 	if (iReason & MSYS_CALLBACK_REASON_MOVE)
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iValue].merc;
-		if (s != NULL)
+		if (s != nullptr)
 		{
 			giHighLine = iValue;
 			giSleepHighLine = (CanChangeSleepStatusForSoldier(s) ? iValue : -1);
@@ -4772,7 +4772,7 @@ static void TeamListSleepRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 iReason
 	else if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iValue].merc;
-		if (s != NULL && CanChangeSleepStatusForSoldier(s)) PlayGlowRegionSound();
+		if (s != nullptr && CanChangeSleepStatusForSoldier(s)) PlayGlowRegionSound();
 	}
 }
 
@@ -4790,7 +4790,7 @@ static void TeamListContractRegionBtnCallBackPrimary(MOUSE_REGION* pRegion, UINT
 
 	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
 
-	if (gCharactersList[iValue].merc != NULL)
+	if (gCharactersList[iValue].merc != nullptr)
 	{
 		// select ONLY this dude
 		ChangeSelectedInfoChar( ( INT8 ) iValue, TRUE );
@@ -4817,7 +4817,7 @@ static void TeamListContractRegionBtnCallBackSecondary(MOUSE_REGION* pRegion, UI
 
 	INT32 iValue = MSYS_GetRegionUserData( pRegion, 0 );
 
-	if (gCharactersList[iValue].merc != NULL)
+	if (gCharactersList[iValue].merc != nullptr)
 	{
 		ContractRegionBtnCallbackSecondary( pRegion, iReason );
 	}
@@ -4842,7 +4842,7 @@ static void TeamListContractRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 iRea
 	if (iReason & MSYS_CALLBACK_REASON_MOVE)
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iValue].merc;
-		if (s != NULL)
+		if (s != nullptr)
 		{
 			giHighLine = iValue;
 			giContractHighLine = (CanExtendContractForSoldier(s) ? iValue : -1);
@@ -4867,7 +4867,7 @@ static void TeamListContractRegionMvtCallBack(MOUSE_REGION* pRegion, UINT32 iRea
 	else if( iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE )
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iValue].merc;
-		if (s != NULL && CanExtendContractForSoldier(s)) PlayGlowRegionSound();
+		if (s != nullptr && CanExtendContractForSoldier(s)) PlayGlowRegionSound();
 	}
 }
 
@@ -5256,7 +5256,7 @@ static void HandleShadingOfLinesForContractMenu(void)
 	// error check, return if not a valid character
 	if (bSelectedContractChar == -1) return;
 	const SOLDIERTYPE* const s = gCharactersList[bSelectedContractChar].merc;
-	if (s == NULL) return;
+	if (s == nullptr) return;
 
 	Assert(CanExtendContractForSoldier(s));
 
@@ -5295,7 +5295,7 @@ void ReBuildCharactersList( void )
 	for (INT16 sCount = 0; sCount < MAX_CHARACTER_COUNT; ++sCount)
 	{
 		// clear this slot
-		gCharactersList[sCount].merc = NULL;
+		gCharactersList[sCount].merc = nullptr;
 	}
 
 	FOR_EACH_IN_TEAM(s, OUR_TEAM)
@@ -5308,10 +5308,10 @@ void ReBuildCharactersList( void )
 
 
 	// if nobody is selected, or the selected merc has somehow become invalid
-	if (GetSelectedInfoChar() == NULL)
+	if (GetSelectedInfoChar() == nullptr)
 	{
 		// is the first character in the list valid?
-		if (gCharactersList[0].merc != NULL)
+		if (gCharactersList[0].merc != nullptr)
 		{
 			// select him
 			ChangeSelectedInfoChar( 0, TRUE );
@@ -5374,7 +5374,7 @@ static void EnableDisableTeamListRegionsAndHelpText(void)
 	{
 		SOLDIERTYPE const* const s = gCharactersList[bCharNum].merc;
 		CharacterRegions&        r = g_character_regions[bCharNum];
-		if (s == NULL)
+		if (s == nullptr)
 		{
 			// disable regions in all team list columns
 			r.name.Disable();
@@ -5532,7 +5532,7 @@ BOOLEAN ContinueDialogue(SOLDIERTYPE* pSoldier, BOOLEAN fDone)
 	}
 
 	// check if valid character talking?
-	if( pSoldier == NULL )
+	if( pSoldier == nullptr )
 	{
 		return FALSE;
 	}
@@ -5561,7 +5561,7 @@ static void HandleSpontanousTalking(void)
 	if (!DialogueActive())
 	{
 		SOLDIERTYPE* const s = GetSelectedInfoChar();
-		if (s != NULL) ContinueDialogue(s, TRUE);
+		if (s != nullptr) ContinueDialogue(s, TRUE);
 	}
 }
 
@@ -5572,7 +5572,7 @@ static void RebuildWayPointsForAllSelectedCharsGroups(void);
 
 static BOOLEAN CheckIfClickOnLastSectorInPath(const SGPSector& sector)
 {
-	PathSt*const* ppMovePath = NULL;
+	PathSt*const* ppMovePath = nullptr;
 	BOOLEAN fLastSectorInPath = FALSE;
 	INT32 iVehicleId = -1;
 
@@ -5606,7 +5606,7 @@ static BOOLEAN CheckIfClickOnLastSectorInPath(const SGPSector& sector)
 		const SOLDIERTYPE*    const s = c->merc;
 
 		// invalid soldier?  we shouldn't be here!
-		if (s == NULL)
+		if (s == nullptr)
 		{
 			bSelectedDestChar = -1;
 			return( FALSE );
@@ -5685,7 +5685,7 @@ static void RebuildWayPointsForAllSelectedCharsGroups(void)
 	// rebuild the waypoints for everyone in the selected character list
 	BOOLEAN fGroupIDRebuilt[ 256 ];
 	INT32 iVehicleId;
-	PathSt** ppMovePath = NULL;
+	PathSt** ppMovePath = nullptr;
 	UINT8 ubGroupId;
 
 
@@ -5786,7 +5786,7 @@ static void UpdateCursorIfInLastSector(void)
 static void FaceRegionBtnCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 {
 	// error checking, make sure someone is there
-	if (GetSelectedInfoChar() == NULL) return;
+	if (GetSelectedInfoChar() == nullptr) return;
 
 	if (gfPreBattleInterfaceActive) return;
 
@@ -5797,7 +5797,7 @@ static void FaceRegionBtnCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 static void FaceRegionBtnCallbackSecondary(MOUSE_REGION* pRegion, UINT32 iReason)
 {
 		// error checking, make sure someone is there
-		if (GetSelectedInfoChar() == NULL) return;
+		if (GetSelectedInfoChar() == nullptr) return;
 
 		RequestToggleMercInventoryPanel();
 }
@@ -5874,7 +5874,7 @@ static void HandleCharBarRender(void)
 	if (fDisableDueToBattleRoster) return; // check if the panel is disbled, if so, do not render
 
 	const SOLDIERTYPE* const s = GetSelectedInfoChar();
-	if (s == NULL) return;
+	if (s == nullptr) return;
 
 	if (s->bLife       != 0               &&
 			s->bAssignment != ASSIGNMENT_DEAD &&
@@ -6082,7 +6082,7 @@ void CancelMapUIMessage( void )
 static void MonitorMapUIMessage(void)
 {
 	// if there is a map UI message being displayed
-	if (g_ui_message_overlay != NULL)
+	if (g_ui_message_overlay != nullptr)
 	{
 		// and if we're not in the middle of the "confirm move" sequence
 //		if( !gfInConfirmMapMoveMode || bSelectedDestChar == -1 )
@@ -6248,7 +6248,7 @@ static void UpdateTheStateOfTheNextPrevMapScreenCharacterButtons(void)
 	if (gfPreBattleInterfaceActive) return;
 
 	const SOLDIERTYPE* const s = GetSelectedInfoChar();
-	if (s == NULL)
+	if (s == nullptr)
 	{
 		DisableButton(giCharInfoButton[0]);
 		DisableButton(giCharInfoButton[1]);
@@ -6438,14 +6438,14 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 	INT16 sEndSectorA, sEndSectorB;
 	INT32 iExpiryTime, iExpiryTimeA;
 
-	SOLDIERTYPE* prev_selected_char = NULL;
+	SOLDIERTYPE* prev_selected_char = nullptr;
 	if (fRetainSelectedMercs) prev_selected_char = GetSelectedInfoChar();
 
 	// do the sort
 	for( iCounter = 1; iCounter < FIRST_VEHICLE ; iCounter++ )
 	{
 		const SOLDIERTYPE* const a = gCharactersList[iCounter].merc;
-		if (a == NULL) break;
+		if (a == nullptr) break;
 
 		switch( giSortStateForMapScreenList )
 		{
@@ -6454,7 +6454,7 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 				for( iCounterA = 0; iCounterA < FIRST_VEHICLE; iCounterA++ )
 				{
 					const SOLDIERTYPE* const b = gCharactersList[iCounterA].merc;
-					if (b == NULL) break;
+					if (b == nullptr) break;
 
 					if (b->name.compare(a->name) > 0 && iCounterA < iCounter)
 					{
@@ -6468,7 +6468,7 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 				for( iCounterA = 0; iCounterA < FIRST_VEHICLE; iCounterA++ )
 				{
 					const SOLDIERTYPE* const b = gCharactersList[iCounterA].merc;
-					if (b == NULL) break;
+					if (b == nullptr) break;
 
 					if (b->bAssignment > a->bAssignment && iCounterA < iCounter)
 					{
@@ -6496,7 +6496,7 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 				for( iCounterA = 0; iCounterA < FIRST_VEHICLE; iCounterA++ )
 				{
 					const SOLDIERTYPE* const b = gCharactersList[iCounterA].merc;
-					if (b == NULL) break;
+					if (b == nullptr) break;
 
 					if (b->fMercAsleep && !a->fMercAsleep && iCounterA < iCounter)
 					{
@@ -6512,7 +6512,7 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 				for( iCounterA = 0; iCounterA < FIRST_VEHICLE; iCounterA++ )
 				{
 					const SOLDIERTYPE* const b = gCharactersList[iCounterA].merc;
-					if (b == NULL) break;
+					if (b == nullptr) break;
 
 					sEndSectorB = CalcLocationValueForChar(b);
 
@@ -6537,7 +6537,7 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 				for( iCounterA = 0; iCounterA < FIRST_VEHICLE; iCounterA++ )
 				{
 					const SOLDIERTYPE* const b = gCharactersList[iCounterA].merc;
-					if (b == NULL) break;
+					if (b == nullptr) break;
 
 					if (GetLengthOfMercPath(b) == 0)
 					{
@@ -6562,7 +6562,7 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 				for( iCounterA = 0; iCounterA < FIRST_VEHICLE; iCounterA++ )
 				{
 					const SOLDIERTYPE* const b = gCharactersList[iCounterA].merc;
-					if (b == NULL) break;
+					if (b == nullptr) break;
 
 					iExpiryTimeA = GetContractExpiryTime(b);
 
@@ -6585,7 +6585,7 @@ static void SortListOfMercsInTeamPanel(BOOLEAN fRetainSelectedMercs)
 		for (size_t i = 0; i < MAX_CHARACTER_COUNT; ++i)
 		{
 			const SOLDIERTYPE* const s = gCharactersList[i].merc;
-			if (s == NULL || !s->bActive) continue;
+			if (s == nullptr || !s->bActive) continue;
 
 			if (prev_selected_char == s) ChangeSelectedInfoChar(static_cast<INT8>(i), FALSE);
 		}
@@ -6686,7 +6686,7 @@ static void DisplayIconsForMercsAsleep(void)
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const pSoldier = gCharactersList[iCounter].merc;
-		if (pSoldier == NULL) continue;
+		if (pSoldier == nullptr) continue;
 
 		if (pSoldier->bActive && pSoldier->fMercAsleep && CanChangeSleepStatusForSoldier(pSoldier))
 		{
@@ -6742,7 +6742,7 @@ static bool CanToggleSelectedCharInventory()
 
 	const SOLDIERTYPE* const pSoldier = GetSelectedInfoChar();
 	// nobody selected?
-	if (pSoldier == NULL) return FALSE;
+	if (pSoldier == nullptr) return FALSE;
 
 	// does the selected guy have inventory and can we get at it?
 	if (!MapCharacterHasAccessibleInventory(*pSoldier)) return FALSE;
@@ -6750,7 +6750,7 @@ static bool CanToggleSelectedCharInventory()
 	// if not in inventory, and holding an item from sector inventory
 	if( !fShowInventoryFlag &&
 			(gpItemPointer || fMapInventoryItem) &&
-			( gpItemPointerSoldier == NULL ) )
+			( gpItemPointerSoldier == nullptr ) )
 	{
 		// make sure he's in that sector
 		if ( (pSoldier->sSector.x != sSelMap.x ) ||
@@ -7037,10 +7037,10 @@ static INT32 GetContractExpiryTime(const SOLDIERTYPE* const pSoldier)
 
 SOLDIERTYPE* GetSelectedInfoChar(void)
 {
-	if (bSelectedInfoChar == -1) return NULL;
+	if (bSelectedInfoChar == -1) return nullptr;
 	Assert(0 <= bSelectedInfoChar && bSelectedInfoChar < MAX_CHARACTER_COUNT);
 	SOLDIERTYPE* const s = gCharactersList[bSelectedInfoChar].merc;
-	if (s == NULL) return NULL;
+	if (s == nullptr) return nullptr;
 	Assert(s->bActive);
 	return s;
 }
@@ -7054,18 +7054,18 @@ void ChangeSelectedInfoChar( INT8 bCharNumber, BOOLEAN fResetSelectedList )
 	if (bCharNumber != -1)
 	{
 		s = gCharactersList[bCharNumber].merc;
-		if (s == NULL) return;
+		if (s == nullptr) return;
 	}
 	else
 	{
-		s = NULL;
+		s = nullptr;
 	}
 
 	// if holding an item
 	if (gpItemPointer || fMapInventoryItem)
 	{
 		// make sure we can give it to this guy, otherwise don't allow the change
-		if (s == NULL || !MapscreenCanPassItemToChar(s))
+		if (s == nullptr || !MapscreenCanPassItemToChar(s))
 		{
 			return;
 		}
@@ -7554,14 +7554,14 @@ static void HandleMilitiaRedistributionClick(void)
 				else
 				{
 					// can't redistribute militia during combat!
-					DoScreenIndependantMessageBox( pMilitiaString[ 2 ], MSG_BOX_FLAG_OK, NULL );
+					DoScreenIndependantMessageBox( pMilitiaString[ 2 ], MSG_BOX_FLAG_OK, nullptr );
 				}
 			}
 			else
 			{
 				// can't have militia in this town
 				sString = st_format_printf(pMapErrorString[ 31 ], GCM->getTown(bTownId)->name);
-				DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, NULL );
+				DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, nullptr );
 			}
 		}
 		else
@@ -7569,7 +7569,7 @@ static void HandleMilitiaRedistributionClick(void)
 			INT8 const sam_id = GetSAMIdFromSector(sector);
 			if (sam_id != -1 && IsSecretFoundAt(sector.AsByte()))
 			{ // Cannot move militia around sam sites.
-				DoScreenIndependantMessageBox(pMapErrorString[30], MSG_BOX_FLAG_OK, NULL);
+				DoScreenIndependantMessageBox(pMapErrorString[30], MSG_BOX_FLAG_OK, nullptr);
 			}
 		}
 	}
@@ -7807,7 +7807,7 @@ ST::string GetMapscreenMercDepartureString(SOLDIERTYPE const& s, UINT8* text_col
 
 static void InitPreviousPaths(void)
 {
-	g_prev_path = NULL;
+	g_prev_path = nullptr;
 }
 
 
@@ -7915,7 +7915,7 @@ static void SelectAllCharactersInSquad(INT8 bSquadNumber)
 	for( bCounter = 0; bCounter < MAX_CHARACTER_COUNT; bCounter++ )
 	{
 		const SOLDIERTYPE* const pSoldier = gCharactersList[bCounter].merc;
-		if (pSoldier == NULL) continue;
+		if (pSoldier == nullptr) continue;
 
 		// if this guy is on that squad or in a vehicle which is assigned to that squad
 		// NOTE: There's no way to select everyone aboard Skyrider with this function...

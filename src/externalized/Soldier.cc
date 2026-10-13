@@ -291,7 +291,7 @@ void Soldier::switchHeadGear(int switchDirection)
 	OBJECTTYPE  detachedGear{};
 
 	// find the gear we want to wear
-	OBJECTTYPE* optimalEyeGear = NULL;
+	OBJECTTYPE* optimalEyeGear = nullptr;
 	for (ITEMDEFINE ic : fromGears)
 	{
 		INT8 slot = FindObj(mSoldier, ic);
@@ -311,7 +311,7 @@ void Soldier::switchHeadGear(int switchDirection)
 	}
 
 	// find the eye gear we are currently wearing
-	OBJECTTYPE* currentEyeGear = NULL;
+	OBJECTTYPE* currentEyeGear = nullptr;
 	for (ITEMDEFINE ic : toGears)
 	{
 		if (mSoldier->inv[HEAD1POS].usItem == ic) currentEyeGear = &mSoldier->inv[HEAD1POS];
@@ -330,7 +330,7 @@ void Soldier::switchHeadGear(int switchDirection)
 		currentEyeGear = &mSoldier->inv[slot];
 	}
 
-	if (optimalEyeGear != NULL)
+	if (optimalEyeGear != nullptr)
 	{
 		// found a suitable eye gear - swap
 		(optimalEyeGear->usItem != NONE)

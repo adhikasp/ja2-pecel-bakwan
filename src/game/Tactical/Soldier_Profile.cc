@@ -574,7 +574,7 @@ SOLDIERTYPE* FindSoldierByProfileID(const ProfileID pid)
 	{
 		if (s->ubProfile == pid) return s;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -584,7 +584,7 @@ SOLDIERTYPE* FindSoldierByProfileIDOnPlayerTeam(const ProfileID pid)
 	{
 		if (s->ubProfile == pid) return s;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
