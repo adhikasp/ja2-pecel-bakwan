@@ -10,7 +10,8 @@ TAGS
 .vs
 .vscode
 .clangd
-.clang-tidy
+# .clang-tidy is a committed config (the whole-tree analysis setup), not a
+# per-editor artifact; .clangd above is the editor's generated one.
 .zed
 /compile_commands.json
 /build/
