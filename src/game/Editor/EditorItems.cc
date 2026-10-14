@@ -48,11 +48,10 @@ struct IPListNode
 	IPListNode* next;
 };
 
-static IPListNode* pIPHead = NULL;
+static IPListNode* pIPHead = nullptr;
 
-static IPListNode* gpCurrItemPoolNode = NULL;
-ITEM_POOL *gpItemPool = NULL;
-
+static IPListNode* gpCurrItemPoolNode = nullptr;
+ITEM_POOL* gpItemPool = nullptr;
 
 static void ShowItemCursor(INT32 iMapIndex);
 
@@ -64,19 +63,19 @@ void BuildItemPoolList(void)
 	IPListNode** anchor = &pIPHead;
 	for (UINT16 i = 0; i < WORLD_MAX; ++i)
 	{
-		if (GetItemPool(i, 0) == NULL) continue;
+		if (GetItemPool(i, 0) == nullptr) continue;
 
 		ShowItemCursor(i);
 
 		IPListNode* const n = new IPListNode{};
 		n->sGridNo = i;
-		n->next    = NULL;
+		n->next = nullptr;
 
 		*anchor = n;
 		anchor = &n->next;
 	}
 	gpCurrItemPoolNode = pIPHead;
-	SpecifyItemToEdit(NULL, -1);
+	SpecifyItemToEdit(nullptr, -1);
 }
 
 
@@ -94,7 +93,7 @@ void KillItemPoolList()
 		delete pIPCurr;
 		pIPCurr = pIPHead;
 	}
-	pIPHead = NULL;
+	pIPHead = nullptr;
 }
 
 //Contains global information about the editor items
@@ -111,7 +110,7 @@ void EntryInitEditorItemsInfo()
 	eInfo.sSelItemIndex = 0;
 	eInfo.sHilitedItemIndex = -1;
 	eInfo.sNumItems = 0;
-	eInfo.pusItemIndex = NULL;
+	eInfo.pusItemIndex = nullptr;
 	if( eInfo.fGameInit )
 	{ //This only gets called one time in game execution.
 		eInfo = EditorItemsInfo{};
@@ -557,7 +556,7 @@ void ClearEditorItemsInfo()
 	if( eInfo.pusItemIndex )
 	{
 		delete[] eInfo.pusItemIndex;
-		eInfo.pusItemIndex = NULL;
+		eInfo.pusItemIndex = nullptr;
 	}
 	DisableEditorRegion( ITEM_REGION_ID );
 	eInfo.fActive = 0;
@@ -706,7 +705,7 @@ static INT8 CalcItemFrequency(UINT16 const item_idx)
 void AddSelectedItemToWorld(INT16 sGridNo)
 {
 	// Extract the currently selected item.
-	SpecifyItemToEdit(NULL, -1);
+	SpecifyItemToEdit(nullptr, -1);
 
 	OBJECTTYPE tempObject;
 	if (eInfo.uiItemType == TBAR_MODE_ITEM_KEYS)
@@ -844,7 +843,7 @@ void HandleRightClickOnItem( INT16 sGridNo )
 	else
 	{
 		pItemPool = GetItemPool(sGridNo, 0);
-		if (pItemPool == NULL)
+		if (pItemPool == nullptr)
 		{
 			// possibly relocate selected item to this gridno?
 			return;
@@ -855,7 +854,7 @@ void HandleRightClickOnItem( INT16 sGridNo )
 
 	//set up the item pool pointer to point to the same mapindex node
 	pIPCurr = pIPHead;
-	gpCurrItemPoolNode = NULL;
+	gpCurrItemPoolNode = nullptr;
 	while( pIPCurr )
 	{
 		if( pIPCurr->sGridNo == sGridNo )
@@ -874,7 +873,7 @@ void HandleRightClickOnItem( INT16 sGridNo )
 
 void DeleteSelectedItem()
 {
-	SpecifyItemToEdit( NULL, -1 );
+	SpecifyItemToEdit(nullptr, -1);
 	//First, check to see if there even is a currently selected item.
 	if( iCurrentTaskbar == TASK_MERCS )
 	{
@@ -900,17 +899,16 @@ void DeleteSelectedItem()
 				case ACTION_ITEM_LARGE_PIT: Remove5X5Pit(sGridNo); break;
 			}
 		}
-		if( gpEditingItemPool == gpItemPool )
-			gpEditingItemPool = NULL;
+		if (gpEditingItemPool == gpItemPool) gpEditingItemPool = nullptr;
 		RemoveItemFromPool(wi);
-		gpItemPool = NULL;
+		gpItemPool = nullptr;
 		//determine if there are still any items at this location
 		gpItemPool = GetItemPool(sGridNo, 0);
-		if (gpItemPool == NULL)
+		if (gpItemPool == nullptr)
 		{ //no items left, so remove the node from the list.
 			IPListNode *pIPPrev, *pIPCurr;
 			pIPCurr = pIPHead;
-			pIPPrev = NULL;
+			pIPPrev = nullptr;
 			while( pIPCurr )
 			{
 				if( pIPCurr->sGridNo == sGridNo )
@@ -932,7 +930,7 @@ void DeleteSelectedItem()
 					//remove node
 					HideItemCursor( sGridNo );
 					delete pIPCurr;
-					pIPCurr = NULL;
+					pIPCurr = nullptr;
 					return;
 				}
 				pIPPrev = pIPCurr;
@@ -1008,7 +1006,7 @@ void SelectPrevItemInPool()
 
 	for (ITEM_POOL* i = GetItemPool(GetWorldItem(gpItemPool->iItemIndex).sGridNo, 0);; i = i->pNext)
 	{
-		if (i->pNext != gpItemPool && i->pNext != NULL) continue;
+		if (i->pNext != gpItemPool && i->pNext != nullptr) continue;
 
 		gpItemPool = i;
 		WORLDITEM& wi = GetWorldItem(gpItemPool->iItemIndex);

@@ -15,9 +15,8 @@
 #include <string_theory/format>
 #include <string_theory/string>
 
-
-#define SCURSOR(name)         { name, NULL, 0,                   0 }
-#define ECURSOR()             { NULL, NULL, USE_OUTLINE_BLITTER, 0 }
+#define SCURSOR(name) { name, nullptr, 0, 0 }
+#define ECURSOR() { nullptr, nullptr, USE_OUTLINE_BLITTER, 0 }
 
 static CursorFileData CursorFileDatabase[] =
 {

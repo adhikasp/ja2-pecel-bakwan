@@ -41,7 +41,7 @@ void UpdateSAMDoneRepair(const SGPSector& sec)
 
 	UINT8 const sector = sec.AsByte();
 	auto samSite = GCM->findSamSiteBySector(sector);
-	if (samSite == NULL)
+	if (samSite == nullptr)
 	{
 		SLOGW("There is no SAM site at sector {}", sec);
 		return;

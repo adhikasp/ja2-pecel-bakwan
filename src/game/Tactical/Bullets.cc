@@ -31,7 +31,7 @@ static BULLET* GetFreeBullet(void)
 	{
 		if (!b->fAllocated) return b;
 	}
-	if (b == endof(gBullets)) return NULL;
+	if (b == endof(gBullets)) return nullptr;
 	++guiNumBullets;
 	return b;
 }
@@ -56,7 +56,7 @@ static void RecountBullets(void)
 BULLET* CreateBullet(SOLDIERTYPE* const firer, const BOOLEAN fFake, const UINT16 usFlags)
 {
 	BULLET* const b = GetFreeBullet();
-	if (b == NULL) return NULL;
+	if (b == nullptr) return nullptr;
 
 	*b = BULLET{};
 	b->fAllocated = TRUE;
@@ -141,19 +141,19 @@ void RemoveBullet(BULLET* b)
 		if (b->usFlags & BULLET_FLAG_KNIFE)
 		{
 			// Delete ani tile
-			if (b->pAniTile != NULL)
+			if (b->pAniTile != nullptr)
 			{
 				DeleteAniTile(b->pAniTile);
-				b->pAniTile = NULL;
+				b->pAniTile = nullptr;
 			}
 
 			// Delete shadow
 			if (b->usFlags & BULLET_FLAG_KNIFE)
 			{
-				if (b->pShadowAniTile != NULL)
+				if (b->pShadowAniTile != nullptr)
 				{
 					DeleteAniTile(b->pShadowAniTile);
-					b->pShadowAniTile = NULL;
+					b->pShadowAniTile = nullptr;
 				}
 			}
 		}
@@ -170,7 +170,7 @@ void RemoveBullet(BULLET* b)
 void LocateBullet(BULLET* b)
 {
 	if (!gGameSettings.fOptions[TOPTION_SHOW_MISSES]) return;
-	if (b->pFirer == NULL) return;
+	if (b->pFirer == nullptr) return;
 	// Check if a bad guy fired!
 	if (b->pFirer->bSide != Side::FRIENDLY) return;
 	if (b->fLocated) return;
@@ -237,7 +237,7 @@ void UpdateBullets(void)
 				{
 					if (b->usFlags & BULLET_FLAG_KNIFE)
 					{
-						if ( b->pAniTile != NULL )
+						if (b->pAniTile != nullptr)
 						{
 							b->pAniTile->sRelativeX	= FIXEDPT_TO_INT32(b->qCurrX);
 							b->pAniTile->sRelativeY	= FIXEDPT_TO_INT32(b->qCurrY);

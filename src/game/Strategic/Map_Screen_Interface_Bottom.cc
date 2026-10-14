@@ -1003,13 +1003,15 @@ void RequestTriggerExitFromMapscreen(ExitToWhere const bExitToWhere)
 			if( !CanGameBeSaved() )
 			{
 				//Display a message saying the player cant save now
-				DoMapMessageBox( MSG_BOX_BASIC_STYLE, zNewTacticalMessages[ TCTL_MSG__IRON_MAN_CANT_SAVE_NOW ], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL );
+				DoMapMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], MAP_SCREEN,
+								MSG_BOX_FLAG_OK, nullptr);
 				return;
 			}
 			else if ( gGameOptions.ubGameSaveMode == DIF_DEAD_IS_DEAD )
 			{
 				//Display DiD message saying the player cant save now
-				DoMapMessageBox( MSG_BOX_BASIC_STYLE, zNewTacticalMessages[ TCTL_MSG__DEAD_IS_DEAD_CANT_SAVE_NOW ], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL );
+				DoMapMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__DEAD_IS_DEAD_CANT_SAVE_NOW],
+								MAP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 				return;
 			}
 		}
@@ -1131,7 +1133,7 @@ void HandleExitsFromMapScreen( void )
 				fLapTop = TRUE;
 				SetPendingNewScreen(LAPTOP_SCREEN);
 
-				BltVideoSurface(guiEXTRABUFFER, FRAME_BUFFER, 0, 0, NULL);
+				BltVideoSurface(guiEXTRABUFFER, FRAME_BUFFER, 0, 0, nullptr);
 				gfStartMapScreenToLaptopTransition = TRUE;
 				break;
 

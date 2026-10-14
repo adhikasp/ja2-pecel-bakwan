@@ -6,8 +6,7 @@
 #include <memory>
 #include <string_theory/string>
 
-
-#define NO_BGND_RECT NULL
+#define NO_BGND_RECT nullptr
 
 enum BackgroundFlags
 {

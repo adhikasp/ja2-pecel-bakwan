@@ -351,7 +351,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 				pSoldier->ubDoorHandleCode != HANDLE_DOOR_UNTRAP &&
 				pSoldier->ubDoorHandleCode != HANDLE_DOOR_UNLOCK)
 			{
-				if ( pDoor != NULL )
+				if (pDoor != nullptr)
 				{
 					// Do we have a trap? NB if door is unlocked disable all traps
 					if (pDoor->fLocked && pDoor->ubTrapID != NO_TRAP)
@@ -431,7 +431,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 					case HANDLE_DOOR_OPEN_DIAG_LONG:
 
 						// If we have no lock on door...
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							sAPCost = doorAPs[pSoldier->ubDoorHandleCode];
 							sBPCost = BP_OPEN_DOOR;
@@ -474,7 +474,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						sBPCost = BP_BOOT_DOOR;
 
 						// OK, using force, if we have no lock, just open the door!
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							ChangeSoldierState(pSoldier, GetAnimStateForInteraction(*pSoldier, fDoor, END_OPEN_DOOR), 0, FALSE);
 							fHandleDoor = TRUE;
@@ -505,7 +505,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						sBPCost = BP_USE_CROWBAR;
 
 						// OK, using force, if we have no lock, just open the door!
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							ChangeSoldierState(pSoldier, GetAnimStateForInteraction(*pSoldier, fDoor, END_OPEN_DOOR), 0, FALSE);
 							fHandleDoor = TRUE;
@@ -535,7 +535,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						sAPCost = AP_EXPLODE_DOOR;
 						sBPCost = BP_EXPLODE_DOOR;
 
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							ScreenMsg( MSG_FONT_YELLOW, MSG_INTERFACE, TacticalStr[ DOOR_THERE_IS_NO_LOCK_STR ] );
 						}
@@ -562,7 +562,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						sBPCost = BP_PICKLOCK;
 
 						// Attempt to pick lock
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							ScreenMsg( MSG_FONT_YELLOW, MSG_INTERFACE, TacticalStr[ DOOR_THERE_IS_NO_LOCK_STR ] );
 						}
@@ -604,7 +604,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						// Whatever the result, end the open animation
 						ChangeSoldierState(pSoldier, GetAnimStateForInteraction(*pSoldier, fDoor, END_OPEN_DOOR), 0, FALSE);
 
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							ScreenMsg( MSG_FONT_YELLOW, MSG_INTERFACE, TacticalStr[ DOOR_THERE_IS_NO_LOCK_STR ] );
 						}
@@ -634,7 +634,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						sBPCost = BP_UNLOCK_DOOR;
 
 						// OK, if we have no lock, show that!
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							// Open if it's not locked....
 							//ScreenMsg( MSG_FONT_YELLOW, MSG_INTERFACE, TacticalStr[ DOOR_THERE_IS_NO_LOCK_STR ] );
@@ -693,7 +693,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						sBPCost = BP_UNTRAP_DOOR;
 
 						// OK, if we have no lock, show that!
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							// Open if it's not locked....
 							ScreenMsg( MSG_FONT_YELLOW, MSG_INTERFACE, TacticalStr[ DOOR_THERE_IS_NO_LOCK_STR ] );
@@ -744,7 +744,7 @@ BOOLEAN HandleOpenableStruct( SOLDIERTYPE *pSoldier, INT16 sGridNo, STRUCTURE *p
 						sBPCost = BP_LOCK_DOOR;
 
 						// OK, if we have no lock, show that!
-						if ( pDoor == NULL )
+						if (pDoor == nullptr)
 						{
 							// Open if it's not locked....
 							ScreenMsg( MSG_FONT_YELLOW, MSG_INTERFACE, TacticalStr[ DOOR_THERE_IS_NO_LOCK_STR ] );
@@ -830,7 +830,7 @@ try
 	// ATE: if we are about to swap, but have an animation playing here..... stop the animation....
 	if ( ( pNode->uiFlags & LEVELNODE_ANIMATION ) )
 	{
-		if ( pNode->pAniTile != NULL )
+		if (pNode->pAniTile != nullptr)
 		{
 			if ( pNode->pAniTile->uiFlags & ANITILE_DOOR )
 			{
@@ -1058,7 +1058,7 @@ void SetDoorString(INT16 const sGridNo)
 	{
 		SetIntTileLocationText(TacticalStr[DOOR_DOOR_MOUSE_DESCRIPTION]);
 		DOOR const* const d = FindDoorInfoAtGridNo(sGridNo);
-		if (d != NULL)
+		if (d != nullptr)
 		{
 			ST::string state;
 			if (d->bPerceivedTrapped == DOOR_PROVED_TRAPPED)
@@ -1094,7 +1094,7 @@ void SetDoorString(INT16 const sGridNo)
 		// Try to get doors status here...
 		bool                     open;
 		DOOR_STATUS const* const ds = GetDoorStatus(sGridNo);
-		if (ds == NULL || ds->ubFlags & DOOR_PERCEIVED_NOTSET)
+		if (ds == nullptr || ds->ubFlags & DOOR_PERCEIVED_NOTSET)
 		{
 			// OK, get status based on graphic.....
 			STRUCTURE const* const structure = FindStructure(sGridNo, STRUCTURE_ANYDOOR);

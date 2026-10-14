@@ -99,12 +99,10 @@ void EraseMapTile( UINT32 iMapIndex )
 		case DRAW_MODE_GROUND:
 		{
 			// Is there ground on this tile? if not, get out o here
-			if ( gpWorldLevelData[ iMapIndex ].pLandHead == NULL )
-				break;
+			if (gpWorldLevelData[iMapIndex].pLandHead == nullptr) break;
 
 			// is there only 1 ground tile here? if so, get out o here
-			if ( gpWorldLevelData[ iMapIndex ].pLandHead->pNext == NULL )
-				break;
+			if (gpWorldLevelData[iMapIndex].pLandHead->pNext == nullptr) break;
 			AddToUndoList( iMapIndex );
 			const UINT32 uiCheckType = GetTileType(gpWorldLevelData[iMapIndex].pLandHead->usIndex);
 			RemoveLand( iMapIndex, gpWorldLevelData[ iMapIndex ].pLandHead->usIndex );
@@ -211,7 +209,7 @@ void PasteDebris( UINT32 iMapIndex )
 		AddToUndoList( iMapIndex );
 
 		// Remove any debris that is currently at this map location
-		if ( gpWorldLevelData[ iMapIndex ].pObjectHead != NULL )
+		if (gpWorldLevelData[iMapIndex].pObjectHead != nullptr)
 		{
 			RemoveAllObjectsOfTypeRange( iMapIndex, ANOTHERDEBRIS, FIRSTPOINTERS - 1 );
 		}
@@ -477,7 +475,7 @@ static void PasteStructureCommon(const UINT32 iMapIndex)
 
 	// Check with Structure Database (aka ODB) if we can put the object here!
 	const DB_STRUCTURE_REF* const sr = gTileDatabase[gTileTypeStartIndex[usUseObjIndex] + usUseIndex].pDBStructureRef;
-	if (!OkayToAddStructureToWorld(iMapIndex, 0, sr, INVALID_STRUCTURE_ID) && sr != NULL) return;
+	if (!OkayToAddStructureToWorld(iMapIndex, 0, sr, INVALID_STRUCTURE_ID) && sr != nullptr) return;
 
 	// Actual structure info is added by the functions below
 	AddStructToHead(iMapIndex, gTileTypeStartIndex[usUseObjIndex] + usUseIndex);
@@ -505,7 +503,7 @@ void PasteBanks(UINT32 const iMapIndex, BOOLEAN const fReplace)
 	{
 		fDoPaste = TRUE;
 
-		if (  gpWorldLevelData[ iMapIndex ].pStructHead != NULL )
+		if (gpWorldLevelData[iMapIndex].pStructHead != nullptr)
 		{
 				// CHECK IF THE SAME TILE IS HERE
 				if ( gpWorldLevelData[ iMapIndex ].pStructHead->usIndex == (UINT16)( gTileTypeStartIndex[ usUseObjIndex ] + usUseIndex ) )

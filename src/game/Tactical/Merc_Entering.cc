@@ -747,7 +747,7 @@ void HandleHeliDrop( )
 
 						// Ahh, but still delete the heli!
 						DeleteAniTile( gpHeli );
-						gpHeli = NULL;
+						gpHeli = nullptr;
 					}
 					else
 					{
@@ -757,7 +757,7 @@ void HandleHeliDrop( )
 
 						// Delete helicopter image!
 						DeleteAniTile( gpHeli );
-						gpHeli = NULL;
+						gpHeli = nullptr;
 						gfIgnoreScrolling = FALSE;
 
 						// Select our first guy

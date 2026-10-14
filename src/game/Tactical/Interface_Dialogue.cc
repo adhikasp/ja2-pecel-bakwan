@@ -121,8 +121,8 @@ static int const kTalkLabel[] = { 1, 2, 3, 4, 5, 0 };
 // GLOBAL NPC STRUCT
 NPC_DIALOGUE_TYPE gTalkPanel;
 BOOLEAN gfInTalkPanel = FALSE;
-SOLDIERTYPE *gpSrcSoldier  = NULL;
-SOLDIERTYPE *gpDestSoldier  = NULL;
+SOLDIERTYPE* gpSrcSoldier = nullptr;
+SOLDIERTYPE* gpDestSoldier = nullptr;
 UINT8 gubSrcSoldierProfile;
 static UINT8 gubNiceNPCProfile  = NO_PROFILE;
 static UINT8 gubNastyNPCProfile = NO_PROFILE;
@@ -213,7 +213,7 @@ void HandlePendingInitConv( )
 	if ( gfConversationPending )
 	{
 		// OK, if pending, remove and now call........
-		OBJECTTYPE* pPendingObject = (g_pending_approach_object.usItem != NONE) ? &g_pending_approach_object : NULL;
+		OBJECTTYPE* pPendingObject = (g_pending_approach_object.usItem != NONE) ? &g_pending_approach_object : nullptr;
 		InternalInitiateConversation(gpPendingDestSoldier, gpPendingSrcSoldier, gbPendingApproach,
 						g_pending_approach_record, pPendingObject);
 	}
@@ -260,7 +260,7 @@ static void InternalInitiateConversation(SOLDIERTYPE* const pDestSoldier, SOLDIE
 
 	// Say first line...
 	// CHRIS LOOK HERE
-	if ( gpSrcSoldier != NULL )
+	if (gpSrcSoldier != nullptr)
 	{
 		gubSrcSoldierProfile = gpSrcSoldier->ubProfile;
 	}
@@ -843,7 +843,7 @@ static BOOLEAN SourceSoldierPointerIsValidAndReachableForGive(SOLDIERTYPE* pGive
 		return( FALSE );
 	}
 
-	sAdjGridNo = FindAdjacentGridEx( pGiver, gpSrcSoldier->sGridNo, NULL, NULL, FALSE, FALSE );
+	sAdjGridNo = FindAdjacentGridEx(pGiver, gpSrcSoldier->sGridNo, nullptr, nullptr, FALSE, FALSE);
 	if ( sAdjGridNo == -1 )
 	{
 		return( FALSE );
@@ -890,7 +890,7 @@ static void HandleNPCTrigger(void);
 void HandleNPCTriggerNPC(UINT8 const ubTargetNPC, UINT8 const ubTargetRecord, BOOLEAN const fShowDialogueMenu, Approach const ubTargetApproach)
 {
 	SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(ubTargetNPC);
-	if ( pSoldier == NULL )
+	if (pSoldier == nullptr)
 	{
 		return;
 	}
@@ -976,7 +976,7 @@ static void HandleNPCTrigger(void)
 				// Converse another way!
 				ConverseFull(gubTargetNPC, NO_PROFILE, gubTargetApproach, gubTargetRecord, 0);
 			}
-			else if (gpSrcSoldier != NULL) // if we can, reinitialize menu
+			else if (gpSrcSoldier != nullptr) // if we can, reinitialize menu
 			{
 				InitiateConversationFull(gpDestSoldier, gpSrcSoldier, gubTargetApproach, gubTargetRecord, 0);
 			}
@@ -998,11 +998,11 @@ static void HandleNPCTrigger(void)
 			}
 			else
 			{
-				sPlayerGridNo = ClosestPC( pSoldier, NULL );
+				sPlayerGridNo = ClosestPC(pSoldier, nullptr);
 				if (sPlayerGridNo != NOWHERE )
 				{
 					SOLDIERTYPE* const player = WhoIsThere2(sPlayerGridNo, 0);
-					if (player != NULL)
+					if (player != nullptr)
 					{
 						InitiateConversationFull(pSoldier, player, gubTargetApproach, gubTargetRecord, 0);
 						return;
@@ -1030,7 +1030,7 @@ void HandleWaitTimerForNPCTrigger( )
 		{
 			guiPendingOverrideEvent = LU_ENDUILOCK;
 
-			UIHandleLUIEndLock( NULL );
+			UIHandleLUIEndLock(nullptr);
 
 			HandleNPCTrigger( );
 
@@ -1662,7 +1662,7 @@ void HandleNPCDoAction( UINT8 ubTargetNPC, UINT16 usActionCode, UINT8 ubQuoteNum
 				SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(ubTargetNPC);
 				if (pSoldier)
 				{
-					const INT16 sGridNo = ClosestPC(pSoldier, NULL);
+					const INT16 sGridNo = ClosestPC(pSoldier, nullptr);
 					if (sGridNo != NOWHERE)
 					{
 						// see if we are facing this person
@@ -1690,7 +1690,8 @@ void HandleNPCDoAction( UINT8 ubTargetNPC, UINT16 usActionCode, UINT8 ubQuoteNum
 					}
 					else
 					{
-						const INT16 sAdjustedGridNo = FindAdjacentGridEx(pSoldier, sGridNo, NULL, NULL, FALSE, FALSE);
+						const INT16 sAdjustedGridNo =
+							FindAdjacentGridEx(pSoldier, sGridNo, nullptr, nullptr, FALSE, FALSE);
 						if (sAdjustedGridNo != -1)
 						{
 							NPCGotoGridNo(PACOS, sAdjustedGridNo, ubQuoteNum);
@@ -1713,7 +1714,8 @@ void HandleNPCDoAction( UINT8 ubTargetNPC, UINT16 usActionCode, UINT8 ubQuoteNum
 					}
 					else
 					{
-						const INT16 sAdjustedGridNo = FindAdjacentGridEx(pSoldier, sGridNo, NULL, NULL, FALSE, FALSE);
+						const INT16 sAdjustedGridNo =
+							FindAdjacentGridEx(pSoldier, sGridNo, nullptr, nullptr, FALSE, FALSE);
 						if (sAdjustedGridNo != -1)
 						{
 							NPCGotoGridNo(PACOS, sAdjustedGridNo, ubQuoteNum);
@@ -1834,7 +1836,8 @@ void HandleNPCDoAction( UINT8 ubTargetNPC, UINT16 usActionCode, UINT8 ubQuoteNum
 				if (pSoldier)
 				{
 					DeleteTalkingMenu();
-					EVENT_SoldierGotHit(pSoldier, 1, 100, 10, pSoldier->bDirection, 320, NULL, FIRE_WEAPON_NO_SPECIAL, AIM_SHOT_TORSO, NOWHERE);
+					EVENT_SoldierGotHit(pSoldier, 1, 100, 10, pSoldier->bDirection, 320, nullptr,
+										FIRE_WEAPON_NO_SPECIAL, AIM_SHOT_TORSO, NOWHERE);
 				}
 				break;
 			}
@@ -2515,8 +2518,8 @@ void HandleNPCDoAction( UINT8 ubTargetNPC, UINT16 usActionCode, UINT8 ubQuoteNum
 					INT8  bMoneySlot;
 					INT8  bEmptySlot;
 
-					sNearestPC = ClosestPC( pSoldier, NULL );
-					SOLDIERTYPE* const pSoldier2 = (sNearestPC != NOWHERE ? WhoIsThere2(sNearestPC, 0) : NULL);
+					sNearestPC = ClosestPC(pSoldier, nullptr);
+					SOLDIERTYPE* const pSoldier2 = (sNearestPC != NOWHERE ? WhoIsThere2(sNearestPC, 0) : nullptr);
 
 					if (pSoldier2)
 					{
@@ -2740,7 +2743,7 @@ action_punch_pc:
 					for ( cnt = 0; cnt < 3; cnt++ )
 					{
 						const SOLDIERTYPE* const pTarget = WhoIsThere2(gsInterrogationGridNo[cnt], 0);
-						if (pTarget == NULL) continue;
+						if (pTarget == nullptr) continue;
 
 						pSoldier->uiPendingActionData4 = APPROACH_DONE_PUNCH_1;
 
@@ -3089,7 +3092,7 @@ action_punch_pc:
 				{
 					if (!pSoldier->bInSector || pSoldier->bTeam != CIV_TEAM || !pSoldier->bNeutral || pSoldier->bLife < OKLIFE)
 					{
-						pSoldier = NULL;
+						pSoldier = nullptr;
 					}
 				}
 
@@ -3098,11 +3101,11 @@ action_punch_pc:
 				{
 					if (!pSoldier2->bInSector || pSoldier2->bTeam != CIV_TEAM || !pSoldier2->bNeutral || pSoldier2->bLife < OKLIFE)
 					{
-						pSoldier2 = NULL;
+						pSoldier2 = nullptr;
 					}
 				}
 
-				if ( pSoldier == NULL && pSoldier2 == NULL )
+				if (pSoldier == nullptr && pSoldier2 == nullptr)
 				{
 					// uh oh
 					break;
@@ -3112,11 +3115,11 @@ action_punch_pc:
 				{
 					if( pSoldier->sGridNo == params->getGridNo(10343) )
 					{
-						pSoldier2 = NULL;
+						pSoldier2 = nullptr;
 					}
 					else if( pSoldier2->sGridNo == params->getGridNo(10343) )
 					{
-						pSoldier = NULL;
+						pSoldier = nullptr;
 					}
 				}
 
@@ -3125,11 +3128,11 @@ action_punch_pc:
 					// both doctors available... turn one off randomly
 					if ( Random( 2 ) )
 					{
-						pSoldier = NULL;
+						pSoldier = nullptr;
 					}
 					else
 					{
-						pSoldier2 = NULL;
+						pSoldier2 = nullptr;
 					}
 				}
 
@@ -3154,9 +3157,9 @@ action_punch_pc:
 					SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(ubTargetNPC);
 					if ( pSoldier )
 					{
-						SOLDIERTYPE* pSoldier2 = NULL;
+						SOLDIERTYPE* pSoldier2 = nullptr;
 
-						sNearestPC = ClosestPC( pSoldier, NULL );
+						sNearestPC = ClosestPC(pSoldier, nullptr);
 						if ( sNearestPC != NOWHERE )
 						{
 							pSoldier2 = WhoIsThere2(sNearestPC, 0);
@@ -3785,29 +3788,35 @@ static void StartDialogueMessageBox(UINT8 ubProfileID, UINT16 usMessageBoxType)
 			{
 				zTemp = st_format_printf(TacticalStr[ ESCORT_PROMPT ], gMercProfiles[ubProfileID].zNickname);
 			}
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack,
+						 nullptr);
 			break;
 		case NPC_ACTION_ASK_ABOUT_PAYING_RPC:
 		case NPC_ACTION_ASK_ABOUT_PAYING_RPC_WITH_DAILY_SALARY:
 		case NPC_ACTION_REDUCE_CONRAD_SALARY_CONDITIONS:
 			zTemp2 = ST::format("${}", gMercProfiles[ubProfileID].sSalary);
 			zTemp = st_format_printf(TacticalStr[ HIRE_PROMPT ], gMercProfiles[ubProfileID].zNickname, zTemp2);
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack,
+						 nullptr);
 			break;
 		case NPC_ACTION_DARREN_REQUESTOR:
 		case NPC_ACTION_FIGHT_AGAIN_REQUESTOR:
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[BOXING_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[BOXING_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+						 DialogueMessageBoxCallBack, nullptr);
 			break;
 		case NPC_ACTION_BUY_LEATHER_KEVLAR_VEST:
 			zTemp2 = ST::format("${}", GCM->getItem(LEATHER_JACKET_W_KEVLAR)->getPrice());
 			zTemp = st_format_printf(TacticalStr[ BUY_VEST_PROMPT ], GCM->getItem(LEATHER_JACKET_W_KEVLAR)->getName(), zTemp2);
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack,
+						 nullptr);
 			break;
 		case NPC_ACTION_PROMPT_PLAYER_TO_LIE:
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[YESNOLIE_STR], GAME_SCREEN, MSG_BOX_FLAG_YESNOLIE, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[YESNOLIE_STR], GAME_SCREEN, MSG_BOX_FLAG_YESNOLIE,
+						 DialogueMessageBoxCallBack, nullptr);
 			break;
 		case NPC_ACTION_MEDICAL_REQUESTOR_2:
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[FREE_MEDICAL_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[FREE_MEDICAL_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+						 DialogueMessageBoxCallBack, nullptr);
 			break;
 		case NPC_ACTION_MEDICAL_REQUESTOR:
 			iTemp = (INT32) CalcMedicalCost( ubProfileID );
@@ -3822,17 +3831,21 @@ static void StartDialogueMessageBox(UINT8 ubProfileID, UINT16 usMessageBoxType)
 			zTemp2 = ST::format("${}", iTemp);
 			zTemp = st_format_printf(TacticalStr[ PAY_MONEY_PROMPT ], zTemp2);
 
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack,
+						 nullptr);
 			break;
 		case NPC_ACTION_BUY_VEHICLE_REQUESTOR:
 			zTemp = st_format_printf(TacticalStr[PAY_MONEY_PROMPT], "$10000");
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zTemp, GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack,
+						 nullptr);
 			break;
 		case NPC_ACTION_TRIGGER_MARRY_DARYL_PROMPT:
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[MARRY_DARYL_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[MARRY_DARYL_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+						 DialogueMessageBoxCallBack, nullptr);
 			break;
 		case NPC_ACTION_KROTT_REQUESTOR:
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[SPARE_KROTT_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, DialogueMessageBoxCallBack, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[SPARE_KROTT_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+						 DialogueMessageBoxCallBack, nullptr);
 			break;
 		default:
 			break;
@@ -3865,8 +3878,8 @@ static void DialogueMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
 					{
 						// Mary might be alive, and if so we need to ensure two places
 						pSoldier = FindSoldierByProfileID(MARY);
-						if (pSoldier != NULL &&
-								NumberOfMercsOnPlayerTeam() > gTacticalStatus.Team[OUR_TEAM].bLastID - 3u)
+						if (pSoldier != nullptr &&
+							NumberOfMercsOnPlayerTeam() > gTacticalStatus.Team[OUR_TEAM].bLastID - 3u)
 						{
 							ScreenMsg( FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, TacticalStr[ CANNOT_RECRUIT_TEAM_FULL ] );
 							break;
@@ -3957,7 +3970,7 @@ static void DialogueMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
 			{
 				// He tried to lie.....
 				// Find the best conscious merc with a chance....
-				SOLDIERTYPE* pLier = NULL;
+				SOLDIERTYPE* pLier = nullptr;
 				FOR_EACH_IN_TEAM(s, OUR_TEAM)
 				{
 					if (s->bInSector &&
@@ -4120,8 +4133,8 @@ static void DoneFadeOutActionBasement(void)
 
 	// OK, once down here, adjust the above map with crate info....
 	gfTacticalTraversal = FALSE;
-	gpTacticalTraversalGroup = NULL;
-	gpTacticalTraversalChosenSoldier = NULL;
+	gpTacticalTraversalGroup = nullptr;
+	gpTacticalTraversalChosenSoldier = nullptr;
 
 	// Remove crate
 	SGPSector upstairs(10, 1);
@@ -4163,8 +4176,8 @@ static void DoneFadeOutActionLeaveBasement(void)
 	SetCurrentWorldSector(SGPSector(10, 1, 0));
 
 	gfTacticalTraversal = FALSE;
-	gpTacticalTraversalGroup = NULL;
-	gpTacticalTraversalChosenSoldier = NULL;
+	gpTacticalTraversalGroup = nullptr;
+	gpTacticalTraversalChosenSoldier = nullptr;
 
 	gFadeInDoneCallback = DoneFadeInActionLeaveBasement;
 
@@ -4220,7 +4233,7 @@ static BOOLEAN NPCOpenThing(SOLDIERTYPE* pSoldier, BOOLEAN fDoor)
 		pStructure = FindStructure( sStructGridNo, STRUCTURE_OPENABLE );
 	}
 
-	if ( pStructure == NULL )
+	if (pStructure == nullptr)
 	{
 		return( FALSE );
 	}
@@ -4240,7 +4253,7 @@ static BOOLEAN NPCOpenThing(SOLDIERTYPE* pSoldier, BOOLEAN fDoor)
 		pDoor->fLocked = FALSE;
 	}
 
-	sActionGridNo =  FindAdjacentGridEx( pSoldier, sStructGridNo, &ubDirection, NULL, FALSE, TRUE );
+	sActionGridNo = FindAdjacentGridEx(pSoldier, sStructGridNo, &ubDirection, nullptr, FALSE, TRUE);
 	if ( sActionGridNo == -1 )
 	{
 		return( FALSE );

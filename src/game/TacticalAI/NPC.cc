@@ -256,7 +256,7 @@ static void RevertToOriginalQuoteFile(UINT8 ubNPC)
 	{
 		delete[] gpNPCQuoteInfoArray[ubNPC];
 		gpNPCQuoteInfoArray[ubNPC] = gpBackupNPCQuoteInfoArray[ubNPC];
-		gpBackupNPCQuoteInfoArray[ubNPC] = NULL;
+		gpBackupNPCQuoteInfoArray[ubNPC] = nullptr;
 	}
 }
 
@@ -264,7 +264,7 @@ static void RevertToOriginalQuoteFile(UINT8 ubNPC)
 static void BackupOriginalQuoteFile(UINT8 ubNPC)
 {
 	gpBackupNPCQuoteInfoArray[ ubNPC ] = gpNPCQuoteInfoArray[ ubNPC ];
-	gpNPCQuoteInfoArray[ubNPC] = NULL;
+	gpNPCQuoteInfoArray[ubNPC] = nullptr;
 }
 
 static NPCQuoteInfo* EnsureQuoteFileLoaded(UINT8 const ubNPC)
@@ -1170,7 +1170,7 @@ static UINT8 NPCConsiderQuote(UINT8 const ubNPC, UINT8 const ubMerc, Approach co
 	}
 
 	// check time constraints on the quotes
-	if (pNPCProfile != NULL && pNPCQuoteInfo->ubFirstDay == MUST_BE_NEW_DAY)
+	if (pNPCProfile != nullptr && pNPCQuoteInfo->ubFirstDay == MUST_BE_NEW_DAY)
 	{
 		if (ubApproach != NPC_INITIATING_CONV)
 		{
@@ -1300,8 +1300,7 @@ void ResetOncePerConvoRecordsForAllNPCsInLoadedSector( void )
 		if (!p->isNPCorRPC()) continue;
 
 		ProfileID ubMercID = p->getID();
-		if (gMercProfiles[ubMercID].sSector == gWorldSector &&
-				gpNPCQuoteInfoArray[ubMercID] != NULL )
+		if (gMercProfiles[ubMercID].sSector == gWorldSector && gpNPCQuoteInfoArray[ubMercID] != nullptr)
 		{
 			ResetOncePerConvoRecordsForNPC(ubMercID);
 		}
@@ -1426,7 +1425,7 @@ void ConverseFull(UINT8 const ubNPC, UINT8 const ubMerc, Approach bApproach, UIN
 				if (uiDay > p.ubLastDateSpokenTo)
 				{
 					NPCConsiderTalking( ubNPC, ubMerc, APPROACH_SPECIAL_INITIAL_QUOTE, 0, pNPCQuoteInfoArray, &pQuotePtr, &ubRecordNum );
-					if (pQuotePtr != NULL)
+					if (pQuotePtr != nullptr)
 					{
 						// converse using this approach instead!
 						ReturnItemToPlayer(ubMerc, o);
@@ -1447,7 +1446,7 @@ void ConverseFull(UINT8 const ubNPC, UINT8 const ubMerc, Approach bApproach, UIN
 			{
 				// try special initial quote first
 				NPCConsiderTalking( ubNPC, ubMerc, APPROACH_SPECIAL_INITIAL_QUOTE, 0, pNPCQuoteInfoArray, &pQuotePtr, &ubRecordNum );
-				if (pQuotePtr != NULL)
+				if (pQuotePtr != nullptr)
 				{
 					// converse using this approach instead!
 					ReturnItemToPlayer(ubMerc, o);
@@ -1456,7 +1455,7 @@ void ConverseFull(UINT8 const ubNPC, UINT8 const ubMerc, Approach bApproach, UIN
 				}
 
 				NPCConsiderTalking( ubNPC, ubMerc, APPROACH_INITIAL_QUOTE, 0, pNPCQuoteInfoArray, &pQuotePtr, &ubRecordNum );
-				if (pQuotePtr != NULL)
+				if (pQuotePtr != nullptr)
 				{
 					// converse using this approach instead!
 					ReturnItemToPlayer(ubMerc, o);
@@ -1511,7 +1510,7 @@ void ConverseFull(UINT8 const ubNPC, UINT8 const ubMerc, Approach bApproach, UIN
 						if (uiDay > p.ubLastDateSpokenTo)
 						{
 							NPCConsiderTalking( ubNPC, ubMerc, APPROACH_SPECIAL_INITIAL_QUOTE, 0, pNPCQuoteInfoArray, &pQuotePtr, &ubRecordNum );
-							if (pQuotePtr != NULL)
+							if (pQuotePtr != nullptr)
 							{
 								// converse using this approach instead!
 								Converse(ubNPC, ubMerc, APPROACH_SPECIAL_INITIAL_QUOTE);
@@ -1528,7 +1527,7 @@ void ConverseFull(UINT8 const ubNPC, UINT8 const ubMerc, Approach bApproach, UIN
 					else
 					{
 						NPCConsiderTalking( ubNPC, ubMerc, APPROACH_INITIAL_QUOTE, 0, pNPCQuoteInfoArray, &pQuotePtr, &ubRecordNum );
-						if (pQuotePtr != NULL)
+						if (pQuotePtr != nullptr)
 						{
 							// converse using this approach instead!
 							Converse(ubNPC, ubMerc, APPROACH_INITIAL_QUOTE);
@@ -1547,7 +1546,7 @@ void ConverseFull(UINT8 const ubNPC, UINT8 const ubMerc, Approach bApproach, UIN
 					NPCConsiderTalking( ubNPC, ubMerc, bApproach, 0, pNPCQuoteInfoArray, &pQuotePtr, &ubRecordNum );
 					break;
 			}
-			if (pQuotePtr == NULL)
+			if (pQuotePtr == nullptr)
 			{
 				// say random everyday quote
 				// do NOT set last quote said!
@@ -1982,7 +1981,8 @@ INT16 NPCConsiderInitiatingConv(const SOLDIERTYPE* const pNPC)
 
 		/* what's the opinion required for the highest-opinion quote that we would
 		 * say to this merc */
-		const UINT8 ubTalkDesire = NPCConsiderTalking(pNPC->ubProfile, pMerc->ubProfile, NPC_INITIATING_CONV, 0, pNPCQuoteInfoArray, NULL, NULL);
+		const UINT8 ubTalkDesire = NPCConsiderTalking(pNPC->ubProfile, pMerc->ubProfile, NPC_INITIATING_CONV, 0,
+													  pNPCQuoteInfoArray, nullptr, nullptr);
 		if (ubTalkDesire == 0) continue;
 
 		if (ubTalkDesire > ubHighestTalkDesire)

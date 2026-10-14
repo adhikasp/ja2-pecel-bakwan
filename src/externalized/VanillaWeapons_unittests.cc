@@ -18,10 +18,10 @@
 TEST(Items, weaponsLoading)
 {
 	DefaultContentManager * cm = DefaultContentManagerUT::createDefaultCMForTesting();
-	ASSERT_TRUE(cm != NULL);
+	ASSERT_TRUE(cm != nullptr);
 	ASSERT_TRUE(cm->loadGameData());
-	EXPECT_TRUE(cm->getWeaponByName("MP5K") != NULL);
-	EXPECT_TRUE(cm->getWeapon(9 /* MP5K */) != NULL);
+	EXPECT_TRUE(cm->getWeaponByName("MP5K") != nullptr);
+	EXPECT_TRUE(cm->getWeapon(9 /* MP5K */) != nullptr);
 	EXPECT_EQ(cm->getWeaponByName("MP5K"), cm->getWeapon(9 /* MP5K */));
 	delete cm;
 }
@@ -70,12 +70,12 @@ TEST(Items, bug120_cawsDefaultMag)
 	GCM = cm;
 
 	const WeaponModel *caws = cm->getWeaponByName("CAWS");
-	ASSERT_TRUE(caws != NULL);
+	ASSERT_TRUE(caws != nullptr);
 
 	const MagazineModel* flechClip = cm->getMagazineByName("CLIPCAWS_10_FLECH");
 	const MagazineModel* sapClip = cm->getMagazineByName("CLIPCAWS_10_SAP");
-	ASSERT_TRUE(flechClip != NULL);
-	ASSERT_TRUE(sapClip != NULL);
+	ASSERT_TRUE(flechClip != nullptr);
+	ASSERT_TRUE(sapClip != nullptr);
 
 	EXPECT_EQ(DefaultMagazine(caws->getItemIndex()), flechClip->getItemIndex());
 
@@ -93,12 +93,12 @@ TEST(Items, bug120_spas15DefaultMag)
 	GCM = cm;
 
 	const WeaponModel *spas15 = cm->getWeaponByName("SPAS15");
-	ASSERT_TRUE(spas15 != NULL);
+	ASSERT_TRUE(spas15 != nullptr);
 
 	const MagazineModel* clipBuckshot = cm->getMagazineByName("CLIP12G_7_BUCKSHOT");
 	const MagazineModel* clip = cm->getMagazineByName("CLIP12G_7");
-	ASSERT_TRUE(clipBuckshot != NULL);
-	ASSERT_TRUE(clip != NULL);
+	ASSERT_TRUE(clipBuckshot != nullptr);
+	ASSERT_TRUE(clip != nullptr);
 
 	EXPECT_EQ(DefaultMagazine(spas15->getItemIndex()), clipBuckshot->getItemIndex());
 

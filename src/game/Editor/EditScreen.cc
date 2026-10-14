@@ -126,7 +126,7 @@ static BOOLEAN fHelpScreen = FALSE;
 
 BOOLEAN fDontUseRandom = FALSE;
 
-static LEVELNODE* gCursorNode = NULL;
+static LEVELNODE* gCursorNode = nullptr;
 
 static MusicMode giMusicMode = MUSIC_MAIN_MENU;
 
@@ -530,7 +530,7 @@ static void RemoveTempMouseCursorObject(void)
 	if ( iCurBankMapIndex < GRIDSIZE )
 	{
 		ForceRemoveStructFromTail( iCurBankMapIndex );
-		gCursorNode = NULL;
+		gCursorNode = nullptr;
 	}
 }
 
@@ -1257,7 +1257,7 @@ static void HandleKeyboardShortcuts(void)
 						ExtractAndUpdateDoorInfo();
 						KillDoorEditing();
 					}
-					else if (iCurrentTaskbar == TASK_MERCS && g_selected_merc != NULL)
+					else if (iCurrentTaskbar == TASK_MERCS && g_selected_merc != nullptr)
 						ExtractCurrentMercModeInfo( FALSE );
 					else if( iCurrentTaskbar == TASK_MAPINFO )
 						ExtractAndUpdateMapInfo();
@@ -1272,7 +1272,7 @@ static void HandleKeyboardShortcuts(void)
 				case SDLK_DELETE:
 					if( iCurrentTaskbar == TASK_ITEMS )
 						DeleteSelectedItem();
-					else if (g_selected_merc != NULL)
+					else if (g_selected_merc != nullptr)
 					{
 						if( gubCurrMercMode == MERC_INVENTORYMODE && gbCurrSelect != -1 )
 						{
@@ -2477,7 +2477,7 @@ catch (...) { return FALSE; }
 BOOLEAN RemoveLight(const GridNo pos)
 {
 	// Check all lights if any at this given position
-	const char* pLastLightName = NULL;
+	const char* pLastLightName = nullptr;
 	FOR_EACH_LIGHT_SPRITE(l)
 	{
 		if (MAPROWCOLTOPOS(l->iY, l->iX) == pos)
@@ -2493,7 +2493,7 @@ BOOLEAN RemoveLight(const GridNo pos)
 		}
 	}
 
-	if (pLastLightName == NULL) return FALSE;
+	if (pLastLightName == nullptr) return FALSE;
 
 	/* Assuming that the light naming convention doesn't change, then this
 	 * following conversion should work.  Basically, the radius values aren't
@@ -2597,13 +2597,13 @@ static void MapOptimize(void)
 			node = start = pMapTile->pLandStart;
 			head = pMapTile->pLandHead;
 
-			if ( start == NULL )
+			if ( start == nullptr )
 				node = start = head;
 
 			end = pMapTile->pLandTail;
 
 			fChangedHead = fChangedTail = fFound = FALSE;
-			while ( !fFound && node != NULL )
+			while ( !fFound && node != nullptr )
 			{
 				if ( gTileDatabase[node->usIndex].ubFullTile == 1 )
 					fFound = TRUE;
@@ -2629,14 +2629,14 @@ static void MapOptimize(void)
 */
 
 				// Now delete from the end to "node"
-				while( end != node && end != NULL )
+				while( end != node && end != nullptr )
 				{
 					fChangedTail = TRUE;
 					temp = end->pPrev;
 					delete end;
 					end = temp;
 					if ( end )
-						end->pNext = NULL;
+						end->pNext = nullptr;
 				}
 
 				if ( fChangedHead )
@@ -2675,7 +2675,7 @@ static BOOLEAN CheckForFences(void)
 	for ( usCheck = 0; usCheck < iNumOStructs2Selected; usCheck++ )
 	{
 		const TILE_ELEMENT* const T = TileElemFromTileType(pSelList[usCheck].uiObject);
-		if ( T->pDBStructureRef == NULL )
+		if (T->pDBStructureRef == nullptr)
 			fFence = FALSE;
 		else if ( !(T->pDBStructureRef->pDBStructure->fFlags & STRUCTURE_ANYFENCE) )
 			fFence = FALSE;
@@ -3326,7 +3326,7 @@ static void UpdateLastActionBeforeLeaving(void)
 {
 	if( iCurrentTaskbar == TASK_MERCS )
 		IndicateSelectedMerc( SELECT_NO_MERC );
-	SpecifyItemToEdit( NULL, -1 );
+	SpecifyItemToEdit(nullptr, -1);
 }
 
 

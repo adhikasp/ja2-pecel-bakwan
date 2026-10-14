@@ -136,7 +136,7 @@ BOOLEAN SetThisSectorAsPlayerControlled(const SGPSector& sMap, BOOLEAN fConteste
 			INT8 const mine_id = GetMineIndexForSector(sector);
 			if (mine_id != -1 && GetTotalLeftInMine(mine_id) > 0)
 			{
-				HandleMoraleEvent(NULL, MORALE_MINE_LIBERATED, sMap);
+				HandleMoraleEvent(nullptr, MORALE_MINE_LIBERATED, sMap);
 				HandleGlobalLoyaltyEvent(GLOBAL_LOYALTY_GAIN_MINE, sMap);
 			}
 

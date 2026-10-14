@@ -36,7 +36,7 @@
 
 INT16 sStatueGridNos[] = { 13829, 13830, 13669, 13670 };
 
-SOLDIERTYPE *gpKillerSoldier = NULL;
+SOLDIERTYPE* gpKillerSoldier = nullptr;
 INT16 gsGridNo;
 INT8 gbLevel;
 
@@ -404,7 +404,8 @@ void BeginHandleQueenBitchDeath( SOLDIERTYPE *pKillerSoldier, INT16 sGridNo, INT
 			//if (!s->bNeutral && s->bSide != Side::FRIENDLY)
 			{
 				gTacticalStatus.ubAttackBusyCount++;
-				EVENT_SoldierGotHit(s, 0, 10000, 0, s->bDirection, 320, NULL, FIRE_WEAPON_NO_SPECIAL, s->bAimShotLocation, NOWHERE);
+				EVENT_SoldierGotHit(s, 0, 10000, 0, s->bDirection, 320, nullptr, FIRE_WEAPON_NO_SPECIAL,
+									s->bAimShotLocation, NOWHERE);
 			}
 		}
 	}

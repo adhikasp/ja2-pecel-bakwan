@@ -20,8 +20,7 @@
 #include "ContentManager.h"
 #include "GameInstance.h"
 
-static ANITILE* pAniTileHead = NULL;
-
+static ANITILE* pAniTileHead = nullptr;
 
 static UINT16 SetFrameByDir(UINT16 frame, const ANITILE* const a)
 {
@@ -65,12 +64,12 @@ ANITILE* CreateAnimationTile(const ANITILE_PARAMS* const parms)
 
 	if (flags & ANITILE_EXISTINGTILE)
 	{
-		Assert(parms->zCachedFile == NULL);
+		Assert(parms->zCachedFile == nullptr);
 		l->pAniTile = a;
 	}
 	else
 	{
-		if (parms->zCachedFile != NULL)
+		if (parms->zCachedFile != nullptr)
 		{
 			cached_tile = GetCachedTile(parms->zCachedFile);
 			tile_index  = cached_tile + TILE_CACHE_START_INDEX;
@@ -156,14 +155,14 @@ ANITILE* CreateAnimationTile(const ANITILE_PARAMS* const parms)
 // Loop throug all ani tiles and remove...
 void DeleteAniTiles( )
 {
-	ANITILE *pAniNode			= NULL;
-	ANITILE *pNode				= NULL;
+	ANITILE* pAniNode = nullptr;
+	ANITILE* pNode = nullptr;
 
 	// LOOP THROUGH EACH NODE
 	// And call delete function...
 	pAniNode = pAniTileHead;
 
-	while( pAniNode != NULL )
+	while (pAniNode != nullptr)
 	{
 		pNode = pAniNode;
 		pAniNode = pAniNode->pNext;
@@ -252,14 +251,14 @@ void DeleteAniTile(ANITILE* const a)
 
 void UpdateAniTiles( )
 {
-	ANITILE *pAniNode			= NULL;
-	ANITILE *pNode				= NULL;
+	ANITILE* pAniNode = nullptr;
+	ANITILE* pNode = nullptr;
 	UINT32	uiClock				= GetJA2Clock( );
 
 	// LOOP THROUGH EACH NODE
 	pAniNode = pAniTileHead;
 
-	while( pAniNode != NULL )
+	while (pAniNode != nullptr)
 	{
 		pNode = pAniNode;
 		pAniNode = pAniNode->pNext;
@@ -342,7 +341,7 @@ void UpdateAniTiles( )
 									if (stunEffect && radius < stunEffect->radius) {
 										radius = stunEffect->radius;
 									}
-									SpreadEffect(pNode->sGridNo, radius, item, e->owner, FALSE, e->bLevel, NULL);
+									SpreadEffect(pNode->sGridNo, radius, item, e->owner, FALSE, e->bLevel, nullptr);
 								}
 								// Forfait any other animations this frame....
 								return;

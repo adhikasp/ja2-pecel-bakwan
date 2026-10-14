@@ -44,7 +44,7 @@ void SetDelayedTileWaiting( SOLDIERTYPE *pSoldier, INT16 sCauseGridNo, INT8 bVal
 		person = &GetMan(gpWorldLevelData[sCauseGridNo].ubReservedSoldierID);
 	}
 
-	if (person != NULL)
+	if (person != nullptr)
 	{
 		// if they are our own team members ( both )
 		if (person->bTeam == OUR_TEAM && pSoldier->bTeam == OUR_TEAM)
@@ -123,7 +123,7 @@ static INT8 TileIsClear(SOLDIERTYPE* pSoldier, INT8 bDirection, INT16 sGridNo, I
 	}
 
 	SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, bLevel);
-	if (tgt != NULL)
+	if (tgt != nullptr)
 	{
 		// If this us?
 		if (tgt != pSoldier)
@@ -546,7 +546,7 @@ void HandleNextTileWaiting(SOLDIERTYPE* const pSoldier)
 					// with person who is in the way?
 					// if either on a mission from god, or two AI guys not on stationary...
 					SOLDIERTYPE* const tgt = WhoIsThere2(pSoldier->sDelayedMovementCauseGridNo, pSoldier->bLevel);
-					if (tgt != NULL)
+					if (tgt != nullptr)
 					{
 						if (pSoldier->ubQuoteRecord != 0 ||
 							(pSoldier->bTeam != OUR_TEAM &&

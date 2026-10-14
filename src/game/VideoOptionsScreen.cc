@@ -507,7 +507,7 @@ ScreenID VideoOptionsScreenHandle()
 		EnterVideoOptions();
 		gfVideoScreenEntry = false;
 		RenderVideoOptions();
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 		InvalidateScreen();
 	}
 

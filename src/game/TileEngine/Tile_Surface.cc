@@ -60,7 +60,7 @@ try
 	}
 	else
 	{
-		pTileSurf->pAuxData = NULL;
+		pTileSurf->pAuxData = nullptr;
 	}
 
 	pTileSurf->vo                = hVObject.release();

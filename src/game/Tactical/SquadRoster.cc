@@ -166,7 +166,7 @@ void HandleMouseOverSoldierFaceForContMove(SOLDIERTYPE* pSoldier, BOOLEAN fOn)
 {
 	INT16 sGridNo;
 
-	if ( pSoldier == NULL )
+	if (pSoldier == nullptr)
 	{
 		return;
 	}
@@ -214,7 +214,7 @@ void HandleLocateSelectMerc(SOLDIERTYPE* const s, bool const force_select)
 {
 	if (!s->bActive) return;
 
-	if (gpItemPointer != NULL)
+	if (gpItemPointer != nullptr)
 	{
 		// ATE: Disable for feel purposes....
 		//return;
@@ -354,7 +354,7 @@ void SquadRosterCardClick(int const slot)
 	SOLDIERTYPE* const s = SquadRosterAt(slot);
 	if (!s || !s->bActive) return;
 
-	if (!gfInItemPickupMenu && gpItemPointer == NULL)
+	if (!gfInItemPickupMenu && gpItemPointer == nullptr)
 	{
 		if (s->uiStatusFlags & (SOLDIER_DRIVER | SOLDIER_PASSENGER))
 		{

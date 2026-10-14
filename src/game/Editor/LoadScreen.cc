@@ -825,7 +825,7 @@ invalid:
 
 static void InitErrorCatchDialog(void)
 {
-	DoMessageBox(MSG_BOX_BASIC_STYLE, gzErrorCatchString, EDIT_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, gzErrorCatchString, EDIT_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 	gfErrorCatch = FALSE;
 }
 
@@ -893,7 +893,7 @@ static ScreenID ProcessFileIO(void)
 			gbCurrentFileIOStatus = LOADING_MAP;
 			if( gfEditMode && iCurrentTaskbar == TASK_MERCS )
 				IndicateSelectedMerc( SELECT_NO_MERC );
-			SpecifyItemToEdit( NULL, -1 );
+			SpecifyItemToEdit(nullptr, -1);
 			return LOADSAVE_SCREEN;
 		case LOADING_MAP: //load map
 			DisableUndo();

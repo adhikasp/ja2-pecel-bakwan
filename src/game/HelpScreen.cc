@@ -1059,14 +1059,11 @@ static UINT16 RenderSpecificHelpScreen(void)
 static void GetHelpScreenTextPositions(UINT16* pusPosX, UINT16* pusPosY, UINT16* pusWidth)
 {
 	//if there are buttons
-	if( pusPosX != NULL )
-		*pusPosX = 0;
+	if (pusPosX != nullptr) *pusPosX = 0;
 
-	if( pusWidth != NULL )
-		*pusWidth = HLP_SCRN__WIDTH_OF_TEXT_BUFFER - 1 * HELP_SCREEN_MARGIN_SIZE;		//DEF was 2
+	if (pusWidth != nullptr) *pusWidth = HLP_SCRN__WIDTH_OF_TEXT_BUFFER - 1 * HELP_SCREEN_MARGIN_SIZE; //DEF was 2
 
-	if( pusPosY != NULL )
-		*pusPosY = 0;
+	if (pusPosY != nullptr) *pusPosY = 0;
 }
 
 
@@ -2160,11 +2157,9 @@ static void CalculateHeightAndPositionForHelpScreenScrollBox(INT32* piHeightOfSc
 		iTopPosScrollBox = (INT32)( dTemp +.5 ) + HLP_SCRN__SCROLL_POSY;
 	}
 
-	if( piHeightOfScrollBox != NULL )
-		*piHeightOfScrollBox = iSizeOfBox;
+	if (piHeightOfScrollBox != nullptr) *piHeightOfScrollBox = iSizeOfBox;
 
-	if( piTopOfScrollBox != NULL )
-		*piTopOfScrollBox = iTopPosScrollBox;
+	if (piTopOfScrollBox != nullptr) *piTopOfScrollBox = iTopPosScrollBox;
 }
 
 

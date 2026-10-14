@@ -28,7 +28,8 @@ const VehicleModel* VehicleModel::deserialize(const JsonValue &json, const ItemS
 	auto obj = json.toObject();
 	ST::string profile = obj.GetString("profile");
 	auto mercProfile = mercSystem->getMercProfileInfoByName(profile);
-	if (mercProfile == NULL) {
+	if (mercProfile == nullptr)
+	{
 		throw DataError(ST::format("'{}' does not refer to a valid profile", profile));
 	}
 	if (mercProfile->mercType != MercType::VEHICLE && mercProfile->mercType != MercType::NOT_USED) {

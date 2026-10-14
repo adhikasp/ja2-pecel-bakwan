@@ -987,7 +987,7 @@ BOOLEAN HasHisMineBeenProducingForPlayerForSomeTime( UINT8 ubMinerProfileId )
 INT8 GetIdOfMineForSector(const SGPSector& sector)
 {
 	auto mine = GCM->getMineForSector(sector);
-	if (mine != NULL)
+	if (mine != nullptr)
 	{
 		return mine->mineId;
 	}

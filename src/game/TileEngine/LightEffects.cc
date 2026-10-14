@@ -41,7 +41,7 @@ static LIGHTEFFECT* GetFreeLightEffect(void)
 	{
 		return &gLightEffectData[guiNumLightEffects++];
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -51,16 +51,16 @@ static void UpdateLightingSprite(LIGHTEFFECT* pLight)
 	ST::string LightName = ST::format("Light{}", pLight->bRadius);
 
 	// Delete old one if one exists...
-	if (pLight->light != NULL)
+	if (pLight->light != nullptr)
 	{
 		LightSpriteDestroy(pLight->light);
-		pLight->light = NULL;
+		pLight->light = nullptr;
 	}
 
 	// Effect light.....
 	LIGHT_SPRITE* const l = LightSpriteCreate(LightName);
 	pLight->light = l;
-	if (l == NULL)
+	if (l == nullptr)
 	{
 		// Could not light!
 		return;
@@ -74,13 +74,13 @@ static void UpdateLightingSprite(LIGHTEFFECT* pLight)
 LIGHTEFFECT* NewLightEffect(const INT16 sGridNo, UINT8 radius, UINT8 duration)
 {
 	LIGHTEFFECT* const l = GetFreeLightEffect();
-	if (l == NULL) return NULL;
+	if (l == nullptr) return nullptr;
 
 	*l = LIGHTEFFECT{};
 
 	// Set some values...
 	l->sGridNo            = sGridNo;
-	l->light              = NULL;
+	l->light = nullptr;
 	l->uiTimeOfLastUpdate = GetWorldTotalSeconds();
 	l->ubDuration = duration;
 	l->bRadius    = radius;
@@ -136,7 +136,7 @@ void DecayLightEffects(const UINT32 uiTime, const bool updateSightings)
 		if (fDelete)
 		{
 			l->fAllocated = FALSE;
-			if (l->light != NULL) LightSpriteDestroy(l->light);
+			if (l->light != nullptr) LightSpriteDestroy(l->light);
 		}
 
 		// Handle sight here....

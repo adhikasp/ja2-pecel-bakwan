@@ -206,7 +206,7 @@ void DrawUICursor()
 {
 	// The native HUD draws the cursor itself (marker, path, chip, pointer: NativeUI/TacticalCursor.cc) from the frame
 	// built here. What the pointer means is decided by Handle_UI (guiCurUICursor); only the drawing is native.
-	if (gpItemPointer != NULL)
+	if (gpItemPointer != nullptr)
 	{
 		// the item rides on the pointer; over the world it shows where it would land
 		if (WorldPointer::In() || IsPointerOnTacticalTouchUI())

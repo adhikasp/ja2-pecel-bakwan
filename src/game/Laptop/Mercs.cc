@@ -1470,7 +1470,7 @@ static void IncreaseMercRandomQuoteValue(UINT8 ubQuoteID, UINT8 ubValue)
 
 static void StopSpeckFromTalking(void)
 {
-	if (g_video_speck_face == NULL) return;
+	if (g_video_speck_face == nullptr) return;
 
 	//Stop speck from talking
 	ShutupaYoFace(g_video_speck_face);

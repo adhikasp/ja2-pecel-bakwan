@@ -52,7 +52,7 @@ const LoadingScreen* LoadingScreenModel::getScreenForSector(uint8_t sectorId, ui
 			return getByIndex(screenId);
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 const LoadingScreen* LoadingScreenModel::getByIndex(uint8_t index) const

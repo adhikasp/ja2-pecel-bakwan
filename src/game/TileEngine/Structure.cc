@@ -455,7 +455,8 @@ static BOOLEAN OkayToAddStructureToTile(INT16 const sBaseGridNo, INT16 const sCu
 	}
 
 	DB_STRUCTURE const* const pDBStructure = pDBStructureRef->pDBStructure;
-	for (STRUCTURE const* pExistingStructure = gpWorldLevelData[sGridNo].pStructureHead; pExistingStructure != NULL; pExistingStructure = pExistingStructure->pNext)
+	for (STRUCTURE const* pExistingStructure = gpWorldLevelData[sGridNo].pStructureHead; pExistingStructure != nullptr;
+		 pExistingStructure = pExistingStructure->pNext)
 	{
 		if (sCubeOffset != pExistingStructure->sCubeOffset) continue;
 
@@ -820,10 +821,10 @@ static void DeleteStructureFromTile(MAP_ELEMENT* const me, STRUCTURE* const s)
 	// put location pointer in tile
 	STRUCTURE* const next = s->pNext;
 	STRUCTURE* const prev = s->pPrev;
-	Assert((prev == NULL) == (me->pStructureHead == s));
-	Assert((next == NULL) == (me->pStructureTail == s));
-	*(prev != NULL ? &prev->pNext : &me->pStructureHead) = next;
-	*(next != NULL ? &next->pPrev : &me->pStructureTail) = prev;
+	Assert((prev == nullptr) == (me->pStructureHead == s));
+	Assert((next == nullptr) == (me->pStructureTail == s));
+	*(prev != nullptr ? &prev->pNext : &me->pStructureHead) = next;
+	*(next != nullptr ? &next->pPrev : &me->pStructureTail) = prev;
 
 	// only one allowed in a tile, so we are safe to do this
 	if (s->fFlags & STRUCTURE_OPENABLE) me->uiFlags &= ~MAPELEMENT_INTERACTIVETILE;
@@ -939,7 +940,7 @@ STRUCTURE* FindStructure(INT16 const sGridNo, StructureFlags const flags)
 {
 	for (STRUCTURE* i = gpWorldLevelData[sGridNo].pStructureHead;; i = i->pNext)
 	{
-		if (i == NULL || i->fFlags & flags) return i;
+		if (i == nullptr || i->fFlags & flags) return i;
 	}
 }
 
@@ -949,7 +950,7 @@ STRUCTURE* FindNextStructure(STRUCTURE const* const s, StructureFlags const flag
 	CHECKN(s);
 	for (STRUCTURE* i = s->pNext;; i = i->pNext)
 	{
-		if (i == NULL || i->fFlags & flags) return i;
+		if (i == nullptr || i->fFlags & flags) return i;
 	}
 }
 
@@ -958,7 +959,7 @@ STRUCTURE* FindStructureByID(const INT16 sGridNo, const UINT16 structure_id)
 {
 	for (STRUCTURE* i = gpWorldLevelData[sGridNo].pStructureHead;; i = i->pNext)
 	{
-		if (i == NULL || i->usStructureID == structure_id) return i;
+		if (i == nullptr || i->usStructureID == structure_id) return i;
 	}
 }
 
@@ -979,7 +980,7 @@ INT8 StructureHeight( STRUCTURE * pStructure )
 	INT8				bLoopZ;
 	INT8				bGreatestHeight = -1;
 
-	if (pStructure == NULL || pStructure->pShape == NULL)
+	if (pStructure == nullptr || pStructure->pShape == nullptr)
 	{
 		return( 0 );
 	}
@@ -1039,7 +1040,7 @@ INT8 GetTallestStructureHeight( INT16 sGridNo, BOOLEAN fOnRoof, BOOLEAN preferOp
 	}
 
 	pCurrent = gpWorldLevelData[sGridNo].pStructureHead;
-	while (pCurrent != NULL)
+	while (pCurrent != nullptr)
 	{
 		// Skip normal roof because it can have 3D shaped edge curbs making it impossible to target
 		// In case of FOV the roofs are irrelevant since it only cares about ground level
@@ -1065,7 +1066,7 @@ INT8 StructureBottomLevel( STRUCTURE * pStructure )
 	INT8				bLoopZ;
 	INT8				bLowestHeight = PROFILE_Z_SIZE;
 
-	if (pStructure == NULL || pStructure->pShape == NULL)
+	if (pStructure == nullptr || pStructure->pShape == nullptr)
 	{
 		return( 0 );
 	}
@@ -1457,13 +1458,13 @@ void AddZStripInfoToVObject(HVOBJECT const hVObject, STRUCTURE_FILE_REF const* c
 	if (pStructureFileRef->usNumberOfStructuresStored == 0) return;
 
 	BOOLEAN             fFound       = FALSE;
-	const DB_STRUCTURE* pDBStructure = NULL;
+	const DB_STRUCTURE* pDBStructure = nullptr;
 	for (UINT32 uiLoop = 0; uiLoop < pStructureFileRef->usNumberOfStructures; ++uiLoop)
 	{
 		const DB_STRUCTURE_REF* const pDBStructureRef = &pStructureFileRef->pDBStructureRef[uiLoop];
 		pDBStructure = pDBStructureRef->pDBStructure;
 		//if (pDBStructure != NULL && pDBStructure->ubNumberOfTiles > 1 && !(pDBStructure->fFlags & STRUCTURE_WALLSTUFF) )
-		if (pDBStructure != NULL && pDBStructure->ubNumberOfTiles > 1)
+		if (pDBStructure != nullptr && pDBStructure->ubNumberOfTiles > 1)
 		{
 			auto tiles = pDBStructureRef->Tiles();
 			for (UINT8 ubLoop2 = 1; ubLoop2 < tiles.size(); ++ubLoop2)
@@ -1479,7 +1480,7 @@ void AddZStripInfoToVObject(HVOBJECT const hVObject, STRUCTURE_FILE_REF const* c
 	}
 
 	// ATE: Make all corpses use z-strip info..
-	if (pDBStructure != NULL && pDBStructure->fFlags & STRUCTURE_CORPSE)
+	if (pDBStructure != nullptr && pDBStructure->fFlags & STRUCTURE_CORPSE)
 	{
 		fFound = TRUE;
 	}
@@ -1544,7 +1545,8 @@ void AddZStripInfoToVObject(HVOBJECT const hVObject, STRUCTURE_FILE_REF const* c
 		if (fCopyIntoVo && sStructIndex < pStructureFileRef->usNumberOfStructures)
 		{
 			const DB_STRUCTURE* const pDBStructure = pStructureFileRef->pDBStructureRef[sStructIndex].pDBStructure;
-			if (pDBStructure != NULL && (pDBStructure->ubNumberOfTiles > 1 || pDBStructure->fFlags & STRUCTURE_CORPSE))
+			if (pDBStructure != nullptr &&
+				(pDBStructure->ubNumberOfTiles > 1 || pDBStructure->fFlags & STRUCTURE_CORPSE))
 			//if (pDBStructure != NULL && pDBStructure->ubNumberOfTiles > 1 )
 			{
 				if (!(pDBStructure->fFlags & STRUCTURE_ANYDOOR) || pDBStructure->fFlags & STRUCTURE_GARAGEDOOR)
@@ -1696,7 +1698,7 @@ void AddZStripInfoToVObject(HVOBJECT const hVObject, STRUCTURE_FILE_REF const* c
 
 INT8 GetBlockingStructureInfo( INT16 sGridNo, INT8 bDir, INT8 bNextDir, INT8 bLevel, INT8 *pStructHeight, STRUCTURE ** ppTallestStructure, BOOLEAN fWallsBlock )
 {
-	STRUCTURE* pStructure = NULL; // XXX HACK000E
+	STRUCTURE* pStructure = nullptr; // XXX HACK000E
 	STRUCTURE* pCurrent;
 	INT16      sDesiredLevel;
 	BOOLEAN    fOKStructOnLevel = FALSE;
@@ -1714,14 +1716,14 @@ INT8 GetBlockingStructureInfo( INT16 sGridNo, INT8 bDir, INT8 bNextDir, INT8 bLe
 	pCurrent =  gpWorldLevelData[sGridNo].pStructureHead;
 
 	// If no struct, return
-	if ( pCurrent == NULL )
+	if (pCurrent == nullptr)
 	{
 		(*pStructHeight) = StructureHeight( pCurrent );
-		(*ppTallestStructure) = NULL;
+		(*ppTallestStructure) = nullptr;
 		return( NOTHING_BLOCKING );
 	}
 
-	while (pCurrent != NULL)
+	while (pCurrent != nullptr)
 	{
 		// Check level!
 		if (pCurrent->sCubeOffset == sDesiredLevel )
@@ -1827,7 +1829,7 @@ INT8 GetBlockingStructureInfo( INT16 sGridNo, INT8 bDir, INT8 bNextDir, INT8 bLe
 	else
 	{
 		(*pStructHeight) = 0;
-		(*ppTallestStructure) = NULL;
+		(*ppTallestStructure) = nullptr;
 		return( NOTHING_BLOCKING );
 	}
 }

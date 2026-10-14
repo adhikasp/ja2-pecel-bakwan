@@ -41,9 +41,9 @@ static BOOLEAN FindAutobandageClimbPoint(INT16 sDesiredGridNo, BOOLEAN fClimbUp)
 	for ( ubLoop = 0; ubLoop < ubNumClimbSpots; ubLoop++ )
 	{
 		const SOLDIERTYPE* const up_there   = WhoIsThere2(pBuilding->sUpClimbSpots[ubLoop],   1);
-		if (up_there   != NULL && !CanCharacterAutoBandageTeammate(up_there))   continue;
+		if (up_there != nullptr && !CanCharacterAutoBandageTeammate(up_there)) continue;
 		const SOLDIERTYPE* const down_there = WhoIsThere2(pBuilding->sDownClimbSpots[ubLoop], 0);
-		if (down_there != NULL && !CanCharacterAutoBandageTeammate(down_there)) continue;
+		if (down_there != nullptr && !CanCharacterAutoBandageTeammate(down_there)) continue;
 		return( TRUE );
 	}
 
@@ -94,7 +94,7 @@ static BOOLEAN FullPatientCheck(const SOLDIERTYPE* const pPatient)
 
 BOOLEAN CanAutoBandage( BOOLEAN fDoFullCheck )
 {
-	static const SOLDIERTYPE* soldier_for_full_check = NULL;
+	static const SOLDIERTYPE* soldier_for_full_check = nullptr;
 
 	// returns false if we should stop being in auto-bandage mode
 	UINT8					ubMedics = 0, ubPatients = 0;
@@ -124,7 +124,7 @@ BOOLEAN CanAutoBandage( BOOLEAN fDoFullCheck )
 			ubPatients++;
 			if (fDoFullCheck)
 			{
-				if (soldier_for_full_check == NULL)
+				if (soldier_for_full_check == nullptr)
 				{
 					// do this guy NEXT time around
 					soldier_for_full_check = pSoldier;
@@ -140,7 +140,7 @@ BOOLEAN CanAutoBandage( BOOLEAN fDoFullCheck )
 					}
 					// set soldier for full check to NULL; will be set to someone later in loop, or to
 					// the first guy on the next pass
-					soldier_for_full_check = NULL;
+					soldier_for_full_check = nullptr;
 				}
 			}
 		}
@@ -201,7 +201,7 @@ static INT8 FindBestPatient(SOLDIERTYPE* pSoldier, BOOLEAN* pfDoClimb)
 	INT16						bBestPriority = 0;
 	INT16						sPatientGridNo;
 	INT16						sShortestPath = 1000, sPathCost, sOtherMedicPathCost;
-	SOLDIERTYPE *		pBestPatient = NULL;
+	SOLDIERTYPE* pBestPatient = nullptr;
 	INT8						bPatientPriority;
 	INT16						sClimbGridNo, sBestClimbGridNo = NOWHERE, sShortestClimbPath = 1000;
 	BOOLEAN					fClimbingNecessary;
@@ -240,7 +240,8 @@ static INT8 FindBestPatient(SOLDIERTYPE* pSoldier, BOOLEAN* pfDoClimb)
 				{
 
 					sPatientGridNo = pPatient->sGridNo;
-					INT16 sAdjacentGridNo = FindAdjacentGridEx(pSoldier, sPatientGridNo, NULL, NULL, FALSE, FALSE);
+					INT16 sAdjacentGridNo =
+						FindAdjacentGridEx(pSoldier, sPatientGridNo, nullptr, nullptr, FALSE, FALSE);
 					if ( sAdjacentGridNo == -1 && gAnimControl[ pPatient->usAnimState ].ubEndHeight == ANIM_PRONE )
 					{
 						// prone; could be the base tile is inaccessible but the rest isn't...
@@ -250,7 +251,8 @@ static INT8 FindBestPatient(SOLDIERTYPE* pSoldier, BOOLEAN* pfDoClimb)
 							if (WhoIsThere2(sPatientGridNo, pPatient->bLevel) == pPatient)
 							{
 								// patient is also here, try this location
-								sAdjacentGridNo = FindAdjacentGridEx(pSoldier, sPatientGridNo, NULL, NULL, FALSE, FALSE);
+								sAdjacentGridNo =
+									FindAdjacentGridEx(pSoldier, sPatientGridNo, nullptr, nullptr, FALSE, FALSE);
 								if ( sAdjacentGridNo != -1 )
 								{
 									break;
@@ -274,11 +276,12 @@ static INT8 FindBestPatient(SOLDIERTYPE* pSoldier, BOOLEAN* pfDoClimb)
 						{
 							// we can get there... can anyone else?
 							SOLDIERTYPE* const pOtherMedic = pPatient->auto_bandaging_medic;
-							if (pOtherMedic != NULL && pOtherMedic != pSoldier)
+							if (pOtherMedic != nullptr && pOtherMedic != pSoldier)
 							{
 								// only switch to this patient if our distance is closer than
 								// the other medic's
-								const INT16 sOtherAdjacentGridNo = FindAdjacentGridEx(pOtherMedic, sPatientGridNo, NULL, NULL, FALSE, FALSE);
+								const INT16 sOtherAdjacentGridNo =
+									FindAdjacentGridEx(pOtherMedic, sPatientGridNo, nullptr, nullptr, FALSE, FALSE);
 								if (sOtherAdjacentGridNo != -1)
 								{
 
@@ -342,7 +345,7 @@ static INT8 FindBestPatient(SOLDIERTYPE* pSoldier, BOOLEAN* pfDoClimb)
 
 	if (pBestPatient)
 	{
-		if (pBestPatient->auto_bandaging_medic != NULL)
+		if (pBestPatient->auto_bandaging_medic != nullptr)
 		{
 			// cancel that medic
 			CancelAIAction(pBestPatient->auto_bandaging_medic);
@@ -377,8 +380,7 @@ INT8 DecideAutoBandage( SOLDIERTYPE * pSoldier )
 	INT8					bSlot;
 	BOOLEAN				fDoClimb;
 
-
-	if (pSoldier->bMedical == 0 || pSoldier->service_partner != NULL)
+	if (pSoldier->bMedical == 0 || pSoldier->service_partner != nullptr)
 	{
 		// don't/can't make decision
 		return( AI_ACTION_NONE );

@@ -6,7 +6,7 @@
 #include "Text.h"
 #include "Logger.h"
 
-STRATEGICEVENT									*gpEventList = NULL;
+STRATEGICEVENT* gpEventList = nullptr;
 
 BOOLEAN gfPreventDeletionOfAnyEvent = FALSE;
 static BOOLEAN gfEventDeletionPending = FALSE;
@@ -75,7 +75,7 @@ void ProcessPendingGameEvents(UINT32 uiAdjustment, const UINT8 ubWarpCode)
 
 	//While we have events inside the time range to be updated, process them...
 	curr = gpEventList;
-	prev = NULL; //prev only used when warping time to target time.
+	prev = nullptr; //prev only used when warping time to target time.
 	while( !gfTimeInterrupt && curr && curr->uiTimeStamp <= guiGameClock + uiAdjustment )
 	{
 		fDeleteEvent = FALSE;
@@ -139,7 +139,7 @@ void ProcessPendingGameEvents(UINT32 uiAdjustment, const UINT8 ubWarpCode)
 				gpEventList = gpEventList->next;
 				delete curr;
 				curr = gpEventList;
-				prev = NULL;
+				prev = nullptr;
 			}
 			else
 			{

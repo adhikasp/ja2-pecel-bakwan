@@ -654,7 +654,7 @@ static const AttachmentInfoStruct* GetAttachmentInfo(const UINT16 usItem)
 	{
 		if (ai.usItem == usItem) return &ai;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -1353,7 +1353,7 @@ BOOLEAN ReloadGun( SOLDIERTYPE * pSoldier, OBJECTTYPE * pGun, OBJECTTYPE * pAmmo
 
 BOOLEAN EmptyWeaponMagazine( OBJECTTYPE * pWeapon, OBJECTTYPE *pAmmo )
 {
-	CHECKF( pAmmo != NULL );
+	CHECKF(pAmmo != nullptr);
 
 	if ( pWeapon->ubGunShotsLeft > 0 )
 	{
@@ -1406,7 +1406,7 @@ INT8 FindAmmoToReload( const SOLDIERTYPE * pSoldier, INT8 bWeaponIn, INT8 bExclu
 	const OBJECTTYPE *pObj;
 	INT8 bSlot;
 
-	if (pSoldier == NULL)
+	if (pSoldier == nullptr)
 	{
 		return NO_SLOT;
 	}
@@ -2467,7 +2467,8 @@ void CreateKeyObject(OBJECTTYPE* const pObj, UINT8 const ubNumberOfKeys, UINT8 c
 {
 	auto keyId = LockTable[ubKeyID].usKeyItem;
 	auto item = GCM->getKeyItemForKeyId(keyId);
-	if (item == NULL) {
+	if (item == nullptr)
+	{
 		throw std::runtime_error(ST::format("Could not find key item for key id `{}` when creating key object", keyId).to_std_string());
 	}
 	CreateItems(item->getItemIndex(), 100, ubNumberOfKeys, pObj);
@@ -2912,7 +2913,7 @@ BOOLEAN RemoveAttachment( OBJECTTYPE * pObj, INT8 bAttachPos, OBJECTTYPE * pNewO
 	}
 
 	// if pNewObj is passed in NULL, then we just delete the attachment
-	if (pNewObj != NULL)
+	if (pNewObj != nullptr)
 	{
 		CreateItem( pObj->usAttachItem[bAttachPos], pObj->bAttachStatus[bAttachPos], pNewObj );
 	}
@@ -2985,7 +2986,7 @@ BOOLEAN PlaceObjectInSoldierProfile( UINT8 ubProfile, OBJECTTYPE *pObject )
 	for (bLoop = POCK1POS; bLoop <= POCK12POS; bLoop++)
 	{
 		if ( gMercProfiles[ ubProfile ].bInvNumber[ bLoop ] != 0 ) continue;
-		if ( pSoldier != NULL && pSoldier->inv[ bLoop ].usItem != NOTHING ) continue;
+		if (pSoldier != nullptr && pSoldier->inv[bLoop].usItem != NOTHING) continue;
 		if ( GCM->getItem(usItem)->getItemClass() != IC_MONEY &&
 			!CanItemFitInPosition( pSoldier, pObject, bLoop, FALSE ) )
 		{
@@ -3014,7 +3015,7 @@ BOOLEAN PlaceObjectInSoldierProfile( UINT8 ubProfile, OBJECTTYPE *pObject )
 	{
 		// ATE: Manage soldier pointer as well....
 		// Do we have a valid profile?
-		if ( pSoldier != NULL )
+		if (pSoldier != nullptr)
 		{
 			// OK, place in soldier...
 			if ( usItem == MONEY )
@@ -3078,7 +3079,7 @@ BOOLEAN RemoveObjectFromSoldierProfile( UINT8 ubProfile, UINT16 usItem )
 	SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(ubProfile);
 
 	// Do we have a valid profile?
-	if ( pSoldier != NULL )
+	if (pSoldier != nullptr)
 	{
 		// Remove item...
 		RemoveInvObject( pSoldier, usItem );
@@ -3657,7 +3658,7 @@ void ActivateXRayDevice( SOLDIERTYPE * pSoldier )
 				tgt->xrayed_by          == pSoldier)
 		{
 			tgt->ubMiscSoldierFlags &= ~SOLDIER_MISC_XRAYED;
-			tgt->xrayed_by           = NULL;
+			tgt->xrayed_by = nullptr;
 		}
 	}
 	// now turn on xray for anyone within range
@@ -3690,7 +3691,7 @@ void TurnOffXRayEffects( SOLDIERTYPE * pSoldier )
 			tgt->xrayed_by == pSoldier)
 		{
 			tgt->ubMiscSoldierFlags &= ~SOLDIER_MISC_XRAYED;
-			tgt->xrayed_by           = NULL;
+			tgt->xrayed_by = nullptr;
 		}
 	}
 	pSoldier->uiXRayActivatedTime = 0;

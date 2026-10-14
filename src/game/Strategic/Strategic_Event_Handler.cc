@@ -116,8 +116,8 @@ void BobbyRayPurchaseEventCallback(const UINT8 ubOrderID)
 	const BOOLEAN fSectorLoaded =
 		CloseCrate(dest->deliverySector, dest->deliverySectorGridNo);
 
-	OBJECTTYPE* pObject       = NULL;
-	OBJECTTYPE* pStolenObject = NULL;
+	OBJECTTYPE* pObject = nullptr;
+	OBJECTTYPE* pStolenObject = nullptr;
 	if (!fSectorLoaded) // if we are NOT currently in the right sector
 	{
 		//build an array of objects to be added
@@ -770,10 +770,8 @@ void HandleEarlyMorningEvents( void )
 
 	// stop moving the truck if Hamous is dead!!
 	// stop moving them if the player has the truck or Hamous is hired!
-	if (gMercProfiles[HAMOUS].bLife > 0 &&
-			FindSoldierByProfileIDOnPlayerTeam(HAMOUS)        == NULL &&
-			FindSoldierByProfileIDOnPlayerTeam(PROF_ICECREAM) == NULL &&
-			gWorldSector != gMercProfiles[HAMOUS].sSector)
+	if (gMercProfiles[HAMOUS].bLife > 0 && FindSoldierByProfileIDOnPlayerTeam(HAMOUS) == nullptr &&
+		FindSoldierByProfileIDOnPlayerTeam(PROF_ICECREAM) == nullptr && gWorldSector != gMercProfiles[HAMOUS].sSector)
 	{
 		// ok, HAMOUS's sector not loaded, so time to move!
 		// might be same sector as before, if so, oh well!
@@ -941,7 +939,7 @@ static void DropOffItemsInDestination(UINT8 ubOrderNum, const ShippingDestinatio
 {
 	OBJECTTYPE		Object;
 	UINT32	uiCount = 0;
-	OBJECTTYPE	*pObject=NULL;
+	OBJECTTYPE* pObject = nullptr;
 	UINT16	usNumberOfItems=0, usItem;
 	UINT8		ubItemsDelivered, ubTempNumItems;
 	UINT32	i;
@@ -1009,7 +1007,7 @@ static void DropOffItemsInDestination(UINT8 ubOrderNum, const ShippingDestinatio
 		//The item are to be added to the Top part of Drassen, grid loc's  10112, 9950
 		AddItemsToUnLoadedSector(shippingDest->deliverySector, shippingDest->deliverySectorGridNo, uiCount, pObject, 0, 0, 0, INVISIBLE);
 		delete[] pObject;
-		pObject = NULL;
+		pObject = nullptr;
 	}
 
 	//mark that the shipment has arrived

@@ -581,7 +581,7 @@ BOOLEAN CanSoldierReachGridNoInGivenTileLimit( SOLDIERTYPE *pSoldier, INT16 sGri
 		return( FALSE );
 	}
 
-	sActionGridNo = FindAdjacentGridEx(pSoldier, sGridNo, NULL, NULL, FALSE, FALSE);
+	sActionGridNo = FindAdjacentGridEx(pSoldier, sGridNo, nullptr, nullptr, FALSE, FALSE);
 
 	if ( sActionGridNo == -1 )
 	{
@@ -984,12 +984,12 @@ static void AddSoldierToSectorGridNo(SOLDIERTYPE* const s, INT16 const sGridNo, 
 BOOLEAN IsMercOnTeam(UINT8 ubMercID)
 {
 	const SOLDIERTYPE* const s = FindSoldierByProfileIDOnPlayerTeam(ubMercID);
-	return s != NULL;
+	return s != nullptr;
 }
 
 
 BOOLEAN IsMercOnTeamAndInOmertaAlreadyAndAlive(UINT8 ubMercID)
 {
 	const SOLDIERTYPE* const s = FindSoldierByProfileIDOnPlayerTeam(ubMercID);
-	return s != NULL && s->bAssignment != IN_TRANSIT && s->bLife > 0;
+	return s != nullptr && s->bAssignment != IN_TRANSIT && s->bLife > 0;
 }

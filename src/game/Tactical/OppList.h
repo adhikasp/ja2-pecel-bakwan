@@ -6,7 +6,7 @@
 
 
 // For RadioSightings() parameter about
-#define EVERYBODY						NULL
+#define EVERYBODY nullptr
 
 #define MAX_MISC_NOISE_DURATION				12 // max dur for VERY loud NOBODY noises
 

@@ -41,9 +41,9 @@ static AILIST* gpFirstAIListEntry;
 
 static void DeleteAIListEntry(AILIST* pEntry)
 {
-	pEntry->soldier   = NULL;
+	pEntry->soldier = nullptr;
 	pEntry->bPriority = 0;
-	pEntry->pNext     = NULL;
+	pEntry->pNext = nullptr;
 }
 
 

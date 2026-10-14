@@ -66,7 +66,7 @@ static inline SOLDIERTYPE* LatestInterruptGuy(void)
 #define INTERRUPTS_OVER		(gubOutOfTurnPersons == 1)
 
 BOOLEAN gfHiddenInterrupt = FALSE;
-static SOLDIERTYPE* gLastInterruptedGuy = NULL;
+static SOLDIERTYPE* gLastInterruptedGuy = nullptr;
 
 extern SightFlags gubSightFlags;
 
@@ -113,7 +113,7 @@ void StartPlayerTeamTurn( BOOLEAN fDoBattleSnd, BOOLEAN fEnteringCombatMode )
 	if ( gTacticalStatus.uiFlags & INCOMBAT )
 	{
 		SOLDIERTYPE* sel = GetSelectedMan();
-		if (sel != NULL)
+		if (sel != nullptr)
 		{
 			// Check if this guy is able to be selected....
 			if (sel->bLife < OKLIFE)
@@ -123,7 +123,7 @@ void StartPlayerTeamTurn( BOOLEAN fDoBattleSnd, BOOLEAN fEnteringCombatMode )
 			}
 
 			// Slide to selected guy...
-			if (sel != NULL)
+			if (sel != nullptr)
 			{
 				SlideTo(sel, SETLOCATOR);
 
@@ -179,7 +179,7 @@ static void FreezeInterfaceForEnemyTurn(void)
 	guiPendingOverrideEvent = LU_BEGINUILOCK;
 
 	// Remove any UI messages!
-	if (g_ui_message_overlay != NULL)
+	if (g_ui_message_overlay != nullptr)
 	{
 		EndUIMessage( );
 	}
@@ -379,7 +379,7 @@ void BeginTeamTurn( UINT8 ubTeam )
 			if ( BuildAIListForTeam( ubTeam ) )
 			{
 				SOLDIERTYPE* const s = RemoveFirstAIListEntry();
-				if (s != NULL)
+				if (s != nullptr)
 				{
 					// Dirty panel interface!
 					fInterfacePanelDirty = DIRTYLEVEL2;
@@ -558,7 +558,7 @@ static void StartInterrupt(void)
 			// now LatestInterruptGuy() is the guy before the previous
 			Interrupter = LatestInterruptGuy();
 
-			if (Interrupter == NULL) // previously emptied slot!
+			if (Interrupter == nullptr) // previously emptied slot!
 			{
 				continue;
 			}
@@ -649,7 +649,7 @@ static void StartInterrupt(void)
 			REMOVE_LATEST_INTERRUPT_GUY();
 			// now LatestInterruptGuy() is the guy before the previous
 			Interrupter = LatestInterruptGuy();
-			if (Interrupter == NULL) // previously emptied slot!
+			if (Interrupter == nullptr) // previously emptied slot!
 			{
 				continue;
 			}
@@ -836,7 +836,7 @@ static void EndInterrupt(BOOLEAN fMarkInterruptOccurred)
 				HandleTacticalUI( );
 
 				SOLDIERTYPE* const sel = GetSelectedMan();
-				if (sel != NULL)
+				if (sel != nullptr)
 				{
 					SlideTo(sel, SETLOCATOR);
 
@@ -901,7 +901,7 @@ static void EndInterrupt(BOOLEAN fMarkInterruptOccurred)
 					}
 
 					SOLDIERTYPE* const s = RemoveFirstAIListEntry();
-					if (s != NULL)
+					if (s != nullptr)
 					{
 						fFound = TRUE;
 						StartNPCAI(*s);
@@ -943,11 +943,11 @@ BOOLEAN StandardInterruptConditionsMet(const SOLDIERTYPE* const pSoldier, const 
 		return( FALSE );
 	}
 
-	if (pOpponent == NULL)
+	if (pOpponent == nullptr)
 	{
 		// no opponent, so controller of 'ptr' makes the call instead
 		// ALEX
-		if (gWhoThrewRock == NULL)
+		if (gWhoThrewRock == nullptr)
 		{
 			return(FALSE);
 		}
@@ -1043,7 +1043,7 @@ BOOLEAN StandardInterruptConditionsMet(const SOLDIERTYPE* const pSoldier, const 
 	ubMinPtsNeeded = AP_CHANGE_FACING;
 
 	// if the opponent is SOMEBODY
-	if (pOpponent != NULL)
+	if (pOpponent != nullptr)
 	{
 		// if the soldiers are on the same side
 		if (pSoldier->bSide == pOpponent->bSide)
@@ -1243,7 +1243,7 @@ INT8 CalcInterruptDuelPts(const SOLDIERTYPE* const pSoldier, const SOLDIERTYPE* 
 		bPoints -= 2;
 	}
 
-	if (pSoldier->service_partner != NULL)
+	if (pSoldier->service_partner != nullptr)
 	{
 		// distracted by being bandaged/doing bandaging
 		bPoints -= 2;
@@ -1356,7 +1356,7 @@ static void DeleteFromIntList(UINT8 ubIndex, BOOLEAN fCommunicate)
 	}
 
 	// either way, whack the last entry to NOBODY and decrement the list size
-	gOutOfTurnOrder[gubOutOfTurnPersons] = NULL;
+	gOutOfTurnOrder[gubOutOfTurnPersons] = nullptr;
 	gubOutOfTurnPersons--;
 }
 

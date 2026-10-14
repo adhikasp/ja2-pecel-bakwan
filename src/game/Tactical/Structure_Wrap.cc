@@ -11,7 +11,7 @@
 
 BOOLEAN	IsRoofPresentAtGridno( INT16 sGridNo )
 {
-	return FindStructure(sGridNo, STRUCTURE_ROOF) != NULL;
+	return FindStructure(sGridNo, STRUCTURE_ROOF) != nullptr;
 }
 
 
@@ -93,7 +93,7 @@ BOOLEAN IsDoorVisibleAtGridNo( INT16 sGridNo )
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_ANYDOOR );
 
-	if ( pStructure != NULL )
+	if (pStructure != nullptr)
 	{
 		// Check around based on orientation
 		if (pStructure->ubWallOrientation & ORIENT_LEFT)
@@ -240,12 +240,11 @@ static STRUCTURE* FindCuttableWireFenceAtGridNo(INT16 sGridNo)
 	STRUCTURE * pStructure;
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_WIREFENCE );
-	if (pStructure != NULL && pStructure->ubWallOrientation != ORIENT_NONE &&
-		!(pStructure->fFlags & STRUCTURE_OPEN))
+	if (pStructure != nullptr && pStructure->ubWallOrientation != ORIENT_NONE && !(pStructure->fFlags & STRUCTURE_OPEN))
 	{
 		return( pStructure );
 	}
-	return( NULL );
+	return (nullptr);
 }
 
 BOOLEAN CutWireFence( INT16 sGridNo )
@@ -268,7 +267,7 @@ BOOLEAN CutWireFence( INT16 sGridNo )
 
 BOOLEAN IsCuttableWireFenceAtGridNo( INT16 sGridNo )
 {
-	return( FindCuttableWireFenceAtGridNo( sGridNo ) != NULL );
+	return (FindCuttableWireFenceAtGridNo(sGridNo) != nullptr);
 }
 
 
@@ -276,9 +275,9 @@ UINT8 IsRepairableStructAtGridNo(const INT16 sGridNo, SOLDIERTYPE** const tgt)
 {
 	// OK, first look for a vehicle....
 	SOLDIERTYPE* const s = WhoIsThere2(sGridNo, 0);
-	if (tgt != NULL) *tgt = s;
+	if (tgt != nullptr) *tgt = s;
 
-	if (s != NULL && s->uiStatusFlags & SOLDIER_VEHICLE) return 2;
+	if (s != nullptr && s->uiStatusFlags & SOLDIER_VEHICLE) return 2;
 	// Then for over a robot....
 
 	return( FALSE );
@@ -289,7 +288,7 @@ SOLDIERTYPE* GetRefuelableStructAtGridNo(INT16 sGridNo)
 {
 	// OK, first look for a vehicle....
 	SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, 0);
-	return tgt != NULL && tgt->uiStatusFlags & SOLDIER_VEHICLE ? tgt : NULL;
+	return tgt != nullptr && tgt->uiStatusFlags & SOLDIER_VEHICLE ? tgt : nullptr;
 }
 
 INT16 FindDoorAtGridNoOrAdjacent( INT16 sGridNo )
@@ -329,7 +328,7 @@ INT16 FindDoorAtGridNoOrAdjacent( INT16 sGridNo )
 
 BOOLEAN IsCorpseAtGridNo( INT16 sGridNo, UINT8 ubLevel )
 {
-	if ( GetCorpseAtGridNo( sGridNo , ubLevel ) != NULL )
+	if (GetCorpseAtGridNo(sGridNo, ubLevel) != nullptr)
 	{
 		return( TRUE );
 	}
@@ -354,7 +353,7 @@ BOOLEAN SetOpenableStructureToClosed( INT16 sGridNo, UINT8 ubLevel )
 	if ( pStructure->fFlags & STRUCTURE_OPEN )
 	{
 		pNewStructure = SwapStructureForPartner(pStructure);
-		if ( pNewStructure != NULL)
+		if (pNewStructure != nullptr)
 		{
 			RecompileLocalMovementCosts( sGridNo );
 			SetRenderFlags( RENDER_FLAG_FULL );

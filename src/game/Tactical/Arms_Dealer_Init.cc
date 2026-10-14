@@ -2356,7 +2356,7 @@ BOOLEAN ItemIsARocketRifle(INT16 sItemIndex)
 static BOOLEAN GetArmsDealerShopHours(ArmsDealerID const ubArmsDealer, UINT32* const puiOpeningTime, UINT32* const puiClosingTime)
 {
 	SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(GCM->getDealer(ubArmsDealer)->profileID);
-	if ( pSoldier == NULL )
+	if (pSoldier == nullptr)
 	{
 		return( FALSE );
 	}

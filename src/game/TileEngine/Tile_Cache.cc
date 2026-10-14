@@ -64,12 +64,12 @@ void DeleteTileCache( )
 	UINT32 cnt;
 
 	// Allocate entries
-	if ( gpTileCache != NULL )
+	if (gpTileCache != nullptr)
 	{
 		// Loop through and delete any entries
 		for ( cnt = 0; cnt < guiMaxTileCacheSize; cnt++ )
 		{
-			if ( gpTileCache[ cnt ].pImagery != NULL )
+			if (gpTileCache[cnt].pImagery != nullptr)
 			{
 				DeleteTileSurface( gpTileCache[ cnt ].pImagery );
 			}
@@ -91,7 +91,7 @@ INT32 GetCachedTile(ST::string const& filename)
 	for (UINT32 cnt = 0; cnt < guiCurTileCacheSize; ++cnt)
 	{
 		TILE_CACHE_ELEMENT* const i = &gpTileCache[cnt];
-		if (i->pImagery == NULL)
+		if (i->pImagery == nullptr)
 		{
 			if (idx == -1) idx = cnt;
 			continue;
@@ -147,7 +147,7 @@ INT32 GetCachedTile(ST::string const& filename)
 	if (sfr) AddZStripInfoToVObject(tce->pImagery->vo, sfr, TRUE, 0);
 
 	const AuxObjectData* const aux = tce->pImagery->pAuxData;
-	tce->ubNumFrames = (aux != NULL ? aux->ubNumberOfFrames : 1);
+	tce->ubNumFrames = (aux != nullptr ? aux->ubNumberOfFrames : 1);
 
 	return idx;
 }
@@ -214,7 +214,7 @@ void CheckForAndDeleteTileCacheStructInfo( LEVELNODE *pNode, UINT16 usIndex )
 	{
 		pStructureFileRef = GetCachedTileStructureRef( ( usIndex - TILE_CACHE_START_INDEX ) );
 
-		if ( pStructureFileRef != NULL)
+		if (pStructureFileRef != nullptr)
 		{
 			DeleteStructureFromWorld( pNode->pStructureData );
 		}

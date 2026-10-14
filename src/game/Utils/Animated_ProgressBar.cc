@@ -144,7 +144,7 @@ void RemoveProgressBar( UINT8 ubID )
 	if( pBar[ubID] )
 	{
 		delete pBar[ubID];
-		pBar[ubID] = NULL;
+		pBar[ubID] = nullptr;
 		return;
 	}
 }
@@ -199,14 +199,13 @@ void RenderProgressBar( UINT8 ubID, UINT32 uiPercentage )
 	static UINT32 uiLastTime = 0;
 	UINT32 uiCurTime = GetJA2Clock();
 	double rActual;
-	PROGRESSBAR *pCurr=NULL;
+	PROGRESSBAR* pCurr = nullptr;
 	//UINT32 r, g;
 
 	Assert( ubID < MAX_PROGRESSBARS );
 	pCurr = pBar[ubID];
 
-	if( pCurr == NULL )
-		return;
+	if (pCurr == nullptr) return;
 
 	if( pCurr )
 	{
@@ -256,13 +255,12 @@ void RenderProgressBar( UINT8 ubID, UINT32 uiPercentage )
 
 void SetProgressBarColor( UINT8 ubID, UINT8 ubColorFillRed, UINT8 ubColorFillGreen, UINT8 ubColorFillBlue )
 {
-	PROGRESSBAR *pCurr=NULL;
+	PROGRESSBAR* pCurr = nullptr;
 
 	Assert( ubID < MAX_PROGRESSBARS );
 
 	pCurr = pBar[ubID];
-	if( pCurr == NULL )
-		return;
+	if (pCurr == nullptr) return;
 
 	pCurr->fill_colour = FROMRGB(ubColorFillRed, ubColorFillGreen, ubColorFillBlue);
 }

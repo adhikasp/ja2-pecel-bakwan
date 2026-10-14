@@ -245,7 +245,7 @@ BOOLEAN CycleSoldierFindStack( UINT16 usMapPos )
 {
 	// Have we initalized for this yet?
 	if (!gfHandleStack &&
-		FindSoldier(usMapPos, FINDSOLDIERSAMELEVEL(gsInterfaceLevel) | FIND_SOLDIER_BEGINSTACK) != NULL)
+		FindSoldier(usMapPos, FINDSOLDIERSAMELEVEL(gsInterfaceLevel) | FIND_SOLDIER_BEGINSTACK) != nullptr)
 	{
 		gfHandleStack = TRUE;
 	}
@@ -284,7 +284,7 @@ BOOLEAN CycleSoldierFindStack( UINT16 usMapPos )
 		}
 		else
 		{
-			gUIFullTarget        = NULL;
+			gUIFullTarget = nullptr;
 			guiUIFullTargetFlags = NO_MERC;
 		}
 	}

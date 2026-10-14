@@ -387,7 +387,7 @@ struct IlluminationFilter
 
 		if (IS_TRAVELCOST_DOOR(ubTravelCost))
 		{
-			ubTravelCost = DoorTravelCost(NULL, dstTileNo, ubTravelCost, TRUE, &baseGridNo);
+			ubTravelCost = DoorTravelCost(nullptr, dstTileNo, ubTravelCost, TRUE, &baseGridNo);
 
 			if (IS_TRAVELCOST_OPEN_DOOR(ubTravelCost) && baseGridNo != srcTileNo)
 			{
@@ -532,7 +532,7 @@ UINT8 LightTrueLevel( INT16 sGridNo, INT8 bLevel )
 		pNode = gpWorldLevelData[sGridNo].pRoofHead;
 	}
 
-	if (pNode == NULL)
+	if (pNode == nullptr)
 	{
 		return( ubAmbientLightLevel );
 	}
@@ -662,7 +662,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 			}
 
 			pObject = gpWorldLevelData[uiTile].pObjectHead;
-			while(pObject != NULL)
+			while (pObject != nullptr)
 			{
 				if (pObject->usIndex < NUMBEROFTILES)
 				{
@@ -675,7 +675,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 				ubShadeAdd = (INT16)ubShade*7/10;
 
 			pMerc = gpWorldLevelData[uiTile].pMercHead;
-			while(pMerc != NULL)
+			while (pMerc != nullptr)
 			{
 				LightAddTileNode(pMerc, ubShadeAdd, FALSE);
 				pMerc = pMerc->pNext;
@@ -686,7 +686,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 	if((uiFlags&LIGHT_ROOF_ONLY) || (uiFlags&LIGHT_EVERYTHING))
 	{
 		pRoof = gpWorldLevelData[uiTile].pRoofHead;
-		while(pRoof!=NULL)
+		while (pRoof != nullptr)
 		{
 			if (pRoof->usIndex < NUMBEROFTILES)
 			{
@@ -696,7 +696,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 		}
 
 		pOnRoof = gpWorldLevelData[uiTile].pOnRoofHead;
-		while(pOnRoof!=NULL)
+		while (pOnRoof != nullptr)
 		{
 			if (pOnRoof->usIndex < NUMBEROFTILES)
 			{
@@ -775,7 +775,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 			}
 
 			pObject = gpWorldLevelData[uiTile].pObjectHead;
-			while(pObject!=NULL)
+			while (pObject != nullptr)
 			{
 				if (pObject->usIndex < NUMBEROFTILES)
 				{
@@ -788,7 +788,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 				ubShadeSubstract = (INT16)ubShade * 7 / 10;
 
 			pMerc = gpWorldLevelData[uiTile].pMercHead;
-			while(pMerc!=NULL)
+			while (pMerc != nullptr)
 			{
 				LightSubtractTileNode(pMerc, ubShadeSubstract, FALSE);
 				pMerc = pMerc->pNext;
@@ -799,7 +799,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 	if((uiFlags&LIGHT_ROOF_ONLY) || (uiFlags&LIGHT_EVERYTHING))
 	{
 		pRoof = gpWorldLevelData[uiTile].pRoofHead;
-		while(pRoof!=NULL)
+		while (pRoof != nullptr)
 		{
 			if (pRoof->usIndex < NUMBEROFTILES)
 			{
@@ -809,7 +809,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 		}
 
 		pOnRoof = gpWorldLevelData[uiTile].pOnRoofHead;
-		while(pOnRoof!=NULL)
+		while (pOnRoof != nullptr)
 		{
 			if (pOnRoof->usIndex < NUMBEROFTILES)
 			{
@@ -1536,7 +1536,7 @@ static BOOLEAN LightHideWall(const INT16 sX, const INT16 sY, const INT16 sSrcX, 
 	BOOLEAN fDoRightWalls = (sX >= sSrcX);
 	BOOLEAN fDoLeftWalls  = (sY >= sSrcY);
 
-	for (const LEVELNODE* i = head; i != NULL; i = i->pNext)
+	for (const LEVELNODE* i = head; i != nullptr; i = i->pNext)
 	{
 		if (i->uiFlags & LEVELNODE_CACHEDANITILE) continue;
 
@@ -1553,7 +1553,7 @@ static BOOLEAN LightHideWall(const INT16 sX, const INT16 sY, const INT16 sSrcX, 
 
 	BOOLEAN fHitWall  = FALSE;
 	BOOLEAN fRerender = FALSE;
-	for (LEVELNODE* i = head; i != NULL; i = i->pNext)
+	for (LEVELNODE* i = head; i != nullptr; i = i->pNext)
 	{
 		if (i->uiFlags & LEVELNODE_CACHEDANITILE) continue;
 
@@ -1795,7 +1795,7 @@ const SGPPaletteEntry* LightGetColor(void)
 
 void LightSetColor(const SGPPaletteEntry* const pPal)
 {
-	Assert(pPal != NULL);
+	Assert(pPal != nullptr);
 
 	if (pPal->r != g_light_color.r ||
 			pPal->g != g_light_color.g ||
@@ -2080,7 +2080,7 @@ CreateObjectPaletteTables
 **********************************************************************************************/
 void CreateTilePaletteTables(const HVOBJECT pObj)
 {
-	Assert(pObj != NULL);
+	Assert(pObj != nullptr);
 
 	// build the shade tables
 	CreateBiasedShadedPalettes(pObj->pShades, pObj->Palette());

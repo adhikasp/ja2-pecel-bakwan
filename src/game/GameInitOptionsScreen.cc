@@ -366,7 +366,7 @@ static void ExitGIOScreen()
 static void DisplayMessageToUserAboutDeadIsDeadSaveScreen(const ST::string& zString, MSGBOX_CALLBACK ReturnCallback)
 {
 	gubGameOptionScreenHandler = GIO_EXIT;
-	DoMessageBox(MSG_BOX_BASIC_STYLE, zString, GAME_INIT_OPTIONS_SCREEN, MSG_BOX_FLAG_OK, ReturnCallback, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, zString, GAME_INIT_OPTIONS_SCREEN, MSG_BOX_FLAG_OK, ReturnCallback, nullptr);
 }
 
 static void HandleGIOScreen(void)
@@ -746,7 +746,7 @@ static void DoneFadeOutForExitGameInitOptionScreen(void)
 
 static void DoGioMessageBox(const ST::string& zString, MSGBOX_CALLBACK ReturnCallback)
 {
-	DoMessageBox(MSG_BOX_BASIC_STYLE, zString, GAME_INIT_OPTIONS_SCREEN, MSG_BOX_FLAG_YESNO, ReturnCallback, NULL);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, zString, GAME_INIT_OPTIONS_SCREEN, MSG_BOX_FLAG_YESNO, ReturnCallback, nullptr);
 }
 
 

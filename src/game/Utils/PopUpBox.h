@@ -13,7 +13,7 @@
 #define POPUP_BOX_FLAG_CENTER_TEXT 2
 #define POPUP_BOX_FLAG_RESIZE 4
 
-#define NO_POPUP_BOX NULL
+#define NO_POPUP_BOX nullptr
 
 PopUpBox* CreatePopUpBox(SGPPoint Position, UINT32 uiFlags, SGPVSurface*, const SGPVObject* border, SGPVSurface* background, UINT32 margin_l, UINT32 margin_t, UINT32 margin_b, UINT32 margin_r, UINT32 line_space);
 

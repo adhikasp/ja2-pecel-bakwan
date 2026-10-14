@@ -37,7 +37,7 @@
 
 //#define DISABLESCHEDULES
 
-SCHEDULENODE *gpScheduleList = NULL;
+SCHEDULENODE* gpScheduleList = nullptr;
 UINT8				gubScheduleID = 0;
 
 
@@ -78,7 +78,7 @@ SCHEDULENODE* GetSchedule( UINT8 ubScheduleID )
 			return curr;
 		curr = curr->next;
 	}
-	return NULL;
+	return nullptr;
 }
 
 //Removes all schedules from the event list, and cleans out the list.
@@ -94,7 +94,7 @@ void DestroyAllSchedules()
 		gpScheduleList = gpScheduleList->next;
 		delete curr;
 	}
-	gpScheduleList = NULL;
+	gpScheduleList = nullptr;
 	gubScheduleID = 0;
 }
 
@@ -110,13 +110,13 @@ void DestroyAllSchedulesWithoutDestroyingEvents()
 		gpScheduleList = gpScheduleList->next;
 		delete curr;
 	}
-	gpScheduleList = NULL;
+	gpScheduleList = nullptr;
 	gubScheduleID = 0;
 }
 
 void DeleteSchedule( UINT8 ubScheduleID )
 {
-	SCHEDULENODE *curr, *temp = NULL;
+	SCHEDULENODE *curr, *temp = nullptr;
 
 	if (!gpScheduleList)
 	{
@@ -167,7 +167,7 @@ void ProcessTacticalSchedule( UINT8 ubScheduleID )
 	}
 	//Attempt to access the soldier involved
 	SOLDIERTYPE* const pSoldier = pSchedule->soldier;
-	if (pSoldier == NULL)
+	if (pSoldier == nullptr)
 	{
 		SLOGW("Schedule callback:  Illegal NULL soldier.");
 		return;
@@ -292,7 +292,7 @@ void PrepareSchedulesForEditorEntry()
 
 	//Now, delete all of the temporary schedules.
 	curr = gpScheduleList;
-	prev = NULL;
+	prev = nullptr;
 	while( curr )
 	{
 		if( curr->usFlags & SCHEDULE_FLAGS_TEMPORARY )
@@ -413,7 +413,7 @@ void ReverseSchedules()
 	//First, remove any gaps which would mess up the reverse ID assignment by optimizing
 	//the schedules.
 	OptimizeSchedules();
-	pReverseHead = NULL;
+	pReverseHead = nullptr;
 	while( gpScheduleList )
 	{
 		//reverse the ID
@@ -548,7 +548,7 @@ BOOLEAN BumpAnyExistingMerc( INT16 sGridNo )
 	}
 
 	SOLDIERTYPE* const pSoldier = WhoIsThere2(sGridNo, 0);
-	if (pSoldier == NULL) return TRUE;
+	if (pSoldier == nullptr) return TRUE;
 
 	// what if the existing merc is prone?
 	const INT16 sNewGridNo = FindGridNoFromSweetSpotWithStructDataFromSoldier(pSoldier, STANDING, 5, 1, pSoldier);

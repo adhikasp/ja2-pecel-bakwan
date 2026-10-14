@@ -85,8 +85,9 @@ ST::string FileMan::joinPaths(const std::vector<ST::string> parts)
 
 ST::string FileMan::resolveExistingComponents(const ST::string& path)
 {
-	RustPointer<char> resolved{Fs_resolveExistingComponents(path.c_str(), NULL, true)};
-	if (resolved.get() == NULL) {
+	RustPointer<char> resolved{ Fs_resolveExistingComponents(path.c_str(), nullptr, true) };
+	if (resolved.get() == nullptr)
+	{
 		RustPointer<char> err{getRustError()};
 		throw IoException(ST::format("FileMan::resolveExistingComponents('{}') failed: {}", path, err.get()));
 	}

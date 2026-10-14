@@ -202,12 +202,12 @@ void MouseButtonDown(const SDL_MouseButtonEvent* BtnEv)
 #if defined WITH_MAEMO
 			/* If the menu button (mapped to F4) is pressed, then treat the event as
 			 * right click */
-			const bool* const key_state = SDL_GetKeyboardState(NULL);
+			const bool* const key_state = SDL_GetKeyboardState(nullptr);
 			g_down_right = key_state[SDL_SCANCODE_F4];
 			if (g_down_right) goto right_button;
 #endif
 #if defined(__APPLE__)
-			const bool* const key_state = SDL_GetKeyboardState(NULL);
+			const bool* const key_state = SDL_GetKeyboardState(nullptr);
 			g_down_right = key_state[SDL_SCANCODE_LGUI] || key_state[SDL_SCANCODE_RGUI];
 			if (g_down_right) goto right_button;
 #endif
@@ -567,7 +567,7 @@ void FreeMouseCursor(void)
 {
 #if 1 // XXX TODO0000
 #else
-	ClipCursor(NULL);
+	ClipCursor(nullptr);
 #endif
 	fCursorWasClipped = FALSE;
 }

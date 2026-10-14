@@ -110,7 +110,7 @@ static UINT16 const gusStopTimeQuoteList[] =
 
 // QUEUE UP DIALOG!
 static DialogueQueue ghDialogueQ;
-FACETYPE *gpCurrentTalkingFace	= NULL;
+FACETYPE* gpCurrentTalkingFace = nullptr;
 static ProfileID       gubCurrentTalkingID = NO_PROFILE;
 static DialogueHandler gbUIHandlerID;
 
@@ -122,7 +122,7 @@ static INT16 gsExternPanelYPosition;
 static BOOLEAN        gfDialogueQueuePaused = FALSE;
 static UINT16         gusSubtitleBoxWidth;
 static UINT16         gusSubtitleBoxHeight;
-static VIDEO_OVERLAY* g_text_box_overlay = NULL;
+static VIDEO_OVERLAY* g_text_box_overlay = nullptr;
 BOOLEAN               gfFacePanelActive = FALSE;
 static UINT32         guiScreenIDUsedWhenUICreated;
 static MOUSE_REGION   gTextBoxMouseRegion;
@@ -156,7 +156,7 @@ static cache_key_t const guiCOMPANELB{ INTERFACEDIR "/communicationpopup_2.sti" 
 
 BOOLEAN DialogueActive( )
 {
-	if ( gpCurrentTalkingFace != NULL )
+	if (gpCurrentTalkingFace != nullptr)
 	{
 		return( TRUE );
 	}
@@ -240,7 +240,7 @@ BOOLEAN DialogueQueueIsEmpty( )
 
 BOOLEAN	DialogueQueueIsEmptyAndNobodyIsTalking()
 {
-	if ( gpCurrentTalkingFace != NULL )
+	if (gpCurrentTalkingFace != nullptr)
 	{
 		return( FALSE );
 	}
@@ -263,7 +263,7 @@ void DialogueAdvanceSpeech( )
 void StopAnyCurrentlyTalkingSpeech( )
 {
 	// ATE; Make sure guys stop talking....
-	if ( gpCurrentTalkingFace != NULL )
+	if (gpCurrentTalkingFace != nullptr)
 	{
 		InternalShutupaYoFace(gpCurrentTalkingFace, TRUE);
 	}
@@ -283,7 +283,7 @@ void HandleDialogue()
 
 	bool const empty = ghDialogueQ.empty();
 
-	if (empty && gpCurrentTalkingFace == NULL)
+	if (empty && gpCurrentTalkingFace == nullptr)
 	{
 		HandlePendingInitConv();
 	}
@@ -429,7 +429,7 @@ void HandleDialogue()
 			f.uiFlags &= ~FACE_TRIGGER_PREBATTLE_INT;
 		}
 
-		gpCurrentTalkingFace = NULL;
+		gpCurrentTalkingFace = nullptr;
 		gubCurrentTalkingID = NO_PROFILE;
 		gTacticalStatus.ubLastQuoteProfileNUm = NO_PROFILE;
 
@@ -448,11 +448,11 @@ void HandleDialogue()
 			SOLDIERTYPE* const pMike = FindSoldierByProfileID(MIKE);
 			if (pMike)
 			{
-				INT16 const sPlayerGridNo = ClosestPC(pMike, NULL);
+				INT16 const sPlayerGridNo = ClosestPC(pMike, nullptr);
 				if (sPlayerGridNo != NOWHERE)
 				{
 					SOLDIERTYPE* const player = WhoIsThere2(sPlayerGridNo, 0);
-					if (player != NULL)
+					if (player != nullptr)
 					{
 						InitiateConversation(pMike, player, NPC_INITIAL_QUOTE);
 						gMercProfiles[pMike->ubProfile].ubMiscFlags2 |= PROFILE_MISC_FLAG2_SAID_FIRSTSEEN_QUOTE;
@@ -736,11 +736,11 @@ BOOLEAN ExecuteCharacterDialogue(UINT8 const ubCharacterNum, UINT16 const usQuot
 
 	// Try to find soldier...
 	const SOLDIERTYPE* const pSoldier = FindSoldierByProfileIDOnPlayerTeam(ubCharacterNum);
-	if (pSoldier == NULL && fFromSoldier)
+	if (pSoldier == nullptr && fFromSoldier)
 	{ // If from a soldier, and he does not exist anymore, do not play!
 		return false;
 	}
-	if (pSoldier != NULL && gubVideoConferencingMode != AIM_VIDEO_MERC_ANSWERING_MACHINE_MODE)
+	if (pSoldier != nullptr && gubVideoConferencingMode != AIM_VIDEO_MERC_ANSWERING_MACHINE_MODE)
 	{
 		// Check vital stats
 		if (pSoldier->bLife < CONSCIOUSNESS )
@@ -815,7 +815,7 @@ BOOLEAN ExecuteCharacterDialogue(UINT8 const ubCharacterNum, UINT16 const usQuot
 	}
 
 	// Check face index
-	CHECKF(face != NULL);
+	CHECKF(face != nullptr);
 
 	ST::string gzQuoteStr;
 	ST::string zSoundString;
@@ -1091,7 +1091,7 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 
 	// PLEASE NOTE:  pSoldier may legally be NULL (e.g. Skyrider) !!!
 
-	if ( pSoldier == NULL )
+	if (pSoldier == nullptr)
 	{
 		fDoExternPanel = TRUE;
 	}
@@ -1113,7 +1113,7 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 		f.uiFlags |= FACE_INACTIVE_HANDLED_ELSEWHERE | FACE_MAKEACTIVE_ONCE_DONE;
 
 		// IF we are in tactical and this soldier is on the current squad
-		if ((guiCurrentScreen == GAME_SCREEN) && (pSoldier != NULL) &&
+		if ((guiCurrentScreen == GAME_SCREEN) && (pSoldier != nullptr) &&
 			(pSoldier->bAssignment == iCurrentTacticalSquad))
 		{
 			// Make the interface panel dirty..
@@ -1151,7 +1151,7 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 	{
 		// Are we in mapscreen?
 		// If so, set current guy active to talk.....
-		if ( pSoldier != NULL )
+		if (pSoldier != nullptr)
 		{
 			ContinueDialogue( pSoldier, FALSE );
 		}
@@ -1225,10 +1225,10 @@ void HandleDialogueEnd(FACETYPE& f)
 			case DIALOGUE_TACTICAL_UI:
 			case DIALOGUE_EXTERNAL_NPC_UI:
 				// Remove if created
-				if (g_text_box_overlay != NULL)
+				if (g_text_box_overlay != nullptr)
 				{
 					RemoveVideoOverlay(g_text_box_overlay);
-					g_text_box_overlay = NULL;
+					g_text_box_overlay = nullptr;
 
 					if ( fTextBoxMouseRegionCreated )
 					{
@@ -1330,7 +1330,7 @@ static void RenderFaceOverlay(VIDEO_OVERLAY* const blt)
 
 static void RenderSubtitleBoxOverlay(VIDEO_OVERLAY* pBlitter)
 {
-	if (g_text_box_overlay == NULL) return;
+	if (g_text_box_overlay == nullptr) return;
 
 	RenderMercPopUpBox(g_dialogue_box, pBlitter->sX, pBlitter->sY, pBlitter->uiDestBuff);
 	InvalidateRegion(pBlitter->sX, pBlitter->sY, pBlitter->sX + gusSubtitleBoxWidth, pBlitter->sY + gusSubtitleBoxHeight);
@@ -1513,7 +1513,7 @@ static void TextOverlayClickCallback(MOUSE_REGION *, UINT32 iReason)
 
 	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP && fLButtonDown )
 	{
-		if(  gpCurrentTalkingFace != NULL )
+		if (gpCurrentTalkingFace != nullptr)
 		{
 			InternalShutupaYoFace(gpCurrentTalkingFace, FALSE);
 		}
@@ -1536,7 +1536,7 @@ static void FaceOverlayClickCallback(MOUSE_REGION *, UINT32 iReason)
 
 	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP && fLButtonDown )
 	{
-		if(  gpCurrentTalkingFace != NULL )
+		if (gpCurrentTalkingFace != nullptr)
 		{
 			InternalShutupaYoFace(gpCurrentTalkingFace, FALSE);
 		}
@@ -1638,7 +1638,7 @@ void HandleShutDownOfMapScreenWhileExternfaceIsTalking( void )
 	if ( ( fExternFaceBoxRegionCreated ) && ( gpCurrentTalkingFace) )
 	{
 		RemoveVideoOverlay(gpCurrentTalkingFace->video_overlay);
-		gpCurrentTalkingFace->video_overlay = NULL;
+		gpCurrentTalkingFace->video_overlay = nullptr;
 	}
 }
 
@@ -1714,7 +1714,7 @@ SpeechView CurrentSpeech()
 void SpeechClick()
 {
 	// a click on the face or the words stops the line
-	if (gpCurrentTalkingFace != NULL)
+	if (gpCurrentTalkingFace != nullptr)
 	{
 		InternalShutupaYoFace(gpCurrentTalkingFace, FALSE);
 	}

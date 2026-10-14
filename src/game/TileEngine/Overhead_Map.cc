@@ -345,7 +345,7 @@ void HandleOverheadMap(void)
 
 	if (!gfEditMode && !gfTacticalPlacementGUIActive)
 	{
-		HandleAnyMercInSquadHasCompatibleStuff(NULL);
+		HandleAnyMercInSquadHasCompatibleStuff(nullptr);
 
 		INT16 const usMapPos = GetOverheadMouseGridNo();
 		if (usMapPos != NOWHERE)
@@ -354,7 +354,7 @@ void HandleOverheadMap(void)
 
 			// ATE: Find the closest item pool within 5 tiles....
 			pItemPool = GetClosestItemPool(usMapPos, 1, 0);
-			if (pItemPool != NULL)
+			if (pItemPool != nullptr)
 			{
 				const STRUCTURE* const structure = FindStructure(usMapPos, STRUCTURE_HASITEMONTOP | STRUCTURE_OPENABLE);
 				INT8             const bZLevel   = GetZLevelOfItemPoolGivenStructure(usMapPos, 0, structure);
@@ -366,7 +366,7 @@ void HandleOverheadMap(void)
 			}
 
 			pItemPool = GetClosestItemPool(usMapPos, 1, 1);
-			if (pItemPool != NULL)
+			if (pItemPool != nullptr)
 			{
 				const INT8 bZLevel = 0;
 				if (AnyItemsVisibleOnLevel(pItemPool, bZLevel))
@@ -383,14 +383,14 @@ void HandleOverheadMap(void)
 	if (!gfEditMode && !gfTacticalPlacementGUIActive)
 	{
 		const SOLDIERTYPE* const sel = GetSelectedMan();
-		if (sel != NULL) DisplayMercNameInOverhead(*sel);
+		if (sel != nullptr) DisplayMercNameInOverhead(*sel);
 
-		gSelectedGuy = NULL;
+		gSelectedGuy = nullptr;
 		INT16 const usMapPos = GetOverheadMouseGridNoForFullSoldiersGridNo();
 		if (usMapPos != NOWHERE)
 		{
 			SOLDIERTYPE* const s = GetClosestMercInOverheadMap(usMapPos, 1);
-			if (s != NULL)
+			if (s != nullptr)
 			{
 				if (s->bTeam == OUR_TEAM) gSelectedGuy = s;
 				DisplayMercNameInOverhead(*s);
@@ -892,7 +892,7 @@ void RenderOverheadMap(INT16 const sStartPointX_M, INT16 const sStartPointY_M, I
 	}
 
 	// Update the save buffer
-	BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+	BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 }
 
 

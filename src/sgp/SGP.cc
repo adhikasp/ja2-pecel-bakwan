@@ -83,7 +83,7 @@ static void shutdownGame()
 
 	SLOGD("Shutting Down Content Manager");
 	delete GCM;
-	GCM = NULL;
+	GCM = nullptr;
 
 	SLOGD("Shutting Down Button System");
 	ShutdownButtonSystem();
@@ -284,7 +284,7 @@ static void MainLoop()
 			}
 			else
 			{
-				SDL_WaitEvent(NULL);
+				SDL_WaitEvent(nullptr);
 			}
 		}
 	}
@@ -292,7 +292,7 @@ static void MainLoop()
 
 ////////////////////////////////////////////////////////////
 
-ContentManager *GCM = NULL;
+ContentManager* GCM = nullptr;
 
 ////////////////////////////////////////////////////////////
 
@@ -379,7 +379,8 @@ int main(int argc, char* argv[])
 
 		if (setGlobalJniEnv(jniEnv) == FALSE) {
 			auto rustError = getRustError();
-			if (rustError != NULL) {
+			if (rustError != nullptr)
+			{
 				SLOGE("Failed to set global JNI env for Android: {}", rustError);
 			}
 			return EXIT_FAILURE;
@@ -418,16 +419,19 @@ int main(int argc, char* argv[])
 		}
 
 		RustPointer<char> configFolderPath(EngineOptions_getPecelBakwanHome());
-		if (configFolderPath.get() == NULL) {
+		if (configFolderPath.get() == nullptr)
+		{
 			auto rustError = getRustError();
-			if (rustError != NULL) {
+			if (rustError != nullptr)
+			{
 				SLOGE("Failed to find home directory: {}", rustError);
 			}
 			return EXIT_FAILURE;
 		}
 
 		RustPointer<EngineOptions> params(EngineOptions_create(configFolderPath.get(), argv, argc));
-		if (params == NULL) {
+		if (params == nullptr)
+		{
 			return EXIT_FAILURE;
 		}
 
@@ -662,7 +666,7 @@ int main(int argc, char* argv[])
 		MainLoop();
 
 		delete cm;
-		GCM = NULL;
+		GCM = nullptr;
 
 		return EXIT_SUCCESS;
 	} catch (...) {

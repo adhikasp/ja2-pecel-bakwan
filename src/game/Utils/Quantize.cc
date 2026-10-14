@@ -44,7 +44,7 @@ static NODE* CreateNode(const UINT level)
 static void AddColor(NODE** const ppNode, const BYTE r, const BYTE g, const BYTE b, const UINT level)
 {
 	// If the node doesn't exist, create it.
-	if (*ppNode == NULL) *ppNode = CreateNode(level);
+	if (*ppNode == nullptr) *ppNode = CreateNode(level);
 	NODE* const node = *ppNode;
 
 	if (node->bIsLeaf)
@@ -72,7 +72,9 @@ static void ReduceTree(void)
 {
 	int i;
 	// Find the deepest level containing at least one reducible node.
-	for (i = COLOUR_BITS - 1; i > 0 && g_reducible_nodes[i] == NULL; i--) {}
+	for (i = COLOUR_BITS - 1; i > 0 && g_reducible_nodes[i] == nullptr; i--)
+	{
+	}
 
 	// Reduce the node most recently added to the list at level i.
 	NODE* const node = g_reducible_nodes[i];
@@ -86,14 +88,14 @@ static void ReduceTree(void)
 	for (i = 0; i < 8; ++i)
 	{
 		NODE* const child = node->pChild[i];
-		if (child != NULL)
+		if (child != nullptr)
 		{
 			nRedSum   += child->nRedSum;
 			nGreenSum += child->nGreenSum;
 			nBlueSum  += child->nBlueSum;
 			node->nPixelCount += child->nPixelCount;
 			delete child;
-			node->pChild[i] = NULL;
+			node->pChild[i] = nullptr;
 			++nChildren;
 		}
 	}
@@ -108,7 +110,7 @@ static void ReduceTree(void)
 
 static NODE* ProcessImage(const SGPPaletteEntry* pData, const int iWidth, const int iHeight)
 {
-	NODE* tree = NULL;
+	NODE* tree = nullptr;
 	for (size_t i = iWidth * iHeight; i != 0; --i)
 	{
 		SGPPaletteEntry const& c = *pData++;
@@ -134,7 +136,7 @@ static size_t GetPaletteColors(const NODE* const pTree, SGPPaletteEntry* const p
 		for (int i = 0; i < 8; i++)
 		{
 			const NODE* const child = pTree->pChild[i];
-			if (child != NULL) index = GetPaletteColors(child, prgb, index);
+			if (child != nullptr) index = GetPaletteColors(child, prgb, index);
 		}
 	}
 	return index;
@@ -146,7 +148,7 @@ static void DeleteTree(NODE* const node)
 	for (int i = 0; i < 8; i++)
 	{
 		NODE* const child = node->pChild[i];
-		if (child != NULL) DeleteTree(child);
+		if (child != nullptr) DeleteTree(child);
 	}
 	delete node;
 }

@@ -454,7 +454,7 @@ void	DoNinjaAttack( SOLDIERTYPE *pSoldier )
 	UINT8  ubTargetStance;
 
 	const SOLDIERTYPE* const pTSoldier = WhoIsThere2(pSoldier->sTargetGridNo, pSoldier->bLevel);
-	if (pTSoldier != NULL)
+	if (pTSoldier != nullptr)
 	{
 		// Look at stance of target
 		ubTargetStance = gAnimControl[ pTSoldier->usAnimState ].ubEndHeight;
@@ -531,7 +531,7 @@ void	DoNinjaAttack( SOLDIERTYPE *pSoldier )
 				filename = BATTLESNDSDIR "/033_chop1.wav";
 			}
 		}
-		const UINT32 uiSoundID = SoundPlay(filename, volume, pan, 1, NULL, NULL);
+		const UINT32 uiSoundID = SoundPlay(filename, volume, pan, 1, nullptr, nullptr);
 
 		if ( uiSoundID != SOUND_ERROR )
 		{
@@ -540,7 +540,7 @@ void	DoNinjaAttack( SOLDIERTYPE *pSoldier )
 			if ( pSoldier->ubProfile != NO_PROFILE )
 			{
 				FACETYPE* const face = pSoldier->face;
-				if (face != NULL) ExternSetFaceTalking(*face, uiSoundID);
+				if (face != nullptr) ExternSetFaceTalking(*face, uiSoundID);
 			}
 		}
 	}
@@ -581,7 +581,7 @@ try
 	}
 	else
 	{
-		s.pKeyRing = NULL;
+		s.pKeyRing = nullptr;
 	}
 
 	// Create frame cache
@@ -649,9 +649,9 @@ void DeleteSoldier(SOLDIERTYPE& s)
 
 	FOR_EACH(UINT16*, i, s.pShades)
 	{
-		if (*i == NULL) continue;
+		if (*i == nullptr) continue;
 		delete[] *i;
-		*i = NULL;
+		*i = nullptr;
 	}
 
 	if (s.effect_shade)
@@ -662,9 +662,9 @@ void DeleteSoldier(SOLDIERTYPE& s)
 
 	FOR_EACH(UINT16*, i, s.pGlowShades)
 	{
-		if (*i == NULL) continue;
+		if (*i == nullptr) continue;
 		delete[] *i;
-		*i = NULL;
+		*i = nullptr;
 	}
 
 	if (s.ubBodyType == QUEENMONSTER)
@@ -691,7 +691,7 @@ static BOOLEAN CreateSoldierLight(SOLDIERTYPE* pSoldier)
 	}
 
 	// DO ONLY IF WE'RE AT A GOOD LEVEL
-	if (pSoldier->light == NULL)
+	if (pSoldier->light == nullptr)
 	{
 		// ATE: Check for goggles in headpos....
 		ST::string light_file = IsWearingHeadGear(*pSoldier, UVGOGGLES) ? "Light4" :
@@ -700,7 +700,7 @@ static BOOLEAN CreateSoldierLight(SOLDIERTYPE* pSoldier)
 
 		LIGHT_SPRITE* const l = LightSpriteCreate(light_file);
 		pSoldier->light = l;
-		if (l == NULL)
+		if (l == nullptr)
 		{
 			SLOGD("Soldier: Failed loading light");
 			return FALSE;
@@ -728,10 +728,10 @@ void ReCreateSoldierLight(SOLDIERTYPE* const s)
 
 void DeleteSoldierLight(SOLDIERTYPE* const s)
 {
-	if (s->light == NULL) return;
+	if (s->light == nullptr) return;
 
 	LightSpriteDestroy(s->light);
-	s->light = NULL;
+	s->light = nullptr;
 }
 
 
@@ -1518,10 +1518,10 @@ void EVENT_InitNewSoldierAnim(SOLDIERTYPE* const pSoldier, UINT16 usNewState, UI
 		case CROW_DIE:
 
 			// Delete shadow of crow....
-			if ( pSoldier->pAniTile != NULL )
+			if (pSoldier->pAniTile != nullptr)
 			{
 				DeleteAniTile( pSoldier->pAniTile );
-				pSoldier->pAniTile = NULL;
+				pSoldier->pAniTile = nullptr;
 			}
 			break;
 
@@ -2657,7 +2657,7 @@ void EVENT_SoldierGotHit(SOLDIERTYPE* pSoldier, const UINT16 usWeaponIndex, INT1
 	}
 
 	// DO STUFF COMMON FOR ALL TYPES
-	if (att != NULL) att->bLastAttackHit = TRUE;
+	if (att != nullptr) att->bLastAttackHit = TRUE;
 
 	pSoldier->attacker = att;
 
@@ -2681,7 +2681,7 @@ void EVENT_SoldierGotHit(SOLDIERTYPE* pSoldier, const UINT16 usWeaponIndex, INT1
 	// handle morale for heavy damage attacks
 	if ( sDamage > 25 )
 	{
-		if (att != NULL)
+		if (att != nullptr)
 		{
 			if (att->bTeam == OUR_TEAM)
 			{
@@ -2795,7 +2795,7 @@ void EVENT_SoldierGotHit(SOLDIERTYPE* pSoldier, const UINT16 usWeaponIndex, INT1
 			pNewSoldier = ReduceAttackBusyGivenTarget(pSoldier);
 		}
 
-		if (pNewSoldier != NULL)
+		if (pNewSoldier != nullptr)
 		{
 			pSoldier = pNewSoldier;
 		}
@@ -3645,7 +3645,7 @@ void SoldierGotoStationaryStance( SOLDIERTYPE *pSoldier )
 		// IN deep water, tred!
 		EVENT_InitNewSoldierAnim( pSoldier, DEEP_WATER_TRED, 0 , FALSE );
 	}
-	else if (pSoldier->service_partner != NULL && pSoldier->bLife >= OKLIFE && pSoldier->bBreath > 0)
+	else if (pSoldier->service_partner != nullptr && pSoldier->bLife >= OKLIFE && pSoldier->bBreath > 0)
 	{
 		EVENT_InitNewSoldierAnim( pSoldier, GIVING_AID, 0 , FALSE );
 	}
@@ -4348,7 +4348,7 @@ void TurnSoldier( SOLDIERTYPE *pSoldier)
 		if ( pSoldier->fTurningFromPronePosition == TURNING_FROM_PRONE_ON )
 		{
 			// ATE: Don't do this if we have something in our hands we are going to throw!
-			if ( IsValidStance( pSoldier, ANIM_PRONE ) && pSoldier->pTempObject == NULL )
+			if (IsValidStance(pSoldier, ANIM_PRONE) && pSoldier->pTempObject == nullptr)
 			{
 				ChangeSoldierStance(pSoldier, ANIM_PRONE);
 			}
@@ -5059,29 +5059,29 @@ void DeletePaletteData()
 	UINT32 cnt;
 
 	// Free!
-	if ( gpPaletteSubRanges != NULL )
+	if (gpPaletteSubRanges != nullptr)
 	{
 		delete[] gpPaletteSubRanges;
-		gpPaletteSubRanges = NULL;
+		gpPaletteSubRanges = nullptr;
 	}
 
-	if ( gubpNumReplacementsPerRange != NULL )
+	if (gubpNumReplacementsPerRange != nullptr)
 	{
 		delete[] gubpNumReplacementsPerRange;
-		gubpNumReplacementsPerRange = NULL;
+		gubpNumReplacementsPerRange = nullptr;
 	}
 
 
 	for ( cnt = 0; cnt < guiNumReplacements; cnt++ )
 	{
-		if (gpPalRep[cnt].rgb != NULL) delete[] gpPalRep[cnt].rgb;
+		if (gpPalRep[cnt].rgb != nullptr) delete[] gpPalRep[cnt].rgb;
 	}
 
 	// Free
-	if ( gpPalRep != NULL )
+	if (gpPalRep != nullptr)
 	{
 		delete[] gpPalRep;
-		gpPalRep = NULL;
+		gpPalRep = nullptr;
 	}
 }
 
@@ -5562,7 +5562,7 @@ UINT8 SoldierTakeDamage(SOLDIERTYPE* const pSoldier, INT16 sLifeDeduct, INT16 sB
 					break;
 				case QUEENMONSTER:
 					// increase with range!
-					if (attacker == NULL)
+					if (attacker == nullptr)
 					{
 						sReductionFactor = 8;
 					}
@@ -5732,7 +5732,7 @@ UINT8 SoldierTakeDamage(SOLDIERTYPE* const pSoldier, INT16 sLifeDeduct, INT16 sB
 		sTestTwo = 2 * std::max(int(sLifeDeduct), sBreathLoss / 100);
 
 		const SOLDIERTYPE* const attacker = pSoldier->attacker;
-		if (attacker != NULL && attacker->ubBodyType == BLOODCAT)
+		if (attacker != nullptr && attacker->ubBodyType == BLOODCAT)
 		{
 			// bloodcat boost, let them make people drop items more
 			sTestTwo += 20;
@@ -5803,8 +5803,7 @@ UINT8 SoldierTakeDamage(SOLDIERTYPE* const pSoldier, INT16 sLifeDeduct, INT16 sB
 
 	DirtyMercPanelInterface( pSoldier, DIRTYLEVEL1 );
 
-
-	if (attacker != NULL)
+	if (attacker != nullptr)
 	{
 		// don't give exp for hitting friends!
 		if (attacker->bTeam == OUR_TEAM && pSoldier->bTeam != OUR_TEAM)
@@ -5832,7 +5831,7 @@ UINT8 SoldierTakeDamage(SOLDIERTYPE* const pSoldier, INT16 sLifeDeduct, INT16 sB
 		if ( !(pSoldier->usQuoteSaidFlags & SOLDIER_QUOTE_SAID_BEING_PUMMELED ) )
 		{
 			// Check attacker!
-			if (attacker != NULL && attacker != pSoldier)
+			if (attacker != nullptr && attacker != pSoldier)
 			{
 				pSoldier->bNumHitsThisTurn++;
 
@@ -5849,7 +5848,7 @@ UINT8 SoldierTakeDamage(SOLDIERTYPE* const pSoldier, INT16 sLifeDeduct, INT16 sB
 		}
 	}
 
-	if (attacker != NULL && attacker->bTeam == OUR_TEAM && pSoldier->ubProfile != NO_PROFILE &&
+	if (attacker != nullptr && attacker->bTeam == OUR_TEAM && pSoldier->ubProfile != NO_PROFILE &&
 		MercProfile(pSoldier->ubProfile).isNPCorRPC())
 	{
 		gMercProfiles[pSoldier->ubProfile].ubMiscFlags |= PROFILE_MISC_FLAG_WOUNDEDBYPLAYER;
@@ -6062,7 +6061,7 @@ file_exists:;
 	}
 
 	UINT32 const pan       = SoundDir(s->sGridNo);
-	UINT32 const uiSoundID = SoundPlay(filename.c_str(), volume, pan, 1, NULL, NULL);
+	UINT32 const uiSoundID = SoundPlay(filename.c_str(), volume, pan, 1, nullptr, nullptr);
 	if (uiSoundID == SOUND_ERROR) return FALSE;
 	s->uiBattleSoundID = uiSoundID;
 
@@ -6184,7 +6183,7 @@ BOOLEAN CheckSoldierHitRoof( SOLDIERTYPE *pSoldier )
 				//EVENT_InitNewSoldierAnim( pSoldier, FALLFORWARD_ROOF, 0 , FALSE );
 
 				// Deduct hitpoints/breath for falling!
-				SoldierTakeDamage(pSoldier, 100, 5000, TAKE_DAMAGE_FALLROOF, NULL);
+				SoldierTakeDamage(pSoldier, 100, 5000, TAKE_DAMAGE_FALLROOF, nullptr);
 
 				fReturnVal = TRUE;
 
@@ -6199,7 +6198,7 @@ BOOLEAN CheckSoldierHitRoof( SOLDIERTYPE *pSoldier )
 				pSoldier->usPendingAnimation = FALLOFF;
 
 				// Deduct hitpoints/breath for falling!
-				SoldierTakeDamage(pSoldier, 100, 5000, TAKE_DAMAGE_FALLROOF, NULL);
+				SoldierTakeDamage(pSoldier, 100, 5000, TAKE_DAMAGE_FALLROOF, nullptr);
 
 				fReturnVal = TRUE;
 			}
@@ -6484,7 +6483,7 @@ void ReleaseSoldiersAttacker( SOLDIERTYPE *pSoldier )
 			// otherise, we keep it so the kill can be awarded!
 			if ( pSoldier->bLife != 0 && pSoldier->ubBodyType != QUEENMONSTER )
 			{
-				pSoldier->attacker = NULL;
+				pSoldier->attacker = nullptr;
 			}
 		}
 	}
@@ -6565,7 +6564,7 @@ static void HandleAnimationProfile(SOLDIERTYPE& s, UINT16 const usAnimState, BOO
 
 void EVENT_SoldierBeginGiveItem( SOLDIERTYPE *pSoldier )
 {
-	if (VerifyGiveItem(pSoldier) != NULL)
+	if (VerifyGiveItem(pSoldier) != nullptr)
 	{
 		// CHANGE DIRECTION AND GOTO ANIMATION NOW
 		pSoldier->bDesiredDirection = pSoldier->bPendingActionData3;
@@ -6608,7 +6607,7 @@ void EVENT_SoldierBeginBladeAttack( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 
 	{
 		// Is there an unconscious guy at gridno......
 		const SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, pSoldier->bTargetLevel);
-		if (tgt != NULL && ((tgt->bLife < OKLIFE && tgt->bLife > 0) || (tgt->bBreath < OKBREATH && tgt->bCollapsed)))
+		if (tgt != nullptr && ((tgt->bLife < OKLIFE && tgt->bLife > 0) || (tgt->bBreath < OKBREATH && tgt->bCollapsed)))
 		{
 			pSoldier->uiPendingActionData4 = tgt->ubID;
 			// add regen bonus
@@ -6642,7 +6641,7 @@ void EVENT_SoldierBeginBladeAttack( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 
 	else
 	{
 		SOLDIERTYPE* const pTSoldier = WhoIsThere2(sGridNo, pSoldier->bTargetLevel);
-		if (pTSoldier != NULL)
+		if (pTSoldier != nullptr)
 		{
 			// Look at stance of target
 			switch( gAnimControl[ pTSoldier->usAnimState ].ubEndHeight	)
@@ -6716,7 +6715,7 @@ void EVENT_SoldierBeginBladeAttack( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 
 			else
 			{
 				const ROTTING_CORPSE* const c = GetCorpseAtGridNo(sGridNo, pSoldier->bLevel);
-				const UINT16 state = (c != NULL && IsValidDecapitationCorpse(c) ? DECAPITATE : CROUCH_STAB);
+				const UINT16 state = (c != nullptr && IsValidDecapitationCorpse(c) ? DECAPITATE : CROUCH_STAB);
 				EVENT_InitNewSoldierAnim(pSoldier, state, 0, FALSE);
 			}
 		}
@@ -6750,7 +6749,7 @@ void EVENT_SoldierBeginPunchAttack( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 
 
 	// get target.....
 	SOLDIERTYPE* const pTSoldier = WhoIsThere2(pSoldier->sTargetGridNo, pSoldier->bLevel);
-	if (pTSoldier == NULL) return;
+	if (pTSoldier == nullptr) return;
 
 	fChangeDirection = TRUE;
 
@@ -6919,7 +6918,7 @@ void EVENT_SoldierBeginFirstAid( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ubD
 	BOOLEAN fRefused = FALSE;
 
 	SOLDIERTYPE* const pTSoldier = WhoIsThere2(sGridNo, pSoldier->bLevel);
-	if (pTSoldier != NULL)
+	if (pTSoldier != nullptr)
 	{
 		// OK, check if we should play quote...
 		if ( pTSoldier->bTeam != OUR_TEAM )
@@ -7218,11 +7217,11 @@ static void InternalReceivingSoldierCancelServices(SOLDIERTYPE* pSoldier, BOOLEA
 			// END SERVICE!
 			pSoldier->ubServiceCount--;
 
-			pTSoldier->service_partner = NULL;
+			pTSoldier->service_partner = nullptr;
 
 			if (gTacticalStatus.fAutoBandageMode)
 			{
-				pSoldier->auto_bandaging_medic = NULL;
+				pSoldier->auto_bandaging_medic = nullptr;
 				ActionDone(pTSoldier);
 			}
 			else
@@ -7248,16 +7247,16 @@ void InternalGivingSoldierCancelServices( SOLDIERTYPE *pSoldier, BOOLEAN fPlayEn
 {
 	// GET TARGET SOLDIER
 	SOLDIERTYPE* const pTSoldier = pSoldier->service_partner;
-	if (pTSoldier != NULL)
+	if (pTSoldier != nullptr)
 	{
 		// END SERVICE!
 		pTSoldier->ubServiceCount--;
 
-		pSoldier->service_partner = NULL;
+		pSoldier->service_partner = nullptr;
 
 		if ( gTacticalStatus.fAutoBandageMode )
 		{
-			pTSoldier->auto_bandaging_medic = NULL;
+			pTSoldier->auto_bandaging_medic = nullptr;
 
 			ActionDone( pSoldier );
 		}
@@ -7288,7 +7287,7 @@ void HaultSoldierFromSighting( SOLDIERTYPE *pSoldier, BOOLEAN fFromSightingEnemy
 	}
 
 	// Whether or not we are about to throw an object
-	bool fIsThrowing = (pSoldier->pTempObject != NULL);
+	bool fIsThrowing = (pSoldier->pTempObject != nullptr);
 
 	// Below are the animations for attacks which do not involve an object.
 	// We use fTurningToShoot and pTempObject to check for other attacks.
@@ -7487,7 +7486,7 @@ void ReLoadSoldierAnimationDueToHandItemChange(SOLDIERTYPE* const s, UINT16 cons
 
 static UINT16* CreateEnemyGlow16BPPPalette(const SGPPaletteEntry* pPalette, UINT32 rscale, UINT32 gscale)
 {
-	Assert(pPalette != NULL);
+	Assert(pPalette != nullptr);
 
 	UINT16* const p16BPPPalette = new UINT16[256]{};
 
@@ -7504,7 +7503,7 @@ static UINT16* CreateEnemyGlow16BPPPalette(const SGPPaletteEntry* pPalette, UINT
 
 static UINT16* CreateEnemyGreyGlow16BPPPalette(const SGPPaletteEntry* pPalette, UINT32 rscale, UINT32 gscale)
 {
-	Assert(pPalette != NULL);
+	Assert(pPalette != nullptr);
 
 	UINT16* const p16BPPPalette = new UINT16[256]{};
 
@@ -7559,7 +7558,7 @@ void ContinueMercMovement( SOLDIERTYPE *pSoldier )
 
 				// If we have a face, tell text in it to go away!
 				FACETYPE* const face = pSoldier->face;
-				if (face != NULL) face->fDisplayTextOver = FACE_ERASE_TEXT_OVER;
+				if (face != nullptr) face->fDisplayTextOver = FACE_ERASE_TEXT_OVER;
 			}
 
 			AdjustNoAPToFinishMove( pSoldier, FALSE );
@@ -7692,7 +7691,7 @@ BOOLEAN InternalIsValidStance(const SOLDIERTYPE* pSoldier, INT8 bDirection, INT8
 
 	// Get structure ref........
 	const STRUCTURE_FILE_REF* const pStructureFileRef = GetAnimationStructureRef(pSoldier, usAnimSurface, usAnimState);
-	if ( pStructureFileRef != NULL )
+	if (pStructureFileRef != nullptr)
 	{
 		// Check if we can do this....
 		UINT16 const usOKToAddStructID = GetStructureID(pSoldier);
@@ -7823,7 +7822,7 @@ static INT32 CheckBleeding(SOLDIERTYPE* pSoldier)
 		if ( ( pSoldier->bBleeding > MIN_BLEEDING_THRESHOLD) || pSoldier->bLife < OKLIFE )
 		{
 			// if he's NOT in the process of being bandaged or DOCTORed
-			if ( ( pSoldier->ubServiceCount == 0 ) && ( AnyDoctorWhoCanHealThisPatient( pSoldier, HEALABLE_EVER ) == NULL ) )
+			if ((pSoldier->ubServiceCount == 0) && (AnyDoctorWhoCanHealThisPatient(pSoldier, HEALABLE_EVER) == nullptr))
 			{
 				// may drop blood whether or not any bleeding takes place this turn
 				if ( pSoldier->bTilesMoved < 1 )
@@ -7948,7 +7947,7 @@ static void SoldierBleed(SOLDIERTYPE* const s, const BOOLEAN fBandagedBleed)
 
 	if (!fBandagedBleed)
 	{
-		SoldierTakeDamage(s, 1, 100, TAKE_DAMAGE_BLOODLOSS, NULL);
+		SoldierTakeDamage(s, 1, 100, TAKE_DAMAGE_BLOODLOSS, nullptr);
 	}
 }
 
@@ -8051,7 +8050,7 @@ void SoldierCollapse( SOLDIERTYPE *pSoldier )
 		if (bPanicTrigger != -1 && !gTacticalStatus.bPanicTriggerIsAlarm[bPanicTrigger] && gTacticalStatus.the_chosen_one == pSoldier)
 		{
 			// replace this guy as the chosen one!
-			gTacticalStatus.the_chosen_one = NULL;
+			gTacticalStatus.the_chosen_one = nullptr;
 			MakeClosestEnemyChosenOne();
 		}
 
@@ -8130,7 +8129,7 @@ void PositionSoldierLight( SOLDIERTYPE *pSoldier )
 		return;
 	}
 
-	if (pSoldier->light == NULL) CreateSoldierLight(pSoldier);
+	if (pSoldier->light == nullptr) CreateSoldierLight(pSoldier);
 
 	LIGHT_SPRITE* const l = pSoldier->light;
 	LightSpritePower(l, TRUE);
@@ -8192,31 +8191,31 @@ void PickPickupAnimation( SOLDIERTYPE *pSoldier, INT32 iItemIndex, INT16 sGridNo
 					{
 //#if 0
 						// Get direction to face....
-						if ( ( pStructure = FindStructure( (INT16)sGridNo, ( STRUCTURE_HASITEMONTOP | STRUCTURE_OPENABLE ) ) ) != NULL )
-						{
-							fDoNormalPickup = FALSE;
+if ((pStructure = FindStructure((INT16)sGridNo, (STRUCTURE_HASITEMONTOP | STRUCTURE_OPENABLE))) != nullptr)
+{
+	fDoNormalPickup = FALSE;
 
-							// OK, look at orientation
-							if ( pStructure->ubWallOrientation & ORIENT_LEFT )
-							{
-								bDirection = (INT8)NORTH;
-							}
-							else if ( pStructure->ubWallOrientation & ORIENT_RIGHT )
-							{
-								bDirection = (INT8)WEST;
-							}
-							else
-							{
-								bDirection = pSoldier->bDirection;
-							}
+	// OK, look at orientation
+	if (pStructure->ubWallOrientation & ORIENT_LEFT)
+	{
+		bDirection = (INT8)NORTH;
+	}
+	else if (pStructure->ubWallOrientation & ORIENT_RIGHT)
+	{
+		bDirection = (INT8)WEST;
+	}
+	else
+	{
+		bDirection = pSoldier->bDirection;
+	}
 
-							//pSoldier->ubPendingDirection = bDirection;
-							EVENT_SetSoldierDesiredDirection( pSoldier, bDirection );
-							EVENT_SetSoldierDirection( pSoldier, bDirection );
+	//pSoldier->ubPendingDirection = bDirection;
+	EVENT_SetSoldierDesiredDirection(pSoldier, bDirection);
+	EVENT_SetSoldierDirection(pSoldier, bDirection);
 
-							// Change to pickup animation
-							EVENT_InitNewSoldierAnim( pSoldier, ADJACENT_GET_ITEM, 0 , FALSE );
-						}
+	// Change to pickup animation
+	EVENT_InitNewSoldierAnim(pSoldier, ADJACENT_GET_ITEM, 0, FALSE);
+}
 //#endif
 					}
 
@@ -8310,7 +8309,7 @@ void EVENT_SoldierBeginRepair(SOLDIERTYPE& s, GridNo const gridno, UINT8 const d
 void EVENT_SoldierBeginRefuel( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ubDirection )
 {
 	// Make sure we have a structure here....
-	if (GetRefuelableStructAtGridNo(sGridNo) != NULL)
+	if (GetRefuelableStructAtGridNo(sGridNo) != nullptr)
 	{
 		// CHANGE DIRECTION AND GOTO ANIMATION NOW
 		EVENT_SetSoldierDesiredDirection( pSoldier, ubDirection );
@@ -8333,7 +8332,7 @@ void EVENT_SoldierBeginTakeBlood( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ub
 	// See if these is a corpse here....
 	ROTTING_CORPSE const * const pCorpse = GetCorpseAtGridNo(sGridNo , pSoldier->bLevel);
 
-	if ( pCorpse != NULL )
+	if (pCorpse != nullptr)
 	{
 		pSoldier->uiPendingActionData4 = pCorpse->ID();
 
@@ -8366,7 +8365,7 @@ void EVENT_SoldierBeginAttachCan( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ub
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_ANYDOOR );
 
-	if ( pStructure == NULL )
+	if (pStructure == nullptr)
 	{
 		return;
 	}
@@ -8384,7 +8383,7 @@ void EVENT_SoldierBeginAttachCan( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ub
 
 	// Now get door status...
 	pDoorStatus = GetDoorStatus( sGridNo );
-	if ( pDoorStatus == NULL )
+	if (pDoorStatus == nullptr)
 	{
 		// SOmething wrong here...
 		return;
@@ -8410,7 +8409,7 @@ void EVENT_SoldierBeginReloadRobot( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 
 {
 	// Make sure we have a robot here....
 	const SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, pSoldier->bLevel);
-	if (tgt != NULL && tgt->uiStatusFlags & SOLDIER_ROBOT)
+	if (tgt != nullptr && tgt->uiStatusFlags & SOLDIER_ROBOT)
 	{
 		// CHANGE DIRECTION AND GOTO ANIMATION NOW
 		EVENT_SetSoldierDesiredDirection( pSoldier, ubDirection );
@@ -8660,7 +8659,7 @@ BOOLEAN CanRobotBeControlled(const SOLDIERTYPE* const robot)
 {
 	Assert(robot->uiStatusFlags & SOLDIER_ROBOT);
 	const SOLDIERTYPE* const controller = robot->robot_remote_holder;
-	if (controller == NULL) return FALSE;
+	if (controller == nullptr) return FALSE;
 	return ControllingRobot(controller);
 }
 
@@ -8746,7 +8745,7 @@ void UpdateRobotControllerGivenRobot( SOLDIERTYPE *pRobot )
 		}
 	}
 
-	pRobot->robot_remote_holder = NULL;
+	pRobot->robot_remote_holder = nullptr;
 }
 
 
@@ -8811,7 +8810,7 @@ void HandleSystemNewAISituation(SOLDIERTYPE* const pSoldier)
 						ReduceAttackBusyCount(pSoldier, FALSE);
 				}
 
-				if ( pSoldier->pTempObject != NULL )
+				if (pSoldier->pTempObject != nullptr)
 				{
 					// Place it back into inv....
 					AutoPlaceObject( pSoldier, pSoldier->pTempObject, FALSE );
@@ -8931,7 +8930,7 @@ void BeginTyingToFall( SOLDIERTYPE *pSoldier )
 
 void SetSoldierAsUnderAiControl( SOLDIERTYPE *pSoldierToSet )
 {
-	if ( pSoldierToSet == NULL )
+	if (pSoldierToSet == nullptr)
 	{
 		return;
 	}

@@ -880,7 +880,7 @@ static bool DoesPlayerHaveAnyMilitia()
 static void CommonBtnCallbackBtnDownChecks(void)
 {
 	// any click cancels MAP UI messages, unless we're in confirm map move mode
-	if (g_ui_message_overlay != NULL && !gfInConfirmMapMoveMode)
+	if (g_ui_message_overlay != nullptr && !gfInConfirmMapMoveMode)
 	{
 		CancelMapUIMessage( );
 	}

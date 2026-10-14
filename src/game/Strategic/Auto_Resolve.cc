@@ -362,7 +362,7 @@ void EliminateAllEnemies(const SGPSector& ubSector)
 		}
 		gpAR->ubAliveEnemies = 0;
 	}
-	gpBattleGroup = NULL;
+	gpBattleGroup = nullptr;
 }
 
 
@@ -403,7 +403,7 @@ static void DoTransitionFromPreBattleInterfaceToAutoResolve(void)
 	UINT16 const h = gpAR->rect.h;
 
 	//save the prebattle/mapscreen interface background
-	BltVideoSurface(guiEXTRABUFFER, FRAME_BUFFER, 0, 0, NULL);
+	BltVideoSurface(guiEXTRABUFFER, FRAME_BUFFER, 0, 0, nullptr);
 
 	//render the autoresolve panel
 	RenderAutoResolve();
@@ -494,7 +494,7 @@ ScreenID AutoResolveScreenHandle()
 		gpAR->fEnteringAutoResolve = FALSE;
 		//Take the framebuffer, shade it, and save it to the SAVEBUFFER.
 		FRAME_BUFFER->ShadowRect(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 		KillPreBattleInterface();
 		CalculateAutoResolveInfo();
 		CalculateSoldierCells();
@@ -1920,7 +1920,7 @@ static void RetreatButtonCallback(GUI_BUTTON* btn, UINT32 reason)
 		if( gpAR->pRobotCell )
 		{ //if robot is retreating, set the retreat time to be the same as the robot's controller.
 			const SOLDIERTYPE* const robot_controller = gpAR->pRobotCell->pSoldier->robot_remote_holder;
-			if (robot_controller == NULL)
+			if (robot_controller == nullptr)
 			{
 				gpAR->pRobotCell->uiFlags &= ~CELL_RETREATING;
 				gpAR->pRobotCell->uiFlags |= CELL_DIRTY;
@@ -2041,7 +2041,7 @@ static void RetreatMercCell(SOLDIERCELL* const pCell)
 	if (!gpAR->pRobotCell) return;
 	//if controller is retreating, make the robot retreat too.
 	const SOLDIERTYPE* const robot_controller = gpAR->pRobotCell->pSoldier->robot_remote_holder;
-	if (robot_controller == NULL)
+	if (robot_controller == nullptr)
 	{
 		gpAR->pRobotCell->uiFlags &= ~CELL_RETREATING;
 		gpAR->pRobotCell->uiFlags |= CELL_DIRTY;
@@ -2415,7 +2415,7 @@ static void RenderSoldierCellHealth(SOLDIERCELL* pCell)
 
 static void DetermineTeamLeader(BOOLEAN fFriendlyTeam)
 {
-	SOLDIERCELL *pBestLeaderCell = NULL;
+	SOLDIERCELL* pBestLeaderCell = nullptr;
 	//For each team (civs and players count as same team), find the merc with the best
 	//leadership ability.
 	if( fFriendlyTeam )
@@ -2701,7 +2701,7 @@ static SOLDIERCELL* ChooseTarget(SOLDIERCELL* pAttacker)
 	INT32 iAvailableTargets;
 	INT32 index;
 	INT32 iRandom = -1;
-	SOLDIERCELL *pTarget = NULL;
+	SOLDIERCELL* pTarget = nullptr;
 	UINT16 usSavedDefence;
 	//Determine what team we are attacking
 	if( pAttacker->uiFlags & (CELL_ENEMY | CELL_CREATURE) )
@@ -2760,7 +2760,7 @@ static SOLDIERCELL* ChooseTarget(SOLDIERCELL* pAttacker)
 		}
 	}
 	SLOGA("Error in ChooseTarget logic for choosing enemy target." );
-	return NULL;
+	return nullptr;
 }
 
 
@@ -2950,7 +2950,7 @@ static void AttackTarget(SOLDIERCELL* pAttacker, SOLDIERCELL* pTarget)
 		else
 			ubLocation = AIM_SHOT_TORSO;
 		ubAccuracy = (UINT8)((usAttack - usDefence + PreRandom( usDefence - pTarget->usDefence ) )/10);
-		iImpact = BulletImpact( pAttacker->pSoldier, pTarget->pSoldier, ubLocation, ubImpact, ubAccuracy, NULL );
+		iImpact = BulletImpact(pAttacker->pSoldier, pTarget->pSoldier, ubLocation, ubImpact, ubAccuracy, nullptr);
 
 		if ( bAttackIndex == -1 )
 		{
@@ -3147,12 +3147,9 @@ static void TargetHitCallback(SOLDIERCELL* pTarget, INT32 index)
 			pKiller = pTarget->pAttacker[ index ];
 			pAssister1 = pTarget->pAttacker[ index < 2 ? index + 1 : 0 ];
 			pAssister2 = pTarget->pAttacker[ index > 0 ? index - 1 : 2 ];
-			if( pKiller == pAssister1 )
-				pAssister1 = NULL;
-			if( pKiller == pAssister2 )
-				pAssister2 = NULL;
-			if( pAssister1 == pAssister2 )
-				pAssister2 = NULL;
+			if (pKiller == pAssister1) pAssister1 = nullptr;
+			if (pKiller == pAssister2) pAssister2 = nullptr;
+			if (pAssister1 == pAssister2) pAssister2 = nullptr;
 			if( pKiller )
 			{
 				if( pKiller->uiFlags & CELL_MERC )
@@ -3278,7 +3275,7 @@ static BOOLEAN IsBattleOver(void)
 	{ //Do special robot checks
 		SOLDIERTYPE *pRobot;
 		pRobot = gpAR->pRobotCell->pSoldier;
-		if (pRobot->robot_remote_holder == NULL)
+		if (pRobot->robot_remote_holder == nullptr)
 		{ //Robot can't fight anymore.
 			gpAR->usPlayerAttack -= gpAR->pRobotCell->usAttack;
 			gpAR->pRobotCell->usAttack = 0;
@@ -3528,7 +3525,7 @@ static void ProcessBattleFrame(void)
 	BOOLEAN found = FALSE;
 	INT32 iTime, iAttacksThisFrame;
 
-	pAttacker = NULL;
+	pAttacker = nullptr;
 	iAttacksThisFrame = 0;
 
 	if( fContinue )
@@ -3680,7 +3677,7 @@ static void ProcessBattleFrame(void)
 				{ //The merc has successfully retreated.  Remove the stats, and continue on.
 					if( pAttacker == gpAR->pRobotCell )
 					{
-						if (gpAR->pRobotCell->pSoldier->robot_remote_holder == NULL)
+						if (gpAR->pRobotCell->pSoldier->robot_remote_holder == nullptr)
 						{
 							gpAR->pRobotCell->uiFlags &= ~CELL_RETREATING;
 							gpAR->pRobotCell->uiFlags |= CELL_DIRTY;

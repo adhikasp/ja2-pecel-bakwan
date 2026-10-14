@@ -1224,7 +1224,7 @@ void MercsFindSelectedMercCallback( GUI_BUTTON *btn, UINT32 reason )
 	if( reason & MSYS_CALLBACK_REASON_POINTER_UP )
 	{
 		const SOLDIERTYPE* const s = g_selected_merc;
-		if (s == NULL) return;
+		if (s == nullptr) return;
 		CenterScreenAtMapIndex(s->sGridNo);
 	}
 }

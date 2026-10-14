@@ -99,7 +99,8 @@ DefaultContentManager::DefaultContentManager(RustPointer<EngineOptions> engineOp
 {
 	m_engineOptions = std::move(engineOptions);
 	m_modManager.reset(ModManager_create(m_engineOptions.get()));
-	if (m_modManager.get() == NULL) {
+	if (m_modManager.get() == nullptr)
+	{
 		RustPointer<char> err{ getRustError() };
 		throw std::runtime_error(err.get());
 	}
@@ -116,7 +117,8 @@ DefaultContentManager::DefaultContentManager(RustPointer<EngineOptions> engineOp
 
 	// Initialize temp dir
 	RustPointer<TempDir> tempDir(TempDir_create());
-	if (tempDir.get() == NULL) {
+	if (tempDir.get() == nullptr)
+	{
 		RustPointer<char> err{ getRustError() };
 		auto error = ST::format("Failed to create temporary directory: {}", err.get());
 		throw std::runtime_error(error.c_str());
@@ -301,7 +303,8 @@ SGPFile* DefaultContentManager::openMapForReading(const ST::string& mapName) con
 std::vector<ST::string> DefaultContentManager::getAllFiles(const ST::string& directory, const ST::string& extension) const
 {
 	RustPointer<VecCString> vec(Vfs_readDir(m_vfs.get(), directory.c_str(), extension.c_str()));
-	if (vec.get() == NULL) {
+	if (vec.get() == nullptr)
+	{
 		throw std::runtime_error(ST::format("DefaultContentManager::getAllFiles in {}: {}", directory.c_str(), getRustError()).c_str());
 	}
 	auto len = VecCString_len(vec.get());
@@ -1064,7 +1067,7 @@ const ItemModel* DefaultContentManager::getKeyItemForKeyId(uint16_t usKeyItem) c
 			return item;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 std::vector<ST::string> DefaultContentManager::getAllSmallInventoryGraphicPaths() const
@@ -1454,7 +1457,7 @@ const BloodCatSpawnsModel* DefaultContentManager::getBloodCatSpawnsOfSector(uint
 			return spawns;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 const std::vector<const CreatureLairModel*>& DefaultContentManager::getCreatureLairs() const
@@ -1471,7 +1474,7 @@ const CreatureLairModel* DefaultContentManager::getCreatureLair(uint8_t lairId) 
 			return lair;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 const CreatureLairModel* DefaultContentManager::getCreatureLairByMineId(uint8_t mineId) const
@@ -1483,7 +1486,7 @@ const CreatureLairModel* DefaultContentManager::getCreatureLairByMineId(uint8_t 
 			return lair;
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 const MineModel* DefaultContentManager::getMineForSector(const SGPSector& sector) const
@@ -1498,7 +1501,7 @@ const MineModel* DefaultContentManager::getMineForSector(const SGPSector& sector
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
 const MineModel* DefaultContentManager::getMine(uint8_t mineId) const
@@ -1514,7 +1517,7 @@ const std::vector<const MineModel*>& DefaultContentManager::getMines() const
 const TownModel* DefaultContentManager::getTown(int8_t townId) const
 {
 	auto iter = m_towns.find(townId);
-	return (iter != m_towns.end()) ? iter->second : NULL;
+	return (iter != m_towns.end()) ? iter->second : nullptr;
 }
 
 const TownModel* DefaultContentManager::getTownByName(const ST::string& name) const
@@ -1547,7 +1550,7 @@ int8_t DefaultContentManager::findSamIDBySector(uint8_t sectorId) const
 const SamSiteModel* DefaultContentManager::findSamSiteBySector(uint8_t sectorId) const
 {
 	auto i = findSamIDBySector(sectorId);
-	return (i > -1) ? m_samSites[i] : NULL;
+	return (i > -1) ? m_samSites[i] : nullptr;
 }
 
 int8_t DefaultContentManager::getControllingSamSite(uint8_t sectorId) const
@@ -1605,7 +1608,7 @@ const RPCSmallFaceModel* DefaultContentManager::getRPCSmallFaceOffsets(uint8_t p
 {
 	if (m_rpcSmallFaces.find(profileID) == m_rpcSmallFaces.end())
 	{
-		return NULL;
+		return nullptr;
 	}
 	return m_rpcSmallFaces.at(profileID);
 }
@@ -1644,7 +1647,7 @@ const MercProfileInfo* DefaultContentManager::getMercProfileInfoByName(const ST:
 	}
 
 	SLOGW("MercProfileInfo is not defined for {}", name);
-	return NULL;
+	return nullptr;
 }
 
 const std::vector<const MercProfile*>& DefaultContentManager::listMercProfiles() const

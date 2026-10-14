@@ -1064,7 +1064,7 @@ static void DisplayFaceOfDisplayedMerc(void)
 	{
 		const PastMercInfo info = GetSelectedPastMercInfo();
 		const MERCPROFILESTRUCT* const p = info.profile;
-		if (p == NULL) return;
+		if (p == nullptr) return;
 		RenderPersonnelFace(     *p, info.state != DEPARTED_DEAD);
 		DisplayDepartedCharName( *p, info.state);
 		DisplayDepartedCharStats(*p, info.state);

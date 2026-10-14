@@ -53,10 +53,11 @@ struct PopUpBox
 
 static PopUpBox* PopUpBoxList[MAX_POPUP_BOX_COUNT];
 
-#define FOR_EACH_POPUP_BOX(iter) \
-	FOR_EACH(PopUpBox*, iter, PopUpBoxList) \
-		if (*iter == NULL) continue; else
-
+#define FOR_EACH_POPUP_BOX(iter)                                                                                       \
+	FOR_EACH(PopUpBox*, iter, PopUpBoxList)                                                                            \
+	if (*iter == nullptr)                                                                                              \
+		continue;                                                                                                      \
+	else
 
 #define BORDER_WIDTH  16
 #define BORDER_HEIGHT  8
@@ -90,7 +91,7 @@ PopUpBox* CreatePopUpBox(const SGPPoint Position, const UINT32 uiFlags, SGPVSurf
 	// find first free box
 	FOR_EACH(PopUpBox*, i, PopUpBoxList)
 	{
-		if (*i == NULL)
+		if (*i == nullptr)
 		{
 			PopUpBox* const box = new PopUpBox{};
 			SetBoxXY(box, Position.iX, Position.iY);
@@ -172,7 +173,7 @@ void AddMonoString(PopUpBox* box, const ST::string& str)
 	INT32 iCounter = 0;
 
 	// find first free slot in list
-	for (iCounter = 0; iCounter < MAX_POPUP_BOX_STRING_COUNT && box->Text[iCounter] != NULL; iCounter++);
+	for (iCounter = 0; iCounter < MAX_POPUP_BOX_STRING_COUNT && box->Text[iCounter] != nullptr; iCounter++);
 
 	if ( iCounter >= MAX_POPUP_BOX_STRING_COUNT )
 	{
@@ -201,7 +202,7 @@ void AddSecondColumnMonoString(PopUpBox* box, const ST::string& str)
 	INT32 iCounter=0;
 
 	// find the LAST USED text string index
-	for (iCounter = 0; iCounter + 1 < MAX_POPUP_BOX_STRING_COUNT && box->Text[iCounter + 1] != NULL; iCounter++);
+	for (iCounter = 0; iCounter + 1 < MAX_POPUP_BOX_STRING_COUNT && box->Text[iCounter + 1] != nullptr; iCounter++);
 
 	if ( iCounter >= MAX_POPUP_BOX_STRING_COUNT )
 	{
@@ -229,7 +230,7 @@ UINT32 GetNumberOfLinesOfTextInBox(const PopUpBox* const box)
 	// check string size
 	for( iCounter = 0; iCounter < MAX_POPUP_BOX_STRING_COUNT; iCounter++ )
 	{
-		if (box->Text[iCounter] == NULL) break;
+		if (box->Text[iCounter] == nullptr) break;
 	}
 
 	return( iCounter );
@@ -356,7 +357,7 @@ void HighLightBoxLine(PopUpBox* const box, const INT32 iLineNumber)
 {
 	// highlight iLineNumber Line in box
 	PopUpString* const line = box->Text[iLineNumber];
-	if (line != NULL)
+	if (line != nullptr)
 	{
 		line->fHighLightFlag = TRUE;
 	}
@@ -365,7 +366,7 @@ void HighLightBoxLine(PopUpBox* const box, const INT32 iLineNumber)
 
 BOOLEAN GetBoxShadeFlag(const PopUpBox* const box, const INT32 iLineNumber)
 {
-	if (box->Text[iLineNumber] != NULL)
+	if (box->Text[iLineNumber] != nullptr)
 	{
 		return box->Text[iLineNumber]->fShadeFlag;
 	}
@@ -403,7 +404,7 @@ void RemoveBox(PopUpBox* const box)
 	{
 		if (*i == box)
 		{
-			*i = NULL;
+			*i = nullptr;
 			RemoveAllBoxStrings(box);
 			delete box;
 			return;
@@ -637,13 +638,13 @@ void ResizeBoxToText(PopUpBox* const box)
 	for (i = 0; i < MAX_POPUP_BOX_STRING_COUNT; ++i)
 	{
 		const PopUpString* const l = box->Text[i];
-		if (l == NULL) break;
+		if (l == nullptr) break;
 
 		const UINT32 lw = StringPixLength(l->codepoints, font);
 		if (lw > max_lw) max_lw = lw;
 
 		const PopUpString* const r = box->pSecondColumnString[i];
-		if (r != NULL)
+		if (r != nullptr)
 		{
 			const UINT32 rw = StringPixLength(r->codepoints, font);
 			if (rw > max_rw) max_rw = rw;
@@ -663,7 +664,7 @@ void ResizeBoxToText(PopUpBox* const box)
 
 BOOLEAN IsBoxShown(const PopUpBox* const box)
 {
-	if (box == NULL) return FALSE;
+	if (box == nullptr) return FALSE;
 	return box->fShowBox;
 }
 
@@ -688,28 +689,28 @@ void HideAllBoxes( void )
 
 static void RemoveBoxPrimaryText(PopUpBox* const Box, const INT32 hStringHandle)
 {
-	Assert(Box != NULL);
+	Assert(Box != nullptr);
 	Assert( hStringHandle < MAX_POPUP_BOX_STRING_COUNT );
 
 	// remove & release primary text
-	if (Box->Text[hStringHandle] != NULL)
+	if (Box->Text[hStringHandle] != nullptr)
 	{
 		delete Box->Text[hStringHandle];
-		Box->Text[hStringHandle] = NULL;
+		Box->Text[hStringHandle] = nullptr;
 	}
 }
 
 
 static void RemoveBoxSecondaryText(PopUpBox* const Box, const INT32 hStringHandle)
 {
-	Assert(Box != NULL);
+	Assert(Box != nullptr);
 	Assert( hStringHandle < MAX_POPUP_BOX_STRING_COUNT );
 
 	// remove & release secondary strings
-	if (Box->pSecondColumnString[hStringHandle] != NULL)
+	if (Box->pSecondColumnString[hStringHandle] != nullptr)
 	{
 		delete Box->pSecondColumnString[hStringHandle];
-		Box->pSecondColumnString[hStringHandle] = NULL;
+		Box->pSecondColumnString[hStringHandle] = nullptr;
 	}
 }
 

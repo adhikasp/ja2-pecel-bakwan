@@ -15,8 +15,7 @@
 
 #include <algorithm>
 
-UNDERGROUND_SECTORINFO* gpUndergroundSectorInfoTail = NULL;
-
+UNDERGROUND_SECTORINFO* gpUndergroundSectorInfoTail = nullptr;
 
 static UNDERGROUND_SECTORINFO* AddUndergroundNode(const UndergroundSectorModel* ugInfo, UINT8 ubDifLevel)
 {
@@ -75,8 +74,8 @@ void TrashUndergroundSectorInfo()
 		gpUndergroundSectorInfoHead = gpUndergroundSectorInfoHead->next;
 		delete curr;
 	}
-	gpUndergroundSectorInfoHead = NULL;
-	gpUndergroundSectorInfoTail = NULL;
+	gpUndergroundSectorInfoHead = nullptr;
+	gpUndergroundSectorInfoTail = nullptr;
 }
 
 //Defines the sectors that can be occupied by enemies, creatures, etc.  It also

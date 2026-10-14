@@ -257,7 +257,7 @@ void SaveBackgroundRects(void)
 
 void FreeBackgroundRect(BACKGROUND_SAVE*& b)
 {
-	if (b == NULL) return;
+	if (b == nullptr) return;
 
 	b->fAllocated = FALSE;
 	b = nullptr;
@@ -500,10 +500,10 @@ void SaveVideoOverlaysArea(SGPVSurface* const src)
 	FOR_EACH_VIDEO_OVERLAY(v)
 	{
 		// OK, if our saved area is null, allocate it here!
-		if (v->pSaveArea == NULL)
+		if (v->pSaveArea == nullptr)
 		{
 			AllocateVideoOverlayArea(v);
-			if (v->pSaveArea == NULL) continue;
+			if (v->pSaveArea == nullptr) continue;
 		}
 
 		// Save data from frame buffer!
@@ -537,7 +537,7 @@ void RestoreShiftedVideoOverlays(const INT16 sShiftX, const INT16 sShiftY)
 
 	FOR_EACH_VIDEO_OVERLAY_SAFE(v)
 	{
-		if (v->pSaveArea == NULL) continue;
+		if (v->pSaveArea == nullptr) continue;
 
 		// Get restore background values
 		const BACKGROUND_SAVE* const b = v->background;

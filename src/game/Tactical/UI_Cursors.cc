@@ -1073,7 +1073,7 @@ void HandleRightClickAdjustCursor( SOLDIERTYPE *pSoldier, INT16 usMapPos )
 	ItemCursor const ubCursor = GetActionModeCursor(pSoldier);
 
 	// 'snap' cursor to target tile....
-	if (gUIFullTarget != NULL) usMapPos = gUIFullTarget->sGridNo;
+	if (gUIFullTarget != nullptr) usMapPos = gUIFullTarget->sGridNo;
 
 	switch( ubCursor )
 	{
@@ -1089,7 +1089,7 @@ void HandleRightClickAdjustCursor( SOLDIERTYPE *pSoldier, INT16 usMapPos )
 			{
 				// Look for a target here...
 				const SOLDIERTYPE* const tgt = gUIFullTarget;
-				if (tgt != NULL)
+				if (tgt != nullptr)
 				{
 					// Get target soldier, if one exists
 					sGridNo = tgt->sGridNo;
@@ -1290,7 +1290,7 @@ void HandleWheelAdjustCursor(SOLDIERTYPE* const pSoldier, INT16 usMapPos, const 
 	}
 
 	// 'snap' cursor to target tile....
-	if (gUIFullTarget != NULL) usMapPos = gUIFullTarget->sGridNo;
+	if (gUIFullTarget != nullptr) usMapPos = gUIFullTarget->sGridNo;
 
 	if ( bDirection < 0 )
 	{
@@ -1314,8 +1314,8 @@ void HandleWheelAdjustCursor(SOLDIERTYPE* const pSoldier, INT16 usMapPos, const 
 
 		// Warn about a shot that is unlikely to reach before spending APs on it
 		const SOLDIERTYPE* const tgt = gUIFullTarget;
-		if ( ubCursor == TARGETCURS && tgt != NULL &&
-			!HandleCheckForBadChangeToGetThrough(pSoldier, tgt, tgt->sGridNo, pSoldier->bLevel) )
+		if (ubCursor == TARGETCURS && tgt != nullptr &&
+			!HandleCheckForBadChangeToGetThrough(pSoldier, tgt, tgt->sGridNo, pSoldier->bLevel))
 		{
 			return;
 		}

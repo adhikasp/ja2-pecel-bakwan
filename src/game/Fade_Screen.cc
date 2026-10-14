@@ -29,11 +29,10 @@ static FadeType gbFadeType;
 INT16   gsFadeRealCount;
 
 using FADE_FUNCTION = void (*)();
-static FADE_FUNCTION gFadeFunction = NULL;
+static FADE_FUNCTION gFadeFunction = nullptr;
 
-FADE_HOOK gFadeInDoneCallback  = NULL;
-FADE_HOOK gFadeOutDoneCallback = NULL;
-
+FADE_HOOK gFadeInDoneCallback = nullptr;
+FADE_HOOK gFadeOutDoneCallback = nullptr;
 
 BOOLEAN gfFadeIn      = FALSE;
 BOOLEAN gfFadeOut     = FALSE;
@@ -96,11 +95,11 @@ BOOLEAN HandleFadeOutCallback( )
 	{
 		gfFadeOutDone = FALSE;
 
-		if ( gFadeOutDoneCallback != NULL )
+		if (gFadeOutDoneCallback != nullptr)
 		{
 			gFadeOutDoneCallback( );
 
-			gFadeOutDoneCallback = NULL;
+			gFadeOutDoneCallback = nullptr;
 
 			return( TRUE );
 		}
@@ -116,12 +115,12 @@ BOOLEAN HandleFadeInCallback( )
 	{
 		gfFadeInDone = FALSE;
 
-		if ( gFadeInDoneCallback != NULL )
+		if (gFadeInDoneCallback != nullptr)
 		{
 			gFadeInDoneCallback( );
 		}
 
-		gFadeInDoneCallback = NULL;
+		gFadeInDoneCallback = nullptr;
 
 		return( TRUE );
 	}
@@ -149,7 +148,7 @@ static void BeginFade(ScreenID const uiExitScreen, FadeType const bType, UINT32 
 			gsFadeLimit			= 8;
 			gFadeFunction = FadeInFrameBufferRealFade;
 
-			BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, NULL);
+			BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
 			FRAME_BUFFER->Fill(Get16BPPColor(FROMRGB(0, 0, 0)));
 			break;
 

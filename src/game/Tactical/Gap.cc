@@ -65,8 +65,8 @@ static void AudioGapListInit(const ST::string& zSoundFile, AudioGapList* pGapLis
 	}
 	catch (...) { /* Handled below */ }
 
-	pGapList->gaps = NULL;
-	pGapList->end  = NULL;
+	pGapList->gaps = nullptr;
+	pGapList->end = nullptr;
 }
 
 
@@ -74,8 +74,8 @@ void AudioGapListDone(AudioGapList* pGapList)
 {
 	// Free the array and nullify the pointers in the AudioGapList
 	delete[] pGapList->gaps;
-	pGapList->gaps = NULL;
-	pGapList->end  = NULL;
+	pGapList->gaps = nullptr;
+	pGapList->end = nullptr;
 	SLOGD("Audio Gap List Deleted");
 }
 
@@ -97,7 +97,7 @@ BOOLEAN PollAudioGap(UINT32 uiSampleNum, AudioGapList* pGapList)
 	}
 
 	const AUDIO_GAP* i = pGapList->gaps;
-	if (i == NULL) return FALSE;
+	if (i == nullptr) return FALSE;
 
 	const UINT32 time = SoundGetPosition(uiSampleNum);
 	SLOGD("Sound Sample Time is {}", time);
@@ -126,8 +126,8 @@ BOOLEAN PollAudioGap(UINT32 uiSampleNum, AudioGapList* pGapList)
 UINT32 PlayJA2GapSample(const ST::string& zSoundFile, UINT32 ubVolume, UINT32 ubLoops, UINT32 uiPan, AudioGapList* pData)
 {
 	// Setup Gap Detection, if it is not null
-	if (pData != NULL) AudioGapListInit(zSoundFile, pData);
+	if (pData != nullptr) AudioGapListInit(zSoundFile, pData);
 
 	const UINT32 vol = CalculateSpeechVolume(ubVolume);
-	return SoundPlay(zSoundFile.c_str(), vol, uiPan, ubLoops, NULL, NULL);
+	return SoundPlay(zSoundFile.c_str(), vol, uiPan, ubLoops, nullptr, nullptr);
 }

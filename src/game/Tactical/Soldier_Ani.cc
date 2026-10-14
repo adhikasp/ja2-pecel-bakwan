@@ -71,7 +71,7 @@
 //#define TIME_FOR_RANDOM_ANIM_CHECK	10
 #define TIME_FOR_RANDOM_ANIM_CHECK	2
 
-const SOLDIERTYPE* gLastMercTalkedAboutKilling = NULL;
+const SOLDIERTYPE* gLastMercTalkedAboutKilling = nullptr;
 
 Observable<SOLDIERTYPE*> OnSoldierDeath;
 
@@ -159,10 +159,10 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 				if ( pSoldier->bMuzFlashCount > MAX_ANIFRAMES_PER_FLASH )
 				{
 					pSoldier->bMuzFlashCount = 0;
-					if (pSoldier->muzzle_flash != NULL)
+					if (pSoldier->muzzle_flash != nullptr)
 					{
 						LightSpriteDestroy(pSoldier->muzzle_flash);
-						pSoldier->muzzle_flash = NULL;
+						pSoldier->muzzle_flash = nullptr;
 					}
 				}
 				else
@@ -455,15 +455,15 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 					if (ubAmbientLightLevel < MIN_AMB_LEVEL_FOR_MERC_LIGHTS) break;
 
 					// Only one sprite is tracked, so let go of the previous round's
-					if (pSoldier->muzzle_flash != NULL)
+					if (pSoldier->muzzle_flash != nullptr)
 					{
 						LightSpriteDestroy(pSoldier->muzzle_flash);
-						pSoldier->muzzle_flash = NULL;
+						pSoldier->muzzle_flash = nullptr;
 					}
 
 					LIGHT_SPRITE* const l = LightSpriteCreate("L-R03.LHT");
 					pSoldier->muzzle_flash = l;
-					if (l == NULL) return TRUE;
+					if (l == nullptr) return TRUE;
 
 					LightSpritePower(l, TRUE);
 
@@ -699,10 +699,10 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 					if ( fStop )
 					{
 						// This round is not fired after all, put its flash out before it shows
-						if (pSoldier->muzzle_flash != NULL)
+						if (pSoldier->muzzle_flash != nullptr)
 						{
 							LightSpriteDestroy(pSoldier->muzzle_flash);
-							pSoldier->muzzle_flash = NULL;
+							pSoldier->muzzle_flash = nullptr;
 						}
 						pSoldier->bMuzFlashCount = 0;
 
@@ -857,7 +857,7 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 
 					//CODE: THORW ITEM
 					// Launch ITem!
-					if ( pSoldier->pTempObject != NULL && pSoldier->pThrowParams != NULL )
+					if (pSoldier->pTempObject != nullptr && pSoldier->pThrowParams != nullptr)
 					{
 						// ATE: If we are armmed...
 						if ( pSoldier->pThrowParams->ubActionCode == THROW_ARM_ITEM )
@@ -883,7 +883,7 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 						ClearTempObject(pSoldier);
 
 						delete pSoldier->pThrowParams;
-						pSoldier->pThrowParams = NULL;
+						pSoldier->pThrowParams = nullptr;
 					}
 					break;
 
@@ -1197,7 +1197,8 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 						if ( pSoldier->bTeam != OUR_TEAM )
 						{
 							// only locate if the enemy is visible or he's aiming at a player
-							if (pSoldier->bVisible != -1 || (pSoldier->target != NULL && pSoldier->target->bTeam == OUR_TEAM))
+							if (pSoldier->bVisible != -1 ||
+								(pSoldier->target != nullptr && pSoldier->target->bTeam == OUR_TEAM))
 							{
 								LocateGridNo( pSoldier->sTargetGridNo );
 							}
@@ -1526,7 +1527,7 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 					if ( !( pSoldier->uiStatusFlags & SOLDIER_NPC_DOING_PUNCH ) )
 					{
 						SOLDIERTYPE* const pTSoldier = FindSoldier(pSoldier->sTargetGridNo, FIND_SOLDIER_GRIDNO);
-						if (pTSoldier != NULL)
+						if (pTSoldier != nullptr)
 						{
 							// IF WE ARE AN ANIMAL, CAR, MONSTER, DONT'T DODGE
 							if ( IS_MERC_BODY_TYPE( pTSoldier ) )
@@ -2256,7 +2257,7 @@ no_cry:
 					// Reload robot....
 				{
 					SOLDIERTYPE* const pRobot = WhoIsThere2(pSoldier->sPendingActionData2, pSoldier->bLevel);
-					if (pRobot != NULL && pRobot->uiStatusFlags & SOLDIER_ROBOT)
+					if (pRobot != nullptr && pRobot->uiStatusFlags & SOLDIER_ROBOT)
 					{
 						ReloadGun( pRobot, &(pRobot->inv[ HANDPOS ] ), pSoldier->pTempObject );
 
@@ -2337,7 +2338,7 @@ no_cry:
 				case 763:
 
 					// CODE: Drop item at gridno
-					if ( pSoldier->pTempObject != NULL )
+					if (pSoldier->pTempObject != nullptr)
 					{
 						if ( pSoldier->bVisible != -1 )
 						{
@@ -2874,12 +2875,12 @@ BOOLEAN HandleSoldierDeath( SOLDIERTYPE *pSoldier , BOOLEAN *pfMadeCorpse )
 		ReceivingSoldierCancelServices( pSoldier );
 		GivingSoldierCancelServices( pSoldier );
 
-		if (pSoldier->muzzle_flash != NULL)
+		if (pSoldier->muzzle_flash != nullptr)
 		{
 			LightSpriteDestroy(pSoldier->muzzle_flash);
-			pSoldier->muzzle_flash = NULL;
+			pSoldier->muzzle_flash = nullptr;
 		}
-		if (pSoldier->light != NULL) LightSpriteDestroy(pSoldier->light);
+		if (pSoldier->light != nullptr) LightSpriteDestroy(pSoldier->light);
 
 		//FREEUP GETTING HIT FLAG
 		pSoldier->fGettingHit = FALSE;
@@ -2906,7 +2907,7 @@ BOOLEAN HandleSoldierDeath( SOLDIERTYPE *pSoldier , BOOLEAN *pfMadeCorpse )
 		{
 			// IF this guy has an attacker and he's a good guy, play sound
 			SOLDIERTYPE* const attacker = pSoldier->attacker;
-			if (attacker != NULL)
+			if (attacker != nullptr)
 			{
 				if (attacker->bTeam == OUR_TEAM && gTacticalStatus.ubAttackBusyCount > 0)
 				{
@@ -2937,7 +2938,7 @@ BOOLEAN HandleSoldierDeath( SOLDIERTYPE *pSoldier , BOOLEAN *pfMadeCorpse )
 
 			// if a friendly with a profile, increment kills
 			// militia also now track kills...
-			if (attacker != NULL)
+			if (attacker != nullptr)
 			{
 				if (attacker->bTeam == OUR_TEAM)
 				{
@@ -2956,7 +2957,7 @@ BOOLEAN HandleSoldierDeath( SOLDIERTYPE *pSoldier , BOOLEAN *pfMadeCorpse )
 			SOLDIERTYPE* assister = pSoldier->previous_attacker;
 			if (assister == attacker) assister = pSoldier->next_to_previous_attacker;
 
-			if (assister != NULL && assister->bActive && assister != attacker)
+			if (assister != nullptr && assister->bActive && assister != attacker)
 			{
 				if (assister->bTeam == OUR_TEAM )
 				{
@@ -3129,7 +3130,7 @@ static void CheckForAndHandleSoldierIncompacitated(SOLDIERTYPE* pSoldier)
 		{
 			// CHECK IF WE HAVE AN ATTACKER, TAKE OPPOSITE DIRECTION!
 			const SOLDIERTYPE* const attacker = pSoldier->attacker;
-			if (attacker != NULL)
+			if (attacker != nullptr)
 			{
 				// Find direction!
 				bTestDirection = (INT8)GetDirectionFromGridNo(attacker->sGridNo, pSoldier);

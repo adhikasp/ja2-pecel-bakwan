@@ -522,7 +522,7 @@ BOOLEAN SetCurrentSquad( INT32 iCurrentSquad, BOOLEAN fForce )
 
 	// check if the currently selected guy is on this squad, if not, get the first one on the new squad
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL || sel->bAssignment != iCurrentSquad)
+	if (sel == nullptr || sel->bAssignment != iCurrentSquad)
 	{
 		// ATE: Changed this to FALSE for acknowledgement sounds.. sounds bad if just starting/entering sector..
 		SelectSoldier(Squad[iCurrentSquad][0], SELSOLDIER_FORCE_RESELECT);
@@ -655,11 +655,11 @@ void SaveSquadInfoToSavedGameFile(HWFILE const f)
 		{
 			// We write all soldiers in squad, and then we fill up the end of
 			// squad up to multiples of 6 for save compatability.
-			const SOLDIERTYPE *const s = (slot < squadSize) ? Squad[squad][slot] : NULL;
+			const SOLDIERTYPE* const s = (slot < squadSize) ? Squad[squad][slot] : nullptr;
 
 			if (squadSize <= 6 && slot == 6) break;                    // always write 6 slots if squad size <= 6
 
-			if (squadSize > 6 && s == NULL && (slot % 6) == 0) break;  // writes none, or multiples of 6
+			if (squadSize > 6 && s == nullptr && (slot % 6) == 0) break; // writes none, or multiples of 6
 
 			INJ_I16(d, s ? s->ubID : -1)
 			INJ_U8(d, SQUAD_INFO_FORMAT_VERSION)
@@ -768,7 +768,7 @@ static void UpdateCurrentlySelectedMerc(SOLDIERTYPE* pSoldier, INT8 bSquadValue)
 		}
 		else
 		{
-			SetSelectedMan(NULL);
+			SetSelectedMan(nullptr);
 
 			// ATE: Make sure we are in TEAM panel at this point!
 			SetCurrentInterfacePanel( TEAM_PANEL );
@@ -801,7 +801,7 @@ static BOOLEAN AddDeadCharacterToSquadDeadGuys(SOLDIERTYPE* pSoldier, INT32 iSqu
 	for (int iCounter = 0; iCounter < NUMBER_OF_DEAD_SOLDIERS_ON_SQUAD; iCounter++)
 	{
 		const INT16 dead_id = sDeadMercs[iSquadValue][iCounter];
-		if (dead_id == -1 || FindSoldierByProfileIDOnPlayerTeam(dead_id) == NULL)
+		if (dead_id == -1 || FindSoldierByProfileIDOnPlayerTeam(dead_id) == nullptr)
 		{
 			sDeadMercs[iSquadValue][iCounter] = pSoldier->ubProfile;
 			return TRUE;

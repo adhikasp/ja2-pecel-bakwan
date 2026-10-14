@@ -143,7 +143,7 @@ BOOLEAN CalcWallInfoUsingSmartMethod( UINT32 iMapIndex, UINT16 *pusWallType, UIN
 
 BOOLEAN CalcDoorInfoUsingSmartMethod( UINT32 iMapIndex, UINT16 *pusDoorType, UINT16 *pusIndex )
 {
-	LEVELNODE *pWall = NULL;
+	LEVELNODE* pWall = nullptr;
 	pWall = GetVerticalWall( iMapIndex );
 	if( pWall )
 	{
@@ -165,7 +165,7 @@ BOOLEAN CalcDoorInfoUsingSmartMethod( UINT32 iMapIndex, UINT16 *pusDoorType, UIN
 
 BOOLEAN CalcWindowInfoUsingSmartMethod( UINT32 iMapIndex, UINT16 *pusWallType, UINT16 *pusIndex )
 {
-	LEVELNODE *pWall = NULL;
+	LEVELNODE* pWall = nullptr;
 
 	pWall = GetVerticalWall( iMapIndex );
 	if( pWall )
@@ -188,7 +188,7 @@ BOOLEAN CalcWindowInfoUsingSmartMethod( UINT32 iMapIndex, UINT16 *pusWallType, U
 
 BOOLEAN CalcBrokenWallInfoUsingSmartMethod( UINT32 iMapIndex, UINT16 *pusWallType, UINT16 *pusIndex )
 {
-	LEVELNODE *pWall = NULL;
+	LEVELNODE* pWall = nullptr;
 
 	if( gubBrokenWallUIValue == 2 ) //the hole in the wall
 	{
@@ -457,7 +457,7 @@ void PasteSmartWall( UINT32 iMapIndex )
 
 void PasteSmartDoor( UINT32 iMapIndex )
 {
-	LEVELNODE *pWall = NULL;
+	LEVELNODE* pWall = nullptr;
 	UINT16 usDoorType;
 	UINT16 usIndex;
 
@@ -483,7 +483,7 @@ void PasteSmartDoor( UINT32 iMapIndex )
 
 void PasteSmartWindow( UINT32 iMapIndex )
 {
-	LEVELNODE *pWall = NULL;
+	LEVELNODE* pWall = nullptr;
 	UINT16 usIndex;
 
 	pWall = GetVerticalWall( iMapIndex );

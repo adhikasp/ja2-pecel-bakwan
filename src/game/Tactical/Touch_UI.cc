@@ -158,9 +158,10 @@ void TacticalTouchUIConfirmCallback(GUI_BUTTON*, UINT32 reason) {
 	if (reason & MSYS_CALLBACK_REASON_POINTER_UP) {
 		auto const& selected = GetSelectedMan();
 
-		if (guiCurrentCursorGridNo == NOWHERE || selected == NULL) return;
+		if (guiCurrentCursorGridNo == NOWHERE || selected == nullptr) return;
 
-		if ( gpItemPointer != NULL ) {
+		if (gpItemPointer != nullptr)
+		{
 			if ( HandleItemPointerClick( guiCurrentCursorGridNo ) )
 			{
 				// getout of mode
@@ -168,7 +169,9 @@ void TacticalTouchUIConfirmCallback(GUI_BUTTON*, UINT32 reason) {
 
 				guiPendingOverrideEvent = A_CHANGE_TO_MOVE;
 			}
-		} else {
+		}
+		else
+		{
 			switch( gCurrentUIMode )
 			{
 				case CONFIRM_MOVE_MODE: {
@@ -217,7 +220,7 @@ void TacticalTouchUIConfirmCallback(GUI_BUTTON*, UINT32 reason) {
 							{
 								guiPendingOverrideEvent = C_MOVE_MERC;
 							}
-							else if (GetCurInteractiveTile() != NULL)
+							else if (GetCurInteractiveTile() != nullptr)
 							{
 								selected->fUIMovementFast = TRUE;
 								guiPendingOverrideEvent = C_MOVE_MERC;
@@ -266,7 +269,7 @@ void TacticalTouchUIIncreaseAimCallback(GUI_BUTTON*, UINT32 reason) {
 	if (reason & MSYS_CALLBACK_REASON_POINTER_UP) {
 		auto const& selected = GetSelectedMan();
 
-		if (guiCurrentCursorGridNo == NOWHERE || selected == NULL) return;
+		if (guiCurrentCursorGridNo == NOWHERE || selected == nullptr) return;
 
 		HandleRightClickAdjustCursor(selected, guiCurrentCursorGridNo);
 	}
@@ -276,7 +279,7 @@ void TacticalTouchUIBurstCallback(GUI_BUTTON*, UINT32 reason) {
 	if (reason & MSYS_CALLBACK_REASON_POINTER_UP) {
 		auto const& selected = GetSelectedMan();
 
-		if (guiCurrentCursorGridNo == NOWHERE || selected == NULL) return;
+		if (guiCurrentCursorGridNo == NOWHERE || selected == nullptr) return;
 
 		ChangeWeaponMode(selected);
 	}
@@ -286,7 +289,7 @@ void TacticalTouchUIItemCallback(GUI_BUTTON*, UINT32 reason) {
 	if (reason & MSYS_CALLBACK_REASON_POINTER_UP) {
 		auto const& sel = GetSelectedMan();
 
-		if (sel == NULL || gpItemPointer != NULL) return;
+		if (sel == nullptr || gpItemPointer != nullptr) return;
 
 		guiPendingOverrideEvent = A_ON_TERRAIN;
 	}
@@ -296,7 +299,7 @@ void TacticalTouchUIRunCallback(GUI_BUTTON*, UINT32 reason) {
 	if (reason & MSYS_CALLBACK_REASON_POINTER_UP) {
 		auto const& sel = GetSelectedMan();
 
-		if (guiCurrentCursorGridNo == NOWHERE || sel == NULL) return;
+		if (guiCurrentCursorGridNo == NOWHERE || sel == nullptr) return;
 		if (MercInWater(sel) || (sel->uiStatusFlags & SOLDIER_ROBOT)) return;
 
 		// Change selected merc to run

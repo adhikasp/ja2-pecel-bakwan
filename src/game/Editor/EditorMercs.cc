@@ -136,7 +136,7 @@ UINT8 gubScheduleInstructions = SCHEDULE_INSTRUCTIONS_NONE;
 //array which keeps track of which item is in which slot.  This is dependant on the selected merc, so
 //these temp values must be updated when different mercs are selected, and reset when a merc detailed
 //placement is created.
-OBJECTTYPE *gpMercSlotItem[9] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+OBJECTTYPE* gpMercSlotItem[9] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 //Because we only support these nine slots, they aren't continuous values, so this array helps
 //processing functions by referring to this array to get the appropriate slot.
 INT8 gbMercSlotTypes[9] = { HELMETPOS, VESTPOS, LEGPOS, HANDPOS, SECONDHANDPOS,
@@ -247,7 +247,7 @@ void EntryInitEditorMercsInfo()
 		iCurStart += gubpNumReplacementsPerRange[ x - 1 ];
 		iEditColorStart[x] = iCurStart;
 	}
-	g_selected_merc      = NULL;
+	g_selected_merc = nullptr;
 	gsSelectedMercGridNo = 0;
 
 	gfCanEditMercs = TRUE;
@@ -378,7 +378,7 @@ void AddMercToWorld( INT32 iMapIndex )
 
 		//Create the soldier, but don't place it yet.
 		SOLDIERTYPE* const pSoldier = TacticalCreateSoldier(gTempDetailedPlacement);
-		if (pSoldier != NULL)
+		if (pSoldier != nullptr)
 		{
 			pSoldier->bVisible = 1;
 			pSoldier->bLastRenderVisibleValue = 1;
@@ -415,7 +415,7 @@ static SOLDIERTYPE* IsMercHere(INT32 iMapIndex);
 void HandleRightClickOnMerc( INT32 iMapIndex )
 {
 	const SOLDIERTYPE* const this_merc = IsMercHere(iMapIndex);
-	if (this_merc != NULL)
+	if (this_merc != nullptr)
 	{
 		if (g_selected_merc != this_merc)
 		{ // We want to edit a new merc (or different merc)
@@ -425,7 +425,8 @@ void HandleRightClickOnMerc( INT32 iMapIndex )
 			IndicateSelectedMerc(this_merc->ubID);
 		}
 	}
-	else if (g_selected_merc != NULL && IsLocationSittable(iMapIndex, gfRoofPlacement)) // We want to move the selected merc to this new location.
+	else if (g_selected_merc != nullptr &&
+			 IsLocationSittable(iMapIndex, gfRoofPlacement)) // We want to move the selected merc to this new location.
 	{
 		RemoveAllObjectsOfTypeRange( gsSelectedMercGridNo, CONFIRMMOVE, CONFIRMMOVE );
 		EVENT_SetSoldierPosition(gpSelected->pSoldier, iMapIndex, SSP_NONE);
@@ -467,7 +468,7 @@ void ResetAllMercPositions()
 		if( curr->pSoldier )
 		{
 			TacticalRemoveSoldier(*curr->pSoldier);
-			curr->pSoldier = NULL;
+			curr->pSoldier = nullptr;
 		}
 		//usMapIndex = gpSelected->pBasicPlacement->usStartingGridNo;
 		//if( gpSelected->pSoldier )
@@ -482,8 +483,8 @@ void ResetAllMercPositions()
 	AddSoldierInitListTeamToWorld(CREATURE_TEAM);
 	AddSoldierInitListTeamToWorld(MILITIA_TEAM);
 	AddSoldierInitListTeamToWorld(CIV_TEAM);
-	gpSelected = NULL;
-	g_selected_merc = NULL;
+	gpSelected = nullptr;
+	g_selected_merc = nullptr;
 }
 
 void AddMercWaypoint( UINT32 iMapIndex )
@@ -493,7 +494,8 @@ void AddMercWaypoint( UINT32 iMapIndex )
 	if ( iActionParam == 0 )
 		return;
 
-	if (g_selected_merc == NULL || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID || g_selected_merc->ubID >= MAXMERCS)
+	if (g_selected_merc == nullptr || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID ||
+		g_selected_merc->ubID >= MAXMERCS)
 		return;
 
 	if ( iActionParam > gpSelected->pSoldier->bPatrolCnt )
@@ -531,7 +533,8 @@ void EraseMercWaypoint()
 	if ( iActionParam == 0 )
 		return;
 
-	if (g_selected_merc == NULL || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID || g_selected_merc->ubID >= MAXMERCS)
+	if (g_selected_merc == nullptr || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID ||
+		g_selected_merc->ubID >= MAXMERCS)
 		return;
 
 	// Fill up missing areas
@@ -562,7 +565,7 @@ static SOLDIERTYPE* IsMercHere(INT32 iMapIndex)
 	{
 		if (s->sGridNo == iMapIndex) return s;
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -747,7 +750,7 @@ void DisplayWayPoints(void)
 	INT8	bPoint;
 
 	const SOLDIERTYPE* const pSoldier = g_selected_merc;
-	if (pSoldier == NULL || pSoldier->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID || pSoldier->ubID >= MAXMERCS)
+	if (pSoldier == nullptr || pSoldier->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID || pSoldier->ubID >= MAXMERCS)
 		return;
 
 	// point 0 is not used!
@@ -885,7 +888,7 @@ void IndicateSelectedMerc( INT16 sID )
 	{
 		case SELECT_NEXT_MERC:
 			prev = gpSelected;
-			if (g_selected_merc == NULL || !gpSelected)
+			if (g_selected_merc == nullptr || !gpSelected)
 			{ //if no merc selected, then select the first one in list.
 				gpSelected = gSoldierInitHead;
 			}
@@ -923,8 +926,8 @@ void IndicateSelectedMerc( INT16 sID )
 			break;
 		case SELECT_NO_MERC:
 			SetMercEditability( TRUE );
-			gpSelected = NULL;
-			g_selected_merc  = NULL;
+			gpSelected = nullptr;
+			g_selected_merc = nullptr;
 			gsSelectedGridNo = 0;
 			SetMercEditingMode( MERC_TEAMMODE );
 			return; //we already deselected the previous merc.
@@ -945,7 +948,7 @@ void IndicateSelectedMerc( INT16 sID )
 			gpSelected = FindSoldierInitNodeWithID( (UINT8)sID );
 			if( !gpSelected )
 			{
-				g_selected_merc  = NULL;
+				g_selected_merc = nullptr;
 				gsSelectedGridNo = 0;
 				SetMercEditability( TRUE );
 				SetMercEditingMode( MERC_TEAMMODE );
@@ -956,7 +959,7 @@ void IndicateSelectedMerc( INT16 sID )
 	if( bTeam != -1 )
 	{ //We are searching for the next occurence of a particular team.
 		prev = gpSelected;
-		if (g_selected_merc == NULL || !gpSelected)
+		if (g_selected_merc == nullptr || !gpSelected)
 		{ //if no merc selected, then select the first one in list.
 			gpSelected = gSoldierInitHead;
 		}
@@ -1076,11 +1079,11 @@ void IndicateSelectedMerc( INT16 sID )
 
 void DeleteSelectedMerc()
 {
-	if (g_selected_merc != NULL)
+	if (g_selected_merc != nullptr)
 	{
 		RemoveSoldierNodeFromInitList( gpSelected );
-		gpSelected = NULL;
-		g_selected_merc = NULL;
+		gpSelected = nullptr;
+		g_selected_merc = nullptr;
 		gfRenderWorld = TRUE;
 		if( TextInputMode() )
 			KillTextInputMode();
@@ -1246,7 +1249,7 @@ static void ExtractAndUpdateMercProfile(void)
 static void SetupTextInputForMercSchedule(void)
 {
 	InitTextInputModeWithScheme( DEFAULT_SCHEME );
-	AddUserInputField( NULL );
+	AddUserInputField(nullptr);
 	AddTextInputField(268, EDITOR_TASKBAR_POS_Y + 13, 36, 16, MSYS_PRIORITY_NORMAL, {}, 6, INPUTTYPE_24HOURCLOCK);
 	SetExclusive24HourTimeValue( 1, gCurrSchedule.usTime[0] );
 	AddTextInputField(268, EDITOR_TASKBAR_POS_Y + 34, 36, 16, MSYS_PRIORITY_NORMAL, {}, 6, INPUTTYPE_24HOURCLOCK);
@@ -1266,7 +1269,7 @@ void ExtractAndUpdateMercSchedule()
 	INT32 i;
 	BOOLEAN fValidSchedule = FALSE;
 	BOOLEAN fScheduleNeedsUpdate = FALSE;
-	SCHEDULENODE *pNext = NULL;
+	SCHEDULENODE* pNext = nullptr;
 	if( !gpSelected )
 		return;
 	//extract all of the fields into a temp schedulenode.
@@ -1330,7 +1333,7 @@ void ExtractAndUpdateMercSchedule()
 void ExtractCurrentMercModeInfo( BOOLEAN fKillTextInputMode )
 {
 	//This happens if we deleted a merc
-	if (g_selected_merc == NULL) return;
+	if (g_selected_merc == nullptr) return;
 	//Extract and update mercs via text fields if applicable
 	switch( gubCurrMercMode )
 	{
@@ -1370,7 +1373,7 @@ void KillDetailedPlacementForMerc()
 {
 	Assert( gpSelected->pDetailedPlacement );
 	delete gpSelected->pDetailedPlacement;
-	gpSelected->pDetailedPlacement = NULL;
+	gpSelected->pDetailedPlacement = nullptr;
 	gpSelected->pBasicPlacement->fDetailedPlacement = FALSE;
 	SetMercEditability( TRUE );
 }
@@ -1592,7 +1595,7 @@ void SetMercEditingMode( UINT8 ubNewMode )
 	}
 
 	//Release the currently selected merc if you just selected a new team.
-	if (g_selected_merc != NULL && ubNewMode == MERC_TEAMMODE)
+	if (g_selected_merc != nullptr && ubNewMode == MERC_TEAMMODE)
 	{
 		//attempt to weed out conditions where we select a team that matches the currently
 		//selected merc.  We don't want to deselect him in this case.
@@ -1617,7 +1620,7 @@ void SetMercEditingMode( UINT8 ubNewMode )
 	}
 
 	ShowButton( iEditorButton[ MERCS_NEXT ] );
-	if (g_selected_merc != NULL) ShowButton(iEditorButton[MERCS_DELETE]);
+	if (g_selected_merc != nullptr) ShowButton(iEditorButton[MERCS_DELETE]);
 
 	if( gubCurrMercMode > MERC_TEAMMODE )
 	{	//Add the basic buttons if applicable.
@@ -1652,7 +1655,7 @@ void SetMercEditingMode( UINT8 ubNewMode )
 			UpdateMercItemSlots();
 			ShowItemStatsPanel();
 			if( gbCurrSelect == -1 )
-				SpecifyItemToEdit( NULL, -1 );
+				SpecifyItemToEdit(nullptr, -1);
 			else
 				SpecifyItemToEdit( gpMercSlotItem[ gbCurrSelect ], -1 );
 			HideEditorButtons( MERCS_DELETE, MERCS_NEXT );
@@ -1898,7 +1901,7 @@ void UpdateMercsInfo()
 				MPrint(396, EDITOR_TASKBAR_POS_Y + 38, "RANDOM");
 				MPrint(396, EDITOR_TASKBAR_POS_Y + 62, "RANDOM");
 				MPrint(396, EDITOR_TASKBAR_POS_Y + 86, "RANDOM");
-				ShowEditMercPalettes( NULL ); //will display grey scale to signify random
+				ShowEditMercPalettes(nullptr); //will display grey scale to signify random
 			}
 			DisplayBodyTypeInfo();
 			break;
@@ -2024,14 +2027,14 @@ static void RenderSelectedMercsInventory(void)
 	INT32 i;
 	INT32 xp, yp;
 	UINT8 ubFontColor;
-	if (g_selected_merc == NULL) return;
+	if (g_selected_merc == nullptr) return;
 	for( i = 0; i < 9; i++ )
 	{
 		if( gpMercSlotItem[i] )
 		{ //Render the current image.
 			xp = mercRects[ i ].iLeft + 4 + MERCPANEL_X;
 			yp = mercRects[ i ].iTop + MERCPANEL_Y;
-			BltVideoSurface(FRAME_BUFFER, guiMercInvPanelBuffers[i], xp, yp, NULL);
+			BltVideoSurface(FRAME_BUFFER, guiMercInvPanelBuffers[i], xp, yp, nullptr);
 			//Render the text
 			switch( i )
 			{
@@ -2332,7 +2335,7 @@ static void UpdateMercItemSlots(void)
 	{
 		for( x = 0; x < 9; x++ )
 		{
-			gpMercSlotItem[ x ] = NULL;
+			gpMercSlotItem[x] = nullptr;
 		}
 	}
 	else
@@ -2350,7 +2353,7 @@ static void UpdateMercItemSlots(void)
 		}
 	}
 	SetDroppableCheckboxesBasedOnMercsInventory();
-	SpecifyItemToEdit( NULL, -1 );
+	SpecifyItemToEdit(nullptr, -1);
 	gbCurrSelect = -1;
 	gbCurrHilite = -1;
 }
@@ -2904,7 +2907,7 @@ static SOLDIERCREATE_STRUCT       gSaveBufferDetailedPlacement;
 
 void CopyMercPlacement( INT32 iMapIndex )
 {
-	if (g_selected_merc == NULL)
+	if (g_selected_merc == nullptr)
 	{
 		ScreenMsg( FONT_MCOLOR_LTRED, MSG_INTERFACE, "Placement not copied because no placement selected." );
 		return;
@@ -2989,7 +2992,7 @@ void PasteMercPlacement( INT32 iMapIndex )
 
 		//Create the soldier, but don't place it yet.
 		SOLDIERTYPE* const pSoldier = TacticalCreateSoldier(tempDetailedPlacement);
-		if (pSoldier != NULL)
+		if (pSoldier != nullptr)
 		{
 			pSoldier->bVisible = 1;
 			pSoldier->bLastRenderVisibleValue = 1;

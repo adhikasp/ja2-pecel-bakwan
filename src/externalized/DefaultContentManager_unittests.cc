@@ -124,7 +124,7 @@ TEST(ExternalizedData, readEveryFile)
 	{
 		ST::string relativePath = f.substr(dataPath.size() + 1);
 		auto json = cm->readJsonDataFile(relativePath);
-		ASSERT_FALSE(json.get() == NULL);
+		ASSERT_FALSE(json.get() == nullptr);
 	}
 
 	delete cm;

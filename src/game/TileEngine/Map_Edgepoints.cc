@@ -957,7 +957,7 @@ void EndMapEdgepointSearch()
 {
 	AssertMsg( gpReservedGridNos, "Attempting to EndMapEdgepointSearch that has already been removed." );
 	delete[] gpReservedGridNos;
-	gpReservedGridNos = NULL;
+	gpReservedGridNos = nullptr;
 	gsReservedIndex = 0;
 }
 

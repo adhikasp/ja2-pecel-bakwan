@@ -755,7 +755,7 @@ void DoSaveLoadMessageBoxWithRect(const ST::string& str, ScreenID uiExitScreen, 
 
 void DoSaveLoadMessageBox(const ST::string& str, ScreenID uiExitScreen, MessageBoxFlags usFlags, MSGBOX_CALLBACK ReturnCallback)
 {
-	DoSaveLoadMessageBoxWithRect(str, uiExitScreen, usFlags, ReturnCallback, NULL);
+	DoSaveLoadMessageBoxWithRect(str, uiExitScreen, usFlags, ReturnCallback, nullptr);
 }
 
 bool compareSaveGames(const SaveGameInfo& i, const SaveGameInfo& j) {
@@ -1123,7 +1123,7 @@ static void InitSaveLoadScreenTextInputBoxes(void)
 	SetTextInputHilitedColors(2, FONT_WHITE, FONT_WHITE);
 	SetCursorColor(Get16BPPColor(FROMRGB(255, 255, 255)));
 
-	AddUserInputField(NULL);
+	AddUserInputField(nullptr);
 
 	// Game Desc Field
 	INT16 const x = SLG_FIRST_SAVED_SPOT_X + SLG_SAVE_GAME_DESC_X;
@@ -1343,10 +1343,12 @@ void DoQuickSave()
 
 		if (guiPreviousOptionScreen == MAP_SCREEN)
 		{
-			DoMapMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+			DoMapMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], MAP_SCREEN, MSG_BOX_FLAG_OK,
+							nullptr);
 		} else
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr,
+						 nullptr);
 		}
 	}
 }
@@ -1365,10 +1367,12 @@ void DoAutoSave()
 
 		if (guiPreviousOptionScreen == MAP_SCREEN)
 		{
-			DoMapMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+			DoMapMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], MAP_SCREEN, MSG_BOX_FLAG_OK,
+							nullptr);
 		} else
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr,
+						 nullptr);
 		}
 	}
 }
@@ -1410,10 +1414,12 @@ void DoDeadIsDeadSave()
 
 		if (guiPreviousOptionScreen == MAP_SCREEN)
 		{
-			DoMapMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], MAP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+			DoMapMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], MAP_SCREEN, MSG_BOX_FLAG_OK,
+							nullptr);
 		} else
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], GAME_SCREEN, MSG_BOX_FLAG_OK, NULL, NULL);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, zSaveLoadText[SLG_SAVE_GAME_ERROR], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr,
+						 nullptr);
 		}
 	}
 }
@@ -1538,7 +1544,7 @@ static void DoSaveGame(const ST::string &saveName, const ST::string &saveDescrip
 	else
 	{
 		if( !SaveGame(saveName, saveDescription)) {
-			DoSaveLoadMessageBox(zSaveLoadText[SLG_SAVE_GAME_ERROR], SAVE_LOAD_SCREEN, MSG_BOX_FLAG_OK, NULL);
+			DoSaveLoadMessageBox(zSaveLoadText[SLG_SAVE_GAME_ERROR], SAVE_LOAD_SCREEN, MSG_BOX_FLAG_OK, nullptr);
 			return;
 		}
 	}

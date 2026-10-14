@@ -97,7 +97,7 @@ static INT32 iHighLightFileLine;
 
 
 // the files record list
-static FilesUnit* pFilesListHead = NULL;
+static FilesUnit* pFilesListHead = nullptr;
 
 // are we in files mode
 static BOOLEAN fInFilesMode=FALSE;
@@ -311,14 +311,14 @@ static void ProcessAndEnterAFilesRecord(const UINT8 ubCode, const BOOLEAN fRead)
 {
 	// Append node to list
 	FilesUnit** anchor;
-	for (anchor = &pFilesListHead; *anchor != NULL; anchor = &(*anchor)->Next)
+	for (anchor = &pFilesListHead; *anchor != nullptr; anchor = &(*anchor)->Next)
 	{
 		// Check if the file is already there
 		if ((*anchor)->ubCode == ubCode) return;
 	}
 
 	FilesUnit* const f = new FilesUnit{};
-	f->Next   = NULL;
+	f->Next = nullptr;
 	f->ubCode = ubCode;
 	f->fRead  = fRead;
 
@@ -382,7 +382,7 @@ static void OpenAndWriteFilesFile(void)
 static void ClearFilesList(void)
 {
 	FilesUnit* i   = pFilesListHead;
-	pFilesListHead = NULL;
+	pFilesListHead = nullptr;
 	while (i)
 	{
 		FilesUnit* const del = i;
@@ -472,7 +472,7 @@ static void FilesBtnCallBack(MOUSE_REGION* pRegion, UINT32 iReason)
 		if (iHighLightFileLine == iFileId) return;
 
 		// make sure is a valid
-		while (pFilesList != NULL)
+		while (pFilesList != nullptr)
 		{
 			if (iCounter == iFileId)
 			{
@@ -533,7 +533,7 @@ static void DisplayFormattedText(void)
 static FileString const* GetFirstStringOnThisPage(FileString const* RecordList, SGPFont const font, UINT16 usWidth, UINT8 ubGap, INT32 iPage, INT32 iPageSize, FileRecordWidth* WidthList)
 {
 	// get the first record on this page - build pages up until this point
-	FileString const* CurrentRecord = NULL;
+	FileString const* CurrentRecord = nullptr;
 
 	INT32 iCurrentPositionOnThisPage = 0;
 	INT32 iCurrentPage =0;
@@ -545,7 +545,7 @@ static FileString const* GetFirstStringOnThisPage(FileString const* RecordList, 
 
 
 	// null record list, nothing to do
-	if( RecordList == NULL )
+	if (RecordList == nullptr)
 	{
 
 		return ( CurrentRecord );
@@ -838,7 +838,7 @@ static FileRecordWidth* CreateRecordWidth(INT32 iRecordNumber, INT32 iRecordWidt
 	// allocs and inits a width info record for the multipage file viewer...this will tell the procedure that does inital computation on which record is the start of the current page
 	// how wide special records are ( ones that share space with pictures )
 	FileRecordWidth* const pTempRecord = new FileRecordWidth{};
-	pTempRecord -> Next = NULL;
+	pTempRecord->Next = nullptr;
 	pTempRecord -> iRecordNumber = iRecordNumber;
 	pTempRecord -> iRecordWidth = iRecordWidth;
 	pTempRecord -> iRecordHeightAdjustment = iRecordHeightAdjustment;
@@ -851,11 +851,10 @@ static FileRecordWidth* CreateRecordWidth(INT32 iRecordNumber, INT32 iRecordWidt
 static FileRecordWidth* CreateWidthRecordsForAruloIntelFile(void)
 {
 	// this fucntion will create the width list for the Arulco intelligence file
-	FileRecordWidth* pTempRecord = NULL;
-	FileRecordWidth* pRecordListHead = NULL;
+	FileRecordWidth* pTempRecord = nullptr;
+	FileRecordWidth* pRecordListHead = nullptr;
 
-
-		// first record width
+	// first record width
 	//pTempRecord = CreateRecordWidth( 7, 350, 200,0 );
 	pTempRecord = CreateRecordWidth( FILES_COUNTER_1_WIDTH, 350, MAX_FILE_MESSAGE_PAGE_SIZE,0 );
 
@@ -880,9 +879,8 @@ static FileRecordWidth* CreateWidthRecordsForAruloIntelFile(void)
 static FileRecordWidth* CreateWidthRecordsForTerroristFile(void)
 {
 	// this fucntion will create the width list for the Arulco intelligence file
-	FileRecordWidth* pTempRecord = NULL;
-	FileRecordWidth* pRecordListHead = NULL;
-
+	FileRecordWidth* pTempRecord = nullptr;
+	FileRecordWidth* pRecordListHead = nullptr;
 
 	// first record width
 	pTempRecord = CreateRecordWidth( 4, 170, 0,0 );

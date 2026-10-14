@@ -302,7 +302,7 @@ void RenderTopmostTacticalInterface()
 
 	if (!gfInItemPickupMenu && !gpItemPointer)
 	{
-		HandleAnyMercInSquadHasCompatibleStuff(NULL);
+		HandleAnyMercInSquadHasCompatibleStuff(nullptr);
 	}
 
 	// the native sector card shows the clock and the town; a click on the clock pauses (TacticalCommands)
@@ -364,10 +364,10 @@ void ResetInterfaceAndUI( )
 
 	//ResetMultiSelection( );
 
-	if (g_ui_message_overlay != NULL)
+	if (g_ui_message_overlay != nullptr)
 	{
 		RemoveVideoOverlay(g_ui_message_overlay);
-		g_ui_message_overlay = NULL;
+		g_ui_message_overlay = nullptr;
 	}
 
 	// Set UI back to movement...

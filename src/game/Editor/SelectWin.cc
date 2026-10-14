@@ -389,7 +389,7 @@ void InitJA2SelectionWindow( void )
 	INT32 iCount2;
 	INT32 iCount3;
 
-	pDispList = NULL;
+	pDispList = nullptr;
 
 	// Init the display spec lists for the types of selection windows
 
@@ -578,7 +578,7 @@ void ShutdownJA2SelectionWindow( void )
 	for (GenericIcon icon : iButtonIcons)
 		UnloadGenericButtonIcon(icon);
 
-	if (pDispList != NULL)
+	if (pDispList != nullptr)
 	{
 		pDispList = TrashList(pDispList);
 	}
@@ -601,7 +601,7 @@ void RemoveJA2SelectionWindow( void )
 
 	gfRenderSquareArea = FALSE;
 
-	if (pDispList != NULL)
+	if (pDispList != nullptr)
 	{
 		pDispList = TrashList(pDispList);
 	}
@@ -615,16 +615,13 @@ void RemoveJA2SelectionWindow( void )
 //	Free the current display list for the selection window.
 static DisplayList* TrashList(DisplayList* pNode)
 {
-	if (pNode == NULL)
-		return(NULL);
+	if (pNode == nullptr) return (nullptr);
 
-	if (pNode->pNext != NULL)
-		pNode->pNext = TrashList(pNode->pNext);
+	if (pNode->pNext != nullptr) pNode->pNext = TrashList(pNode->pNext);
 
-	if (pNode->pNext == NULL)
-		delete pNode;
+	if (pNode->pNext == nullptr) delete pNode;
 
-	return(NULL);
+	return (nullptr);
 }
 
 
@@ -734,7 +731,7 @@ static void SelWinClkCallback(GUI_BUTTON* button, UINT32 reason)
 		pNode = pDispList;
 
 		fDone = FALSE;
-		while( (pNode != NULL) && !fDone )
+		while ((pNode != nullptr) && !fDone)
 		{
 			if ( (iClickX >= pNode->iX) && (iClickX < (pNode->iX + pNode->iWidth)) &&
 					(iClickY >= pNode->iY) && (iClickY < (pNode->iY + pNode->iHeight)) )
@@ -777,7 +774,7 @@ static void SelWinClkCallback(GUI_BUTTON* button, UINT32 reason)
 				pNode = pDispList;
 
 				fDone = FALSE;
-				while( (pNode != NULL) && !fDone )
+				while ((pNode != nullptr) && !fDone)
 				{
 					if ( (iClickX >= pNode->iX) && (iClickX < (pNode->iX + pNode->iWidth)) &&
 							(iClickY >= pNode->iY) && (iClickY < (pNode->iY + pNode->iHeight)) )
@@ -881,12 +878,10 @@ BOOLEAN ClearSelectionList( void )
 	INT32 iIndex;
 	DisplayList *pNode;
 
-
-	if (pNumSelList == NULL )
-		return( FALSE );
+	if (pNumSelList == nullptr) return (FALSE);
 
 	pNode = pDispList;
-	while ( pNode != NULL )
+	while (pNode != nullptr)
 	{
 		pNode->fChosen = FALSE;
 		pNode = pNode->pNext;

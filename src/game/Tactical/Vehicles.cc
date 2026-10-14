@@ -100,7 +100,7 @@ INT32 AddVehicleToList(const SGPSector& sMap, INT16, const UINT8 ubType)
 	v->sSector         = sMap;
 	v->fValid          = TRUE;
 	v->ubVehicleType   = ubType;
-	v->pMercPath       = NULL;
+	v->pMercPath = nullptr;
 	v->fDestroyed      = FALSE;
 	v->ubMovementGroup = gubVehicleMovementGroups[vid];
 
@@ -868,7 +868,7 @@ BOOLEAN OKUseVehicle( UINT8 ubProfile )
 
 static void TeleportVehicleToItsClosestSector(const UINT8 ubGroupID)
 {
-	GROUP  *pGroup = NULL;
+	GROUP* pGroup = nullptr;
 	UINT32 uiTimeToNextSector;
 	UINT32 uiTimeToLastSector;
 	SGPSector sPrev, sNext;
@@ -996,7 +996,7 @@ BOOLEAN IsSoldierInThisVehicleSquad(const SOLDIERTYPE* const pSoldier, const INT
 SOLDIERTYPE* PickRandomPassengerFromVehicle(SOLDIERTYPE* const pSoldier)
 {
 	// If not a vehicle, ignore!
-	if (!(pSoldier->uiStatusFlags & SOLDIER_VEHICLE)) return NULL;
+	if (!(pSoldier->uiStatusFlags & SOLDIER_VEHICLE)) return nullptr;
 
 	VEHICLETYPE const& v = pVehicleList[pSoldier->bVehicleID];
 
@@ -1004,7 +1004,7 @@ SOLDIERTYPE* PickRandomPassengerFromVehicle(SOLDIERTYPE* const pSoldier)
 	SOLDIERTYPE* mercs_in_vehicle[20];
 	CFOR_EACH_PASSENGER(v, i) mercs_in_vehicle[n_mercs++] = *i;
 
-	return n_mercs == 0 ? NULL : mercs_in_vehicle[Random(n_mercs)];
+	return n_mercs == 0 ? nullptr : mercs_in_vehicle[Random(n_mercs)];
 }
 
 

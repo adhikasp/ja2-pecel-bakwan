@@ -537,7 +537,7 @@ void HandleDoorTrap(SOLDIERTYPE& s, DOOR const& d)
 	{
 		case EXPLOSION:
 			// cause damage as a regular hand grenade
-			IgniteExplosion(NULL, 25, s.sGridNo, HAND_GRENADE, 0);
+			IgniteExplosion(nullptr, 25, s.sGridNo, HAND_GRENADE, 0);
 			break;
 
 		case SIREN:
@@ -567,8 +567,7 @@ void HandleDoorTrap(SOLDIERTYPE& s, DOOR const& d)
 			gTacticalStatus.ubAttackBusyCount++;
 			SLOGD("Trap gone off. Busy count: {}", gTacticalStatus.ubAttackBusyCount);
 
-			SoldierTakeDamage(&s, 10 + PreRandom(10), 3 + PreRandom(3) * 1000,
-						TAKE_DAMAGE_ELECTRICITY, NULL);
+			SoldierTakeDamage(&s, 10 + PreRandom(10), 3 + PreRandom(3) * 1000, TAKE_DAMAGE_ELECTRICITY, nullptr);
 			break;
 
 		case SUPER_ELECTRIC:
@@ -580,7 +579,7 @@ void HandleDoorTrap(SOLDIERTYPE& s, DOOR const& d)
 			gTacticalStatus.ubAttackBusyCount++;
 			SLOGD("Trap gone off. Busy count: {}", gTacticalStatus.ubAttackBusyCount);
 
-			SoldierTakeDamage(&s, 20 + PreRandom(20), 6 + PreRandom(6) * 1000, TAKE_DAMAGE_ELECTRICITY, NULL);
+			SoldierTakeDamage(&s, 20 + PreRandom(20), 6 + PreRandom(6) * 1000, TAKE_DAMAGE_ELECTRICITY, nullptr);
 			break;
 
 		default:
@@ -661,7 +660,8 @@ BOOLEAN AttemptToBlowUpLock( SOLDIERTYPE * pSoldier, DOOR * pDoor )
 		}
 
 		// OOPS! ... BOOM!
-		IgniteExplosionXY(NULL, pSoldier->sX, pSoldier->sY, gpWorldLevelData[pSoldier->sGridNo].sHeight, pSoldier->sGridNo, SHAPED_CHARGE, 0);
+		IgniteExplosionXY(nullptr, pSoldier->sX, pSoldier->sY, gpWorldLevelData[pSoldier->sGridNo].sHeight,
+						  pSoldier->sGridNo, SHAPED_CHARGE, 0);
 	}
 	return( FALSE );
 }
@@ -760,7 +760,7 @@ DOOR* FindDoorInfoAtGridNo( INT32 iMapIndex )
 	{
 		if (d.sGridNo == iMapIndex) return &d;
 	}
-	return NULL;
+	return nullptr;
 }
 
 //Upon world deallocation, the door table needs to be deallocated.

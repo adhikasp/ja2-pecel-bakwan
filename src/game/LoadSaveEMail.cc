@@ -84,13 +84,13 @@ void SaveEmailToSavedGame(HWFILE const File)
 
 	// Count the emails
 	UINT32 uiNumOfEmails = 0;
-	for (pEmail = pEmailList; pEmail != NULL; pEmail = pEmail->Next)
+	for (pEmail = pEmailList; pEmail != nullptr; pEmail = pEmail->Next)
 	{
 		uiNumOfEmails++;
 	}
 	File->write(&uiNumOfEmails, sizeof(UINT32));
 
-	for (pEmail = pEmailList; pEmail != NULL; pEmail = pEmail->Next)
+	for (pEmail = pEmailList; pEmail != nullptr; pEmail = pEmail->Next)
 	{
 		SaveEMailIntoFile(File, pEmail);
 	}

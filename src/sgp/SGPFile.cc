@@ -118,14 +118,14 @@ std::vector<uint8_t> SGPFile::readToEnd()
     RustPointer<VecU8> vec;
     vec.reset(File_readToEnd(this->file));
 
-    if (vec.get() == NULL)
-    {
-        RustPointer<char> err{getRustError()};
-        throw SGPFileException("readToEnd failed", name, err);
-    }
-    auto bytes = VecU8_as_ptr(vec.get());
-    auto len = VecU8_len(vec.get());
-    return std::vector<uint8_t>(bytes, bytes + len);
+	if (vec.get() == nullptr)
+	{
+		RustPointer<char> err{ getRustError() };
+		throw SGPFileException("readToEnd failed", name, err);
+	}
+	auto bytes = VecU8_as_ptr(vec.get());
+	auto len = VecU8_len(vec.get());
+	return std::vector<uint8_t>(bytes, bytes + len);
 }
 
 size_t SGPFile::readAtMost(void *const pDest, size_t const uiBytesToRead)

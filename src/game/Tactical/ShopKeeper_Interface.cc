@@ -240,7 +240,7 @@ static INT32 giShopKeepDialogueEventinProgress = -1;
 
 INVENTORY_IN_SLOT gMoveingItem;
 
-const OBJECTTYPE* gpHighLightedItemObject = NULL;
+const OBJECTTYPE* gpHighLightedItemObject = nullptr;
 
 static BOOLEAN gfResetShopKeepIdleQuote = FALSE;
 static BOOLEAN gfDoEvaluationAfterOpening = FALSE;
@@ -260,7 +260,7 @@ static SELECTED_ARMS_DEALERS_STATS gSelectArmsDealerInfo;
 
 
 //This pointer is used to store the inventory the arms dealer has for sale
-static INVENTORY_IN_SLOT* gpTempDealersInventory = NULL;
+static INVENTORY_IN_SLOT* gpTempDealersInventory = nullptr;
 
 static INVENTORY_IN_SLOT ArmsDealerOfferArea[SKI_NUM_TRADING_INV_SLOTS];
 static INVENTORY_IN_SLOT PlayersOfferArea[SKI_NUM_TRADING_INV_SLOTS];
@@ -293,7 +293,7 @@ static UINT16 gusPositionOfSubTitlesX = 0;
 
 static BOOLEAN gfExitSKIDueToMessageBox = FALSE;
 
-OBJECTTYPE *pShopKeeperItemDescObject=NULL;
+OBJECTTYPE* pShopKeeperItemDescObject = nullptr;
 
 static UINT32 guiNextFreeInvSlot;
 
@@ -410,7 +410,7 @@ static void RenderShopKeeperInterface(void);
 const DealerModel* SelectedArmsDealer()
 {
 	auto dealer = GCM->getDealer(gbSelectedArmsDealerID);
-	if (dealer == NULL)
+	if (dealer == nullptr)
 	{
 		ST::string err = ST::format("Dealer is NULL ({})", gbSelectedArmsDealerID);
 		throw std::runtime_error(err.to_std_string());
@@ -499,8 +499,8 @@ ScreenID ShopKeeperScreenHandle()
 		// tell player there's not enough room in the player's offer area
 		// ARM: message is delayed because we need the mouse restriction to be in place
 		// BEFORE it comes up so it gets lifted/restored
-		DoSkiMessageBox(SKI_Text[SKI_TEXT_NO_MORE_ROOM_IN_PLAYER_OFFER_AREA], SHOPKEEPER_SCREEN,
-					MSG_BOX_FLAG_OK, NULL);
+		DoSkiMessageBox(SKI_Text[SKI_TEXT_NO_MORE_ROOM_IN_PLAYER_OFFER_AREA], SHOPKEEPER_SCREEN, MSG_BOX_FLAG_OK,
+						nullptr);
 
 		gfDisplayNoRoomMsg = FALSE;
 	}
@@ -555,7 +555,7 @@ static void EnterShopKeeperInterface(void)
 	}
 
 	//Check to make sure the inventory is null ( should always be null if we are just coming in to the SKI )
-	Assert( gpTempDealersInventory == NULL );
+	Assert(gpTempDealersInventory == nullptr);
 
 	//Reinitialize the team panel to be the SM panel
 	SetCurrentInterfacePanel( SM_PANEL );
@@ -663,7 +663,7 @@ static void EnterShopKeeperInterface(void)
 	ResetAllQuoteSaidFlags();
 
 	//Reset the highlighted item pointer;
-	gpHighLightedItemObject = NULL;
+	gpHighLightedItemObject = nullptr;
 
 	//Reset
 	gfRemindedPlayerToPickUpHisStuff = FALSE;
@@ -721,8 +721,7 @@ static void EnterShopKeeperInterface(void)
 	gfDealerHasSaidTheEvaluateQuoteOnceThisSession = FALSE;
 	guiRandomQuoteDelayTime = SKI_DEALERS_RANDOM_QUOTE_DELAY;
 
-	pShopKeeperItemDescObject = NULL;
-
+	pShopKeeperItemDescObject = nullptr;
 
 	//Region to allow the user to drop items to the ground
 	MSYS_DefineRegion(&gArmsDealersDropItemToGroundMouseRegions, SKI_DROP_ITEM_TO_GROUND_START_X,
@@ -772,7 +771,7 @@ static void ExitShopKeeperInterface(void)
 	}
 
 	// ItemDescriptionBox should be cleared in either case
-	if( InItemDescriptionBox( ) || pShopKeeperItemDescObject != NULL )
+	if (InItemDescriptionBox() || pShopKeeperItemDescObject != nullptr)
 	{
 		DeleteItemDescriptionBox( );
 	}
@@ -820,7 +819,7 @@ static void ExitShopKeeperInterface(void)
 	if( gpTempDealersInventory )
 	{
 		delete[] gpTempDealersInventory;
-		gpTempDealersInventory = NULL;
+		gpTempDealersInventory = nullptr;
 	}
 
 	//if there is a subtitles box up, remove it
@@ -852,7 +851,7 @@ static void HandleShopKeeperInterface(void)
 
 
 	//if we are in the item desc panel, disable the buttons
-	if( InItemDescriptionBox( ) && pShopKeeperItemDescObject != NULL )
+	if (InItemDescriptionBox() && pShopKeeperItemDescObject != nullptr)
 	{
 		ShopKeeperInterface_SetSMpanelButtonsState(false);
 		DisableButton( guiSKI_InvPageUpButton );
@@ -944,8 +943,7 @@ static void HandleShopKeeperInterface(void)
 
 	//if the merc is talking and there is an item currently being highlighted
 	// ( this gets rid of the item burning through the dealers text box )
-	if (gfIsTheShopKeeperTalking &&
-			(gpHighLightedItemObject != NULL || gubSkiDirtyLevel != SKI_DIRTY_LEVEL0))
+	if (gfIsTheShopKeeperTalking && (gpHighLightedItemObject != nullptr || gubSkiDirtyLevel != SKI_DIRTY_LEVEL0))
 	{
 		RenderMercPopUpBox(g_popup_box, gusPositionOfSubTitlesX, SKI_POSITION_SUBTITLES_Y, FRAME_BUFFER);
 	}
@@ -983,7 +981,7 @@ static void RestoreTacticalBackGround(void);
 
 static void RenderShopKeeperInterface(void)
 {
-	if (InItemDescriptionBox() && pShopKeeperItemDescObject != NULL) return;
+	if (InItemDescriptionBox() && pShopKeeperItemDescObject != nullptr) return;
 
 	//RenderTacticalInterface( );
 	// Render view window
@@ -1308,8 +1306,7 @@ static void SelectDealersInventoryRegionCallBackPrimary(MOUSE_REGION* pRegion, U
 	UINT8 ubSelectedInvSlot = (UINT8)MSYS_GetRegionUserData( pRegion, 0 );
 	INT8  ubLocation;
 
-	if( gpTempDealersInventory == NULL )
-		return;
+	if (gpTempDealersInventory == nullptr) return;
 
 	ubSelectedInvSlot += gSelectArmsDealerInfo.ubFirstItemIndexOnPage;
 
@@ -1384,8 +1381,7 @@ static void SelectDealersInventoryRegionCallBackSecondary(MOUSE_REGION* pRegion,
 {
 	UINT8 ubSelectedInvSlot = (UINT8)MSYS_GetRegionUserData( pRegion, 0 );
 
-	if( gpTempDealersInventory == NULL )
-		return;
+	if (gpTempDealersInventory == nullptr) return;
 
 	ubSelectedInvSlot += gSelectArmsDealerInfo.ubFirstItemIndexOnPage;
 
@@ -1450,8 +1446,7 @@ static void SelectDealersInventoryMovementRegionCallBack(MOUSE_REGION* pRegion, 
 	UINT8 ubSelectedInvSlot = (UINT8)MSYS_GetRegionUserData( pRegion, 0 );
 	ubSelectedInvSlot += gSelectArmsDealerInfo.ubFirstItemIndexOnPage;
 
-	if( gpTempDealersInventory == NULL )
-		return;
+	if (gpTempDealersInventory == nullptr) return;
 
 	if( ubSelectedInvSlot >= gSelectArmsDealerInfo.uiNumDistinctInventoryItems )
 		return;
@@ -1472,7 +1467,7 @@ static void SelectDealersInventoryMovementRegionCallBack(MOUSE_REGION* pRegion, 
 		if (!gpTempDealersInventory[ubSelectedInvSlot].fActive)
 			return;
 
-		gpHighLightedItemObject = NULL;
+		gpHighLightedItemObject = nullptr;
 		gubSkiDirtyLevel = SKI_DIRTY_LEVEL1;
 		HandleCompatibleAmmoUI( gpSMCurrentMerc, -1, FALSE );
 	}
@@ -1497,7 +1492,7 @@ static void SelectDealersOfferSlotsMovementRegionCallBack(MOUSE_REGION* pRegion,
 		//if there is nothing in the slot, exit
 		if (!a->fActive) return;
 
-		gpHighLightedItemObject = NULL;
+		gpHighLightedItemObject = nullptr;
 		gubSkiDirtyLevel = SKI_DIRTY_LEVEL1;
 		HandleCompatibleAmmoUI( gpSMCurrentMerc, -1, FALSE );
 	}
@@ -1522,7 +1517,7 @@ static void SelectPlayersOfferSlotsMovementRegionCallBack(MOUSE_REGION* pRegion,
 		//if there is nothing in the slot, exit
 		if (!o->fActive) return;
 
-		gpHighLightedItemObject = NULL;
+		gpHighLightedItemObject = nullptr;
 		gubSkiDirtyLevel = SKI_DIRTY_LEVEL1;
 		HandleCompatibleAmmoUI( gpSMCurrentMerc, -1, FALSE );
 	}
@@ -1886,7 +1881,7 @@ static void DisplayArmsDealerCurrentInventoryPage(void)
 	usPosY = SKI_ARMS_DEALERS_INV_START_Y;
 
 	//if there is any inventory
-	if( gpTempDealersInventory != NULL )
+	if (gpTempDealersInventory != nullptr)
 	{
 		if( gubSkiDirtyLevel != SKI_DIRTY_LEVEL0 )
 		{
@@ -1973,12 +1968,13 @@ static void DisplayArmsDealerCurrentInventoryPage(void)
 		//This handles the remaining (empty) slots, resetting Fast Help text, and hatching out disabled ones
 		while ( sItemCount < SKI_NUM_ARMS_DEALERS_INV_SLOTS )
 		{
-			SetSkiRegionHelpText( NULL, &gDealersInventoryMouseRegions[ sItemCount ], ARMS_DEALER_INVENTORY );
+			SetSkiRegionHelpText(nullptr, &gDealersInventoryMouseRegions[sItemCount], ARMS_DEALER_INVENTORY);
 
 			//if the dealer repairs
 			if (DoesDealerDoRepairs(gbSelectedArmsDealerID))
 			{
-				SetSkiFaceRegionHelpText( NULL, &gRepairmanInventorySmallFaceMouseRegions[ sItemCount ], ARMS_DEALER_INVENTORY );
+				SetSkiFaceRegionHelpText(nullptr, &gRepairmanInventorySmallFaceMouseRegions[sItemCount],
+										 ARMS_DEALER_INVENTORY);
 			}
 
 			// hatch it out if region is disabled
@@ -2190,7 +2186,7 @@ static void DetermineArmsDealersSellingInventory(void)
 	if( gpTempDealersInventory )
 	{
 		delete[] gpTempDealersInventory;
-		gpTempDealersInventory = NULL;
+		gpTempDealersInventory = nullptr;
 	}
 
 	//allocate memory to hold the inventory in memory
@@ -2294,8 +2290,7 @@ static void AddItemsToTempDealerInventory(UINT16 usItemIndex, SPECIAL_ITEM_INFO*
 
 
 	Assert( ubHowMany > 0 );
-	Assert( pSpclItemInfo != NULL );
-
+	Assert(pSpclItemInfo != nullptr);
 
 	// if there's just one of them
 	if ( ubHowMany == 1 )
@@ -2810,7 +2805,7 @@ static void SetSkiFaceRegionHelpText(const INVENTORY_IN_SLOT* pInv, MOUSE_REGION
 	Assert( pRegion );
 
 	//if the item isn't NULL, and is owned by a merc
-	if( ( pInv != NULL ) && ( pInv->ubIdOfMercWhoOwnsTheItem != NO_PROFILE ) )
+	if ((pInv != nullptr) && (pInv->ubIdOfMercWhoOwnsTheItem != NO_PROFILE))
 	{
 		zTempText = BuildItemHelpTextString(pInv, ubScreenArea);
 		// add who owns it
@@ -2835,8 +2830,7 @@ static INT8 AddItemToPlayersOfferArea(UINT8 ubProfileID, const INVENTORY_IN_SLOT
 	if( bSlotIdInOtherLocation != -1 )
 	{
 		//if the item has already been added somewhere. don't add it again
-		if( GetPtrToOfferSlotWhereThisItemIs( ubProfileID, bSlotIdInOtherLocation ) != NULL )
-			return( -1 );
+		if (GetPtrToOfferSlotWhereThisItemIs(ubProfileID, bSlotIdInOtherLocation) != nullptr) return (-1);
 	}
 
 
@@ -2941,7 +2935,7 @@ static void DisplayPlayersOfferArea(void)
 				if (o->bSlotIdInOtherLocation != -1 && o->ubIdOfMercWhoOwnsTheItem != NO_PROFILE)
 				{
 					const SOLDIERTYPE* const s = FindSoldierByProfileIDOnPlayerTeam(o->ubIdOfMercWhoOwnsTheItem);
-					Assert(s != NULL);
+					Assert(s != nullptr);
 					o->ItemObject.uiMoneyAmount = s->inv[o->bSlotIdInOtherLocation].uiMoneyAmount;
 					o->uiItemPrice = o->ItemObject.uiMoneyAmount;
 				}
@@ -3028,17 +3022,17 @@ static INVENTORY_IN_SLOT* GetPtrToOfferSlotWhereThisItemIs(UINT8 ubProfileID, IN
 	}
 
 	// not found (perfectly valid result)
-	return( NULL );
+	return (nullptr);
 }
 
 
 BOOLEAN ShouldSoldierDisplayHatchOnItem( UINT8 ubProfileID, INT16 sSlotNum )
 {
-	INVENTORY_IN_SLOT *pInvSlot = NULL;
+	INVENTORY_IN_SLOT* pInvSlot = nullptr;
 
 	pInvSlot = GetPtrToOfferSlotWhereThisItemIs( ubProfileID, ( INT8 ) sSlotNum );
 
-	if( pInvSlot == NULL )
+	if (pInvSlot == nullptr)
 		// not found in either offer area
 		return( FALSE );
 	else
@@ -3209,7 +3203,8 @@ static void PerformTransaction(UINT32 uiMoneyFromPlayersAccount)
 			if( CountNumberOfItemsInTheArmsDealersOfferArea( ) > uiAvailablePlayerOfferSlots )
 			{
 				// tell player there's not enough room in the player's offer area
-				DoSkiMessageBox(SKI_Text[SKI_TEXT_NO_MORE_ROOM_IN_PLAYER_OFFER_AREA], SHOPKEEPER_SCREEN, MSG_BOX_FLAG_OK, NULL);
+				DoSkiMessageBox(SKI_Text[SKI_TEXT_NO_MORE_ROOM_IN_PLAYER_OFFER_AREA], SHOPKEEPER_SCREEN,
+								MSG_BOX_FLAG_OK, nullptr);
 
 				return;
 			}
@@ -3650,10 +3645,10 @@ void BeginSkiItemPointer( UINT8 ubSource, INT8 bSlotNum, BOOLEAN fOfferToDealerF
 	}
 
 	// if we have something in hand
-	if ( gpItemPointer != NULL )
+	if (gpItemPointer != nullptr)
 	{
 		//make sure the soldier is not null
-		Assert( gpItemPointerSoldier != NULL );
+		Assert(gpItemPointerSoldier != nullptr);
 
 		// Set mouse
 		SetSkiCursor( EXTERN_CURSOR );
@@ -3751,7 +3746,7 @@ void SetSkiCursor( UINT16 usCursor )
 	{
 		gMoveingItem = INVENTORY_IN_SLOT{};
 
-		gpItemPointer = NULL;
+		gpItemPointer = nullptr;
 
 		LockTacticalButtons( FALSE );
 
@@ -4435,7 +4430,7 @@ static void EnableDisableEvaluateAndTransactionButtons(void)
 
 
 	//if the player is in the item desc for the arms dealer items
-	if( InItemDescriptionBox( ) && pShopKeeperItemDescObject != NULL )
+	if (InItemDescriptionBox() && pShopKeeperItemDescObject != nullptr)
 	{
 		guiSKI_TransactionButton->uiFlags |= BUTTON_FORCE_UNDIRTY;
 		guiSKI_DoneButton->uiFlags        |= BUTTON_FORCE_UNDIRTY;
@@ -5162,8 +5157,7 @@ void DeleteShopKeeperItemDescBox()
 {
 	INT32 iCnt;
 
-
-	pShopKeeperItemDescObject = NULL;
+	pShopKeeperItemDescObject = nullptr;
 	gubSkiDirtyLevel = SKI_DIRTY_LEVEL2;
 
 	//Redraw the face
@@ -5589,7 +5583,7 @@ static void IfMercOwnedCopyItemToMercInv(const INVENTORY_IN_SLOT* pInv)
 
 		// get soldier
 		SOLDIERTYPE* const s = FindSoldierByProfileIDOnPlayerTeam(pInv->ubIdOfMercWhoOwnsTheItem);
-		Assert(s != NULL);
+		Assert(s != nullptr);
 		Assert(CanMercInteractWithSelectedShopkeeper(s));
 
 		//Copy the object back into that merc's original inventory slot
@@ -5621,7 +5615,7 @@ static void IfMercOwnedRemoveItemFromMercInv2(UINT8 ubOwnerProfileId, INT8 bOwne
 		Assert( ubOwnerProfileId != NO_PROFILE );
 
 		SOLDIERTYPE* const s = FindSoldierByProfileIDOnPlayerTeam(ubOwnerProfileId);
-		Assert(s != NULL);
+		Assert(s != nullptr);
 		Assert(CanMercInteractWithSelectedShopkeeper(s));
 
 		//remove the object from that merc's original inventory slot
@@ -5644,7 +5638,7 @@ static BOOLEAN SKITryToReturnInvToOwnerOrCurrentMerc(INVENTORY_IN_SLOT* pInv)
 	{
 		SOLDIERTYPE* const s = FindSoldierByProfileIDOnPlayerTeam(pInv->ubIdOfMercWhoOwnsTheItem);
 		// if that soldier is not in player's hire any longer
-		if (s == NULL) return FALSE;
+		if (s == nullptr) return FALSE;
 
 		// For owners of repaired items, this checks that owner is still hired, in sector,
 		// on current squad, close enough to the shopkeeper, etc.
@@ -5722,12 +5716,11 @@ BOOLEAN CanMercInteractWithSelectedShopkeeper(const SOLDIERTYPE* pSoldier)
 	INT16  sDistVisible;
 	UINT32 uiRange;
 
-
-	Assert( pSoldier!= NULL );
+	Assert(pSoldier != nullptr);
 	Assert( gbSelectedArmsDealerID != -1 );
 
 	const SOLDIERTYPE* const pShopkeeper = FindSoldierByProfileID(SelectedArmsDealer()->profileID);
-	Assert( pShopkeeper != NULL );
+	Assert(pShopkeeper != nullptr);
 	Assert( pShopkeeper->bInSector );
 
 	if ( pShopkeeper->bLife < OKLIFE )
@@ -6200,7 +6193,7 @@ static UINT32 EvaluateInvSlot(INVENTORY_IN_SLOT* pInvSlot)
 	if( gbSelectedArmsDealerID == ARMS_DEALER_MICKY )
 	{
 		const SOLDIERTYPE* const s = FindSoldierByProfileIDOnPlayerTeam(SelectedArmsDealer()->profileID);
-		if (s != NULL && GetDrunkLevel(s) == DRUNK)
+		if (s != nullptr && GetDrunkLevel(s) == DRUNK)
 		{
 			//Micky is DRUNK, pays more!
 			dPriceModifier = SelectedArmsDealer()->sellingPrice;
@@ -6340,7 +6333,7 @@ static ST::string BuildItemHelpTextString(const INVENTORY_IN_SLOT* pInv, UINT8 u
 	ST::string zHelpText;
 	ST::string zRepairTime;
 
-	if( pInv != NULL )
+	if (pInv != nullptr)
 	{
 		zHelpText = GetHelpTextForItem(pInv->ItemObject);
 
@@ -6434,7 +6427,7 @@ static void EnableAllDealersOfferSlots(void)
 static void HatchOutInvSlot(UINT16 usPosX, UINT16 usPosY)
 {
 	//if we are in the item desc panel
-	if( InItemDescriptionBox( ) && pShopKeeperItemDescObject != NULL )
+	if (InItemDescriptionBox() && pShopKeeperItemDescObject != nullptr)
 	{
 		// do nothing, don't wanna shade things twice!
 		return;

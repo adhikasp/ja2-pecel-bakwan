@@ -358,18 +358,18 @@ void LogMouseOverInteractiveTile(INT16 const sGridNo)
 
 static LEVELNODE* InternalGetCurInteractiveTile(const BOOLEAN fRejectItemsOnTop)
 {
-	if (_KeyDown(SHIFT)) return NULL;
-	if (!gfOverIntTile)  return NULL;
+	if (_KeyDown(SHIFT)) return nullptr;
+	if (!gfOverIntTile) return nullptr;
 
 	LEVELNODE* n = gpWorldLevelData[gCurIntTile.sGridNo].pStructHead;
-	for (; n != NULL; n = n->pNext)
+	for (; n != nullptr; n = n->pNext)
 	{
 		if (n->usIndex != gCurIntTile.sTileIndex) continue;
 		if (fRejectItemsOnTop && gCurIntTile.fStructure)
 		{
 			// get strucuture here...
 			STRUCTURE* const s = FindStructureByID(gCurIntTile.sGridNo, gCurIntTile.usStructureID);
-			if (s == NULL || s->fFlags & STRUCTURE_HASITEMONTOP) return NULL;
+			if (s == nullptr || s->fFlags & STRUCTURE_HASITEMONTOP) return nullptr;
 		}
 		break;
 	}
@@ -386,7 +386,7 @@ LEVELNODE* GetCurInteractiveTile(void)
 LEVELNODE* GetCurInteractiveTileGridNo(INT16* const psGridNo)
 {
 	LEVELNODE* const n = GetCurInteractiveTile();
-	*psGridNo = (n != NULL ? gCurIntTile.sGridNo : NOWHERE);
+	*psGridNo = (n != nullptr ? gCurIntTile.sGridNo : NOWHERE);
 	return n;
 }
 
@@ -394,15 +394,15 @@ LEVELNODE* GetCurInteractiveTileGridNo(INT16* const psGridNo)
 LEVELNODE* ConditionalGetCurInteractiveTileGridNoAndStructure(INT16* const psGridNo, STRUCTURE** const ppStructure, const BOOLEAN fRejectOnTopItems)
 {
 	GridNo     g = NOWHERE;
-	STRUCTURE* s = NULL;
+	STRUCTURE* s = nullptr;
 	LEVELNODE* n = InternalGetCurInteractiveTile(fRejectOnTopItems);
-	if (n != NULL)
+	if (n != nullptr)
 	{
 		g = gCurIntTile.sGridNo;
 		if (gCurIntTile.fStructure)
 		{
 			s = FindStructureByID(g, gCurIntTile.usStructureID);
-			if (s == NULL) n = NULL;
+			if (s == nullptr) n = nullptr;
 		}
 	}
 	*ppStructure = s;
@@ -564,7 +564,7 @@ BOOLEAN CheckVideoObjectScreenCoordinateInData(HVOBJECT hSrcVObject, UINT16 usIn
 	INT32   iTestPos, iStartPos;
 
 	// Assertions
-	Assert( hSrcVObject != NULL );
+	Assert(hSrcVObject != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav    = hSrcVObject->SubregionProperties(usIndex);

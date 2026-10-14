@@ -362,7 +362,7 @@ static ROTTING_CORPSE* GetFreeRottingCorpse(void)
 	{
 		return &gRottingCorpse[giNumRottingCorpse++];
 	}
-	return NULL;
+	return nullptr;
 }
 
 
@@ -421,11 +421,11 @@ static void CreateCorpsePalette(ROTTING_CORPSE*);
 ROTTING_CORPSE* AddRottingCorpse(ROTTING_CORPSE_DEFINITION* const pCorpseDef)
 try
 {
-	if (pCorpseDef->sGridNo == NOWHERE)   return NULL;
-	if (pCorpseDef->ubType  == NO_CORPSE) return NULL;
+	if (pCorpseDef->sGridNo == NOWHERE) return nullptr;
+	if (pCorpseDef->ubType == NO_CORPSE) return nullptr;
 
 	ROTTING_CORPSE* const c = GetFreeRottingCorpse();
-	if (c == NULL) return NULL;
+	if (c == nullptr) return nullptr;
 
 	// Copy elements in
 	c->def = *pCorpseDef;
@@ -455,7 +455,7 @@ try
 		}
 
 		// If time of death is a few days, now, don't add at all!
-		if (GetWorldTotalMin() - c->def.uiTimeOfDeath > DELAY_UNTIL_DONE_ROTTING) return NULL;
+		if (GetWorldTotalMin() - c->def.uiTimeOfDeath > DELAY_UNTIL_DONE_ROTTING) return nullptr;
 	}
 
 	// Check if on roof or not...
@@ -521,7 +521,7 @@ try
 	CheckForAndAddTileCacheStructInfo(n, c->def.sGridNo, ani->sCachedTileID, GetCorpseStructIndex(pCorpseDef, TRUE));
 
 	const STRUCTURE_FILE_REF* const pStructureFileRef = GetCachedTileStructureRefFromFilename(zFilename);
-	if (pStructureFileRef != NULL)
+	if (pStructureFileRef != nullptr)
 	{
 		const UINT16                  usStructIndex   = GetCorpseStructIndex(pCorpseDef, TRUE);
 		const DB_STRUCTURE_REF* const pDBStructureRef = &pStructureFileRef->pDBStructureRef[usStructIndex];
@@ -543,10 +543,10 @@ static void FreeCorpsePalettes(ROTTING_CORPSE* pCorpse)
 
 	for ( cnt = 0; cnt < NUM_CORPSE_SHADES; cnt++ )
 	{
-		if ( pCorpse->pShades[ cnt ] != NULL )
+		if (pCorpse->pShades[cnt] != nullptr)
 		{
 			delete[] pCorpse->pShades[ cnt ];
-			pCorpse->pShades[ cnt ] = NULL;
+			pCorpse->pShades[cnt] = nullptr;
 		}
 	}
 }
@@ -798,7 +798,7 @@ static void AddCrowToCorpse(ROTTING_CORPSE* pCorpse)
 	RandomizeNewSoldierStats( &MercCreateStruct );
 
 	SOLDIERTYPE* const pSoldier = TacticalCreateSoldier(MercCreateStruct);
-	if (pSoldier != NULL)
+	if (pSoldier != nullptr)
 	{
 		// Setup action data to point back to corpse....
 		pSoldier->uiPendingActionData1 = pCorpse->ID();
@@ -955,7 +955,7 @@ void CorpseHit( INT16 sGridNo, UINT16 usStructureID )
 {
 #if 0
 	STRUCTURE *pStructure, *pBaseStructure;
-	ROTTING_CORPSE *pCorpse = NULL;
+	ROTTING_CORPSE *pCorpse = nullptr;
 	INT16 sBaseGridNo;
 
 	pStructure = FindStructureByID( sGridNo, usStructureID );
@@ -969,7 +969,7 @@ void CorpseHit( INT16 sGridNo, UINT16 usStructureID )
 	// Get corpse ID.....
 	pCorpse = FindCorpseBasedOnStructure( sBaseGridNo, pBaseStructure );
 
-	if ( pCorpse == NULL )
+	if ( pCorpse == nullptr )
 	{
 		SLOGD("Bullet hit corpse but corpse cannot be found at: {}", sBaseGridNo);
 		return;
@@ -1000,7 +1000,7 @@ void CorpseHit( INT16 sGridNo, UINT16 usStructureID )
 void VaporizeCorpse( INT16 sGridNo, UINT16 usStructureID )
 {
 	STRUCTURE *pStructure, *pBaseStructure;
-	ROTTING_CORPSE *pCorpse = NULL;
+	ROTTING_CORPSE* pCorpse = nullptr;
 	INT16 sBaseGridNo;
 
 	pStructure = FindStructureByID( sGridNo, usStructureID );
@@ -1014,7 +1014,7 @@ void VaporizeCorpse( INT16 sGridNo, UINT16 usStructureID )
 	// Get corpse ID.....
 	pCorpse = FindCorpseBasedOnStructure( sBaseGridNo, pBaseStructure );
 
-	if ( pCorpse == NULL )
+	if (pCorpse == nullptr)
 	{
 		SLOGW("Vaporize corpse but corpse cannot be found at: {}", sBaseGridNo);
 		return;
@@ -1046,7 +1046,7 @@ void VaporizeCorpse( INT16 sGridNo, UINT16 usStructureID )
 		if ( pCorpse->def.bLevel == 0 )
 		{
 			// Set some blood......
-			SpreadEffect(sBaseGridNo, 2, 0, NULL, BLOOD_SPREAD_EFFECT, 0, NULL);
+			SpreadEffect(sBaseGridNo, 2, 0, nullptr, BLOOD_SPREAD_EFFECT, 0, nullptr);
 		}
 	}
 
@@ -1106,7 +1106,7 @@ INT16 FindNearestAvailableGridNoForCorpse( ROTTING_CORPSE_DEFINITION *pDef, INT8
 					BOOLEAN	fCanSetDirection   = FALSE;
 
 					// Check each struct in each direction
-					if ( pStructureFileRef == NULL )
+					if (pStructureFileRef == nullptr)
 					{
 						fDirectionFound = TRUE;
 					}
@@ -1165,18 +1165,18 @@ ROTTING_CORPSE *GetCorpseAtGridNo( INT16 sGridNo, INT8 bLevel )
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_CORPSE );
 
-	if ( pStructure != NULL )
+	if (pStructure != nullptr)
 	{
 		// Get base....
 		pBaseStructure = FindBaseStructure( pStructure );
 
-		if ( pBaseStructure != NULL )
+		if (pBaseStructure != nullptr)
 		{
 			return( FindCorpseBasedOnStructure( pBaseStructure->sGridNo, pBaseStructure ) );
 		}
 	}
 
-	return( NULL );
+	return (nullptr);
 }
 
 
@@ -1187,7 +1187,7 @@ void DecapitateCorpse(const INT16 sGridNo, const INT8 bLevel)
 
 	pCorpse = GetCorpseAtGridNo( sGridNo, bLevel );
 
-	if ( pCorpse == NULL )
+	if (pCorpse == nullptr)
 	{
 		return;
 	}
@@ -1293,7 +1293,7 @@ void LookForAndMayCommentOnSeeingCorpse( SOLDIERTYPE *pSoldier, INT16 sGridNo, U
 
 	pCorpse = GetCorpseAtGridNo( sGridNo, ubLevel );
 
-	if ( pCorpse == NULL )
+	if (pCorpse == nullptr)
 	{
 		return;
 	}

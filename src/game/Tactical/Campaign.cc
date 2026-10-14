@@ -368,7 +368,7 @@ static void ProcessStatChange(MERCPROFILESTRUCT& p, StatKind const ubStat, UINT1
 // UpdateStats version for mercs not currently on player's team
 static void ProfileUpdateStats(MERCPROFILESTRUCT& p)
 {
-	ProcessUpdateStats(p, NULL);
+	ProcessUpdateStats(p, nullptr);
 }
 
 
@@ -378,11 +378,11 @@ static UINT32 CalcNewSalary(UINT32 uiOldSalary, BOOLEAN fIncrease, UINT32 uiMaxL
 static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKind const ubStat, INT16 const sPtsChanged)
 {
 	// this function changes the stat a given amount...
-	INT16 *psStatGainPtr = NULL;
-	INT8 *pbStatPtr = NULL;
-	INT8 *pbSoldierStatPtr = NULL;
-	INT8 *pbStatDeltaPtr = NULL;
-	UINT32 *puiStatTimerPtr = NULL;
+	INT16* psStatGainPtr = nullptr;
+	INT8* pbStatPtr = nullptr;
+	INT8* pbSoldierStatPtr = nullptr;
+	INT8* pbStatDeltaPtr = nullptr;
+	UINT32* puiStatTimerPtr = nullptr;
 	BOOLEAN fChangeTypeIncrease;
 	BOOLEAN fChangeSalary;
 	UINT8 ubMercMercIdValue = 0;
@@ -466,7 +466,7 @@ static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKi
 
 
 	// if this merc is currently on the player's team
-	if (pSoldier != NULL)
+	if (pSoldier != nullptr)
 	{
 		// build ptrs to appropriate soldiertype stat fields
 		switch( ubStat )
@@ -560,7 +560,7 @@ static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKi
 		*pbStatPtr += sPtsChanged;
 
 		// if this merc is currently on the player's team (DON'T count increases earned outside the player's employ)
-		if (pSoldier != NULL)
+		if (pSoldier != nullptr)
 		{
 			// also note the delta (how much this stat has changed since start of game)
 			*pbStatDeltaPtr += sPtsChanged;
@@ -571,7 +571,7 @@ static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKi
 
 
 		// if the guy is employed by player
-		if (pSoldier != NULL)
+		if (pSoldier != nullptr)
 		{
 			// transfer over change to soldiertype structure
 			*pbSoldierStatPtr = *pbStatPtr;
@@ -652,7 +652,7 @@ static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKi
 			}
 
 			// if the guy is employed by player
-			if (pSoldier != NULL)
+			if (pSoldier != nullptr)
 			{
 				// adjust current health by the same amount as max health
 				pSoldier->bLife += sPtsChanged;
@@ -670,7 +670,7 @@ static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKi
 		if( (ubStat == EXPERAMT) && fChangeTypeIncrease)
 		{
 			// if the guy is employed by player
-			if (pSoldier != NULL)
+			if (pSoldier != nullptr)
 			{
 				switch (pSoldier->ubWhatKindOfMercAmI)
 				{
@@ -747,8 +747,8 @@ static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKi
 static void ProcessUpdateStats(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier)
 {
 	// this function will run through the soldier's profile and update their stats based on any accumulated gain pts.
-	INT16 *psStatGainPtr = NULL;
-	INT8 *pbStatPtr = NULL;
+	INT16* psStatGainPtr = nullptr;
+	INT8* pbStatPtr = nullptr;
 	INT8 bMinStatValue;
 	INT8 bMaxStatValue;
 	UINT16 usSubpointsPerPoint;
@@ -756,7 +756,7 @@ static void ProcessUpdateStats(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier
 
 
 	// if hired, not back at AIM
-	if ( pSoldier != NULL )
+	if (pSoldier != nullptr)
 	{
 		// ATE: if in the midst of an attack, if in the field, delay all stat changes until the check made after the 'attack'...
 		if ((gTacticalStatus.ubAttackBusyCount > 0) && pSoldier->bInSector &&

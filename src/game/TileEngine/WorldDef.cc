@@ -111,13 +111,13 @@ static BOOLEAN isValidGridNo(INT32 gridNo)
 
 BOOLEAN DoorAtGridNo(const UINT32 iMapIndex)
 {
-	return FindStructure(iMapIndex, STRUCTURE_ANYDOOR) != NULL;
+	return FindStructure(iMapIndex, STRUCTURE_ANYDOOR) != nullptr;
 }
 
 
 BOOLEAN OpenableAtGridNo(const UINT32 iMapIndex)
 {
-	return FindStructure(iMapIndex, STRUCTURE_OPENABLE) != NULL;
+	return FindStructure(iMapIndex, STRUCTURE_OPENABLE) != nullptr;
 }
 
 
@@ -247,7 +247,7 @@ static void AddTileSurface(ST::string const& filename, UINT32 const type)
 	if (slot)
 	{
 		DeleteTileSurface(slot);
-		slot = NULL;
+		slot = nullptr;
 	}
 
 	TILE_IMAGERY* const t = LoadTileSurface(filename);
@@ -286,7 +286,7 @@ void DestroyTileShadeTables(void)
 	for (UINT32 i = 0; i < NUMBEROFTILETYPES; ++i)
 	{
 		const TILE_IMAGERY* const ti = gTileSurfaceArray[i];
-		if (ti == NULL) continue;
+		if (ti == nullptr) continue;
 
 		// Don't delete shade tables if default are still being used...
 		if(GameMode::getInstance()->isEditorMode())
@@ -327,7 +327,7 @@ static void CompileWorldTerrainIDs(void)
 		// Check if we have anything in object layer which has a terrain modifier
 		const LEVELNODE* n = gpWorldLevelData[sGridNo].pObjectHead;
 
-		if (n != NULL && giCurrentTilesetID == TEMP_19)
+		if (n != nullptr && giCurrentTilesetID == TEMP_19)
 		{
 			// ATE: CRAPOLA! Special case stuff here for the friggen pool since art was fu*ked up
 			switch (n->usIndex)
@@ -340,9 +340,7 @@ static void CompileWorldTerrainIDs(void)
 			}
 		}
 
-		if (n == NULL                   ||
-				n->usIndex >= NUMBEROFTILES ||
-				gTileDatabase[n->usIndex].ubTerrainID == NO_TERRAIN)
+		if (n == nullptr || n->usIndex >= NUMBEROFTILES || gTileDatabase[n->usIndex].ubTerrainID == NO_TERRAIN)
 		{	// Try terrain instead!
 			n = gpWorldLevelData[sGridNo].pLandHead;
 		}
@@ -409,17 +407,17 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 			SET_MOVEMENTCOST( usGridNo, ubDirLoop,  0, TRAVELCOST_OFF_MAP );
 			SET_MOVEMENTCOST( usGridNo, ubDirLoop,  1, TRAVELCOST_OFF_MAP );
 		}
-		if (gpWorldLevelData[usGridNo].pStructureHead == NULL)
+		if (gpWorldLevelData[usGridNo].pStructureHead == nullptr)
 		{
 			return;
 		}
 	}
 
-	if (gpWorldLevelData[usGridNo].pStructureHead != NULL)
+	if (gpWorldLevelData[usGridNo].pStructureHead != nullptr)
 	{ // structures in tile
 		// consider the land
 		pLand = gpWorldLevelData[ usGridNo ].pLandHead;
-		if ( pLand != NULL )
+		if (pLand != nullptr)
 		{
 			// Set TEMPORARY cost here
 
@@ -546,15 +544,15 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 							SET_CURRMOVEMENTCOST( ubDirLoop, TRAVELCOST_OBSTACLE );
 						}
 
-						if (FindStructure(usGridNo - WORLD_COLS, STRUCTURE_OBSTACLE) == NULL &&
-								FindStructure(usGridNo + WORLD_COLS, STRUCTURE_OBSTACLE) == NULL)
+						if (FindStructure(usGridNo - WORLD_COLS, STRUCTURE_OBSTACLE) == nullptr &&
+							FindStructure(usGridNo + WORLD_COLS, STRUCTURE_OBSTACLE) == nullptr)
 						{
 							FORCE_SET_MOVEMENTCOST( usGridNo, NORTH, 0, TRAVELCOST_FENCE );
 							FORCE_SET_MOVEMENTCOST( usGridNo, SOUTH, 0, TRAVELCOST_FENCE );
 						}
 
-						if (FindStructure(usGridNo - 1, STRUCTURE_OBSTACLE) == NULL &&
-								FindStructure(usGridNo + 1, STRUCTURE_OBSTACLE) == NULL)
+						if (FindStructure(usGridNo - 1, STRUCTURE_OBSTACLE) == nullptr &&
+							FindStructure(usGridNo + 1, STRUCTURE_OBSTACLE) == nullptr)
 						{
 							FORCE_SET_MOVEMENTCOST( usGridNo, EAST, 0, TRAVELCOST_FENCE );
 							FORCE_SET_MOVEMENTCOST( usGridNo, WEST, 0, TRAVELCOST_FENCE );
@@ -1012,10 +1010,10 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 				}
 			}
 			pStructure = pStructure->pNext;
-		} while (pStructure != NULL);
+		} while (pStructure != nullptr);
 
 		// HIGHEST LAYER
-		if ((gpWorldLevelData[ usGridNo ].pRoofHead != NULL))
+		if ((gpWorldLevelData[usGridNo].pRoofHead != nullptr))
 		{
 			if (!fStructuresOnRoof)
 			{
@@ -1067,7 +1065,7 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 		}
 */
 		// HIGHEST LEVEL
-		if (gpWorldLevelData[ usGridNo ].pRoofHead != NULL)
+		if (gpWorldLevelData[usGridNo].pRoofHead != nullptr)
 		{
 			for (ubDirLoop=0; ubDirLoop < 8; ubDirLoop++)
 			{
@@ -1610,7 +1608,7 @@ static void OptimizeMapForShadows()
 	for (INT32 cnt = 0; cnt != WORLD_MAX; ++cnt)
 	{
 		// Is there a tree here?
-		if (FindStructure(cnt, STRUCTURE_TREE) == NULL) continue;
+		if (FindStructure(cnt, STRUCTURE_TREE) == nullptr) continue;
 
 		// Check for a structure a footprint away
 		for (UINT8 const* dir = bDirectionsForShadowSearch;; ++dir)
@@ -1817,7 +1815,7 @@ try
 			BASIC_SOLDIERCREATE_STRUCT basic;
 			ExtractBasicSoldierCreateStructFromFile(f, basic);
 
-			TEAMSUMMARY* pTeam = NULL;
+			TEAMSUMMARY* pTeam = nullptr;
 			switch (basic.bTeam)
 			{
 				case ENEMY_TEAM:    pTeam = &pSummary->EnemyTeam;    break;
@@ -2491,9 +2489,9 @@ void NewWorld()
 void FreeLevelNodeList(LEVELNODE** const head)
 {
 	LEVELNODE* i = *head;
-	*head = NULL;
+	*head = nullptr;
 
-	while (i != NULL)
+	while (i != nullptr)
 	{
 		LEVELNODE* const next = i->pNext;
 		delete i;
@@ -2519,7 +2517,7 @@ void TrashWorld(void)
 	{
 		if (s->bTeam == OUR_TEAM)
 		{
-			s->pLevelNode = NULL; // Just delete levelnode
+			s->pLevelNode = nullptr; // Just delete levelnode
 		}
 		else
 		{
@@ -2553,7 +2551,7 @@ void TrashWorld(void)
 		FreeLevelNodeList(&me->pOnRoofHead);
 		FreeLevelNodeList(&me->pTopmostHead);
 
-		while (me->pStructureHead != NULL)
+		while (me->pStructureHead != nullptr)
 		{
 			if (!DeleteStructureFromWorld(me->pStructureHead))
 			{
@@ -2624,7 +2622,7 @@ static UINT16 GetWireframeGraphicNumToUseForWall(const INT16 sGridNo, STRUCTURE*
 	if (base_structure)
 	{
 		// Find levelnode...
-		for (const LEVELNODE* n = gpWorldLevelData[sGridNo].pStructHead; n != NULL; n = n->pNext)
+		for (const LEVELNODE* n = gpWorldLevelData[sGridNo].pStructHead; n != nullptr; n = n->pNext)
 		{
 			if (n->pStructureData == base_structure)
 			{
@@ -2694,7 +2692,7 @@ void CalculateWorldWireFrameTiles( BOOLEAN fForce )
 
 			pStructure = gpWorldLevelData[ cnt ].pStructureHead;
 
-			while ( pStructure != NULL )
+			while (pStructure != nullptr)
 			{
 				// Check for doors
 				if ( pStructure->fFlags & STRUCTURE_ANYDOOR )

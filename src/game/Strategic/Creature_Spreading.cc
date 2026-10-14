@@ -130,7 +130,7 @@ static CREATURE_DIRECTIVE* NewDirective(UINT8 ubSectorID, UINT8 ubSectorZ, UINT8
 	}
 
 	curr->pLevel->ubCreatureHabitat = ubCreatureHabitat;
-	curr->next = NULL;
+	curr->next = nullptr;
 	return curr;
 }
 
@@ -138,7 +138,7 @@ static void InitCreatureLair(const CreatureLairModel* lairModel)
 {
 	gLairModel = lairModel;
 
-	CREATURE_DIRECTIVE* curr = NULL;
+	CREATURE_DIRECTIVE* curr = nullptr;
 	giLairID = lairModel->lairId;
 
 	//initialize the linked list of lairs
@@ -150,7 +150,7 @@ static void InitCreatureLair(const CreatureLairModel* lairModel)
 			next->pLevel->ubNumCreatures = 1;	//for the queen.
 		}
 
-		if (curr == NULL)
+		if (curr == nullptr)
 		{ // first node, set gLair to the start of list
 			gLair = next;
 		}
@@ -235,7 +235,7 @@ void InitCreatureQuest()
 	// enable the lair entrance
 	UINT8 entranceSector = lairModel->entranceSector;
 	UNDERGROUND_SECTORINFO* lairEntrance = FindUnderGroundSector(SGPSector::FromSectorID(entranceSector, lairModel->entranceSectorLevel));
-	if (lairEntrance == NULL)
+	if (lairEntrance == nullptr)
 	{
 		throw std::runtime_error("Lair entrance sector is not defined as an underground sector");
 	}
@@ -483,7 +483,7 @@ static void AddCreaturesToBattle(UINT8 n_young_males, UINT8 n_young_females, UIN
 
 static void ChooseTownSectorToAttack(UINT8 ubSectorID, BOOLEAN fSpecificSector)
 {
-	if (gLairModel == NULL)
+	if (gLairModel == nullptr)
 	{
 		SLOGA("gLairModel is NULL. Something wrong!");
 		return;
@@ -611,7 +611,7 @@ static void DeleteDirectiveNode(CREATURE_DIRECTIVE** node)
 	if( (*node)->next )
 		DeleteDirectiveNode( &((*node)->next) );
 	delete *node;
-	*node = NULL;
+	*node = nullptr;
 }
 
 //Recursively delete all nodes (from the top down).
@@ -680,7 +680,7 @@ BOOLEAN MineClearOfMonsters( UINT8 ubMineIndex )
 	if( !gMineStatus[ ubMineIndex ].fPrevInvadedByMonsters )
 	{
 		auto mine = GCM->getMine(ubMineIndex);
-		if (mine == NULL)
+		if (mine == nullptr)
 		{
 			SLOGE("Attempting to check if mine is clear but mine index is invalid ({}).", ubMineIndex);
 			return true;
@@ -1001,7 +1001,7 @@ bool GetWarpOutOfMineCodes(SGPSector& sector, INT16* const insertion_grid_no)
 	if (gWorldSector.z == 0) return false;
 
 	auto lair = gLairModel;
-	if (lair == NULL && giLairID == -1)
+	if (lair == nullptr && giLairID == -1)
 	{
 		// Quest is finished
 		lair = GCM->getCreatureLair(giDestroyedLairID);

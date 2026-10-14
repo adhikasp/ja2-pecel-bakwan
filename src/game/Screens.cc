@@ -19,40 +19,35 @@
 #include "UiSpikeScreen.h"
 #include "VideoOptionsScreen.h"
 
-
-Screens const GameScreens[] =
-{
-	{ EditScreenInit,       EditScreenHandle,            EditScreenShutdown       },
-	{ NULL,                 NULL,                        NULL                     },
-	{ NULL,                 NULL,                        NULL                     },
-	{ NULL,                 ErrorScreenHandle,           NULL                     }, // Title Screen
-	{ NULL,                 InitScreenHandle,            NULL                     }, // Title Screen
-	{ MainGameScreenInit,   MainGameScreenHandle,        MainGameScreenShutdown   },
-	{ NULL,                 NULL,                        NULL                     }, // was AniEditScreen
-	{ NULL,                 PalEditScreenHandle,         NULL                     },
-	{ NULL,                 DebugScreenHandle,           NULL                     },
-	{ MapScreenInit,        MapScreenHandle,             MapScreenShutdown        },
-	{ LaptopScreenInit,     LaptopScreenHandle,          LaptopScreenShutdown     },
-	{ NULL,                 LoadSaveScreenHandle,        NULL                     },
-	{ nullptr,              HandleScreen<MAPUTILITY_SCREEN>, nullptr              },
-	{ NULL,                 FadeScreenHandle,            NULL                     },
-	{ NULL,                 MessageBoxScreenHandle,      MessageBoxScreenShutdown },
-	{ NULL,                 MainMenuScreenHandle,        NULL                     },
-	{ NULL,                 AutoResolveScreenHandle,     NULL                     },
-	{ NULL,                 SaveLoadScreenHandle,        NULL                     },
-	{ NULL,                 OptionsScreenHandle,         NULL                     },
-	{ ShopKeeperScreenInit, ShopKeeperScreenHandle,      ShopKeeperScreenShutdown },
-	{ NULL,                 SexScreenHandle,             NULL                     },
-	{ nullptr,              HandleScreen<GAME_INIT_OPTIONS_SCREEN>, nullptr       },
-	{ NULL,                 NULL,                        NULL                     },
-	{ NULL,                 IntroScreenHandle,           NULL                     },
-	{ nullptr,              HandleScreen<CREDIT_SCREEN>, nullptr                  },
-	{ QuestDebugScreenInit, QuestDebugScreenHandle,      NULL                     },
-	{ NULL,                 VideoOptionsScreenHandle,    NULL                     },
-	{ nullptr,              UiSpikeScreenHandle,         nullptr                  },
-	{ nullptr,              EpilogueScreenHandle,        nullptr                  }
-};
-
+Screens const GameScreens[] = { { EditScreenInit, EditScreenHandle, EditScreenShutdown },
+								{ nullptr, nullptr, nullptr },
+								{ nullptr, nullptr, nullptr },
+								{ nullptr, ErrorScreenHandle, nullptr }, // Title Screen
+								{ nullptr, InitScreenHandle, nullptr },  // Title Screen
+								{ MainGameScreenInit, MainGameScreenHandle, MainGameScreenShutdown },
+								{ nullptr, nullptr, nullptr }, // was AniEditScreen
+								{ nullptr, PalEditScreenHandle, nullptr },
+								{ nullptr, DebugScreenHandle, nullptr },
+								{ MapScreenInit, MapScreenHandle, MapScreenShutdown },
+								{ LaptopScreenInit, LaptopScreenHandle, LaptopScreenShutdown },
+								{ nullptr, LoadSaveScreenHandle, nullptr },
+								{ nullptr, HandleScreen<MAPUTILITY_SCREEN>, nullptr },
+								{ nullptr, FadeScreenHandle, nullptr },
+								{ nullptr, MessageBoxScreenHandle, MessageBoxScreenShutdown },
+								{ nullptr, MainMenuScreenHandle, nullptr },
+								{ nullptr, AutoResolveScreenHandle, nullptr },
+								{ nullptr, SaveLoadScreenHandle, nullptr },
+								{ nullptr, OptionsScreenHandle, nullptr },
+								{ ShopKeeperScreenInit, ShopKeeperScreenHandle, ShopKeeperScreenShutdown },
+								{ nullptr, SexScreenHandle, nullptr },
+								{ nullptr, HandleScreen<GAME_INIT_OPTIONS_SCREEN>, nullptr },
+								{ nullptr, nullptr, nullptr },
+								{ nullptr, IntroScreenHandle, nullptr },
+								{ nullptr, HandleScreen<CREDIT_SCREEN>, nullptr },
+								{ QuestDebugScreenInit, QuestDebugScreenHandle, nullptr },
+								{ nullptr, VideoOptionsScreenHandle, nullptr },
+								{ nullptr, UiSpikeScreenHandle, nullptr },
+								{ nullptr, EpilogueScreenHandle, nullptr } };
 
 #ifdef WITH_UNITTESTS
 #include "gtest/gtest.h"

@@ -417,7 +417,7 @@ void EnterInitAimMembers()
 	gubPopUpBoxAction = AIM_POPUP_NOTHING;
 	gfRedrawScreen = FALSE;
 	giContractAmount = 0;
-	giMercFaceIndex = NULL;
+	giMercFaceIndex = nullptr;
 	guiLastHandleMercTime = GetJA2Clock();
 	gubCurrentCount = 0;
 	gfFirstTimeInContactScreen = TRUE;
@@ -997,7 +997,7 @@ try
 		shaded = TRUE;
 		text   = pPOWStrings[0];
 	}
-	else if (s != NULL)
+	else if (s != nullptr)
 	{
 		// the merc has already been hired
 		shaded = TRUE;
@@ -1264,7 +1264,8 @@ static INT8 AimMemberHireMerc(void)
 	else if (ret == MERC_HIRE_OVER_20_MERCS_HIRED)
 	{
 		// Display a warning saying you can't hire more then 20 mercs
-		DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, AimPopUpText[AIM_MEMBER_ALREADY_HAVE_20_MERCS], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, NULL);
+		DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, AimPopUpText[AIM_MEMBER_ALREADY_HAVE_20_MERCS], LAPTOP_SCREEN,
+						   MSG_BOX_FLAG_OK, nullptr);
 	}
 	return FALSE;
 }
@@ -1391,7 +1392,7 @@ static void DisplayMercChargeAmount(void)
 
 	MERCPROFILESTRUCT const& p = GetProfile(gbCurrentSoldier);
 
-	if (FindSoldierByProfileIDOnPlayerTeam(gbCurrentSoldier) == NULL)
+	if (FindSoldierByProfileIDOnPlayerTeam(gbCurrentSoldier) == nullptr)
 	{
 		//the contract charge amount
 		INT32 amount;

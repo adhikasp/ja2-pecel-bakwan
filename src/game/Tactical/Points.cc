@@ -52,7 +52,7 @@ INT16 TerrainActionPoints(const SOLDIERTYPE* const pSoldier, const INT16 sGridno
 	}
 	else if (IS_TRAVELCOST_DOOR( sSwitchValue ))
 	{
-		sSwitchValue = DoorTravelCost(pSoldier, sGridno, (UINT8)sSwitchValue, pSoldier->bTeam == OUR_TEAM, NULL);
+		sSwitchValue = DoorTravelCost(pSoldier, sGridno, (UINT8)sSwitchValue, pSoldier->bTeam == OUR_TEAM, nullptr);
 	}
 
 	if (sSwitchValue >= TRAVELCOST_BLOCKED && sSwitchValue != TRAVELCOST_DOOR )
@@ -1413,7 +1413,7 @@ void DeductAmmo( SOLDIERTYPE *pSoldier, INT8 bInvPos )
 
 			if (bAttachPos != ITEM_NOT_FOUND)
 			{
-				RemoveAttachment( pObj, bAttachPos, NULL );
+				RemoveAttachment(pObj, bAttachPos, nullptr);
 			}
 		}
 
@@ -1537,7 +1537,7 @@ INT8 GetAPsToAutoReload( SOLDIERTYPE * pSoldier )
 
 UINT16 GetAPsToReloadRobot(SOLDIERTYPE* const s, SOLDIERTYPE const* const robot)
 {
-	GridNo const sActionGridNo = FindAdjacentGridEx(s, robot->sGridNo, NULL, NULL, TRUE, FALSE);
+	GridNo const sActionGridNo = FindAdjacentGridEx(s, robot->sGridNo, nullptr, nullptr, TRUE, FALSE);
 	return GetMovePlusActionAPCosts(s, sActionGridNo, 4);
 }
 
@@ -1608,7 +1608,7 @@ BOOLEAN CheckForMercContMove(SOLDIERTYPE* const s)
 {
 	if (!(gTacticalStatus.uiFlags & INCOMBAT)) return FALSE;
 
-	if (gpItemPointer != NULL) return FALSE;
+	if (gpItemPointer != nullptr) return FALSE;
 
 	if (s->bLife < OKLIFE) return FALSE;
 

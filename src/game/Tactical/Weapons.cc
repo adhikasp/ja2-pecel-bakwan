@@ -165,7 +165,7 @@ INT8 ExplosiveEffectiveArmour(const OBJECTTYPE* pObj)
 	INT32 iValue;
 	INT8  bPlate;
 
-	if (pObj == NULL || !GCM->getItem(pObj->usItem)->isArmour())
+	if (pObj == nullptr || !GCM->getItem(pObj->usItem)->isArmour())
 	{
 		return( 0 );
 	}
@@ -369,7 +369,7 @@ FireWeaponResult FireWeapon(SOLDIERTYPE * const pSoldier, GridNo const sTargetGr
 	}
 
 	// SET ATTACKER TO NOBODY, WILL GET SET EVENTUALLY
-	pSoldier->opponent = NULL;
+	pSoldier->opponent = nullptr;
 
 	switch( GCM->getItem(pSoldier->usAttackingWeapon)->getItemClass() )
 	{
@@ -699,9 +699,7 @@ static void UseGun(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 
 		// NB bDoBurst will be 2 at this point for the first shot since it was incremented
 		// above
-		if (IsOnOurTeam(*pSoldier) &&
-			pSoldier->target != NULL  &&
-			(!pSoldier->bDoBurst || pSoldier->bDoBurst == 2) &&
+		if (IsOnOurTeam(*pSoldier) && pSoldier->target != nullptr && (!pSoldier->bDoBurst || pSoldier->bDoBurst == 2) &&
 			gTacticalStatus.uiFlags & INCOMBAT)
 		{
 			const SOLDIERTYPE* const tgt = pSoldier->target;
@@ -765,7 +763,7 @@ static void UseGun(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 		// Deduct knife from inv! (not here, later?)
 
 		// Improve for using a throwing knife....
-		if (IsOnOurTeam(*pSoldier) && pSoldier->target != NULL)
+		if (IsOnOurTeam(*pSoldier) && pSoldier->target != nullptr)
 		{
 			if ( fGonnaHit )
 			{
@@ -845,7 +843,7 @@ static void UseGun(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 
 		// Check if a person exists here and is not prone....
 		SOLDIERTYPE* const tgt = WhoIsThere2(sNewGridNo, pSoldier->bLevel);
-		if (tgt != NULL)
+		if (tgt != nullptr)
 		{
 			if (gAnimControl[tgt->usAnimState].ubHeight != ANIM_PRONE)
 			{
@@ -1028,7 +1026,7 @@ static void UseBlade(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 			FreeUpAttacker(pSoldier);
 		}
 
-		if (IsOnOurTeam(*pSoldier) && pSoldier->target != NULL)
+		if (IsOnOurTeam(*pSoldier) && pSoldier->target != nullptr)
 		{
 			if ( fGonnaHit )
 			{
@@ -1315,16 +1313,16 @@ static void UseThrown(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 		if ( pTargetSoldier && pTargetSoldier->bTeam == pSoldier->bTeam )
 		{
 			// ignore!
-			pTargetSoldier = NULL;
+			pTargetSoldier = nullptr;
 		}
 
-		if ( pTargetSoldier == NULL )
+		if (pTargetSoldier == nullptr)
 		{
 			// search for an opponent near the target gridno
 			for ( bLoop = 0; bLoop < NUM_WORLD_DIRECTIONS; bLoop++ )
 			{
 				pTargetSoldier = WhoIsThere2(NewGridNo(pSoldier->sTargetGridNo, DirectionInc(bLoop)), pSoldier->bTargetLevel);
-				if (pTargetSoldier != NULL && pTargetSoldier->bTeam != pSoldier->bTeam) break;
+				if (pTargetSoldier != nullptr && pTargetSoldier->bTeam != pSoldier->bTeam) break;
 			}
 		}
 
@@ -1410,7 +1408,7 @@ static void UseLauncher(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo
 	{
 		// Firing an attached grenade launcher... the attachment we found above
 		// is the one to remove!
-		RemoveAttachment( pObj, bAttachPos, NULL );
+		RemoveAttachment(pObj, bAttachPos, nullptr);
 	}
 
 	// ATE: Check here if the launcher should fail 'cause of bad status.....
@@ -1463,7 +1461,7 @@ static void UseLauncher(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo
 	ClearTempObject(pSoldier);
 
 	delete pSoldier->pThrowParams;
-	pSoldier->pThrowParams = NULL;
+	pSoldier->pThrowParams = nullptr;
 }
 
 
@@ -1553,7 +1551,7 @@ void WeaponHit(SOLDIERTYPE* const pTargetSoldier, const UINT16 usWeaponIndex, co
 		return;
 	}
 
-	DoSpecialEffectAmmoMiss(attacker, pTargetSoldier->sGridNo, sXPos, sYPos, sZPos, FALSE, FALSE, NULL);
+	DoSpecialEffectAmmoMiss(attacker, pTargetSoldier->sGridNo, sXPos, sYPos, sZPos, FALSE, FALSE, nullptr);
 
 	// OK, SHOT HAS HIT, DO THINGS APPROPRIATELY
 	// ATE: This is 'cause of that darn smoke effect that could potnetially kill
@@ -1615,7 +1613,7 @@ void StructureHit(BULLET* const pBullet, const UINT16 usStructureID, const INT32
 	{
 		// AGILITY GAIN: Opponent "dodged" a bullet shot at him (it missed)
 		SOLDIERTYPE* const opp = attacker->opponent;
-		if (opp != NULL) AgilityForEnemyMissingPlayer(attacker, opp, 5);
+		if (opp != nullptr) AgilityForEnemyMissingPlayer(attacker, opp, 5);
 	}
 
 	const BOOLEAN fHitSameStructureAsBefore = (usStructureID == pBullet->usLastStructureHit);
@@ -1873,13 +1871,13 @@ void WindowHit( INT16 sGridNo, UINT16 usStructureID, BOOLEAN fBlowWindowSouth, B
 
 	// find the wall structure, and go one length along the chain
 	pWallAndWindow = FindStructureByID( sGridNo, usStructureID );
-	if (pWallAndWindow == NULL)
+	if (pWallAndWindow == nullptr)
 	{
 		return;
 	}
 
 	pWallAndWindow = SwapStructureForPartner(pWallAndWindow);
-	if (pWallAndWindow == NULL)
+	if (pWallAndWindow == nullptr)
 	{
 		return;
 	}
@@ -1915,10 +1913,10 @@ void WindowHit( INT16 sGridNo, UINT16 usStructureID, BOOLEAN fBlowWindowSouth, B
 
 	if (pWallAndWindowInDB->bPartnerDelta != NO_PARTNER_STRUCTURE  )
 	{ // just cracked; don't display the animation
-		MakeNoise(NULL, sGridNo, 0, WINDOW_CRACK_VOLUME, NOISE_BULLET_IMPACT);
+		MakeNoise(nullptr, sGridNo, 0, WINDOW_CRACK_VOLUME, NOISE_BULLET_IMPACT);
 		return;
 	}
-	MakeNoise(NULL, sGridNo, 0, WINDOW_SMASH_VOLUME, NOISE_BULLET_IMPACT);
+	MakeNoise(nullptr, sGridNo, 0, WINDOW_SMASH_VOLUME, NOISE_BULLET_IMPACT);
 	if (pWallAndWindowInDB->ubWallOrientation & ORIENT_RIGHT)
 	{
 		/*
@@ -2240,7 +2238,8 @@ UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime
 
 	// best to use team knowledge as well, in case of spotting for someone else
 	const SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, pSoldier->bTargetLevel);
-	if (tgt != NULL && (pSoldier->bOppList[tgt->ubID] == SEEN_CURRENTLY || gbPublicOpplist[pSoldier->bTeam][tgt->ubID] == SEEN_CURRENTLY))
+	if (tgt != nullptr && (pSoldier->bOppList[tgt->ubID] == SEEN_CURRENTLY ||
+						   gbPublicOpplist[pSoldier->bTeam][tgt->ubID] == SEEN_CURRENTLY))
 	{
 		iSightRange = SoldierToBodyPartLineOfSightTest(pSoldier, sGridNo, pSoldier->bTargetLevel,
 								pSoldier->bAimShotLocation,
@@ -2487,7 +2486,7 @@ UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime
 
 
 	const SOLDIERTYPE* const pTarget = WhoIsThere2(sGridNo, pSoldier->bTargetLevel);
-	if (pTarget != NULL)
+	if (pTarget != nullptr)
 	{
 		// targeting a merc
 		// adjust for crouched/prone target
@@ -3312,7 +3311,7 @@ void ShotMiss(const BULLET* const b)
 	SOLDIERTYPE* const pAttacker = b->pFirer;
 	SOLDIERTYPE* const opponent = pAttacker->opponent;
 	// AGILITY GAIN: Opponent "dodged" a bullet shot at him (it missed)
-	if (opponent != NULL) AgilityForEnemyMissingPlayer(pAttacker, opponent, 5);
+	if (opponent != nullptr) AgilityForEnemyMissingPlayer(pAttacker, opponent, 5);
 
 	switch (GCM->getWeapon(pAttacker->usAttackingWeapon)->ubWeaponClass)
 	{
@@ -3329,7 +3328,7 @@ void ShotMiss(const BULLET* const b)
 
 			// PLAY SOUND AND FLING DEBRIS
 			// RANDOMIZE SOUND SYSTEM
-			if (!DoSpecialEffectAmmoMiss(pAttacker, NOWHERE, 0, 0, 0, TRUE, TRUE, NULL))
+			if (!DoSpecialEffectAmmoMiss(pAttacker, NOWHERE, 0, 0, 0, TRUE, TRUE, nullptr))
 			{
 				PlayJA2Sample(SoundRange<MISS_1, MISS_8>(), HIGHVOLUME, 1, MIDDLEPAN);
 			}

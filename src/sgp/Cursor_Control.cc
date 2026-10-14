@@ -37,7 +37,7 @@ static UINT32 guiRequestedCursor = VIDEO_NO_CURSOR; // the last SetCurrentCursor
 
 UINT32 GetCurrentCursorIndex() { return guiRequestedCursor; }
 
-static MOUSEBLT_HOOK gMouseBltOverride = NULL;
+static MOUSEBLT_HOOK gMouseBltOverride = nullptr;
 
 std::optional<SGPPoint> gManualCursorPos = std::nullopt;
 
@@ -104,11 +104,11 @@ static void LoadCursorData(UINT32 uiCursorIndex)
 		const CursorImage* pCurImage = &pCurData->Composites[cnt];
 		CursorFileData*    CFData    = &gpCursorFileDatabase[pCurImage->uiFileIndex];
 
-		if (CFData->hVObject == NULL)
+		if (CFData->hVObject == nullptr)
 		{
 			// The file containing the video object hasn't been loaded yet. Let's load it now
 			// First load as an SGPImage so we can get aux data!
-			Assert(CFData->Filename != NULL);
+			Assert(CFData->Filename != nullptr);
 
 			AutoSGPImage hImage(CreateImage(CFData->Filename, IMAGE_ALLDATA));
 
@@ -189,10 +189,10 @@ static void UnLoadCursorData(UINT32 uiCursorIndex)
 		const CursorImage* pCurImage = &pCurData->Composites[cnt];
 		CursorFileData* CFData = &gpCursorFileDatabase[pCurImage->uiFileIndex];
 
-		if (CFData->hVObject != NULL && CFData->Filename != NULL)
+		if (CFData->hVObject != nullptr && CFData->Filename != nullptr)
 		{
 			DeleteVideoObject(CFData->hVObject);
-			CFData->hVObject = NULL;
+			CFData->hVObject = nullptr;
 		}
 	}
 }
@@ -203,10 +203,10 @@ void CursorDatabaseClear(void)
 	for (UINT32 uiIndex = 0; uiIndex < gusNumDataFiles; uiIndex++)
 	{
 		CursorFileData* CFData = &gpCursorFileDatabase[uiIndex];
-		if (CFData->hVObject != NULL && CFData->Filename != NULL)
+		if (CFData->hVObject != nullptr && CFData->Filename != nullptr)
 		{
 			DeleteVideoObject(CFData->hVObject);
-			CFData->hVObject = NULL;
+			CFData->hVObject = nullptr;
 		}
 	}
 }
@@ -236,7 +236,7 @@ BOOLEAN SetCurrentCursorFromDatabase(UINT32 uiCursorIndex)
 			BltVideoObjectOutline(MOUSE_BUFFER, guiExternVo, gusExternVoSubIndex, 0, 0, SGP_TRANSPARENT);
 
 			// Hook into hook function
-			if (gMouseBltOverride != NULL) gMouseBltOverride();
+			if (gMouseBltOverride != nullptr) gMouseBltOverride();
 
 			SetMouseCursorProperties(usEffWidth / 2, usEffHeight / 2, usEffHeight, usEffWidth);
 		}
@@ -342,7 +342,7 @@ BOOLEAN SetCurrentCursorFromDatabase(UINT32 uiCursorIndex)
 			}
 
 			// Hook into hook function
-			if (gMouseBltOverride != NULL) gMouseBltOverride();
+			if (gMouseBltOverride != nullptr) gMouseBltOverride();
 
 			INT16 sCenterValX = pCurData->sOffsetX;
 			INT16 sCenterValY = pCurData->sOffsetY;
@@ -370,7 +370,7 @@ void SetExternVOData(UINT32 uiCursorIndex, HVOBJECT hVObject, UINT16 usSubIndex)
 		CursorImage*    pCurImage = &pCurData->Composites[cnt];
 		CursorFileData* CFData    = &gpCursorFileDatabase[pCurImage->uiFileIndex];
 
-		if (CFData->Filename == NULL)
+		if (CFData->Filename == nullptr)
 		{
 			// OK, set Video Object here....
 

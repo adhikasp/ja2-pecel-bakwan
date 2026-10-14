@@ -910,7 +910,7 @@ static void InitFlowerOrderTextInputBoxes(void)
 	SetTextInputHilitedColors( FONT_WHITE, 2, 141  );
 	SetCursorColor( Get16BPPColor(FROMRGB(0, 0, 0) ) );
 
-	AddUserInputField(NULL);
+	AddUserInputField(nullptr);
 
 	if( gbCurrentlySelectedCard != -1 )
 	{

@@ -90,7 +90,7 @@ static SOLDIERTYPE* gShouldBecomeHostileOrSayQuote[SHOULD_BECOME_HOSTILE_SIZE];
 static UINT8 gubNumShouldBecomeHostileOrSayQuote;
 
 // NB this ID is set for someone opening a door
-SOLDIERTYPE* gInterruptProvoker = NULL;
+SOLDIERTYPE* gInterruptProvoker = nullptr;
 
 INT8 gbPublicOpplist[MAXTEAMS][TOTAL_SOLDIERS];
 INT8 gbSeenOpponents[TOTAL_SOLDIERS][TOTAL_SOLDIERS];
@@ -154,7 +154,7 @@ static const INT8 gbLookDistance[8][8] =
 	/* NORTHWEST */ { ANGLE,          SIDE,  SBEHIND,     BEHIND,  SBEHIND,       SIDE,    ANGLE,  STRAIGHT }
 };
 
-const SOLDIERTYPE* gWhoThrewRock = NULL;
+const SOLDIERTYPE* gWhoThrewRock = nullptr;
 
 #define NIGHTSIGHTGOGGLES_BONUS		2
 #define UVGOGGLES_BONUS			4
@@ -297,7 +297,8 @@ static void ReevaluateBestSightingPosition(SOLDIERTYPE* pSoldier, INT8 bInterrup
 			// must percolate him down
 			for ( ubLoop2 = ubLoop + 1; ubLoop2 < gubBestToMakeSightingSize; ubLoop2++ )
 			{
-				if (gBestToMakeSighting[ubLoop2] != NULL && gBestToMakeSighting[ubLoop2 - 1]->bInterruptDuelPts < gBestToMakeSighting[ubLoop2]->bInterruptDuelPts)
+				if (gBestToMakeSighting[ubLoop2] != nullptr && gBestToMakeSighting[ubLoop2 - 1]->bInterruptDuelPts <
+																   gBestToMakeSighting[ubLoop2]->bInterruptDuelPts)
 				{
 					SwapBestSightingPositions( (UINT8) (ubLoop2 - 1), ubLoop2 );
 				}
@@ -331,9 +332,10 @@ static void ReevaluateBestSightingPosition(SOLDIERTYPE* pSoldier, INT8 bInterrup
 		{
 			for ( ubLoop = 0; ubLoop < gubBestToMakeSightingSize; ubLoop++ )
 			{
-				if (gBestToMakeSighting[ubLoop] == NULL || bInterruptDuelPts > gBestToMakeSighting[ubLoop]->bInterruptDuelPts)
+				if (gBestToMakeSighting[ubLoop] == nullptr ||
+					bInterruptDuelPts > gBestToMakeSighting[ubLoop]->bInterruptDuelPts)
 				{
-					if (gBestToMakeSighting[gubBestToMakeSightingSize - 1] !=  NULL)
+					if (gBestToMakeSighting[gubBestToMakeSightingSize - 1] != nullptr)
 					{
 						gBestToMakeSighting[gubBestToMakeSightingSize - 1]->bInterruptDuelPts = NO_INTERRUPT;
 						SLOGD("RBSP: resetting points for {} to zilch", pSoldier->ubID);
@@ -359,7 +361,7 @@ static void ReevaluateBestSightingPosition(SOLDIERTYPE* pSoldier, INT8 bInterrup
 
 	for ( ubLoop = 0; ubLoop < BEST_SIGHTING_ARRAY_SIZE; ubLoop++ )
 	{
-		if (gBestToMakeSighting[ubLoop] != NULL)
+		if (gBestToMakeSighting[ubLoop] != nullptr)
 		{
 			SLOGD("RBSP entry {}: {} ({} pts)",
 				ubLoop, gBestToMakeSighting[ubLoop]->ubID,
@@ -380,13 +382,13 @@ static void HandleBestSightingPositionInRealtime(void)
 		return;
 	}
 
-	if (gBestToMakeSighting[0] != NULL)
+	if (gBestToMakeSighting[0] != nullptr)
 	{
 		SLOGD("HBSPIR called and there is someone in the list" );
 
 		//if (gfHumanSawSomeoneInRealtime)
 		{
-			if (gBestToMakeSighting[1] == NULL)
+			if (gBestToMakeSighting[1] == nullptr)
 			{
 				// award turn
 				EnterCombatMode(gBestToMakeSighting[0]->bTeam);
@@ -395,8 +397,7 @@ static void HandleBestSightingPositionInRealtime(void)
 			{
 				// if 1st and 2nd on same team, or 1st and 3rd on same team, or there IS no 3rd, award turn to 1st
 				if (gBestToMakeSighting[0]->bTeam == gBestToMakeSighting[1]->bTeam ||
-					gBestToMakeSighting[2] == NULL ||
-					gBestToMakeSighting[0]->bTeam == gBestToMakeSighting[2]->bTeam)
+					gBestToMakeSighting[2] == nullptr || gBestToMakeSighting[0]->bTeam == gBestToMakeSighting[2]->bTeam)
 				{
 					EnterCombatMode(gBestToMakeSighting[0]->bTeam);
 				}
@@ -416,7 +417,7 @@ static void HandleBestSightingPositionInRealtime(void)
 
 		for (UINT8 ubLoop = 0; ubLoop < BEST_SIGHTING_ARRAY_SIZE; ++ubLoop)
 		{
-			if (gBestToMakeSighting[ubLoop] != NULL)
+			if (gBestToMakeSighting[ubLoop] != nullptr)
 			{
 				gBestToMakeSighting[ubLoop]->bInterruptDuelPts = NO_INTERRUPT;
 				SLOGD("RBSP: done, resetting points for {} to zilch",
@@ -441,7 +442,7 @@ static void HandleBestSightingPositionInTurnbased(void)
 	// This function is called for handling interrupts when opening a door in turnbased
 	BOOLEAN fOk = FALSE;
 
-	if (gBestToMakeSighting[0] != NULL)
+	if (gBestToMakeSighting[0] != nullptr)
 	{
 		if (gBestToMakeSighting[0]->bTeam != gTacticalStatus.ubCurrentTeam)
 		{
@@ -449,10 +450,10 @@ static void HandleBestSightingPositionInTurnbased(void)
 			UINT8 ubLoop;
 			for (ubLoop = 0; ubLoop < gubBestToMakeSightingSize; ++ubLoop)
 			{
-				if (gBestToMakeSighting[ubLoop] == NULL)
+				if (gBestToMakeSighting[ubLoop] == nullptr)
 				{
 					// If nobody, do nothing (for now) - abort!
-					if (gInterruptProvoker == NULL) return;
+					if (gInterruptProvoker == nullptr) return;
 
 					// use this guy as the "interrupted" fellow
 					gBestToMakeSighting[ubLoop] = gInterruptProvoker;
@@ -480,7 +481,7 @@ static void HandleBestSightingPositionInTurnbased(void)
 		}
 		for (UINT8 ubLoop = 0; ubLoop < BEST_SIGHTING_ARRAY_SIZE; ++ubLoop)
 		{
-			if (gBestToMakeSighting[ubLoop] != NULL)
+			if (gBestToMakeSighting[ubLoop] != nullptr)
 			{
 				gBestToMakeSighting[ubLoop]->bInterruptDuelPts = NO_INTERRUPT;
 				SLOGD("RBSP (TB): done, resetting points for {} to zilch",
@@ -550,7 +551,7 @@ static SOLDIERTYPE* SelectSpeakerFromHostileOrSayQuoteList(void)
 		}
 	}
 
-	return ubNumProfiles == 0 ? NULL : speaker_list[Random(ubNumProfiles)];
+	return ubNumProfiles == 0 ? nullptr : speaker_list[Random(ubNumProfiles)];
 }
 
 
@@ -566,7 +567,7 @@ void CheckHostileOrSayQuoteList( void )
 		UINT8 ubLoop;
 
 		SOLDIERTYPE* const speaker = SelectSpeakerFromHostileOrSayQuoteList();
-		if (speaker == NULL)
+		if (speaker == nullptr)
 		{
 			// make sure everyone on this list is hostile
 			for ( ubLoop = 0; ubLoop < gubNumShouldBecomeHostileOrSayQuote; ubLoop++ )
@@ -1218,7 +1219,7 @@ void AllTeamsLookForAll(UINT8 ubAllowInterrupts)
 	}
 
 	// reset interrupt only guynum which may have been used
-	gInterruptProvoker = NULL;
+	gInterruptProvoker = nullptr;
 }
 
 
@@ -2103,7 +2104,7 @@ void RemoveManAsTarget(SOLDIERTYPE *pSoldier)
 	ResetLastKnownLocs(*pSoldier);
 
 	TacticalTeamType* const tt = &gTacticalStatus.Team[pSoldier->bTeam];
-	if (tt->last_merc_to_radio == pSoldier) tt->last_merc_to_radio = NULL;
+	if (tt->last_merc_to_radio == pSoldier) tt->last_merc_to_radio = nullptr;
 }
 
 
@@ -2245,7 +2246,7 @@ void InitOpponentKnowledgeSystem(void)
 
 	for ( cnt = 0; cnt < SHOULD_BECOME_HOSTILE_SIZE; cnt++ )
 	{
-		gShouldBecomeHostileOrSayQuote[cnt] = NULL;
+		gShouldBecomeHostileOrSayQuote[cnt] = nullptr;
 	}
 
 	gubNumShouldBecomeHostileOrSayQuote = 0;
@@ -2690,7 +2691,7 @@ void DebugSoldierPage1()
 	INT32 const h = DEBUG_PAGE_LINE_HEIGHT;
 
 	const SOLDIERTYPE* const s = gUIFullTarget;
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		MPageHeader(ST::format("DEBUG SOLDIER PAGE ONE, GRIDNO {}", s->sGridNo));
 
@@ -2750,7 +2751,7 @@ void DebugSoldierPage2()
 	INT32 const h = DEBUG_PAGE_LINE_HEIGHT;
 
 	const SOLDIERTYPE* const s = gUIFullTarget;
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		MPageHeader(ST::format("DEBUG SOLDIER PAGE TWO, GRIDNO {}", s->sGridNo));
 
@@ -2823,7 +2824,7 @@ void DebugSoldierPage2()
 
 		LEVELNODE const* const land_head = me->pLandHead;
 		MPrintStat(DEBUG_PAGE_FIRST_COLUMN, y += h, "Land Node:", land_head);
-		if (land_head != NULL)
+		if (land_head != nullptr)
 		{
 			UINT16 const idx = land_head->usIndex;
 			MPrintStat(DEBUG_PAGE_FIRST_COLUMN, y += h, "Land Node:", idx);
@@ -2840,7 +2841,7 @@ void DebugSoldierPage2()
 		}
 
 		LEVELNODE const* const node = GetCurInteractiveTile();
-		if (node != NULL)
+		if (node != nullptr)
 		{
 			MPrint(  DEBUG_PAGE_FIRST_COLUMN+DEBUG_PAGE_LABEL_WIDTH, y += h, ST::format("Tile: {}", node->usIndex));
 			MPrint( DEBUG_PAGE_FIRST_COLUMN, y,      "ON INT TILE");
@@ -2887,7 +2888,7 @@ void DebugSoldierPage3()
 	INT32 const h = DEBUG_PAGE_LINE_HEIGHT;
 
 	const SOLDIERTYPE* const s = gUIFullTarget;
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		MPageHeader(ST::format("DEBUG SOLDIER PAGE THREE, GRIDNO {}", s->sGridNo));
 
@@ -2969,7 +2970,7 @@ void DebugSoldierPage3()
 
 		// OPINION OF SELECTED MERC
 		const SOLDIERTYPE* const sel = GetSelectedMan();
-		if (sel != NULL && s->ubProfile != NO_PROFILE)
+		if (sel != nullptr && s->ubProfile != NO_PROFILE)
 		{
 			MercProfile const p = MercProfile(s->ubProfile);
 			if (p.isPlayerMerc() || p.isRPC())
@@ -2989,7 +2990,7 @@ void DebugSoldierPage3()
 
 		// OK, display door information here.....
 		DOOR_STATUS const* const door = GetDoorStatus(map_pos);
-		if (door == NULL)
+		if (door == nullptr)
 		{
 			MHeader(DEBUG_PAGE_FIRST_COLUMN, y += h, "No Door Status");
 		}
@@ -3010,7 +3011,7 @@ void DebugSoldierPage3()
 
 		//Find struct data and se what it says......
 		STRUCTURE const* const structure = FindStructure(map_pos, STRUCTURE_ANYDOOR);
-		if (structure == NULL)
+		if (structure == nullptr)
 		{
 			MHeader(DEBUG_PAGE_FIRST_COLUMN, y += h, "No Door Struct Data");
 		}
@@ -3110,7 +3111,7 @@ void DebugSoldierPage4()
 
 	INT32 const h = DEBUG_PAGE_LINE_HEIGHT;
 
-	if (s != NULL)
+	if (s != nullptr)
 	{
 		MPageHeader(ST::format("DEBUG SOLDIER PAGE FOUR, GRIDNO {}", s->sGridNo));
 
@@ -3409,9 +3410,7 @@ void OurNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, INT8 const bL
 	// see if anyone actually hears this noise, sees noise_maker, etc.
 	ProcessNoise(noise_maker, sGridNo, bLevel, ubVolume, ubNoiseType);
 
-	if (noise_maker != NULL &&
-		(gTacticalStatus.uiFlags & INCOMBAT) &&
-		!gfDelayResolvingBestSightingDueToDoor)
+	if (noise_maker != nullptr && (gTacticalStatus.uiFlags & INCOMBAT) && !gfDelayResolvingBestSightingDueToDoor)
 	{
 		// interrupts are possible, resolve them now (we're in control here)
 		// (you can't interrupt NOBODY, even if you hear the noise)
@@ -3443,7 +3442,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 	// dead noiseMaker is only used here to decide WHICH soldiers HearNoise().
 
 	// if noise is made by a person, AND it's not noise from an explosion
-	if (noise_maker != NULL && ubNoiseType != NOISE_EXPLOSION)
+	if (noise_maker != nullptr && ubNoiseType != NOISE_EXPLOSION)
 	{
 		// inactive/not in sector/dead soldiers, shouldn't be making noise!
 		if (!noise_maker->bActive ||
@@ -3478,7 +3477,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 		case NOISE_EXPLOSION:
 			// the source of the noise is not at all obvious, so hide it from
 			// the listener and maintain noiseMaker's cover by making source NOBODY
-			source = NULL;
+			source = nullptr;
 			break;
 
 		default:
@@ -3494,7 +3493,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 		if (!IsTeamActive(bTeam)) continue;
 
 		// if a the noise maker is a person, not just NOBODY
-		if (noise_maker != NULL)
+		if (noise_maker != nullptr)
 		{
 			// if this team is the same TEAM as the noise maker's
 			// (for now, assume we will report noises by unknown source on same SIDE)
@@ -3548,7 +3547,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 		}
 
 		// if noise was made by a person
-		if (noise_maker != NULL)
+		if (noise_maker != nullptr)
 		{
 			switch (gbPublicOpplist[bTeam][noise_maker->ubID])
 			{
@@ -3579,7 +3578,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 		BOOLEAN bHeard = FALSE;
 		BOOLEAN bSeen  = FALSE;
 		ubLoudestEffVolume = 0;
-		SOLDIERTYPE* heard_loudest_by = NULL;
+		SOLDIERTYPE* heard_loudest_by = nullptr;
 
 		// All mercs on this team check if they are eligible to hear this noise
 		FOR_EACH_IN_TEAM(pSoldier, bTeam)
@@ -3603,7 +3602,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 			}
 
 			// if a the noise maker is a person, not just NOBODY
-			if (noise_maker != NULL)
+			if (noise_maker != nullptr)
 			{
 				// if this listener can see this noise maker
 				if (pSoldier->bOppList[noise_maker->ubID] == SEEN_CURRENTLY)
@@ -3666,7 +3665,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 			else
 			{
 				// screen out allied militia from hearing us
-				if (noise_maker == NULL && pSoldier->bTeam == MILITIA_TEAM && pSoldier->bSide == Side::FRIENDLY)
+				if (noise_maker == nullptr && pSoldier->bTeam == MILITIA_TEAM && pSoldier->bSide == Side::FRIENDLY)
 				{
 					continue;
 				}
@@ -3719,7 +3718,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 			if (bTeam == OUR_TEAM)
 			{
 				// if we are to tell the player about this type of noise
-				if (bTellPlayer && heard_loudest_by != NULL)
+				if (bTellPlayer && heard_loudest_by != nullptr)
 				{
 					// the merc that heard it the LOUDEST is the one to comment
 					// should add level to this function call
@@ -3747,7 +3746,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 		// if the listening team is human-controlled AND
 		// the noise's source is another soldier
 		// (computer-controlled teams don't radio or automatically report NOISE)
-		if (source != NULL && gTacticalStatus.Team[bTeam].bHuman)
+		if (source != nullptr && gTacticalStatus.Team[bTeam].bHuman)
 		{
 			// if noise_maker was seen by at least one member of this team
 			if (bSeen)
@@ -3766,7 +3765,7 @@ static void ProcessNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, IN
 		}
 	}
 
-	gWhoThrewRock = NULL;
+	gWhoThrewRock = nullptr;
 }
 
 
@@ -3923,7 +3922,7 @@ static void HearNoise(SOLDIERTYPE* const pSoldier, SOLDIERTYPE* const noise_make
 	// is he close enough to see that gridno if he turns his head?
 
 	// ignore muzzle flashes when turning head to see noise
-	if (ubNoiseType == NOISE_GUNFIRE && noise_maker != NULL && noise_maker->fMuzzleFlash)
+	if (ubNoiseType == NOISE_GUNFIRE && noise_maker != nullptr && noise_maker->fMuzzleFlash)
 	{
 		sNoiseX = CenterX(sGridNo);
 		sNoiseY = CenterY(sGridNo);
@@ -3983,7 +3982,7 @@ static void HearNoise(SOLDIERTYPE* const pSoldier, SOLDIERTYPE* const noise_make
 	}
 
 	// if noise is made by a person
-	if (noise_maker != NULL)
+	if (noise_maker != nullptr)
 	{
 		bOldOpplist = pSoldier->bOppList[noise_maker->ubID];
 
@@ -4206,7 +4205,7 @@ static void HearNoise(SOLDIERTYPE* const pSoldier, SOLDIERTYPE* const noise_make
 			{
 				// give every ELIGIBLE listener an automatic interrupt, since it's
 				// reasonable to assume the guy throwing wants to wait for their reaction!
-				if (StandardInterruptConditionsMet(pSoldier, NULL, FALSE))
+				if (StandardInterruptConditionsMet(pSoldier, nullptr, FALSE))
 				{
 					pSoldier->bInterruptDuelPts = AUTOMATIC_INTERRUPT; // force automatic interrupt
 					SLOGD("Calculating int duel pts in noise code, {} has {} points",
@@ -4524,7 +4523,7 @@ void DecayPublicOpplist(INT8 bTeam)
 	{
 		// forget about the last radio alert (ie. throw away who made the call)
 		// this is mainly so POINT_PATROL guys don't SEEK_FRIEND forever after
-		gTacticalStatus.Team[bTeam].last_merc_to_radio = NULL;
+		gTacticalStatus.Team[bTeam].last_merc_to_radio = nullptr;
 	}
 
 	// decay watched locs as well
@@ -5019,7 +5018,7 @@ static BOOLEAN WatchedLocLocationIsEmpty(INT16 sGridNo, INT8 bLevel, INT8 bTeam)
 	for (GridNo const sTempGridNo : GridSquare{ sGridNo, WATCHED_LOC_RADIUS })
 	{
 		const SOLDIERTYPE* const tgt = WhoIsThere2(sTempGridNo, bLevel);
-		if (tgt != NULL && tgt->bTeam != bTeam) return FALSE;
+		if (tgt != nullptr && tgt->bTeam != bTeam) return FALSE;
 	}
 	return( TRUE );
 }

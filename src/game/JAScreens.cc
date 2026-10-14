@@ -201,8 +201,8 @@ ScreenID PalEditScreenHandle(void)
 		FirstTime = TRUE;
 		FreeBackgroundRect(guiBackgroundRect);
 		guiBackgroundRect = NO_BGND_RECT;
-		SetRenderHook(NULL);
-		SetUIKeyboardHook(NULL);
+		SetRenderHook(nullptr);
+		SetUIKeyboardHook(nullptr);
 		return( GAME_SCREEN );
 	}
 
@@ -229,7 +229,7 @@ ScreenID PalEditScreenHandle(void)
 static void PalEditRenderHook(void)
 {
 	const SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel != NULL)
+	if (sel != nullptr)
 	{
 		// Set to current
 		DisplayPaletteRep(sel->HeadPal,  50,  10, FRAME_BUFFER);
@@ -274,7 +274,7 @@ static BOOLEAN PalEditKeyboardHook(InputAtom* pInputEvent)
 	if (pInputEvent->usEvent != KEY_DOWN) return FALSE;
 
 	SOLDIERTYPE* const sel = GetSelectedMan();
-	if (sel == NULL) return FALSE;
+	if (sel == nullptr) return FALSE;
 
 	switch (pInputEvent->usParam)
 	{
@@ -300,8 +300,8 @@ static BOOLEAN CheckForAndExitTacticalDebug(void)
 		gfDoVideoScroll = TRUE;
 		FreeBackgroundRect( guiBackgroundRect );
 		guiBackgroundRect = NO_BGND_RECT;
-		SetRenderHook(NULL);
-		SetUIKeyboardHook(NULL);
+		SetRenderHook(nullptr);
+		SetUIKeyboardHook(nullptr);
 
 		return( TRUE );
 	}
@@ -432,7 +432,7 @@ ScreenID SexScreenHandle(void)
 	{
 		// Load face....
 		guiSMILY = AddVideoObjectFromFile(INTERFACEDIR "/luckysmile.sti");
-		PlayJA2StreamingSampleFromFile(SOUNDSDIR "/sex.wav", HIGHVOLUME, 1, MIDDLEPAN, NULL);
+		PlayJA2StreamingSampleFromFile(SOUNDSDIR "/sex.wav", HIGHVOLUME, 1, MIDDLEPAN, nullptr);
 
 		// Init screen
 		bCurFrame = 0;

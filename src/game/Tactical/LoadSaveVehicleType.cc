@@ -93,7 +93,7 @@ void InjectVehicleTypeIntoFile(HWFILE const file, VEHICLETYPE const* const v)
 	// The ProfileID of the passengers gets stored, not their SoldierID
 	FOR_EACH(SOLDIERTYPE* const, i, v->pPassengers)
 	{
-		const ProfileID id = (*i == NULL ? NO_PROFILE : (*i)->ubProfile);
+		const ProfileID id = (*i == nullptr ? NO_PROFILE : (*i)->ubProfile);
 		INJ_U8(d, id)
 		INJ_SKIP(d, 3)
 	}

@@ -645,7 +645,7 @@ void InitializeSMPanel()
 	// this is important! It will disable buttons like SM_MAP_SCREEN_BUTTON when they're supposed to be
 	// disabled - the previous disabled state is lost everytime panel is reinitialized, because all the
 	// buttons are created from scratch!
-	if (gpItemPointer == NULL)
+	if (gpItemPointer == nullptr)
 	{
 		// empty cursor - enable, not from item pickup
 		EnableSMPanelButtons(TRUE, FALSE);
@@ -693,7 +693,7 @@ static void BtnNextMercCallback(GUI_BUTTON* btn, UINT32 reason);
 
 static void CreateSMPanelButtons(void)
 {
-	giSMStealthImages = NULL;
+	giSMStealthImages = nullptr;
 	gfUIStanceDifferent = TRUE;
 	gfAllDisabled	= FALSE;
 
@@ -785,7 +785,7 @@ void ShutdownSMPanel()
 	DeleteVideoObject(guiSMObjects);
 	DeleteVideoObject(guiSMObjects2);
 
-	gSelectSMPanelToMerc = NULL;
+	gSelectSMPanelToMerc = nullptr;
 
 	// CJC: delete key ring if open
 	DeleteKeyRingPopup(); // function will abort if key ring is not up
@@ -935,7 +935,7 @@ void RenderSMPanel(DirtyLevel* const dirty_level)
 
 	if (*dirty_level == DIRTYLEVEL2)
 	{
-		BltVideoSurface(guiSAVEBUFFER, guiSMPanel, dx, dy, NULL);
+		BltVideoSurface(guiSAVEBUFFER, guiSMPanel, dx, dy, nullptr);
 
 		{
 			SGPVObject const* gfx;
@@ -1080,7 +1080,7 @@ static void SMInvMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 
 	if (iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE)
 	{
-		if ( gpItemPointer == NULL )
+		if (gpItemPointer == nullptr)
 		{
 			// Setup a timer....
 			guiMouseOverItemTime = GetJA2Clock( );
@@ -1090,7 +1090,7 @@ static void SMInvMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 	}
 	else if (iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
 	{
-		if ( gpItemPointer == NULL )
+		if (gpItemPointer == nullptr)
 		{
 			HandleCompatibleAmmoUI( gpSMCurrentMerc, (INT8)uiHandPos, FALSE );
 			gfCheckForMouseOverItem = FALSE;
@@ -1124,7 +1124,7 @@ static void SMInvClickCamoCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 		// Apply camo (if we have something in cursor...)
 		// If we do not have an item in hand, start moving it
 		OBJECTTYPE* const obj = gpItemPointer;
-		if (obj == NULL) return;
+		if (obj == nullptr) return;
 
 		SOLDIERTYPE* const s = gpSMCurrentMerc;
 		if (TacticalInventory().PlanApply(InventoryHand(), InventoryPartyOf(s)) != Equipment::InvWhy::None) return;

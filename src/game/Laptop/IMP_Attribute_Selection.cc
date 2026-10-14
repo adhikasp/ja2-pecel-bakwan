@@ -93,7 +93,7 @@ static MOUSE_REGION pSliderRegions[10];
 
 
 //The currently "anchored scroll bar"
-static MOUSE_REGION* gpCurrentScrollBox      = NULL;
+static MOUSE_REGION* gpCurrentScrollBox = nullptr;
 static INT32         giCurrentlySelectedStat = -1;
 
 // has any of the sliding bars moved?...for re-rendering puposes
@@ -122,7 +122,7 @@ void EnterIMPAttributeSelection(void)
 		// re starting
 		SetAttributes();
 
-		gpCurrentScrollBox = NULL;
+		gpCurrentScrollBox = nullptr;
 		giCurrentlySelectedStat = -1;
 
 		// does character have PROBLEMS?
@@ -194,7 +194,7 @@ void HandleIMPAttributeSelection(void)
 	if (fReviewStats) return;
 
 	// set the currently selectd slider bar
-	if ((IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMainFingerDown()) && gpCurrentScrollBox != NULL)
+	if ((IsMouseButtonDown(MOUSE_BUTTON_LEFT) || IsMainFingerDown()) && gpCurrentScrollBox != nullptr)
 	{
 		//if the user is holding down the mouse cursor to left of the start of the slider bars
 		if (gusMouseXPos < SKILL_SLIDE_START_X + LAPTOP_SCREEN_UL_X)
@@ -242,7 +242,7 @@ void HandleIMPAttributeSelection(void)
 	}
 	else
 	{
-		gpCurrentScrollBox = NULL;
+		gpCurrentScrollBox = nullptr;
 		giCurrentlySelectedStat = -1;
 	}
 
@@ -312,7 +312,7 @@ static void IncrementStat(INT32 iStatToIncrement)
 	// review mode, do not allow changes
 	if (fReviewStats) return;
 
-	INT32*  val = NULL;
+	INT32* val = nullptr;
 	switch (iStatToIncrement)
 	{
 		case STRENGTH_ATTRIBUTE:   val = &iCurrentStrength;    break;
@@ -354,7 +354,7 @@ static void DecrementStat(INT32 iStatToDecrement)
 	if (fReviewStats) return;
 
 	BOOLEAN may_be_zero = FALSE;
-	INT32*  val         = NULL;
+	INT32* val = nullptr;
 	switch (iStatToDecrement)
 	{
 		case STRENGTH_ATTRIBUTE:   val = &iCurrentStrength;                        break;
@@ -557,8 +557,7 @@ static void SliderRegionButtonCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 	static INT32 iAttribute = -1;
 
 	//if we already have an anchored slider bar
-	if (gpCurrentScrollBox != pRegion && gpCurrentScrollBox != NULL)
-		return;
+	if (gpCurrentScrollBox != pRegion && gpCurrentScrollBox != nullptr) return;
 
 	if (iReason & MSYS_CALLBACK_REASON_POINTER_REPEAT)
 	{

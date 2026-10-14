@@ -286,7 +286,7 @@ void ResetSelectedListForMapScreen( void )
 	}
 
 	// if we still have a valid dude selected
-	if (GetSelectedInfoChar() != NULL)
+	if (GetSelectedInfoChar() != nullptr)
 	{
 		// then keep him selected
 		SetEntryInSelectedCharacterList( bSelectedInfoChar );
@@ -403,7 +403,7 @@ void DeselectSelectedListMercsWhoCantMoveWithThisGuy(const SOLDIERTYPE* const pS
 		if (!c->selected) continue;
 
 		const SOLDIERTYPE* const pSoldier2 = c->merc;
-		if (pSoldier2 == NULL) continue;
+		if (pSoldier2 == nullptr) continue;
 
 		// skip the guy we are
 		if (pSoldier == pSoldier2) continue;
@@ -488,7 +488,7 @@ void SelectUnselectedMercsWhoMustMoveWithThisGuy( void )
 		if (c->selected) continue;
 
 		const SOLDIERTYPE* const pSoldier = c->merc;
-		if (pSoldier == NULL) continue;
+		if (pSoldier == nullptr) continue;
 
 		// if on a squad or in a vehicle
 		if ( ( pSoldier->bAssignment < ON_DUTY ) || ( pSoldier->bAssignment == VEHICLE ) )
@@ -693,7 +693,7 @@ BOOLEAN CharacterIsGettingPathPlotted(INT16 const sCharNumber)
 	}
 
 	// is the character a valid one?
-	if (gCharactersList[sCharNumber].merc == NULL) return FALSE;
+	if (gCharactersList[sCharNumber].merc == nullptr) return FALSE;
 
 	// if the highlighted line character is also selected
 	if ( ( ( giDestHighLine != -1 ) && IsEntryInSelectedListSet ( ( INT8 ) giDestHighLine ) ) ||
@@ -732,7 +732,7 @@ BOOLEAN IsCharacterSelectedForAssignment( INT16 sCharNumber )
 	}
 
 	// is the character a valid one?
-	if (gCharactersList[sCharNumber].merc == NULL) return FALSE;
+	if (gCharactersList[sCharNumber].merc == nullptr) return FALSE;
 
 	// if the highlighted line character is also selected
 	if ( ( giAssignHighLine != -1 ) && IsEntryInSelectedListSet ( ( INT8 ) giAssignHighLine ) )
@@ -766,7 +766,7 @@ BOOLEAN IsCharacterSelectedForSleep( INT16 sCharNumber )
 	}
 
 	// is the character a valid one?
-	if (gCharactersList[sCharNumber].merc == NULL) return FALSE;
+	if (gCharactersList[sCharNumber].merc == nullptr) return FALSE;
 
 	// if the highlighted line character is also selected
 	if ( ( giSleepHighLine != -1 ) && IsEntryInSelectedListSet ( ( INT8 ) giSleepHighLine ) )
@@ -876,7 +876,7 @@ void CheckAndUpdateBasedOnContractTimes( void )
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iCounter].merc;
-		if (s == NULL) continue;
+		if (s == nullptr) continue;
 
 		// what kind of merc
 		if (s->ubWhatKindOfMercAmI == MERC_TYPE__AIM_MERC)
@@ -1106,7 +1106,7 @@ void InitLeaveList( void )
 	// init leave list with NULLS/zeroes
 	for( iCounter = 0; iCounter < NUM_LEAVE_LIST_SLOTS; iCounter++ )
 	{
-		gpLeaveListHead[ iCounter ] = NULL;
+		gpLeaveListHead[iCounter] = nullptr;
 		guiLeaveListOwnerProfileId[ iCounter ] = NO_PROFILE;
 	}
 }
@@ -1119,7 +1119,7 @@ void ShutDownLeaveList( void )
 	for( iCounter = 0; iCounter < NUM_LEAVE_LIST_SLOTS; iCounter++ )
 	{
 		// go through nodes and free them
-		if ( gpLeaveListHead[ iCounter ] != NULL )
+		if (gpLeaveListHead[iCounter] != nullptr)
 		{
 			FreeLeaveListSlot( iCounter );
 		}
@@ -1131,15 +1131,15 @@ void AddItemToLeaveIndex(const OBJECTTYPE* const o, const UINT32 uiSlotIndex)
 {
 	Assert(uiSlotIndex < NUM_LEAVE_LIST_SLOTS);
 
-	if (o == NULL) return;
+	if (o == nullptr) return;
 
 	MERC_LEAVE_ITEM* const mli = new MERC_LEAVE_ITEM{};
 	mli->o     = *o;
-	mli->pNext = NULL;
+	mli->pNext = nullptr;
 
 	// Append node to list
 	MERC_LEAVE_ITEM** anchor = &gpLeaveListHead[uiSlotIndex];
-	while (*anchor != NULL) anchor = &(*anchor)->pNext;
+	while (*anchor != nullptr) anchor = &(*anchor)->pNext;
 	*anchor = mli;
 }
 
@@ -1147,7 +1147,7 @@ void AddItemToLeaveIndex(const OBJECTTYPE* const o, const UINT32 uiSlotIndex)
 // release memory for all items in this slot's leave item list
 static void FreeLeaveListSlot(UINT32 uiSlotIndex)
 {
-	MERC_LEAVE_ITEM *pCurrent = NULL, *pTemp = NULL;
+	MERC_LEAVE_ITEM *pCurrent = nullptr, *pTemp = nullptr;
 
 	Assert( uiSlotIndex < NUM_LEAVE_LIST_SLOTS );
 
@@ -1161,7 +1161,7 @@ static void FreeLeaveListSlot(UINT32 uiSlotIndex)
 		pCurrent = pTemp;
 	}
 
-	gpLeaveListHead[ uiSlotIndex ] = NULL;
+	gpLeaveListHead[uiSlotIndex] = nullptr;
 }
 
 
@@ -1172,7 +1172,7 @@ static INT32 FindFreeSlotInLeaveList(void)
 
 	for( iCounter = 0; iCounter < NUM_LEAVE_LIST_SLOTS; iCounter++ )
 	{
-		if( gpLeaveListHead[ iCounter ] == NULL )
+		if (gpLeaveListHead[iCounter] == nullptr)
 		{
 			return( iCounter );
 		}
@@ -1317,7 +1317,7 @@ void FindAndSetThisContractSoldier( SOLDIERTYPE *pSoldier )
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iCounter].merc;
-		if (s == NULL) continue;
+		if (s == nullptr) continue;
 
 		if (s == pSoldier)
 		{
@@ -1351,7 +1351,7 @@ void UpdateMapScreenAssignmentPositions( void )
 		return;
 	}
 
-	if (gCharactersList[bSelectedAssignChar].merc == NULL)
+	if (gCharactersList[bSelectedAssignChar].merc == nullptr)
 	{
 		if (!gfPreBattleInterfaceActive) giBoxY = 0;
 		return;
@@ -1488,7 +1488,7 @@ BOOLEAN MapscreenCanPassItemToChar(const SOLDIERTYPE* const pNewSoldier)
 		// it came from either the currently selected merc, or the sector inventory
 		if (fMapInventoryItem)
 		{
-			pOldSoldier = NULL;
+			pOldSoldier = nullptr;
 		}
 		else
 		{
@@ -1498,7 +1498,7 @@ BOOLEAN MapscreenCanPassItemToChar(const SOLDIERTYPE* const pNewSoldier)
 
 
 	// if another merc had it previously
-	if ( pOldSoldier != NULL )
+	if (pOldSoldier != nullptr)
 	{
 		// disallow passing items to a merc not in the same sector
 		if (pNewSoldier->sSector != pOldSoldier->sSector)
@@ -1574,9 +1574,7 @@ void GoToNextCharacterInList( UINT32 const direction )
 	for( INT32 iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iCount].merc;
-		if (s != NULL &&
-				iCount < MAX_CHARACTER_COUNT &&
-				ValidSelectableCharForNextOrPrev(*s))
+		if (s != nullptr && iCount < MAX_CHARACTER_COUNT && ValidSelectableCharForNextOrPrev(*s))
 		{
 			ChangeSelectedInfoChar( ( INT8 )iCount, TRUE );
 			if ( s->bLife > 0 && s->bAssignment != ASSIGNMENT_POW )
@@ -2544,8 +2542,7 @@ static void MoveMenuBtnCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 	// btn callback handler for move box line regions
 	INT32 iMoveBoxLine = -1, iRegionType = -1, iListIndex = -1;
 	UINT32 uiClickTime = 0;
-	SOLDIERTYPE *pSoldier = NULL;
-
+	SOLDIERTYPE* pSoldier = nullptr;
 
 	iMoveBoxLine = MSYS_GetRegionUserData( pRegion, 0 );
 	iRegionType  = MSYS_GetRegionUserData( pRegion, 1 );
@@ -2617,7 +2614,7 @@ static void MoveMenuBtnCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 				{
 					// we don't allow mercs to change squads or get out of vehicles between sectors, easiest way to handle this
 					// is to prevent any toggling of individual soldiers on the move at the outset.
-					DoScreenIndependantMessageBox( pMapErrorString[ 41 ], MSG_BOX_FLAG_OK, NULL );
+					DoScreenIndependantMessageBox(pMapErrorString[41], MSG_BOX_FLAG_OK, nullptr);
 					return;
 				}
 
@@ -2879,7 +2876,7 @@ static void HandleSettingTheSelectedListOfMercs(void)
 	for( iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const pSoldier = gCharactersList[iCounter].merc;
-		if (pSoldier == NULL) continue;
+		if (pSoldier == nullptr) continue;
 
 		if ( pSoldier->uiStatusFlags & SOLDIER_VEHICLE )
 		{
@@ -3062,7 +3059,7 @@ static void ResetSoldierUpdateBox(void)
 	// delete any loaded faces
 	for( iCounter = 0; iCounter < SIZE_OF_UPDATE_BOX; iCounter++ )
 	{
-		if( pUpdateSoldierBox[ iCounter ] != NULL )
+		if (pUpdateSoldierBox[iCounter] != nullptr)
 		{
 			DeleteVideoObject(giUpdateSoldierFaces[iCounter]);
 		}
@@ -3076,7 +3073,7 @@ static void ResetSoldierUpdateBox(void)
 	// reset the soldier ptrs in the update box
 	for( iCounter = 0; iCounter < SIZE_OF_UPDATE_BOX; iCounter++ )
 	{
-		pUpdateSoldierBox[ iCounter ] = NULL;
+		pUpdateSoldierBox[iCounter] = nullptr;
 	}
 }
 
@@ -3164,7 +3161,7 @@ static void AddSoldierToUpdateBox(SOLDIERTYPE* const pSoldier)
 	if (!pSoldier->bActive) return;
 
 	// if update
-	if( pUpdateSoldierBox[ iCounter ] == NULL )
+	if (pUpdateSoldierBox[iCounter] == nullptr)
 	{
 		giMercPanelImage = AddVideoObjectFromFile(INTERFACEDIR "/panels.sti");
 	}
@@ -3173,7 +3170,7 @@ static void AddSoldierToUpdateBox(SOLDIERTYPE* const pSoldier)
 	for( iCounter = 0; iCounter < SIZE_OF_UPDATE_BOX; iCounter++ )
 	{
 		// find a free slot
-		if( pUpdateSoldierBox[ iCounter ] == NULL )
+		if (pUpdateSoldierBox[iCounter] == nullptr)
 		{
 			// add to box
 			pUpdateSoldierBox[ iCounter ] = pSoldier;
@@ -3493,7 +3490,7 @@ void CreateDestroyTheUpdateBox( void )
 static void RenderSoldierSmallFaceForUpdatePanel(INT32 iIndex, INT32 iX, INT32 iY)
 {
 	INT32 iStartY = 0;
-	SOLDIERTYPE *pSoldier = NULL;
+	SOLDIERTYPE* pSoldier = nullptr;
 
 	// fill the background for the info bars black
 	ColorFillVideoSurfaceArea( guiSAVEBUFFER, iX+36, iY+2, iX+44,	iY+30, 0 );
