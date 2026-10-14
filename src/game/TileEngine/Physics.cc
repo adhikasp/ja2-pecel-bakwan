@@ -1420,7 +1420,7 @@ static FLOAT CalculateObjectTrajectory(INT16 sTargetZ, const OBJECTTYPE* pItem, 
 	}
 
 	REAL_OBJECT* const pObject = CreatePhysicalObject(pItem, -1, vPosition->x, vPosition->y, vPosition->z, vForce->x,
-													  vForce->y, vForce->z, nullptr, NO_THROW_ACTION, 0);
+													  vForce->y, vForce->z, nullptr, NO_THROW_ACTION, nullptr);
 
 	// Set some special values...
 	pObject->fTestObject = TEST_OBJECT_NO_COLLISIONS;
@@ -1455,7 +1455,7 @@ static FLOAT CalculateObjectTrajectory(INT16 sTargetZ, const OBJECTTYPE* pItem, 
 static INT32 ChanceToGetThroughObjectTrajectory(INT16 sTargetZ, const OBJECTTYPE* pItem, vector_3* vPosition, vector_3* vForce, INT16* psNewGridNo, INT8* pbLevel, BOOLEAN fFromUI)
 {
 	REAL_OBJECT* const pObject = CreatePhysicalObject(pItem, -1, vPosition->x, vPosition->y, vPosition->z, vForce->x,
-													  vForce->y, vForce->z, nullptr, NO_THROW_ACTION, 0);
+													  vForce->y, vForce->z, nullptr, NO_THROW_ACTION, nullptr);
 
 	// Set some special values...
 	pObject->fTestObject = TEST_OBJECT_NOTWALLROOF_COLLISIONS;
