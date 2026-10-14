@@ -72,7 +72,9 @@ static void ReduceTree(void)
 {
 	int i;
 	// Find the deepest level containing at least one reducible node.
-	for (i = COLOUR_BITS - 1; i > 0 && g_reducible_nodes[i] == nullptr; i--) {}
+	for (i = COLOUR_BITS - 1; i > 0 && g_reducible_nodes[i] == nullptr; i--)
+	{
+	}
 
 	// Reduce the node most recently added to the list at level i.
 	NODE* const node = g_reducible_nodes[i];

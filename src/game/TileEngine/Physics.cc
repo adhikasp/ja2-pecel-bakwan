@@ -614,12 +614,12 @@ static void PhysicsDeleteObject(REAL_OBJECT* pObject)
 {
 	if ( pObject->fAllocated )
 	{
-		if ( pObject->pNode != nullptr )
+		if (pObject->pNode != nullptr)
 		{
 			RemoveStructFromLevelNode( pObject->sLevelNodeGridNo, pObject->pNode );
 		}
 
-		if ( pObject->pShadow != nullptr )
+		if (pObject->pShadow != nullptr)
 		{
 			RemoveShadowFromLevelNode( pObject->sLevelNodeGridNo, pObject->pShadow );
 		}
@@ -1097,7 +1097,7 @@ static BOOLEAN PhysicsMoveObject(REAL_OBJECT* pObject)
 	}
 
 	// Look at old gridno
-	if ( sNewGridNo != pObject->sGridNo || pObject->pNode == nullptr )
+	if (sNewGridNo != pObject->sGridNo || pObject->pNode == nullptr)
 	{
 		if ( pObject->fVisible )
 		{
@@ -1132,13 +1132,13 @@ static BOOLEAN PhysicsMoveObject(REAL_OBJECT* pObject)
 				if ( sNewGridNo != pObject->sGridNo )
 				{
 					// We're at a new gridno!
-					if ( pObject->pNode != nullptr )
+					if (pObject->pNode != nullptr)
 					{
 						RemoveStructFromLevelNode( pObject->sLevelNodeGridNo, pObject->pNode );
 					}
 
 					// We're at a new gridno!
-					if ( pObject->pShadow != nullptr )
+					if (pObject->pShadow != nullptr)
 					{
 						RemoveShadowFromLevelNode( pObject->sLevelNodeGridNo, pObject->pShadow );
 					}
@@ -1172,19 +1172,19 @@ static BOOLEAN PhysicsMoveObject(REAL_OBJECT* pObject)
 		else
 		{
 			// Remove!
-			if ( pObject->pNode != nullptr )
+			if (pObject->pNode != nullptr)
 			{
 				RemoveStructFromLevelNode( pObject->sLevelNodeGridNo, pObject->pNode );
 			}
 
 			// We're at a new gridno!
-			if ( pObject->pShadow != nullptr )
+			if (pObject->pShadow != nullptr)
 			{
 				RemoveShadowFromLevelNode( pObject->sLevelNodeGridNo, pObject->pShadow );
 			}
 
 			pObject->pNode = nullptr;
-			pObject->pShadow  = nullptr;
+			pObject->pShadow = nullptr;
 		}
 
 		if ( sNewGridNo != pObject->sGridNo )
@@ -1204,7 +1204,7 @@ static BOOLEAN PhysicsMoveObject(REAL_OBJECT* pObject)
 	{
 		if ( pObject->Obj.usItem != MORTAR_SHELL || pObject->ubActionCode != THROW_ARM_ITEM )
 		{
-			if ( pObject->pNode != nullptr )
+			if (pObject->pNode != nullptr)
 			{
 				// Add new object / update position
 				// Update position data
@@ -1419,7 +1419,8 @@ static FLOAT CalculateObjectTrajectory(INT16 sTargetZ, const OBJECTTYPE* pItem, 
 		(*psFinalGridNo) = NOWHERE;
 	}
 
-	REAL_OBJECT* const pObject = CreatePhysicalObject(pItem, -1, vPosition->x, vPosition->y, vPosition->z, vForce->x, vForce->y, vForce->z, nullptr, NO_THROW_ACTION, 0);
+	REAL_OBJECT* const pObject = CreatePhysicalObject(pItem, -1, vPosition->x, vPosition->y, vPosition->z, vForce->x,
+													  vForce->y, vForce->z, nullptr, NO_THROW_ACTION, 0);
 
 	// Set some special values...
 	pObject->fTestObject = TEST_OBJECT_NO_COLLISIONS;
@@ -1453,7 +1454,8 @@ static FLOAT CalculateObjectTrajectory(INT16 sTargetZ, const OBJECTTYPE* pItem, 
 
 static INT32 ChanceToGetThroughObjectTrajectory(INT16 sTargetZ, const OBJECTTYPE* pItem, vector_3* vPosition, vector_3* vForce, INT16* psNewGridNo, INT8* pbLevel, BOOLEAN fFromUI)
 {
-	REAL_OBJECT* const pObject = CreatePhysicalObject(pItem, -1, vPosition->x, vPosition->y, vPosition->z, vForce->x, vForce->y, vForce->z, nullptr, NO_THROW_ACTION, 0);
+	REAL_OBJECT* const pObject = CreatePhysicalObject(pItem, -1, vPosition->x, vPosition->y, vPosition->z, vForce->x,
+													  vForce->y, vForce->z, nullptr, NO_THROW_ACTION, 0);
 
 	// Set some special values...
 	pObject->fTestObject = TEST_OBJECT_NOTWALLROOF_COLLISIONS;
@@ -1468,8 +1470,7 @@ static INT32 ChanceToGetThroughObjectTrajectory(INT16 sTargetZ, const OBJECTTYPE
 		SimulateObject(pObject);
 	}
 
-
-	if ( psNewGridNo != nullptr )
+	if (psNewGridNo != nullptr)
 	{
 		// Calculate gridno from last position
 
@@ -2273,7 +2274,7 @@ static CollisionEnums CheckForCollision(FLOAT dX, FLOAT dY, FLOAT dZ,
 	//}
 
 	//if (pMapElement->pMercHead != NULL && pBullet->iLoop != 1)
-	if (pMapElement->pMercHead != nullptr )
+	if (pMapElement->pMercHead != nullptr)
 	{
 		// a merc! that isn't us :-)
 		pTarget = pMapElement->pMercHead->pSoldier;
@@ -2451,7 +2452,7 @@ static CollisionEnums CheckForCollision(FLOAT dX, FLOAT dY, FLOAT dZ,
 										pTempStructure = pMapElement->pStructureHead;
 
 										// LOOK at ALL structs on roof
-										while ( pTempStructure != nullptr )
+										while (pTempStructure != nullptr)
 										{
 											if (pTempStructure->sCubeOffset == STRUCTURE_ON_ROOF )
 											{

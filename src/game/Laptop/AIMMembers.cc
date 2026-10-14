@@ -1264,7 +1264,8 @@ static INT8 AimMemberHireMerc(void)
 	else if (ret == MERC_HIRE_OVER_20_MERCS_HIRED)
 	{
 		// Display a warning saying you can't hire more then 20 mercs
-		DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, AimPopUpText[AIM_MEMBER_ALREADY_HAVE_20_MERCS], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
+		DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, AimPopUpText[AIM_MEMBER_ALREADY_HAVE_20_MERCS], LAPTOP_SCREEN,
+						   MSG_BOX_FLAG_OK, nullptr);
 	}
 	return FALSE;
 }

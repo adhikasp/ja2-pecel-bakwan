@@ -850,8 +850,8 @@ static void ShutDownPalettesForMap()
 	delete[] pMapLTGreenPalette;
 	delete[] pMapDKGreenPalette;
 
-	pMapLTRedPalette   = nullptr;
-	pMapDKRedPalette   = nullptr;
+	pMapLTRedPalette = nullptr;
+	pMapDKRedPalette = nullptr;
 	pMapLTGreenPalette = nullptr;
 	pMapDKGreenPalette = nullptr;
 }
@@ -918,8 +918,7 @@ void PlotATemporaryPathForCharacter(const SOLDIERTYPE* const pCharacter, const S
 UINT32 ClearPathAfterThisSectorForCharacter(SOLDIERTYPE *pCharacter, const SGPSector& sMap)
 {
 	INT32 iOrigLength = 0;
-	VEHICLETYPE *pVehicle = nullptr;
-
+	VEHICLETYPE* pVehicle = nullptr;
 
 	iOrigLength = GetLengthOfMercPath( pCharacter );
 
@@ -962,7 +961,7 @@ UINT32 ClearPathAfterThisSectorForCharacter(SOLDIERTYPE *pCharacter, const SGPSe
 		}
 
 		// if there's an associated vehicle structure
-		if ( pVehicle != nullptr )
+		if (pVehicle != nullptr)
 		{
 			// do it for the vehicle, too
 			pVehicle->pMercPath = ClearStrategicPathListAfterThisSector(pVehicle->pMercPath, sMap, pVehicle->ubMovementGroup);
@@ -1461,10 +1460,9 @@ static BOOLEAN TraceCharAnimatedRoute(PathSt* const pPath, const BOOLEAN fForceU
 	BOOLEAN fUTurnFlag=FALSE;
 	BOOLEAN fNextNode=FALSE;
 	PathSt* pTempNode = nullptr;
-	PathSt* pNode     = nullptr;
+	PathSt* pNode = nullptr;
 	PathSt* pPastNode = nullptr;
 	PathSt* pNextNode = nullptr;
-
 
 	// must be plotting movement
 	if (bSelectedDestChar == -1 && !fPlotForHelicopter)
@@ -1481,13 +1479,13 @@ static BOOLEAN TraceCharAnimatedRoute(PathSt* const pPath, const BOOLEAN fForceU
 
 
 	// Valid path?
-	if ( pPath == nullptr )
+	if (pPath == nullptr)
 	{
 		return FALSE;
 	}
 	else
 	{
-		if(pCurrentNode==nullptr)
+		if (pCurrentNode == nullptr)
 		{
 			pCurrentNode = pPath;
 		}
@@ -1552,7 +1550,7 @@ static BOOLEAN TraceCharAnimatedRoute(PathSt* const pPath, const BOOLEAN fForceU
 	}
 
 	// if deleted, restart at beginnning
-	if(pTempNode==nullptr)
+	if (pTempNode == nullptr)
 	{
 		pCurrentNode = pPath;
 	}
@@ -1571,12 +1569,12 @@ static BOOLEAN TraceCharAnimatedRoute(PathSt* const pPath, const BOOLEAN fForceU
 	if (pNode->pNext)
 		pNextNode=pNode->pNext;
 	else
-		pNextNode=nullptr;
+		pNextNode = nullptr;
 
 	if (pNode->pPrev)
 		pPastNode=pNode->pPrev;
 	else
-		pPastNode=nullptr;
+		pPastNode = nullptr;
 
 	// go through characters list and display arrows for path
 	iSector = SGPSector::FromStrategicIndex(pNode->uiSectorId);

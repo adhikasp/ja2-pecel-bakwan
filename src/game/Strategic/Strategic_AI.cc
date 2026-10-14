@@ -235,7 +235,7 @@ static void RequestAttackOnSector(UINT8 ubSectorID, UINT16 usDefencePoints)
 		if( gGarrisonGroup[ i ].ubSectorID == ubSectorID && !gGarrisonGroup[ i ].ubPendingGroupID )
 		{
 			SLOGD("An attack has been requested in sector {}.", sMap);
-			SendReinforcementsForGarrison( i, usDefencePoints, nullptr );
+			SendReinforcementsForGarrison(i, usDefencePoints, nullptr);
 			return;
 		}
 	}
@@ -1365,7 +1365,7 @@ void CheckEnemyControlledSector( UINT8 ubSectorID )
 				return;
 			}
 		}
-		if( sSector.x < 16 && EnemyPermittedToAttackSector( nullptr, (UINT8)(ubSectorID + 1) ) )
+		if (sSector.x < 16 && EnemyPermittedToAttackSector(nullptr, (UINT8)(ubSectorID + 1)))
 		{
 			if( AdjacentSectorIsImportantAndUndefended( (UINT8)(ubSectorID+1) ) && AttemptToNoticeEmptySectorSucceeds() )
 			{
@@ -1373,7 +1373,7 @@ void CheckEnemyControlledSector( UINT8 ubSectorID )
 				return;
 			}
 		}
-		if( sSector.y < 16 && EnemyPermittedToAttackSector( nullptr, (UINT8)(ubSectorID + 16) ) )
+		if (sSector.y < 16 && EnemyPermittedToAttackSector(nullptr, (UINT8)(ubSectorID + 16)))
 		{
 			if( AdjacentSectorIsImportantAndUndefended( (UINT8)(ubSectorID+16) ) && AttemptToNoticeEmptySectorSucceeds() )
 			{
@@ -1381,7 +1381,7 @@ void CheckEnemyControlledSector( UINT8 ubSectorID )
 				return;
 			}
 		}
-		if( sSector.x > 1 && EnemyPermittedToAttackSector( nullptr, (UINT8)(ubSectorID - 1) ) )
+		if (sSector.x > 1 && EnemyPermittedToAttackSector(nullptr, (UINT8)(ubSectorID - 1)))
 		{
 			if( AdjacentSectorIsImportantAndUndefended( (UINT8)(ubSectorID-1) ) && AttemptToNoticeEmptySectorSucceeds() )
 			{
@@ -1980,13 +1980,13 @@ void EvaluateQueenSituation()
 		iWeight = gGarrisonGroup[ i ].bWeight;
 		if( iWeight > 0 )
 		{	//if group is requesting reinforcements.
-			if( iRandom < iWeight && !gGarrisonGroup[ i ].ubPendingGroupID &&
-					EnemyPermittedToAttackSector( nullptr, gGarrisonGroup[ i ].ubSectorID ) &&
-					GarrisonRequestingMinimumReinforcements( i ) )
+			if (iRandom < iWeight && !gGarrisonGroup[i].ubPendingGroupID &&
+				EnemyPermittedToAttackSector(nullptr, gGarrisonGroup[i].ubSectorID) &&
+				GarrisonRequestingMinimumReinforcements(i))
 			{ //This is the group that gets the reinforcements!
 				if( ReinforcementsApproved( i, &usDefencePoints ) )
 				{
-					SendReinforcementsForGarrison( i, usDefencePoints, nullptr );
+					SendReinforcementsForGarrison(i, usDefencePoints, nullptr);
 				}
 				else
 				{
@@ -2008,7 +2008,7 @@ void EvaluateQueenSituation()
 		{
 			if( iRandom < iWeight && !gPatrolGroup[ i ].ubPendingGroupID && PatrolRequestingMinimumReinforcements( i ) )
 			{ //This is the group that gets the reinforcements!
-				SendReinforcementsForPatrol( i, nullptr );
+				SendReinforcementsForPatrol(i, nullptr);
 				return;
 			}
 			iRandom -= iWeight;
@@ -2391,7 +2391,7 @@ void LoadStrategicAI(HWFILE const hFile)
 				INT32 cnt, iRandom;
 				INT32 iEliteChance, iTroopChance, iAdminChance;
 				INT32 iStartPop;
-				SECTORINFO *pSector = nullptr;
+				SECTORINFO* pSector = nullptr;
 
 				//Change the garrison composition to LEVEL1_DEFENCE from LEVEL2_DEFENCE
 				pSector = &SectorInfo[ SEC_N7 ];
@@ -3046,9 +3046,8 @@ static void MassFortifyTowns(void)
 		ubDesiredTroops = (UINT8)gArmyComp[ gGarrisonGroup[ i ].ubComposition ].bDesiredPopulation;
 		if( ubNumTroops < ubDesiredTroops  )
 		{
-			if( !gGarrisonGroup[ i ].ubPendingGroupID &&
-					gGarrisonGroup[ i ].ubComposition != ROADBLOCK &&
-					EnemyPermittedToAttackSector( nullptr, gGarrisonGroup[ i ].ubSectorID ) )
+			if (!gGarrisonGroup[i].ubPendingGroupID && gGarrisonGroup[i].ubComposition != ROADBLOCK &&
+				EnemyPermittedToAttackSector(nullptr, gGarrisonGroup[i].ubSectorID))
 			{
 				RequestHighPriorityGarrisonReinforcements( i, (UINT8)(ubDesiredTroops - ubNumTroops) );
 			}
@@ -3430,9 +3429,9 @@ static void ReassignAIGroup(GROUP** pGroup)
 		{	//if group is requesting reinforcements.
 			if( iRandom < iWeight )
 			{
-				if( !gGarrisonGroup[ i ].ubPendingGroupID &&
-						EnemyPermittedToAttackSector( nullptr, gGarrisonGroup[ i ].ubSectorID ) &&
-						GarrisonRequestingMinimumReinforcements( i ) )
+				if (!gGarrisonGroup[i].ubPendingGroupID &&
+					EnemyPermittedToAttackSector(nullptr, gGarrisonGroup[i].ubSectorID) &&
+					GarrisonRequestingMinimumReinforcements(i))
 				{ //This is the group that gets the reinforcements!
 					if( ReinforcementsApproved( i, &usDefencePoints ) )
 					{
@@ -3460,9 +3459,9 @@ static void ReassignAIGroup(GROUP** pGroup)
 			iWeight = gGarrisonGroup[ i ].bWeight;
 			if( iWeight > 0 )
 			{	//if group is requesting reinforcements.
-				if( !gGarrisonGroup[ i ].ubPendingGroupID &&
-						EnemyPermittedToAttackSector( nullptr, gGarrisonGroup[ i ].ubSectorID ) &&
-						GarrisonRequestingMinimumReinforcements( i ) )
+				if (!gGarrisonGroup[i].ubPendingGroupID &&
+					EnemyPermittedToAttackSector(nullptr, gGarrisonGroup[i].ubSectorID) &&
+					GarrisonRequestingMinimumReinforcements(i))
 				{ //This is the group that gets the reinforcements!
 					if( ReinforcementsApproved( i, &usDefencePoints ) )
 					{

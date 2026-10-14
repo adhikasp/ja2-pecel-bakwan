@@ -2415,7 +2415,7 @@ static void RenderSoldierCellHealth(SOLDIERCELL* pCell)
 
 static void DetermineTeamLeader(BOOLEAN fFriendlyTeam)
 {
-	SOLDIERCELL *pBestLeaderCell = nullptr;
+	SOLDIERCELL* pBestLeaderCell = nullptr;
 	//For each team (civs and players count as same team), find the merc with the best
 	//leadership ability.
 	if( fFriendlyTeam )
@@ -2701,7 +2701,7 @@ static SOLDIERCELL* ChooseTarget(SOLDIERCELL* pAttacker)
 	INT32 iAvailableTargets;
 	INT32 index;
 	INT32 iRandom = -1;
-	SOLDIERCELL *pTarget = nullptr;
+	SOLDIERCELL* pTarget = nullptr;
 	UINT16 usSavedDefence;
 	//Determine what team we are attacking
 	if( pAttacker->uiFlags & (CELL_ENEMY | CELL_CREATURE) )
@@ -2950,7 +2950,7 @@ static void AttackTarget(SOLDIERCELL* pAttacker, SOLDIERCELL* pTarget)
 		else
 			ubLocation = AIM_SHOT_TORSO;
 		ubAccuracy = (UINT8)((usAttack - usDefence + PreRandom( usDefence - pTarget->usDefence ) )/10);
-		iImpact = BulletImpact( pAttacker->pSoldier, pTarget->pSoldier, ubLocation, ubImpact, ubAccuracy, nullptr );
+		iImpact = BulletImpact(pAttacker->pSoldier, pTarget->pSoldier, ubLocation, ubImpact, ubAccuracy, nullptr);
 
 		if ( bAttackIndex == -1 )
 		{
@@ -3147,12 +3147,9 @@ static void TargetHitCallback(SOLDIERCELL* pTarget, INT32 index)
 			pKiller = pTarget->pAttacker[ index ];
 			pAssister1 = pTarget->pAttacker[ index < 2 ? index + 1 : 0 ];
 			pAssister2 = pTarget->pAttacker[ index > 0 ? index - 1 : 2 ];
-			if( pKiller == pAssister1 )
-				pAssister1 = nullptr;
-			if( pKiller == pAssister2 )
-				pAssister2 = nullptr;
-			if( pAssister1 == pAssister2 )
-				pAssister2 = nullptr;
+			if (pKiller == pAssister1) pAssister1 = nullptr;
+			if (pKiller == pAssister2) pAssister2 = nullptr;
+			if (pAssister1 == pAssister2) pAssister2 = nullptr;
 			if( pKiller )
 			{
 				if( pKiller->uiFlags & CELL_MERC )

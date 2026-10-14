@@ -297,7 +297,8 @@ static void ReevaluateBestSightingPosition(SOLDIERTYPE* pSoldier, INT8 bInterrup
 			// must percolate him down
 			for ( ubLoop2 = ubLoop + 1; ubLoop2 < gubBestToMakeSightingSize; ubLoop2++ )
 			{
-				if (gBestToMakeSighting[ubLoop2] != nullptr && gBestToMakeSighting[ubLoop2 - 1]->bInterruptDuelPts < gBestToMakeSighting[ubLoop2]->bInterruptDuelPts)
+				if (gBestToMakeSighting[ubLoop2] != nullptr && gBestToMakeSighting[ubLoop2 - 1]->bInterruptDuelPts <
+																   gBestToMakeSighting[ubLoop2]->bInterruptDuelPts)
 				{
 					SwapBestSightingPositions( (UINT8) (ubLoop2 - 1), ubLoop2 );
 				}
@@ -331,9 +332,10 @@ static void ReevaluateBestSightingPosition(SOLDIERTYPE* pSoldier, INT8 bInterrup
 		{
 			for ( ubLoop = 0; ubLoop < gubBestToMakeSightingSize; ubLoop++ )
 			{
-				if (gBestToMakeSighting[ubLoop] == nullptr || bInterruptDuelPts > gBestToMakeSighting[ubLoop]->bInterruptDuelPts)
+				if (gBestToMakeSighting[ubLoop] == nullptr ||
+					bInterruptDuelPts > gBestToMakeSighting[ubLoop]->bInterruptDuelPts)
 				{
-					if (gBestToMakeSighting[gubBestToMakeSightingSize - 1] !=  nullptr)
+					if (gBestToMakeSighting[gubBestToMakeSightingSize - 1] != nullptr)
 					{
 						gBestToMakeSighting[gubBestToMakeSightingSize - 1]->bInterruptDuelPts = NO_INTERRUPT;
 						SLOGD("RBSP: resetting points for {} to zilch", pSoldier->ubID);
@@ -395,8 +397,7 @@ static void HandleBestSightingPositionInRealtime(void)
 			{
 				// if 1st and 2nd on same team, or 1st and 3rd on same team, or there IS no 3rd, award turn to 1st
 				if (gBestToMakeSighting[0]->bTeam == gBestToMakeSighting[1]->bTeam ||
-					gBestToMakeSighting[2] == nullptr ||
-					gBestToMakeSighting[0]->bTeam == gBestToMakeSighting[2]->bTeam)
+					gBestToMakeSighting[2] == nullptr || gBestToMakeSighting[0]->bTeam == gBestToMakeSighting[2]->bTeam)
 				{
 					EnterCombatMode(gBestToMakeSighting[0]->bTeam);
 				}
@@ -3409,9 +3410,7 @@ void OurNoise(SOLDIERTYPE* const noise_maker, INT16 const sGridNo, INT8 const bL
 	// see if anyone actually hears this noise, sees noise_maker, etc.
 	ProcessNoise(noise_maker, sGridNo, bLevel, ubVolume, ubNoiseType);
 
-	if (noise_maker != nullptr &&
-		(gTacticalStatus.uiFlags & INCOMBAT) &&
-		!gfDelayResolvingBestSightingDueToDoor)
+	if (noise_maker != nullptr && (gTacticalStatus.uiFlags & INCOMBAT) && !gfDelayResolvingBestSightingDueToDoor)
 	{
 		// interrupts are possible, resolve them now (we're in control here)
 		// (you can't interrupt NOBODY, even if you hear the noise)

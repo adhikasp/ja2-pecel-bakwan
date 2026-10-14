@@ -632,7 +632,7 @@ static INT32 LineOfSightTest(GridNo start_pos, FLOAT dStartZ, GridNo end_pos, FL
 
 	MAP_ELEMENT *pMapElement;
 	STRUCTURE *pStructure;
-	STRUCTURE *pRoofStructure = nullptr;
+	STRUCTURE* pRoofStructure = nullptr;
 
 	BOOLEAN fCheckForRoof;
 	FIXEDPT qLastZ;
@@ -1631,7 +1631,8 @@ INT32 SoldierToSoldierLineOfSightTest(const SOLDIERTYPE* const pStartSoldier, co
 		ubTreeReduction = gubTreeSightReduction[ gAnimControl[pEndSoldier->usAnimState].ubEndHeight ];
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, pEndSoldier->sGridNo, dEndZPos, ubTileSightLimit, ubTreeReduction, bAware, bEffectiveCamo, fSmell, nullptr);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, pEndSoldier->sGridNo, dEndZPos, ubTileSightLimit,
+						   ubTreeReduction, bAware, bEffectiveCamo, fSmell, nullptr);
 }
 
 INT16 SoldierToLocationWindowTest(const SOLDIERTYPE* pStartSoldier, INT16 sEndGridNo)
@@ -1687,7 +1688,8 @@ INT32 SoldierTo3DLocationLineOfSightTest(const SOLDIERTYPE* pStartSoldier, INT16
 		dEndZPos += CONVERT_PIXELS_TO_HEIGHTUNITS( gpWorldLevelData[ sGridNo ].sHeight );
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit,
+						   gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 INT32 SoldierToBodyPartLineOfSightTest( const SOLDIERTYPE * pStartSoldier, INT16 sGridNo, INT8 bLevel, UINT8 ubAimLocation, UINT8 ubTileSightLimit, INT8 bAware )
@@ -1727,7 +1729,8 @@ INT32 SoldierToBodyPartLineOfSightTest( const SOLDIERTYPE * pStartSoldier, INT16
 		return( FALSE );
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit,
+						   gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 
@@ -1763,7 +1766,8 @@ INT32 SoldierToVirtualSoldierLineOfSightTest(const SOLDIERTYPE* pStartSoldier, I
 		dEndZPos += WALL_HEIGHT_UNITS;
 	}
 
-	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
+	return LineOfSightTest(pStartSoldier->sGridNo, dStartZPos, sGridNo, dEndZPos, ubTileSightLimit,
+						   gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 INT32 SoldierToLocationLineOfSightTest( SOLDIERTYPE * pStartSoldier, INT16 sGridNo, UINT8 ubTileSightLimit, INT8 bAware )
@@ -1790,7 +1794,8 @@ INT32 LocationToLocationLineOfSightTest( INT16 sStartGridNo, INT8 bStartLevel, I
 	// add in ground height
 	dEndZPos += CONVERT_PIXELS_TO_HEIGHTUNITS( gpWorldLevelData[ sEndGridNo ].sHeight );
 
-	return LineOfSightTest(sStartGridNo, dStartZPos, sEndGridNo, dEndZPos, ubTileSightLimit, gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
+	return LineOfSightTest(sStartGridNo, dStartZPos, sEndGridNo, dEndZPos, ubTileSightLimit,
+						   gubTreeSightReduction[ANIM_STAND], bAware, 0, FALSE, nullptr);
 }
 
 /*
@@ -2442,7 +2447,7 @@ static UINT8 CalcChanceToGetThrough(BULLET* pBullet)
 
 	MAP_ELEMENT * pMapElement;
 	STRUCTURE * pStructure;
-	STRUCTURE * pRoofStructure = nullptr;
+	STRUCTURE* pRoofStructure = nullptr;
 
 	FIXEDPT qLastZ = 0;
 
@@ -2615,7 +2620,7 @@ static UINT8 CalcChanceToGetThrough(BULLET* pBullet)
 				{
 					// could hit this corpse!
 					// but we should ignore the corpse if there is someone standing there
-					if ( FindStructure( (INT16) iGridNo, STRUCTURE_PERSON ) == nullptr )
+					if (FindStructure((INT16)iGridNo, STRUCTURE_PERSON) == nullptr)
 					{
 						gpLocalStructure[iNumLocalStructures] = pStructure;
 						iNumLocalStructures++;
@@ -3456,7 +3461,7 @@ void MoveBullet(BULLET* const pBullet)
 
 	MAP_ELEMENT * pMapElement;
 	STRUCTURE * pStructure;
-	STRUCTURE * pRoofStructure = nullptr;
+	STRUCTURE* pRoofStructure = nullptr;
 
 	FIXEDPT qLastZ;
 
@@ -3737,7 +3742,7 @@ void MoveBullet(BULLET* const pBullet)
 				{
 					// could hit this corpse!
 					// but ignore if someone is here
-					if ( FindStructure( (INT16) iGridNo, STRUCTURE_PERSON ) == nullptr )
+					if (FindStructure((INT16)iGridNo, STRUCTURE_PERSON) == nullptr)
 					{
 						gpLocalStructure[iNumLocalStructures] = pStructure;
 						iNumLocalStructures++;
@@ -4227,9 +4232,8 @@ void MoveBullet(BULLET* const pBullet)
 		}
 
 		// check to see if bullet is close to target
-		if (pBullet->pFirer->target != nullptr &&
-				!(pBullet->pFirer->uiStatusFlags & SOLDIER_ATTACK_NOTICED) &&
-				PythSpacesAway(pBullet->sGridNo, pBullet->sTargetGridNo) <= 3)
+		if (pBullet->pFirer->target != nullptr && !(pBullet->pFirer->uiStatusFlags & SOLDIER_ATTACK_NOTICED) &&
+			PythSpacesAway(pBullet->sGridNo, pBullet->sTargetGridNo) <= 3)
 		{
 			pBullet->pFirer->uiStatusFlags |= SOLDIER_ATTACK_NOTICED;
 		}

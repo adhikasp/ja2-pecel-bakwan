@@ -1161,8 +1161,8 @@ static void PurchaseBobbyRayItem(UINT16 usItemNumber)
 				else
 				{
 					//display error popup because the player is trying to purchase more thenn 10 items
-					DoLapTopMessageBox( MSG_BOX_LAPTOP_DEFAULT, BobbyRText[ BOBBYR_MORE_THEN_10_PURCHASES ], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
-
+					DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, BobbyRText[BOBBYR_MORE_THEN_10_PURCHASES], LAPTOP_SCREEN,
+									   MSG_BOX_FLAG_OK, nullptr);
 				}
 			}
 			// Else If the item is already purchased increment purchase amount.  Only if ordering less then the max amount!
@@ -1174,7 +1174,8 @@ static void PurchaseBobbyRayItem(UINT16 usItemNumber)
 		}
 		else
 		{
-			DoLapTopMessageBox( MSG_BOX_LAPTOP_DEFAULT, BobbyRText[ BOBBYR_MORE_NO_MORE_IN_STOCK ], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
+			DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, BobbyRText[BOBBYR_MORE_NO_MORE_IN_STOCK], LAPTOP_SCREEN,
+							   MSG_BOX_FLAG_OK, nullptr);
 		}
 	}
 	//else the player is on a any other page except the used page
@@ -1199,7 +1200,8 @@ static void PurchaseBobbyRayItem(UINT16 usItemNumber)
 				else
 				{
 					//display error popup because the player is trying to purchase more thenn 10 items
-					DoLapTopMessageBox( MSG_BOX_LAPTOP_DEFAULT, BobbyRText[ BOBBYR_MORE_THEN_10_PURCHASES ], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
+					DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, BobbyRText[BOBBYR_MORE_THEN_10_PURCHASES], LAPTOP_SCREEN,
+									   MSG_BOX_FLAG_OK, nullptr);
 				}
 			}
 			// Else If the item is already purchased increment purchase amount.  Only if ordering less then the max amount!
@@ -1211,7 +1213,8 @@ static void PurchaseBobbyRayItem(UINT16 usItemNumber)
 		}
 		else
 		{
-			DoLapTopMessageBox( MSG_BOX_LAPTOP_DEFAULT, BobbyRText[ BOBBYR_MORE_NO_MORE_IN_STOCK ], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
+			DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, BobbyRText[BOBBYR_MORE_NO_MORE_IN_STOCK], LAPTOP_SCREEN,
+							   MSG_BOX_FLAG_OK, nullptr);
 		}
 	}
 }

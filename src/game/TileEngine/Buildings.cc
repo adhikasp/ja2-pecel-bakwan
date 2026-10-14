@@ -26,7 +26,7 @@ static BUILDING* CreateNewBuilding(UINT8* pubBuilding)
 {
 	if (gubNumberOfBuildings + 1 >= MAX_BUILDINGS)
 	{
-		return( nullptr );
+		return (nullptr);
 	}
 	// increment # of buildings
 	gubNumberOfBuildings++;
@@ -55,7 +55,7 @@ static BUILDING* GenerateBuilding(INT16 sDesiredSpot)
 	pBuilding = CreateNewBuilding( &ubBuildingID );
 	if (!pBuilding)
 	{
-		return( nullptr );
+		return (nullptr);
 	}
 
 	// set up fake soldier for location testing
@@ -82,7 +82,7 @@ static BUILDING* GenerateBuilding(INT16 sDesiredSpot)
 		if ( sTempGridNo == sNextTempGridNo )
 		{
 			// hit edge of map!??!
-			return( nullptr );
+			return (nullptr);
 		}
 		else
 		{
@@ -161,7 +161,7 @@ static BUILDING* GenerateBuilding(INT16 sDesiredSpot)
 				if (!fFoundDir)
 				{
 					// WTF is going on?
-					return( nullptr );
+					return (nullptr);
 				}
 			}
 			bDirection = bTempDirection;
@@ -232,7 +232,7 @@ static BUILDING* GenerateBuilding(INT16 sDesiredSpot)
 					break;
 				default:
 					// what the heck?
-					return( nullptr );
+					return (nullptr);
 			}
 
 			if (bDesiredOrientation == ORIENT_OUTSIDE_LEFT)
@@ -345,14 +345,14 @@ BUILDING * FindBuilding( INT16 sGridNo )
 
 	if (sGridNo <= 0 || sGridNo >= WORLD_MAX)
 	{
-		return( nullptr );
+		return (nullptr);
 	}
 
 	// id 0 indicates no building
 	ubBuildingID = gubBuildingInfo[ sGridNo ];
 	if ( ubBuildingID == NO_BUILDING )
 	{
-		return( nullptr );
+		return (nullptr);
 		/*
 		// need extra checks to see if is valid spot...
 		// must have valid room information and be a flat-roofed
@@ -369,7 +369,7 @@ BUILDING * FindBuilding( INT16 sGridNo )
 	}
 	else if ( ubBuildingID > gubNumberOfBuildings ) // huh?
 	{
-		return( nullptr );
+		return (nullptr);
 	}
 
 	return( &(gBuildings[ ubBuildingID ]) );
@@ -402,7 +402,8 @@ void GenerateBuildings( void )
 
 	for (GridNo loop = 0; loop < WORLD_MAX; ++loop)
 	{
-		if ( (gubWorldRoomInfo[ loop ] != NO_ROOM) && (gubBuildingInfo[ loop ] == NO_BUILDING) && (FindStructure( loop, STRUCTURE_NORMAL_ROOF ) != nullptr) )
+		if ((gubWorldRoomInfo[loop] != NO_ROOM) && (gubBuildingInfo[loop] == NO_BUILDING) &&
+			(FindStructure(loop, STRUCTURE_NORMAL_ROOF) != nullptr))
 		{
 			GenerateBuilding( loop );
 		}
@@ -436,8 +437,8 @@ INT16 FindClosestClimbPoint( INT16 sStartGridNo, INT16 sDesiredGridNo, BOOLEAN f
 
 	for ( ubLoop = 0; ubLoop < ubNumClimbSpots; ubLoop++ )
 	{
-		if (WhoIsThere2(pBuilding->sUpClimbSpots[ubLoop],   0) == nullptr &&
-				WhoIsThere2(pBuilding->sDownClimbSpots[ubLoop], 1) == nullptr)
+		if (WhoIsThere2(pBuilding->sUpClimbSpots[ubLoop], 0) == nullptr &&
+			WhoIsThere2(pBuilding->sDownClimbSpots[ubLoop], 1) == nullptr)
 		{
 			sDistance = PythSpacesAway( sStartGridNo, psClimbSpots[ ubLoop ] );
 			if (sDistance < sClosestDistance )

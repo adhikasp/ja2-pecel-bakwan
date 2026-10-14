@@ -197,7 +197,6 @@ template<> ScreenID HandleScreen<MAPUTILITY_SCREEN>()
 	// RENDER!
 	BltVideoSurface(FRAME_BUFFER, giMiniMap, 20, 360, nullptr);
 
-
 	ST::string zFilename2;
 	//QUantize!
 	{ SGPVSurface::Lock lsrc(gi8BitMiniMap);

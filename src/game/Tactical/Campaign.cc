@@ -378,11 +378,11 @@ static UINT32 CalcNewSalary(UINT32 uiOldSalary, BOOLEAN fIncrease, UINT32 uiMaxL
 static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKind const ubStat, INT16 const sPtsChanged)
 {
 	// this function changes the stat a given amount...
-	INT16 *psStatGainPtr = nullptr;
-	INT8 *pbStatPtr = nullptr;
-	INT8 *pbSoldierStatPtr = nullptr;
-	INT8 *pbStatDeltaPtr = nullptr;
-	UINT32 *puiStatTimerPtr = nullptr;
+	INT16* psStatGainPtr = nullptr;
+	INT8* pbStatPtr = nullptr;
+	INT8* pbSoldierStatPtr = nullptr;
+	INT8* pbStatDeltaPtr = nullptr;
+	UINT32* puiStatTimerPtr = nullptr;
 	BOOLEAN fChangeTypeIncrease;
 	BOOLEAN fChangeSalary;
 	UINT8 ubMercMercIdValue = 0;
@@ -747,8 +747,8 @@ static void ChangeStat(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier, StatKi
 static void ProcessUpdateStats(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier)
 {
 	// this function will run through the soldier's profile and update their stats based on any accumulated gain pts.
-	INT16 *psStatGainPtr = nullptr;
-	INT8 *pbStatPtr = nullptr;
+	INT16* psStatGainPtr = nullptr;
+	INT8* pbStatPtr = nullptr;
 	INT8 bMinStatValue;
 	INT8 bMaxStatValue;
 	UINT16 usSubpointsPerPoint;
@@ -756,7 +756,7 @@ static void ProcessUpdateStats(MERCPROFILESTRUCT& p, SOLDIERTYPE* const pSoldier
 
 
 	// if hired, not back at AIM
-	if ( pSoldier != nullptr )
+	if (pSoldier != nullptr)
 	{
 		// ATE: if in the midst of an attack, if in the field, delay all stat changes until the check made after the 'attack'...
 		if ((gTacticalStatus.ubAttackBusyCount > 0) && pSoldier->bInSector &&

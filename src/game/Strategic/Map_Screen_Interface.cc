@@ -1106,7 +1106,7 @@ void InitLeaveList( void )
 	// init leave list with NULLS/zeroes
 	for( iCounter = 0; iCounter < NUM_LEAVE_LIST_SLOTS; iCounter++ )
 	{
-		gpLeaveListHead[ iCounter ] = nullptr;
+		gpLeaveListHead[iCounter] = nullptr;
 		guiLeaveListOwnerProfileId[ iCounter ] = NO_PROFILE;
 	}
 }
@@ -1119,7 +1119,7 @@ void ShutDownLeaveList( void )
 	for( iCounter = 0; iCounter < NUM_LEAVE_LIST_SLOTS; iCounter++ )
 	{
 		// go through nodes and free them
-		if ( gpLeaveListHead[ iCounter ] != nullptr )
+		if (gpLeaveListHead[iCounter] != nullptr)
 		{
 			FreeLeaveListSlot( iCounter );
 		}
@@ -1161,7 +1161,7 @@ static void FreeLeaveListSlot(UINT32 uiSlotIndex)
 		pCurrent = pTemp;
 	}
 
-	gpLeaveListHead[ uiSlotIndex ] = nullptr;
+	gpLeaveListHead[uiSlotIndex] = nullptr;
 }
 
 
@@ -1172,7 +1172,7 @@ static INT32 FindFreeSlotInLeaveList(void)
 
 	for( iCounter = 0; iCounter < NUM_LEAVE_LIST_SLOTS; iCounter++ )
 	{
-		if( gpLeaveListHead[ iCounter ] == nullptr )
+		if (gpLeaveListHead[iCounter] == nullptr)
 		{
 			return( iCounter );
 		}
@@ -1498,7 +1498,7 @@ BOOLEAN MapscreenCanPassItemToChar(const SOLDIERTYPE* const pNewSoldier)
 
 
 	// if another merc had it previously
-	if ( pOldSoldier != nullptr )
+	if (pOldSoldier != nullptr)
 	{
 		// disallow passing items to a merc not in the same sector
 		if (pNewSoldier->sSector != pOldSoldier->sSector)
@@ -1574,9 +1574,7 @@ void GoToNextCharacterInList( UINT32 const direction )
 	for( INT32 iCounter = 0; iCounter < MAX_CHARACTER_COUNT; iCounter++ )
 	{
 		const SOLDIERTYPE* const s = gCharactersList[iCount].merc;
-		if (s != nullptr &&
-				iCount < MAX_CHARACTER_COUNT &&
-				ValidSelectableCharForNextOrPrev(*s))
+		if (s != nullptr && iCount < MAX_CHARACTER_COUNT && ValidSelectableCharForNextOrPrev(*s))
 		{
 			ChangeSelectedInfoChar( ( INT8 )iCount, TRUE );
 			if ( s->bLife > 0 && s->bAssignment != ASSIGNMENT_POW )
@@ -2544,8 +2542,7 @@ static void MoveMenuBtnCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 	// btn callback handler for move box line regions
 	INT32 iMoveBoxLine = -1, iRegionType = -1, iListIndex = -1;
 	UINT32 uiClickTime = 0;
-	SOLDIERTYPE *pSoldier = nullptr;
-
+	SOLDIERTYPE* pSoldier = nullptr;
 
 	iMoveBoxLine = MSYS_GetRegionUserData( pRegion, 0 );
 	iRegionType  = MSYS_GetRegionUserData( pRegion, 1 );
@@ -2617,7 +2614,7 @@ static void MoveMenuBtnCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 				{
 					// we don't allow mercs to change squads or get out of vehicles between sectors, easiest way to handle this
 					// is to prevent any toggling of individual soldiers on the move at the outset.
-					DoScreenIndependantMessageBox( pMapErrorString[ 41 ], MSG_BOX_FLAG_OK, nullptr );
+					DoScreenIndependantMessageBox(pMapErrorString[41], MSG_BOX_FLAG_OK, nullptr);
 					return;
 				}
 
@@ -3062,7 +3059,7 @@ static void ResetSoldierUpdateBox(void)
 	// delete any loaded faces
 	for( iCounter = 0; iCounter < SIZE_OF_UPDATE_BOX; iCounter++ )
 	{
-		if( pUpdateSoldierBox[ iCounter ] != nullptr )
+		if (pUpdateSoldierBox[iCounter] != nullptr)
 		{
 			DeleteVideoObject(giUpdateSoldierFaces[iCounter]);
 		}
@@ -3076,7 +3073,7 @@ static void ResetSoldierUpdateBox(void)
 	// reset the soldier ptrs in the update box
 	for( iCounter = 0; iCounter < SIZE_OF_UPDATE_BOX; iCounter++ )
 	{
-		pUpdateSoldierBox[ iCounter ] = nullptr;
+		pUpdateSoldierBox[iCounter] = nullptr;
 	}
 }
 
@@ -3164,7 +3161,7 @@ static void AddSoldierToUpdateBox(SOLDIERTYPE* const pSoldier)
 	if (!pSoldier->bActive) return;
 
 	// if update
-	if( pUpdateSoldierBox[ iCounter ] == nullptr )
+	if (pUpdateSoldierBox[iCounter] == nullptr)
 	{
 		giMercPanelImage = AddVideoObjectFromFile(INTERFACEDIR "/panels.sti");
 	}
@@ -3173,7 +3170,7 @@ static void AddSoldierToUpdateBox(SOLDIERTYPE* const pSoldier)
 	for( iCounter = 0; iCounter < SIZE_OF_UPDATE_BOX; iCounter++ )
 	{
 		// find a free slot
-		if( pUpdateSoldierBox[ iCounter ] == nullptr )
+		if (pUpdateSoldierBox[iCounter] == nullptr)
 		{
 			// add to box
 			pUpdateSoldierBox[ iCounter ] = pSoldier;
@@ -3493,7 +3490,7 @@ void CreateDestroyTheUpdateBox( void )
 static void RenderSoldierSmallFaceForUpdatePanel(INT32 iIndex, INT32 iX, INT32 iY)
 {
 	INT32 iStartY = 0;
-	SOLDIERTYPE *pSoldier = nullptr;
+	SOLDIERTYPE* pSoldier = nullptr;
 
 	// fill the background for the info bars black
 	ColorFillVideoSurfaceArea( guiSAVEBUFFER, iX+36, iY+2, iX+44,	iY+30, 0 );

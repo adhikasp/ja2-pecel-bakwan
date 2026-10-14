@@ -99,7 +99,6 @@ static INT32 iCurrentHistoryPage = 1;
 // the History record list
 static HistoryUnit* pHistoryListHead = nullptr;
 
-
 void ClearHistoryList( void );
 
 
@@ -305,7 +304,7 @@ static void BtnHistoryDisplayNextPageCallBack(GUI_BUTTON* btn, UINT32 reason)
 static void ProcessAndEnterAHistoryRecord(const UINT8 ubCode, const UINT32 uiDate, const UINT8 ubSecondCode, const SGPSector& sSector)
 {
 	HistoryUnit* const h = new HistoryUnit{};
-	h->Next         = nullptr;
+	h->Next = nullptr;
 	h->ubCode       = ubCode;
 	h->ubSecondCode = ubSecondCode;
 	h->uiDate       = uiDate;

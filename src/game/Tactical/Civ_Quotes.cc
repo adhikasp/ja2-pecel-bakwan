@@ -207,7 +207,8 @@ static void ShutDownQuoteBox(BOOLEAN fForce)
 		// do we need to do anything at the end of the civ quote?
 		if ( gCivQuoteData.pCiv && gCivQuoteData.pCiv->bAction == AI_ACTION_OFFER_SURRENDER )
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SURRENDER], GAME_SCREEN, MSG_BOX_FLAG_YESNO, SurrenderMessageBoxCallBack, nullptr);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SURRENDER], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+						 SurrenderMessageBoxCallBack, nullptr);
 		}
 	}
 }
@@ -290,8 +291,7 @@ INT8 GetCivType(const SOLDIERTYPE* pCiv)
 
 static void RenderCivQuoteBoxOverlay(VIDEO_OVERLAY* pBlitter)
 {
-	if (gCivQuoteData.video_overlay == nullptr)
-		return;
+	if (gCivQuoteData.video_overlay == nullptr) return;
 	RenderMercPopUpBox(gCivQuoteData.dialogue_box, pBlitter->sX, pBlitter->sY,  pBlitter->uiDestBuff);
 	InvalidateRegion(pBlitter->sX, pBlitter->sY, pBlitter->sX + gusCivQuoteBoxWidth,
 				pBlitter->sY + gusCivQuoteBoxHeight);

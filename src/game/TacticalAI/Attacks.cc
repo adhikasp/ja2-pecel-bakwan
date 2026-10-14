@@ -308,7 +308,7 @@ static BOOLEAN CloseEnoughForGrenadeToss(INT16 sGridNo, INT16 sGridNo2)
 			ubMovementCost = gubWorldMovementCosts[ sTempGridNo ][ bDirection ][ 0 ];
 			if ( IS_TRAVELCOST_DOOR( ubMovementCost ) )
 			{
-				ubMovementCost = DoorTravelCost( nullptr, sTempGridNo, ubMovementCost, FALSE, nullptr );
+				ubMovementCost = DoorTravelCost(nullptr, sTempGridNo, ubMovementCost, FALSE, nullptr);
 			}
 			if ( ubMovementCost >= TRAVELCOST_BLOCKED)
 			{
@@ -338,7 +338,7 @@ static BOOLEAN CloseEnoughForGrenadeToss(INT16 sGridNo, INT16 sGridNo2)
 			ubMovementCost = gubWorldMovementCosts[ sTempGridNo ][ bDirection ][ 0 ];
 			if ( IS_TRAVELCOST_DOOR( ubMovementCost ) )
 			{
-				ubMovementCost = DoorTravelCost( nullptr, sTempGridNo, ubMovementCost, FALSE, nullptr );
+				ubMovementCost = DoorTravelCost(nullptr, sTempGridNo, ubMovementCost, FALSE, nullptr);
 			}
 			if ( ubMovementCost >= TRAVELCOST_BLOCKED)
 			{
@@ -1660,7 +1660,7 @@ static INT8 CountAdjacentSpreadTargets(SOLDIERTYPE* pSoldier, INT16 sFirstTarget
 
 	INT8 bDirLoop, bDir, bCheckDir, bTargetIndex, bTargets;
 	INT16 sTarget;
-	SOLDIERTYPE *pTargets[5] = {nullptr};
+	SOLDIERTYPE* pTargets[5] = { nullptr };
 
 	bTargetIndex = -1;
 	bCheckDir = -1;
@@ -1787,7 +1787,7 @@ INT16 CalcSpreadBurst( SOLDIERTYPE * pSoldier, INT16 sFirstTarget, INT8 bTargetL
 {
 	INT8	bDirLoop, bDir, bCheckDir, bTargetIndex = 0, bLoop, bTargets;
 	INT16	sTarget;
-	SOLDIERTYPE* pTargets[5] = {nullptr};
+	SOLDIERTYPE* pTargets[5] = { nullptr };
 	INT8 bAdjacents, bOtherAdjacents;
 
 

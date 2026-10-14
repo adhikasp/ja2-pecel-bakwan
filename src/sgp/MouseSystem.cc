@@ -85,7 +85,7 @@ struct DoubleDetectionState {
 					* allowed for a double click.  Double click check succeeded,
 					* set flag and reset double click globals. */
 				lastDownRegion = nullptr;
-				lastUpRegion   = nullptr;
+				lastUpRegion = nullptr;
 				lastDownTime = 0;
 				return TRUE;
 			}
@@ -112,7 +112,7 @@ struct DoubleDetectionState {
 				/* User released touch outside of current button, so kill any
 					* chance of a double tap happening. */
 				lastDownRegion = nullptr;
-				lastUpRegion   = nullptr;
+				lastUpRegion = nullptr;
 				lastDownTime = 0;
 			}
 		}
@@ -407,7 +407,8 @@ static void MSYS_UpdateMouseRegion(void)
 	MSYS_CurrRegion = cur;
 
 	MOUSE_REGION* prev = MSYS_PrevRegion;
-	if (cur != nullptr && cur != prev && cur->uiFlags & MSYS_REGION_ENABLED) {
+	if (cur != nullptr && cur != prev && cur->uiFlags & MSYS_REGION_ENABLED)
+	{
 		// Maintain values before calling any callbacks
 		cur->uiFlags |= MSYS_MOUSE_IN_AREA;
 	}

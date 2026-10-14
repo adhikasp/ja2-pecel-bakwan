@@ -445,7 +445,8 @@ static BOOLEAN MercFilesHireMerc(UINT8 ubMercID)
 	//already have 20 mercs on the team
 	if( bReturnCode == MERC_HIRE_OVER_20_MERCS_HIRED )
 	{
-		DoLapTopMessageBox( MSG_BOX_LAPTOP_DEFAULT, MercInfo[ MERC_FILES_HIRE_TO_MANY_PEOPLE_WARNING ], LAPTOP_SCREEN, MSG_BOX_FLAG_OK, nullptr);
+		DoLapTopMessageBox(MSG_BOX_LAPTOP_DEFAULT, MercInfo[MERC_FILES_HIRE_TO_MANY_PEOPLE_WARNING], LAPTOP_SCREEN,
+						   MSG_BOX_FLAG_OK, nullptr);
 		return(FALSE);
 	}
 	else if( bReturnCode == MERC_HIRE_FAILED )

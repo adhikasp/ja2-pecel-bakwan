@@ -699,9 +699,7 @@ static void UseGun(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 
 		// NB bDoBurst will be 2 at this point for the first shot since it was incremented
 		// above
-		if (IsOnOurTeam(*pSoldier) &&
-			pSoldier->target != nullptr  &&
-			(!pSoldier->bDoBurst || pSoldier->bDoBurst == 2) &&
+		if (IsOnOurTeam(*pSoldier) && pSoldier->target != nullptr && (!pSoldier->bDoBurst || pSoldier->bDoBurst == 2) &&
 			gTacticalStatus.uiFlags & INCOMBAT)
 		{
 			const SOLDIERTYPE* const tgt = pSoldier->target;
@@ -1318,7 +1316,7 @@ static void UseThrown(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo)
 			pTargetSoldier = nullptr;
 		}
 
-		if ( pTargetSoldier == nullptr )
+		if (pTargetSoldier == nullptr)
 		{
 			// search for an opponent near the target gridno
 			for ( bLoop = 0; bLoop < NUM_WORLD_DIRECTIONS; bLoop++ )
@@ -1410,7 +1408,7 @@ static void UseLauncher(SOLDIERTYPE * const pSoldier, GridNo const sTargetGridNo
 	{
 		// Firing an attached grenade launcher... the attachment we found above
 		// is the one to remove!
-		RemoveAttachment( pObj, bAttachPos, nullptr );
+		RemoveAttachment(pObj, bAttachPos, nullptr);
 	}
 
 	// ATE: Check here if the launcher should fail 'cause of bad status.....
@@ -2240,7 +2238,8 @@ UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime
 
 	// best to use team knowledge as well, in case of spotting for someone else
 	const SOLDIERTYPE* const tgt = WhoIsThere2(sGridNo, pSoldier->bTargetLevel);
-	if (tgt != nullptr && (pSoldier->bOppList[tgt->ubID] == SEEN_CURRENTLY || gbPublicOpplist[pSoldier->bTeam][tgt->ubID] == SEEN_CURRENTLY))
+	if (tgt != nullptr && (pSoldier->bOppList[tgt->ubID] == SEEN_CURRENTLY ||
+						   gbPublicOpplist[pSoldier->bTeam][tgt->ubID] == SEEN_CURRENTLY))
 	{
 		iSightRange = SoldierToBodyPartLineOfSightTest(pSoldier, sGridNo, pSoldier->bTargetLevel,
 								pSoldier->bAimShotLocation,

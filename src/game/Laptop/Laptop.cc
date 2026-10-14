@@ -1065,8 +1065,8 @@ ScreenID LaptopScreenHandle()
 
 		//Step 2:  The mapscreen image is in the EXTRABUFFER, and laptop is in the SAVEBUFFER
 		//         Start transitioning the screen.
-		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER,   0, 0, nullptr);
-		BltVideoSurface(FRAME_BUFFER,  guiEXTRABUFFER, 0, 0, nullptr);
+		BltVideoSurface(guiSAVEBUFFER, FRAME_BUFFER, 0, 0, nullptr);
+		BltVideoSurface(FRAME_BUFFER, guiEXTRABUFFER, 0, 0, nullptr);
 		PlayJA2SampleFromFile(SOUNDSDIR "/laptop power up (8-11).wav", HIGHVOLUME, 1, MIDDLEPAN);
 		sgp::RunAnimation(std::chrono::milliseconds{ 1000 }, [](double t) { DrawLaptopPowerZoom(t, true); });
 		fReDrawScreenFlag = TRUE;

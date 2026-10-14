@@ -567,8 +567,7 @@ void HandleDoorTrap(SOLDIERTYPE& s, DOOR const& d)
 			gTacticalStatus.ubAttackBusyCount++;
 			SLOGD("Trap gone off. Busy count: {}", gTacticalStatus.ubAttackBusyCount);
 
-			SoldierTakeDamage(&s, 10 + PreRandom(10), 3 + PreRandom(3) * 1000,
-						TAKE_DAMAGE_ELECTRICITY, nullptr);
+			SoldierTakeDamage(&s, 10 + PreRandom(10), 3 + PreRandom(3) * 1000, TAKE_DAMAGE_ELECTRICITY, nullptr);
 			break;
 
 		case SUPER_ELECTRIC:
@@ -661,7 +660,8 @@ BOOLEAN AttemptToBlowUpLock( SOLDIERTYPE * pSoldier, DOOR * pDoor )
 		}
 
 		// OOPS! ... BOOM!
-		IgniteExplosionXY(nullptr, pSoldier->sX, pSoldier->sY, gpWorldLevelData[pSoldier->sGridNo].sHeight, pSoldier->sGridNo, SHAPED_CHARGE, 0);
+		IgniteExplosionXY(nullptr, pSoldier->sX, pSoldier->sY, gpWorldLevelData[pSoldier->sGridNo].sHeight,
+						  pSoldier->sGridNo, SHAPED_CHARGE, 0);
 	}
 	return( FALSE );
 }

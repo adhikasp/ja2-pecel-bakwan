@@ -986,7 +986,8 @@ void UpdateMercsInSector()
 			// ATE: If we are in i13 - pop up message!
 			if (gWorldSector == secI13)
 			{
-				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[POW_MERCS_ARE_HERE], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[POW_MERCS_ARE_HERE], GAME_SCREEN, MSG_BOX_FLAG_OK,
+							 nullptr, nullptr);
 			}
 			else
 			{
@@ -1383,7 +1384,7 @@ static int16_t PickGridNoNearestEdge(SOLDIERTYPE* pSoldier, uint8_t ubTacticalDi
 
 void JumpIntoAdjacentSector( UINT8 ubTacticalDirection, UINT8 ubJumpCode, INT16 sAdditionalData )
 {
-	SOLDIERTYPE *pValidSoldier = nullptr;
+	SOLDIERTYPE* pValidSoldier = nullptr;
 	UINT32 uiTraverseTime=0;
 	UINT8 ubDirection = (UINT8)-1; // XXX HACK000E
 	EXITGRID ExitGrid;
@@ -2042,7 +2043,7 @@ BOOLEAN OKForSectorExit( INT8 bExitDirection, UINT16 usAdditionalData, UINT32 *p
 {
 	BOOLEAN     fAtLeastOneMercControllable = FALSE;
 	BOOLEAN     fOnlySelectedGuy = FALSE;
-	SOLDIERTYPE *pValidSoldier = nullptr;
+	SOLDIERTYPE* pValidSoldier = nullptr;
 	UINT8       ubReturnVal = FALSE;
 	UINT8       ubNumMercs = 0, ubNumEPCs = 0;
 	UINT8       ubPlayerControllableMercsInSquad = 0;
@@ -2876,7 +2877,7 @@ static INT16 PickGridNoToWalkIn(SOLDIERTYPE* pSoldier, UINT8 ubInsertionDirectio
 void HandleSlayDailyEvent( void )
 {
 	SOLDIERTYPE* const pSoldier = FindSoldierByProfileIDOnPlayerTeam(SLAY);
-	if( pSoldier == nullptr )
+	if (pSoldier == nullptr)
 	{
 		return;
 	}

@@ -236,7 +236,7 @@ static SGPVObject const * guiItemGraphic;
 static UINT16 guiItemGraphicIndex;
 BOOLEAN gfInItemDescBox = FALSE;
 static UINT32 guiCurrentItemDescriptionScreen=0;
-OBJECTTYPE *gpItemDescObject = nullptr;
+OBJECTTYPE* gpItemDescObject = nullptr;
 static BOOLEAN gfItemDescObjectIsAttachment = FALSE;
 static ST::string gzItemName;
 static ST::string gzItemDesc;
@@ -927,7 +927,7 @@ BOOLEAN HandleCompatibleAmmoUIForMapScreen(const SOLDIERTYPE* pSoldier, INT32 bI
 	}
 
 	// ATE: If pTest object is NULL, test only for existence of syringes, etc...
-	if ( pTestObject == nullptr )
+	if (pTestObject == nullptr)
 	{
 		for ( cnt = 0; cnt < NUM_INV_SLOTS; cnt++ )
 		{
@@ -945,8 +945,7 @@ BOOLEAN HandleCompatibleAmmoUIForMapScreen(const SOLDIERTYPE* pSoldier, INT32 bI
 			}
 		}
 
-
-		if ( gpItemPointer != nullptr )
+		if (gpItemPointer != nullptr)
 		{
 			if ( CompatibleItemForApplyingOnMerc( gpItemPointer ) )
 			{
@@ -1149,7 +1148,7 @@ BOOLEAN InternalHandleCompatibleAmmoUI(const SOLDIERTYPE* pSoldier, const OBJECT
 	//BOOLEAN fFoundAttachment = FALSE;
 
 	// ATE: If pTest object is NULL, test only for existence of syringes, etc...
-	if ( pTestObject == nullptr )
+	if (pTestObject == nullptr)
 	{
 		for ( cnt = 0; cnt < NUM_INV_SLOTS; cnt++ )
 		{
@@ -1167,8 +1166,7 @@ BOOLEAN InternalHandleCompatibleAmmoUI(const SOLDIERTYPE* pSoldier, const OBJECT
 			}
 		}
 
-
-		if ( gpItemPointer != nullptr )
+		if (gpItemPointer != nullptr)
 		{
 			if ( CompatibleItemForApplyingOnMerc( gpItemPointer ) )
 			{
@@ -2042,7 +2040,7 @@ static void SheetAttachPrimary(UINT32 const uiItemPos)
 	r.sheetIsAttachment = gfItemDescObjectIsAttachment;
 	// if the item being described belongs to a shopkeeper, ignore attempts to pick it up / replace it
 	r.shopOwned         = guiCurrentScreen == SHOPKEEPER_SCREEN && pShopKeeperItemDescObject;
-	r.handFull          = gpItemPointer != nullptr;
+	r.handFull = gpItemPointer != nullptr;
 	if (r.handFull)
 	{
 		// require as many APs as to reload; the pointer's soldier can be NULL (sector inventory in the map)
@@ -2288,7 +2286,8 @@ void RenderItemDescriptionBox(void)
 				INT16 const item_y = agi.item_box.y + y;
 				INT16 const item_w = agi.item_box.w;
 				INT16 const item_h = agi.item_box.h;
-				INVRenderItem(guiSAVEBUFFER, nullptr, obj, item_x, item_y, item_w, item_h, DIRTYLEVEL2, RENDER_ITEM_ATTACHMENT1 + i, SGP_TRANSPARENT);
+				INVRenderItem(guiSAVEBUFFER, nullptr, obj, item_x, item_y, item_w, item_h, DIRTYLEVEL2,
+							  RENDER_ITEM_ATTACHMENT1 + i, SGP_TRANSPARENT);
 
 				INT16 const bar_x = agi.bar_box.x + x;
 				INT16 const bar_h = agi.bar_box.h;
@@ -2803,7 +2802,7 @@ void InternalBeginItemPointer( SOLDIERTYPE *pSoldier, OBJECTTYPE *pObject, INT8 
 	//BOOLEAN fOk;
 
 	// If not null return
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		return;
 	}
@@ -2854,7 +2853,7 @@ void BeginItemPointer( SOLDIERTYPE *pSoldier, UINT8 ubHandPos )
 void BeginKeyRingItemPointer( SOLDIERTYPE *pSoldier, UINT8 ubKeyRingPosition )
 {
 	// If not null return
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		return;
 	}
@@ -2880,7 +2879,7 @@ void BeginKeyRingItemPointer( SOLDIERTYPE *pSoldier, UINT8 ubKeyRingPosition )
 
 void EndItemPointer( )
 {
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		gpItemPointer = nullptr;
 		gbItemPointerSrcSlot = NO_SLOT;
@@ -3016,7 +3015,7 @@ void DrawItemTileCursor( )
 
 		// Get recalc and cursor flags
 		MouseMoveState uiCursorFlags;
-		fRecalc = GetMouseRecalcAndShowAPFlags( &uiCursorFlags, nullptr );
+		fRecalc = GetMouseRecalcAndShowAPFlags(&uiCursorFlags, nullptr);
 
 		// OK, if we begin to move, reset the cursor...
 		if (uiCursorFlags != MOUSE_STATIONARY)
@@ -3109,7 +3108,8 @@ void DrawItemTileCursor( )
 				if (uiCursorFlags == MOUSE_STATIONARY)
 				{
 					// Find adjacent gridno...
-					sActionGridNo = FindAdjacentGridEx(gpItemPointerSoldier, gusCurMousePos, nullptr, nullptr, FALSE, FALSE);
+					sActionGridNo =
+						FindAdjacentGridEx(gpItemPointerSoldier, gusCurMousePos, nullptr, nullptr, FALSE, FALSE);
 					if ( sActionGridNo == -1 )
 					{
 						sActionGridNo = gusCurMousePos;
@@ -3555,8 +3555,7 @@ BOOLEAN HandleItemPointerClick( UINT16 usMapPos )
 	}
 
 	// CHECK IF WE ARE NOT ON THE SAME GRIDNO
-	if (sDist <= 1 &&
-			(gUIFullTarget == nullptr || gUIFullTarget == gpItemPointerSoldier))
+	if (sDist <= 1 && (gUIFullTarget == nullptr || gUIFullTarget == gpItemPointerSoldier))
 	{
 		// Check some things here....
 		// 1 ) are we at the exact gridno that we stand on?
@@ -3627,11 +3626,8 @@ BOOLEAN HandleItemPointerClick( UINT16 usMapPos )
 		sGridNo = usMapPos;
 
 		SOLDIERTYPE* const pSoldier = gUIFullTarget;
-		if (sDist <= PASSING_ITEM_DISTANCE_OKLIFE &&
-			pSoldier != nullptr &&
-			pSoldier->bTeam == OUR_TEAM &&
-			!AM_AN_EPC(pSoldier) &&
-			!(pSoldier->uiStatusFlags & SOLDIER_VEHICLE))
+		if (sDist <= PASSING_ITEM_DISTANCE_OKLIFE && pSoldier != nullptr && pSoldier->bTeam == OUR_TEAM &&
+			!AM_AN_EPC(pSoldier) && !(pSoldier->uiStatusFlags & SOLDIER_VEHICLE))
 		{
 			// the same rule as dropping on a squad card: reach, sight and both mercs' points (the core's verdict)
 			return PassHeldItemTo(pSoldier);
@@ -3921,7 +3917,7 @@ void InitItemStackPopup(SOLDIERTYPE* const pSoldier, UINT8 const ubPosition, INT
 
 static void EndItemStackPopupWithItemInHand(void)
 {
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		DeleteItemStackPopup( );
 	}
@@ -3959,7 +3955,8 @@ void RenderItemStackPopup( BOOLEAN fFullRender )
 			INT16 sX = gsItemPopupX + col * usWidth + 11;
 			INT16 sY = gsItemPopupY + row * usHeight + 3;
 
-			INVRenderItem(FRAME_BUFFER, nullptr, *gpItemPopupObject, sX, sY, 29, 23, DIRTYLEVEL2, RENDER_ITEM_NOSTATUS, SGP_TRANSPARENT);
+			INVRenderItem(FRAME_BUFFER, nullptr, *gpItemPopupObject, sX, sY, 29, 23, DIRTYLEVEL2, RENDER_ITEM_NOSTATUS,
+						  SGP_TRANSPARENT);
 
 			// Do status bar here...
 			INT16 sNewX = gsItemPopupX + col * usWidth + 7;
@@ -4150,7 +4147,8 @@ void RenderKeyRingPopup(const BOOLEAN fFullRender)
 
 		auto keyId = LockTable[key.ubKeyID].usKeyItem;
 		auto item = GCM->getKeyItemForKeyId(keyId);
-		if (item == nullptr) {
+		if (item == nullptr)
+		{
 			throw std::runtime_error(ST::format("Could not find key item for key id `{}` when rendering key popup", keyId).to_std_string());
 		}
 		o.usItem            = item->getItemIndex();
@@ -4239,7 +4237,8 @@ CSubVObject GetBigInventoryGraphicForItem(const ItemModel * item)
 	} catch (const std::runtime_error &ex) {
 		SLOGE("Error loading big inventory graphic for item `{}`", item->getInternalName());
 	}
-	if (vObject == nullptr) {
+	if (vObject == nullptr)
+	{
 		return GetFallbackBigInventoryGraphic();
 	}
 	if (subImageIndex >= vObject->SubregionCount()) {
@@ -4299,7 +4298,7 @@ static void ItemPopupRegionCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason
 static void StackPrimary(UINT32 const uiItemPos)
 {
 	//If one in our hand, place it
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		if ( !PlaceObjectAtObjectIndex( gpItemPointer, gpItemPopupObject, (UINT8)uiItemPos ) )
 		{
@@ -4627,7 +4626,8 @@ static void MoneyStepClick(UINT8 const which, bool const right)
 	if (why == Equipment::InvWhy::MoneyCap)
 	{
 		ScreenID const exit_screen = guiCurrentScreen == SHOPKEEPER_SCREEN ? SHOPKEEPER_SCREEN : GAME_SCREEN;
-		DoMessageBox(MSG_BOX_BASIC_STYLE, gzMoneyWithdrawMessageText[MONEY_TEXT_WITHDRAW_MORE_THEN_MAXIMUM], exit_screen, MSG_BOX_FLAG_OK, nullptr, nullptr);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, gzMoneyWithdrawMessageText[MONEY_TEXT_WITHDRAW_MORE_THEN_MAXIMUM],
+					 exit_screen, MSG_BOX_FLAG_OK, nullptr, nullptr);
 		o.action = "refused";
 		o.why    = Equipment::Describe(why);
 		RecordInventoryOutcome(o);
@@ -4817,7 +4817,7 @@ ST::string GetHelpTextForItem(const OBJECTTYPE& obj)
 void CancelItemPointer( )
 {
 	// ATE: If we have an item pointer end it!
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		if (GCM->getItem(gpItemPointer->usItem)->isKey())
 		{
@@ -4901,7 +4901,7 @@ void SaveItemCursorToSavedGame(HWFILE const f)
 
 void UpdateItemHatches(void)
 {
-	SOLDIERTYPE *pSoldier = nullptr;
+	SOLDIERTYPE* pSoldier = nullptr;
 
 	if (fInMapMode)
 	{
@@ -4912,7 +4912,7 @@ void UpdateItemHatches(void)
 		pSoldier = gpSMCurrentMerc;
 	}
 
-	if ( pSoldier != nullptr )
+	if (pSoldier != nullptr)
 	{
 		ReevaluateItemHatches(pSoldier, FALSE);
 	}
@@ -5315,7 +5315,8 @@ bool StackClickBox(int const i)
 	PopupEvent e;
 	e.kind = PopupKind::Stack;
 	e.id = i;
-	PopupModels::StackClick const plan = PopupModels::PlanStackClick(i, gpItemPopupObject->ubNumberOfObjects, gpItemPointer != nullptr);
+	PopupModels::StackClick const plan =
+		PopupModels::PlanStackClick(i, gpItemPopupObject->ubNumberOfObjects, gpItemPointer != nullptr);
 	e.action = plan == PopupModels::StackClick::Put ? "put" : "take";
 	if (plan == PopupModels::StackClick::Nothing)
 	{

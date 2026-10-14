@@ -176,12 +176,11 @@ enum
 
 INT8 gbEditingMode = EDITING_NOTHING;
 
-OBJECTTYPE	*gpItem = nullptr;
+OBJECTTYPE* gpItem = nullptr;
 BOOLEAN			gfShowItemStatsPanel;
 INT16				gsItemGridNo;
 
-ITEM_POOL		*gpEditingItemPool = nullptr;
-
+ITEM_POOL* gpEditingItemPool = nullptr;
 
 void ShowItemStatsPanel()
 {
@@ -194,7 +193,7 @@ void ShowItemStatsPanel()
 void HideItemStatsPanel()
 {
 	HideEditorButtons( FIRST_ITEMSTATS_BUTTON, LAST_ITEMSTATS_BUTTON );
-	SpecifyItemToEdit( nullptr, -1 );
+	SpecifyItemToEdit(nullptr, -1);
 	gfShowItemStatsPanel = FALSE;
 }
 
@@ -355,7 +354,7 @@ void SpecifyItemToEdit( OBJECTTYPE *pItem, INT32 iMapIndex )
 		ShowEditorButton( ITEMSTATS_HIDDEN_BTN );
 
 	//Determine the type of item so that we can determine the dynamic editing mode.
-	AddUserInputField( nullptr );
+	AddUserInputField(nullptr);
 
 	SetupGameTypeFlags();
 

@@ -117,10 +117,10 @@ public:
 	virtual bool isTwoHanded() const;
 	virtual bool isInBigGunList() const;
 
-	virtual const WeaponModel* asWeapon() const   { return nullptr; }
-	virtual const MagazineModel* asAmmo() const   { return nullptr; }
-	virtual const ArmourModel* asArmour() const   { return nullptr; }
-	virtual const ExplosiveModel* asExplosive() const   { return nullptr; }
+	virtual const WeaponModel* asWeapon() const { return nullptr; }
+	virtual const MagazineModel* asAmmo() const { return nullptr; }
+	virtual const ArmourModel* asArmour() const { return nullptr; }
+	virtual const ExplosiveModel* asExplosive() const { return nullptr; }
 
 	/** Check if the given attachment can be attached to the item. */
 	virtual bool canBeAttached(const GamePolicy* policy, const ItemModel* attachment) const;

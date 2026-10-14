@@ -133,7 +133,7 @@ void KillBuilding( UINT32 iMapIndex )
 		RebuildRoof( iMapIndex, 0 );
 }
 
-BUILDINGLAYOUTNODE *gpBuildingLayoutList = nullptr;
+BUILDINGLAYOUTNODE* gpBuildingLayoutList = nullptr;
 INT16 gsBuildingLayoutAnchorGridNo = -1;
 
 
@@ -227,7 +227,7 @@ void CopyBuilding( INT32 iMapIndex )
 static void SortBuildingLayout(INT32 iMapIndex)
 {
 	BUILDINGLAYOUTNODE* prevBest = nullptr; // XXX HACK000E
-	BUILDINGLAYOUTNODE* best     = nullptr; // XXX HACK000E
+	BUILDINGLAYOUTNODE* best = nullptr;     // XXX HACK000E
 	BUILDINGLAYOUTNODE *head, *curr, *prev;
 	INT32 iBestIndex;
 	head = nullptr;
@@ -417,7 +417,6 @@ struct ROOFNODE
 };
 
 static ROOFNODE* gpRoofList = nullptr;
-
 
 static void ReplaceRoof(INT32 iMapIndex, UINT16 usRoofType)
 {
@@ -703,7 +702,7 @@ void SetupTextInputForBuildings()
 {
 	ST::string str;
 	InitTextInputModeWithScheme( DEFAULT_SCHEME );
-	AddUserInputField( nullptr );  //just so we can use short cut keys while not typing.
+	AddUserInputField(nullptr); //just so we can use short cut keys while not typing.
 	str = ST::format("{}", gubMaxRoomNumber);
 	AddTextInputField( 410, EDITOR_TASKBAR_POS_Y + 40, 25, 15, MSYS_PRIORITY_NORMAL, str, 3, INPUTTYPE_NUMERICSTRICT );
 }

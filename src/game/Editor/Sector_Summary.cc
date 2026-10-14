@@ -314,7 +314,7 @@ void CreateSummaryWindow()
 
 	//Init the textinput field.
 	InitTextInputModeWithScheme( DEFAULT_SCHEME );
-	AddUserInputField( nullptr );  //just so we can use short cut keys while not typing.
+	AddUserInputField(nullptr); //just so we can use short cut keys while not typing.
 	AddTextInputField(MAP_LEFT + 112, MAP_BOTTOM + 75, 100, 18, MSYS_PRIORITY_HIGH, {}, 20, INPUTTYPE_DOSFILENAME);
 
 	for( i = 1; i < NUM_SUMMARY_BUTTONS; i++ )

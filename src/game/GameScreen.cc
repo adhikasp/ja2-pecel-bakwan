@@ -293,7 +293,7 @@ ScreenID MainGameScreenHandle(void)
 
 	if ( gfBeginEndTurn )
 	{
-		UIHandleEndTurn( nullptr );
+		UIHandleEndTurn(nullptr);
 		gfBeginEndTurn = FALSE;
 	}
 
@@ -481,7 +481,7 @@ ScreenID MainGameScreenHandle(void)
 
 	RenderWorld( );
 
-	if ( gRenderOverride != nullptr )
+	if (gRenderOverride != nullptr)
 	{
 		gRenderOverride( );
 	}
@@ -642,8 +642,7 @@ void EndModalTactical( )
 		gfTacticalDisableRegionActive = FALSE;
 	}
 
-
-	if ( gModalDoneCallback != nullptr )
+	if (gModalDoneCallback != nullptr)
 	{
 		gModalDoneCallback( );
 

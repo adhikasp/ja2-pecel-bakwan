@@ -6,7 +6,7 @@
 #include "Text.h"
 #include "Logger.h"
 
-STRATEGICEVENT									*gpEventList = nullptr;
+STRATEGICEVENT* gpEventList = nullptr;
 
 BOOLEAN gfPreventDeletionOfAnyEvent = FALSE;
 static BOOLEAN gfEventDeletionPending = FALSE;

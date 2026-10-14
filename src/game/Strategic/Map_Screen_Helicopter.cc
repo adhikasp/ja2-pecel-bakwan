@@ -520,7 +520,7 @@ INT32 DistanceOfIntendedHelicopterPath( void )
 	PathSt const* pNode = GetHelicopter().pMercPath;
 
 	// any path yet?
-	if( pNode != nullptr )
+	if (pNode != nullptr)
 	{
 		while( pNode -> pNext )
 		{
@@ -532,7 +532,7 @@ INT32 DistanceOfIntendedHelicopterPath( void )
 	pNode = pTempHelicopterPath;
 
 	// any path yet?
-	if( pNode != nullptr )
+	if (pNode != nullptr)
 	{
 		while( pNode -> pNext )
 		{
@@ -1293,12 +1293,13 @@ INT16 GetNumUnSafeSectorsInPath( void )
 	const PathSt* pNode = v.pMercPath;
 
 	// any path yet?
-	if( pNode != nullptr )
+	if (pNode != nullptr)
 	{
 		// first node: skip it if that's the sector the chopper is currently in, AND
 		// we're NOT gonna be changing directions (not actually performed until waypoints are rebuilt AFTER plotting is done)
-		if ( ( ( INT32 ) pNode->uiSectorId == iHeliSector ) && ( pNode->pNext != nullptr ) &&
-				!GroupBetweenSectorsAndSectorXYIsInDifferentDirection(pGroup, SGPSector::FromStrategicIndex(pNode->pNext->uiSectorId)))
+		if (((INT32)pNode->uiSectorId == iHeliSector) && (pNode->pNext != nullptr) &&
+			!GroupBetweenSectorsAndSectorXYIsInDifferentDirection(
+				pGroup, SGPSector::FromStrategicIndex(pNode->pNext->uiSectorId)))
 		{
 			pNode = pNode->pNext;
 		}
@@ -1318,14 +1319,15 @@ INT16 GetNumUnSafeSectorsInPath( void )
 
 	pNode = pTempHelicopterPath;
 	// any path yet?
-	if( pNode != nullptr )
+	if (pNode != nullptr)
 	{
 		// first node: skip it if that's the sector the chopper is currently in, AND
 		// we're NOT gonna be changing directions (not actually performed until waypoints are rebuilt AFTER plotting is done)
 		// OR if the chopper has a mercpath, in which case this a continuation of it that would count the sector twice
-		if ( ( ( ( INT32 ) pNode->uiSectorId == iHeliSector ) && ( pNode->pNext != nullptr ) &&
-				!GroupBetweenSectorsAndSectorXYIsInDifferentDirection(pGroup, SGPSector::FromStrategicIndex(pNode->pNext->uiSectorId))) ||
-				GetLengthOfPath(v.pMercPath) > 0)
+		if ((((INT32)pNode->uiSectorId == iHeliSector) && (pNode->pNext != nullptr) &&
+			 !GroupBetweenSectorsAndSectorXYIsInDifferentDirection(
+				 pGroup, SGPSector::FromStrategicIndex(pNode->pNext->uiSectorId))) ||
+			GetLengthOfPath(v.pMercPath) > 0)
 		{
 			pNode = pNode->pNext;
 		}

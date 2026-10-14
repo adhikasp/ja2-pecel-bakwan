@@ -2756,7 +2756,7 @@ void BltTransZTransShadowIncObscure(ClipInfo const& ci, UINT16* pBuffer, UINT32 
 	INT32  LSCount;
 	UINT16 usZLevel, usZColsToGo, usZIndex;
 
-	Assert(pBuffer     != nullptr);
+	Assert(pBuffer != nullptr);
 
 	UINT32 uiLineFlag = ci.iTempY & 1;
 
@@ -2972,7 +2972,7 @@ void BltTransZTransShadowInc(ClipInfo const& ci, UINT16* pBuffer, UINT32 uiDestP
 	INT32  LSCount;
 	UINT16 usZLevel, usZColsToGo, usZIndex;
 
-	Assert(pBuffer     != nullptr);
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr  = SkipLines(ci.srcPtr, ci.topSkip);
 	UINT8*       DestPtr  = (UINT8*)pBuffer  + uiDestPitchBYTES * (ci.iTempY + ci.topSkip) + (ci.iTempX + ci.leftSkip) * 2;

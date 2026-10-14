@@ -549,7 +549,6 @@ static void CheckForValidArrivalSector(void)
 
 		sString = st_format_printf(str_arrival_rerouted, g_merc_arrive_sector.AsShortString(), zShortTownIDString1);
 
-		DoScreenIndependantMessageBox(  sString, MSG_BOX_FLAG_OK, nullptr );
-
+		DoScreenIndependantMessageBox(sString, MSG_BOX_FLAG_OK, nullptr);
 	}
 }

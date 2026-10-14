@@ -284,7 +284,7 @@ BOOLEAN CycleSoldierFindStack( UINT16 usMapPos )
 		}
 		else
 		{
-			gUIFullTarget        = nullptr;
+			gUIFullTarget = nullptr;
 			guiUIFullTargetFlags = NO_MERC;
 		}
 	}

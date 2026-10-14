@@ -99,8 +99,8 @@ UINT8 gubCursorGroupID = 0;
 INT8	gbSelectedMercID = -1;
 INT8	gbHilightedMercID = -1;
 INT8  gbCursorMercID = -1;
-SOLDIERTYPE *gpTacticalPlacementSelectedSoldier = nullptr;
-SOLDIERTYPE *gpTacticalPlacementHilightedSoldier = nullptr;
+SOLDIERTYPE* gpTacticalPlacementSelectedSoldier = nullptr;
+SOLDIERTYPE* gpTacticalPlacementHilightedSoldier = nullptr;
 
 static bool gfNorth;
 static bool gfEast;

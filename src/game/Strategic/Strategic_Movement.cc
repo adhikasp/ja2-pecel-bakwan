@@ -94,7 +94,6 @@ static GROUP* gpGroupPrompting = nullptr;
 
 static UINT32 uniqueIDMask[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-
 static GROUP* gpInitPrebattleGroup = nullptr;
 
 // waiting for input from user
@@ -703,7 +702,7 @@ static BOOLEAN PossibleToCoordinateSimultaneousGroupArrivals(GROUP* pFirstGroup)
 
 static BOOLEAN CheckConditionsForBattle(GROUP* pGroup)
 {
-	GROUP *pPlayerDialogGroup = nullptr;
+	GROUP* pPlayerDialogGroup = nullptr;
 	SOLDIERTYPE *pSoldier;
 	BOOLEAN fBattlePending = FALSE;
 	BOOLEAN fAliveMerc = FALSE;
@@ -1327,8 +1326,7 @@ void GroupArrivedAtSector(GROUP& g, BOOLEAN const check_for_battle, BOOLEAN cons
 			{
 				// ATE: Add a few corpse to the bloodcat lair
 				auto spawns = GCM->getBloodCatSpawnsOfSector(cSector.AsByte());
-				if ( spawns != nullptr && spawns->isLair &&
-					!GetSectorFlagStatus(cSector, SF_ALREADY_VISITED))
+				if (spawns != nullptr && spawns->isLair && !GetSectorFlagStatus(cSector, SF_ALREADY_VISITED))
 				{
 					AddCorpsesToBloodcatLair(cSector);
 				}
@@ -1928,11 +1926,11 @@ INT32 CalculateTravelTimeOfGroup(GROUP const* const pGroup)
 {
 	INT32 iDelta;
 	UINT32 uiEtaTime = 0;
-	WAYPOINT *pNode = nullptr;
+	WAYPOINT* pNode = nullptr;
 	WAYPOINT pCurrent, pDest;
 
 	// check if valid group
-	if( pGroup == nullptr )
+	if (pGroup == nullptr)
 	{
 		// return current time
 		return( uiEtaTime );
@@ -2603,7 +2601,7 @@ static void LoadPlayerGroupList(HWFILE const f, GROUP* const g)
 		}
 
 		pg->pSoldier = s;
-		pg->next     = nullptr;
+		pg->next = nullptr;
 
 		*anchor = pg;
 		anchor  = &pg->next;
@@ -2976,7 +2974,7 @@ void UpdatePersistantGroupsFromOldSave( UINT32 uiSavedGameVersion )
 		{
 			// create mvt groups
 			GROUP* const pGroup = GetGroup(cnt);
-			if( pGroup != nullptr && pGroup->fPlayer )
+			if (pGroup != nullptr && pGroup->fPlayer)
 			{
 				pGroup->fPersistant = TRUE;
 			}
@@ -2990,7 +2988,7 @@ void UpdatePersistantGroupsFromOldSave( UINT32 uiSavedGameVersion )
 		{
 			// create mvt groups
 			GROUP* const pGroup = GetGroup(SquadMovementGroups[cnt]);
-			if ( pGroup != nullptr )
+			if (pGroup != nullptr)
 			{
 				pGroup->fPersistant = TRUE;
 			}
@@ -2999,7 +2997,7 @@ void UpdatePersistantGroupsFromOldSave( UINT32 uiSavedGameVersion )
 		for( cnt = 0; cnt <  MAX_VEHICLES; cnt++ )
 		{
 			GROUP* const pGroup = GetGroup(gubVehicleMovementGroups[cnt]);
-			if ( pGroup != nullptr )
+			if (pGroup != nullptr)
 			{
 				pGroup->fPersistant = TRUE;
 			}
@@ -3284,7 +3282,8 @@ static BOOLEAN TestForBloodcatAmbush(GROUP const* const pGroup)
 
 	bool bIsLair = false, bIsArena = false;
 	auto spawns = GCM->getBloodCatSpawnsOfSector( ubSectorID );
-	if (spawns != nullptr) {
+	if (spawns != nullptr)
+	{
 		bIsLair = spawns->isLair;   // SEC_I16
 		bIsArena = spawns->isArena; // SEC_N5
 	}

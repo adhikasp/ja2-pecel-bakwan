@@ -197,7 +197,7 @@ void RemoveRoomRoof( UINT16 sGridNo, UINT8 bRoomNum, SOLDIERTYPE *pSoldier )
 				{
 					fSaidItemSeenQuote = TRUE;
 
-					if ( pSoldier != nullptr )
+					if (pSoldier != nullptr)
 					{
 						TacticalCharacterDialogue( pSoldier, (UINT16)( QUOTE_SPOTTED_SOMETHING_ONE + Random( 2 ) ) );
 					}

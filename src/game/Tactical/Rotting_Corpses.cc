@@ -421,8 +421,8 @@ static void CreateCorpsePalette(ROTTING_CORPSE*);
 ROTTING_CORPSE* AddRottingCorpse(ROTTING_CORPSE_DEFINITION* const pCorpseDef)
 try
 {
-	if (pCorpseDef->sGridNo == NOWHERE)   return nullptr;
-	if (pCorpseDef->ubType  == NO_CORPSE) return nullptr;
+	if (pCorpseDef->sGridNo == NOWHERE) return nullptr;
+	if (pCorpseDef->ubType == NO_CORPSE) return nullptr;
 
 	ROTTING_CORPSE* const c = GetFreeRottingCorpse();
 	if (c == nullptr) return nullptr;
@@ -543,10 +543,10 @@ static void FreeCorpsePalettes(ROTTING_CORPSE* pCorpse)
 
 	for ( cnt = 0; cnt < NUM_CORPSE_SHADES; cnt++ )
 	{
-		if ( pCorpse->pShades[ cnt ] != nullptr )
+		if (pCorpse->pShades[cnt] != nullptr)
 		{
 			delete[] pCorpse->pShades[ cnt ];
-			pCorpse->pShades[ cnt ] = nullptr;
+			pCorpse->pShades[cnt] = nullptr;
 		}
 	}
 }
@@ -1000,7 +1000,7 @@ void CorpseHit( INT16 sGridNo, UINT16 usStructureID )
 void VaporizeCorpse( INT16 sGridNo, UINT16 usStructureID )
 {
 	STRUCTURE *pStructure, *pBaseStructure;
-	ROTTING_CORPSE *pCorpse = nullptr;
+	ROTTING_CORPSE* pCorpse = nullptr;
 	INT16 sBaseGridNo;
 
 	pStructure = FindStructureByID( sGridNo, usStructureID );
@@ -1014,7 +1014,7 @@ void VaporizeCorpse( INT16 sGridNo, UINT16 usStructureID )
 	// Get corpse ID.....
 	pCorpse = FindCorpseBasedOnStructure( sBaseGridNo, pBaseStructure );
 
-	if ( pCorpse == nullptr )
+	if (pCorpse == nullptr)
 	{
 		SLOGW("Vaporize corpse but corpse cannot be found at: {}", sBaseGridNo);
 		return;
@@ -1106,7 +1106,7 @@ INT16 FindNearestAvailableGridNoForCorpse( ROTTING_CORPSE_DEFINITION *pDef, INT8
 					BOOLEAN	fCanSetDirection   = FALSE;
 
 					// Check each struct in each direction
-					if ( pStructureFileRef == nullptr )
+					if (pStructureFileRef == nullptr)
 					{
 						fDirectionFound = TRUE;
 					}
@@ -1165,18 +1165,18 @@ ROTTING_CORPSE *GetCorpseAtGridNo( INT16 sGridNo, INT8 bLevel )
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_CORPSE );
 
-	if ( pStructure != nullptr )
+	if (pStructure != nullptr)
 	{
 		// Get base....
 		pBaseStructure = FindBaseStructure( pStructure );
 
-		if ( pBaseStructure != nullptr )
+		if (pBaseStructure != nullptr)
 		{
 			return( FindCorpseBasedOnStructure( pBaseStructure->sGridNo, pBaseStructure ) );
 		}
 	}
 
-	return( nullptr );
+	return (nullptr);
 }
 
 
@@ -1187,7 +1187,7 @@ void DecapitateCorpse(const INT16 sGridNo, const INT8 bLevel)
 
 	pCorpse = GetCorpseAtGridNo( sGridNo, bLevel );
 
-	if ( pCorpse == nullptr )
+	if (pCorpse == nullptr)
 	{
 		return;
 	}
@@ -1293,7 +1293,7 @@ void LookForAndMayCommentOnSeeingCorpse( SOLDIERTYPE *pSoldier, INT16 sGridNo, U
 
 	pCorpse = GetCorpseAtGridNo( sGridNo, ubLevel );
 
-	if ( pCorpse == nullptr )
+	if (pCorpse == nullptr)
 	{
 		return;
 	}

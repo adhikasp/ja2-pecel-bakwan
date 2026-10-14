@@ -359,7 +359,7 @@ void LogMouseOverInteractiveTile(INT16 const sGridNo)
 static LEVELNODE* InternalGetCurInteractiveTile(const BOOLEAN fRejectItemsOnTop)
 {
 	if (_KeyDown(SHIFT)) return nullptr;
-	if (!gfOverIntTile)  return nullptr;
+	if (!gfOverIntTile) return nullptr;
 
 	LEVELNODE* n = gpWorldLevelData[gCurIntTile.sGridNo].pStructHead;
 	for (; n != nullptr; n = n->pNext)
@@ -564,7 +564,7 @@ BOOLEAN CheckVideoObjectScreenCoordinateInData(HVOBJECT hSrcVObject, UINT16 usIn
 	INT32   iTestPos, iStartPos;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
+	Assert(hSrcVObject != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav    = hSrcVObject->SubregionProperties(usIndex);

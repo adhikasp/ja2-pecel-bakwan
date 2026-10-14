@@ -233,8 +233,7 @@ static short trailTreeNdx=0;
 static path_t *pQueueHead;
 static path_t *pClosedHead;
 
-
-#define pathQNotEmpty				(pQueueHead->pNext[0] != nullptr)
+#define pathQNotEmpty (pQueueHead->pNext[0] != nullptr)
 #define pathFound				(pQueueHead->pNext[0]->iLocation == iDestination)
 #define pathNotYetFound			(!pathFound)
 
@@ -290,28 +289,28 @@ static path_t *pClosedHead;
 	iClosedListSize++;\
 }
 
-#define ClosedListGet( pNew )\
-{\
-	if (queRequests<QPOOLNDX)\
-	{\
-		pNew = pathQ + (queRequests);\
-		queRequests++;\
-		pNew->bLevel = RandomSkipListLevel();\
-	}\
-	else if (iClosedListSize > 0)\
-	{\
-		pNew = pClosedHead->pNext[0];\
-		pClosedHead->pNext[0] = pNew->pNext[0];\
-		iClosedListSize--;\
-		queRequests++;\
-		std::fill_n(pNew->pNext, ABSMAX_SKIPLIST_LEVEL, nullptr);\
-		pNew->bLevel = RandomSkipListLevel();\
-	}\
-	else\
-	{\
-		pNew = nullptr;\
-	}\
-}
+#define ClosedListGet(pNew)                                                                                            \
+	{                                                                                                                  \
+		if (queRequests < QPOOLNDX)                                                                                    \
+		{                                                                                                              \
+			pNew = pathQ + (queRequests);                                                                              \
+			queRequests++;                                                                                             \
+			pNew->bLevel = RandomSkipListLevel();                                                                      \
+		}                                                                                                              \
+		else if (iClosedListSize > 0)                                                                                  \
+		{                                                                                                              \
+			pNew = pClosedHead->pNext[0];                                                                              \
+			pClosedHead->pNext[0] = pNew->pNext[0];                                                                    \
+			iClosedListSize--;                                                                                         \
+			queRequests++;                                                                                             \
+			std::fill_n(pNew->pNext, ABSMAX_SKIPLIST_LEVEL, nullptr);                                                  \
+			pNew->bLevel = RandomSkipListLevel();                                                                      \
+		}                                                                                                              \
+		else                                                                                                           \
+		{                                                                                                              \
+			pNew = nullptr;                                                                                            \
+		}                                                                                                              \
+	}
 
 /*
 #define ClosedListAdd( pNew ) \
@@ -1659,7 +1658,7 @@ INT32 FindBestPath(SOLDIERTYPE* s, INT16 sDestination, INT8 ubLevel, INT16 usMov
 						while( pCurr )
 						{
 							bTemp = pQueueHead->bLevel;
-							while ( pCurr->pNext[ bTemp - 1 ] == nullptr )
+							while (pCurr->pNext[bTemp - 1] == nullptr)
 							{
 								bTemp--;
 							}

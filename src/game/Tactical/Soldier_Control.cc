@@ -1518,7 +1518,7 @@ void EVENT_InitNewSoldierAnim(SOLDIERTYPE* const pSoldier, UINT16 usNewState, UI
 		case CROW_DIE:
 
 			// Delete shadow of crow....
-			if ( pSoldier->pAniTile != nullptr )
+			if (pSoldier->pAniTile != nullptr)
 			{
 				DeleteAniTile( pSoldier->pAniTile );
 				pSoldier->pAniTile = nullptr;
@@ -4348,7 +4348,7 @@ void TurnSoldier( SOLDIERTYPE *pSoldier)
 		if ( pSoldier->fTurningFromPronePosition == TURNING_FROM_PRONE_ON )
 		{
 			// ATE: Don't do this if we have something in our hands we are going to throw!
-			if ( IsValidStance( pSoldier, ANIM_PRONE ) && pSoldier->pTempObject == nullptr )
+			if (IsValidStance(pSoldier, ANIM_PRONE) && pSoldier->pTempObject == nullptr)
 			{
 				ChangeSoldierStance(pSoldier, ANIM_PRONE);
 			}
@@ -5059,13 +5059,13 @@ void DeletePaletteData()
 	UINT32 cnt;
 
 	// Free!
-	if ( gpPaletteSubRanges != nullptr )
+	if (gpPaletteSubRanges != nullptr)
 	{
 		delete[] gpPaletteSubRanges;
 		gpPaletteSubRanges = nullptr;
 	}
 
-	if ( gubpNumReplacementsPerRange != nullptr )
+	if (gubpNumReplacementsPerRange != nullptr)
 	{
 		delete[] gubpNumReplacementsPerRange;
 		gubpNumReplacementsPerRange = nullptr;
@@ -5078,7 +5078,7 @@ void DeletePaletteData()
 	}
 
 	// Free
-	if ( gpPalRep != nullptr )
+	if (gpPalRep != nullptr)
 	{
 		delete[] gpPalRep;
 		gpPalRep = nullptr;
@@ -5802,7 +5802,6 @@ UINT8 SoldierTakeDamage(SOLDIERTYPE* const pSoldier, INT16 sLifeDeduct, INT16 sB
 	// EXPERIENCE CLASS GAIN (combLoss): Getting wounded in battle
 
 	DirtyMercPanelInterface( pSoldier, DIRTYLEVEL1 );
-
 
 	if (attacker != nullptr)
 	{
@@ -7692,7 +7691,7 @@ BOOLEAN InternalIsValidStance(const SOLDIERTYPE* pSoldier, INT8 bDirection, INT8
 
 	// Get structure ref........
 	const STRUCTURE_FILE_REF* const pStructureFileRef = GetAnimationStructureRef(pSoldier, usAnimSurface, usAnimState);
-	if ( pStructureFileRef != nullptr )
+	if (pStructureFileRef != nullptr)
 	{
 		// Check if we can do this....
 		UINT16 const usOKToAddStructID = GetStructureID(pSoldier);
@@ -7823,7 +7822,7 @@ static INT32 CheckBleeding(SOLDIERTYPE* pSoldier)
 		if ( ( pSoldier->bBleeding > MIN_BLEEDING_THRESHOLD) || pSoldier->bLife < OKLIFE )
 		{
 			// if he's NOT in the process of being bandaged or DOCTORed
-			if ( ( pSoldier->ubServiceCount == 0 ) && ( AnyDoctorWhoCanHealThisPatient( pSoldier, HEALABLE_EVER ) == nullptr ) )
+			if ((pSoldier->ubServiceCount == 0) && (AnyDoctorWhoCanHealThisPatient(pSoldier, HEALABLE_EVER) == nullptr))
 			{
 				// may drop blood whether or not any bleeding takes place this turn
 				if ( pSoldier->bTilesMoved < 1 )
@@ -8192,31 +8191,31 @@ void PickPickupAnimation( SOLDIERTYPE *pSoldier, INT32 iItemIndex, INT16 sGridNo
 					{
 //#if 0
 						// Get direction to face....
-						if ( ( pStructure = FindStructure( (INT16)sGridNo, ( STRUCTURE_HASITEMONTOP | STRUCTURE_OPENABLE ) ) ) != nullptr )
-						{
-							fDoNormalPickup = FALSE;
+if ((pStructure = FindStructure((INT16)sGridNo, (STRUCTURE_HASITEMONTOP | STRUCTURE_OPENABLE))) != nullptr)
+{
+	fDoNormalPickup = FALSE;
 
-							// OK, look at orientation
-							if ( pStructure->ubWallOrientation & ORIENT_LEFT )
-							{
-								bDirection = (INT8)NORTH;
-							}
-							else if ( pStructure->ubWallOrientation & ORIENT_RIGHT )
-							{
-								bDirection = (INT8)WEST;
-							}
-							else
-							{
-								bDirection = pSoldier->bDirection;
-							}
+	// OK, look at orientation
+	if (pStructure->ubWallOrientation & ORIENT_LEFT)
+	{
+		bDirection = (INT8)NORTH;
+	}
+	else if (pStructure->ubWallOrientation & ORIENT_RIGHT)
+	{
+		bDirection = (INT8)WEST;
+	}
+	else
+	{
+		bDirection = pSoldier->bDirection;
+	}
 
-							//pSoldier->ubPendingDirection = bDirection;
-							EVENT_SetSoldierDesiredDirection( pSoldier, bDirection );
-							EVENT_SetSoldierDirection( pSoldier, bDirection );
+	//pSoldier->ubPendingDirection = bDirection;
+	EVENT_SetSoldierDesiredDirection(pSoldier, bDirection);
+	EVENT_SetSoldierDirection(pSoldier, bDirection);
 
-							// Change to pickup animation
-							EVENT_InitNewSoldierAnim( pSoldier, ADJACENT_GET_ITEM, 0 , FALSE );
-						}
+	// Change to pickup animation
+	EVENT_InitNewSoldierAnim(pSoldier, ADJACENT_GET_ITEM, 0, FALSE);
+}
 //#endif
 					}
 
@@ -8333,7 +8332,7 @@ void EVENT_SoldierBeginTakeBlood( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ub
 	// See if these is a corpse here....
 	ROTTING_CORPSE const * const pCorpse = GetCorpseAtGridNo(sGridNo , pSoldier->bLevel);
 
-	if ( pCorpse != nullptr )
+	if (pCorpse != nullptr)
 	{
 		pSoldier->uiPendingActionData4 = pCorpse->ID();
 
@@ -8366,7 +8365,7 @@ void EVENT_SoldierBeginAttachCan( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ub
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_ANYDOOR );
 
-	if ( pStructure == nullptr )
+	if (pStructure == nullptr)
 	{
 		return;
 	}
@@ -8384,7 +8383,7 @@ void EVENT_SoldierBeginAttachCan( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 ub
 
 	// Now get door status...
 	pDoorStatus = GetDoorStatus( sGridNo );
-	if ( pDoorStatus == nullptr )
+	if (pDoorStatus == nullptr)
 	{
 		// SOmething wrong here...
 		return;
@@ -8811,7 +8810,7 @@ void HandleSystemNewAISituation(SOLDIERTYPE* const pSoldier)
 						ReduceAttackBusyCount(pSoldier, FALSE);
 				}
 
-				if ( pSoldier->pTempObject != nullptr )
+				if (pSoldier->pTempObject != nullptr)
 				{
 					// Place it back into inv....
 					AutoPlaceObject( pSoldier, pSoldier->pTempObject, FALSE );
@@ -8931,7 +8930,7 @@ void BeginTyingToFall( SOLDIERTYPE *pSoldier )
 
 void SetSoldierAsUnderAiControl( SOLDIERTYPE *pSoldierToSet )
 {
-	if ( pSoldierToSet == nullptr )
+	if (pSoldierToSet == nullptr)
 	{
 		return;
 	}

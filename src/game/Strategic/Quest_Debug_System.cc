@@ -419,7 +419,7 @@ static INT32 giHaveSelectedNPC  = -1; // If it is not the first time in, dont re
 
 
 static INT32        giSelectedMercCurrentQuote = -1;
-static SOLDIERTYPE* gTalkingMercSoldier        = nullptr;
+static SOLDIERTYPE* gTalkingMercSoldier = nullptr;
 static BOOLEAN      gfPauseTalkingMercPopup    = FALSE;
 static BOOLEAN gfAddNpcToTeam                 = FALSE;
 static BOOLEAN gfRpcToSaySectorDesc           = FALSE;
@@ -603,7 +603,7 @@ ScreenID QuestDebugScreenHandle()
 	{
 		if( gubTextEntryAction != QD_DROP_DOWN_NO_ACTION )
 		{
-			CreateDestroyDisplayTextEntryBox( gubTextEntryAction, {}, nullptr );
+			CreateDestroyDisplayTextEntryBox(gubTextEntryAction, {}, nullptr);
 			gubTextEntryAction = QD_DROP_DOWN_NO_ACTION;
 		}
 
@@ -999,7 +999,7 @@ static void RenderQuestDebugSystem(void)
 	if( gfTextEntryActive )
 	{
 		gubTextEntryAction = QD_DROP_DOWN_DISPLAY;
-		CreateDestroyDisplayTextEntryBox( gubTextEntryAction, {}, nullptr );
+		CreateDestroyDisplayTextEntryBox(gubTextEntryAction, {}, nullptr);
 		gubTextEntryAction = QD_DROP_DOWN_NO_ACTION;
 	}
 
@@ -2896,8 +2896,7 @@ static void HandleQDSTalkingMerc(void)
 
 	if( giSelectedMercCurrentQuote != -1 )
 	{
-		if( gTalkingMercSoldier == nullptr )
-			return;
+		if (gTalkingMercSoldier == nullptr) return;
 
 		//Call this function to enable or disable the flags in the faces struct ( without modifing the pause state )
 		SetTalkingMercPauseState( gfPauseTalkingMercPopup );
@@ -3060,7 +3059,7 @@ static void BtnQuestDebugRPCSaySectorDescToggleCallback(GUI_BUTTON* btn, UINT32 
 
 static UINT8 WhichPanelShouldTalkingMercUse(void)
 {
-	if ( gTalkingMercSoldier == nullptr )
+	if (gTalkingMercSoldier == nullptr)
 	{
 		return( QDS_NO_PANEL );
 	}
@@ -3139,7 +3138,7 @@ static ST::string GetDebugLocationString(UINT16 usProfileID)
 	}
 
 	//the soldier is in this sector
-	else if( pSoldier != nullptr )
+	else if (pSoldier != nullptr)
 	{
 		return pSoldier->sSector.AsShortString();
 	}

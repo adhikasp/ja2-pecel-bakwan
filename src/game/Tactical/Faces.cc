@@ -146,7 +146,7 @@ FACETYPE& InitFace(const ProfileID id, SOLDIERTYPE* const s, const UINT32 uiInit
 	f.uiFlags               = uiInitFlags;
 	f.fAllocated            = TRUE;
 	f.fDisabled             = TRUE; // default to off!
-	f.video_overlay         = nullptr;
+	f.video_overlay = nullptr;
 	f.soldier               = s;
 	f.ubCharacterNum        = id;
 	f.sEyeFrame             = 0;
@@ -438,10 +438,7 @@ static void BlinkAutoFace(FACETYPE& f)
 
 	// CHECK IF BUDDY IS DEAD, UNCONSCIOUS, ASLEEP, OR POW!
 	SOLDIERTYPE const* const s = f.soldier;
-	if (s != nullptr && (
-		s->fMercAsleep ||
-		s->bLife < OKLIFE ||
-		s->bAssignment == ASSIGNMENT_POW))
+	if (s != nullptr && (s->fMercAsleep || s->bLife < OKLIFE || s->bAssignment == ASSIGNMENT_POW))
 	{
 		return;
 	}
@@ -895,7 +892,8 @@ static void HandleRenderFaceAdjustments(FACETYPE& f, BOOLEAN const fDisplayBuffe
 						break;
 
 					case TRAIN_TEAMMATE:
-						sPtsAvailable = GetBonusTrainingPtsDueToInstructor(s, nullptr , s->bTrainStat, fAtGunRange, &usMaximumPts);
+						sPtsAvailable =
+							GetBonusTrainingPtsDueToInstructor(s, nullptr, s->bTrainStat, fAtGunRange, &usMaximumPts);
 						break;
 				}
 				fShowNumber = TRUE;

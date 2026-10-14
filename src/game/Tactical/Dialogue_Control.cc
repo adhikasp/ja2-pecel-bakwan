@@ -110,7 +110,7 @@ static UINT16 const gusStopTimeQuoteList[] =
 
 // QUEUE UP DIALOG!
 static DialogueQueue ghDialogueQ;
-FACETYPE *gpCurrentTalkingFace	= nullptr;
+FACETYPE* gpCurrentTalkingFace = nullptr;
 static ProfileID       gubCurrentTalkingID = NO_PROFILE;
 static DialogueHandler gbUIHandlerID;
 
@@ -156,7 +156,7 @@ static cache_key_t const guiCOMPANELB{ INTERFACEDIR "/communicationpopup_2.sti" 
 
 BOOLEAN DialogueActive( )
 {
-	if ( gpCurrentTalkingFace != nullptr )
+	if (gpCurrentTalkingFace != nullptr)
 	{
 		return( TRUE );
 	}
@@ -240,7 +240,7 @@ BOOLEAN DialogueQueueIsEmpty( )
 
 BOOLEAN	DialogueQueueIsEmptyAndNobodyIsTalking()
 {
-	if ( gpCurrentTalkingFace != nullptr )
+	if (gpCurrentTalkingFace != nullptr)
 	{
 		return( FALSE );
 	}
@@ -263,7 +263,7 @@ void DialogueAdvanceSpeech( )
 void StopAnyCurrentlyTalkingSpeech( )
 {
 	// ATE; Make sure guys stop talking....
-	if ( gpCurrentTalkingFace != nullptr )
+	if (gpCurrentTalkingFace != nullptr)
 	{
 		InternalShutupaYoFace(gpCurrentTalkingFace, TRUE);
 	}
@@ -1091,7 +1091,7 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 
 	// PLEASE NOTE:  pSoldier may legally be NULL (e.g. Skyrider) !!!
 
-	if ( pSoldier == nullptr )
+	if (pSoldier == nullptr)
 	{
 		fDoExternPanel = TRUE;
 	}
@@ -1151,7 +1151,7 @@ static void HandleTacticalSpeechUI(const UINT8 ubCharacterNum, FACETYPE& f)
 	{
 		// Are we in mapscreen?
 		// If so, set current guy active to talk.....
-		if ( pSoldier != nullptr )
+		if (pSoldier != nullptr)
 		{
 			ContinueDialogue( pSoldier, FALSE );
 		}
@@ -1513,7 +1513,7 @@ static void TextOverlayClickCallback(MOUSE_REGION *, UINT32 iReason)
 
 	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP && fLButtonDown )
 	{
-		if(  gpCurrentTalkingFace != nullptr )
+		if (gpCurrentTalkingFace != nullptr)
 		{
 			InternalShutupaYoFace(gpCurrentTalkingFace, FALSE);
 		}
@@ -1536,7 +1536,7 @@ static void FaceOverlayClickCallback(MOUSE_REGION *, UINT32 iReason)
 
 	if (iReason & MSYS_CALLBACK_REASON_POINTER_UP && fLButtonDown )
 	{
-		if(  gpCurrentTalkingFace != nullptr )
+		if (gpCurrentTalkingFace != nullptr)
 		{
 			InternalShutupaYoFace(gpCurrentTalkingFace, FALSE);
 		}

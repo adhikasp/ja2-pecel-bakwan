@@ -68,9 +68,8 @@ extern BOOLEAN gfDelayAutoResolveStart;
 
 
 BOOLEAN gfTacticalTraversal = FALSE;
-GROUP *gpTacticalTraversalGroup = nullptr;
-SOLDIERTYPE *gpTacticalTraversalChosenSoldier = nullptr;
-
+GROUP* gpTacticalTraversalGroup = nullptr;
+SOLDIERTYPE* gpTacticalTraversalChosenSoldier = nullptr;
 
 BOOLEAN gfAutomaticallyStartAutoResolve = FALSE;
 BOOLEAN gfAutoAmbush = FALSE;
@@ -102,8 +101,7 @@ enum //GraphicIDs for the panel
 
 bool gfDisplayPotentialRetreatPaths = false;
 
-GROUP *gpBattleGroup = nullptr;
-
+GROUP* gpBattleGroup = nullptr;
 
 static MOUSE_REGION PBInterfaceBlanket;
 BOOLEAN gfPreBattleInterfaceActive = FALSE;

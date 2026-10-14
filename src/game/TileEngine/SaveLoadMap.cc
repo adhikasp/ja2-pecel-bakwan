@@ -410,7 +410,7 @@ static void AddBloodOrSmellFromMapTempFileToMap(MODIFY_MAP* pMap)
 
 void SaveRevealedStatusArrayToRevealedTempFile(const SGPSector& sSector)
 {
-	Assert( gpRevealedMap != nullptr );
+	Assert(gpRevealedMap != nullptr);
 
 	AutoSGPFile hFile(GCM->tempFiles()->openForWriting(GetMapTempFileName(SF_REVEALED_STATUS_TEMP_FILE_EXISTS, sSector), true));
 
@@ -437,7 +437,7 @@ void LoadRevealedStatusArrayFromRevealedTempFile()
 	{
 		AutoSGPFile hFile(GCM->tempFiles()->openForReading(zMapName));
 
-		Assert( gpRevealedMap == nullptr );
+		Assert(gpRevealedMap == nullptr);
 		gpRevealedMap = new UINT8[NUM_REVEALED_BYTES]{};
 
 		// Load the Reveal map array structure
@@ -501,7 +501,7 @@ static void SetMapRevealedStatus(void)
 
 static void DamageStructsFromMapTempFile(MODIFY_MAP* pMap)
 {
-	STRUCTURE *pCurrent=nullptr;
+	STRUCTURE* pCurrent = nullptr;
 	INT8			bLevel;
 	UINT8			ubWallOrientation;
 	UINT8			ubBitToSet = 0x80;
@@ -511,8 +511,7 @@ static void DamageStructsFromMapTempFile(MODIFY_MAP* pMap)
 	//Find the base structure
 	pCurrent = FindStructure( (INT16)pMap->usGridNo, STRUCTURE_BASE_TILE );
 
-	if( pCurrent == nullptr )
-		return;
+	if (pCurrent == nullptr) return;
 
 	bLevel = pMap->ubExtra & ubBitToSet;
 	ubWallOrientation = pMap->ubExtra & ~ubBitToSet;
@@ -522,7 +521,7 @@ static void DamageStructsFromMapTempFile(MODIFY_MAP* pMap)
 	//Check to see if the desired strucure node is in this tile
 	pCurrent = FindStructureBySavedInfo( pMap->usGridNo, ubType, ubWallOrientation, bLevel );
 
-	if( pCurrent != nullptr )
+	if (pCurrent != nullptr)
 	{
 		//Assign the hitpoints
 		pCurrent->ubHitPoints = (UINT8)( pMap->usSubImageIndex );
@@ -700,7 +699,7 @@ static void SetOpenableStructStatusFromMapTempFile(UINT32 uiMapIndex, BOOLEAN fO
 
 	pStructure = FindStructure( (UINT16)uiMapIndex, STRUCTURE_OPENABLE );
 
-	if( pStructure == nullptr )
+	if (pStructure == nullptr)
 	{
 		SLOGD("SetOpenableStructStatusFromMapTempFile( {}, {} ) failed to find the openable struct.", uiMapIndex, fOpened);
 		return;

@@ -148,7 +148,7 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 
 				if (g_ui_message_overlay == nullptr)
 				{
-					if ( gpItemPointer == nullptr )
+					if (gpItemPointer == nullptr)
 					{
 						switch( gCurrentUIMode )
 						{
@@ -190,8 +190,7 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 
 								gfUICanBeginAllMoveCycle = TRUE;
 
-								if ( !HandleCheckForExitArrowsInput( FALSE ) &&
-									gpItemPointer == nullptr )
+								if (!HandleCheckForExitArrowsInput(FALSE) && gpItemPointer == nullptr)
 								{
 									if (gUIFullTarget != nullptr && guiUIFullTargetFlags & OWNED_MERC)
 									{
@@ -262,7 +261,7 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 
 			}
 
-			if ( gpItemPointer == nullptr )
+			if (gpItemPointer == nullptr)
 			{
 				if (g_ui_message_overlay == nullptr && !gfRTHaveClickedRightWhileLeftDown)
 				{
@@ -350,7 +349,7 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 						// CHECK HERE FOR DOUBLE CLICK EVENTS
 						if ( fValidDoubleClickPossible )
 						{
-							if ( gpItemPointer == nullptr )
+							if (gpItemPointer == nullptr)
 							{
 									fDoubleClickIntercepted = TRUE;
 
@@ -436,7 +435,7 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 								{
 									if ( !HandleCheckForExitArrowsInput( TRUE ) )
 									{
-										if ( gpItemPointer != nullptr )
+										if (gpItemPointer != nullptr)
 										{
 											if ( HandleItemPointerClick( usMapPos ) )
 											{
@@ -510,16 +509,19 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 
 														case MOVE_MODE:
 
-															if ( !HandleCheckForExitArrowsInput( FALSE ) && gpItemPointer == nullptr )
+															if (!HandleCheckForExitArrowsInput(FALSE) &&
+																gpItemPointer == nullptr)
 															{
 																// First check if we clicked on a guy, if so, make selected if it's ours
-																if (gUIFullTarget != nullptr && guiUIFullTargetFlags & OWNED_MERC)
+																if (gUIFullTarget != nullptr &&
+																	guiUIFullTargetFlags & OWNED_MERC)
 																{
 																	if ( !( guiUIFullTargetFlags & UNCONSCIOUS_MERC ) )
 																	{
 																		// Select guy
 																		SOLDIERTYPE* const pSoldier = gUIFullTarget;
-																		if (pSoldier != nullptr && gpItemPointer == nullptr)
+																		if (pSoldier != nullptr &&
+																			gpItemPointer == nullptr)
 																		{
 																			if( pSoldier->bAssignment >= ON_DUTY && !(pSoldier->uiStatusFlags & SOLDIER_VEHICLE ) )
 																			{
@@ -610,21 +612,24 @@ static void QueryRTLeftButton(UIEventKind* const puiNewEvent)
 																		//}/
 																		//else
 																		//{
-																			if (sel != nullptr)
-																			{
-																				BeginDisplayTimedCursor( GetInteractiveTileCursor( guiCurrentUICursor, TRUE ), 300 );
+																		if (sel != nullptr)
+																		{
+																			BeginDisplayTimedCursor(
+																				GetInteractiveTileCursor(
+																					guiCurrentUICursor, TRUE),
+																				300);
 
-																				if (sel->usAnimState != RUNNING)
-																				{
-																					*puiNewEvent = C_MOVE_MERC;
-																				}
-																				else if (GetCurInteractiveTile() != nullptr)
-																				{
-																					sel->fUIMovementFast = TRUE;
-																					*puiNewEvent = C_MOVE_MERC;
-																				}
-																				fValidDoubleClickPossible = TRUE;
+																			if (sel->usAnimState != RUNNING)
+																			{
+																				*puiNewEvent = C_MOVE_MERC;
 																			}
+																			else if (GetCurInteractiveTile() != nullptr)
+																			{
+																				sel->fUIMovementFast = TRUE;
+																				*puiNewEvent = C_MOVE_MERC;
+																			}
+																			fValidDoubleClickPossible = TRUE;
+																		}
 																		//}
 																	}
 																	else if ( bReturnCode == 0 )
@@ -816,7 +821,7 @@ static void QueryRTRightButton(UIEventKind* const puiNewEvent)
 				//fIgnoreLeftUp = TRUE;
 				gfRTHaveClickedRightWhileLeftDown = TRUE;
 
-				if ( gpItemPointer == nullptr )
+				if (gpItemPointer == nullptr)
 				{
 					// ATE:
 					SOLDIERTYPE* const sel = GetSelectedMan();
@@ -875,7 +880,7 @@ static void QueryRTRightButton(UIEventKind* const puiNewEvent)
 				// IF HERE, DO A CLICK-HOLD IF IN INTERVAL
 				if (COUNTERDONE(RMOUSECLICK_DELAY_COUNTER, false) && !fClickHoldIntercepted)
 				{
-					if ( gpItemPointer == nullptr )
+					if (gpItemPointer == nullptr)
 					{
 						// Switch on UI mode
 						switch( gCurrentUIMode )
@@ -888,10 +893,8 @@ static void QueryRTRightButton(UIEventKind* const puiNewEvent)
 							case MOVE_MODE:
 							{
 								const SOLDIERTYPE* const tgt = gUIFullTarget;
-								if (tgt != nullptr &&
-									!(tgt->uiStatusFlags & SOLDIER_VEHICLE) &&
-									guiUIFullTargetFlags & OWNED_MERC &&
-									guiUIFullTargetFlags & VISIBLE_MERC &&
+								if (tgt != nullptr && !(tgt->uiStatusFlags & SOLDIER_VEHICLE) &&
+									guiUIFullTargetFlags & OWNED_MERC && guiUIFullTargetFlags & VISIBLE_MERC &&
 									!(guiUIFullTargetFlags & DEAD_MERC))
 								{
 									PopupAssignmentMenuInTactical();
@@ -937,7 +940,7 @@ static void QueryRTRightButton(UIEventKind* const puiNewEvent)
 						// OK, check if left button down...
 						if ( fLeftButtonDown )
 						{
-							if ( gpItemPointer == nullptr )
+							if (gpItemPointer == nullptr)
 							{
 								if ( !fClickIntercepted && !fClickHoldIntercepted )
 								{
@@ -975,7 +978,7 @@ static void QueryRTRightButton(UIEventKind* const puiNewEvent)
 					// CHECK COMBINATIONS
 					if ( fLeftButtonDown )
 					{
-						if ( gpItemPointer == nullptr )
+						if (gpItemPointer == nullptr)
 						{
 							if ( !fClickHoldIntercepted && !fClickIntercepted )
 							{
@@ -1005,7 +1008,7 @@ static void QueryRTRightButton(UIEventKind* const puiNewEvent)
 					{
 						if ( !fClickHoldIntercepted && !fClickIntercepted )
 						{
-							if ( gpItemPointer == nullptr )
+							if (gpItemPointer == nullptr)
 							{
 								// ATE:
 								SOLDIERTYPE* const sel = GetSelectedMan();
@@ -1094,7 +1097,7 @@ void GetRTMousePositionInput(UIEventKind* const puiNewEvent)
 	if (usMapPos == NOWHERE) return;
 
 	// Check if we have an item in our hands...
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		*puiNewEvent = A_ON_TERRAIN;
 		return;
@@ -1387,7 +1390,8 @@ void TacticalViewPortTouchCallbackRT(UINT32 reason) {
 			}
 		}
 	} else if (reason & MSYS_CALLBACK_REASON_MBUTTON_DWN) {
-		if (_KeyDown(SHIFT) && gpItemPointer == nullptr) {
+		if (_KeyDown(SHIFT) && gpItemPointer == nullptr)
+		{
 			switch( gCurrentUIMode )
 			{
 				case MOVE_MODE:
@@ -1411,11 +1415,14 @@ void TacticalViewPortTouchCallbackRT(UINT32 reason) {
 
 		if (guiCurrentCursorGridNo == NOWHERE || selected == nullptr) return;
 
-		if ( gpItemPointer != nullptr ) {
+		if (gpItemPointer != nullptr)
+		{
 			// If we went up with item in hand change to confirm mode
 			gfPlotNewMovement = TRUE;
 			guiPendingOverrideEvent = C_WAIT_FOR_CONFIRM;
-		} else {
+		}
+		else
+		{
 			switch( gCurrentUIMode )
 			{
 				case MOVE_MODE:
@@ -1424,8 +1431,7 @@ void TacticalViewPortTouchCallbackRT(UINT32 reason) {
 				case HANDCURSOR_MODE:
 				case TALKCURSOR_MODE:
 					if (gUIFullTarget != nullptr && gUIFullTarget == gLastDownUIFullTarget &&
-							(guiUIFullTargetFlags & OWNED_MERC) &&
-							!(guiUIFullTargetFlags & UNCONSCIOUS_MERC))
+						(guiUIFullTargetFlags & OWNED_MERC) && !(guiUIFullTargetFlags & UNCONSCIOUS_MERC))
 					{
 						// If we went down and up on the same merc select it
 						guiPendingOverrideEvent = I_SELECT_MERC;

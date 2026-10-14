@@ -2383,8 +2383,7 @@ static void UpdateMercMercContractInfo(void)
 		SOLDIERTYPE* const pSoldier = FindSoldierByProfileIDOnPlayerTeam(ubMercID);
 
 		//if the merc is on the team
-		if( pSoldier == nullptr )
-			continue;
+		if (pSoldier == nullptr) continue;
 
 		gMercProfiles[ubMercID].iMercMercContractLength = pSoldier->iTotalContractLength;
 

@@ -857,7 +857,7 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 
 					//CODE: THORW ITEM
 					// Launch ITem!
-					if ( pSoldier->pTempObject != nullptr && pSoldier->pThrowParams != nullptr )
+					if (pSoldier->pTempObject != nullptr && pSoldier->pThrowParams != nullptr)
 					{
 						// ATE: If we are armmed...
 						if ( pSoldier->pThrowParams->ubActionCode == THROW_ARM_ITEM )
@@ -1197,7 +1197,8 @@ BOOLEAN AdjustToNextAnimationFrame( SOLDIERTYPE *pSoldier )
 						if ( pSoldier->bTeam != OUR_TEAM )
 						{
 							// only locate if the enemy is visible or he's aiming at a player
-							if (pSoldier->bVisible != -1 || (pSoldier->target != nullptr && pSoldier->target->bTeam == OUR_TEAM))
+							if (pSoldier->bVisible != -1 ||
+								(pSoldier->target != nullptr && pSoldier->target->bTeam == OUR_TEAM))
 							{
 								LocateGridNo( pSoldier->sTargetGridNo );
 							}
@@ -2337,7 +2338,7 @@ no_cry:
 				case 763:
 
 					// CODE: Drop item at gridno
-					if ( pSoldier->pTempObject != nullptr )
+					if (pSoldier->pTempObject != nullptr)
 					{
 						if ( pSoldier->bVisible != -1 )
 						{

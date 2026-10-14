@@ -237,7 +237,7 @@ void UpdateBullets(void)
 				{
 					if (b->usFlags & BULLET_FLAG_KNIFE)
 					{
-						if ( b->pAniTile != nullptr )
+						if (b->pAniTile != nullptr)
 						{
 							b->pAniTile->sRelativeX	= FIXEDPT_TO_INT32(b->qCurrX);
 							b->pAniTile->sRelativeY	= FIXEDPT_TO_INT32(b->qCurrY);

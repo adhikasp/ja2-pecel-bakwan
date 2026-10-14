@@ -673,7 +673,7 @@ static void ClearFinanceList(void)
 static void ProcessAndEnterAFinancialRecord(const UINT8 ubCode, const UINT32 uiDate, const INT32 iAmount, const UINT8 ubSecondCode, const INT32 iBalanceToDate)
 {
 	FinanceUnit* const fu = new FinanceUnit{};
-	fu->Next           = nullptr;
+	fu->Next = nullptr;
 	fu->ubCode         = ubCode;
 	fu->ubSecondCode   = ubSecondCode;
 	fu->uiDate         = uiDate;

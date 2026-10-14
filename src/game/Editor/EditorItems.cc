@@ -51,8 +51,7 @@ struct IPListNode
 static IPListNode* pIPHead = nullptr;
 
 static IPListNode* gpCurrItemPoolNode = nullptr;
-ITEM_POOL *gpItemPool = nullptr;
-
+ITEM_POOL* gpItemPool = nullptr;
 
 static void ShowItemCursor(INT32 iMapIndex);
 
@@ -70,7 +69,7 @@ void BuildItemPoolList(void)
 
 		IPListNode* const n = new IPListNode{};
 		n->sGridNo = i;
-		n->next    = nullptr;
+		n->next = nullptr;
 
 		*anchor = n;
 		anchor = &n->next;
@@ -874,7 +873,7 @@ void HandleRightClickOnItem( INT16 sGridNo )
 
 void DeleteSelectedItem()
 {
-	SpecifyItemToEdit( nullptr, -1 );
+	SpecifyItemToEdit(nullptr, -1);
 	//First, check to see if there even is a currently selected item.
 	if( iCurrentTaskbar == TASK_MERCS )
 	{
@@ -900,8 +899,7 @@ void DeleteSelectedItem()
 				case ACTION_ITEM_LARGE_PIT: Remove5X5Pit(sGridNo); break;
 			}
 		}
-		if( gpEditingItemPool == gpItemPool )
-			gpEditingItemPool = nullptr;
+		if (gpEditingItemPool == gpItemPool) gpEditingItemPool = nullptr;
 		RemoveItemFromPool(wi);
 		gpItemPool = nullptr;
 		//determine if there are still any items at this location

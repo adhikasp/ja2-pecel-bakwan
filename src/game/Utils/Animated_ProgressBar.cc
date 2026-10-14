@@ -199,14 +199,13 @@ void RenderProgressBar( UINT8 ubID, UINT32 uiPercentage )
 	static UINT32 uiLastTime = 0;
 	UINT32 uiCurTime = GetJA2Clock();
 	double rActual;
-	PROGRESSBAR *pCurr=nullptr;
+	PROGRESSBAR* pCurr = nullptr;
 	//UINT32 r, g;
 
 	Assert( ubID < MAX_PROGRESSBARS );
 	pCurr = pBar[ubID];
 
-	if( pCurr == nullptr )
-		return;
+	if (pCurr == nullptr) return;
 
 	if( pCurr )
 	{
@@ -256,13 +255,12 @@ void RenderProgressBar( UINT8 ubID, UINT32 uiPercentage )
 
 void SetProgressBarColor( UINT8 ubID, UINT8 ubColorFillRed, UINT8 ubColorFillGreen, UINT8 ubColorFillBlue )
 {
-	PROGRESSBAR *pCurr=nullptr;
+	PROGRESSBAR* pCurr = nullptr;
 
 	Assert( ubID < MAX_PROGRESSBARS );
 
 	pCurr = pBar[ubID];
-	if( pCurr == nullptr )
-		return;
+	if (pCurr == nullptr) return;
 
 	pCurr->fill_colour = FROMRGB(ubColorFillRed, ubColorFillGreen, ubColorFillBlue);
 }

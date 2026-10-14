@@ -1080,7 +1080,7 @@ static void SMInvMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 
 	if (iReason & MSYS_CALLBACK_REASON_GAIN_MOUSE)
 	{
-		if ( gpItemPointer == nullptr )
+		if (gpItemPointer == nullptr)
 		{
 			// Setup a timer....
 			guiMouseOverItemTime = GetJA2Clock( );
@@ -1090,7 +1090,7 @@ static void SMInvMoveCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 	}
 	else if (iReason & MSYS_CALLBACK_REASON_LOST_MOUSE )
 	{
-		if ( gpItemPointer == nullptr )
+		if (gpItemPointer == nullptr)
 		{
 			HandleCompatibleAmmoUI( gpSMCurrentMerc, (INT8)uiHandPos, FALSE );
 			gfCheckForMouseOverItem = FALSE;

@@ -64,12 +64,12 @@ void DeleteTileCache( )
 	UINT32 cnt;
 
 	// Allocate entries
-	if ( gpTileCache != nullptr )
+	if (gpTileCache != nullptr)
 	{
 		// Loop through and delete any entries
 		for ( cnt = 0; cnt < guiMaxTileCacheSize; cnt++ )
 		{
-			if ( gpTileCache[ cnt ].pImagery != nullptr )
+			if (gpTileCache[cnt].pImagery != nullptr)
 			{
 				DeleteTileSurface( gpTileCache[ cnt ].pImagery );
 			}
@@ -214,7 +214,7 @@ void CheckForAndDeleteTileCacheStructInfo( LEVELNODE *pNode, UINT16 usIndex )
 	{
 		pStructureFileRef = GetCachedTileStructureRef( ( usIndex - TILE_CACHE_START_INDEX ) );
 
-		if ( pStructureFileRef != nullptr)
+		if (pStructureFileRef != nullptr)
 		{
 			DeleteStructureFromWorld( pNode->pStructureData );
 		}

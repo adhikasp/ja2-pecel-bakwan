@@ -1328,7 +1328,10 @@ BOOLEAN HandleGotoNewGridNo(SOLDIERTYPE* pSoldier, BOOLEAN* pfKeepMoving, BOOLEA
 
 		return FALSE;
 	}
-	else if (InternalDoorTravelCost(pSoldier, usNewGridNo, gubWorldMovementCosts[usNewGridNo][pSoldier->ubPathingData[pSoldier->ubPathIndex]][pSoldier->bLevel], pSoldier->bTeam == OUR_TEAM, nullptr, TRUE) == TRAVELCOST_DOOR)
+	else if (InternalDoorTravelCost(
+				 pSoldier, usNewGridNo,
+				 gubWorldMovementCosts[usNewGridNo][pSoldier->ubPathingData[pSoldier->ubPathIndex]][pSoldier->bLevel],
+				 pSoldier->bTeam == OUR_TEAM, nullptr, TRUE) == TRAVELCOST_DOOR)
 	{
 		// OK, if we are here, we have been told to get a pth through a door.
 
@@ -2199,8 +2202,7 @@ void HandlePlayerTeamMemberDeath(SOLDIERTYPE* pSoldier)
 
 	if (new_selected_soldier != nullptr)
 	{
-		if (gTacticalStatus.fAutoBandageMode &&
-				pSoldier->auto_bandaging_medic != nullptr)
+		if (gTacticalStatus.fAutoBandageMode && pSoldier->auto_bandaging_medic != nullptr)
 		{
 			CancelAIAction(pSoldier->auto_bandaging_medic);
 		}
@@ -3425,7 +3427,8 @@ INT16 FindAdjacentGridEx(SOLDIERTYPE* pSoldier, INT16 sGridNo, UINT8* pubDirecti
 		else
 		{
 			// this function returns original MP cost if not a door cost
-			if ( DoorTravelCost( pSoldier, sSpot, gubWorldMovementCosts[ sSpot ][ ubTestDirection ][ pSoldier->bLevel ], FALSE, nullptr ) >= TRAVELCOST_BLOCKED )
+			if (DoorTravelCost(pSoldier, sSpot, gubWorldMovementCosts[sSpot][ubTestDirection][pSoldier->bLevel], FALSE,
+							   nullptr) >= TRAVELCOST_BLOCKED)
 			{
 			// obstacle or wall there!
 			continue;
@@ -3433,7 +3436,7 @@ INT16 FindAdjacentGridEx(SOLDIERTYPE* pSoldier, INT16 sGridNo, UINT8* pubDirecti
 		}
 
 		// Eliminate some directions if we are looking at doors!
-		if ( pDoor != nullptr )
+		if (pDoor != nullptr)
 		{
 			// Get orinetation
 			ubWallOrientation = pDoor->ubWallOrientation;
@@ -3652,7 +3655,8 @@ INT16 FindNextToAdjacentGridEx( SOLDIERTYPE *pSoldier, INT16 sGridNo, UINT8 *pub
 		// first tile is okay, how about the second?
 		sSpot2 = NewGridNo( sSpot, DirectionInc( sDirs[ cnt ] ) );
 		if (gubWorldMovementCosts[sSpot2][sDirs[cnt]][pSoldier->bLevel] >= TRAVELCOST_BLOCKED ||
-			DoorTravelCost(pSoldier, sSpot2, gubWorldMovementCosts[sSpot2][sDirs[cnt]][pSoldier->bLevel], pSoldier->bTeam == OUR_TEAM, nullptr) == TRAVELCOST_DOOR) // closed door blocks!
+			DoorTravelCost(pSoldier, sSpot2, gubWorldMovementCosts[sSpot2][sDirs[cnt]][pSoldier->bLevel],
+						   pSoldier->bTeam == OUR_TEAM, nullptr) == TRAVELCOST_DOOR) // closed door blocks!
 		{
 			// obstacle or wall there!
 			continue;
@@ -3770,7 +3774,8 @@ INT16 FindAdjacentPunchTarget(const SOLDIERTYPE* const pSoldier, const SOLDIERTY
 	{
 		const INT16 sSpot = NewGridNo(pSoldier->sGridNo, DirectionInc(i));
 
-		if (DoorTravelCost(pSoldier, sSpot, gubWorldMovementCosts[sSpot][i][pSoldier->bLevel], FALSE, nullptr) >= TRAVELCOST_BLOCKED)
+		if (DoorTravelCost(pSoldier, sSpot, gubWorldMovementCosts[sSpot][i][pSoldier->bLevel], FALSE, nullptr) >=
+			TRAVELCOST_BLOCKED)
 		{
 			// blocked!
 			continue;
@@ -4626,8 +4631,7 @@ BOOLEAN CheckForEndOfBattle( BOOLEAN fAnEnemyRetreated )
 					{
 
 					}
-					if (gLastMercTalkedAboutKilling != nullptr &&
-						gLastMercTalkedAboutKilling->ubBodyType == BLOODCAT)
+					if (gLastMercTalkedAboutKilling != nullptr && gLastMercTalkedAboutKilling->ubBodyType == BLOODCAT)
 					{
 						SayBattleSoundFromAnyBodyInSector(BATTLE_SOUND_COOL1);
 					}
@@ -5241,7 +5245,7 @@ static void HandleSuppressionFire(const SOLDIERTYPE* const targeted_merc, SOLDIE
 					case ANIM_CROUCH:
 						if (ubTotalPointsLost >= AP_PRONE && IsValidStance( pSoldier, ANIM_PRONE ) )
 						{
-							sClosestOpponent = ClosestKnownOpponent( pSoldier, &sClosestOppLoc, nullptr );
+							sClosestOpponent = ClosestKnownOpponent(pSoldier, &sClosestOppLoc, nullptr);
 							if (sClosestOpponent == NOWHERE || SpacesAway( pSoldier->sGridNo, sClosestOppLoc ) > 8)
 							{
 								// The stance change below is issued with
@@ -5262,7 +5266,7 @@ static void HandleSuppressionFire(const SOLDIERTYPE* const targeted_merc, SOLDIE
 						}
 						else if (ubTotalPointsLost >= (AP_CROUCH + AP_PRONE) && ( gAnimControl[ pSoldier->usAnimState ].ubEndHeight != ANIM_PRONE ) && IsValidStance( pSoldier, ANIM_PRONE ) )
 						{
-							sClosestOpponent = ClosestKnownOpponent( pSoldier, &sClosestOppLoc, nullptr );
+							sClosestOpponent = ClosestKnownOpponent(pSoldier, &sClosestOppLoc, nullptr);
 							if ( sClosestOpponent == NOWHERE || SpacesAway( pSoldier->sGridNo, sClosestOppLoc ) > 8 )
 							{
 								if ( gAnimControl[ pSoldier->usAnimState ].ubEndHeight == ANIM_STAND )
@@ -5587,7 +5591,7 @@ static SOLDIERTYPE* InternalReduceAttackBusyCount(SOLDIERTYPE* const pSoldier, c
 	// this is so we DON'T call freeupattacker() which will cancel
 	// the AI guy's meanwhile NPC stuff.
 	// OK< let's NOT do this if it was the queen attacking....
-	if ( AreInMeanwhile( ) && pSoldier != nullptr && pSoldier->ubProfile != QUEEN )
+	if (AreInMeanwhile() && pSoldier != nullptr && pSoldier->ubProfile != QUEEN)
 	{
 		return( pTarget );
 	}
@@ -6009,7 +6013,8 @@ static void DeathTimerCallback(void)
 	{
 		text = LargeTacticalStr[LARGESTR_NOONE_LEFT_CAPABLE_OF_BATTLE_STR];
 	}
-	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback, nullptr);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback,
+				 nullptr);
 }
 
 
@@ -6024,7 +6029,8 @@ void CaptureTimerCallback(void)
 	{
 		text = LargeTacticalStr[LARGESTR_HAVE_BEEN_CAPTURED];
 	}
-	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback, nullptr);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, text, GAME_SCREEN, MSG_BOX_FLAG_OK, EndBattleWithUnconsciousGuysCallback,
+				 nullptr);
 	gfSurrendered = FALSE;
 }
 
@@ -6217,7 +6223,8 @@ void HandleThePlayerBeNotifiedOfSomeoneElseInSector(void)
 		return;
 	}
 
-	DoMessageBox(MSG_BOX_BASIC_STYLE, *(GCM->getNewString(NS_SOMEONE_ELSE_IN_SECTOR)), GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, *(GCM->getNewString(NS_SOMEONE_ELSE_IN_SECTOR)), GAME_SCREEN, MSG_BOX_FLAG_OK,
+				 nullptr, nullptr);
 }
 
 static void HandleBrothelWallDestroyed(INT16 const sSectorX, INT16 const sSectorY, INT8 const sSectorZ, INT16 const sGridNo, STRUCTURE* const s, UINT8 const ubDamage, BOOLEAN const fDestroyed)

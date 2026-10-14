@@ -230,10 +230,8 @@ void ScrollString(void)
 	pStringS.pop_front();
 
 	//check if new meesage we have not seen since mapscreen..if so, beep
-	if (fOkToBeepNewMessage &&
-			gpDisplayList[MAX_LINE_COUNT - 2] == nullptr &&
-			(guiCurrentScreen == GAME_SCREEN || guiCurrentScreen == MAP_SCREEN) &&
-			!gfFacePanelActive)
+	if (fOkToBeepNewMessage && gpDisplayList[MAX_LINE_COUNT - 2] == nullptr &&
+		(guiCurrentScreen == GAME_SCREEN || guiCurrentScreen == MAP_SCREEN) && !gfFacePanelActive)
 	{
 		PlayNewMessageSound();
 	}

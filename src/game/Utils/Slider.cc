@@ -54,8 +54,7 @@ struct SLIDER
 	SLIDER*                pPrev;
 };
 
-
-static SLIDER* pSliderHead     = nullptr;
+static SLIDER* pSliderHead = nullptr;
 static SLIDER* gpCurrentSlider = nullptr;
 static cache_key_t const guiSliderBoxImage = INTERFACEDIR "/sliderbox.sti";
 

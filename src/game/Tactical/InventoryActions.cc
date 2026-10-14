@@ -104,8 +104,7 @@ SOLDIERTYPE* gSelectSMPanelToMerc = nullptr;
 static BOOLEAN gfReEvaluateDisabledINVPanelButtons = FALSE;
 
 // The merc the single-merc (inventory) view shows
-SOLDIERTYPE *gpSMCurrentMerc = nullptr;
-
+SOLDIERTYPE* gpSMCurrentMerc = nullptr;
 
 void CheckForDisabledForGiveItem(void)
 {
@@ -206,7 +205,7 @@ void SetSMPanelCurrentMerc(SOLDIERTYPE* s)
 	SetAllAutoFacesInactive( );
 
 	// Turn off compat ammo....
-	if ( gpItemPointer == nullptr )
+	if (gpItemPointer == nullptr)
 	{
 		HandleCompatibleAmmoUI(s, HANDPOS, FALSE);
 		gfCheckForMouseOverItem = FALSE;
@@ -256,7 +255,7 @@ void ReevaluateItemHatches(SOLDIERTYPE* pSoldier, BOOLEAN fAllValid)
 	INT32 cnt;
 
 	// if there's an item in the cursor and we're not supposed to just make them all valid
-	if ( ( gpItemPointer != nullptr ) && !fAllValid )
+	if ((gpItemPointer != nullptr) && !fAllValid)
 	{
 		// check all inventory positions and mark the ones where cursor item won't fit as invalid
 		for ( cnt = 0; cnt < NUM_INV_SLOTS; cnt++ )
@@ -298,7 +297,7 @@ void EnableSMPanelButtons(BOOLEAN fEnable, BOOLEAN fFromItemPickup)
 	{
 		// If we have the item pointer up (or the pick-up menu is open) the squad's buttons are off
 		// CJC Dec 4 2002: or if item pickup menu is up
-		LockTacticalButtons( gpItemPointer != nullptr || gfInItemPickupMenu );
+		LockTacticalButtons(gpItemPointer != nullptr || gfInItemPickupMenu);
 		fInterfacePanelDirty = DIRTYLEVEL2;
 	}
 
@@ -307,7 +306,7 @@ void EnableSMPanelButtons(BOOLEAN fEnable, BOOLEAN fFromItemPickup)
 	if ( fFromItemPickup )
 	{
 		// If we have the item pointer up...
-		if ( gpItemPointer != nullptr )
+		if (gpItemPointer != nullptr)
 		{
 			ReevaluateItemHatches( gpSMCurrentMerc, fEnable );
 
@@ -649,11 +648,13 @@ static InventoryOutcome SlotPrimary(SOLDIERTYPE* const s, UINT32 const pos, bool
 				// the only way to merge items is to pick them up. In SKI when you pick up an item, the cursor is
 				// locked in a region, free it up.
 				FreeMouseCursor();
-				DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], SHOPKEEPER_SCREEN, MSG_BOX_FLAG_YESNO, MergeMessageBoxCallBack, nullptr);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], SHOPKEEPER_SCREEN,
+							 MSG_BOX_FLAG_YESNO, MergeMessageBoxCallBack, nullptr);
 			}
 			else if (!NativeUI::TacticalHudActive())
 			{
-				DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], GAME_SCREEN, MSG_BOX_FLAG_YESNO, MergeMessageBoxCallBack, nullptr);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_MERGE_ITEMS], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+							 MergeMessageBoxCallBack, nullptr);
 			}
 			InventoryOutcome o;
 			o.ok     = true;
@@ -794,7 +795,7 @@ static bool ShopHatched(UINT32 const pos)
 
 void BeginKeyPanelFromKeyShortcut(void)
 {
-	SOLDIERTYPE *pSoldier = nullptr;
+	SOLDIERTYPE* pSoldier = nullptr;
 	INT16 sStartYPosition = 0;
 	INT16 sWidth = 0, sHeight = 0;
 
@@ -803,7 +804,7 @@ void BeginKeyPanelFromKeyShortcut(void)
 		return;
 	}
 
-	if ( gpSMCurrentMerc == nullptr )
+	if (gpSMCurrentMerc == nullptr)
 	{
 		return;
 	}
@@ -837,7 +838,7 @@ void KeyRingItemPanelButtonCallback(MOUSE_REGION* pRegion, UINT32 iReason)
 /** The key ring button: the popup with the keys of the merc the panel shows. */
 static void OpenKeyRing()
 {
-	SOLDIERTYPE *pSoldier = nullptr;
+	SOLDIERTYPE* pSoldier = nullptr;
 	INT16 sStartYPosition = 0;
 	INT16 sWidth = 0, sHeight = 0;
 
@@ -852,7 +853,7 @@ static void OpenKeyRing()
 	}
 	else
 	{
-		if ( gpSMCurrentMerc == nullptr )
+		if (gpSMCurrentMerc == nullptr)
 		{
 			return;
 		}
@@ -927,7 +928,7 @@ void KeyRingSlotInvClickCallbackPrimary( MOUSE_REGION * pRegion, UINT32 iReason 
 	}
 
 	// If we do not have an item in hand, start moving it
-	if ( gpItemPointer == nullptr )
+	if (gpItemPointer == nullptr)
 	{
 		// Return if empty
 		if (!gpItemPopupSoldier->pKeyRing[uiKeyRing].isValid())
@@ -956,8 +957,7 @@ void KeyRingSlotInvClickCallbackPrimary( MOUSE_REGION * pRegion, UINT32 iReason 
 		}
 
 		// ATE: OK, get source, dest guy if different... check for and then charge appropriate APs
-		if (gpItemPointerSoldier == nullptr ||
-			gpItemPointerSoldier == GetSelectedInfoChar())
+		if (gpItemPointerSoldier == nullptr || gpItemPointerSoldier == GetSelectedInfoChar())
 		{
 			// We are doing this ourselve, continue
 			fOKToGo = TRUE;
@@ -1113,7 +1113,7 @@ void InventoryCashButton()
 			return;
 
 		//if the player has an item in his hand,
-		if( gpItemPointer != nullptr )
+		if (gpItemPointer != nullptr)
 		{
 			//and the item is money
 			if( GCM->getItem(gpItemPointer->usItem)->getItemClass() == IC_MONEY )
@@ -1134,10 +1134,12 @@ void InventoryCashButton()
 				{
 					//if we are in the shop keeper interface, free the cursor
 					FreeMouseCursor();
-					DoMessageBox(MSG_BOX_BASIC_STYLE, zText, SHOPKEEPER_SCREEN, MSG_BOX_FLAG_YESNO, ConfirmationToDepositMoneyToPlayersAccount, nullptr);
+					DoMessageBox(MSG_BOX_BASIC_STYLE, zText, SHOPKEEPER_SCREEN, MSG_BOX_FLAG_YESNO,
+								 ConfirmationToDepositMoneyToPlayersAccount, nullptr);
 				}
 				else
-					DoMessageBox(MSG_BOX_BASIC_STYLE, zText, GAME_SCREEN, MSG_BOX_FLAG_YESNO, ConfirmationToDepositMoneyToPlayersAccount, nullptr);
+					DoMessageBox(MSG_BOX_BASIC_STYLE, zText, GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+								 ConfirmationToDepositMoneyToPlayersAccount, nullptr);
 			}
 		}
 
@@ -1222,8 +1224,8 @@ void GoToMapScreenFromTactical(void)
 	if ( gTacticalStatus.bBoxingState != NOT_BOXING )
 	{
 		// pop up dialogue asking whether the player wants to abandon the fight
-		DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_ABANDON_FIGHT], GAME_SCREEN,
-				MSG_BOX_FLAG_YESNO, AbandonBoxingCallback, nullptr);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_ABANDON_FIGHT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+					 AbandonBoxingCallback, nullptr);
 		return;
 	}
 	// ok, proceed!

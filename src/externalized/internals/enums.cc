@@ -40,7 +40,7 @@ const char* Internals::getApproachName(enum Approach approach)
 		case APPROACH_BUYSELL:                        return "BUYSELL";
 		case APPROACH_ONE_OF_FOUR_STANDARD:           return "ONE_OF_FOUR_STANDARD";
 		case APPROACH_FRIENDLY_DIRECT_OR_RECRUIT:     return "FRIENDLY_DIRECT_OR_RECRUIT";
-		default:                                      return nullptr;
+		default: return nullptr;
 	}
 }
 

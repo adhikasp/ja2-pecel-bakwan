@@ -90,8 +90,7 @@ struct TOP_MESSAGE
 static TOP_MESSAGE gTopMessage;
 BOOLEAN gfTopMessageDirty = FALSE;
 
-
-VIDEO_OVERLAY*       g_ui_message_overlay = nullptr;
+VIDEO_OVERLAY* g_ui_message_overlay = nullptr;
 ST::string           g_ui_message_text; // what the message overlay says (the native map screen draws it)
 static UINT16        gusUIMessageWidth;
 static UINT16        gusUIMessageHeight;

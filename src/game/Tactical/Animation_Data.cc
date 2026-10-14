@@ -25,9 +25,7 @@ constexpr UINT16 TO_INIT = 0;
 #define PATH_STRUCT					ANIMSDIR "/STRUCTDATA/"
 #define SUFFIX						".JSD"
 
-
-
-ANIM_PROF *gpAnimProfiles = nullptr;
+ANIM_PROF* gpAnimProfiles = nullptr;
 static UINT8 gubNumAnimProfiles = 0;
 
 INT8 gbAnimUsageHistory[ NUMANIMATIONSURFACETYPES ][ MAX_NUM_SOLDIERS ];
@@ -472,16 +470,14 @@ struct AnimationStructureType
 	STRUCTURE_FILE_REF* pStructureFileRef;
 };
 
-
-#define ABCDEF(a, b, c, d, e, f)  \
-{                                 \
-	{ PATH_STRUCT a SUFFIX, nullptr }, \
-	{ PATH_STRUCT b SUFFIX, nullptr }, \
-	{ PATH_STRUCT c SUFFIX, nullptr }, \
-	{ PATH_STRUCT d SUFFIX, nullptr }, \
-	{ PATH_STRUCT e SUFFIX, nullptr }, \
-	{ PATH_STRUCT f SUFFIX, nullptr }  \
-}
+#define ABCDEF(a, b, c, d, e, f)                                                                                       \
+	{                                                                                                                  \
+		{ PATH_STRUCT a SUFFIX, nullptr }, { PATH_STRUCT b SUFFIX, nullptr }, { PATH_STRUCT c SUFFIX, nullptr },       \
+			{ PATH_STRUCT d SUFFIX, nullptr }, { PATH_STRUCT e SUFFIX, nullptr },                                      \
+		{                                                                                                              \
+			PATH_STRUCT f SUFFIX, nullptr                                                                              \
+		}                                                                                                              \
+	}
 #define AAAAAA(a)          ABCDEF(a, a, a, a, a, a)
 #define AAAAAB(a, b)       ABCDEF(a, a, a, a, a, b)
 #define AAABCA(a, b, c)    ABCDEF(a, a, a, b, c, a)
@@ -615,14 +611,14 @@ static STRUCTURE_FILE_REF* InternalGetAnimationStructureRef(const SOLDIERTYPE* c
 
 	if ( usSurfaceIndex == INVALID_ANIMATION_SURFACE )
 	{
-		return( nullptr );
+		return (nullptr);
 	}
 
 	bStructDataType = gAnimSurfaceDatabase[ usSurfaceIndex ].bStructDataType;
 
 	if ( bStructDataType == NO_STRUCT )
 	{
-		return( nullptr );
+		return (nullptr);
 	}
 
 	// ATE: Alright - we all hate exception coding but ness here...
@@ -848,7 +844,7 @@ void ZeroAnimSurfaceCounts( )
 	for ( cnt = 0; cnt < NUMANIMATIONSURFACETYPES; cnt++ )
 	{
 		gAnimSurfaceDatabase[ cnt ].bUsageCount   = 0;
-		gAnimSurfaceDatabase[ cnt ].hVideoObject  = nullptr;
+		gAnimSurfaceDatabase[cnt].hVideoObject = nullptr;
 	}
 
 	for (auto& i : gbAnimUsageHistory)

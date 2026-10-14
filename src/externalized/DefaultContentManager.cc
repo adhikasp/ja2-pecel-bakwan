@@ -99,7 +99,8 @@ DefaultContentManager::DefaultContentManager(RustPointer<EngineOptions> engineOp
 {
 	m_engineOptions = std::move(engineOptions);
 	m_modManager.reset(ModManager_create(m_engineOptions.get()));
-	if (m_modManager.get() == nullptr) {
+	if (m_modManager.get() == nullptr)
+	{
 		RustPointer<char> err{ getRustError() };
 		throw std::runtime_error(err.get());
 	}
@@ -116,7 +117,8 @@ DefaultContentManager::DefaultContentManager(RustPointer<EngineOptions> engineOp
 
 	// Initialize temp dir
 	RustPointer<TempDir> tempDir(TempDir_create());
-	if (tempDir.get() == nullptr) {
+	if (tempDir.get() == nullptr)
+	{
 		RustPointer<char> err{ getRustError() };
 		auto error = ST::format("Failed to create temporary directory: {}", err.get());
 		throw std::runtime_error(error.c_str());
@@ -301,7 +303,8 @@ SGPFile* DefaultContentManager::openMapForReading(const ST::string& mapName) con
 std::vector<ST::string> DefaultContentManager::getAllFiles(const ST::string& directory, const ST::string& extension) const
 {
 	RustPointer<VecCString> vec(Vfs_readDir(m_vfs.get(), directory.c_str(), extension.c_str()));
-	if (vec.get() == nullptr) {
+	if (vec.get() == nullptr)
+	{
 		throw std::runtime_error(ST::format("DefaultContentManager::getAllFiles in {}: {}", directory.c_str(), getRustError()).c_str());
 	}
 	auto len = VecCString_len(vec.get());

@@ -8,7 +8,8 @@ RPCSmallFaceModel* RPCSmallFaceModel::deserialize(const JsonValue& json, const M
 	auto r = json.toObject();
 	ST::string profile = r.GetString("profile");
 	auto mercProfile = mercSystem->getMercProfileInfoByName(profile);
-	if (mercProfile == nullptr) {
+	if (mercProfile == nullptr)
+	{
 		throw DataError(ST::format("`{}` does not refer to a valid profile.", profile));
 	}
 	auto profileId = mercProfile->profileID;

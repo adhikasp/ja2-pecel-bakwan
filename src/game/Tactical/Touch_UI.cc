@@ -160,7 +160,8 @@ void TacticalTouchUIConfirmCallback(GUI_BUTTON*, UINT32 reason) {
 
 		if (guiCurrentCursorGridNo == NOWHERE || selected == nullptr) return;
 
-		if ( gpItemPointer != nullptr ) {
+		if (gpItemPointer != nullptr)
+		{
 			if ( HandleItemPointerClick( guiCurrentCursorGridNo ) )
 			{
 				// getout of mode
@@ -168,7 +169,9 @@ void TacticalTouchUIConfirmCallback(GUI_BUTTON*, UINT32 reason) {
 
 				guiPendingOverrideEvent = A_CHANGE_TO_MOVE;
 			}
-		} else {
+		}
+		else
+		{
 			switch( gCurrentUIMode )
 			{
 				case CONFIRM_MOVE_MODE: {

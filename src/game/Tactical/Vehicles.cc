@@ -100,7 +100,7 @@ INT32 AddVehicleToList(const SGPSector& sMap, INT16, const UINT8 ubType)
 	v->sSector         = sMap;
 	v->fValid          = TRUE;
 	v->ubVehicleType   = ubType;
-	v->pMercPath       = nullptr;
+	v->pMercPath = nullptr;
 	v->fDestroyed      = FALSE;
 	v->ubMovementGroup = gubVehicleMovementGroups[vid];
 
@@ -868,7 +868,7 @@ BOOLEAN OKUseVehicle( UINT8 ubProfile )
 
 static void TeleportVehicleToItsClosestSector(const UINT8 ubGroupID)
 {
-	GROUP  *pGroup = nullptr;
+	GROUP* pGroup = nullptr;
 	UINT32 uiTimeToNextSector;
 	UINT32 uiTimeToLastSector;
 	SGPSector sPrev, sNext;

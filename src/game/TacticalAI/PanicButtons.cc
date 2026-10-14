@@ -438,8 +438,7 @@ BOOLEAN NeedToRadioAboutPanicTrigger( void )
 	UINT32		uiPercentEnemiesKilled;
 	INT8			bLoop;
 
-	if (!(gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE) ||
-			gTacticalStatus.the_chosen_one != nullptr)
+	if (!(gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE) || gTacticalStatus.the_chosen_one != nullptr)
 	{
 		// already done!
 		return( FALSE );

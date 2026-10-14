@@ -271,8 +271,8 @@ static void DeleteEmailMouseRegions()
 
 void GameInitEmail()
 {
-	pEmailList=nullptr;
-	pPageList=nullptr;
+	pEmailList = nullptr;
+	pPageList = nullptr;
 
 	CurrentMail = nullptr;
 	PreviousMail = nullptr;
@@ -440,7 +440,6 @@ void HandleEmail( void )
 	// if delete notice needs to be displayed?...display it
 	if (MailToDelete != nullptr) DisplayDeleteNotice(MailToDelete);
 
-
 	// update buttons
 	HandleEmailViewerButtonStates( );
 
@@ -556,7 +555,7 @@ void AddEmailMessage(INT32 iMessageOffset, INT32 iMessageLength, INT32 iDate, UI
 	pTempEmail->Prev = pEmail;
 
 	// reset Next ptr
-	pTempEmail->Next=nullptr;
+	pTempEmail->Next = nullptr;
 
 	// set flag that new mail has arrived
 	fNewMailFlag=TRUE;
@@ -616,8 +615,7 @@ static void AddMessageToPages(Email* Mail)
 	if(!pPage)
 		AddEmailPage();
 	pPage=pPageList;
-	while (pPage->Next != nullptr && pPage->Mail[MAX_MESSAGES_PAGE - 1] != nullptr)
-		pPage=pPage->Next;
+	while (pPage->Next != nullptr && pPage->Mail[MAX_MESSAGES_PAGE - 1] != nullptr) pPage = pPage->Next;
 	// if list is full, add new page
 	while(iCounter <MAX_MESSAGES_PAGE)
 	{
@@ -934,7 +932,7 @@ static Record* GetFirstRecordOnThisPage(Record* const RecordList, INT32 const iP
 
 
 	// null record list, nothing to do
-	if( RecordList == nullptr )
+	if (RecordList == nullptr)
 	{
 		return ( CurrentRecord );
 	}
@@ -958,7 +956,7 @@ static Record* GetFirstRecordOnThisPage(Record* const RecordList, INT32 const iP
 			CurrentRecord = CurrentRecord -> Next;
 
 			// check if we have gone too far?
-			if( CurrentRecord == nullptr )
+			if (CurrentRecord == nullptr)
 			{
 				return( CurrentRecord );
 			}
@@ -1364,7 +1362,7 @@ static BOOLEAN DisplayDeleteNotice(Email* pMail)
 	}
 
 	// error check.. no valid message passed
-	if( pMail == nullptr )
+	if (pMail == nullptr)
 	{
 		return ( FALSE );
 	}
@@ -1601,8 +1599,8 @@ static void ClearOutEmailMessageRecordsList(void)
 
 	for( iCounter = 0; iCounter < MAX_NUMBER_EMAIL_PAGES; iCounter++ )
 	{
-		pEmailPageInfo[ iCounter ].pFirstRecord = nullptr;
-		pEmailPageInfo[ iCounter ].pLastRecord = nullptr;
+		pEmailPageInfo[iCounter].pFirstRecord = nullptr;
+		pEmailPageInfo[iCounter].pLastRecord = nullptr;
 		pEmailPageInfo[ iCounter ].iPageNumber = iCounter;
 	}
 

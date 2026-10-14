@@ -366,7 +366,8 @@ static void CreateTextures()
 					SDL_PIXELFORMAT_RGB565,
 					SDL_TEXTUREACCESS_STREAMING,
 					SCREEN_WIDTH, SCREEN_HEIGHT);
-	if (ScreenTexture == nullptr) {
+	if (ScreenTexture == nullptr)
+	{
 		SLOGE("SDL_CreateTexture for ScreenTexture failed: {}\n", SDL_GetError());
 	}
 }
@@ -680,7 +681,8 @@ static void CreateSoftwareSurfaces()
 					SDL_PIXELFORMAT_RGB565
 	);
 
-	if (ScreenBuffer == nullptr) {
+	if (ScreenBuffer == nullptr)
+	{
 		SLOGE("SDL_CreateRGBSurface for ScreenBuffer failed: {}\n", SDL_GetError());
 	}
 
@@ -797,12 +799,14 @@ void ShutdownVideoManager(void)
 	}
 	VideoGpu::Shutdown();
 
-	if (ScreenTexture != nullptr) {
+	if (ScreenTexture != nullptr)
+	{
 		SDL_DestroyTexture(ScreenTexture);
 		ScreenTexture = nullptr;
 	}
 
-	if (ScaledScreenTexture != nullptr) {
+	if (ScaledScreenTexture != nullptr)
+	{
 		SDL_DestroyTexture(ScaledScreenTexture);
 		ScaledScreenTexture = nullptr;
 	}
@@ -819,18 +823,21 @@ void ShutdownVideoManager(void)
 	WorldBuffer = nullptr;
 	Layered = false;
 
-	if (GameRenderer != nullptr) {
+	if (GameRenderer != nullptr)
+	{
 		SDL_DestroyRenderer(GameRenderer);
 		GameRenderer = nullptr;
 	}
 
-	if (GpuDevice != nullptr) {
+	if (GpuDevice != nullptr)
+	{
 		// Not destroyed: the world renderer holds a pointer to the shared device and may be re-used after a
 		// video restart (the setup screen). Like the old SDL_Renderer path it lives until process exit.
 		GpuDevice = nullptr;
 	}
 
-	if (g_game_window != nullptr) {
+	if (g_game_window != nullptr)
+	{
 		SDL_DestroyWindow(g_game_window);
 		g_game_window = nullptr;
 	}

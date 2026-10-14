@@ -390,7 +390,7 @@ void RevealRoofsAndItems(SOLDIERTYPE* const pSoldier, const BOOLEAN fShowLocator
 			{
 				ubMovementCost = DoorTravelCost(pSoldier, marker, ubMovementCost, pSoldier->bTeam == OUR_TEAM, &iDoorGridNo);
 				pStructure = FindStructure( (INT16) iDoorGridNo, STRUCTURE_ANYDOOR );
-				if ( pStructure != nullptr && pStructure->fFlags & STRUCTURE_TRANSPARENT)
+				if (pStructure != nullptr && pStructure->fFlags & STRUCTURE_TRANSPARENT)
 				{
 					// cell door or somehow otherwise transparent; allow merc to see through
 					ubMovementCost = TRAVELCOST_FLAT;
@@ -610,7 +610,7 @@ void RevealRoofsAndItems(SOLDIERTYPE* const pSoldier, const BOOLEAN fShowLocator
 						STRUCTURE* pStructure;
 						pStructure = FindStructure( (INT16)marker, STRUCTURE_SLANTED_ROOF );
 
-						if ( pStructure != nullptr )
+						if (pStructure != nullptr)
 						{
 							// ADD TO SLANTED ROOF LIST!
 							AddSlantRoofFOVSlot( (INT16)marker );
@@ -625,7 +625,8 @@ void RevealRoofsAndItems(SOLDIERTYPE* const pSoldier, const BOOLEAN fShowLocator
 							// OK, if we are underground, we don't want to reveal stuff if
 							// 1 ) there is a roof over us and
 							// 2 ) we are not in a room
-							if (gubWorldRoomInfo[marker] != NO_ROOM || TypeRangeExistsInRoofLayer(marker, FIRSTROOF, FOURTHROOF) == nullptr)
+							if (gubWorldRoomInfo[marker] != NO_ROOM ||
+								TypeRangeExistsInRoofLayer(marker, FIRSTROOF, FOURTHROOF) == nullptr)
 							{
 								gpWorldLevelData[ marker ].uiFlags |= MAPELEMENT_REVEALED;
 								if( gfCaves )

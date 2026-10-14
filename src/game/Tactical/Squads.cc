@@ -655,11 +655,11 @@ void SaveSquadInfoToSavedGameFile(HWFILE const f)
 		{
 			// We write all soldiers in squad, and then we fill up the end of
 			// squad up to multiples of 6 for save compatability.
-			const SOLDIERTYPE *const s = (slot < squadSize) ? Squad[squad][slot] : nullptr;
+			const SOLDIERTYPE* const s = (slot < squadSize) ? Squad[squad][slot] : nullptr;
 
 			if (squadSize <= 6 && slot == 6) break;                    // always write 6 slots if squad size <= 6
 
-			if (squadSize > 6 && s == nullptr && (slot % 6) == 0) break;  // writes none, or multiples of 6
+			if (squadSize > 6 && s == nullptr && (slot % 6) == 0) break; // writes none, or multiples of 6
 
 			INJ_I16(d, s ? s->ubID : -1)
 			INJ_U8(d, SQUAD_INFO_FORMAT_VERSION)

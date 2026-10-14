@@ -31,9 +31,8 @@ INT16   gsFadeRealCount;
 using FADE_FUNCTION = void (*)();
 static FADE_FUNCTION gFadeFunction = nullptr;
 
-FADE_HOOK gFadeInDoneCallback  = nullptr;
+FADE_HOOK gFadeInDoneCallback = nullptr;
 FADE_HOOK gFadeOutDoneCallback = nullptr;
-
 
 BOOLEAN gfFadeIn      = FALSE;
 BOOLEAN gfFadeOut     = FALSE;
@@ -96,7 +95,7 @@ BOOLEAN HandleFadeOutCallback( )
 	{
 		gfFadeOutDone = FALSE;
 
-		if ( gFadeOutDoneCallback != nullptr )
+		if (gFadeOutDoneCallback != nullptr)
 		{
 			gFadeOutDoneCallback( );
 
@@ -116,7 +115,7 @@ BOOLEAN HandleFadeInCallback( )
 	{
 		gfFadeInDone = FALSE;
 
-		if ( gFadeInDoneCallback != nullptr )
+		if (gFadeInDoneCallback != nullptr)
 		{
 			gFadeInDoneCallback( );
 		}

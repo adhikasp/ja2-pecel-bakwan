@@ -166,7 +166,7 @@ void HandleMouseOverSoldierFaceForContMove(SOLDIERTYPE* pSoldier, BOOLEAN fOn)
 {
 	INT16 sGridNo;
 
-	if ( pSoldier == nullptr )
+	if (pSoldier == nullptr)
 	{
 		return;
 	}

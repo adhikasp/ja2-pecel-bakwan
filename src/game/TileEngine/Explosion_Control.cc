@@ -114,7 +114,8 @@ void InternalIgniteExplosion(SOLDIERTYPE* const owner, const INT16 sX, const INT
 	SLOGD("Incrementing Attack: Explosion gone off, Count now {}", gTacticalStatus.ubAttackBusyCount);
 
 	EXPLOSIONTYPE* const e = GetFreeExplosion();
-	if (e == nullptr) {
+	if (e == nullptr)
+	{
 		SLOGE("Could not get free explosion pointer in InternalIgniteExplosion");
 		return;
 	}
@@ -366,7 +367,8 @@ static bool ExplosiveDamageStructureAtGridNo(STRUCTURE* const pCurrent, STRUCTUR
 		// Damage structure!
 		INT16 const sX = CenterX(grid_no);
 		INT16 const sY = CenterY(grid_no);
-		INT8 bDamageReturnVal = DamageStructure(pCurrent, wound_amt, STRUCTURE_DAMAGE_EXPLOSION, grid_no, sX, sY, nullptr);
+		INT8 bDamageReturnVal =
+			DamageStructure(pCurrent, wound_amt, STRUCTURE_DAMAGE_EXPLOSION, grid_no, sX, sY, nullptr);
 		if (bDamageReturnVal == STRUCTURE_NOT_DAMAGED) return true;
 
 		BOOLEAN fDestroyed = (bDamageReturnVal == STRUCTURE_DESTROYED);
@@ -1060,7 +1062,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 
 	if ( IS_TRAVELCOST_DOOR( ubMovementCost ) )
 	{
-		ubMovementCost = DoorTravelCost( nullptr, uiNewSpot, ubMovementCost, FALSE, nullptr );
+		ubMovementCost = DoorTravelCost(nullptr, uiNewSpot, ubMovementCost, FALSE, nullptr);
 		// If we have hit a wall, STOP HERE
 		if (ubMovementCost >= TRAVELCOST_BLOCKED)
 		{
@@ -1159,7 +1161,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 					fBlowWindowSouth = TRUE;
 				}
 
-				if ( pBlockingStructure != nullptr )
+				if (pBlockingStructure != nullptr)
 				{
 					WindowHit( (INT16)uiNewSpot, pBlockingStructure->usStructureID, fBlowWindowSouth, TRUE );
 				}
@@ -1177,7 +1179,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 			}
 			if ( BlockingTemp == BLOCKING_TOPRIGHT_WINDOW || BlockingTemp == BLOCKING_TOPLEFT_WINDOW )
 			{
-				if ( pBlockingStructure != nullptr )
+				if (pBlockingStructure != nullptr)
 				{
 					WindowHit( sNewGridNo, pBlockingStructure->usStructureID, FALSE, TRUE );
 				}
@@ -1193,7 +1195,7 @@ static void GetRayStopInfo(UINT32 uiNewSpot, UINT8 ubDir, INT8 bLevel, BOOLEAN f
 			}
 			if ( BlockingTemp == BLOCKING_TOPRIGHT_WINDOW || BlockingTemp == BLOCKING_TOPLEFT_WINDOW )
 			{
-				if ( pBlockingStructure != nullptr )
+				if (pBlockingStructure != nullptr)
 				{
 					WindowHit( sNewGridNo, pBlockingStructure->usStructureID, FALSE, TRUE );
 				}
@@ -1564,11 +1566,11 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				{
 					if (pStructure->fFlags & STRUCTURE_BASE_TILE)
 					{
-						HandleDoorChangeFromGridNo( nullptr, sGridNo, FALSE );
+						HandleDoorChangeFromGridNo(nullptr, sGridNo, FALSE);
 					}
 					else
 					{
-						HandleDoorChangeFromGridNo( nullptr, pStructure->sBaseGridNo, FALSE );
+						HandleDoorChangeFromGridNo(nullptr, pStructure->sBaseGridNo, FALSE);
 					}
 					gfExplosionQueueMayHaveChangedSight = TRUE;
 				}
@@ -1587,11 +1589,11 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				{
 					if (pStructure->fFlags & STRUCTURE_BASE_TILE)
 					{
-						HandleDoorChangeFromGridNo( nullptr, sGridNo , FALSE );
+						HandleDoorChangeFromGridNo(nullptr, sGridNo, FALSE);
 					}
 					else
 					{
-						HandleDoorChangeFromGridNo( nullptr, pStructure->sBaseGridNo, FALSE );
+						HandleDoorChangeFromGridNo(nullptr, pStructure->sBaseGridNo, FALSE);
 					}
 					gfExplosionQueueMayHaveChangedSight = TRUE;
 				}
@@ -1613,11 +1615,11 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 			{
 				if (pStructure->fFlags & STRUCTURE_BASE_TILE)
 				{
-					HandleDoorChangeFromGridNo( nullptr, sGridNo, FALSE );
+					HandleDoorChangeFromGridNo(nullptr, sGridNo, FALSE);
 				}
 				else
 				{
-					HandleDoorChangeFromGridNo( nullptr, pStructure->sBaseGridNo , FALSE );
+					HandleDoorChangeFromGridNo(nullptr, pStructure->sBaseGridNo, FALSE);
 				}
 				gfExplosionQueueMayHaveChangedSight = TRUE;
 			}
@@ -1894,30 +1896,22 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				UINT8 ubRoom;
 				if ( InAHiddenRoom( sGridNo, &ubRoom ) )
 				{
-					RemoveRoomRoof( sGridNo, ubRoom, nullptr );
+					RemoveRoomRoof(sGridNo, ubRoom, nullptr);
 				}
 			}
 			break;
-		case ACTION_ITEM_LOCAL_ALARM:
-			MakeNoise(nullptr, sGridNo, 0, 30, NOISE_SILENT_ALARM);
-			break;
-		case ACTION_ITEM_GLOBAL_ALARM:
-			CallAvailableEnemiesTo( sGridNo );
-			break;
-		case ACTION_ITEM_BLOODCAT_ALARM:
-			CallAvailableTeamEnemiesTo( sGridNo, CREATURE_TEAM );
-			break;
-		case ACTION_ITEM_KLAXON:
-			PlayLocationJA2Sample(sGridNo, KLAXON_ALARM, MIDVOLUME, 5);
-			break;
-		case ACTION_ITEM_MUSEUM_ALARM:
-			PlayLocationJA2Sample(sGridNo, KLAXON_ALARM, MIDVOLUME, 5);
-			CallEldinTo( sGridNo );
-			break;
-		default:
-			// error message here
-			SLOGW("Action item with invalid action in gridno {}!", sGridNo);
-			break;
+			case ACTION_ITEM_LOCAL_ALARM: MakeNoise(nullptr, sGridNo, 0, 30, NOISE_SILENT_ALARM); break;
+			case ACTION_ITEM_GLOBAL_ALARM: CallAvailableEnemiesTo(sGridNo); break;
+			case ACTION_ITEM_BLOODCAT_ALARM: CallAvailableTeamEnemiesTo(sGridNo, CREATURE_TEAM); break;
+			case ACTION_ITEM_KLAXON: PlayLocationJA2Sample(sGridNo, KLAXON_ALARM, MIDVOLUME, 5); break;
+			case ACTION_ITEM_MUSEUM_ALARM:
+				PlayLocationJA2Sample(sGridNo, KLAXON_ALARM, MIDVOLUME, 5);
+				CallEldinTo(sGridNo);
+				break;
+			default:
+				// error message here
+				SLOGW("Action item with invalid action in gridno {}!", sGridNo);
+				break;
 	}
 }
 

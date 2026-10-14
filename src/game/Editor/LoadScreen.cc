@@ -893,7 +893,7 @@ static ScreenID ProcessFileIO(void)
 			gbCurrentFileIOStatus = LOADING_MAP;
 			if( gfEditMode && iCurrentTaskbar == TASK_MERCS )
 				IndicateSelectedMerc( SELECT_NO_MERC );
-			SpecifyItemToEdit( nullptr, -1 );
+			SpecifyItemToEdit(nullptr, -1);
 			return LOADSAVE_SCREEN;
 		case LOADING_MAP: //load map
 			DisableUndo();

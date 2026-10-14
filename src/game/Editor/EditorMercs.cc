@@ -136,7 +136,7 @@ UINT8 gubScheduleInstructions = SCHEDULE_INSTRUCTIONS_NONE;
 //array which keeps track of which item is in which slot.  This is dependant on the selected merc, so
 //these temp values must be updated when different mercs are selected, and reset when a merc detailed
 //placement is created.
-OBJECTTYPE *gpMercSlotItem[9] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+OBJECTTYPE* gpMercSlotItem[9] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
 //Because we only support these nine slots, they aren't continuous values, so this array helps
 //processing functions by referring to this array to get the appropriate slot.
 INT8 gbMercSlotTypes[9] = { HELMETPOS, VESTPOS, LEGPOS, HANDPOS, SECONDHANDPOS,
@@ -247,7 +247,7 @@ void EntryInitEditorMercsInfo()
 		iCurStart += gubpNumReplacementsPerRange[ x - 1 ];
 		iEditColorStart[x] = iCurStart;
 	}
-	g_selected_merc      = nullptr;
+	g_selected_merc = nullptr;
 	gsSelectedMercGridNo = 0;
 
 	gfCanEditMercs = TRUE;
@@ -425,7 +425,8 @@ void HandleRightClickOnMerc( INT32 iMapIndex )
 			IndicateSelectedMerc(this_merc->ubID);
 		}
 	}
-	else if (g_selected_merc != nullptr && IsLocationSittable(iMapIndex, gfRoofPlacement)) // We want to move the selected merc to this new location.
+	else if (g_selected_merc != nullptr &&
+			 IsLocationSittable(iMapIndex, gfRoofPlacement)) // We want to move the selected merc to this new location.
 	{
 		RemoveAllObjectsOfTypeRange( gsSelectedMercGridNo, CONFIRMMOVE, CONFIRMMOVE );
 		EVENT_SetSoldierPosition(gpSelected->pSoldier, iMapIndex, SSP_NONE);
@@ -493,7 +494,8 @@ void AddMercWaypoint( UINT32 iMapIndex )
 	if ( iActionParam == 0 )
 		return;
 
-	if (g_selected_merc == nullptr || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID || g_selected_merc->ubID >= MAXMERCS)
+	if (g_selected_merc == nullptr || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID ||
+		g_selected_merc->ubID >= MAXMERCS)
 		return;
 
 	if ( iActionParam > gpSelected->pSoldier->bPatrolCnt )
@@ -531,7 +533,8 @@ void EraseMercWaypoint()
 	if ( iActionParam == 0 )
 		return;
 
-	if (g_selected_merc == nullptr || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID || g_selected_merc->ubID >= MAXMERCS)
+	if (g_selected_merc == nullptr || g_selected_merc->ubID <= gTacticalStatus.Team[OUR_TEAM].bLastID ||
+		g_selected_merc->ubID >= MAXMERCS)
 		return;
 
 	// Fill up missing areas
@@ -924,7 +927,7 @@ void IndicateSelectedMerc( INT16 sID )
 		case SELECT_NO_MERC:
 			SetMercEditability( TRUE );
 			gpSelected = nullptr;
-			g_selected_merc  = nullptr;
+			g_selected_merc = nullptr;
 			gsSelectedGridNo = 0;
 			SetMercEditingMode( MERC_TEAMMODE );
 			return; //we already deselected the previous merc.
@@ -945,7 +948,7 @@ void IndicateSelectedMerc( INT16 sID )
 			gpSelected = FindSoldierInitNodeWithID( (UINT8)sID );
 			if( !gpSelected )
 			{
-				g_selected_merc  = nullptr;
+				g_selected_merc = nullptr;
 				gsSelectedGridNo = 0;
 				SetMercEditability( TRUE );
 				SetMercEditingMode( MERC_TEAMMODE );
@@ -1246,7 +1249,7 @@ static void ExtractAndUpdateMercProfile(void)
 static void SetupTextInputForMercSchedule(void)
 {
 	InitTextInputModeWithScheme( DEFAULT_SCHEME );
-	AddUserInputField( nullptr );
+	AddUserInputField(nullptr);
 	AddTextInputField(268, EDITOR_TASKBAR_POS_Y + 13, 36, 16, MSYS_PRIORITY_NORMAL, {}, 6, INPUTTYPE_24HOURCLOCK);
 	SetExclusive24HourTimeValue( 1, gCurrSchedule.usTime[0] );
 	AddTextInputField(268, EDITOR_TASKBAR_POS_Y + 34, 36, 16, MSYS_PRIORITY_NORMAL, {}, 6, INPUTTYPE_24HOURCLOCK);
@@ -1266,7 +1269,7 @@ void ExtractAndUpdateMercSchedule()
 	INT32 i;
 	BOOLEAN fValidSchedule = FALSE;
 	BOOLEAN fScheduleNeedsUpdate = FALSE;
-	SCHEDULENODE *pNext = nullptr;
+	SCHEDULENODE* pNext = nullptr;
 	if( !gpSelected )
 		return;
 	//extract all of the fields into a temp schedulenode.
@@ -1652,7 +1655,7 @@ void SetMercEditingMode( UINT8 ubNewMode )
 			UpdateMercItemSlots();
 			ShowItemStatsPanel();
 			if( gbCurrSelect == -1 )
-				SpecifyItemToEdit( nullptr, -1 );
+				SpecifyItemToEdit(nullptr, -1);
 			else
 				SpecifyItemToEdit( gpMercSlotItem[ gbCurrSelect ], -1 );
 			HideEditorButtons( MERCS_DELETE, MERCS_NEXT );
@@ -1898,7 +1901,7 @@ void UpdateMercsInfo()
 				MPrint(396, EDITOR_TASKBAR_POS_Y + 38, "RANDOM");
 				MPrint(396, EDITOR_TASKBAR_POS_Y + 62, "RANDOM");
 				MPrint(396, EDITOR_TASKBAR_POS_Y + 86, "RANDOM");
-				ShowEditMercPalettes( nullptr ); //will display grey scale to signify random
+				ShowEditMercPalettes(nullptr); //will display grey scale to signify random
 			}
 			DisplayBodyTypeInfo();
 			break;
@@ -2332,7 +2335,7 @@ static void UpdateMercItemSlots(void)
 	{
 		for( x = 0; x < 9; x++ )
 		{
-			gpMercSlotItem[ x ] = nullptr;
+			gpMercSlotItem[x] = nullptr;
 		}
 	}
 	else
@@ -2350,7 +2353,7 @@ static void UpdateMercItemSlots(void)
 		}
 	}
 	SetDroppableCheckboxesBasedOnMercsInventory();
-	SpecifyItemToEdit( nullptr, -1 );
+	SpecifyItemToEdit(nullptr, -1);
 	gbCurrSelect = -1;
 	gbCurrHilite = -1;
 }

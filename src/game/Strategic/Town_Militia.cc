@@ -45,7 +45,7 @@ INT32 giTotalCostOfTraining = 0;
 
 //the completed list of sector soldiers for training militia
 static SOLDIERTYPE* g_list_of_merc_in_sectors_completed_militia_training[SIZE_OF_MILITIA_COMPLETED_TRAINING_LIST];
-SOLDIERTYPE *pMilitiaTrainerSoldier = nullptr;
+SOLDIERTYPE* pMilitiaTrainerSoldier = nullptr;
 
 // note that these sector values are STRATEGIC INDEXES, not 0-255!
 static INT16 gsUnpaidStrategicSector[MAX_CHARACTER_COUNT];
@@ -737,7 +737,6 @@ void HandleContinueOfTownTraining( void )
 	INT32 iCounter = 0;
 	BOOLEAN fContinueEventPosted = FALSE;
 
-
 	while (g_list_of_merc_in_sectors_completed_militia_training[iCounter] != nullptr)
 	{
 		// get the soldier
@@ -923,7 +922,8 @@ BOOLEAN MilitiaTrainingAllowedInSector(const SGPSector& sector)
 BOOLEAN MilitiaTrainingAllowedInTown( INT8 bTownId )
 {
 	auto town = GCM->getTown(bTownId);
-	if (town == nullptr) {
+	if (town == nullptr)
+	{
 		return false;
 	}
 	return town->isMilitiaTrainingAllowed;

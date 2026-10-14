@@ -44,13 +44,11 @@ struct CONTRACT_NEWAL_LIST_NODE
 	UINT8 ubFiller[3]; // XXX HACK000B
 };
 
-
 static SOLDIERTYPE* pLeaveSoldier = nullptr;
 
 BOOLEAN	fEnterMapDueToContract = FALSE;
 
-
-SOLDIERTYPE *pContractReHireSoldier = nullptr;
+SOLDIERTYPE* pContractReHireSoldier = nullptr;
 
 static UINT8        gubContractLength  = 0; // Used when extending a mercs insurance contract
 static SOLDIERTYPE* gpInsuranceSoldier = 0;
@@ -131,7 +129,7 @@ void HandleContractRenewalSequence( )
 		// Get soldier - if there is none, adavance to next
 		SOLDIERTYPE* const pSoldier = FindSoldierByProfileID(ContractRenewalList[ubCurrentContractRenewal].ubProfileID); // Steve Willis, 80
 
-		if ( pSoldier == nullptr )
+		if (pSoldier == nullptr)
 		{
 			// Advance to next guy!
 			EndCurrentContractRenewal( );
@@ -920,7 +918,7 @@ void FindOutIfAnyMercAboutToLeaveIsGonnaRenew(void)
 
 static void HandleNotifyPlayerCantAffordInsurance(void)
 {
-	DoScreenIndependantMessageBox( zMarksMapScreenText[ 9 ], MSG_BOX_FLAG_OK, nullptr );
+	DoScreenIndependantMessageBox(zMarksMapScreenText[9], MSG_BOX_FLAG_OK, nullptr);
 }
 
 

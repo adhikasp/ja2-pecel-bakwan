@@ -53,10 +53,11 @@ struct PopUpBox
 
 static PopUpBox* PopUpBoxList[MAX_POPUP_BOX_COUNT];
 
-#define FOR_EACH_POPUP_BOX(iter) \
-	FOR_EACH(PopUpBox*, iter, PopUpBoxList) \
-		if (*iter == nullptr) continue; else
-
+#define FOR_EACH_POPUP_BOX(iter)                                                                                       \
+	FOR_EACH(PopUpBox*, iter, PopUpBoxList)                                                                            \
+	if (*iter == nullptr)                                                                                              \
+		continue;                                                                                                      \
+	else
 
 #define BORDER_WIDTH  16
 #define BORDER_HEIGHT  8

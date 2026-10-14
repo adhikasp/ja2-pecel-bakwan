@@ -340,9 +340,7 @@ static void CompileWorldTerrainIDs(void)
 			}
 		}
 
-		if (n == nullptr                   ||
-				n->usIndex >= NUMBEROFTILES ||
-				gTileDatabase[n->usIndex].ubTerrainID == NO_TERRAIN)
+		if (n == nullptr || n->usIndex >= NUMBEROFTILES || gTileDatabase[n->usIndex].ubTerrainID == NO_TERRAIN)
 		{	// Try terrain instead!
 			n = gpWorldLevelData[sGridNo].pLandHead;
 		}
@@ -419,7 +417,7 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 	{ // structures in tile
 		// consider the land
 		pLand = gpWorldLevelData[ usGridNo ].pLandHead;
-		if ( pLand != nullptr )
+		if (pLand != nullptr)
 		{
 			// Set TEMPORARY cost here
 
@@ -547,14 +545,14 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 						}
 
 						if (FindStructure(usGridNo - WORLD_COLS, STRUCTURE_OBSTACLE) == nullptr &&
-								FindStructure(usGridNo + WORLD_COLS, STRUCTURE_OBSTACLE) == nullptr)
+							FindStructure(usGridNo + WORLD_COLS, STRUCTURE_OBSTACLE) == nullptr)
 						{
 							FORCE_SET_MOVEMENTCOST( usGridNo, NORTH, 0, TRAVELCOST_FENCE );
 							FORCE_SET_MOVEMENTCOST( usGridNo, SOUTH, 0, TRAVELCOST_FENCE );
 						}
 
 						if (FindStructure(usGridNo - 1, STRUCTURE_OBSTACLE) == nullptr &&
-								FindStructure(usGridNo + 1, STRUCTURE_OBSTACLE) == nullptr)
+							FindStructure(usGridNo + 1, STRUCTURE_OBSTACLE) == nullptr)
 						{
 							FORCE_SET_MOVEMENTCOST( usGridNo, EAST, 0, TRAVELCOST_FENCE );
 							FORCE_SET_MOVEMENTCOST( usGridNo, WEST, 0, TRAVELCOST_FENCE );
@@ -1015,7 +1013,7 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 		} while (pStructure != nullptr);
 
 		// HIGHEST LAYER
-		if ((gpWorldLevelData[ usGridNo ].pRoofHead != nullptr))
+		if ((gpWorldLevelData[usGridNo].pRoofHead != nullptr))
 		{
 			if (!fStructuresOnRoof)
 			{
@@ -1067,7 +1065,7 @@ static void CompileTileMovementCosts(UINT16 usGridNo)
 		}
 */
 		// HIGHEST LEVEL
-		if (gpWorldLevelData[ usGridNo ].pRoofHead != nullptr)
+		if (gpWorldLevelData[usGridNo].pRoofHead != nullptr)
 		{
 			for (ubDirLoop=0; ubDirLoop < 8; ubDirLoop++)
 			{
@@ -2694,7 +2692,7 @@ void CalculateWorldWireFrameTiles( BOOLEAN fForce )
 
 			pStructure = gpWorldLevelData[ cnt ].pStructureHead;
 
-			while ( pStructure != nullptr )
+			while (pStructure != nullptr)
 			{
 				// Check for doors
 				if ( pStructure->fFlags & STRUCTURE_ANYDOOR )

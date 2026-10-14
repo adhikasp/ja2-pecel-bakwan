@@ -113,7 +113,7 @@ BOOLEAN HandleCheckForBadChangeToGetThrough(SOLDIERTYPE* const pSoldier, const S
 {
 	BOOLEAN fBadChangeToGetThrough = FALSE;
 
-	if ( pTargetSoldier != nullptr )
+	if (pTargetSoldier != nullptr)
 	{
 		if ( SoldierToSoldierBodyPartChanceToGetThrough( pSoldier, pTargetSoldier, pSoldier->bAimShotLocation ) < OK_CHANCE_TO_GET_THROUGH )
 		{
@@ -444,7 +444,7 @@ ItemHandleResult HandleItem(SOLDIERTYPE* const s, INT16 usGridNo, const INT8 bLe
 
 			// Make sure movement costs are OK.... Check for blocking doors also
 			if (gubWorldMovementCosts[sSpot][i][bLevel] >= TRAVELCOST_BLOCKED ||
-			    DoorTravelCost(s, sSpot, gubWorldMovementCosts[sSpot][i][bLevel], FALSE, nullptr) >= TRAVELCOST_BLOCKED)
+				DoorTravelCost(s, sSpot, gubWorldMovementCosts[sSpot][i][bLevel], FALSE, nullptr) >= TRAVELCOST_BLOCKED)
 			{
 				continue;
 			}
@@ -530,7 +530,8 @@ ItemHandleResult HandleItem(SOLDIERTYPE* const s, INT16 usGridNo, const INT8 bLe
 		{
 			soldier.setPendingAction(MERC_GIVEAID);
 			if      (fHadToUseCursorPos) s->sPendingActionData2 = usMapPos;
-			else if (tgt != nullptr)        s->sPendingActionData2 = tgt->sGridNo;
+			else if (tgt != nullptr)
+				s->sPendingActionData2 = tgt->sGridNo;
 			else                         s->sPendingActionData2 = usGridNo;
 			s->bPendingActionData3      = ubDirection;
 
@@ -970,7 +971,7 @@ void HandleSoldierUseRemote( SOLDIERTYPE *pSoldier, INT16 sGridNo )
 void SoldierHandleDropItem( SOLDIERTYPE *pSoldier )
 {
 	// LOOK IN PANDING DATA FOR ITEM TO DROP, AND LOCATION
-	if ( pSoldier->pTempObject != nullptr )
+	if (pSoldier->pTempObject != nullptr)
 	{
 		if ( pSoldier->bVisible != -1 )
 		{
@@ -1033,7 +1034,7 @@ void HandleSoldierThrowItem( SOLDIERTYPE *pSoldier, INT16 sGridNo )
 			if ( sGridNo == pSoldier->sGridNo )
 			{
 				// OK, JUST DROP ITEM!
-				if ( pSoldier->pTempObject != nullptr )
+				if (pSoldier->pTempObject != nullptr)
 				{
 					AddItemToPool(sGridNo, pSoldier->pTempObject, VISIBLE, pSoldier->bLevel, 0, -1);
 					NotifySoldiersToLookforItems( );
@@ -1204,7 +1205,8 @@ void SoldierGetItemFromWorld(SOLDIERTYPE* const s, const INT32 iItemIndex, const
 				// ask about activating the switch!
 				bTempFrequency = o.bFrequency;
 				gpTempSoldier = s;
-				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[ACTIVATE_SWITCH_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, SwitchMessageBoxCallBack, nullptr);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[ACTIVATE_SWITCH_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+							 SwitchMessageBoxCallBack, nullptr);
 				continue;
 			}
 
@@ -1251,7 +1253,8 @@ void SoldierGetItemFromWorld(SOLDIERTYPE* const s, const INT32 iItemIndex, const
 				// handle switch
 				bTempFrequency = o.bFrequency;
 				gpTempSoldier  = s;
-				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[ACTIVATE_SWITCH_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, SwitchMessageBoxCallBack, nullptr);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[ACTIVATE_SWITCH_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+							 SwitchMessageBoxCallBack, nullptr);
 			}
 			else
 			{
@@ -1587,7 +1590,7 @@ INT32 InternalAddItemToPool(INT16* const psGridNo, OBJECTTYPE* const pObject, Vi
 	// Check for and existing pool on the object layer
 
 	ITEM_POOL* const new_item = new ITEM_POOL{};
-	new_item->pNext      = nullptr;
+	new_item->pNext = nullptr;
 	new_item->iItemIndex = iWorldItem;
 
 	ITEM_POOL* item_pool = GetItemPool(sNewGridNo, ubLevel);
@@ -1659,7 +1662,7 @@ BOOLEAN ItemTypeExistsAtLocation(INT16 const sGridNo, UINT16 const usItem, UINT8
 BOOLEAN DoesItemPoolContainAnyHiddenItems(const ITEM_POOL* pItemPool)
 {
 	// LOOP THROUGH LIST TO FIND NODE WE WANT
-	while( pItemPool != nullptr )
+	while (pItemPool != nullptr)
 	{
 		if (GetWorldItem(pItemPool->iItemIndex).bVisible == HIDDEN_ITEM)
 		{
@@ -1845,8 +1848,7 @@ void RemoveItemFromPool(WORLDITEM& wi)
 	for (;; prev = item, item = item->pNext)
 	{
 		// Could not find item? Maybe somebody got it before we got there!
-		if (item == nullptr)
-			return;
+		if (item == nullptr) return;
 		if (&GetWorldItem(item->iItemIndex) == &wi)
 			break;
 	}
@@ -1943,7 +1945,7 @@ BOOLEAN AnyItemsVisibleOnLevel(const ITEM_POOL* pItemPool, INT8 bZLevel)
 	}
 
 	//Determine total #
-	while( pItemPool != nullptr )
+	while (pItemPool != nullptr)
 	{
 		WORLDITEM const& wi = GetWorldItem(pItemPool->iItemIndex);
 		if (wi.bRenderZHeightAboveLevel == bZLevel && wi.bVisible == VISIBLE)
@@ -2247,8 +2249,7 @@ SOLDIERTYPE* VerifyGiveItem(SOLDIERTYPE* const pSoldier)
 	if (tgt != nullptr)
 	{
 		// Check if it's the same merc!
-		if (tgt->ubID != ubTargetMercID)
-			return nullptr;
+		if (tgt->ubID != ubTargetMercID) return nullptr;
 
 		// Look for item in hand....
 
@@ -2256,7 +2257,7 @@ SOLDIERTYPE* VerifyGiveItem(SOLDIERTYPE* const pSoldier)
 	}
 	else
 	{
-		if ( pSoldier->pTempObject != nullptr )
+		if (pSoldier->pTempObject != nullptr)
 		{
 			AddItemToPool(pSoldier->sGridNo, pSoldier->pTempObject, VISIBLE, pSoldier->bLevel, 0 , -1);
 
@@ -2303,9 +2304,7 @@ void SoldierGiveItemFromAnimation( SOLDIERTYPE *pSoldier )
 
 	// ATE: OK, check if we have an item in the cursor from
 	// this soldier and from this inv slot, if so, delete!!!!!!!
-	if (gpItemPointer != nullptr &&
-		pSoldier == gpItemPointerSoldier &&
-		bInvPos == gbItemPointerSrcSlot &&
+	if (gpItemPointer != nullptr && pSoldier == gpItemPointerSoldier && bInvPos == gbItemPointerSrcSlot &&
 		usItemNum == gpItemPointer->usItem)
 	{
 		// Remove!!!
@@ -2546,7 +2545,8 @@ static void StartBombMessageBox(SOLDIERTYPE* const s, INT16 const gridno)
 	{
 		return;
 	}
-	DoMessageBox(MSG_BOX_BASIC_SMALL_BUTTONS, text, GAME_SCREEN, MSG_BOX_FLAG_FOUR_NUMBERED_BUTTONS, BombMessageBoxCallBack, nullptr);
+	DoMessageBox(MSG_BOX_BASIC_SMALL_BUTTONS, text, GAME_SCREEN, MSG_BOX_FLAG_FOUR_NUMBERED_BUTTONS,
+				 BombMessageBoxCallBack, nullptr);
 }
 
 
@@ -2592,7 +2592,9 @@ static void BombMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
 				else
 				{
 					// OOPS! ... BOOM!
-					IgniteExplosionXY(nullptr, gpTempSoldier->sX, gpTempSoldier->sY, gpWorldLevelData[gpTempSoldier->sGridNo].sHeight, gpTempSoldier->sGridNo, gpTempSoldier->inv[HANDPOS].usItem, gpTempSoldier->bLevel);
+					IgniteExplosionXY(nullptr, gpTempSoldier->sX, gpTempSoldier->sY,
+									  gpWorldLevelData[gpTempSoldier->sGridNo].sHeight, gpTempSoldier->sGridNo,
+									  gpTempSoldier->inv[HANDPOS].usItem, gpTempSoldier->bLevel);
 					return;
 				}
 			}
@@ -2767,7 +2769,8 @@ static BOOLEAN ContinuePastBoobyTrap(SOLDIERTYPE* const pSoldier, const INT16 sG
 				gfDisarmingBuriedBomb = FALSE;
 				gbTrapDifficulty = o.bTrap;
 
-				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[DISARM_BOOBYTRAP_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, BoobyTrapMessageBoxCallBack, nullptr);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[DISARM_BOOBYTRAP_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+							 BoobyTrapMessageBoxCallBack, nullptr);
 			}
 			else
 			{
@@ -2911,7 +2914,8 @@ static void BoobyTrapMessageBoxCallBack(MessageBoxReturnValue const ubExitValue)
 	{
 		if (gfDisarmingBuriedBomb)
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[REMOVE_BLUE_FLAG_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, RemoveBlueFlagDialogueCallBack, nullptr);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[REMOVE_BLUE_FLAG_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+						 RemoveBlueFlagDialogueCallBack, nullptr);
 		}
 		// otherwise do nothing
 	}
@@ -3004,7 +3008,8 @@ static void BoobyTrapInMapScreenMessageBoxCallBack(MessageBoxReturnValue const u
 	{
 		if (gfDisarmingBuriedBomb)
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[REMOVE_BLUE_FLAG_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, RemoveBlueFlagDialogueCallBack, nullptr);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[REMOVE_BLUE_FLAG_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+						 RemoveBlueFlagDialogueCallBack, nullptr);
 		}
 		// otherwise do nothing
 	}
@@ -3140,7 +3145,8 @@ static void MineSpottedLocatorCallback(void)
 	guiPendingOverrideEvent = LU_ENDUILOCK;
 
 	// now ask the player if he wants to place a blue flag.
-	DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[PLACE_BLUE_FLAG_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO, MineSpottedMessageBoxCallBack, nullptr);
+	DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[PLACE_BLUE_FLAG_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_YESNO,
+				 MineSpottedMessageBoxCallBack, nullptr);
 }
 
 
@@ -3344,7 +3350,8 @@ BOOLEAN ContinuePastBoobyTrapInMapScreen( OBJECTTYPE *pObject, SOLDIERTYPE *pSol
 				// have the computer ask us if we want to proceed
 				gpBoobyTrapSoldier = pSoldier;
 				gbTrapDifficulty = pObject->bTrap;
-				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[DISARM_BOOBYTRAP_PROMPT], MAP_SCREEN, MSG_BOX_FLAG_YESNO, BoobyTrapInMapScreenMessageBoxCallBack, nullptr);
+				DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[DISARM_BOOBYTRAP_PROMPT], MAP_SCREEN, MSG_BOX_FLAG_YESNO,
+							 BoobyTrapInMapScreenMessageBoxCallBack, nullptr);
 			}
 			else
 			{

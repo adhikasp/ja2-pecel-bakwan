@@ -174,7 +174,7 @@ static void SoundAdvanceVirtual(std::chrono::nanoseconds elapsed);
 // thread that it needs to do some processing through the condition_variable
 // When the system needs to be shut down, fShutdownBufferServiceThread needs to be set to true and the buffer servicing thread
 // needs to be notified using the condition_variable
-SDL_Thread *bufferServiceThread = nullptr;
+SDL_Thread* bufferServiceThread = nullptr;
 std::mutex mutexBuffersNeedService;
 std::condition_variable conditionBuffersNeedService;
 BOOLEAN fBuffersNeedService = FALSE;
@@ -323,7 +323,7 @@ BOOLEAN SoundIsPlaying(UINT32 uiSoundID)
 	if (!fSoundSystemInit) return FALSE;
 
 	const SOUNDTAG* const channel = SoundGetChannelByID(uiSoundID);
-	return channel != nullptr &&  channel->State != CHANNEL_FREE;
+	return channel != nullptr && channel->State != CHANNEL_FREE;
 }
 
 
@@ -354,7 +354,7 @@ void SoundStopAll(void)
 		{
 			assert(i->pSample->uiInstances != 0);
 			i->pSample->uiInstances -= 1;
-			i->pSample               = nullptr;
+			i->pSample = nullptr;
 			i->uiSoundID             = SOUND_ERROR;
 			i->State                 = CHANNEL_FREE;
 		}
@@ -494,14 +494,17 @@ static void FillRingBuffer(SOUNDTAG* channel) {
 		void* pFramesInClientFormat;
 		maResultToRuntimeError(ma_pcm_rb_acquire_write(channel->pRingBuffer, &bytesToWrite, &pFramesInClientFormat), "ma_pcm_rb_acquire_write");
 		ma_uint64 framesRead = 0;
-		if (sample->pDecoder != nullptr) {
+		if (sample->pDecoder != nullptr)
+		{
 			maResultToRuntimeError(ma_decoder_seek_to_pcm_frame(sample->pDecoder, channel->Pos), "ma_decoder_seek_to_pcm_frame");
 			// We stream from file
 			auto result = ma_decoder_read_pcm_frames(sample->pDecoder, pFramesInClientFormat, bytesToWrite, &framesRead);
 			if (result != MA_SUCCESS && result != MA_AT_END) {
 				throw std::runtime_error(ST::format("ma_decoder_read_pcm_frames: {}", ma_result_description(result)).c_str());
 			}
-		} else if (sample->pDataConverter != nullptr) {
+		}
+		else if (sample->pDataConverter != nullptr)
+		{
 			auto bytesPerFrame = ma_get_bytes_per_frame(sample->eInMemoryFormat, sample->uiInMemoryChannels);
 
 			ma_uint64 posInBytes;
@@ -524,7 +527,9 @@ static void FillRingBuffer(SOUNDTAG* channel) {
 				&expectedOutputFrameCount
 			), "ma_data_converter_process_pcm_frames");
 			framesRead = expectedOutputFrameCount;
-		} else {
+		}
+		else
+		{
 			throw std::runtime_error("Dont know how to process ring buffer");
 		}
 		maResultToRuntimeError(ma_pcm_rb_commit_write(channel->pRingBuffer, framesRead), "ma_pcm_rb_commit_write");
@@ -583,7 +588,7 @@ void SoundServiceStreams(void)
 			if (Sound->EOSCallback != nullptr) Sound->EOSCallback(Sound->pCallbackData);
 			assert(Sound->pSample->uiInstances != 0);
 			Sound->pSample->uiInstances--;
-			Sound->pSample   = nullptr;
+			Sound->pSample = nullptr;
 			Sound->uiSoundID = SOUND_ERROR;
 			Sound->State     = CHANNEL_FREE;
 		}
@@ -794,13 +799,16 @@ static SAMPLETAG* SoundLoadDisk(const char* pFilename)
 	{
 		SLOGE("SoundLoadDisk Error for \"{}\": {}", pFilename, err.what());
 		// Clean up possible allocations
-		if (hFile != nullptr) {
+		if (hFile != nullptr)
+		{
 			delete hFile;
 		}
-		if (rwOps != nullptr) {
+		if (rwOps != nullptr)
+		{
 			SDL_CloseIO(rwOps);
 		}
-		if (decoder != nullptr) {
+		if (decoder != nullptr)
+		{
 			ma_free(decoder, nullptr);
 		}
 		return nullptr;
@@ -824,9 +832,8 @@ static BOOLEAN SoundCleanCache(void)
 
 	FOR_EACH(SAMPLETAG, i, pSampleList)
 	{
-		if (i->uiFlags & SAMPLE_ALLOCATED &&
-				!(i->uiFlags & SAMPLE_LOCKED) &&
-				(candidate == nullptr || candidate->uiCacheHits > i->uiCacheHits))
+		if (i->uiFlags & SAMPLE_ALLOCATED && !(i->uiFlags & SAMPLE_LOCKED) &&
+			(candidate == nullptr || candidate->uiCacheHits > i->uiCacheHits))
 		{
 			if (!SoundSampleIsPlaying(i)) candidate = i;
 		}
@@ -873,19 +880,23 @@ static void SoundFreeSample(SAMPLETAG* s)
 
 	assert(s->uiInstances == 0);
 
-	if (s->pDecoder != nullptr) {
+	if (s->pDecoder != nullptr)
+	{
 		ma_decoder_uninit(s->pDecoder);
 		ma_free(s->pDecoder, nullptr);
 	}
-	if (s->pDataConverter != nullptr) {
+	if (s->pDataConverter != nullptr)
+	{
 		ma_data_converter_uninit(s->pDataConverter, nullptr);
 		ma_free(s->pDataConverter, nullptr);
 	}
-	if (s->pRWOps != nullptr) {
+	if (s->pRWOps != nullptr)
+	{
 		SDL_CloseIO(s->pRWOps);
 	}
 	// Note: s->pFile is closed and deleted by SDL_RWclose implicitly, but s->pInMemoryBuffer is not
-	if (s->pInMemoryBuffer != nullptr) {
+	if (s->pInMemoryBuffer != nullptr)
+	{
 		delete[] s->pInMemoryBuffer;
 	}
 	*s = SAMPLETAG{};
@@ -1016,7 +1027,8 @@ static BOOLEAN SoundInitVirtual(void)
 	for (auto channel = std::begin(pSoundList); channel != std::end(pSoundList); ++channel)
 	{
 		channel->pRingBuffer = (ma_pcm_rb*)ma_malloc(sizeof(ma_pcm_rb), nullptr);
-		if (ma_pcm_rb_init(SOUND_MA_SOUND_FORMAT, SOUND_CHANNELS, SOUND_RING_BUFFER_SIZE, nullptr, nullptr, channel->pRingBuffer) != MA_SUCCESS)
+		if (ma_pcm_rb_init(SOUND_MA_SOUND_FORMAT, SOUND_CHANNELS, SOUND_RING_BUFFER_SIZE, nullptr, nullptr,
+						   channel->pRingBuffer) != MA_SUCCESS)
 		{
 			SLOGE("SoundInitVirtual: ma_pcm_rb_init failed for channel {}", channel - pSoundList);
 			return FALSE;
@@ -1118,7 +1130,8 @@ static BOOLEAN SoundInitHardware(void)
 		std::fill(std::begin(pSoundList), std::end(pSoundList), SOUNDTAG{});
 		for(auto channel = std::begin(pSoundList); channel != std::end(pSoundList); ++channel) {
 			channel->pRingBuffer = (ma_pcm_rb*)ma_malloc(sizeof(ma_pcm_rb), nullptr);
-			ma_result result = ma_pcm_rb_init(SOUND_MA_SOUND_FORMAT, SOUND_CHANNELS, SOUND_RING_BUFFER_SIZE, nullptr, nullptr, channel->pRingBuffer);
+			ma_result result = ma_pcm_rb_init(SOUND_MA_SOUND_FORMAT, SOUND_CHANNELS, SOUND_RING_BUFFER_SIZE, nullptr,
+											  nullptr, channel->pRingBuffer);
 			if (result != MA_SUCCESS) {
 				throw std::runtime_error(ST::format(
 					"ma_pcm_rb_init for channel {} returned error: {}",
@@ -1128,7 +1141,7 @@ static BOOLEAN SoundInitHardware(void)
 			}
 		}
 
-		bufferServiceThread = SDL_CreateThread(SoundServiceBuffers, "SoundManBufferServiceThread", (void *)nullptr);
+		bufferServiceThread = SDL_CreateThread(SoundServiceBuffers, "SoundManBufferServiceThread", (void*)nullptr);
 		if (!bufferServiceThread) {
 			throw std::runtime_error(ST::format("SDL_CreateThread for SoundManBufferServiceThread returned error: {}", SDL_GetError()).c_str());
 		}
@@ -1154,7 +1167,8 @@ static void SoundShutdownHardware(void)
 		sgp::Clock::SetAdvanceListener(nullptr);
 		gfVirtualAudio = false;
 	}
-	if (bufferServiceThread != nullptr) {
+	if (bufferServiceThread != nullptr)
+	{
 		{
 			std::lock_guard<std::mutex> lk(mutexBuffersNeedService);
 			fShutdownBufferServiceThread = true;
@@ -1167,14 +1181,16 @@ static void SoundShutdownHardware(void)
 		}
 	}
 	for(auto channel = std::begin(pSoundList); channel != std::end(pSoundList); ++channel) {
-		if (channel->pRingBuffer != nullptr) {
+		if (channel->pRingBuffer != nullptr)
+		{
 			ma_pcm_rb_uninit(channel->pRingBuffer);
 			ma_free(channel->pRingBuffer, nullptr);
 			channel->pRingBuffer = nullptr;
 		}
 	}
 	if (SDL_WasInit(SDL_INIT_AUDIO) != 0) {
-		if (gAudioStream != nullptr) {
+		if (gAudioStream != nullptr)
+		{
 			SDL_DestroyAudioStream(gAudioStream);
 			gAudioStream = nullptr;
 		}

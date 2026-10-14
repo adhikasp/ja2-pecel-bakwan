@@ -167,8 +167,8 @@ static void CountPeopleInBoxingRingAndDoActions(void)
 {
 	UINT8       ubTotalInRing = 0;
 	UINT8       ubPlayersInRing = 0;
-	SOLDIERTYPE *pInRing[2] = { nullptr, nullptr };
-	SOLDIERTYPE *pNonBoxingPlayer = nullptr;
+	SOLDIERTYPE* pInRing[2] = { nullptr, nullptr };
+	SOLDIERTYPE* pNonBoxingPlayer = nullptr;
 
 	FOR_EACH_MERC(i)
 	{

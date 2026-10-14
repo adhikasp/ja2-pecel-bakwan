@@ -1657,13 +1657,8 @@ INT8 ExecuteAction(SOLDIERTYPE *pSoldier)
 		case AI_ACTION_RED_ALERT:             // tell friends opponent(s) seen
 			// if a computer merc, and up to now they didn't know you're here
 			if (!(pSoldier->uiStatusFlags & SOLDIER_PC) &&
-				(
-					!gTacticalStatus.Team[pSoldier->bTeam].bAwareOfOpposition ||
-					(
-						gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE &&
-						gTacticalStatus.the_chosen_one == nullptr
-					)
-				))
+				(!gTacticalStatus.Team[pSoldier->bTeam].bAwareOfOpposition ||
+				 (gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE && gTacticalStatus.the_chosen_one == nullptr)))
 			{
 				HandleInitialRedAlert(pSoldier->bTeam);
 			}
@@ -1888,7 +1883,7 @@ void InitAttackType(ATTACKTYPE *pAttack)
 {
 	// initialize the given bestAttack structure fields to their default values
 	pAttack->ubPossible          = FALSE;
-	pAttack->opponent            = nullptr;
+	pAttack->opponent = nullptr;
 	pAttack->ubAimTime           = 0;
 	pAttack->ubChanceToReallyHit = 0;
 	pAttack->sTarget             = NOWHERE;

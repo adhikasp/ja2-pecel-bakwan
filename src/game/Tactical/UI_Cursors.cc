@@ -1314,8 +1314,8 @@ void HandleWheelAdjustCursor(SOLDIERTYPE* const pSoldier, INT16 usMapPos, const 
 
 		// Warn about a shot that is unlikely to reach before spending APs on it
 		const SOLDIERTYPE* const tgt = gUIFullTarget;
-		if ( ubCursor == TARGETCURS && tgt != nullptr &&
-			!HandleCheckForBadChangeToGetThrough(pSoldier, tgt, tgt->sGridNo, pSoldier->bLevel) )
+		if (ubCursor == TARGETCURS && tgt != nullptr &&
+			!HandleCheckForBadChangeToGetThrough(pSoldier, tgt, tgt->sGridNo, pSoldier->bLevel))
 		{
 			return;
 		}

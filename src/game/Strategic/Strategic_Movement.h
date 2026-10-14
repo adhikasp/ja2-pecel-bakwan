@@ -118,9 +118,7 @@ struct GROUP
 
 extern GROUP *gpGroupList;
 
-
-#define BASE_FOR_EACH_GROUP(type, iter) \
-	for (type iter = gpGroupList; iter != nullptr; iter = iter->next)
+#define BASE_FOR_EACH_GROUP(type, iter) for (type iter = gpGroupList; iter != nullptr; iter = iter->next)
 #define FOR_EACH_GROUP(iter)  BASE_FOR_EACH_GROUP(      GROUP*, iter)
 #define CFOR_EACH_GROUP(iter) BASE_FOR_EACH_GROUP(const GROUP*, iter)
 
@@ -136,10 +134,12 @@ extern GROUP *gpGroupList;
 #define FOR_EACH_PLAYER_GROUP(iter)  BASE_FOR_EACH_PLAYER_GROUP(      GROUP*, iter)
 #define CFOR_EACH_PLAYER_GROUP(iter) BASE_FOR_EACH_PLAYER_GROUP(const GROUP*, iter)
 
-#define FOR_EACH_GROUP_SAFE(iter)                                                    \
-	for (GROUP* iter = gpGroupList, * iter##__next; iter != nullptr; iter = iter##__next) \
-		if (iter##__next = iter->next, FALSE) {} else                                    \
-
+#define FOR_EACH_GROUP_SAFE(iter)                                                                                      \
+	for (GROUP* iter = gpGroupList, *iter##__next; iter != nullptr; iter = iter##__next)                               \
+		if (iter##__next = iter->next, FALSE)                                                                          \
+		{                                                                                                              \
+		}                                                                                                              \
+		else
 
 #define CFOR_EACH_PLAYER_IN_GROUP(iter, group) \
 	for (PLAYERGROUP const* iter = (Assert((group)->fPlayer), (group)->pPlayerList); iter; iter = iter->next)

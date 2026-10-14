@@ -246,7 +246,7 @@ void BltMonoShadow(ClipInfo const& ci, UINT16 *pBuffer, UINT32 uiDestPitchBYTES,
 	UINT32 Unblitted;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const* SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -387,8 +387,8 @@ void Blt8BPPDataTo16BPPBufferTransZPixelateObscured( UINT16 *pBuffer, UINT32 uiD
 	UINT32 uiLineFlag;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav = hSrcVObject->SubregionProperties(usIndex);
@@ -551,8 +551,8 @@ void Blt8BPPDataTo16BPPBufferTransShadow(UINT16* pBuffer, UINT32 uiDestPitchBYTE
 	UINT32 LineSkip;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav = hSrcVObject->SubregionProperties(usIndex);
@@ -662,8 +662,8 @@ void Blt8BPPDataTo16BPPBufferTransShadowZNBObscured(UINT16* pBuffer, UINT32 uiDe
 	UINT32 uiLineFlag;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav = hSrcVObject->SubregionProperties(usIndex);
@@ -749,7 +749,7 @@ void Blt8BPPDataTo16BPPBufferTransShadowZClip(ClipInfo const& ci, UINT16* pBuffe
 	if (ci.status == ClipInfo::Status::Completely_Clipped) return;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const* SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -1019,7 +1019,7 @@ void BltTransShadowZNBObscured(ClipInfo const& ci, UINT16* pBuffer, UINT32 uiDes
 	UINT32 Unblitted, LSCount;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -1136,8 +1136,8 @@ void Blt8BPPDataTo16BPPBufferShadowZ( UINT16 *pBuffer, UINT32 uiDestPitchBYTES, 
 	UINT32 LineSkip;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav    = hSrcVObject->SubregionProperties(usIndex);
@@ -1208,7 +1208,7 @@ void BltShadowZ(ClipInfo const& ci, UINT16 *pBuffer, UINT32 uiDestPitchBYTES, UI
 	if (ci.status == ClipInfo::Status::Completely_Clipped) return;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -1303,8 +1303,8 @@ void Blt8BPPDataTo16BPPBufferShadowZNB( UINT16 *pBuffer, UINT32 uiDestPitchBYTES
 	UINT32 LineSkip;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav    = hSrcVObject->SubregionProperties(usIndex);
@@ -1371,7 +1371,7 @@ void BltShadowZNB(ClipInfo const& ci, UINT16 *pBuffer, UINT32 uiDestPitchBYTES, 
 	if (ci.status == ClipInfo::Status::Completely_Clipped) return;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -1474,7 +1474,7 @@ void BltTransZ(ClipInfo const& ci, UINT16 *pBuffer, UINT32 uiDestPitchBYTES, UIN
 	UINT32 Unblitted;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -1581,7 +1581,7 @@ void BltTransZNB(ClipInfo const& ci, UINT16 *pBuffer, UINT32 uiDestPitchBYTES, U
 	UINT32 Unblitted;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -1682,9 +1682,9 @@ void Blt8BPPDataTo16BPPBuffer( UINT16 *pBuffer, UINT32 uiDestPitchBYTES, SGPVSur
 	INT32  iTempX, iTempY;
 
 	// Assertions
-	Assert( hSrcVSurface != nullptr );
-	Assert( pSrcBuffer != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVSurface != nullptr);
+	Assert(pSrcBuffer != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	UINT32 const usWidth  = hSrcVSurface->Width();
@@ -1812,8 +1812,8 @@ static void Blt16BPPBufferPixelateRectWithColor(UINT16* pBuffer, UINT32 uiDestPi
 	INT32	iLeft, iTop, iRight, iBottom;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
-	Assert( Pattern != nullptr );
+	Assert(pBuffer != nullptr);
+	Assert(Pattern != nullptr);
 
 	iLeft = std::max(ClippingRect.iLeft, area->iLeft);
 	iTop = std::max(ClippingRect.iTop, area->iTop);
@@ -1895,8 +1895,8 @@ void Blt8BPPDataTo16BPPBufferShadow( UINT16 *pBuffer, UINT32 uiDestPitchBYTES, H
 	UINT32 LineSkip;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav    = hSrcVObject->SubregionProperties(usIndex);
@@ -2012,7 +2012,7 @@ void BltTransparent(ClipInfo const& ci, UINT16 * pBuffer, UINT32 uiDestPitchBYTE
 	UINT32 Unblitted;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -2107,7 +2107,7 @@ void BltShadow(ClipInfo const& ci, UINT16 *pBuffer, UINT32 uiDestPitchBYTES)
 	if (ci.status == ClipInfo::Status::Completely_Clipped) return;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -2186,7 +2186,7 @@ ClipInfo::ClipInfo(SGPVObject const * hSrcVObject, INT32 iX, INT32 iY, UINT16 us
 	vobjectIndex = usIndex;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
+	Assert(hSrcVObject != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav = hSrcVObject->SubregionProperties(usIndex);
@@ -2288,7 +2288,7 @@ void BltOutline(ClipInfo const& ci, UINT16* pBuffer, UINT32 uiDestPitchBYTES, IN
 	UINT32 Unblitted;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -2388,7 +2388,7 @@ void BltOutlineZ(ClipInfo const& ci, UINT16* const pBuffer, const UINT32 uiDestP
 	int LSCount;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -2495,7 +2495,7 @@ void BltOutlineZPixelateObscured(ClipInfo const& ci, UINT16* const pBuffer, cons
 	UINT32 Unblitted;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY + ci.topSkip)) + ((ci.iTempX + ci.leftSkip)*2);
@@ -2607,8 +2607,8 @@ void Blt8BPPDataTo16BPPBufferOutlineZ(UINT16* const pBuffer, const UINT32 uiDest
 	UINT32 LineSkip;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav = hSrcVObject->SubregionProperties(usIndex);
@@ -2770,8 +2770,8 @@ void Blt8BPPDataTo16BPPBufferOutlineZPixelateObscured(UINT16* const pBuffer, con
 	UINT32 uiLineFlag;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav = hSrcVObject->SubregionProperties(usIndex);
@@ -2959,8 +2959,8 @@ void Blt8BPPDataTo16BPPBufferOutlineZNB(UINT16* const pBuffer, const UINT32 uiDe
 	UINT32 LineSkip;
 
 	// Assertions
-	Assert( hSrcVObject != nullptr );
-	Assert( pBuffer != nullptr );
+	Assert(hSrcVObject != nullptr);
+	Assert(pBuffer != nullptr);
 
 	// Get Offsets from Index into structure
 	ETRLEObject const& pTrav = hSrcVObject->SubregionProperties(usIndex);
@@ -3036,7 +3036,7 @@ void BltTransZPixelateObscured(ClipInfo const& ci, UINT16 *pBuffer, UINT32 uiDes
 	UINT32 Unblitted;
 
 	// Assertions
-	Assert( pBuffer != nullptr );
+	Assert(pBuffer != nullptr);
 
 	UINT8 const * SrcPtr = SkipLines(ci.srcPtr, ci.topSkip);
 	auto * DestPtr = (UINT8 *)pBuffer + (uiDestPitchBYTES*(ci.iTempY+ci.topSkip)) + ((ci.iTempX+ci.leftSkip)*2);

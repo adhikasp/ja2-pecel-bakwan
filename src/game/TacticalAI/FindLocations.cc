@@ -1713,7 +1713,7 @@ INT16 FindClosestDoor( SOLDIERTYPE * pSoldier )
 		{
 			// calculate the next potential gridno
 			sGridNo = pSoldier->sGridNo + sXOffset + (MAXCOL * sYOffset);
-			if (FindStructure( sGridNo, STRUCTURE_ANYDOOR ) != nullptr)
+			if (FindStructure(sGridNo, STRUCTURE_ANYDOOR) != nullptr)
 			{
 				iDist = PythSpacesAway( pSoldier->sGridNo, sGridNo );
 				if (iDist < iClosestDist)

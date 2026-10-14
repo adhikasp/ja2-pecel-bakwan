@@ -37,7 +37,7 @@
 
 //#define DISABLESCHEDULES
 
-SCHEDULENODE *gpScheduleList = nullptr;
+SCHEDULENODE* gpScheduleList = nullptr;
 UINT8				gubScheduleID = 0;
 
 

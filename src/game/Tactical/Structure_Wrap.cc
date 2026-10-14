@@ -93,7 +93,7 @@ BOOLEAN IsDoorVisibleAtGridNo( INT16 sGridNo )
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_ANYDOOR );
 
-	if ( pStructure != nullptr )
+	if (pStructure != nullptr)
 	{
 		// Check around based on orientation
 		if (pStructure->ubWallOrientation & ORIENT_LEFT)
@@ -240,12 +240,11 @@ static STRUCTURE* FindCuttableWireFenceAtGridNo(INT16 sGridNo)
 	STRUCTURE * pStructure;
 
 	pStructure = FindStructure( sGridNo, STRUCTURE_WIREFENCE );
-	if (pStructure != nullptr && pStructure->ubWallOrientation != ORIENT_NONE &&
-		!(pStructure->fFlags & STRUCTURE_OPEN))
+	if (pStructure != nullptr && pStructure->ubWallOrientation != ORIENT_NONE && !(pStructure->fFlags & STRUCTURE_OPEN))
 	{
 		return( pStructure );
 	}
-	return( nullptr );
+	return (nullptr);
 }
 
 BOOLEAN CutWireFence( INT16 sGridNo )
@@ -268,7 +267,7 @@ BOOLEAN CutWireFence( INT16 sGridNo )
 
 BOOLEAN IsCuttableWireFenceAtGridNo( INT16 sGridNo )
 {
-	return( FindCuttableWireFenceAtGridNo( sGridNo ) != nullptr );
+	return (FindCuttableWireFenceAtGridNo(sGridNo) != nullptr);
 }
 
 
@@ -329,7 +328,7 @@ INT16 FindDoorAtGridNoOrAdjacent( INT16 sGridNo )
 
 BOOLEAN IsCorpseAtGridNo( INT16 sGridNo, UINT8 ubLevel )
 {
-	if ( GetCorpseAtGridNo( sGridNo , ubLevel ) != nullptr )
+	if (GetCorpseAtGridNo(sGridNo, ubLevel) != nullptr)
 	{
 		return( TRUE );
 	}
@@ -354,7 +353,7 @@ BOOLEAN SetOpenableStructureToClosed( INT16 sGridNo, UINT8 ubLevel )
 	if ( pStructure->fFlags & STRUCTURE_OPEN )
 	{
 		pNewStructure = SwapStructureForPartner(pStructure);
-		if ( pNewStructure != nullptr)
+		if (pNewStructure != nullptr)
 		{
 			RecompileLocalMovementCosts( sGridNo );
 			SetRenderFlags( RENDER_FLAG_FULL );

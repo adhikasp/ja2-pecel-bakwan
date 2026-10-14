@@ -662,7 +662,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 			}
 
 			pObject = gpWorldLevelData[uiTile].pObjectHead;
-			while(pObject != nullptr)
+			while (pObject != nullptr)
 			{
 				if (pObject->usIndex < NUMBEROFTILES)
 				{
@@ -675,7 +675,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 				ubShadeAdd = (INT16)ubShade*7/10;
 
 			pMerc = gpWorldLevelData[uiTile].pMercHead;
-			while(pMerc != nullptr)
+			while (pMerc != nullptr)
 			{
 				LightAddTileNode(pMerc, ubShadeAdd, FALSE);
 				pMerc = pMerc->pNext;
@@ -686,7 +686,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 	if((uiFlags&LIGHT_ROOF_ONLY) || (uiFlags&LIGHT_EVERYTHING))
 	{
 		pRoof = gpWorldLevelData[uiTile].pRoofHead;
-		while(pRoof!=nullptr)
+		while (pRoof != nullptr)
 		{
 			if (pRoof->usIndex < NUMBEROFTILES)
 			{
@@ -696,7 +696,7 @@ static BOOLEAN LightAddTile(const INT16 iX, const INT16 iY, const UINT8 ubShade,
 		}
 
 		pOnRoof = gpWorldLevelData[uiTile].pOnRoofHead;
-		while(pOnRoof!=nullptr)
+		while (pOnRoof != nullptr)
 		{
 			if (pOnRoof->usIndex < NUMBEROFTILES)
 			{
@@ -775,7 +775,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 			}
 
 			pObject = gpWorldLevelData[uiTile].pObjectHead;
-			while(pObject!=nullptr)
+			while (pObject != nullptr)
 			{
 				if (pObject->usIndex < NUMBEROFTILES)
 				{
@@ -788,7 +788,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 				ubShadeSubstract = (INT16)ubShade * 7 / 10;
 
 			pMerc = gpWorldLevelData[uiTile].pMercHead;
-			while(pMerc!=nullptr)
+			while (pMerc != nullptr)
 			{
 				LightSubtractTileNode(pMerc, ubShadeSubstract, FALSE);
 				pMerc = pMerc->pNext;
@@ -799,7 +799,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 	if((uiFlags&LIGHT_ROOF_ONLY) || (uiFlags&LIGHT_EVERYTHING))
 	{
 		pRoof = gpWorldLevelData[uiTile].pRoofHead;
-		while(pRoof!=nullptr)
+		while (pRoof != nullptr)
 		{
 			if (pRoof->usIndex < NUMBEROFTILES)
 			{
@@ -809,7 +809,7 @@ static BOOLEAN LightSubtractTile(const INT16 iX, const INT16 iY, const UINT8 ubS
 		}
 
 		pOnRoof = gpWorldLevelData[uiTile].pOnRoofHead;
-		while(pOnRoof!=nullptr)
+		while (pOnRoof != nullptr)
 		{
 			if (pOnRoof->usIndex < NUMBEROFTILES)
 			{

@@ -9,6 +9,13 @@
 
 #define CHECKF(exp) do { if (!(exp)) { WCHECK_FAIL return FALSE; } } while (0)
 #define CHECKV(exp) do { if (!(exp)) { WCHECK_FAIL return;       } } while (0)
-#define CHECKN(exp) do { if (!(exp)) { WCHECK_FAIL return nullptr;  } } while (0)
+#define CHECKN(exp)                                                                                                    \
+	do                                                                                                                 \
+	{                                                                                                                  \
+		if (!(exp))                                                                                                    \
+		{                                                                                                              \
+			WCHECK_FAIL return nullptr;                                                                                \
+		}                                                                                                              \
+	} while (0)
 
 #endif

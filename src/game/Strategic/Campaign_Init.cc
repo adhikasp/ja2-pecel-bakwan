@@ -17,7 +17,6 @@
 
 UNDERGROUND_SECTORINFO* gpUndergroundSectorInfoTail = nullptr;
 
-
 static UNDERGROUND_SECTORINFO* AddUndergroundNode(const UndergroundSectorModel* ugInfo, UINT8 ubDifLevel)
 {
 	UNDERGROUND_SECTORINFO* const u = ugInfo->createUndergroundSectorInfo(ubDifLevel);

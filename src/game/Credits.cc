@@ -278,7 +278,8 @@ static void HandleCreditScreen(void)
 	HandleCreditEyeBlinking();
 
 	//is it time to get a new node
-	if (g_credits_tail == nullptr || (CRDT_START_POS_Y - (g_credits_tail->sPosY + g_credits_tail->sHeightOfString - 16)) >= (INT16)guiGapTillReadNextCredit)
+	if (g_credits_tail == nullptr || (CRDT_START_POS_Y - (g_credits_tail->sPosY + g_credits_tail->sHeightOfString -
+														  16)) >= (INT16)guiGapTillReadNextCredit)
 	{
 		//if there are no more credits in the file
 		if (!GetNextCreditFromTextFile() && g_credits_tail == nullptr)

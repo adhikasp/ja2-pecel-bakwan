@@ -80,7 +80,7 @@ LIGHTEFFECT* NewLightEffect(const INT16 sGridNo, UINT8 radius, UINT8 duration)
 
 	// Set some values...
 	l->sGridNo            = sGridNo;
-	l->light              = nullptr;
+	l->light = nullptr;
 	l->uiTimeOfLastUpdate = GetWorldTotalSeconds();
 	l->ubDuration = duration;
 	l->bRadius    = radius;

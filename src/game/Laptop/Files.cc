@@ -318,7 +318,7 @@ static void ProcessAndEnterAFilesRecord(const UINT8 ubCode, const BOOLEAN fRead)
 	}
 
 	FilesUnit* const f = new FilesUnit{};
-	f->Next   = nullptr;
+	f->Next = nullptr;
 	f->ubCode = ubCode;
 	f->fRead  = fRead;
 
@@ -545,7 +545,7 @@ static FileString const* GetFirstStringOnThisPage(FileString const* RecordList, 
 
 
 	// null record list, nothing to do
-	if( RecordList == nullptr )
+	if (RecordList == nullptr)
 	{
 
 		return ( CurrentRecord );
@@ -838,7 +838,7 @@ static FileRecordWidth* CreateRecordWidth(INT32 iRecordNumber, INT32 iRecordWidt
 	// allocs and inits a width info record for the multipage file viewer...this will tell the procedure that does inital computation on which record is the start of the current page
 	// how wide special records are ( ones that share space with pictures )
 	FileRecordWidth* const pTempRecord = new FileRecordWidth{};
-	pTempRecord -> Next = nullptr;
+	pTempRecord->Next = nullptr;
 	pTempRecord -> iRecordNumber = iRecordNumber;
 	pTempRecord -> iRecordWidth = iRecordWidth;
 	pTempRecord -> iRecordHeightAdjustment = iRecordHeightAdjustment;
@@ -854,8 +854,7 @@ static FileRecordWidth* CreateWidthRecordsForAruloIntelFile(void)
 	FileRecordWidth* pTempRecord = nullptr;
 	FileRecordWidth* pRecordListHead = nullptr;
 
-
-		// first record width
+	// first record width
 	//pTempRecord = CreateRecordWidth( 7, 350, 200,0 );
 	pTempRecord = CreateRecordWidth( FILES_COUNTER_1_WIDTH, 350, MAX_FILE_MESSAGE_PAGE_SIZE,0 );
 
@@ -882,7 +881,6 @@ static FileRecordWidth* CreateWidthRecordsForTerroristFile(void)
 	// this fucntion will create the width list for the Arulco intelligence file
 	FileRecordWidth* pTempRecord = nullptr;
 	FileRecordWidth* pRecordListHead = nullptr;
-
 
 	// first record width
 	pTempRecord = CreateRecordWidth( 4, 170, 0,0 );

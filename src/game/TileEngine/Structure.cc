@@ -455,7 +455,8 @@ static BOOLEAN OkayToAddStructureToTile(INT16 const sBaseGridNo, INT16 const sCu
 	}
 
 	DB_STRUCTURE const* const pDBStructure = pDBStructureRef->pDBStructure;
-	for (STRUCTURE const* pExistingStructure = gpWorldLevelData[sGridNo].pStructureHead; pExistingStructure != nullptr; pExistingStructure = pExistingStructure->pNext)
+	for (STRUCTURE const* pExistingStructure = gpWorldLevelData[sGridNo].pStructureHead; pExistingStructure != nullptr;
+		 pExistingStructure = pExistingStructure->pNext)
 	{
 		if (sCubeOffset != pExistingStructure->sCubeOffset) continue;
 
@@ -1544,7 +1545,8 @@ void AddZStripInfoToVObject(HVOBJECT const hVObject, STRUCTURE_FILE_REF const* c
 		if (fCopyIntoVo && sStructIndex < pStructureFileRef->usNumberOfStructures)
 		{
 			const DB_STRUCTURE* const pDBStructure = pStructureFileRef->pDBStructureRef[sStructIndex].pDBStructure;
-			if (pDBStructure != nullptr && (pDBStructure->ubNumberOfTiles > 1 || pDBStructure->fFlags & STRUCTURE_CORPSE))
+			if (pDBStructure != nullptr &&
+				(pDBStructure->ubNumberOfTiles > 1 || pDBStructure->fFlags & STRUCTURE_CORPSE))
 			//if (pDBStructure != NULL && pDBStructure->ubNumberOfTiles > 1 )
 			{
 				if (!(pDBStructure->fFlags & STRUCTURE_ANYDOOR) || pDBStructure->fFlags & STRUCTURE_GARAGEDOOR)
@@ -1714,7 +1716,7 @@ INT8 GetBlockingStructureInfo( INT16 sGridNo, INT8 bDir, INT8 bNextDir, INT8 bLe
 	pCurrent =  gpWorldLevelData[sGridNo].pStructureHead;
 
 	// If no struct, return
-	if ( pCurrent == nullptr )
+	if (pCurrent == nullptr)
 	{
 		(*pStructHeight) = StructureHeight( pCurrent );
 		(*ppTallestStructure) = nullptr;

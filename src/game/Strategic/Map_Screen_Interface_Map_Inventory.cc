@@ -197,7 +197,8 @@ static BOOLEAN RenderItemInPoolSlot(INT32 iCurrentSlot, INT32 iFirstSlotOnPage)
 	SetFontDestBuffer(guiSAVEBUFFER);
 	const SGPBox* const item_box = &g_sector_inv_item_box;
 	const UINT16        outline  = fMapInventoryItemCompatable[iCurrentSlot] ? Get16BPPColor(FROMRGB(255, 255, 255)) : SGP_TRANSPARENT;
-	INVRenderItem(guiSAVEBUFFER, nullptr, item.o, dx + item_box->x, dy + item_box->y, item_box->w, item_box->h, DIRTYLEVEL2, 0, outline);
+	INVRenderItem(guiSAVEBUFFER, nullptr, item.o, dx + item_box->x, dy + item_box->y, item_box->w, item_box->h,
+				  DIRTYLEVEL2, 0, outline);
 
 	// draw bar for condition
 	const UINT16 col0 = Get16BPPColor(DESC_STATUS_BAR);
@@ -207,11 +208,8 @@ static BOOLEAN RenderItemInPoolSlot(INT32 iCurrentSlot, INT32 iFirstSlotOnPage)
 
 	// if the item is not reachable, or if the selected merc is not in the current sector
 	const SOLDIERTYPE* const s = GetSelectedInfoChar();
-	if (!(item.usFlags & WORLD_ITEM_REACHABLE) ||
-			s           == nullptr     ||
-			s->sSector.x != sSelMap.x ||
-			s->sSector.y != sSelMap.y ||
-			s->sSector.z != iCurrentMapSectorZ)
+	if (!(item.usFlags & WORLD_ITEM_REACHABLE) || s == nullptr || s->sSector.x != sSelMap.x ||
+		s->sSector.y != sSelMap.y || s->sSector.z != iCurrentMapSectorZ)
 	{
 		//Shade the item
 		DrawHatchOnInventory(guiSAVEBUFFER, dx + item_box->x, dy + item_box->y, item_box->w, item_box->h);
@@ -720,7 +718,7 @@ static void BeginInventoryPoolPtr(OBJECTTYPE* pInventorySlot)
 	BOOLEAN fOk = FALSE;
 
 	// If not null return
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		return;
 	}
@@ -1157,7 +1155,7 @@ static void ResetMapSectorInventoryPoolHighLights();
 
 static void HandleMouseInCompatableItemForMapSectorInventory(INT32 iCurrentSlot)
 {
-	SOLDIERTYPE *pSoldier = nullptr;
+	SOLDIERTYPE* pSoldier = nullptr;
 	static BOOLEAN fItemWasHighLighted = FALSE;
 
 	if( iCurrentSlot == -1 )

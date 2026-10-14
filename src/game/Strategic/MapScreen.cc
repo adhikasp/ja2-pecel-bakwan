@@ -587,7 +587,7 @@ void DrawFace(void)
 	// draws the face of the currently selected merc, being displayed int he upper left hand corner
 
 	const SOLDIERTYPE* const pSoldier = GetSelectedInfoChar();
-	if( pSoldier == nullptr )
+	if (pSoldier == nullptr)
 	{
 		return;
 	}
@@ -979,7 +979,7 @@ INT32 GetPathTravelTimeDuringPlotting(PathSt* pPath)
 			ubGroupId = pVehicleList[s->iVehicleId].ubMovementGroup;
 			pGroup = GetGroup( ubGroupId );
 
-			if( pGroup == nullptr )
+			if (pGroup == nullptr)
 			{
 				SetUpMvtGroupForVehicle(s);
 
@@ -993,7 +993,7 @@ INT32 GetPathTravelTimeDuringPlotting(PathSt* pPath)
 			ubGroupId = pVehicleList[s->bVehicleID].ubMovementGroup;
 			pGroup = GetGroup( ubGroupId );
 
-			if( pGroup == nullptr )
+			if (pGroup == nullptr)
 			{
 				SetUpMvtGroupForVehicle(s);
 
@@ -1581,7 +1581,7 @@ ScreenID MapScreenHandle(void)
 		gMPanelRegion.Disable();
 
 		// create contract box
-		CreateContractBox( nullptr );
+		CreateContractBox(nullptr);
 
 		// create the permanent boxes for assignment and its submenus
 		fShowAssignmentMenu = TRUE;
@@ -1601,7 +1601,7 @@ ScreenID MapScreenHandle(void)
 			RenderMapAreaBackdrop(FRAME_BUFFER);
 		}
 
-		if( gpCurrentTalkingFace != nullptr )
+		if (gpCurrentTalkingFace != nullptr)
 		{
 			ContinueDialogue(gpCurrentTalkingFace->soldier, FALSE);
 		}
@@ -2398,7 +2398,7 @@ static UINT32 HandleMapUI(void)
 					}
 
 					// if item's owner is known
-					if ( gpItemPointerSoldier != nullptr )
+					if (gpItemPointerSoldier != nullptr)
 					{
 						// make sure it's the owner's sector that's selected
 						if (gpItemPointerSoldier->sSector != sSelMap)
@@ -3703,7 +3703,7 @@ static void MAPInvClickCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 	Assert(MapCharacterHasAccessibleInventory(*pSoldier));
 
 	// If we do not have an item in hand, start moving it
-	if ( gpItemPointer == nullptr )
+	if (gpItemPointer == nullptr)
 	{
 		// Return if empty
 		if ( pSoldier->inv[ uiHandPos ].usItem == NOTHING )
@@ -3719,7 +3719,7 @@ static void MAPInvClickCallbackPrimary(MOUSE_REGION* pRegion, UINT32 iReason)
 
 		if ( _KeyDown(CTRL) )
 		{
-			CleanUpStack( &( pSoldier->inv[ uiHandPos ] ), nullptr );
+			CleanUpStack(&(pSoldier->inv[uiHandPos]), nullptr);
 		}
 
 		// remember what it was
@@ -3892,7 +3892,7 @@ static void MAPInvClickCallbackCancelMessage(MOUSE_REGION* pRegion, UINT32 iReas
 void InternalMAPBeginItemPointer(SOLDIERTYPE* pSoldier)
 {
 	// If not null return
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		return;
 	}
@@ -3914,7 +3914,7 @@ static void MAPBeginItemPointer(SOLDIERTYPE* pSoldier, UINT8 ubHandPos)
 	BOOLEAN	fOk;
 
 	// If not null return
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		return;
 	}
@@ -3939,7 +3939,7 @@ static void MAPBeginItemPointer(SOLDIERTYPE* pSoldier, UINT8 ubHandPos)
 
 void MAPEndItemPointer(void)
 {
-	if ( gpItemPointer != nullptr )
+	if (gpItemPointer != nullptr)
 	{
 		gpItemPointer = nullptr;
 		gMPanelRegion.ChangeCursor(CURSOR_NORMAL);
@@ -4400,7 +4400,7 @@ static void TeamListAssignmentRegionBtnCallBackPrimary(MOUSE_REGION* pRegion, UI
 		if ( ( pSoldier->bAssignment != ASSIGNMENT_DEAD ) && ( pSoldier->bLife > 0 ) && ( pSoldier->fBetweenSectors ) && !( pSoldier->uiStatusFlags & SOLDIER_VEHICLE ) )
 		{
 			// can't reassign mercs while between sectors
-			DoScreenIndependantMessageBox( pMapErrorString[ 41 ], MSG_BOX_FLAG_OK, nullptr );
+			DoScreenIndependantMessageBox(pMapErrorString[41], MSG_BOX_FLAG_OK, nullptr);
 			return;
 		}
 
@@ -5532,7 +5532,7 @@ BOOLEAN ContinueDialogue(SOLDIERTYPE* pSoldier, BOOLEAN fDone)
 	}
 
 	// check if valid character talking?
-	if( pSoldier == nullptr )
+	if (pSoldier == nullptr)
 	{
 		return FALSE;
 	}
@@ -5572,7 +5572,7 @@ static void RebuildWayPointsForAllSelectedCharsGroups(void);
 
 static BOOLEAN CheckIfClickOnLastSectorInPath(const SGPSector& sector)
 {
-	PathSt*const* ppMovePath = nullptr;
+	PathSt* const* ppMovePath = nullptr;
 	BOOLEAN fLastSectorInPath = FALSE;
 	INT32 iVehicleId = -1;
 
@@ -6748,9 +6748,7 @@ static bool CanToggleSelectedCharInventory()
 	if (!MapCharacterHasAccessibleInventory(*pSoldier)) return FALSE;
 
 	// if not in inventory, and holding an item from sector inventory
-	if( !fShowInventoryFlag &&
-			(gpItemPointer || fMapInventoryItem) &&
-			( gpItemPointerSoldier == nullptr ) )
+	if (!fShowInventoryFlag && (gpItemPointer || fMapInventoryItem) && (gpItemPointerSoldier == nullptr))
 	{
 		// make sure he's in that sector
 		if ( (pSoldier->sSector.x != sSelMap.x ) ||
@@ -7554,14 +7552,14 @@ static void HandleMilitiaRedistributionClick(void)
 				else
 				{
 					// can't redistribute militia during combat!
-					DoScreenIndependantMessageBox( pMilitiaString[ 2 ], MSG_BOX_FLAG_OK, nullptr );
+					DoScreenIndependantMessageBox(pMilitiaString[2], MSG_BOX_FLAG_OK, nullptr);
 				}
 			}
 			else
 			{
 				// can't have militia in this town
 				sString = st_format_printf(pMapErrorString[ 31 ], GCM->getTown(bTownId)->name);
-				DoScreenIndependantMessageBox( sString, MSG_BOX_FLAG_OK, nullptr );
+				DoScreenIndependantMessageBox(sString, MSG_BOX_FLAG_OK, nullptr);
 			}
 		}
 		else

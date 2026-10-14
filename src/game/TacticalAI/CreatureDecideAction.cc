@@ -736,7 +736,8 @@ static INT8 CreatureDecideActionRed(SOLDIERTYPE* pSoldier, UINT8 ubUnconsciousOK
 			// need smell/visibility check?
 			if (PythSpacesAway( pSoldier->sGridNo, pSoldier->usActionData) < MAX_EAT_DIST )
 			{
-				const INT16 sGridNo = FindAdjacentGridEx(pSoldier, pSoldier->usActionData, nullptr, nullptr, FALSE, FALSE);
+				const INT16 sGridNo =
+					FindAdjacentGridEx(pSoldier, pSoldier->usActionData, nullptr, nullptr, FALSE, FALSE);
 				if ( sGridNo != -1 )
 				{
 					pSoldier->usActionData = sGridNo;

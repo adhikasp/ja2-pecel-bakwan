@@ -25,7 +25,7 @@ static UINT16       FontShadow16     = DEFAULT_SHADOW;
 
 // Temp, for saving printing parameters
 static SGPFont      SaveFontDefault      = 0;
-static SGPVSurface* SaveFontDestBuffer   = nullptr;
+static SGPVSurface* SaveFontDestBuffer = nullptr;
 static SGPRect      SaveFontDestRegion   = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 static UINT16       SaveFontForeground16 = 0;
 static UINT16       SaveFontShadow16     = 0;

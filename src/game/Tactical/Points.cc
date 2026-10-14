@@ -1413,7 +1413,7 @@ void DeductAmmo( SOLDIERTYPE *pSoldier, INT8 bInvPos )
 
 			if (bAttachPos != ITEM_NOT_FOUND)
 			{
-				RemoveAttachment( pObj, bAttachPos, nullptr );
+				RemoveAttachment(pObj, bAttachPos, nullptr);
 			}
 		}
 

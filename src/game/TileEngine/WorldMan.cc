@@ -28,8 +28,8 @@ static LEVELNODE* CreateLevelNode(void)
 	LEVELNODE* const Node = new LEVELNODE{};
 	Node->ubShadeLevel        = LightGetAmbient();
 	Node->ubNaturalShadeLevel = LightGetAmbient();
-	Node->pSoldier            = nullptr;
-	Node->pNext               = nullptr;
+	Node->pSoldier = nullptr;
+	Node->pNext = nullptr;
 	Node->sRelativeX          = 0;
 	Node->sRelativeY          = 0;
 	return Node;
@@ -269,7 +269,7 @@ LEVELNODE* AddLandToTail(const UINT32 iMapIndex, const UINT16 usIndex)
 	n->usIndex = usIndex;
 
 	// Append node to list
-	LEVELNODE*  prev   = nullptr;
+	LEVELNODE* prev = nullptr;
 	LEVELNODE** anchor = &gpWorldLevelData[iMapIndex].pLandHead;
 	while (*anchor != nullptr)
 	{
@@ -680,7 +680,7 @@ static void RemoveShadowBuddy(UINT32 iMapIndex, UINT16 usIndex)
 
 void ForceRemoveStructFromTail(UINT32 const iMapIndex)
 {
-	LEVELNODE* pPrevStruct	= nullptr;
+	LEVELNODE* pPrevStruct = nullptr;
 
 	// GOTO TAIL
 	for (LEVELNODE* pStruct = gpWorldLevelData[iMapIndex].pStructHead; pStruct != nullptr; pStruct = pStruct->pNext)
@@ -1458,9 +1458,7 @@ BOOLEAN IsRoofVisible(INT16 sMapPos)
 	if (gfBasement) return TRUE;
 
 	const STRUCTURE* pStructure = FindStructure(sMapPos, STRUCTURE_ROOF);
-	return
-		pStructure != nullptr &&
-		!(gpWorldLevelData[sMapPos].uiFlags & MAPELEMENT_REVEALED);
+	return pStructure != nullptr && !(gpWorldLevelData[sMapPos].uiFlags & MAPELEMENT_REVEALED);
 }
 
 
@@ -1646,7 +1644,7 @@ void SetWallLevelnodeFlags(UINT16 const sGridNo, LevelnodeFlags const uiFlags)
 	for (LEVELNODE* pStruct = gpWorldLevelData[sGridNo].pStructHead; pStruct != nullptr; pStruct = pStruct->pNext)
 	{
 		if (pStruct->pStructureData != nullptr &&
-				pStruct->pStructureData->fFlags & STRUCTURE_WALLSTUFF) // See if we are a wall!
+			pStruct->pStructureData->fFlags & STRUCTURE_WALLSTUFF) // See if we are a wall!
 		{
 			pStruct->uiFlags |= uiFlags;
 		}
@@ -1659,7 +1657,7 @@ void RemoveWallLevelnodeFlags(UINT16 const sGridNo, LevelnodeFlags const uiFlags
 	for (LEVELNODE* pStruct = gpWorldLevelData[sGridNo].pStructHead; pStruct != nullptr; pStruct = pStruct->pNext)
 	{
 		if (pStruct->pStructureData != nullptr &&
-				pStruct->pStructureData->fFlags & STRUCTURE_WALLSTUFF) // See if we are a wall!
+			pStruct->pStructureData->fFlags & STRUCTURE_WALLSTUFF) // See if we are a wall!
 		{
 			pStruct->uiFlags &= ~uiFlags;
 		}

@@ -22,7 +22,6 @@
 
 static ANITILE* pAniTileHead = nullptr;
 
-
 static UINT16 SetFrameByDir(UINT16 frame, const ANITILE* const a)
 {
 	if (a->uiFlags & ANITILE_USE_DIRECTION_FOR_START_FRAME)
@@ -156,14 +155,14 @@ ANITILE* CreateAnimationTile(const ANITILE_PARAMS* const parms)
 // Loop throug all ani tiles and remove...
 void DeleteAniTiles( )
 {
-	ANITILE *pAniNode			= nullptr;
-	ANITILE *pNode				= nullptr;
+	ANITILE* pAniNode = nullptr;
+	ANITILE* pNode = nullptr;
 
 	// LOOP THROUGH EACH NODE
 	// And call delete function...
 	pAniNode = pAniTileHead;
 
-	while( pAniNode != nullptr )
+	while (pAniNode != nullptr)
 	{
 		pNode = pAniNode;
 		pAniNode = pAniNode->pNext;
@@ -252,14 +251,14 @@ void DeleteAniTile(ANITILE* const a)
 
 void UpdateAniTiles( )
 {
-	ANITILE *pAniNode			= nullptr;
-	ANITILE *pNode				= nullptr;
+	ANITILE* pAniNode = nullptr;
+	ANITILE* pNode = nullptr;
 	UINT32	uiClock				= GetJA2Clock( );
 
 	// LOOP THROUGH EACH NODE
 	pAniNode = pAniTileHead;
 
-	while( pAniNode != nullptr )
+	while (pAniNode != nullptr)
 	{
 		pNode = pAniNode;
 		pAniNode = pAniNode->pNext;

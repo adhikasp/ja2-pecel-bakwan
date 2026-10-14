@@ -252,7 +252,7 @@ static void InitializeButtonImageManager(void)
 	for (int x = 0; x < MAX_BUTTON_PICS; ++x)
 	{
 		BUTTON_PICS* const pics = &ButtonPictures[x];
-		pics->vobj      = nullptr;
+		pics->vobj = nullptr;
 		pics->Grayed    = -1;
 		pics->OffNormal = -1;
 		pics->OffHilite = -1;
@@ -261,10 +261,10 @@ static void InitializeButtonImageManager(void)
 	}
 
 	// Blank out all Generic button data
-	GenericButtonOffNormal  = nullptr;
-	GenericButtonOffHilite  = nullptr;
-	GenericButtonOnNormal   = nullptr;
-	GenericButtonOnHilite   = nullptr;
+	GenericButtonOffNormal = nullptr;
+	GenericButtonOffHilite = nullptr;
+	GenericButtonOnNormal = nullptr;
+	GenericButtonOnHilite = nullptr;
 	GenericButtonFillColors = 0;
 
 	// Load the default generic button images
@@ -748,9 +748,9 @@ static void QuickButtonCallbackMButn(MOUSE_REGION* reg, UINT32 reason)
 	bool isDefaultCallback = false;
 	if (b->MoveCallback) {
 		auto moveCallbackPtr = b->MoveCallback.target<void(*)(GUI_BUTTON*, UINT32)>();
-		if (moveCallbackPtr != nullptr) {
+		if (moveCallbackPtr != nullptr)
+		{
 			isDefaultCallback = *moveCallbackPtr == DefaultMoveCallback;
-
 		}
 	}
 	/* Kris:
@@ -1437,7 +1437,7 @@ static void DrawGenericButton(const GUI_BUTTON* b)
 	}
 	else if (b->Clicked())
 	{
-		if  (b->Area.uiFlags & MSYS_MOUSE_IN_AREA && GenericButtonOnHilite != nullptr && gfRenderHilights)
+		if (b->Area.uiFlags & MSYS_MOUSE_IN_AREA && GenericButtonOnHilite != nullptr && gfRenderHilights)
 		{
 			BPic = GenericButtonOnHilite;
 		}

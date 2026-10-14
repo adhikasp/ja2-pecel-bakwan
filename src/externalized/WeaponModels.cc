@@ -141,7 +141,7 @@ std::unique_ptr<WeaponModel> WeaponModel::deserialize(const JsonValue &json,
 {
 	auto obj = json.toObject();
 	ItemModel::InitData const initData{ obj, stringLoader };
-	WeaponModel *wep = nullptr;
+	WeaponModel* wep = nullptr;
 	int itemIndex = obj.GetInt("itemIndex");
 	ST::string internalName = obj.GetString("internalName");
 	ST::string internalType = obj.GetString("internalType");

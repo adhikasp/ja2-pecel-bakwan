@@ -1300,8 +1300,7 @@ void ResetOncePerConvoRecordsForAllNPCsInLoadedSector( void )
 		if (!p->isNPCorRPC()) continue;
 
 		ProfileID ubMercID = p->getID();
-		if (gMercProfiles[ubMercID].sSector == gWorldSector &&
-				gpNPCQuoteInfoArray[ubMercID] != nullptr )
+		if (gMercProfiles[ubMercID].sSector == gWorldSector && gpNPCQuoteInfoArray[ubMercID] != nullptr)
 		{
 			ResetOncePerConvoRecordsForNPC(ubMercID);
 		}
@@ -1982,7 +1981,8 @@ INT16 NPCConsiderInitiatingConv(const SOLDIERTYPE* const pNPC)
 
 		/* what's the opinion required for the highest-opinion quote that we would
 		 * say to this merc */
-		const UINT8 ubTalkDesire = NPCConsiderTalking(pNPC->ubProfile, pMerc->ubProfile, NPC_INITIATING_CONV, 0, pNPCQuoteInfoArray, nullptr, nullptr);
+		const UINT8 ubTalkDesire = NPCConsiderTalking(pNPC->ubProfile, pMerc->ubProfile, NPC_INITIATING_CONV, 0,
+													  pNPCQuoteInfoArray, nullptr, nullptr);
 		if (ubTalkDesire == 0) continue;
 
 		if (ubTalkDesire > ubHighestTalkDesire)

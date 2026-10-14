@@ -33,11 +33,11 @@
 
 BOOLEAN gfOriginalList = TRUE;
 
-SOLDIERINITNODE *gSoldierInitHead = nullptr;
-SOLDIERINITNODE *gSoldierInitTail = nullptr;
+SOLDIERINITNODE* gSoldierInitHead = nullptr;
+SOLDIERINITNODE* gSoldierInitTail = nullptr;
 
-SOLDIERINITNODE *gOriginalSoldierInitListHead = nullptr;
-SOLDIERINITNODE *gAlternateSoldierInitListHead = nullptr;
+SOLDIERINITNODE* gOriginalSoldierInitListHead = nullptr;
+SOLDIERINITNODE* gAlternateSoldierInitListHead = nullptr;
 
 void InitSoldierInitList()
 {
@@ -113,8 +113,7 @@ void RemoveSoldierNodeFromInitList( SOLDIERINITNODE *pNode )
 	if( pNode == gSoldierInitHead )
 	{
 		gSoldierInitHead = gSoldierInitHead->next;
-		if( gSoldierInitHead )
-			gSoldierInitHead->prev = nullptr;
+		if (gSoldierInitHead) gSoldierInitHead->prev = nullptr;
 		if( gfOriginalList )
 			gOriginalSoldierInitListHead = gSoldierInitHead;
 		else
@@ -622,8 +621,8 @@ void AddSoldierInitListEnemyDefenceSoldiers( UINT8 ubTotalAdmin, UINT8 ubTotalTr
 	UINT8 ubTroopPDSlots = 0, ubTroopDSlots = 0, ubTroopPSlots = 0, ubTroopBSlots = 0;
 	UINT8 ubAdminPDSlots = 0, ubAdminDSlots = 0, ubAdminPSlots = 0, ubAdminBSlots = 0;
 	UINT8 ubFreeSlots;
-	UINT8 *pCurrSlots=nullptr;
-	UINT8 *pCurrTotal=nullptr;
+	UINT8* pCurrSlots = nullptr;
+	UINT8* pCurrTotal = nullptr;
 	UINT8 ubCurrClass;
 
 	ResetMortarsOnTeamCount();
@@ -711,10 +710,7 @@ void AddSoldierInitListEnemyDefenceSoldiers( UINT8 ubTotalAdmin, UINT8 ubTotalTr
 		//Now, loop through the priority existance and detailed placement section of the list.
 		FOR_EACH_SOLDIERINITNODE(curr)
 		{
-			if (ubMaxNum == 0 ||
-				*pCurrTotal == 0 ||
-				*pCurrSlots == 0 ||
-				curr->pDetailedPlacement == nullptr ||
+			if (ubMaxNum == 0 || *pCurrTotal == 0 || *pCurrSlots == 0 || curr->pDetailedPlacement == nullptr ||
 				!curr->pBasicPlacement->fPriorityExistance)
 			{
 				break;
@@ -1036,8 +1032,8 @@ void AddSoldierInitListMilitia( UINT8 ubNumGreen, UINT8 ubNumRegs, UINT8 ubNumEl
 	UINT8 ubRegSlots = 0;
 	UINT8 ubGreenSlots = 0;
 	UINT8 ubFreeSlots;
-	UINT8 *pCurrSlots=nullptr;
-	UINT8 *pCurrTotal=nullptr;
+	UINT8* pCurrSlots = nullptr;
+	UINT8* pCurrTotal = nullptr;
 	UINT8 ubCurrClass;
 
 	ubMaxNum = ubNumGreen + ubNumRegs + ubNumElites;
@@ -1523,7 +1519,7 @@ void AddSoldierInitListBloodcats()
 		}
 
 		auto spawns = GCM->getBloodCatSpawnsOfSector( ubSectorID );
-		if( bBloodCatPlacements != pSector->bBloodCatPlacements && spawns == nullptr )
+		if (bBloodCatPlacements != pSector->bBloodCatPlacements && spawns == nullptr)
 		{
 			pSector->bBloodCatPlacements = bBloodCatPlacements;
 			pSector->bBloodCats = -1;
@@ -1637,7 +1633,7 @@ static SOLDIERINITNODE* FindSoldierInitListNodeByProfile(UINT8 ubProfile)
 			return( curr );
 		}
 	}
-	return( nullptr );
+	return (nullptr);
 }
 
 

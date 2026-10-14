@@ -309,7 +309,8 @@ public:
 	void Sample(std::string const& which)
 	{
 		if (which == "effects") PlayJA2SampleFromFile(SOUNDSDIR "/weapons/lmg reload.wav", HIGHVOLUME, 1, MIDDLEPAN);
-		else if (which == "speech") PlayJA2GapSample(BATTLESNDSDIR "/m_cool.wav", HIGHVOLUME, 1, MIDDLEPAN, nullptr);
+		else if (which == "speech")
+			PlayJA2GapSample(BATTLESNDSDIR "/m_cool.wav", HIGHVOLUME, 1, MIDDLEPAN, nullptr);
 	}
 
 	/** After a volume stops moving: the sample, as the legacy slider does (HandleSliderBarMovementSounds). */

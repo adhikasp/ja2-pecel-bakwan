@@ -79,7 +79,8 @@ void BeginAutoBandage( )
 	// If we are in combat, we con't...
 	if ( (gTacticalStatus.uiFlags & INCOMBAT) || (NumEnemyInSector() != 0) )
 	{
-		DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SECTOR_NOT_CLEARED], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, g_langRes->Message[STR_SECTOR_NOT_CLEARED], GAME_SCREEN, MSG_BOX_FLAG_OK,
+					 nullptr, nullptr);
 		return;
 	}
 
@@ -114,22 +115,26 @@ void BeginAutoBandage( )
 
 	if ( !fFoundAGuy )
 	{
-		DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[AUTOBANDAGE_NOT_NEEDED], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[AUTOBANDAGE_NOT_NEEDED], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr,
+					 nullptr);
 	}
 	else if ( !fFoundAMedKit )
 	{
-		DoMessageBox(MSG_BOX_BASIC_STYLE, gzLateLocalizedString[STR_LATE_09], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
+		DoMessageBox(MSG_BOX_BASIC_STYLE, gzLateLocalizedString[STR_LATE_09], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr,
+					 nullptr);
 	}
 	else
 	{
 		if ( ! CanAutoBandage( FALSE ) )
 		{
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[CANT_AUTOBANDAGE_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[CANT_AUTOBANDAGE_PROMPT], GAME_SCREEN, MSG_BOX_FLAG_OK,
+						 nullptr, nullptr);
 		}
 		else
 		{
 			// Confirm if we want to start or not....
-			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[BEGIN_AUTOBANDAGE_PROMPT_STR], GAME_SCREEN, MSG_BOX_FLAG_YESNO, BeginAutoBandageCallBack, nullptr);
+			DoMessageBox(MSG_BOX_BASIC_STYLE, TacticalStr[BEGIN_AUTOBANDAGE_PROMPT_STR], GAME_SCREEN,
+						 MSG_BOX_FLAG_YESNO, BeginAutoBandageCallBack, nullptr);
 		}
 	}
 }
@@ -369,7 +374,7 @@ void AutoBandage( BOOLEAN fStart )
 		if( gfAutoBandageFailed )
 		{
 			// inform player some mercs could not be bandaged
-			DoScreenIndependantMessageBox(pDoctorWarningString[ 1 ], MSG_BOX_FLAG_OK, nullptr );
+			DoScreenIndependantMessageBox(pDoctorWarningString[1], MSG_BOX_FLAG_OK, nullptr);
 			gfAutoBandageFailed = FALSE;
 		}
 	}
@@ -408,7 +413,7 @@ static void SetUpAutoBandageUpdatePanel(void)
 	if (next_patient == gpatient_list) next_doctor  = gdoctor_list;
 
 	// Clear the rest of the lists
-	while (next_doctor  != endof(gdoctor_list))  *next_doctor++  = nullptr;
+	while (next_doctor != endof(gdoctor_list)) *next_doctor++ = nullptr;
 	while (next_patient != endof(gpatient_list)) *next_patient++ = nullptr;
 
 	// now add the faces

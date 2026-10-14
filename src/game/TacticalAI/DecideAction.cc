@@ -524,7 +524,7 @@ static INT8 DecideActionBoxerEnteringRing(SOLDIERTYPE* pSoldier)
 	if (room == BOXING_RING)
 	{
 		// look towards nearest player
-		sDesiredMercLoc = ClosestPC( pSoldier, nullptr );
+		sDesiredMercLoc = ClosestPC(pSoldier, nullptr);
 		if ( sDesiredMercLoc != NOWHERE )
 		{
 			// see if we are facing this person
@@ -697,8 +697,7 @@ static INT8 DecideActionGreen(SOLDIERTYPE* pSoldier)
 						// character then didn't trigger the end of boxing record
 						// (and we know from the if statement above that we're
 						// still in a boxing state of some sort...)
-						TriggerEndOfBoxingRecord( nullptr );
-
+						TriggerEndOfBoxingRecord(nullptr);
 					}
 				}
 
@@ -1633,7 +1632,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier, UINT8 ubUnconsciousOK)
 		}
 		else
 		{
-			const INT16 sKnownOpponent = ClosestKnownOpponent( pSoldier, nullptr, nullptr );
+			const INT16 sKnownOpponent = ClosestKnownOpponent(pSoldier, nullptr, nullptr);
 			if ( sKnownOpponent == NOWHERE ||
 				PythSpacesAway( pSoldier->sGridNo, sKnownOpponent ) > MaxDistanceVisible() + STRAIGHT )
 			{
@@ -2145,7 +2144,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier, UINT8 ubUnconsciousOK)
 				// if HIDING is possible and at least as desirable as seeking or helping
 				if ((bHidePts > -90) && (bHidePts >= bSeekPts) && (bHidePts >= bHelpPts) && (bHidePts >= bWatchPts ))
 				{
-					sClosestOpponent = ClosestKnownOpponent( pSoldier, nullptr, nullptr );
+					sClosestOpponent = ClosestKnownOpponent(pSoldier, nullptr, nullptr);
 					// if an opponent is known (not necessarily reachable or conscious)
 					if (!SkipCoverCheck && sClosestOpponent != NOWHERE )
 					{
@@ -2293,7 +2292,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier, UINT8 ubUnconsciousOK)
 		// try turning in a random direction as we still can't see anyone.
 		if (!gfTurnBasedAI || GetAPsToLook( pSoldier ) <= pSoldier->bActionPoints)
 		{
-			sClosestDisturbance = MostImportantNoiseHeard( pSoldier, nullptr, nullptr, nullptr );
+			sClosestDisturbance = MostImportantNoiseHeard(pSoldier, nullptr, nullptr, nullptr);
 			UINT8 ubOpponentDir;
 			if ( sClosestDisturbance != NOWHERE )
 			{
@@ -2423,7 +2422,7 @@ INT8 DecideActionRed(SOLDIERTYPE *pSoldier, UINT8 ubUnconsciousOK)
 
 	if ( !fCivilian && pSoldier->bUnderFire && pSoldier->bActionPoints >= (pSoldier->bInitialActionPoints - GetAPsToLook( pSoldier ) ) && IsValidStance( pSoldier, ANIM_PRONE ) )
 	{
-		sClosestDisturbance = MostImportantNoiseHeard( pSoldier, nullptr, nullptr, nullptr );
+		sClosestDisturbance = MostImportantNoiseHeard(pSoldier, nullptr, nullptr, nullptr);
 		if ( sClosestDisturbance != NOWHERE )
 		{
 			const UINT8 ubOpponentDir = GetDirectionToGridNoFromGridNo(pSoldier->sGridNo, sClosestDisturbance);
@@ -2495,8 +2494,7 @@ static INT8 DecideActionBlack(SOLDIERTYPE* pSoldier)
 	ubCanMove = (pSoldier->bActionPoints >= MinPtsToMove(pSoldier));
 
 	if ((pSoldier->bTeam == ENEMY_TEAM || pSoldier->ubProfile == WARDEN) &&
-		gTacticalStatus.fPanicFlags    &  PANIC_TRIGGERS_HERE            &&
-		gTacticalStatus.the_chosen_one == nullptr)
+		gTacticalStatus.fPanicFlags & PANIC_TRIGGERS_HERE && gTacticalStatus.the_chosen_one == nullptr)
 	{
 		INT8 bPanicTrigger;
 
@@ -3528,7 +3526,6 @@ static INT8 DecideActionBlack(SOLDIERTYPE* pSoldier)
 		{
 			// determine the location of the known closest opponent
 			// (don't care if he's conscious, don't care if he's reachable at all)
-
 
 			sClosestOpponent = ClosestSeenOpponent(pSoldier, nullptr, nullptr);
 			// if we have a closest reachable opponent

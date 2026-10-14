@@ -66,7 +66,7 @@ static void AudioGapListInit(const ST::string& zSoundFile, AudioGapList* pGapLis
 	catch (...) { /* Handled below */ }
 
 	pGapList->gaps = nullptr;
-	pGapList->end  = nullptr;
+	pGapList->end = nullptr;
 }
 
 
@@ -75,7 +75,7 @@ void AudioGapListDone(AudioGapList* pGapList)
 	// Free the array and nullify the pointers in the AudioGapList
 	delete[] pGapList->gaps;
 	pGapList->gaps = nullptr;
-	pGapList->end  = nullptr;
+	pGapList->end = nullptr;
 	SLOGD("Audio Gap List Deleted");
 }
 

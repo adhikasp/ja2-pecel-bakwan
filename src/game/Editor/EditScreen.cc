@@ -2675,7 +2675,7 @@ static BOOLEAN CheckForFences(void)
 	for ( usCheck = 0; usCheck < iNumOStructs2Selected; usCheck++ )
 	{
 		const TILE_ELEMENT* const T = TileElemFromTileType(pSelList[usCheck].uiObject);
-		if ( T->pDBStructureRef == nullptr )
+		if (T->pDBStructureRef == nullptr)
 			fFence = FALSE;
 		else if ( !(T->pDBStructureRef->pDBStructure->fFlags & STRUCTURE_ANYFENCE) )
 			fFence = FALSE;
@@ -3326,7 +3326,7 @@ static void UpdateLastActionBeforeLeaving(void)
 {
 	if( iCurrentTaskbar == TASK_MERCS )
 		IndicateSelectedMerc( SELECT_NO_MERC );
-	SpecifyItemToEdit( nullptr, -1 );
+	SpecifyItemToEdit(nullptr, -1);
 }
 
 

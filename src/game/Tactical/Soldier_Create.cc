@@ -486,7 +486,7 @@ catch (...) { return 0; }
 SOLDIERTYPE* TacticalCreateSoldierFromExisting(const SOLDIERTYPE* const existing)
 {
 	Assert(guiCurrentScreen != AUTORESOLVE_SCREEN);
-	Assert(existing->face  == nullptr);
+	Assert(existing->face == nullptr);
 	Assert(existing->light == nullptr);
 
 	SOLDIERTYPE& s = GetMan(existing->ubID);
