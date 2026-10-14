@@ -40,10 +40,24 @@ if [[ "$CI_TARGET" == "linux" ]]; then
     linux-install-sccache
 
     # clang-format / clang-tidy for the diff-scoped C++ lint in ci-build.sh
-    # (.ci/ci-lint-cpp.sh). The distribution package is older than the
-    # clang-format 22 the tree is developed with on MSYS2; the .clang-format
-    # settings are stable across those releases.
+    # (.ci/ci-lint-cpp.sh).
+    #
+    # clang-format is PINNED to the 22.1.8 the tree is developed with on MSYS2. The
+    # distribution package is a different major release and the two do NOT format the same
+    # file identically. Counterexample found on PR #370:
+    #
+    #     #define SCURSOR(name) { name, nullptr, 0, 0 }
+    #
+    # 22.1.8 leaves that line alone; the distribution's version breaks it across four
+    # backslash-continued lines (AllowShortBlocksOnASingleLine: Never applied to the braced
+    # body). So a branch formatted correctly with the project's own tool was rejected by CI,
+    # and the rejection could not be reproduced locally at all. Pinning removes the class.
+    #
+    # The apt package still provides `git-clang-format`, which invokes `clang-format` from
+    # PATH -- the pinned pip binary must therefore win. /usr/local/bin precedes /usr/bin on
+    # the runner, so it does.
     linux-install-via-apt-get clang-format clang-tidy
+    python3 -m pip install --disable-pip-version-check 'clang-format==22.1.8'
 
     # Rust via Rustup
     unix-install-rustup

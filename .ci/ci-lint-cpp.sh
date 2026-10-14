@@ -51,6 +51,9 @@ echo "ci-lint-cpp: base ${base}, HEAD $(git rev-parse --short HEAD)"
 # lines this change touched; no diff header is a pass.
 if command -v clang-format >/dev/null 2>&1 && command -v git-clang-format >/dev/null 2>&1; then
   echo "## clang-format (changed lines only) ##"
+  # Printed so a version mismatch is visible: the formatting rules are not stable across
+  # clang-format majors, so "it passes locally" only means anything if the versions match.
+  echo "ci-lint-cpp: $(clang-format --version) (the tree is developed with 22.1.8)"
   fmt_diff="$(git clang-format --diff "${base}" -- '*.cc' '*.h' 2>/dev/null || true)"
   # `git clang-format` prints "no modified files to format" on stdout when the
   # change touches no C++ file, so an actual diff is recognised by its header.

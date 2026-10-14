@@ -204,6 +204,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.saves()` | Loadable save names. |
 | `ja2.load(name, [timeout])` | Loads through the game's own load path (main menu or in game) and waits until done. |
 | `ja2.save(name, [description])` | From the map screen or tactical. |
+| `ja2.saveVersion(name)` | The save version stored in a saved game's header (`SAVE_GAME_VERSION` for a save this build wrote). It exists so a test can restore the exact value it found instead of hardcoding one; `ja2.debug("saveversion")` rewrites it. |
 | `ja2.quit()` | |
 | `ja2.game.npcs()` | The native people registry ([plan/living-world-npc.md](plan/living-world-npc.md)): `{id, name, kind, homeSectors, placedAtStart, quests[{id, name, role}]}` per named character. |
 | `ja2.game.quests()` | The native quest registry: `{id, name, title, status, selfResolving, givers[], resolvers[], dialogue[], prerequisites[], reward, reputationHook, deedHook, note}` per quest. `status` is the live `gubQuest` value (`NOT_STARTED`, `IN_PROGRESS`, `DONE`), so a script can assert a transition: `ja2ctl eval 'return ja2.game.quests()'`. |
@@ -278,6 +279,7 @@ screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas
 | `ja2.feedback()` | The UI feedback lines (placement refusals like "X does not fit here: ...") as an array of strings, oldest first; they are not in `ja2.messages()`. |
 | `ja2.messages()` | The message log as an array of strings, oldest first (the map screen log / tactical scroll). Assert feedback such as "does not fit here" without a screenshot. |
 | `ja2.debug("msgbox", text, [kind])` | Open a message box from the current screen (`ok`, `yesno`, `yesnolie`, `okskip`, `four`); `ja2.lastMessageBoxResult()` is what it returned. |
+| `ja2.debug("saveversion", name, version)` | Rewrite the version stored in a saved game's header in place, so that loading it exercises the real `SaveLoadCompatibility` comparison (the version/mods warning) — bit 1, the version bullet, because a different build or a fake-mod session cannot otherwise be staged headlessly. Nothing else about the save changes; read the old value with `ja2.saveVersion(name)` first and restore it before loading. |
 
 **Element ids.** Every element with an `id` in a native document is addressable: `ja2.click{id="credits.back"}`,
 `ja2.find{id="msgbox.yes"}`, `ja2ctl click '#credits.back'`. Ids are stable English names with dots

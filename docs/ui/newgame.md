@@ -49,5 +49,6 @@ Radio click sound, fade out, music stops on exit.
 
 `tests/e2e/newgame_parity.lua` (golden `newgame_native.png`): every choice by id and the summary; the Iron Man warning,
 No resets to Save Anytime; Esc cancels; a real start (warning, difficulty confirmation, laptop), and the started game has
-the chosen settings (`ja2.viewModel("options")` reads `gGameOptions`); layout audit at 150 %. Not in the tour: the Dead
-is Dead save-name step.
+the chosen settings (`ja2.viewModel("options")` reads `gGameOptions`); layout audit at 150 %. The Dead is Dead chain — its
+warning, the difficulty confirmation, the save-name prompt and the save screen — is walked in
+`tests/e2e/saveload_parity.lua`.
