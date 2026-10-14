@@ -126,7 +126,6 @@ static std::vector<NativeUI::MessageBoxButton> NativeButtons(MessageBoxFlags con
 	return {};
 }
 
-
 /** The legacy texts carry the coded-text markers U+00B1..U+00B5 (WordWrap.h). The native box shows plain
  *  text, so NEWLINE becomes a real line break and the other markers are dropped, the same treatment
  *  HelpScreen's CleanHelpText gives its records. */
@@ -138,7 +137,8 @@ static std::string PlainMessageBoxText(ST::string const& str)
 	for (size_t i = 0; i < in.size();)
 	{
 		unsigned char const c = static_cast<unsigned char>(in[i]);
-		if (c == 0xC2 && i + 1 < in.size() && static_cast<unsigned char>(in[i + 1]) >= 0xB1 && static_cast<unsigned char>(in[i + 1]) <= 0xB5)
+		if (c == 0xC2 && i + 1 < in.size() && static_cast<unsigned char>(in[i + 1]) >= 0xB1 &&
+			static_cast<unsigned char>(in[i + 1]) <= 0xB5)
 		{
 			bool const new_line = static_cast<unsigned char>(in[i + 1]) == 0xB1;
 			bool const new_color = static_cast<unsigned char>(in[i + 1]) == 0xB4;
@@ -159,7 +159,6 @@ static std::string PlainMessageBoxText(ST::string const& str)
 	}
 	return out;
 }
-
 
 /** DoMessageBox with the native UI: the same modal flow (MSG_BOX_SCREEN, pause, callback), drawn natively. */
 static void DoNativeMessageBox(MessageBoxStyleID const style, ST::string const& str, ScreenID const uiExitScreen,

@@ -255,8 +255,7 @@ void SaveHeader(SGPFile & file, SAVED_GAME_HEADER const& header)
 }
 }
 
-
-UINT32 SaveGameStoredVersion(const ST::string &saveName)
+UINT32 SaveGameStoredVersion(const ST::string& saveName)
 {
 	AutoSGPFile f(GCM->saveGameFiles()->openForReading(GetSaveGamePath(saveName)));
 	SAVED_GAME_HEADER header{};
@@ -264,7 +263,7 @@ UINT32 SaveGameStoredVersion(const ST::string &saveName)
 	return header.uiSavedGameVersion;
 }
 
-bool SetSaveGameStoredVersion(const ST::string &saveName, UINT32 version)
+bool SetSaveGameStoredVersion(const ST::string& saveName, UINT32 version)
 {
 	// Read-modify-write in place (Finances.cc writes its balance the same way): the header at the start
 	// of the file is plaintext, and the rest of the save is encrypted with a set that does not involve

@@ -1170,7 +1170,8 @@ namespace
 				{
 					// Rewrite a save's stored version in place, so a tour can walk the real version
 					// warning (ja2.saveVersion reads it back). A test aid: nothing else changes.
-					if (!a || !a->is<std::string>()) throw std::runtime_error("ja2.debug(\"saveversion\", name, version)");
+					if (!a || !a->is<std::string>())
+						throw std::runtime_error("ja2.debug(\"saveversion\", name, version)");
 					if (!b || !b->is<int>()) throw std::runtime_error("ja2.debug(\"saveversion\", name, version)");
 					SetSaveGameStoredVersion(a->as<std::string>(), static_cast<UINT32>(b->as<int>()));
 				}
@@ -1859,9 +1860,8 @@ namespace
 		});
 		// ja2.saveVersion(name): the version stored in a save's header (ja2.debug("saveversion") rewrites
 		// it). A script reads it before rewinding, so it restores the exact value it found.
-		ja2.set_function("saveVersion", [](std::string const& name) {
-			return Guarded([&] { return SaveGameStoredVersion(name); });
-		});
+		ja2.set_function("saveVersion",
+						 [](std::string const& name) { return Guarded([&] { return SaveGameStoredVersion(name); }); });
 		ja2.set_function("quit", [] { Session::Quit(); });
 
 		// --- test helpers ---

@@ -10,7 +10,7 @@ namespace NativeUI
 
 namespace
 {
-	/** Every live view model: automation reads it (ja2.viewModels) and Notify walks it.
+/** Every live view model: automation reads it (ja2.viewModels) and Notify walks it.
 	 *
 	 *  The vector is deliberately never destroyed. The UI runtime that owns the current screen (and so
 	 *  its view model) is a namespace-scope object, so it is destroyed *after* a function-local static
@@ -18,11 +18,11 @@ namespace
 	 *  freed - a use-after-free that reads stale pointers and faults whenever the heap no longer has that
 	 *  block mapped (the exit-time Dead is Dead save is enough to make it happen). Leaking a handful of
 	 *  pointers at exit is the point. */
-	std::vector<ViewModel*>& LiveList()
-	{
-		static std::vector<ViewModel*>* const live = new std::vector<ViewModel*>();
-		return *live;
-	}
+std::vector<ViewModel*>& LiveList()
+{
+	static std::vector<ViewModel*>* const live = new std::vector<ViewModel*>();
+	return *live;
+}
 
 	std::map<std::string, std::function<std::unique_ptr<ViewModel>()>>& Factories()
 	{
