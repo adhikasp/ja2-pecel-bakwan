@@ -28,7 +28,19 @@ BasedOnStyle: LLVM
 # .editorconfig declares `indent_style = tab` for *.{cc,h,lua} and predates this
 # file, so spaces would contradict a committed file. 79.7% of lines are
 # tab-led. Tabs for indentation, spaces for alignment, a tab is 4 wide.
-UseTab: ForIndentation
+# ForContinuationAndIndentation, NOT ForIndentation. Both are tab-based and both match
+# .editorconfig, but ForIndentation splits leading whitespace into "indentation" (tabs) and
+# "alignment" (spaces) -- and on this tree that split is not a fixed point. On a file that mixes
+# tab and space indentation (see the measurement below: 201 of 1085 files indent with spaces
+# somewhere), applying the result changes which columns clang-format reads as indentation, so the
+# next run wants the opposite change. `git clang-format` then oscillates and the changed-lines gate
+# can never be satisfied -- observed at 1665 -> 1977 -> 2605 -> 3801 -> 4844 bytes of residual on one
+# PR, growing rather than converging.
+#
+# ForContinuationAndIndentation uses tabs for continuation as well as indentation, which removes the
+# ambiguity and converges (the same PR reached 39 bytes and stopped). It is the setting that makes
+# the gate terminate.
+UseTab: ForContinuationAndIndentation
 IndentWidth: 4
 TabWidth: 4
 ContinuationIndentWidth: 4
