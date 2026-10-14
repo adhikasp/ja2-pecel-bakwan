@@ -6881,16 +6881,16 @@ void UnEscortEPC(SOLDIERTYPE* const s)
 			case JOHN: other = FindSoldierByProfileIDOnPlayerTeam(MARY); break;
 			case MARY: other = FindSoldierByProfileIDOnPlayerTeam(JOHN); break;
 			default: other = nullptr; break;
-		}
-		if (other != nullptr) InternalUnescortEPC(other);
+			}
+			if (other != nullptr) InternalUnescortEPC(other);
 
-		// stop showing menu
-		giAssignHighLine = -1;
+			// stop showing menu
+			giAssignHighLine = -1;
 
-		// set dirty flag
-		fTeamPanelDirty          = TRUE;
-		fMapScreenBottomDirty    = TRUE;
-		fCharacterInfoPanelDirty = TRUE;
+			// set dirty flag
+			fTeamPanelDirty = TRUE;
+			fMapScreenBottomDirty = TRUE;
+			fCharacterInfoPanelDirty = TRUE;
 	}
 	else
 	{

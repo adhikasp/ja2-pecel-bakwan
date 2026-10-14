@@ -1912,7 +1912,7 @@ static void PerformItemAction(INT16 sGridNo, OBJECTTYPE* pObj)
 				// error message here
 				SLOGW("Action item with invalid action in gridno {}!", sGridNo);
 				break;
-	}
+			}
 }
 
 
