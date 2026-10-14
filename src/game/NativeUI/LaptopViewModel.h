@@ -143,6 +143,7 @@ namespace NativeUI
 
 		// M.E.R.C.
 		std::vector<Row> mercFiles; std::string speck, mercOwed, mercAccount; int mercStatus = 0; bool mercHasAccount = false;
+		bool mercSiteDown = false;
 		std::vector<Row> mercAccountRows;
 
 		// Bobby Ray's

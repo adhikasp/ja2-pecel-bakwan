@@ -186,7 +186,8 @@ motion (`--t-slow` panel transitions).
 - [ ] 18 mercs (hire limit messages on A.I.M. and M.E.R.C.), 10-item Bobby Ray's limit, long ledgers (pages → scroll)
 - [ ] Dead mercs (A.I.M. "Deceased", departed list)
 - [x] Mercs away on assignment: answering machine, leave message, mail back, refusal (`laptop_parity.lua`)
-- [ ] M.E.R.C. server down (broken link), Bobby Ray's not open yet, Speck's unpaid account
+- [x] M.E.R.C. server down (broken link, `laptop_parity.lua`)
+- [ ] Bobby Ray's not open yet, Speck's unpaid account
 - [ ] Rain delay; insufficient funds on every purchase path
 - [ ] Long translations: German page titles, Russian quiz answers (quiz answers wrap)
 - [ ] 1280x720 to 3440x1440: the wireframes hold at all three sizes (no layout-audit findings)

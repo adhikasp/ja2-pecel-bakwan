@@ -351,6 +351,7 @@ void LaptopViewModel::ReadMerc()
 {
 	mercStatus = LaptopNative::MercAccountStatus();
 	mercHasAccount = mercStatus != 0;
+	mercSiteDown = LaptopNative::MercSiteDown();
 	mercOwed = Money(INT32(LaptopNative::MercOwed()));
 	mercAccount = mercHasAccount ? ST::format("{} {05d}", MercAccountText[MERC_ACCOUNT_ACCOUNT], LaptopSaveInfo.guiPlayersMercAccountNumber).to_std_string() : "";
 	mercFiles.clear();
@@ -536,6 +537,7 @@ void LaptopViewModel::DescribeSites(Fields& f)
 	f.Field("hire_total", hireTotal); f.Field("hire_after", hireAfter); f.Field("hire_affordable", hireAffordable); f.Field("hire_message", hireMessage);
 	f.Rows("merc_files", mercFiles); f.Field("speck", speck); f.Field("merc_owed", mercOwed); f.Field("merc_account", mercAccount);
 	f.Field("merc_status", mercStatus); f.Field("merc_has_account", mercHasAccount); f.Rows("merc_account_rows", mercAccountRows);
+	f.Field("merc_site_down", mercSiteDown);
 	f.Field("bobby_cat", bobbyCat); f.Rows("bobby_cats", bobbyCats); f.Rows("shop", shop); f.Field("shop_count", shopCount);
 	f.Rows("cart", cart); f.Field("cart_count", cartCount); f.Field("cart_total", cartTotal); f.Field("cart_weight", cartWeight);
 	f.Field("cart_count_text", cartCountText); f.Rows("order_lines", orderLines); f.Rows("cities", cities); f.Field("city_open", cityOpen);

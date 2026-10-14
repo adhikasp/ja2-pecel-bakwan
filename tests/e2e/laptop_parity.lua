@@ -173,6 +173,16 @@ ja2.expect(v.pd_name == merc.title, "personnel shows " .. merc.title)
 local daily
 for _, row in ipairs(v.pd_employment) do if row.title:find("Daily Cost") then daily = row.value end end
 ja2.expect(daily == merc.meta, "personnel shows the daily cost: " .. tostring(daily))
+-- the server goes down (the broken link) and comes back up again
+ja2.debug("mercsitedown"); ja2.step(1)
+click("laptop.app.email"); click("laptop.app.web"); click("web.bookmark.merc")
+v = vm()
+ja2.expect(v.page == "broken" and v.merc_site_down, "the server is down: broken link")
+ja2.expect(not ja2.exists{id = "merc.nav.files"}, "the broken page has no nav")
+shots.take("laptop_merc_broken.png")
+ja2.debug("mercbackup"); ja2.step(1)
+click("laptop.app.email"); click("laptop.app.web"); click("web.bookmark.merc")
+ja2.expect(vm().page == "home" and not vm().merc_site_down, "the server is back")
 local money
 
 -- Bobby Ray's: order two of the second item, deliver to a city
