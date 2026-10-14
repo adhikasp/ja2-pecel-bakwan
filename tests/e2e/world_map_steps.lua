@@ -176,8 +176,12 @@ for _, m in ipairs(worldmap.vm().messages) do
 	local n = m.text:match("^Skyrider was paid %$(%d+)")
 	if n then fare = tonumber(n) break end
 end
+-- Each entered sector costs $100 (safe airspace) or $1,000 (unsafe), so the total
+-- is 100 * entered + 900 * (unsafe sectors): in range, and a multiple of the
+-- difference between the two rates. That covers a mixed safe/unsafe route too.
 local entered = #route - 1
-ja2.expect(fare ~= nil and (fare == 100 * entered or fare == 1000 * entered),
+ja2.expect(fare ~= nil and fare >= 100 * entered and fare <= 1000 * entered
+	and (fare - 100 * entered) % 900 == 0,
 	"the fare is per entered sector (" .. tostring(fare) .. " for " .. entered .. ")")
 ja2.click(id("map.log.collapse"))
 ja2.waitIdle()
