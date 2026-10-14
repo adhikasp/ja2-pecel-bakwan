@@ -23,10 +23,21 @@ ctest -L tooling                                 # the dev.py tooling tests (Pyt
 - The `tooling` tests drive real git against throwaway repositories. They need `git` on the PATH of the process ctest starts — CI has it, and on Windows run them from PowerShell (`cd _bin; ctest -L tooling`), because `dev.py`'s MSYS2 environment can hide the Git for Windows install and they then fail rather than silently skip.
 
 - The build directory is `build` on macOS and `_bin` on Windows; the wrapper creates, configures and updates it (Ninja + sccache + lld when the machine has them, see [Faster builds](COMPILATION.md#faster-builds)).
-- **The compiler cache is shared between worktrees.** `tools/dev.py` sets `SCCACHE_BASEDIR` to the worktree root, so sccache rewrites those paths to be relative before hashing and two checkouts at different absolute paths get the same key: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects, minutes instead of a full recompile. Worktrees build side by side — there is no shared build path to queue behind. Builds that bypass `tools/dev.py` do not set it and share nothing.
+- **The compiler cache is shared between worktrees.** `tools/dev.py` sets `SCCACHE_BASEDIR` to the worktree root, so sccache rewrites those paths to be relative before hashing and two checkouts at different absolute paths get the same key: build `master` (or any branch) once and a fresh worktree of the same code reuses those objects, minutes instead of a full recompile. Worktrees build side by side — there is no shared build path to queue behind. Builds that bypass `tools/dev.py` do not set it and share nothing. ⚠️ sccache 0.16+ ignores the name dev.py sets and shares nothing across checkouts — see #376.
 - Builds and e2e runs also take a machine-wide job semaphore, so several agents on one machine share the CPU instead of starving each other. `JA2_JOBS` or `--jobs` overrides the computed count.
 - Deep worktrees (agent worktrees live in deep directories) stay well under Windows' MAX_PATH on their own: the deepest path this tree produces is ~212 characters, in cargo's `target/`, and Windows 10+ long-path support is on by default.
 - `setup` also checks `game_dir` and warns about the `Data` trap below. Everything is idempotent: re-run `setup` after switching branches or moving a worktree.
+
+### A build box can do the building
+
+A checkout does not have to be built where it is edited. Where a remote machine is configured
+for it (see the `bagong-build-box` skill), prefer that machine for clean builds, the unit
+tests and the full e2e and resolution sweeps: it is a faster CPU than the laptop usually
+driving the agent, and those suites are CPU-bound, so they finish in roughly half the time.
+Build locally when the box is already busy — the skill's `dev.py status` check is the gate —
+and for the seconds-long edit → build loop, where the ssh hop costs more than it saves.
+The skill owns the detail: what is installed there, how to get a branch onto it, and what it
+costs.
 
 ### Worktree bootstrap runs itself
 
