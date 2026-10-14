@@ -130,6 +130,16 @@ ja2.click(id("map.sector[" .. dest .. "]"))
 ja2.waitIdle()
 heli = worldmap.helicopter()
 ja2.expect(heli.destination == dest, "the route is plotted to " .. dest .. " (" .. tostring(heli.destination) .. ")")
+-- The plotted route itself, sector by sector: an aboard merc carries the
+-- helicopter's path (GetSoldierMercPathPtr returns the vehicle's path when the merc's
+-- assignment is Vehicle). Read it here, while the plotting banner is still up: the
+-- confirm click consumes the route node by node, and at 60-minute compression a
+-- one-sector hop can arrive inside that very click (the path is then empty).
+local route = worldmap.merc("Barry").path
+ja2.expect(#route >= 2 and route[1] == home and route[#route] == dest,
+	"the plotted helicopter route runs " .. home .. " -> " .. dest .. " (" .. table.concat(route, " ") .. ")")
+ja2.expect(worldmap.merc("Ivan").path[#worldmap.merc("Ivan").path] == dest, "Ivan is on the same route")
+shots.take("world_map_heli_plot.png")
 -- The confirmation takes off; a one-sector hop at full compression can arrive
 -- within the click itself, so the assert is "in the air", not "between sectors".
 ja2.click(id("map.sector[" .. dest .. "]"))
@@ -150,6 +160,27 @@ for _, name in ipairs({ "Barry", "Ivan" }) do
 	ja2.expect(m.sector == dest, name .. " is in " .. dest .. " (" .. m.sector .. ")")
 	ja2.expect(not m.betweenSectors, name .. " landed")
 end
+
+-- The fare, from the map message log: Skyrider bills per entered sector, $100 in
+-- safe airspace and $1,000 in unsafe (COST_AIRSPACE_SAFE / COST_AIRSPACE_UNSAFE,
+-- Map_Screen_Helicopter.h). Search the log rather than reading the newest message,
+-- because the arrival dialogue lands after the payment; and do not compare
+-- ja2.state().money across it, because a staged balance does not survive a
+-- transaction (issue #365).
+if not worldmap.vm().log_open then
+	ja2.click(id("map.log.expand"))
+	ja2.waitIdle()
+end
+local fare
+for _, m in ipairs(worldmap.vm().messages) do
+	local n = m.text:match("^Skyrider was paid %$(%d+)")
+	if n then fare = tonumber(n) break end
+end
+local entered = #route - 1
+ja2.expect(fare ~= nil and (fare == 100 * entered or fare == 1000 * entered),
+	"the fare is per entered sector (" .. tostring(fare) .. " for " .. entered .. ")")
+ja2.click(id("map.log.collapse"))
+ja2.waitIdle()
 
 -- Unboard: back on squad 1, the helicopter empty.
 worldmap.assign("Barry", "On Duty", "Squad 1")
