@@ -71,6 +71,14 @@ extern bool isValidSavedGameHeader(SAVED_GAME_HEADER& h);
 /** @brief Extract saved game header from a file. */
 void ExtractSavedGameHeaderFromFile(HWFILE, SAVED_GAME_HEADER&);
 
+/** The save version recorded in a saved game's header: SAVE_GAME_VERSION for a save this build wrote.
+ *  Automation reads it (ja2.saveVersion) so a test can restore the value it found instead of hardcoding one. */
+UINT32 SaveGameStoredVersion(const ST::string& saveName);
+
+/** Rewrite the save version recorded in a saved game's header, in place: nothing else about the save
+ *  changes, so loading it then goes through the real version/mods comparison (ja2.debug("saveversion")).
+ *  A test aid, not a save-format change. */
+bool SetSaveGameStoredVersion(const ST::string& saveName, UINT32 version);
 
 extern ScreenID guiScreenToGotoAfterLoadingSavedGame;
 

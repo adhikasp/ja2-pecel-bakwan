@@ -55,7 +55,7 @@ Fade out/in around loading; "Saving..." message.
 
 ## 7. Edge cases
 - [ ] No saves; 200 saves (scroll); unreadable save (skipped, logged). [ ] Very long descriptions (ellipsis + tooltip).
-- [ ] Iron Man in combat cannot save. [ ] Save from a different version or mods: warning.
+- [ ] Iron Man in combat cannot save. [x] Save from a different version or mods: warning.
 
 ## 8. Dropped or changed
 
@@ -69,18 +69,19 @@ Fade out/in around loading; "Saving..." message.
 
 ## 9. Parity tour
 
-`tests/e2e/saveload_parity.lua` (goldens `save_native.png`, `load_native.png`, `mainmenu_lastsave.png`):
+`tests/e2e/saveload_parity.lua` (goldens `save_native.png`, `load_native.png`, `load_compat_warning.png`, `mainmenu_lastsave.png`, `save_did_name.png`):
 
 | Row | Covered by |
 |---|---|
 | A4, I10 | a new save named in the new-save row: the file exists (`ja2.saves()`), the list shows its name, sector and a thumbnail |
 | A3 | save over it: the overwrite question, still two saves |
+| A2, §5 | the version/mods warning: a save whose stored version is not this build's asks before it loads; No stays on the list. The version bullet (bit 1) is staged; the mods bullet (bit 2) comes from the same `problems` mask and the same box |
 | I1, A9 | load mode: sort by name, the filter keeps one save |
 | A5 | Esc drops the selection; Del asks, the file is gone |
 | A2 | load: back on the map in A9 |
 | A6 | Esc twice leaves to the options screen |
 | layout | UI scale 150 %: layout audit |
 | Continue | quit to the main menu; the last-save card; C loads the newest save |
+| §4, I8 | Dead is Dead: its warning, the difficulty confirmation, the save-name prompt, and the save screen asks for the name; naming alone writes no file |
 | < 1280x720 | the legacy screen runs |
 
-Not covered by a tour: the version/mods question (needs a save from another version) and the Dead is Dead new-game save.

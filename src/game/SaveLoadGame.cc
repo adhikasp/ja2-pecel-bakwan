@@ -255,6 +255,28 @@ void SaveHeader(SGPFile & file, SAVED_GAME_HEADER const& header)
 }
 }
 
+UINT32 SaveGameStoredVersion(const ST::string& saveName)
+{
+	AutoSGPFile f(GCM->saveGameFiles()->openForReading(GetSaveGamePath(saveName)));
+	SAVED_GAME_HEADER header{};
+	ExtractSavedGameHeaderFromFile(f, header);
+	return header.uiSavedGameVersion;
+}
+
+bool SetSaveGameStoredVersion(const ST::string& saveName, UINT32 version)
+{
+	// Read-modify-write in place (Finances.cc writes its balance the same way): the header at the start
+	// of the file is plaintext, and the rest of the save is encrypted with a set that does not involve
+	// the version, so rewriting the header changes the version and nothing else.
+	AutoSGPFile f(GCM->saveGameFiles()->openForReadWrite(GetSaveGamePath(saveName)));
+	SAVED_GAME_HEADER header{};
+	ExtractSavedGameHeaderFromFile(f, header);
+	header.uiSavedGameVersion = version;
+	f->seek(0, FILE_SEEK_FROM_START);
+	SaveHeader(*f, header);
+	return true;
+}
+
 static void CalcJA2EncryptionSet(SAVED_GAME_HEADER const&);
 static void PauseBeforeSaveGame(void);
 static void UnPauseAfterSaveGame(void);
