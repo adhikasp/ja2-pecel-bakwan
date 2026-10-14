@@ -118,21 +118,44 @@ Nothing below is required — each one is picked up automatically when the machi
   (macOS), `cargo install sccache --locked` (elsewhere).
   **Cache sharing across worktrees** — sccache hashes absolute paths, so naively two checkouts at
   different paths are two cache islands and the second worktree recompiles the world.
-  `SCCACHE_BASEDIR` fixes this: sccache rewrites paths under that directory to be *relative*
+  `SCCACHE_BASEDIRS` fixes this: sccache rewrites paths under those directories to be *relative*
   before hashing, so checkouts at different absolute paths produce the same key.
-  `tools/dev.py` sets it to the worktree root, which covers every source file and every generated
-  header under `_bin`. Measured here, one translation unit compiled from two different roots:
+  `tools/dev.py` sets it to **every checkout of this repo on the machine** (from `git worktree
+  list`, the one being built first), which covers every source file and every generated header
+  under `_bin` in all of them at once. Measured here, one translation unit compiled from two
+  different roots:
 
   | | result |
   | --- | --- |
-  | no `SCCACHE_BASEDIR`, root A then root B | 6.41 s MISS, then 6.36 s **MISS** |
-  | `SCCACHE_BASEDIR=<root>` per checkout | 6.41 s MISS, then 0.09 s **HIT** |
+  | no base directory, root A then root B | 6.41 s MISS, then 6.36 s **MISS** |
+  | base directory set per checkout | 6.41 s MISS, then 0.09 s **HIT** |
+
+  Four things about this are easy to get wrong, and all four have been:
+
+  - **The name.** sccache 0.16 renamed the setting to `SCCACHE_BASEDIRS` (plural, and a list of
+    directories) and ignores the old singular `SCCACHE_BASEDIR` *silently* — a build with the old
+    name succeeds, fills the cache and never shares a single entry. `tools/tests/test_sccache.py`
+    asserts against a real sccache that the name it reads is the name `dev.py` sets.
+  - **The server, not the shell.** sccache reads its configuration once, when the server starts,
+    and a server that is already running keeps the directories it was given. `dev.py` therefore
+    stops a server that does not know about every checkout (or that predates a change to this
+    machine's set of them); the next compile starts a server that does. A server left over from
+    before a checkout existed is otherwise an invisible cold build.
+  - **The whole set, not one root.** One server serves the machine, so the directories have to
+    cover every checkout: a build in the main clone must be a hit in an agent worktree, and they
+    sit at different absolute paths by design.
+  - **A path with a space does not share with one without.** One more silent one, and not ours:
+    CMake quotes an `-I` argument when its value contains a space, sccache hashes the argument
+    text, and `-I"C:/my tree/src"` is not `-IC:/my-tree/src` even after the base directories are
+    stripped. Checkouts that both have a space in their path share with each other, and so do
+    checkouts that both do not; across the two it cannot work.
 
   This is what lets worktrees build side by side with a shared cache. The previous design pinned
   every worktree to one machine-wide `subst` drive under an exclusive lock, which produced the
   same sharing but serialised the machine behind it: on a 9-worktree box a **0.8 s** no-op build
   spent **215 s** waiting for the lock. If you build outside `tools/dev.py`, set
-  `SCCACHE_BASEDIR` to your checkout root or you get a private cache island.
+  `SCCACHE_BASEDIRS` to your checkout roots (or a common ancestor of them) or you get a private
+  cache island.
 - **lld** — `-DUSE_LLD=ON` (the default) links with `ld.lld` when the toolchain provides it, which
   cuts the link of the monolithic `ja2` binary to a fraction of GNU ld's time. MSYS2:
   `pacman -S mingw-w64-x86_64-lld`. Where `ld.lld` is absent the option is skipped silently.

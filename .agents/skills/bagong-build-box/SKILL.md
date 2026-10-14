@@ -98,11 +98,12 @@ hand it back in the state you found it:
 ssh bagong "cd /d C:\Workspace\ja2-pecel-bakwan && git checkout -f master && git reset --hard origin/master"
 ```
 
-A **worktree** is the right tool only when you need two checkouts of the tree side by side
-(your branch and `master`, say). It keeps the sessions from fighting over one checkout, but it
-pays for its own `_bin` (~2.7 GB) and its own `uv sync`, and today it does **not** get
-compiler-cache hits from the other checkouts — a fresh worktree is a full cold build, ~8 min
-on this box. Until that is fixed (see the gotcha below), prefer the shared clone.
+A **worktree** is the right tool when you need two checkouts of the tree side by side (your
+branch and `master`, say), or just to keep your branch off the shared clone. It pays for its
+own `_bin` (~2.7 GB) and its own `uv sync`, but not for a rebuild: the compiler cache is shared
+across every checkout on the machine, so a worktree of code that has been built anywhere on the
+box compiles out of the cache — every C/C++ object, anyway; the Rust crate still recompiles
+(measured: 4m30s for a fresh worktree of a built commit, against 8m25s from scratch).
 
 ```sh
 ssh bagong "cd /d C:\Workspace\ja2-pecel-bakwan && git fetch origin <branch>:<branch>"
@@ -167,13 +168,13 @@ box through its own console session if you need to watch it.
   multi-line, base64 the script and decode it on the box rather than piping it through the
   ssh command line, and never pipe binary through a PowerShell pipeline (`tar | ssh` corrupts
   the stream — use `scp -r`).
-- **Cross-checkout cache hits are broken right now, and it is not this box's fault (#376).**
-  `tools/dev.py` sets `SCCACHE_BASEDIR`, but sccache 0.16+ reads `SCCACHE_BASEDIRS` (plural,
-  added with multi-path support) and silently ignores the singular one: the server reports
-  `Base directories (none)` and every checkout of the tree hashes its own absolute paths, so a
-  fresh worktree compiles from scratch. Setting the plural name makes the server report the
-  roots correctly. This is why the shared clone above is the recommended path; until it is
-  fixed, expect a cold build per new checkout.
+- **The compiler cache is shared across every checkout on the box, and the server is the part
+  that is easy to get wrong.** `tools/dev.py` sets `SCCACHE_BASEDIRS` to all of this repo's
+  checkouts, so a build in one is a cache hit in the others; a server started with an older
+  setting would silently go back to hashing absolute paths, so `dev.py` checks what the running
+  server has and restarts one that is out of date (it says so in the build log when it does).
+  `sccache --show-stats` on the box prints `Base directories` — if that ever comes back `(none)`
+  on a machine that has been building, the sharing is not happening.
 - **`dev.py status`'s `active:` line is the whole busy check.** Check it before a suite, not
   after you have started one.
 - **Check the cache before committing to a long run.** `sccache --show-stats` (on the box)
