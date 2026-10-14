@@ -145,34 +145,40 @@ def is_project(path):
     return p.startswith(repo + os.sep)
 
 
-# Split the diagnostics: a `clang-diagnostic-error` in a *system* header is a
-# clang/GCC-libstdc++ toolchain mismatch, not a defect this change introduced,
-# and blocking on it would make the gate useless for the TUs that hit it (one
-# pattern: a struct holding std::vector<std::pair<std::string, Self>>). A
-# parse error in the project's own files, or any finding from an enabled check,
-# still fails.
+# Split the diagnostics. `clang-diagnostic-*` entries are clang's own parse errors, and
+# clang over the GCC libstdc++/glibc this project builds against cannot parse some of these
+# TUs: a glibc `strlcpy` redeclaration missing its exception spec (`src/sgp/SGPStrings.h`),
+# `_Destroy` resolution in `stl_uninitialized.h`, and a completeness static_assert over a
+# project type (`std::pair<std::string, NativeUI::Value>`) reported at the type_traits
+# location with the project file in its note chain. Those are toolchain mismatches, not
+# defects a change introduced.
+#
+# The tidy step does NOT fail on them. A parse error means clang-tidy produced no findings for
+# that TU at all, so failing the build cannot restore the coverage -- and a genuine parse error
+# in our own code already fails the compiler in this job's build step, so nothing is lost by
+# not duplicating that here. The counts are printed so the lost coverage is visible rather than
+# silent, and findings from an enabled check still fail.
 diag = re.compile(
     r"^(?P<path>.+?):\d+:\d+: (?P<sev>error|warning): .*\[(?P<check>[^,\]]+)(?:,[^\]]*)?\]\s*$")
 findings = []
-project_errors = []
-external_errors = []
+unparsed_project = []
+unparsed_external = []
 for line in output.splitlines():
     m = diag.match(line)
     if not m:
         continue
     if m.group("check").startswith("clang-diagnostic"):
-        (project_errors if is_project(m.group("path")) else external_errors).append(line)
+        (unparsed_project if is_project(m.group("path")) else unparsed_external).append(line)
     else:
         findings.append(line)
 
-if external_errors and not findings and not project_errors:
-    print(f"ci-lint-cpp: {len(external_errors)} clang parser error(s) in system "
-          "headers (clang vs the GCC libstdc++), not from this change; ignored")
+if unparsed_project or unparsed_external:
+    print(f"ci-lint-cpp: {len(unparsed_project) + len(unparsed_external)} clang parse error(s) "
+          f"({len(unparsed_project)} reported in project files, {len(unparsed_external)} in system "
+          "headers) -- clang vs the GCC libstdc++/glibc. Those TUs got no tidy coverage; not "
+          "failing on them (the build step is what catches a real parse error).")
 if findings:
     print("ci-lint-cpp: clang-tidy findings on the changed lines above.")
-    sys.exit(1)
-if project_errors:
-    print("ci-lint-cpp: clang could not parse the project code above.")
     sys.exit(1)
 sys.exit(0)
 PY
