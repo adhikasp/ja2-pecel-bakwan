@@ -15,9 +15,10 @@ with Ninja, sccache and lld when the machine has them, runs `uv sync` and
 checks `game_dir`. It is safe to run any number of times.
 
 Worktrees build side by side. Each builds in its own directory at its own
-path, and `SCCACHE_BASEDIR` points the compiler cache at that root, so the
-absolute path stops being part of the cache key: a build of master warms every
-other worktree of the same code even though they sit at different paths.
+path, and `SCCACHE_BASEDIRS` points the compiler cache at every checkout of the
+repo on the machine, so the absolute path stops being part of the cache key:
+a build of master warms every other worktree of the same code even though they
+sit at different paths.
 (That used to be done with one machine-wide `subst` drive under an exclusive
 lock, which serialised every agent on the machine behind one build path; see
 "Cache sharing" in COMPILATION.md.) `build` and `e2e` still cap parallel jobs
@@ -34,6 +35,7 @@ Run `python tools/dev.py --help` for all commands.
 
 import argparse
 import contextlib
+import functools
 import hashlib
 import json
 import os
@@ -58,6 +60,13 @@ TOOL_WHICH = {}
 # of GB free, so let the cache be large enough to actually be a cache. Override
 # with SCCACHE_CACHE_SIZE in the environment.
 SCCACHE_CACHE_SIZE = "50G"
+# sccache reads its base directories once, when the server starts, and it reads
+# them from SCCACHE_BASEDIRS - plural, and a list. The singular SCCACHE_BASEDIR
+# that sccache used before 0.16 is ignored without a word, which is worse than
+# an error: the build succeeds, the cache fills, and no two checkouts ever share
+# an entry. That is why the name is asserted in tools/tests/test_sccache.py, and
+# why the server is checked rather than assumed in sync_sccache_server().
+SCCACHE_BASEDIRS = "SCCACHE_BASEDIRS"
 
 
 # --- small helpers ----------------------------------------------------------
@@ -110,26 +119,172 @@ def posix(path: Path) -> str:
     return (f"/{m.group(1).lower()}/{tail}" if m else tail).rstrip("/") or "/"
 
 
-def tool_run(cmd: str, cwd: Path, capture: bool = False):
-    """Run a build-tool command inside the tool environment (MSYS2 MinGW64)."""
+def tool_env() -> dict:
+    """The environment a build tool runs in: MSYS2's, plus the cache settings."""
     # Always a dict we can add to: the non-Windows path used to pass env=None
-    # (plain inheritance), which cannot carry the SCCACHE_BASEDIR below.
+    # (plain inheritance), which cannot carry the base directories below.
     env = dict(os.environ)
     if IS_WINDOWS:
-        argv = [str(bash_exe()), "-lc", f"cd '{posix(cwd)}' && {cmd}"]
         env["MSYSTEM"] = "MINGW64"
         env.setdefault("SCCACHE_CACHE_SIZE", SCCACHE_CACHE_SIZE)
+    # Share the compiler cache across checkouts without pinning them to one
+    # build path: sccache rewrites paths under these directories to be relative
+    # before hashing, so two checkouts at different absolute paths produce the
+    # same key. Without it each worktree is its own cache island and the second
+    # worktree on a branch recompiles the world.
+    env[SCCACHE_BASEDIRS] = sccache_basedirs()
+    return env
+
+
+def tool_run(cmd: str, cwd: Path, capture: bool = False):
+    """Run a build-tool command inside the tool environment (MSYS2 MinGW64)."""
+    if IS_WINDOWS:
+        argv = [str(bash_exe()), "-lc", f"cd '{posix(cwd)}' && {cmd}"]
     else:
         argv = ["/bin/bash", "-lc", f"cd {shlex.quote(str(cwd))} && {cmd}"]
-    # Share the compiler cache across worktrees without pinning them to one
-    # build path: sccache rewrites paths under SCCACHE_BASEDIR to be relative
-    # before hashing, so two checkouts at different absolute paths produce the
-    # same key. Without this each worktree is its own cache island and the
-    # second worktree on a branch recompiles the world. Both worktree roots and
-    # the in-tree `_bin` are under REPO, so one value covers every source and
-    # generated header in the compile.
-    env["SCCACHE_BASEDIR"] = str(REPO)
-    return subprocess.run(argv, env=env, capture_output=capture, text=True)
+    return subprocess.run(argv, env=tool_env(), capture_output=capture, text=True)
+
+
+@functools.lru_cache(maxsize=1)
+def worktree_roots():
+    """Every checkout of this repo on this machine, this one first.
+
+    The base directories have to cover all of them at once. One sccache server
+    serves the whole machine, and it strips only the directories it was started
+    with, so a build in the main checkout has to be a cache hit in an agent
+    worktree and the other way round - and those two sit at different absolute
+    paths by design. Cached, because this is asked for by every tool command and
+    a new worktree appearing mid-build can wait for the next one.
+    """
+    roots = [REPO]
+    try:
+        r = subprocess.run(["git", "-C", str(REPO), "worktree", "list", "--porcelain"],
+                           capture_output=True, text=True)
+    except OSError:
+        return roots
+    if r.returncode == 0:
+        for p in parse_worktree_list(r.stdout):
+            if p not in roots:
+                roots.append(p)
+    return roots
+
+
+MSYS_DRIVE = re.compile(r"^/([A-Za-z])/(.*)$")
+
+
+def native_root(path) -> str:
+    """One path spelled the way the platform does, from whatever git printed.
+
+    Git is not one program on Windows. Run `dev.py` from MSYS2's shell and `git`
+    is MSYS2's, which spells a Windows path `/c/Users/...`; run it from cmd and
+    `git` is Git for Windows, which spells it `C:/Users/...`. Both have to come
+    out as the absolute Windows path sccache insists on - it refuses to start on
+    anything else, and a server that cannot start is every compile in the build
+    failing.
+    """
+    s = str(path).replace("\\", "/")
+    if IS_WINDOWS:
+        m = MSYS_DRIVE.match(s)
+        if m:
+            s = f"{m.group(1).upper()}:/{m.group(2)}"
+    return s
+
+
+def parse_worktree_list(porcelain: str):
+    """The absolute checkout roots in `git worktree list --porcelain` output.
+
+    Anything that is not absolute is dropped rather than passed on: a base
+    directory sccache rejects takes the whole build with it, and losing one root
+    only costs a cache miss in that checkout.
+    """
+    roots = []
+    for line in porcelain.splitlines():
+        if line.startswith("worktree "):
+            p = Path(native_root(line[len("worktree "):].strip()))
+            if p.is_absolute() and p not in roots:
+                roots.append(p)
+    return roots
+
+
+def sccache_basedirs() -> str:
+    """The SCCACHE_BASEDIRS value: every checkout root, joined the way sccache wants."""
+    return os.pathsep.join(str(p) for p in worktree_roots())
+
+
+def normalize_root(path) -> str:
+    """A root the way sccache reports it: forward slashes, lower case, trailing '/'.
+
+    Windows matching is case-insensitive and the server normalizes what it
+    echoes back, so comparing the reported list with ours has to normalize too.
+    """
+    return str(path).strip().replace("\\", "/").rstrip("/").lower() + "/"
+
+
+def sccache_reported_basedirs():
+    """What the running sccache server has for base directories, or None.
+
+    `--show-stats` is the only way to ask, and it starts a server (with the
+    environment it is given) when none is running - so this is the server's
+    configuration in both cases, which is the point: the server keeps what it
+    was started with. None means "could not tell" and the caller must then fall
+    back on what it knows rather than restart on a hunch.
+    """
+    r = tool_run("sccache --show-stats", REPO, capture=True)
+    if r.returncode != 0:
+        return None
+    for line in (r.stdout or "").splitlines():
+        if line.strip().startswith("Base directories"):
+            tail = line.split("Base directories", 1)[1].strip()
+            if tail in ("", "(none)"):
+                return set()
+            return {normalize_root(p) for p in tail.split(",") if p.strip()}
+    return None
+
+
+SCCACHE_SYNCED = False
+
+
+def sync_sccache_server():
+    """Make sure the running server was started with our base directories.
+
+    sccache applies its configuration when the server starts and a server that
+    is already up keeps the directories it was given, so one started before this
+    machine knew about a checkout quietly goes back to hashing absolute paths -
+    the failure the base directories exist to prevent, and an invisible one.
+
+    Two signals, because neither is enough alone: what the server reports, and
+    what the last build on this machine asked for. Asking starts a server when
+    none is running (with our environment, so with the right directories); one
+    that does not know about every checkout we are about to build in is stopped,
+    and the next compile starts a server that does.
+
+    Once per process: the set of checkouts cannot change under a single build,
+    and this runs from both the configure and the build path.
+    """
+    global SCCACHE_SYNCED
+    if SCCACHE_SYNCED or not tool_which("sccache"):
+        return
+    SCCACHE_SYNCED = True
+    want = {normalize_root(p) for p in worktree_roots()}
+    basedirs = sccache_basedirs()
+    marker = state_dir() / "sccache-basedirs.txt"
+    try:
+        last = marker.read_text(encoding="utf-8").strip()
+    except OSError:
+        last = None
+    have = sccache_reported_basedirs()
+    stale = last != basedirs or (have is not None and not have >= want)
+    if not stale:
+        return
+    log("restarting the sccache server so every checkout shares one cache")
+    tool_run("sccache --stop-server", REPO, capture=True)
+    try:
+        marker.parent.mkdir(parents=True, exist_ok=True)
+        marker.write_text(basedirs, encoding="utf-8")
+    except OSError:
+        pass
+
+
 
 
 def tool_which(name: str):
@@ -383,6 +538,7 @@ def configure(root: Path, build_dir: Path, quiet: bool = False):
         log(f"configure {build_dir} ({'Ninja' if ninja else 'default generator'}"
             f"{', sccache' if tool_which('sccache') else ''}{', lld' if tool_which('ld.lld') else ''})")
     with build_lock(build_dir):
+        sync_sccache_server()
         if tool_run(cmd, build_dir).returncode != 0:
             die("cmake configure failed; see the output above")
         stamp = build_dir / ".dev-setup.json"
@@ -433,6 +589,7 @@ def setup_if_needed(root: Path, build_dir: Path):
 
 def build_binary(root: Path, build_dir: Path, jobs, target=None) -> int:
     with build_lock(build_dir), job_slots("build", jobs) as j:
+        sync_sccache_server()
         cmd = f"cmake --build '{posix(build_dir)}' --parallel {j}"
         if target:
             cmd += f" --target {shlex.quote(target)}"
@@ -690,7 +847,8 @@ def cmd_status(args):
     check_game_dir()
     active = list((state_dir() / "active").glob("*.json"))
     print(f"{'active:':<12}{len(active)} build/test process(es) on this machine")
-    print(f"{'cache:':<12}SCCACHE_BASEDIR={REPO} (shared with every worktree)")
+    print(f"{'cache:':<12}{SCCACHE_BASEDIRS}={REPO}"
+          f" (+ {len(worktree_roots()) - 1} other checkout(s), one shared cache)")
 
 
 # --- worktrees and PR screenshots --------------------------------------------
