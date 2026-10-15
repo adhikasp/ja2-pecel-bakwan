@@ -103,6 +103,8 @@
 #include "Interface_Items.h"
 #include "Render_Fun.h"
 #include "RenderWorld.h"
+#include "Explosion_Control.h"
+#include "Item_Types.h"
 #include "Handle_UI.h"
 #include "NativeUI.h"
 #include "GameViewModelsLua.h"
@@ -1650,6 +1652,17 @@ namespace
 					if (room == NO_ROOM) throw std::runtime_error("ja2.debug(\"roof\"): no room there");
 					RemoveRoomRoof(UINT16(a->as<int>()), room, nullptr);
 					SetRenderFlags(RENDER_FLAG_FULL);
+				}
+				else if (what == "explosion")
+				{
+					// a live explosion at grid a (b = item index, default TEARGAS_GRENADE), for the world
+					// renderer scenes: the animation's keyframe gives the node LEVELNODE_REVEAL, which is
+					// what makes RenderTiles record the translucent blitters. Tear gas is translucent from
+					// its first frame and does nothing until frame 18, so a scene can pin it mid-animation
+					// without damaging or gassing anyone.
+					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"explosion\", grid, [item])");
+					IgniteExplosion(GetSelectedMan(), 0, static_cast<INT16>(a->as<int>()),
+						static_cast<UINT16>(b && b->is<int>() ? b->as<int>() : TEARGAS_GRENADE), 0);
 				}
 				else if (what == "bookmarks")
 				{
