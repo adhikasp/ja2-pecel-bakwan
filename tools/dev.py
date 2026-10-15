@@ -627,6 +627,68 @@ def cmd_test(args):
     sys.exit(subprocess.run(argv, cwd=str(build_dir), env=binary_env()).returncode)
 
 
+@functools.lru_cache(maxsize=None)
+def ctest_supports_junit(build_dir: Path) -> bool:
+    """Whether this ctest can write a JUnit report (`--output-junit`, CMake 3.21+).
+
+    `cmake_minimum_required` is 3.18.1, so it cannot be assumed; a plain
+    `ctest --help` is the cheap, version-independent probe, and the report is a
+    diagnostic that must never break a run on an older ctest.
+    """
+    r = tool_run("ctest --help", build_dir, capture=True)
+    return "--output-junit" in (r.stdout or "")
+
+
+def ctest_json_runner(select, build_dir: Path):
+    """A `run(argv, cwd)` for e2e_select that goes through the tool environment.
+
+    `ctest` is not on the PATH of the Python process on Windows (it lives in
+    MSYS2), so the selector's default subprocess runner is replaced with one
+    that enters MSYS2 the way every other dev.py command does.
+    """
+    def run(argv, cwd):
+        r = tool_run(" ".join(shlex.quote(a) for a in argv), build_dir, capture=True)
+        if r.returncode != 0:
+            raise select.CTestError(f"{' '.join(argv)} failed: {(r.stderr or r.stdout).strip()}")
+        return r.stdout
+    return run
+
+
+def changed_selection(build_dir: Path, base: str) -> str:
+    """`--changed`: the `ctest -R` regex for the areas a diff can affect, or "".
+
+    "" means run everything: either a changed path has no area mapped (the safe
+    direction), or the diff only touched files that cannot affect a run. The
+    smoke tier is always part of a selection, so a narrowed run is never empty.
+    """
+    select = tool_module("e2e_select")
+    try:
+        paths = select.changed_paths(REPO, base)
+        test_areas = select.ctest_test_areas(build_dir, run=ctest_json_runner(select, build_dir))
+    except select.SelectError as exc:
+        die(str(exc))
+    selection = select.select(paths, test_areas)
+    if selection.fallback:
+        log(f"--changed: {len(paths)} changed file(s); one has no area mapped, running every e2e test")
+        return ""
+    log(f"--changed: {len(paths)} changed file(s) -> areas: "
+        f"{', '.join(sorted(selection.areas)) or '(none)'}")
+    log(f"--changed: {len(selection.tests)} test(s): {' '.join(selection.tests)}")
+    return select.test_regex(selection.tests)
+
+
+def print_slowest(report: Path):
+    """The slowest e2e tests from the run's JUnit report, so regressions show."""
+    select = tool_module("e2e_select")
+    try:
+        entries = select.parse_junit(report.read_text(encoding="utf-8"))
+    except (OSError, select.SelectError) as exc:
+        warn(f"no slowest-test report: {exc}")
+        return
+    for line in select.report_lines(entries):
+        log(line)
+
+
 def cmd_e2e(args):
     build_dir = REPO / BUILD_DIR_NAME
     setup_if_needed(REPO, build_dir)
@@ -639,12 +701,27 @@ def cmd_e2e(args):
         argv = [sys.executable, str(REPO / "tools" / "ja2ctl.py"), "run"] + args.args
         log(" ".join(shlex.quote(a) for a in argv))
         sys.exit(subprocess.run(argv, cwd=str(REPO), env=binary_env()).returncode)
+    # The slowest-test report needs ctest's own timings; ask ctest for them
+    # (`--output-junit`) so a runtime regression is visible after every run.
+    report = build_dir / "e2e-timings.xml"
+    junit = ctest_supports_junit(build_dir)
+    if junit:
+        report.unlink(missing_ok=True)  # a stale file must not be read as this run's
+    selected = changed_selection(build_dir, args.changed) if args.changed is not None else ""
     with job_slots("e2e", args.jobs) as jobs:
-        cmd = f"ctest -L e2e --output-on-failure --parallel {jobs}"
+        cmd = "ctest -L e2e"
+        if selected:
+            cmd += " -R " + shlex.quote(selected)
+        cmd += f" --output-on-failure --parallel {jobs}"
+        if junit:
+            cmd += " --output-junit " + shlex.quote(str(report))
         if args.args:
             cmd += " " + " ".join(shlex.quote(a) for a in args.args)
         log(cmd)
-        sys.exit(tool_run(cmd, build_dir).returncode)
+        rc = tool_run(cmd, build_dir).returncode
+    if junit:
+        print_slowest(report)
+    sys.exit(rc)
 
 
 def cmd_run(args):
@@ -884,7 +961,15 @@ def split_tail(tail):
             dev += tail[i:i + 2]
             i += 2
             continue
-        if arg in DEV_FLAGS or arg.startswith("--jobs=") or re.fullmatch(r"-j\d+", arg):
+        if arg == "--changed" and i + 1 < len(tail) and not tail[i + 1].startswith("-"):
+            # `--changed <ref>`: argparse would take the next token as the
+            # optional value, but split_tail runs first - claim it here or it
+            # leaks into the ctest command line.
+            dev += tail[i:i + 2]
+            i += 2
+            continue
+        if (arg in DEV_FLAGS or arg.startswith("--jobs=") or re.fullmatch(r"-j\d+", arg)
+                or arg == "--changed" or arg.startswith("--changed=")):
             dev.append(arg)
         else:
             child.append(arg)
@@ -948,6 +1033,8 @@ def main():
 
     p = sub.add_parser("e2e", help="build and run the e2e tests: ctest -L e2e, or one ja2ctl script")
     common(p)
+    p.add_argument("--changed", nargs="?", const="master", default=None, metavar="REF",
+                   help="run only the tests a diff against REF (default: master) can affect, plus smoke")
     p.set_defaults(func=cmd_e2e)
 
     p = sub.add_parser("run", help="build and play the game (default -res 1280x720)")

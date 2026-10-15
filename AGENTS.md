@@ -9,6 +9,7 @@ python tools/dev.py setup     # once per worktree (idempotent): build dir, uv sy
 python tools/dev.py build     # incremental build
 python tools/dev.py test      # C++ unit tests
 python tools/dev.py e2e [..]  # e2e tests: ctest -L e2e, or one script (tests/e2e/foo.lua --isolated)
+python tools/dev.py e2e --changed  # e2e for the diff vs master (+ smoke), not all 59
 python tools/dev.py run [..]  # play the game (default -res 1280x720)
 python tools/dev.py status    # what dev.py sees: paths, tools, build state
 python tools/dev.py roadmap   # regenerate docs/roadmap/roadmap.html from the issues
@@ -76,6 +77,9 @@ python tools/ja2ctl.py run tests/e2e/<name>.lua --isolated   # one-shot script r
 python tools/dev.py e2e                                       # all e2e tests (ctest -L e2e)
 ```
 Tests and their shared helpers (`lib/campaign.lua`) live in `tests/e2e/`; see its README. `python tools/dev.py setup` runs `uv sync` for you — it creates `.venv/` with Pillow and numpy, which `ctest` picks up for the resolution/golden-image tests after a fresh cmake configure.
+
+`ctest -L smoke` is the fast tier — boot, main menu, new game to tactical, one native-UI tour, all at 1280x720 — and `python tools/dev.py e2e --changed[=REF]` runs only the tests the diff against `REF` (default `master`) can affect, plus smoke; an unmapped path (frozen data, `rust/`, most of `src/sgp/`) falls back to the whole suite. Every e2e test carries area labels (`tactical`, `mapscreen`, `laptop`, `campaign`, `equipment`, `nativeui`, `world-renderer`, `automation`), so `ctest -L tactical` works too. The labels are the single source of truth: they are declared in `CMakeLists.txt`, the path→area table is `tools/e2e_select.py`, and the two are joined through CTest's own `ctest --show-only=json-v1` and kept honest by the drift guard in the `tooling` tests. A run prints the slowest tests when it finishes.
+
 Image-only widgets need `SetName(...)` in C++ to be clickable by label; new animations/loading states belong in `NothingInFlight()` in `src/game/Automation/AutomationSession.cc`.
 
 ### Golden / resolution suite
