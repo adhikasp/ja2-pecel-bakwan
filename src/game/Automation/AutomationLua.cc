@@ -1119,7 +1119,8 @@ namespace
 
 		// ja2.debug(what, [a]): open a piece of tactical UI directly, for layout tests that cannot
 		// easily reach it through play. what = "exitmenu" (a = direction), "placement", "quote"
-		// (a = quote number, spoken by the selected merc), "message" (a = text), "msgbox" (a = text),
+		// (a = quote number, spoken by the selected merc), "message" (a = text, b = kind: an MSG_*
+		// constant in Message.h, default MSG_INTERFACE), "msgbox" (a = text),
 		// "loadscreen" (a = id), "transition" (a = progress 0..1 of the sector-load zoom), "prebattle"
 		// and "autoresolve" (fake a fight in the current sector), "intro" (a = "splash" | "beginning" |
 		// "ending", b = "still"), "epilogue" (the victory epilogue),
@@ -1157,7 +1158,12 @@ namespace
 				}
 				else if (what == "message")
 				{
-					ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, ST::string(a && a->is<std::string>() ? a->as<std::string>() : "debug message"));
+					// b = the kind, so a test can post a dialogue (MSG_DIALOG) as well as an ordinary
+					// interface line: the kind is what the map screen log classifies a message by
+					// (MSG_DIALOG -> Team) and, since issue #43, is saved with the message.
+					UINT8 const priority = b && b->is<int>() ? static_cast<UINT8>(b->as<int>()) : MSG_INTERFACE;
+					ScreenMsg(FONT_MCOLOR_LTYELLOW, priority,
+							  ST::string(a && a->is<std::string>() ? a->as<std::string>() : "debug message"));
 				}
 				else if (what == "msgbox")
 				{
