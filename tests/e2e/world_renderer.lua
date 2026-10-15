@@ -126,14 +126,14 @@ end
 -- 5c. A live explosion: the only scene with a LEVELNODE_REVEAL dynamic tile, so this is what makes RenderTiles
 -- record the 50%-translucency blitters (TranslucentZ / TranslucentZNB). Placed last: the animation keeps
 -- advancing afterwards, and there is nothing left for it to perturb.
-ja2.debug("light", 3)          -- back to day: no merc light sprite (ambient 3 is below the merc-light minimum),
-                               -- so the strict unlit assertions apply
-local boom = merc.gridNo + 4
-ja2.debug("explosion", boom)   -- TEARGAS_GRENADE: translucent from animation frame 1, and does nothing until
-                               -- frame 18 (~1.4 s of virtual time), so this pins it mid-animation
-ja2.wait(250)                  -- three animation frames at 80 ms: translucency on, damage not yet
-local r = scene("explosion")   -- the trailing waitIdle of the *previous* scene is the last one; the explosion
-                               -- holds gTacticalStatus.ubAttackBusyCount, so waitIdle would wait it out
+ja2.debug("light", 3)                     -- back to day: ambient 3 is below the merc-light minimum, so no merc
+                                          -- light sprite is created and the strict unlit assertions apply
+ja2.debug("explosion", merc.gridNo + 4)   -- TEARGAS_GRENADE: translucent from animation frame 1, and it does
+                                          -- nothing (no damage, no gas) until frame 18, ~1.4 s of virtual time
+ja2.wait(250)                             -- three animation frames at 80 ms, so the translucency is on
+local r = scene("explosion")              -- the helper's leading waitIdle is the last one: the explosion holds
+                                          -- gTacticalStatus.ubAttackBusyCount, so waiting again before the
+                                          -- comparison would ride out the animation being pinned
 ja2.expect(r.ops.TranslucentZNB and r.ops.TranslucentZNB > 0,
 	"the live explosion records the translucent topmost blitter (" .. tostring(r.ops.TranslucentZNB) .. ")")
 
