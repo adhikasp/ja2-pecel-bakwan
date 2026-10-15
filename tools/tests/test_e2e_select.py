@@ -198,7 +198,7 @@ class JUnitReport(unittest.TestCase):
     def test_the_report_is_slowest_first_with_a_total(self):
         lines = e2e_select.report_lines(e2e_select.parse_junit(JUNIT), count=2)
         self.assertIn("slowest 2 of 3", lines[0])
-        self.assertIn("total", lines[0])
+        self.assertIn("total test time 31.4s", lines[0])
         self.assertIn("e2e_battle_smoke", lines[1])
         self.assertIn("e2e_tactical_hud", lines[2])
         self.assertNotIn("e2e_main_menu", "".join(lines))

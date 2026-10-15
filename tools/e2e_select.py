@@ -293,7 +293,7 @@ def report_lines(entries, count=10):
         return []
     total = sum(e.seconds for e in entries)
     lines = [f"slowest {min(count, len(entries))} of {len(entries)} e2e tests "
-             f"({fmt_secs(total)} total):"]
+             f"(total test time {fmt_secs(total)}):"]
     for i, e in enumerate(sorted(entries, key=lambda e: e.seconds, reverse=True)[:count], 1):
         lines.append(f"  {i:>2}. {e.name:<38} {fmt_secs(e.seconds):>8}  {e.labels}")
     return lines
