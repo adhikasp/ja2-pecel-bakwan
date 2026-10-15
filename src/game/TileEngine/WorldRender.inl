@@ -600,18 +600,35 @@ bool RenderWorldRecorded()
 }
 
 
-WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool const gpu)
+WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool const gpu, WorldEquivalenceOptions const& opts)
 {
 	if (!gfWorldLoaded) throw std::runtime_error("world equivalence: no sector loaded");
 	WorldEquivalenceResult res;
 	CalcRenderParameters(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y);
-	SGPRect const clip = gClippingRect;
 	int const W = WORLD_SCREEN_WIDTH, H = WORLD_SCREEN_HEIGHT;
+
+	// 0. With the cache on, prime it at this camera, then move the camera and record the view under test. What the
+	// cache does across that move is the thing under test; with no move this is the plain cache-on record.
+	if (opts.cache)
+	{
+		ClearRenderFlags(RENDER_FLAG_FULL | RENDER_FLAG_MARKED);
+		RecordWorldFrame(false, false, true);
+		if (opts.Scrolled())
+		{
+			gsRenderCenterX = INT16(gsRenderCenterX + opts.scrollTilesX * CELL_X_SIZE);
+			gsRenderCenterY = INT16(gsRenderCenterY + opts.scrollTilesY * CELL_Y_SIZE);
+			ApplyScrolling(gsRenderCenterX, gsRenderCenterY, FALSE, FALSE);
+			CalcRenderParameters(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y);
+		}
+	}
+	SGPRect const clip = gClippingRect;
 
 	// 1. Record (no side effects on the nodes, so the software renderer below sees the same world)
 	auto t0 = wr_clock::now();
-	RecordWorldFrame(false, false);
+	RecordWorldFrame(false, false, opts.cache);
 	res.recordMs = WrMs(t0, wr_clock::now());
+	res.staticHits = gStaticCache.hits;
+	res.staticMisses = gStaticCache.misses;
 	res.instances = int(gWorldFrame.instances.size());
 	res.palettes = int(gWorldFrame.palettes.size() / 256);
 	res.sprites = int(gWorldPool.byData.size());
