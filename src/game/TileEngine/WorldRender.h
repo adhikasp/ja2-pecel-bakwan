@@ -57,6 +57,7 @@ struct WorldRenderStats
 	int    staticHits = 0, staticMisses = 0; // frames that reused / re-recorded the static layers       // wall-clock time since the previous RenderWorld (any renderer)
 	int stripsRecorded = 0, stripsReused = 0; // this frame's static rows re-recorded / taken from the cache
 	bool gpuSkipped = false; // the GPU renderer found the target already held this frame and dispatched nothing
+	int    gpuDirtyW = 0, gpuDirtyH = 0; // the region the GPU dispatched (the whole target when it dispatched it whole)
 };
 /** Called whenever a frame is presented: measures the frame interval. */
 void WorldRenderFrameTick();

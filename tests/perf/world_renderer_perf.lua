@@ -50,9 +50,9 @@ local function measure(renderer, uncached, scrolling)
 	if scrolling then scrollWait(seconds * 1000) else wallWait(seconds * 1000) end
 	local t = ja2.frameTiming(true)
 	local st = ja2.worldRenderer()
-	ja2.log(("perf %-8s %-8s %-10s %d frames: mean %.2f ms (%.0f fps), median %.2f, p95 %.2f, max %.2f ms; %d instances, record %.2f ms, %d rows recorded / %d reused, gpu skipped %s")
+	ja2.log(("perf %-8s %-8s %-10s %d frames: mean %.2f ms (%.0f fps), median %.2f, p95 %.2f, max %.2f ms; %d instances, record %.2f ms, %d rows recorded / %d reused, gpu skipped %s, dispatch %dx%d")
 		:format(renderer, uncached and "uncached" or "cached", scrolling and "scrolling" or "still", t.samples, t.mean, 1000 / t.mean,
-			t.p50, t.p95, t.max, st.instances, st.recordMs, st.stripsRecorded, st.stripsReused, tostring(st.gpuSkipped)))
+			t.p50, t.p95, t.max, st.instances, st.recordMs, st.stripsRecorded, st.stripsReused, tostring(st.gpuSkipped), st.gpuDirtyW, st.gpuDirtyH))
 end
 -- software: its own incremental redraw (nothing moves); gpu: with the static cache (standing still and scrolling
 -- the strip cache) and without it (every frame records the whole view: the cost of a scrolling frame)

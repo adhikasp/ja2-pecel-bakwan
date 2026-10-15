@@ -23,6 +23,16 @@ struct Stats
 	size_t binItems = 0;
 	size_t uploadBytes = 0;
 	bool skipped = false; // the frame was the one already in the target: no binning, upload or dispatch
+	int dirtyX = 0, dirtyY = 0, dirtyW = 0, dirtyH = 0; // the region that was dispatched (the whole target, whole)
+};
+
+/** The target pixels a dispatch covers: [x0, x1) x [y0, y1). x0/y0 are 16-aligned (a dispatch is a grid of
+ * 16x16 bins); empty means nothing changed and there is nothing to dispatch. */
+struct Region
+{
+	int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+	bool Empty() const { return x1 <= x0 || y1 <= y0; }
+	size_t Pixels() const { return Empty() ? 0 : size_t(x1 - x0) * size_t(y1 - y0); }
 };
 
 /** The shader formats there is code for (for SDL_CreateGPUDevice). */
@@ -41,9 +51,10 @@ public:
 	std::string const& Error() const { return m_error; }
 	std::string DriverName() const;
 
-	/** Rasterizes the frame. With readback the 565 result is kept for Read565 (which then waits for it).
-	 * A frame that is exactly the one already in the target (same instances, palettes, depths, lighting and
-	 * clear) is not dispatched again: the texture already holds it, so only a readback has to re-read. */
+	/** Rasterizes the frame. With readback the 565 result is kept for Read565 (which then waits for it), and the
+	 * whole target is always dispatched (the readback sees every pixel). Without readback only the region the
+	 * frame changed since the last one is dispatched - the target already holds the rest; a frame that changed
+	 * nothing at all is not dispatched (skipped). */
 	bool Render(WorldPipe::Frame const&, WorldPipe::SpritePool&, uint16_t const* shadeTable, bool readback);
 	/** The last frame read back (Render with readback), width * height pixels. Waits for the GPU. */
 	bool Read565(std::vector<uint16_t>& out);
@@ -57,10 +68,10 @@ private:
 	struct Buffer { SDL_GPUBuffer* buf = nullptr; uint32_t size = 0; };
 	bool Ensure(Buffer&, uint32_t bytes, SDL_GPUBufferUsageFlags usage);
 	bool EnsureTarget(int w, int h);
-	/** Whether the frame is the one the target already holds (see Render). */
-	bool SameFrame(WorldPipe::Frame const&, uint32_t poolGeneration, uint16_t const* shadeTable) const;
+	/** The target pixels the frame changed since the last dispatch, and so the region to dispatch. Empty when
+	 * nothing changed at all; the whole target when something outside the instances did (see Render). */
+	Region DirtyRegion(WorldPipe::Frame const&, uint32_t poolGeneration, uint16_t const* shadeTable) const;
 	void RememberFrame(WorldPipe::Frame const&, uint32_t poolGeneration, uint16_t const* shadeTable);
-
 	SDL_GPUDevice*          m_device = nullptr;
 	bool                    m_ownDevice = false;
 	SDL_GPUComputePipeline* m_pipeline = nullptr;
