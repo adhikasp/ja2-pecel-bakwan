@@ -536,7 +536,10 @@ void AppendStrip(WorldPipe::Frame& dst, StaticRowStrips const& row, size_t const
  * by the sprite overhang). */
 bool RowUsable(StaticRowStrips const& s, StaticRow const& row)
 {
-	if (s.xFrom > row.xM || s.xTo < row.xM + row.count) return false;
+	// The tiles past the map edge record nothing (the walk skips them), so a row that covers the part of its x
+	// range that is on the map is enough: a wider view would otherwise never reuse its edge rows.
+	INT32 const need = std::min(INT32(WORLD_COLS), row.xM + row.count);
+	if (s.xFrom > row.xM || s.xTo < need) return false;
 	// The recorded lattice origin is in the shifted frame; this is the camera's own move.
 	INT32 const dx = row.cx - s.cx + kStripMargin, dy = row.cy - s.cy + kStripMargin;
 	INT32 const x0 = row.xS - kStripOverhang - dx, x1 = row.xS + 40 * row.count + kStripOverhang - dx;
@@ -926,6 +929,7 @@ bool RenderWorldRecorded()
 		gWorldStats.gpuBinMs = gpu->LastStats().buildMs;
 		gWorldStats.gpuSubmitMs = gpu->LastStats().uploadMs;
 		gWorldStats.uploadBytes = gpu->LastStats().uploadBytes;
+		gWorldStats.gpuSkipped = gpu->LastStats().skipped;
 		if (cpuCopy)
 		{
 			// The GPU's 888 texture is only seen in a real window; a driven session reads the frame back as RGB565

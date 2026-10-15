@@ -1805,6 +1805,7 @@ namespace
 			t["staticMisses"] = s.staticMisses;
 			t["stripsRecorded"] = s.stripsRecorded;
 			t["stripsReused"] = s.stripsReused;
+			t["gpuSkipped"] = s.gpuSkipped;
 			t["wallMs"] = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count(); // wall clock, for frame-rate measurements
 			return t;
 		});

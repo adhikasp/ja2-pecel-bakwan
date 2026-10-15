@@ -22,6 +22,7 @@ struct Stats
 	double waitMs   = 0;   // waiting for the GPU (only when read back)
 	size_t binItems = 0;
 	size_t uploadBytes = 0;
+	bool skipped = false; // the frame was the one already in the target: no binning, upload or dispatch
 };
 
 /** The shader formats there is code for (for SDL_CreateGPUDevice). */
@@ -40,7 +41,9 @@ public:
 	std::string const& Error() const { return m_error; }
 	std::string DriverName() const;
 
-	/** Rasterizes the frame. With readback the 565 result is kept for Read565 (which then waits for it). */
+	/** Rasterizes the frame. With readback the 565 result is kept for Read565 (which then waits for it).
+	 * A frame that is exactly the one already in the target (same instances, palettes, depths, lighting and
+	 * clear) is not dispatched again: the texture already holds it, so only a readback has to re-read. */
 	bool Render(WorldPipe::Frame const&, WorldPipe::SpritePool&, uint16_t const* shadeTable, bool readback);
 	/** The last frame read back (Render with readback), width * height pixels. Waits for the GPU. */
 	bool Read565(std::vector<uint16_t>& out);
@@ -54,6 +57,9 @@ private:
 	struct Buffer { SDL_GPUBuffer* buf = nullptr; uint32_t size = 0; };
 	bool Ensure(Buffer&, uint32_t bytes, SDL_GPUBufferUsageFlags usage);
 	bool EnsureTarget(int w, int h);
+	/** Whether the frame is the one the target already holds (see Render). */
+	bool SameFrame(WorldPipe::Frame const&, uint32_t poolGeneration, uint16_t const* shadeTable) const;
+	void RememberFrame(WorldPipe::Frame const&, uint32_t poolGeneration, uint16_t const* shadeTable);
 
 	SDL_GPUDevice*          m_device = nullptr;
 	bool                    m_ownDevice = false;
@@ -71,6 +77,26 @@ private:
 	WorldPipe::Bins         m_bins;
 	Stats                   m_stats;
 	std::string             m_error;
+
+	// What the target holds, to recognise a frame that does not need dispatching: the instance list, the depth
+	// runs and palettes it indexes, the frame's clear and lighting, and the pool generation behind its sprites.
+	struct FrameKey
+	{
+		bool valid = false;
+		int width = 0, height = 0;
+		uint32_t clearColor = 0;
+		uint16_t clearDepth = 0;
+		uint32_t mask = 0;
+		uint32_t poolGeneration = 0;
+		uint32_t points = 0;
+		float ambientR = 0, ambientG = 0, ambientB = 0, sunR = 0, sunG = 0, sunB = 0, falloff = 0;
+		std::vector<WorldPipe::Instance> instances;
+		std::vector<uint32_t> palettes;
+		std::vector<uint16_t> columns;
+		std::vector<WorldPipe::PointLight> lights;
+		std::vector<uint16_t> shade; // the 65536-entry shade table the ops darken through
+	};
+	FrameKey m_last;
 };
 
 } // namespace WorldGpu
