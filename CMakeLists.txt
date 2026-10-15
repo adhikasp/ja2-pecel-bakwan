@@ -713,9 +713,20 @@ if (WITH_UNITTESTS)
                 set_tests_properties(${t} PROPERTIES LABELS matrix)
             endif()
         endforeach()
-        # the map screen tours are long (a campaign, every state) and render in software at 21:9
+        # The long watchdog, 2400 s instead of the default 900 s, for the two sets of tours that
+        # measured close to the default: every map screen tour (a whole campaign, every state),
+        # which has had it since #24, and every 3440x1440 tour (issue #45).
+        #
+        # 3440x1440 gets it as a tier rather than tour by tour. The one timeout here - menus_tour
+        # at 900.37 s of its 900 s under -j8 - is a tour that costs 78 s on bagong and 106 s on the
+        # laptop in a quiet -j8 run, on the machine that hit the watchdog 411.77 s alone. A 4-8x
+        # spread at this resolution means the quiet-run cost does not predict which tour needs the
+        # headroom, and this is the tier the matrix is expensive enough in for a watchdog to fire
+        # at all. The audit (every 3440x1440 tour, both machines, per tour) is in
+        # docs/plan/native-modern-game-decisions.md. The other three resolutions keep 900 s: their
+        # measured maximum is well inside it.
         foreach(t ${RESOLUTION_TESTS})
-            if(t MATCHES "^resolution_mapscreen_")
+            if(t MATCHES "^resolution_mapscreen_" OR t MATCHES "_3440x1440$")
                 set_tests_properties(${t} PROPERTIES TIMEOUT 2400)
             endif()
         endforeach()

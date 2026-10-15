@@ -491,6 +491,51 @@ def cmd_list(opts):
     return 0
 
 
+# The driver's own exit codes (Automation.h, Automation::ExitCode). A script run can only end
+# with one of these; anything else did not come from the driver, and reading it as the script's
+# result is how "the script failed" gets printed for a script that passed (issue #45).
+EXIT_MEANINGS = {
+    0: "passed",
+    1: "a script expectation failed",
+    2: "a script or setup error",
+    3: "the game threw",
+    4: "a wait or the watchdog timed out",
+}
+
+
+def describe_exit_code(code: int) -> str:
+    """What an exit code says happened, for codes the driver never produces.
+
+    Windows reports a process killed by PowerShell's Stop-Process (or .NET's Process.Kill) as
+    `0xFFFFFFFF`, which Python hands back as 4294967295 and a reader reads as a crash; an
+    unhandled exception is its NTSTATUS (0xC0000005, ...). On POSIX a process killed by signal N
+    comes back as -N. None of those is the script's verdict, and saying which one it is saves the
+    reader from guessing between the script, the golden compare and the process (issue #45).
+    """
+    if code in EXIT_MEANINGS:
+        return f"the driver's own result: {EXIT_MEANINGS[code]}"
+    if code < 0:
+        return f"killed by signal {-code}"
+    if code == 0xFFFFFFFF:
+        return "terminated externally (0xffffffff = -1, what PowerShell Stop-Process and .NET Process.Kill leave behind)"
+    if 0xC0000000 <= code <= 0xCFFFFFFF:
+        return f"an unhandled exception (0x{code:08x})"
+    return f"an exit code the driver never produces (0x{code:08x} = {code})"
+
+
+def exit_status(code: int) -> int:
+    """A code this process can actually exit with, keeping the value the caller sees.
+
+    Windows reports a killed process as 0xffffffff and a crash as its NTSTATUS (0xc0000005), and
+    neither fits the C int that exit() takes: `sys.exit(4294967295)` and `os._exit(4294967295)`
+    raise OverflowError *after* the report has been printed, which is the kind of noise this issue
+    is about. Handing exit() those bits sign-extended gives the caller the same code back.
+    """
+    if not 0 <= code <= 0xFFFFFFFF:
+        return code  # a POSIX signal (-N), or a code exit() can already carry
+    return code - 0x100000000 if code >= 0x80000000 else code
+
+
 def cmd_run(opts):
     args = [str(find_binary()), "-run", str(Path(opts.script).resolve())]
     home = opts.home
@@ -533,6 +578,13 @@ def cmd_run(opts):
             sys.stdout.write(line)
             sys.stdout.flush()
         code = proc.wait()
+    if code != 0 and code not in EXIT_MEANINGS:
+        # A code the driver never exits with: the process was killed or crashed, and nothing else
+        # in the run's output says so. The driver's own codes are explained by what the driver
+        # printed around them, and the resolution harness reads the tour's verdict to name which
+        # layer failed (issue #45).
+        print(f"ja2ctl: the game process did not exit with a driver result: exit code {code}: "
+              f"{describe_exit_code(code)}", file=sys.stderr)
     if scratch:
         if code == 0 and not opts.keep:
             shutil.rmtree(scratch, ignore_errors=True)
@@ -793,4 +845,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(exit_status(main()))
