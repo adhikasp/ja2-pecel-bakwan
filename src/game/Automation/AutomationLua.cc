@@ -1662,7 +1662,7 @@ namespace
 					// without damaging or gassing anyone.
 					if (!a || !a->is<int>()) throw std::runtime_error("ja2.debug(\"explosion\", grid, [item])");
 					IgniteExplosion(GetSelectedMan(), 0, static_cast<INT16>(a->as<int>()),
-						static_cast<UINT16>(b && b->is<int>() ? b->as<int>() : TEARGAS_GRENADE), 0);
+									static_cast<UINT16>(b && b->is<int>() ? b->as<int>() : TEARGAS_GRENADE), 0);
 				}
 				else if (what == "bookmarks")
 				{
