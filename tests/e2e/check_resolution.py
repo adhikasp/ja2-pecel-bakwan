@@ -32,6 +32,11 @@ of the game's state: the version label carries the build's commit sha, and a
 save's filename and "Today HH:MM" carry the machine's clock and timezone. Left
 alone they make a golden image depend on when and where it was taken, so the
 screens that show them would fail on every other machine and after every commit.
+
+A failing tour names the layer that failed: the script (the driver's own exit
+codes 1-4), the golden compare (this file's exit code 5) or the process (any
+other code - a kill or a crash, which is never the script's result even when it
+reads like one). The tour's own "passed"/"FAILED" line decides which.
 """
 
 import argparse
@@ -55,6 +60,16 @@ except ImportError as exc:
 HERE = Path(__file__).resolve().parent
 JA2CTL = HERE.parent.parent / "tools" / "ja2ctl.py"
 GOLDEN = HERE / "golden"
+
+# The driver's exit-code vocabulary lives in ja2ctl (it is the program that runs the game), so
+# the harness reads it from there rather than keeping a second copy that could drift.
+sys.path.insert(0, str(JA2CTL.parent))
+import ja2ctl  # noqa: E402
+
+# This harness's own failure code for a golden compare that failed. The driver never exits with
+# it (ja2ctl.EXIT_MEANINGS is 0-4), so the three ways a tour can fail - the script, the compare,
+# the process - are each a different code and a different message (issue #45).
+EXIT_GOLDEN_MISMATCH = 5
 
 # What the tour runs with so a golden image is a function of the game's state alone. Both are
 # passed to every run, in --update mode too, so a regenerated golden carries the same fixed values
@@ -166,6 +181,32 @@ def compare(a: Path, b: Path, tol: int):
     return int(bad.sum()), wa * ha
 
 
+# The tour's own verdict, printed by the game (Automation.cc: "automation: <script> passed (N
+# frames, M ms game time)" / "automation: <script> FAILED ..."). It is the only statement about
+# whether the tour itself succeeded, and it is what tells a failure in the script from a process
+# that died after the script was done.
+VERDICT = re.compile(r"^automation: .*? (passed|FAILED)\b")
+
+
+def failure_reason(code: int, verdict, goldens_marked: int) -> str:
+    """Name which layer failed: the script, the golden compare, or the process.
+
+    A nonzero exit used to print "script failed with exit code N" whatever the code was, which is
+    wrong when the script passed and the process died afterwards - an external kill reports
+    0xffffffff, i.e. Python's 4294967295, and reads as a crash - and it never said whether the
+    golden compare had even run. The compare's own failure has its own message below; this covers
+    the other two (issue #45).
+    """
+    if verdict == "passed":
+        return (f"the script passed and the process died after it (exit code {code}: "
+                f"{ja2ctl.describe_exit_code(code)}); {goldens_marked} golden image(s) marked, "
+                "none compared")
+    if code in ja2ctl.EXIT_MEANINGS and code != 0:
+        return f"the script failed: exit code {code}, {ja2ctl.EXIT_MEANINGS[code]}"
+    return (f"the process died before the script reached its verdict (exit code {code}: "
+            f"{ja2ctl.describe_exit_code(code)}); no golden image compared")
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("script")
@@ -197,12 +238,25 @@ def main() -> int:
         cmd = [sys.executable, str(JA2CTL), "run", str(script), "--isolated", "--seed", "1",
                "--res", opts.res, "--timeout", "2400", "--out", str(out), "--arg", "golden=1",
                "--freeze-wall-clock", GOLDEN_CLOCK, "--version-label", GOLDEN_VERSION]
-        code = subprocess.call(cmd)
-        if code != 0:
-            print(f"{name} @ {opts.res}: script failed with exit code {code}", file=sys.stderr)
-            return code
+        # Echo the game's output as it arrives and keep the tour's own verdict line: the exit code
+        # alone cannot say whether the tour was the failure, and for a process that was killed it
+        # is a number the driver never emits (see failure_reason).
+        verdict = None
+        proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        for raw in proc.stdout:
+            line = raw.decode("utf-8", errors="replace")
+            sys.stdout.write(line)
+            sys.stdout.flush()
+            m = VERDICT.match(line.strip())
+            if m:
+                verdict = m.group(1)
+        code = proc.wait()
         marked = out / "golden.txt"
         golden_shots = marked.read_text().split() if marked.exists() else []
+        if code != 0:
+            print(f"{name} @ {opts.res}: {failure_reason(code, verdict, len(golden_shots))}",
+                  file=sys.stderr)
+            return code
         if not golden_shots:
             print(f"{name} @ {opts.res}: passed (no golden shots marked)")
             return 0
@@ -233,8 +287,9 @@ def main() -> int:
                 for s in golden_shots:
                     shutil.copyfile(out / s, keep / s)
                 print(f"actual screenshots kept in {keep}", file=sys.stderr)
-            print(f"{name} @ {opts.res}: golden mismatch:\n  " + "\n  ".join(failed), file=sys.stderr)
-            return 1
+            print(f"{name} @ {opts.res}: the golden compare failed, the script did not:\n  "
+                  + "\n  ".join(failed), file=sys.stderr)
+            return EXIT_GOLDEN_MISMATCH
         print(f"{name} @ {opts.res}: passed ({len(golden_shots)} golden image(s) match)")
         return 0
     finally:

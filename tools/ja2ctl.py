@@ -491,6 +491,38 @@ def cmd_list(opts):
     return 0
 
 
+# The driver's own exit codes (Automation.h, Automation::ExitCode). A script run can only end
+# with one of these; anything else did not come from the driver, and reading it as the script's
+# result is how "the script failed" gets printed for a script that passed (issue #45).
+EXIT_MEANINGS = {
+    0: "passed",
+    1: "a script expectation failed",
+    2: "a script or setup error",
+    3: "the game threw",
+    4: "a wait or the watchdog timed out",
+}
+
+
+def describe_exit_code(code: int) -> str:
+    """What an exit code says happened, for codes the driver never produces.
+
+    Windows reports a process killed by PowerShell's Stop-Process (or .NET's Process.Kill) as
+    `0xFFFFFFFF`, which Python hands back as 4294967295 and a reader reads as a crash; an
+    unhandled exception is its NTSTATUS (0xC0000005, ...). On POSIX a process killed by signal N
+    comes back as -N. None of those is the script's verdict, and saying which one it is saves the
+    reader from guessing between the script, the golden compare and the process (issue #45).
+    """
+    if code in EXIT_MEANINGS:
+        return f"the driver's own result: {EXIT_MEANINGS[code]}"
+    if code < 0:
+        return f"killed by signal {-code}"
+    if code == 0xFFFFFFFF:
+        return "terminated externally (0xffffffff = -1, what PowerShell Stop-Process and .NET Process.Kill leave behind)"
+    if 0xC0000000 <= code <= 0xCFFFFFFF:
+        return f"an unhandled exception (0x{code:08x})"
+    return f"an exit code the driver never produces (0x{code:08x} = {code})"
+
+
 def cmd_run(opts):
     args = [str(find_binary()), "-run", str(Path(opts.script).resolve())]
     home = opts.home
@@ -533,6 +565,12 @@ def cmd_run(opts):
             sys.stdout.write(line)
             sys.stdout.flush()
         code = proc.wait()
+    if code != 0:
+        # Name the code before anything else: a run whose script passed and whose process was
+        # then killed reports a code the driver never emits, and the raw number alone reads as a
+        # crash in the script (issue #45).
+        print(f"ja2ctl: the game process exited with code {code}: {describe_exit_code(code)}",
+              file=sys.stderr)
     if scratch:
         if code == 0 and not opts.keep:
             shutil.rmtree(scratch, ignore_errors=True)

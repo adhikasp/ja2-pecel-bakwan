@@ -29,6 +29,23 @@ Full-screen tactical shots (`landed.png`, `moved.png`) are stored only at
 the tours still run and call `ja2.assertInsideScreen()`.
 The smallest output the game runs at is 1280x720 (issue #324): there are no 640x480 goldens.
 
+## What a failing test says
+
+A resolution test runs a tour and then compares its shots, so a nonzero exit
+can come from three places. Each one has its own exit code and its own line:
+
+| Exit code | Message starts with | What failed |
+|---|---|---|
+| the driver's 1-4 | `the script failed: exit code N, ...` | the tour itself (an expectation, a setup error, the game, a timeout) |
+| 5 | `the golden compare failed, the script did not:` | the pixels |
+| anything else | `the script passed and the process died after it ...` / `the process died before the script reached its verdict ...` | the process — a kill or a crash, never the script |
+
+The last row is the one worth knowing: an externally killed process reports
+4294967295 (`0xffffffff`, i.e. -1, what PowerShell's `Stop-Process` and .NET's
+`Process.Kill` leave behind), and that used to print `script failed` for a tour
+whose own log said `passed`. The tour's own `passed`/`FAILED` line decides which
+row it is, not the exit code (issue #45).
+
 ## Why a golden image is portable
 
 A golden image is only comparable if the same tour produces the same pixels on
