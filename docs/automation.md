@@ -268,7 +268,7 @@ screenshots, `ja2.pixel` and goldens include it. Coordinates are the same canvas
 |---|---|
 | `ja2.setUiMode(key, "legacy" \| "native" \| "default")` | Override a screen's ui_mode for this session (applies at the next entry). |
 | `ja2.uiMode(key)` | `{configured, resolved, reason}`. |
-| `ja2.nativeUi()` | `{running, renderer, w, h, dp, uiScale, screen, documents, warnings, capturesMouse, focused, modes}`. |
+| `ja2.nativeUi()` | `{running, renderer, w, h, dp, uiScale, screen, documents, warnings, capturesMouse, focused, modes, overlays = {fps = {on, drawn}, visualizer = {on, drawn}}}`. `overlays.*.drawn` is how many frames the debug overlay has actually been drawn on (the SDL_GPU compositor or the SDL_Renderer fallback); it stays put in a headless run, which presents nothing. |
 | `ja2.setUiScale(s)` | The native UI scale (1 = 100 %, up to 3). |
 | `ja2.focus(id)` | Give an element keyboard focus (with the focus ring). Tab/arrows/Enter work through `ja2.key`. |
 | `ja2.viewModel(name)` | A view model's fields as a table: an open screen's (`"credits"`, `"options"`, ...) or one made for the call, which reads the game now (`"status"`: day, time, money, sector, mercs; `"options"`: the game settings, volumes, video settings and this campaign's options; `"mainmenu"`, `"saveload"`: the saves). |

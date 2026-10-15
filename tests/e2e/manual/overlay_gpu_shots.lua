@@ -10,6 +10,11 @@ if ja2.screen() ~= "GAME_SCREEN" then
 end
 ja2.waitIdle()
 
+-- The run's default window mode is the desktop (the window follows the monitor); a real windowed size makes the
+-- screenshots the size asked for.
+ja2.setVideo{ window = "windowed" }
+ja2.waitIdle()
+
 -- The Visualizer only toggles on at cheat level: type the cheat code, as a player would.
 for _, ch in ipairs({ "g", "a", "b", "b", "i" }) do
 	ja2.key("ctrl+" .. ch)
@@ -17,7 +22,7 @@ end
 
 -- Put the cursor over a building so the Visualizer's hitboxes have something to show.
 local sz = ja2.screenSize()
-ja2.move(math.floor(sz.w * 0.38), math.floor(sz.h * 0.50))
+ja2.move(math.floor(sz.w * 0.30), math.floor(sz.h * 0.40))
 ja2.step(3)
 
 -- Ctrl+F and Ctrl+C, through the driver's key path.
@@ -26,19 +31,22 @@ ja2.key("ctrl+c")
 ja2.step(60) -- let the compositor draw a few frames (and the counter refresh)
 
 local o = ja2.nativeUi().overlays
-ja2.log("overlays: fps on=" .. tostring(o.fps.on) .. " drawn=" .. tostring(o.fps.drawn)
+local n = ja2.nativeUi()
+ja2.log("screen " .. sz.w .. "x" .. sz.h .. ", nativeUi " .. tostring(n.w) .. "x" .. tostring(n.h)
+	.. ", overlays: fps on=" .. tostring(o.fps.on) .. " drawn=" .. tostring(o.fps.drawn)
 	.. ", visualizer on=" .. tostring(o.visualizer.on) .. " drawn=" .. tostring(o.visualizer.drawn)
-	.. ", renderer=" .. tostring(ja2.nativeUi().renderer))
+	.. ", renderer=" .. tostring(n.renderer))
 ja2.expect(o.fps.on, "the FPS counter is on")
 ja2.expect(o.visualizer.on, "the Visualizer is on (cheat level reached)")
 ja2.expect(o.fps.drawn > 0, "the FPS counter was drawn on the compositor")
 ja2.expect(o.visualizer.drawn > 0, "the Visualizer was drawn on the compositor")
 
 ja2.screenshot("overlay_both.png")     -- both on
-ja2.key("ctrl+f")                      -- FPS off; the Visualizer stays on
-ja2.step(5)
-ja2.screenshot("overlay_visualizer.png")
-ja2.key("ctrl+f")                      -- FPS back on
+ja2.key("ctrl+c")                      -- Visualizer off: the FPS counter only
 ja2.step(5)
 ja2.screenshot("overlay_fps.png")
+ja2.key("ctrl+c")                      -- Visualizer back on ...
+ja2.key("ctrl+f")                      -- ... and the FPS counter off: the Visualizer only
+ja2.step(5)
+ja2.screenshot("overlay_visualizer.png")
 ja2.log("overlay_gpu_shots: done")
