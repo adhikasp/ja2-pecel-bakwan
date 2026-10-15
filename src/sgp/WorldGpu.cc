@@ -60,28 +60,55 @@ WorldGpu::Region Renderer::DirtyRegion(WorldPipe::Frame const& f, uint32_t const
 	// A different count means the instance list was reordered, so this per-index comparison says nothing: full.
 	if (last.instances.size() != f.instances.size()) return full;
 	if (f.instances.empty()) return Region{};
-	auto const* const a = reinterpret_cast<uint8_t const*>(last.instances.data());
-	auto const* const b = reinterpret_cast<uint8_t const*>(f.instances.data());
-	size_t const bytes = f.instances.size() * sizeof(WorldPipe::Instance);
-	size_t i0 = 0;
-	while (i0 < bytes && a[i0] == b[i0]) ++i0;
-	if (i0 == bytes) return Region{}; // the frame is exactly the one the target holds
-	size_t i1 = bytes - 1;
-	while (a[i1] == b[i1]) --i1;
-	// Every instance from the first to the last that differs is dirty, and each one dirties its own pixels in
-	// both frames (it may have moved). The rest of the instances are identical and so is what they draw.
+
+	// A palette or a depth run is content the instance reads, not content the instance names: an instance is dirty
+	// when its own bytes differ, when the palette it indexes holds different colours, or when its depth run does.
+	// (Naming it by index would call every instance of a re-recorded frame dirty even when the colours matched.)
+	auto const paletteHashes = [](std::vector<uint32_t> const& palettes) {
+		std::vector<uint32_t> h(palettes.size() / 256);
+		for (size_t p = 0; p < h.size(); ++p)
+		{
+			uint32_t v = 2166136261u;
+			for (size_t k = 0; k < 256; ++k) v = (v ^ palettes[p * 256 + k]) * 16777619u;
+			h[p] = v;
+		}
+		return h;
+	};
+	auto const depthRun = [](WorldPipe::Instance const& in, std::vector<uint16_t> const& columns, uint16_t const*& out) -> size_t {
+		if (in.columns == WorldPipe::NO_COLUMNS) { out = nullptr; return 0; }
+		size_t const n = (in.parity & WorldPipe::PER_PIXEL_DEPTH)
+			? size_t(in.y1 - in.y0) * (in.x1 - in.x0) : size_t(in.x1 - in.x0);
+		out = columns.data() + in.columns;
+		return n;
+	};
+	std::vector<uint32_t> const newPal = paletteHashes(f.palettes);
+	std::vector<uint32_t> const oldPal = paletteHashes(last.palettes);
 	Region r;
+	bool any = false;
 	auto cover = [&r](WorldPipe::Instance const& in) {
 		if (in.x0 >= in.x1 || in.y0 >= in.y1) return;
 		if (r.Empty()) { r.x0 = in.x0; r.x1 = in.x1; r.y0 = in.y0; r.y1 = in.y1; return; }
 		r.x0 = std::min<int>(r.x0, in.x0); r.x1 = std::max<int>(r.x1, in.x1);
 		r.y0 = std::min<int>(r.y0, in.y0); r.y1 = std::max<int>(r.y1, in.y1);
 	};
-	for (size_t k = i0 / sizeof(WorldPipe::Instance), e = i1 / sizeof(WorldPipe::Instance); k <= e; ++k)
+	for (size_t k = 0; k < f.instances.size(); ++k)
 	{
-		cover(f.instances[k]);
-		cover(last.instances[k]);
+		WorldPipe::Instance const& in = f.instances[k];
+		WorldPipe::Instance const& old = last.instances[k];
+		if (std::memcmp(&in, &old, sizeof(WorldPipe::Instance)) == 0 &&
+			newPal[in.palette] == oldPal[old.palette])
+		{
+			uint16_t const* na;
+			uint16_t const* oa;
+			size_t const nn = depthRun(in, f.columns, na), no = depthRun(old, last.columns, oa);
+			if (nn == no && (nn == 0 || std::memcmp(na, oa, nn * sizeof(uint16_t)) == 0)) continue;
+		}
+		// Dirty: it draws different pixels in the new frame, and the ones it drew in the old frame have to go too.
+		any = true;
+		cover(in);
+		cover(old);
 	}
+	if (!any) return Region{}; // the frame is exactly the one the target holds
 	// A dispatch is a grid of 16x16 bins: the origin is bin-aligned and the extent covers the last partial bin.
 	r.x0 = (r.x0 / WorldPipe::BIN) * WorldPipe::BIN;
 	r.y0 = (r.y0 / WorldPipe::BIN) * WorldPipe::BIN;
