@@ -25,6 +25,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -50,6 +51,7 @@ AREAS_FIXTURE = {
     "e2e_loadout_spec": {"equipment"},
     "e2e_world_renderer": {"world-renderer"},
     "e2e_determinism": {"automation"},
+    "e2e_tactical_layers_pipeline": {"tactical", "world-renderer"},
 }
 
 
@@ -77,10 +79,11 @@ class PathMapping(unittest.TestCase):
         self.assertEqual({"laptop", "nativeui"},
                          self.areas("src/game/NativeUI/LaptopScreen.cc"))
         self.assertEqual({"nativeui"}, self.areas("src/game/NativeUI/FrontEnd.cc"))
+        self.assertEqual({"nativeui"}, self.areas("src/nativeui/UiCore.cc"))
 
     def test_renderer_and_tileengine_are_world_renderer(self):
         self.assertEqual({"world-renderer"}, self.areas("src/sgp/VideoGpu.cc"))
-        self.assertEqual({"world-renderer"}, self.areas("src/shaders/world.hlsl"))
+        self.assertEqual({"world-renderer"}, self.areas("src/sgp/shaders/world_raster.comp"))
         self.assertEqual({"world-renderer", "tactical"},
                          self.areas("src/game/TileEngine/tile.cc"))
 
@@ -88,6 +91,10 @@ class PathMapping(unittest.TestCase):
         self.assertEqual({"campaign"}, self.areas("tests/e2e/campaign_state.lua"))
         # the check_* runners strip their prefix to find the e2e_<name> test
         self.assertEqual({"automation"}, self.areas("tests/e2e/check_determinism.py"))
+        # a script compiled into several tests (tactical_layers.lua -> the
+        # e2e_tactical_layers_* tests) unions their areas
+        self.assertEqual({"tactical", "world-renderer"},
+                         self.areas("tests/e2e/tactical_layers.lua"))
 
     def test_shared_fixtures_map_to_every_area(self):
         self.assertEqual(set(e2e_select.AREAS), self.areas("tests/e2e/lib/campaign.lua"))
@@ -209,6 +216,15 @@ class JUnitReport(unittest.TestCase):
     def test_a_file_that_is_not_junit_is_refused(self):
         with self.assertRaises(e2e_select.SelectError):
             e2e_select.parse_junit("<not-a-testsuite")
+
+
+class MissingTools(unittest.TestCase):
+    """A tool that cannot be started is a clean error, not a traceback."""
+
+    def test_a_missing_git_is_a_clean_error(self):
+        with mock.patch.object(e2e_select.subprocess, "run", side_effect=FileNotFoundError("git")):
+            with self.assertRaises(e2e_select.SelectError):
+                e2e_select.changed_paths(".", "master")
 
 
 class AgainstRealGit(unittest.TestCase):

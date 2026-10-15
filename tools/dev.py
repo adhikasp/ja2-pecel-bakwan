@@ -961,6 +961,13 @@ def split_tail(tail):
             dev += tail[i:i + 2]
             i += 2
             continue
+        if arg == "--changed" and i + 1 < len(tail) and not tail[i + 1].startswith("-"):
+            # `--changed <ref>`: argparse would take the next token as the
+            # optional value, but split_tail runs first - claim it here or it
+            # leaks into the ctest command line.
+            dev += tail[i:i + 2]
+            i += 2
+            continue
         if (arg in DEV_FLAGS or arg.startswith("--jobs=") or re.fullmatch(r"-j\d+", arg)
                 or arg == "--changed" or arg.startswith("--changed=")):
             dev.append(arg)

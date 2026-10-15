@@ -77,8 +77,9 @@ PATH_RULES = (
     (r"^src/game/NativeUI/(?:.*Loadout|.*WeaponReadout|.*CursorModel)", ("equipment", "nativeui")),
     (r"^src/game/NativeUI/AutoResolve", ("mapscreen", "nativeui")),
     (r"^src/game/NativeUI/", ("nativeui",)),
+    (r"^src/nativeui/", ("nativeui",)),  # the native-UI core (UiCore, UiGpu, ...)
     (r"^src/sgp/(?:Video[^/]*|WorldGpu\.[^/]*|WorldPipeline\.[^/]*)$", ("world-renderer",)),
-    (r"^src/shaders/", ("world-renderer",)),
+    (r"^src/sgp/shaders/", ("world-renderer",)),
     (r"^src/game/TileEngine/", ("world-renderer", "tactical")),
     (r"^src/game/Automation/", ("automation",)),
     (r"^tools/(?:ja2ctl|dev)\.py$", ("automation",)),
@@ -113,11 +114,13 @@ def _matches(rules, path):
 
 
 def script_areas(name, test_areas):
-    """The areas of the test a script drives, or None if it is not one yet.
+    """The areas of the test(s) a script drives, or None if it drives none yet.
 
     `check_determinism.py` drives `e2e_determinism`, so the `check_` prefix is
-    tried and then dropped; a comparator like `check_resolution.py` has no
-    `e2e_` test and comes back None (unmapped -> run all).
+    tried and then dropped. A script compiled into several tests
+    (`tactical_layers.lua` -> `e2e_tactical_layers_*`) unions them at the
+    underscore boundary. A comparator like `check_resolution.py` has no `e2e_`
+    test and comes back None (unmapped -> run all).
     """
     candidates = [f"e2e_{name}"]
     if name.startswith("check_"):
@@ -125,7 +128,12 @@ def script_areas(name, test_areas):
     for candidate in candidates:
         if candidate in test_areas:
             return set(test_areas[candidate])
-    return None
+    prefix = f"e2e_{name}_"
+    derived = set()
+    for test, areas in test_areas.items():
+        if test.startswith(prefix):
+            derived |= areas
+    return derived or None
 
 
 def areas_for_path(path, test_areas):
@@ -197,8 +205,11 @@ def changed_paths(repo, base="master"):
     source or test file is exactly a change a selector must not miss.
     """
     def git(*args):
-        r = subprocess.run(["git", "-C", str(repo), *args],
-                           capture_output=True, text=True)
+        try:
+            r = subprocess.run(["git", "-C", str(repo), *args],
+                               capture_output=True, text=True)
+        except OSError as exc:  # git is not on this process's PATH
+            raise SelectError(f"could not run git: {exc}")
         if r.returncode != 0:
             raise SelectError(f"git {' '.join(args)} failed: "
                               f"{(r.stderr or r.stdout).strip()}")
