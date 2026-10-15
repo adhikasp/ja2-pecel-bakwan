@@ -20,9 +20,15 @@ for _, ch in ipairs({ "g", "a", "b", "b", "i" }) do
 	ja2.key("ctrl+" .. ch)
 end
 
--- Put the cursor over a building so the Visualizer's hitboxes have something to show.
-local sz = ja2.screenSize()
-ja2.move(math.floor(sz.w * 0.30), math.floor(sz.h * 0.40))
+-- Put the cursor over a wall, so the Visualizer's hitboxes have something to show. The manual run can override
+-- the canvas position with e.g. `--arg 330,340`.
+local mx, my = 330, 340
+local arg = ja2.args and ja2.args[1]
+if arg then
+	local ax, ay = arg:match("^(%d+),(%d+)$")
+	if ax then mx, my = tonumber(ax), tonumber(ay) end
+end
+ja2.move(mx, my)
 ja2.step(3)
 
 -- Ctrl+F and Ctrl+C, through the driver's key path.
@@ -32,6 +38,7 @@ ja2.step(60) -- let the compositor draw a few frames (and the counter refresh)
 
 local o = ja2.nativeUi().overlays
 local n = ja2.nativeUi()
+local sz = ja2.screenSize()
 ja2.log("screen " .. sz.w .. "x" .. sz.h .. ", nativeUi " .. tostring(n.w) .. "x" .. tostring(n.h)
 	.. ", overlays: fps on=" .. tostring(o.fps.on) .. " drawn=" .. tostring(o.fps.drawn)
 	.. ", visualizer on=" .. tostring(o.visualizer.on) .. " drawn=" .. tostring(o.visualizer.drawn)
