@@ -300,18 +300,19 @@ script, the golden compare and the process. Now the tour's own verdict decides, 
 driver prints `passed` or `FAILED` for every result the script produced, so a *missing* verdict is
 itself evidence — and each layer has its own message:
 
-| Message | Exit code | What failed |
-|---|---|---|
-| `the script failed (exit code N: …)` | the driver's 1–4 | the tour: a failed expectation or check, or the game throwing |
-| `the tour ended before a verdict (exit code N: …)` | 2–4 | the tour, before it could report: a bad path or save, a crash at startup, a wait or the watchdog timing out |
-| `the golden compare failed, the script did not:` | 5 | the pixels |
-| `the script passed and the process died after it …` | anything | the process, after a tour that passed |
-| `the process died before the script reached its verdict …` | anything ¹ | the process — a kill or a crash, never the script |
+| Message | What failed |
+|---|---|
+| `the script failed (exit code N: …)` | the tour: a failed expectation or check, or the game throwing |
+| `the tour ended before a verdict (exit code N: …)` | the tour, before it could report: a bad path or save, a crash at startup, a wait or the watchdog timing out |
+| `the golden compare failed, the script did not:` | the pixels |
+| `the script passed and the process died after it …` | the process, after a tour that passed |
+| `the process died before the script reached its verdict …` | the process — a kill or a crash, never the script |
 
-¹ Including exit 1 with no `FAILED` line. The driver prints one before every exit 1, so an exit 1
-without a verdict is not the driver's own result — and a force-kill can use any code, which is why
-the verdict decides: Windows' `taskkill /F` terminates with code 1, which is also "a script
-expectation failed".
+The last message covers exit 1 with no `FAILED` line: the driver prints one before every exit 1, so
+an exit 1 without a verdict is not the driver's own result, and a force-kill can use any code, which
+is why the verdict decides — Windows' `taskkill /F` terminates with code 1, which is also "a script
+expectation failed". The golden compare is the only failure with an exit code of the harness's own
+(`5`, `check_resolution.py`); the rest propagate the driver's or the process's.
 
 `tools/ja2ctl.py` owns the exit-code vocabulary (the driver's 0–4 are `Automation::ExitCode`; there
 is no driver code outside them) and describes anything else as an external kill, an unhandled
@@ -413,13 +414,13 @@ matrix does produce on a machine that is doing something else is two other thing
   still reported.
 - **A killed process.** Issue #45's `script failed with exit code 4294967295` and the orchestration
   note's two failures are all `0xffffffff` = -1, which no code in this repository emits — the
-  driver's codes are 0-4, and the test harness only ever returns those or its own 5 (verified:
-  `Stop-Process -Force` on the game process reproduces 4294967295, and the tour's own log line said
-  `passed` both times; Windows' `taskkill /F` uses 1 instead, which is the case the verdict — not
-  the code — catches). That is an external kill of the game process — an agent harness or a tool
-  reaping a process tree — not a test result, and it is not retried: the harness now reports it as
-  the process layer, so the run can be judged as "not a test failure" or repeated *whole*, with a
-  reason.
+  driver's own codes are 0-4 and the harness's own is 5 for a golden compare, so anything else came
+  from the process (verified: `Stop-Process -Force` on the game process reproduces 4294967295, and
+  the tour's own log line said `passed` both times; Windows' `taskkill /F` uses 1 instead, which is
+  the case the verdict — not the code — catches). That is an external kill of the game process — an
+  agent harness or a tool reaping a process tree — not a test result, and it is not retried: the
+  harness now reports it as the process layer, so the run can be judged as "not a test failure" or
+  repeated *whole*, with a reason.
 
 So the honest operating rule: run the sweep with the machine to itself (bagong's `dev.py status`
 `active: 0` is the gate), and read a failure by the layer it names. A matrix that is green in one
