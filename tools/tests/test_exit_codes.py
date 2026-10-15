@@ -79,6 +79,25 @@ class DescribeExitCode(unittest.TestCase):
         self.assertIn("never produces", text)
 
 
+class ExitStatus(unittest.TestCase):
+    """ja2ctl.exit_status: a code the process can carry, without losing what it says."""
+
+    def test_the_drivers_codes_pass_through(self):
+        for code in ja2ctl.EXIT_MEANINGS:
+            with self.subTest(code=code):
+                self.assertEqual(ja2ctl.exit_status(code), code)
+
+    def test_a_windows_kill_or_crash_keeps_its_bits(self):
+        # sys.exit()/os._exit() raise OverflowError for these (> INT_MAX), after the report has
+        # been printed; exit() takes the same 32 bits sign-extended and Windows records what the
+        # original process reported.
+        self.assertEqual(ja2ctl.exit_status(0xFFFFFFFF), -1)
+        self.assertEqual(ja2ctl.exit_status(0xC0000005), 0xC0000005 - 0x100000000)
+
+    def test_a_signal_stays_negative(self):
+        self.assertEqual(ja2ctl.exit_status(-9), -9)
+
+
 @unittest.skipIf(check_resolution is None, f"check_resolution is unavailable: {SKIP}")
 class FailureReason(unittest.TestCase):
     """check_resolution.failure_reason: which of the three layers a nonzero exit belongs to."""
@@ -91,18 +110,41 @@ class FailureReason(unittest.TestCase):
         self.assertNotIn("the script failed", reason)
 
     def test_a_real_script_failure_says_so(self):
-        reason = check_resolution.failure_reason(1, "FAILED", 0)
-        self.assertIn("the script failed", reason)
-        self.assertIn("a script expectation failed", reason)
+        # The driver prints its verdict before returning 1 (a failed expectation) or 2 (a failed
+        # check), so a FAILED line is the script's own result.
+        for code in (1, 2):
+            with self.subTest(code=code):
+                reason = check_resolution.failure_reason(code, "FAILED", 3)
+                self.assertIn("the script failed", reason)
+                self.assertIn(ja2ctl.EXIT_MEANINGS[code], reason)
+
+    def test_exit_one_with_no_verdict_is_a_kill_not_the_script(self):
+        # Windows' taskkill /F terminates a process with code 1, which is also the driver's
+        # "expectation failed". Only the verdict tells them apart: Automation.cc prints its FAILED
+        # line before every exit 1, so an exit 1 without one is not the script failing.
+        reason = check_resolution.failure_reason(1, None, 0)
+        self.assertIn("the process died before the script reached its verdict", reason)
+        self.assertIn("no FAILED line", reason)
+        self.assertNotIn("the script failed", reason)
 
     def test_a_death_with_no_verdict_says_so(self):
         reason = check_resolution.failure_reason(7, None, 0)
-        self.assertIn("before the script reached its verdict", reason)
+        self.assertIn("the process died before the script reached its verdict", reason)
         self.assertNotIn("the script failed", reason)
+
+    def test_a_driver_code_with_no_verdict_is_not_a_script_failure(self):
+        # A watchdog timeout (4) or a setup error (2) never prints a verdict, and neither is the
+        # script's assertions failing.
+        for code in (2, 3, 4):
+            with self.subTest(code=code):
+                reason = check_resolution.failure_reason(code, None, 0)
+                self.assertIn("the tour ended before a verdict", reason)
+                self.assertIn(ja2ctl.EXIT_MEANINGS[code], reason)
+                self.assertNotIn("the script failed", reason)
 
     def test_the_compare_has_its_own_code_and_message(self):
         # Not one of the driver's codes: a reader (or a script) can tell the golden compare from
-        # the script without parsing English.
+        # the tour without parsing English.
         self.assertNotIn(check_resolution.EXIT_GOLDEN_MISMATCH, ja2ctl.EXIT_MEANINGS)
 
 

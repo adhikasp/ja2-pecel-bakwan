@@ -523,6 +523,19 @@ def describe_exit_code(code: int) -> str:
     return f"an exit code the driver never produces (0x{code:08x} = {code})"
 
 
+def exit_status(code: int) -> int:
+    """A code this process can actually exit with, keeping the value the caller sees.
+
+    Windows reports a killed process as 0xffffffff and a crash as its NTSTATUS (0xc0000005), and
+    neither fits the C int that exit() takes: `sys.exit(4294967295)` and `os._exit(4294967295)`
+    raise OverflowError *after* the report has been printed, which is the kind of noise this issue
+    is about. Handing exit() those bits sign-extended gives the caller the same code back.
+    """
+    if not 0 <= code <= 0xFFFFFFFF:
+        return code  # a POSIX signal (-N), or a code exit() can already carry
+    return code - 0x100000000 if code >= 0x80000000 else code
+
+
 def cmd_run(opts):
     args = [str(find_binary()), "-run", str(Path(opts.script).resolve())]
     home = opts.home
@@ -565,12 +578,13 @@ def cmd_run(opts):
             sys.stdout.write(line)
             sys.stdout.flush()
         code = proc.wait()
-    if code != 0:
-        # Name the code before anything else: a run whose script passed and whose process was
-        # then killed reports a code the driver never emits, and the raw number alone reads as a
-        # crash in the script (issue #45).
-        print(f"ja2ctl: the game process exited with code {code}: {describe_exit_code(code)}",
-              file=sys.stderr)
+    if code != 0 and code not in EXIT_MEANINGS:
+        # A code the driver never exits with: the process was killed or crashed, and nothing else
+        # in the run's output says so. The driver's own codes are explained by what the driver
+        # printed around them, and the resolution harness reads the tour's verdict to name which
+        # layer failed (issue #45).
+        print(f"ja2ctl: the game process did not exit with a driver result: exit code {code}: "
+              f"{describe_exit_code(code)}", file=sys.stderr)
     if scratch:
         if code == 0 and not opts.keep:
             shutil.rmtree(scratch, ignore_errors=True)
@@ -831,4 +845,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(exit_status(main()))

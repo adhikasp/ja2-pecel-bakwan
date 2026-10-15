@@ -33,10 +33,11 @@ save's filename and "Today HH:MM" carry the machine's clock and timezone. Left
 alone they make a golden image depend on when and where it was taken, so the
 screens that show them would fail on every other machine and after every commit.
 
-A failing tour names the layer that failed: the script (the driver's own exit
-codes 1-4), the golden compare (this file's exit code 5) or the process (any
-other code - a kill or a crash, which is never the script's result even when it
-reads like one). The tour's own "passed"/"FAILED" line decides which.
+A failing tour names the layer that failed: the tour (the driver printed
+"FAILED", or ended on one of its own codes without one), the golden compare (this
+file's exit code 5) or the process (no verdict, or a code outside the driver's
+1-4: a kill or a crash, never the script's result even when the code suggests
+one). The tour's own "passed"/"FAILED" line decides which.
 """
 
 import argparse
@@ -192,17 +193,30 @@ def failure_reason(code: int, verdict, goldens_marked: int) -> str:
     """Name which layer failed: the script, the golden compare, or the process.
 
     A nonzero exit used to print "script failed with exit code N" whatever the code was, which is
-    wrong when the script passed and the process died afterwards - an external kill reports
-    0xffffffff, i.e. Python's 4294967295, and reads as a crash - and it never said whether the
-    golden compare had even run. The compare's own failure has its own message below; this covers
-    the other two (issue #45).
+    wrong twice over: the code need not be the driver's own (a killed process reports a code the
+    driver never exits with - 0xffffffff, or 1 for Windows' taskkill /F - and the raw number reads
+    as a crash), and it never said whether the golden compare had even run. The tour's own verdict
+    line decides, because the driver prints "passed" or "FAILED" for every result the script
+    produced; the code only says what the process did. The compare's own failure has its own
+    message below; this covers the other two (issue #45).
     """
     if verdict == "passed":
         return (f"the script passed and the process died after it (exit code {code}: "
                 f"{ja2ctl.describe_exit_code(code)}); {goldens_marked} golden image(s) marked, "
                 "none compared")
-    if code in ja2ctl.EXIT_MEANINGS and code != 0:
-        return f"the script failed: exit code {code}, {ja2ctl.EXIT_MEANINGS[code]}"
+    if verdict == "FAILED":
+        return (f"the script failed (exit code {code}: "
+                f"{ja2ctl.EXIT_MEANINGS.get(code, ja2ctl.describe_exit_code(code))}); "
+                f"{goldens_marked} golden image(s) marked")
+    if code == 1:
+        # Automation.cc prints a FAILED line before every exit 1, so an exit 1 with no verdict is
+        # not the driver's own result: the process died, and a force-kill can use any code.
+        return ("the process died before the script reached its verdict (exit code 1 with no FAILED "
+                "line: the driver prints one before it exits 1, so this is a kill or a crash - "
+                "Windows' taskkill /F uses code 1 - not the script); no golden image compared")
+    if code in ja2ctl.EXIT_MEANINGS:
+        return (f"the tour ended before a verdict (exit code {code}: {ja2ctl.EXIT_MEANINGS[code]}); "
+                "no golden image compared")
     return (f"the process died before the script reached its verdict (exit code {code}: "
             f"{ja2ctl.describe_exit_code(code)}); no golden image compared")
 
@@ -256,7 +270,9 @@ def main() -> int:
         if code != 0:
             print(f"{name} @ {opts.res}: {failure_reason(code, verdict, len(golden_shots))}",
                   file=sys.stderr)
-            return code
+            # The raw code is in the message; the process exit code has to be one exit() can carry
+            # (a killed Windows process reports 0xffffffff, which raises instead).
+            return ja2ctl.exit_status(code)
         if not golden_shots:
             print(f"{name} @ {opts.res}: passed (no golden shots marked)")
             return 0

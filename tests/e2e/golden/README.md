@@ -32,19 +32,24 @@ The smallest output the game runs at is 1280x720 (issue #324): there are no 640x
 ## What a failing test says
 
 A resolution test runs a tour and then compares its shots, so a nonzero exit
-can come from three places. Each one has its own exit code and its own line:
+can come from three places. Each one has its own message, decided by the tour's
+own `passed`/`FAILED` line (the driver prints one for every result the script
+produced) rather than by the exit code:
 
-| Exit code | Message starts with | What failed |
-|---|---|---|
-| the driver's 1-4 | `the script failed: exit code N, ...` | the tour itself (an expectation, a setup error, the game, a timeout) |
-| 5 | `the golden compare failed, the script did not:` | the pixels |
-| anything else | `the script passed and the process died after it ...` / `the process died before the script reached its verdict ...` | the process — a kill or a crash, never the script |
+| Message | What failed |
+|---|---|
+| `the script failed (exit code N: …)` | the tour — a failed expectation, the game throwing |
+| `the tour ended before a verdict (exit code N: …)` | the tour, before it could report: a bad path or save, a crash at startup, a wait or the watchdog timing out |
+| `the golden compare failed, the script did not:` | the pixels |
+| `the script passed and the process died after it …` / `the process died before the script reached its verdict …` | the process — a kill or a crash, never the script |
 
-The last row is the one worth knowing: an externally killed process reports
-4294967295 (`0xffffffff`, i.e. -1, what PowerShell's `Stop-Process` and .NET's
-`Process.Kill` leave behind), and that used to print `script failed` for a tour
-whose own log said `passed`. The tour's own `passed`/`FAILED` line decides which
-row it is, not the exit code (issue #45).
+The last row is the one worth knowing. It used to print `script failed` for
+anything nonzero: an externally killed process reports 4294967295
+(`0xffffffff` = -1, what PowerShell's `Stop-Process` and .NET's `Process.Kill`
+leave behind), which reads as a crash, and a killed process can equally report
+the code the driver uses for a failed expectation — Windows' `taskkill /F`
+uses 1 — which is why the verdict decides and the code only says what the
+process did (issue #45).
 
 ## Why a golden image is portable
 

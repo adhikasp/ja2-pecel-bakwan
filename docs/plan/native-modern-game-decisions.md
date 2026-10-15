@@ -296,21 +296,30 @@ A resolution test runs a tour and then compares its shots, so a nonzero exit can
 places. It used to print `script failed with exit code 4294967295` for all of them — including the
 case where the tour's own log said `passed`. `0xffffffff` is -1, what PowerShell's `Stop-Process`
 and .NET's `Process.Kill` leave behind, so it read as a crash and a reader had to guess between the
-script, the golden compare and the process. Now each layer has its own code and its own message:
+script, the golden compare and the process. Now the tour's own verdict decides, not the code — the
+driver prints `passed` or `FAILED` for every result the script produced, so a *missing* verdict is
+itself evidence — and each layer has its own message:
 
-| Exit code | Message | What failed |
+| Message | Exit code | What failed |
 |---|---|---|
-| the driver's 1–4 | `the script failed: exit code N, <meaning>` | the tour itself (an expectation, a setup error, the game, a timeout) |
-| 5 | `the golden compare failed, the script did not:` | the pixels |
-| anything else | `the script passed and the process died after it …` / `the process died before the script reached its verdict …` | the process — a kill or a crash, never the script |
+| `the script failed (exit code N: …)` | the driver's 1–4 | the tour: a failed expectation or check, or the game throwing |
+| `the tour ended before a verdict (exit code N: …)` | 2–4 | the tour, before it could report: a bad path or save, a crash at startup, a wait or the watchdog timing out |
+| `the golden compare failed, the script did not:` | 5 | the pixels |
+| `the script passed and the process died after it …` | anything | the process, after a tour that passed |
+| `the process died before the script reached its verdict …` | anything ¹ | the process — a kill or a crash, never the script |
+
+¹ Including exit 1 with no `FAILED` line. The driver prints one before every exit 1, so an exit 1
+without a verdict is not the driver's own result — and a force-kill can use any code, which is why
+the verdict decides: Windows' `taskkill /F` terminates with code 1, which is also "a script
+expectation failed".
 
 `tools/ja2ctl.py` owns the exit-code vocabulary (the driver's 0–4 are `Automation::ExitCode`; there
 is no driver code outside them) and describes anything else as an external kill, an unhandled
 exception, a signal or an unknown code. `tests/e2e/check_resolution.py` keeps the tour's own
-`passed`/`FAILED` line and uses it to name the layer. Reproduce the third row by killing the game
-process of a running tour (`Stop-Process -Force` on Windows); the first with any script that fails.
-`tools/tests/test_exit_codes.py` pins all of it, including that the wording it greps for is still
-what `Automation.cc` prints.
+`passed`/`FAILED` line and uses it to name the layer. Reproduce the process rows by killing the game
+process of a running tour (`Stop-Process -Force` reports 0xffffffff, `taskkill /F` reports 1); the
+tour row with any script that fails. `tools/tests/test_exit_codes.py` pins all of it, including that
+the wording it greps for is still what `Automation.cc` prints.
 
 ## The 3440x1440 watchdog: the whole tier gets 2400 s
 
@@ -349,7 +358,7 @@ screen tours was #24's.
 | saveload_parity | 900 | 117.19 | 155.75 | 5.8x |
 | tactical_overlays | 900 | 74.47 | 116.55 | 7.7x |
 | menus_tour | 900 | 78.32 | 106.33 | 8.5x (900.37 s used on the reporter's machine) |
-| mapscreen_overlays | 900 | 69.22 | 92.93 | 9.7x |
+| mapscreen_overlays | 2400 | 69.22 | 92.93 | 9.7x |
 | mapscreen_states | 2400 | 65.01 | 92.50 | 9.7x |
 | mapscreen_equivalence | 2400 | 62.11 | 87.83 | 10.2x |
 | tactical_parity | 900 | 59.84 | 84.47 | 10.7x |
@@ -383,13 +392,11 @@ at 8.5x — which is the point above: the margin is a property of the run, not o
 ### The full matrix, green in one run
 
 `ctest -R resolution_ -j8` on bagong, at its `268eb54b8` build (the commits after it change docs and
-tests only):
-**144/144 passed, 910.78 s of
-wall time** (5292.81 s\*proc under the `matrix` label, 1504.46 s\*proc under `resolution`). It is a
-single run — not a re-run until green: no test needed the new watchdog and nothing was retried. No
-golden image drifted (`git status tests/e2e/golden` empty). The same commit's e2e suite is 59/59 in
-288.75 s, also `-j8`; `tools/tests/test_exit_codes.py` and `ctest -L tooling` cover the reporting
-change.
+tests only): **144/144 passed, 910.78 s of wall time** (5292.81 s\*proc under the `matrix` label,
+1504.46 s\*proc under `resolution`). It is a single run — not a re-run until green: no test needed
+the new watchdog and nothing was retried. No golden image drifted (`git status tests/e2e/golden`
+empty). The same commit's e2e suite is 59/59 in 288.75 s, also `-j8`; `tools/tests/test_exit_codes.py`
+and `ctest -L tooling` cover the reporting change.
 
 The same day, for the other tiers: the laptop's 1080p sweep (`ctest -L resolution`, 36 tests) is
 36/36 in 317.16 s and its 3440x1440 subset 36/36 in 610.00 s, both `-j8`.
@@ -408,9 +415,10 @@ matrix does produce on a machine that is doing something else is two other thing
   note's two failures are all `0xffffffff` = -1, which no code in this repository emits — the
   driver's codes are 0-4, and the test harness only ever returns those or its own 5 (verified:
   `Stop-Process -Force` on the game process reproduces 4294967295, and the tour's own log line said
-  `passed` both times). That is an external kill of the game process — an agent harness or a tool
+  `passed` both times; Windows' `taskkill /F` uses 1 instead, which is the case the verdict — not
+  the code — catches). That is an external kill of the game process — an agent harness or a tool
   reaping a process tree — not a test result, and it is not retried: the harness now reports it as
-  the process layer so the run can be judged as "not a test failure" or repeated *whole*, with a
+  the process layer, so the run can be judged as "not a test failure" or repeated *whole*, with a
   reason.
 
 So the honest operating rule: run the sweep with the machine to itself (bagong's `dev.py status`
