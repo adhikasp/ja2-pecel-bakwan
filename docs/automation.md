@@ -323,7 +323,10 @@ through CTest (they need the game data and the Python environment from
 
 ```bash
 ctest -L e2e -j8 --output-on-failure      # in the build directory
+python tools/dev.py e2e --changed         # only the areas a diff vs master can affect, + smoke
 ```
+
+Every test carries area labels (`tactical`, `mapscreen`, ...), so `ctest -L tactical` runs one area; `ctest -L smoke` is the fast tier. `dev.py e2e --changed` maps the diff's paths to areas and falls back to the whole suite for a path it cannot place. See [tests/e2e/README.md](../tests/e2e/README.md#running).
 
 ## Making more of the UI addressable
 
