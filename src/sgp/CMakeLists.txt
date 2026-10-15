@@ -17,6 +17,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveData.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/MouseSystem.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Object_Cache.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/OverlayImage.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/PCX.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Random.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/SGP.cc
@@ -45,10 +46,12 @@ if (WITH_UNITTESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/FileMan_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveData_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Logger_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/OverlayImage_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/SGPStrings_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/string_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/TextRegistry_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Video_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/Visualizer_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/WorldPipeline_unittest.cc
     )
 endif()

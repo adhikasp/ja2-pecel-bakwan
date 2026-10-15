@@ -38,6 +38,15 @@ namespace
 	SDL_GPUBuffer*           g_indexBuf = nullptr;
 	uint32_t                 g_indexBufSize = 0;
 
+	// The debug overlays' triangles: a batch of their own, drawn on top of everything after the native UI.
+	std::vector<Vertex> g_overlayVerts;
+	std::vector<uint32_t> g_overlayIndices;
+	std::vector<Layer> g_overlayLayers;
+	SDL_GPUBuffer* g_overlayVertBuf = nullptr;
+	uint32_t g_overlayVertBufSize = 0;
+	SDL_GPUBuffer* g_overlayIndexBuf = nullptr;
+	uint32_t g_overlayIndexBufSize = 0;
+
 	// Reusable staging.
 	SDL_GPUTransferBuffer*   g_upload = nullptr;
 	uint32_t                 g_uploadSize = 0;
@@ -127,6 +136,23 @@ namespace
 
 	void NdcX(float const px, float& out) { out = px / float(g_w) * 2.0f - 1.0f; }
 	void NdcY(float const py, float& out) { out = 1.0f - py / float(g_h) * 2.0f; }
+
+	/** A vertex at a window pixel, with texture coordinates @a u,@a v and a premultiplied colour. */
+	Vertex MakeVertex(float const px, float const py, float const u, float const v, float const r, float const g,
+					  float const b, float const a)
+	{
+		float x, y;
+		NdcX(px, x);
+		NdcY(py, y);
+		return { x,
+				 y,
+				 u,
+				 v,
+				 uint8_t(std::clamp(r, 0.0f, 1.0f) * 255.0f + 0.5f),
+				 uint8_t(std::clamp(g, 0.0f, 1.0f) * 255.0f + 0.5f),
+				 uint8_t(std::clamp(b, 0.0f, 1.0f) * 255.0f + 0.5f),
+				 uint8_t(std::clamp(a, 0.0f, 1.0f) * 255.0f + 0.5f) };
+	}
 }
 
 bool Init(SDL_GPUDevice* const device, SDL_Window* const window)
@@ -249,6 +275,8 @@ void Shutdown()
 		SDL_WaitForGPUIdle(g_device);
 		if (g_vertBuf) SDL_ReleaseGPUBuffer(g_device, g_vertBuf);
 		if (g_indexBuf) SDL_ReleaseGPUBuffer(g_device, g_indexBuf);
+		if (g_overlayVertBuf) SDL_ReleaseGPUBuffer(g_device, g_overlayVertBuf);
+		if (g_overlayIndexBuf) SDL_ReleaseGPUBuffer(g_device, g_overlayIndexBuf);
 		if (g_upload) SDL_ReleaseGPUTransferBuffer(g_device, g_upload);
 		if (g_download) SDL_ReleaseGPUTransferBuffer(g_device, g_download);
 		if (g_captureTex) SDL_ReleaseGPUTexture(g_device, g_captureTex);
@@ -261,15 +289,20 @@ void Shutdown()
 		if (g_window) SDL_ReleaseWindowFromGPUDevice(g_device, g_window);
 	}
 	g_vertBuf = g_indexBuf = nullptr;
+	g_overlayVertBuf = g_overlayIndexBuf = nullptr;
 	g_upload = g_download = nullptr;
 	g_captureTex = g_white = nullptr;
 	g_pipeline = nullptr;
 	g_vert = g_frag = nullptr;
 	g_nearest = g_linear = nullptr;
 	g_vertBufSize = g_indexBufSize = g_uploadSize = g_downloadSize = 0;
+	g_overlayVertBufSize = g_overlayIndexBufSize = 0;
 	g_verts.clear();
 	g_indices.clear();
 	g_layers.clear();
+	g_overlayVerts.clear();
+	g_overlayIndices.clear();
+	g_overlayLayers.clear();
 	g_captureRgb.clear();
 	g_captureOutW = g_captureOutH = 0;
 	g_device = nullptr;
@@ -306,6 +339,7 @@ bool BeginFrame()
 	g_w = int(w);
 	g_h = int(h);
 	QuadReset();
+	OverlayReset();
 	return true;
 }
 
@@ -410,6 +444,84 @@ bool QuadUpload()
 	return true;
 }
 
+void OverlayReset()
+{
+	g_overlayVerts.clear();
+	g_overlayIndices.clear();
+	g_overlayLayers.clear();
+}
+
+void OverlayQuad(float const x0, float const y0, float const x1, float const y1, float const x2, float const y2,
+				 float const x3, float const y3, float const r, float const g, float const b, float const a)
+{
+	uint32_t const base = uint32_t(g_overlayVerts.size());
+	g_overlayVerts.push_back(MakeVertex(x0, y0, 0.5f, 0.5f, r, g, b, a));
+	g_overlayVerts.push_back(MakeVertex(x1, y1, 0.5f, 0.5f, r, g, b, a));
+	g_overlayVerts.push_back(MakeVertex(x2, y2, 0.5f, 0.5f, r, g, b, a));
+	g_overlayVerts.push_back(MakeVertex(x3, y3, 0.5f, 0.5f, r, g, b, a));
+	g_overlayIndices.push_back(base + 0);
+	g_overlayIndices.push_back(base + 1);
+	g_overlayIndices.push_back(base + 2);
+	g_overlayIndices.push_back(base + 0);
+	g_overlayIndices.push_back(base + 2);
+	g_overlayIndices.push_back(base + 3);
+	g_overlayLayers.push_back({ g_white, g_nearest, uint32_t(g_overlayIndices.size()) - 6, 6 });
+}
+
+void OverlayTextured(SDL_GPUTexture* const tex, float const dx, float const dy, float const dw, float const dh,
+					 float const r, float const g, float const b, float const a, bool const nearest)
+{
+	if (!tex || dw <= 0 || dh <= 0) return;
+	uint32_t const base = uint32_t(g_overlayVerts.size());
+	g_overlayVerts.push_back(MakeVertex(dx, dy, 0, 0, r, g, b, a));
+	g_overlayVerts.push_back(MakeVertex(dx + dw, dy, 1, 0, r, g, b, a));
+	g_overlayVerts.push_back(MakeVertex(dx + dw, dy + dh, 1, 1, r, g, b, a));
+	g_overlayVerts.push_back(MakeVertex(dx, dy + dh, 0, 1, r, g, b, a));
+	g_overlayIndices.push_back(base + 0);
+	g_overlayIndices.push_back(base + 1);
+	g_overlayIndices.push_back(base + 2);
+	g_overlayIndices.push_back(base + 0);
+	g_overlayIndices.push_back(base + 2);
+	g_overlayIndices.push_back(base + 3);
+	g_overlayLayers.push_back({ tex, nearest ? g_nearest : g_linear, uint32_t(g_overlayIndices.size()) - 6, 6 });
+}
+
+bool OverlayUpload()
+{
+	if (g_overlayIndices.empty() || !g_cmd) return false;
+	if (!EnsureBuffer(g_overlayVertBuf, g_overlayVertBufSize, uint32_t(g_overlayVerts.size() * sizeof(Vertex)),
+					  SDL_GPU_BUFFERUSAGE_VERTEX))
+		return false;
+	if (!EnsureBuffer(g_overlayIndexBuf, g_overlayIndexBufSize, uint32_t(g_overlayIndices.size() * 4),
+					  SDL_GPU_BUFFERUSAGE_INDEX))
+		return false;
+	size_t const vb = g_overlayVerts.size() * sizeof(Vertex);
+	size_t const ib = g_overlayIndices.size() * 4;
+	if (!EnsureUpload(uint32_t(vb + ib))) return false;
+	uint8_t* const map = static_cast<uint8_t*>(SDL_MapGPUTransferBuffer(g_device, g_upload, true));
+	if (!map)
+	{
+		g_error = "mapping the upload buffer failed";
+		return false;
+	}
+	std::memcpy(map, g_overlayVerts.data(), vb);
+	std::memcpy(map + Align4(vb), g_overlayIndices.data(), ib);
+	SDL_UnmapGPUTransferBuffer(g_device, g_upload);
+	SDL_GPUCopyPass* const copy = SDL_BeginGPUCopyPass(g_cmd);
+	{
+		SDL_GPUTransferBufferLocation const src{ g_upload, 0 };
+		SDL_GPUBufferRegion const dst{ g_overlayVertBuf, 0, uint32_t(vb) };
+		SDL_UploadToGPUBuffer(copy, &src, &dst, false);
+	}
+	{
+		SDL_GPUTransferBufferLocation const src{ g_upload, Align4(vb) };
+		SDL_GPUBufferRegion const dst{ g_overlayIndexBuf, 0, uint32_t(ib) };
+		SDL_UploadToGPUBuffer(copy, &src, &dst, false);
+	}
+	SDL_EndGPUCopyPass(copy);
+	return true;
+}
+
 void BeginPass(float const cr, float const cg, float const cb, bool const capture)
 {
 	if (!g_cmd) return;
@@ -444,6 +556,22 @@ void QuadDraw()
 	SDL_GPUBufferBinding const ibind{ g_indexBuf, 0 };
 	SDL_BindGPUIndexBuffer(g_pass, &ibind, SDL_GPU_INDEXELEMENTSIZE_32BIT);
 	for (Layer const& l : g_layers)
+	{
+		SDL_GPUTextureSamplerBinding const tsb{ l.tex, l.sampler };
+		SDL_BindGPUFragmentSamplers(g_pass, 0, &tsb, 1);
+		SDL_DrawGPUIndexedPrimitives(g_pass, l.indexCount, 1, l.firstIndex, 0, 0);
+	}
+}
+
+void OverlayDraw()
+{
+	if (!g_pass || g_overlayIndices.empty()) return;
+	SDL_BindGPUGraphicsPipeline(g_pass, g_pipeline);
+	SDL_GPUBufferBinding const vbind{ g_overlayVertBuf, 0 };
+	SDL_BindGPUVertexBuffers(g_pass, 0, &vbind, 1);
+	SDL_GPUBufferBinding const ibind{ g_overlayIndexBuf, 0 };
+	SDL_BindGPUIndexBuffer(g_pass, &ibind, SDL_GPU_INDEXELEMENTSIZE_32BIT);
+	for (Layer const& l : g_overlayLayers)
 	{
 		SDL_GPUTextureSamplerBinding const tsb{ l.tex, l.sampler };
 		SDL_BindGPUFragmentSamplers(g_pass, 0, &tsb, 1);

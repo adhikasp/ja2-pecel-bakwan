@@ -13,6 +13,7 @@
 #include "Headless.h"
 #include "Input.h"
 #include "Game_Clock.h"
+#include "FPS.h"
 #include "StrategicMap.h"
 #include "JAScreens.h"
 #include "ScreenIDs.h"
@@ -25,6 +26,7 @@
 #include "Video.h"
 #include "VideoGpu.h"
 #include "VideoOptionsScreen.h"
+#include "Visualizer.h"
 #include "json/Json.h"
 
 #include <string_theory/format>
@@ -1389,6 +1391,10 @@ namespace
 Info GetInfo()
 {
 	Info i;
+	// The debug overlays are reported even when no native screen is running: `ja2ctl native` is the diagnostic
+	// for them, and they draw over a legacy screen too.
+	i.fps = { FPS::Enabled(), FPS::Drawn() };
+	i.visualizer = { Visualizer::Enabled(), Visualizer::Drawn() };
 	i.running = g_rt.running;
 	i.userScale = g_rt.userScale;
 	if (!g_rt.running) return i;

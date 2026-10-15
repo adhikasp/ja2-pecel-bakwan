@@ -68,11 +68,25 @@ namespace VideoGpu
 	/** Uploads the quads recorded by Quad() (their own copy pass, before the render pass). */
 	bool QuadUpload();
 
+	/* The debug overlays (the FPS counter and the tile Visualizer): a batch of their own, drawn after the native
+	 * UI, so an overlay lands on top of everything. Corners are in window pixels, like Quad(). */
+	void OverlayReset();
+	/** A coloured quad with arbitrary corners (window pixels): (x0,y0) (x1,y1) (x2,y2) (x3,y3) in order. */
+	void OverlayQuad(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3, float r, float g,
+					 float b, float a);
+	/** A textured quad in window pixels, whole texture. */
+	void OverlayTextured(SDL_GPUTexture* tex, float dx, float dy, float dw, float dh, float r, float g, float b,
+						 float a, bool nearest);
+	/** Uploads the overlay quads recorded since OverlayReset(). */
+	bool OverlayUpload();
+
 	/** Opens the render pass (clear to the letterbox colour). @a capture renders it offscreen instead of straight
 	 * to the swapchain, so it can be read back; Submit() then still presents it. */
 	void BeginPass(float cr, float cg, float cb, bool capture);
 	/** Draws the quads recorded by Quad() into the open pass. */
 	void QuadDraw();
+	/** Draws the overlay quads into the open pass, after the game's own content. */
+	void OverlayDraw();
 	void EndPass();
 
 	/** Submits the frame. When it was rendered for capture, waits for the GPU and reads it back. */

@@ -1984,6 +1984,19 @@ namespace
 				sol::table modes = g_lua.create_table();
 				for (auto const& m : NativeUI::ModeKeys()) modes[m.key] = NativeUI::ToString(NativeUI::ResolveMode(m.key));
 				t["modes"] = modes;
+				// The debug overlays: whether each is on, and how many frames it has actually been drawn on. A
+				// headless run presents nothing, so `drawn` stays put there; a window's compositor moves it.
+				sol::table overlays = g_lua.create_table();
+				auto const overlay = [&](NativeUI::OverlayInfo const& o)
+				{
+					sol::table row = g_lua.create_table();
+					row["on"] = o.on;
+					row["drawn"] = o.drawn;
+					return row;
+				};
+				overlays["fps"] = overlay(i.fps);
+				overlays["visualizer"] = overlay(i.visualizer);
+				t["overlays"] = overlays;
 				return t;
 			});
 		});

@@ -151,20 +151,33 @@ void DispatchInputEvent(SDL_Event const& event)
 {
 	switch (event.type)
 	{
-		case SDL_EVENT_KEY_DOWN:   KeyDown(&event.key);   break;
-		case SDL_EVENT_KEY_UP:     KeyUp(  &event.key);   break;
-		case SDL_EVENT_TEXT_INPUT: TextInput(&event.text); break;
+	case SDL_EVENT_KEY_DOWN:
+		// The debug overlays' toggles, the same as MainLoop's: a driven session gets its keys here.
+		if (event.key.key == SDLK_F && (event.key.mod & SDL_KMOD_CTRL))
+		{
+			FPS::ToggleOnOff();
+			break;
+		}
+		if (event.key.key == SDLK_C && (event.key.mod & SDL_KMOD_CTRL))
+		{
+			Visualizer::ToggleOnOff();
+			break;
+		}
+		KeyDown(&event.key);
+		break;
+	case SDL_EVENT_KEY_UP: KeyUp(&event.key); break;
+	case SDL_EVENT_TEXT_INPUT: TextInput(&event.text); break;
 
-		case SDL_EVENT_MOUSE_BUTTON_DOWN: MouseButtonDown(&event.button); break;
-		case SDL_EVENT_MOUSE_BUTTON_UP:   MouseButtonUp(&event.button);   break;
-		case SDL_EVENT_MOUSE_MOTION:      MouseMove(&event.motion);       break;
-		case SDL_EVENT_MOUSE_WHEEL:       MouseWheelScroll(&event.wheel); break;
+	case SDL_EVENT_MOUSE_BUTTON_DOWN: MouseButtonDown(&event.button); break;
+	case SDL_EVENT_MOUSE_BUTTON_UP: MouseButtonUp(&event.button); break;
+	case SDL_EVENT_MOUSE_MOTION: MouseMove(&event.motion); break;
+	case SDL_EVENT_MOUSE_WHEEL: MouseWheelScroll(&event.wheel); break;
 
-		case SDL_EVENT_FINGER_MOTION: FingerMove(&event.tfinger); break;
-		case SDL_EVENT_FINGER_UP:     FingerUp(&event.tfinger);   break;
-		case SDL_EVENT_FINGER_DOWN:   FingerDown(&event.tfinger); break;
+	case SDL_EVENT_FINGER_MOTION: FingerMove(&event.tfinger); break;
+	case SDL_EVENT_FINGER_UP: FingerUp(&event.tfinger); break;
+	case SDL_EVENT_FINGER_DOWN: FingerDown(&event.tfinger); break;
 
-		default: break;
+	default: break;
 	}
 }
 

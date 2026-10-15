@@ -61,6 +61,13 @@ namespace NativeUI
 	void  SetUserScale(float); // clamped to 0.5 .. 3
 	/** Pixels per dp now (0 before the runtime started). */
 	float DpScale();
+	/** A debug overlay's state, for the `ja2ctl native` diagnostic: on/off, and how many frames it has actually
+	 * been drawn on the active presentation path (0 in a headless run, which presents nothing). */
+	struct OverlayInfo
+	{
+		bool on = false;
+		unsigned long long drawn = 0;
+	};
 	struct Info
 	{
 		bool        running = false;
@@ -70,6 +77,8 @@ namespace NativeUI
 		std::string screen;   // the native screen's key, or ""
 		std::vector<std::string> documents;
 		int         warnings = 0;
+		OverlayInfo fps;        // the FPS counter (Ctrl+F)
+		OverlayInfo visualizer; // the tile Visualizer (Ctrl+C)
 	};
 	Info GetInfo();
 
