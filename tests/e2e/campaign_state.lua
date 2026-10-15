@@ -75,6 +75,42 @@ ja2.expect(has_item(barry, "FIRSTAIDKIT"), "Barry carries the first aid kit")
 ja2.expect(has_item(barry, "CROWBAR"), "Barry carries the crowbar")
 
 -- Save the staged state, load it back, and assert it survived the round trip.
+--
+-- Two map-screen messages go in before the save, at two different game minutes: the log is rebuilt
+-- from the save file on load and its records are fixed-size and read back in order, so the round
+-- trip below is asserted on a set that could not pass with the fields swapped or a record one byte
+-- short (a single message would).
+campaign.stage(spec)
+campaign.toMap()
+campaign.stage{ day = 12, hour = 9, minute = 0 }
+ja2.debug("message", "Round trip: A9 is secured")     -- day 12, 09:00
+campaign.stage{ day = 12, hour = 10, minute = 30 }
+ja2.debug("message", "Round trip: the convoy left")   -- day 12, 10:30
+
+-- The log as it is live, with the day heading and time of every row, read from the map screen's
+-- view model (the save file's own assertion point). The same rows are compared after the reload.
+local beforeLog = {}
+local function minutesIn(hhmm)
+	local h, m = tostring(hhmm):match("(%d%d):(%d%d)")
+	return h and tonumber(h) * 60 + tonumber(m) or -1
+end
+if ja2.screen() == "MAP_SCREEN" and ja2.nativeUi().running then
+	ja2.click{ id = "map.log.expand" }
+	ja2.waitIdle()
+	for _, m in ipairs(ja2.viewModel("mapscreen").messages) do beforeLog[m.text] = m.day .. "|" .. m.time end
+	local morning, briefing = beforeLog["Round trip: A9 is secured"], beforeLog["Round trip: the convoy left"]
+	ja2.expect(morning and morning:find("%d%d:%d%d"), "the 09:00 message shows its time while it is live (" .. tostring(morning) .. ")")
+	ja2.expect(briefing and briefing:find("%d%d:%d%d"), "the 10:30 message shows its time while it is live (" .. tostring(briefing) .. ")")
+	ja2.expect(morning and briefing
+		and minutesIn(briefing:match("%d%d:%d%d")) - minutesIn(morning:match("%d%d:%d%d")) > 60,
+		"the two messages are an hour and a half apart, not one minute")
+	shots.take("log_before_reload.png")
+	ja2.click{ id = "map.log.collapse" }
+	ja2.waitIdle()
+end
+
+-- The save is written at the newest message's minute, so the reloaded clock and the log agree.
+spec.hour, spec.minute = 10, 30
 local reloaded = campaign.at(spec)
 campaign.assertState{
 	day = 12,
@@ -98,6 +134,23 @@ if ja2.screen() == "MAP_SCREEN" and ja2.nativeUi().running then
 	ja2.expect(tostring(map.day):find("12"), "the map screen shows day 12, got " .. tostring(map.day))
 	ja2.expect(tostring(map.money):find("120,000"), "the map screen shows the staged balance, got " .. tostring(map.money))
 	ja2.expect(tostring(map.team_count):find("2"), "the map screen shows two mercs, got " .. tostring(map.team_count))
+
+	-- Issue #43: the log's game minute and kind are saved with each message, so the reloaded log
+	-- shows the same day and time each one had before the save, instead of falling back to
+	-- "Earlier" with no clock. The assertion point is the reloaded view model.
+	ja2.click{ id = "map.log.expand" }
+	ja2.waitIdle()
+	local afterLog = {}
+	for _, m in ipairs(ja2.viewModel("mapscreen").messages) do afterLog[m.text] = m.day .. "|" .. m.time end
+	for _, text in ipairs{ "Round trip: A9 is secured", "Round trip: the convoy left" } do
+		ja2.expect(afterLog[text] == beforeLog[text],
+			"the reloaded log keeps \"" .. text .. "\"'s day and time (" .. tostring(beforeLog[text]) .. " -> " .. tostring(afterLog[text]) .. ")")
+	end
+	local newestDay = ja2.viewModel("mapscreen").messages[1].day
+	ja2.expect(newestDay:find("12") ~= nil, "the reloaded log's newest group is day 12, not Earlier (" .. tostring(newestDay) .. ")")
+	shots.take("log_after_reload.png")
+	ja2.click{ id = "map.log.collapse" }
+	ja2.waitIdle()
 end
 
 shots.take("campaign_state.png")
