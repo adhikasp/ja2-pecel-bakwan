@@ -37,6 +37,17 @@ click("aim.hire.done")
 if ja2.state().messageBox then ja2.click{text = "OK", exact = true}; ja2.wait(300) end
 click("aim.nav.policies"); shot("aim_policies")
 click("web.bookmark.merc"); shot("merc")
+-- M.E.R.C. account and hire (issue #172): the no-account gate is the "merc" shot above
+click("merc.openaccount"); shot("merc_account_open")
+local merc
+for _, m in ipairs(ja2.viewModel("laptop").merc_files) do if m.cls == "" then merc = m; break end end
+click("merc.hire[" .. merc.id .. "]")
+if ja2.state().messageBox then ja2.click{text = "OK", exact = true}; ja2.wait(300) end
+shot("merc_hired")
+click("merc.nav.account"); shot("merc_account_page")
+ja2.debug("mercsitedown"); ja2.step(1)
+click("laptop.app.email"); click("laptop.app.web"); click("web.bookmark.merc"); shot("merc_broken")
+ja2.debug("mercbackup"); ja2.step(1)
 click("web.bookmark.bobby"); shot("bobby_shop")
 click("bobby.item[1].add"); click("bobby.item[1].add"); shot("bobby_cart")
 click("bobby.toorder"); click("bobby.order.city"); shot("bobby_cities")

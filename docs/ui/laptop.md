@@ -186,7 +186,8 @@ motion (`--t-slow` panel transitions).
 - [ ] 18 mercs (hire limit messages on A.I.M. and M.E.R.C.), 10-item Bobby Ray's limit, long ledgers (pages → scroll)
 - [ ] Dead mercs (A.I.M. "Deceased", departed list)
 - [x] Mercs away on assignment: answering machine, leave message, mail back, refusal (`laptop_parity.lua`)
-- [ ] M.E.R.C. server down (broken link), Bobby Ray's not open yet, Speck's unpaid account
+- [x] M.E.R.C. server down (broken link, `laptop_parity.lua`)
+- [ ] Bobby Ray's not open yet, Speck's unpaid account
 - [ ] Rain delay; insufficient funds on every purchase path
 - [ ] Long translations: German page titles, Russian quiz answers (quiz answers wrap)
 - [ ] 1280x720 to 3440x1440: the wireframes hold at all three sizes (no layout-audit findings)
@@ -217,5 +218,6 @@ Owner decisions on the M2 wireframes (2026-10-02, `native-phase-6-wireframes/` o
 
 `tests/e2e/laptop_parity.lua` (to write in M4): open each program by id (`laptop.app.*`), read and delete a mail
 (assert read flag and count), hire from A.I.M. by `aim.hire.transfer` (assert team, balance, transaction), hire from
-M.E.R.C. (assert account), order from Bobby Ray's (assert balance, shipment scheduled), make an I.M.P. character
+M.E.R.C. (assert the no-account gate, the account, the hire and the daily cost), order from Bobby Ray's (assert
+balance, shipment scheduled), make an I.M.P. character
 (assert profile), buy insurance, send flowers; check finance ledger rows and personnel stats against game state.

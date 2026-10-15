@@ -138,8 +138,51 @@ shots.take("laptop_aim_refused.png")
 click("aim.hire.done")
 ja2.expect(ja2.state().money == money and #ja2.state().mercs == 1, "a refusal costs nothing and hires nobody")
 
--- (M.E.R.C. account and hire: not covered yet, see the PR gaps)
+-- M.E.R.C.: the no-account gate, opening an account, hiring (nothing is charged up front), and the broken link
 click("laptop.app.web"); ja2.debug("bookmarks"); ja2.waitIdle(); click("laptop.app.email"); click("laptop.app.web")
+click("web.bookmark.merc")
+ja2.expect(vm().page == "home" and not vm().merc_has_account, "M.E.R.C. home, no account yet")
+local merc
+for _, m in ipairs(vm().merc_files) do if m.cls == "" then merc = m; break end end
+ja2.expect(merc ~= nil, "a hireable M.E.R.C. merc is listed")
+-- the gate: no Hire button exists until the account is open
+ja2.expect(not ja2.exists{id = "merc.hire[" .. merc.id .. "]"}, "no Hire button without an account")
+click("merc.openaccount")
+v = vm()
+ja2.expect(v.merc_has_account and v.merc_account:find("%d%d%d%d%d") and #v.speck > 0, "the account is open: " .. v.speck)
+ja2.expect(not ja2.exists{id = "merc.openaccount"}, "the Open Account button is gone")
+ja2.expect(ja2.exists{id = "merc.hire[" .. merc.id .. "]"}, "Hire appears once the account is open")
+shots.take("laptop_merc.png")
+-- a M.E.R.C. hire charges nothing up front (the fee accrues daily and is authorized later)
+local mercMoney, mercTeam = ja2.state().money, #ja2.state().mercs
+click("merc.hire[" .. merc.id .. "]"); campaign.acceptMessageBox("should arrive")
+ja2.expect(ja2.state().money == mercMoney, "a M.E.R.C. hire charges nothing up front")
+ja2.expect(#ja2.state().mercs == mercTeam + 1 and vm().team == tostring(mercTeam + 1), "the merc joins in transit, the system bar follows it")
+click("merc.nav.account")
+v = vm()
+ja2.expect(v.page == "account" and #v.merc_account_rows == 1 and v.merc_account_rows[1].sub == "1", "the account page bills one day")
+ja2.expect(num(v.merc_owed) == num(merc.meta), "the account owes the merc's daily fee: " .. v.merc_owed)
+shots.take("laptop_merc_account.png")
+click("laptop.app.personnel")
+local sel
+for _, r in ipairs(vm().roster) do if r.title == merc.title then sel = r.index end end
+ja2.expect(sel ~= nil, "the hired M.E.R.C. merc is on the personnel roster")
+click("personnel.merc[" .. I(sel) .. "]")
+v = vm()
+ja2.expect(v.pd_name == merc.title, "personnel shows " .. merc.title)
+local daily
+for _, row in ipairs(v.pd_employment) do if row.title:find("Daily Cost") then daily = row.value end end
+ja2.expect(daily == merc.meta, "personnel shows the daily cost: " .. tostring(daily))
+-- the server goes down (the broken link) and comes back up again
+ja2.debug("mercsitedown"); ja2.step(1)
+click("laptop.app.email"); click("laptop.app.web"); click("web.bookmark.merc")
+v = vm()
+ja2.expect(v.page == "broken" and v.merc_site_down, "the server is down: broken link")
+ja2.expect(not ja2.exists{id = "merc.nav.files"}, "the broken page has no nav")
+shots.take("laptop_merc_broken.png")
+ja2.debug("mercbackup"); ja2.step(1)
+click("laptop.app.email"); click("laptop.app.web"); click("web.bookmark.merc")
+ja2.expect(vm().page == "home" and not vm().merc_site_down, "the server is back")
 local money
 
 -- Bobby Ray's: order two of the second item, deliver to a city
@@ -298,4 +341,4 @@ ja2.expect(vm().page == "home" and vm().imp_full == "" and vm().imp_code == "", 
 ja2.setUiScale(1.5); ja2.waitIdle(); for _, p in ipairs(ja2.layoutProblems()) do ja2.log("150% layout note: " .. p) end; ja2.setUiScale(1)
 click("laptop.app.web"); click("laptop.close")
 ja2.waitScreen("MAP_SCREEN")
-ja2.expect(#ja2.state().mercs == 2, "Barry and the I.M.P. character are on the map screen")
+ja2.expect(#ja2.state().mercs == 3, "Barry, the M.E.R.C. hire and the I.M.P. character are on the map screen")

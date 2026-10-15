@@ -38,6 +38,7 @@
 #include "WorldDef.h"
 #include "Laptop.h"
 #include "LaptopSave.h"
+#include "Mercs.h"
 #include "SaveLoadGame.h"
 #include "Logger.h"
 #include "MessageBoxScreen.h"
@@ -1357,6 +1358,20 @@ namespace
 					// Test aid: the midnight update of the mercs (away mercs count down and return, a left
 					// message is mailed). It does nothing on day 1, as in the game: stage a later day first.
 					MercDailyUpdate();
+				}
+				else if (what == "mercsitedown")
+				{
+					// Test aid: the M.E.R.C. server is down, so the site shows the broken link instead of its
+					// pages (docs/ui/laptop.md 7). The real path needs a mid-campaign day, an arrived listing
+					// and an RNG roll; this forces the flag the same way the event would.
+					LaptopSaveInfo.fMercSiteHasGoneDownYet = TRUE;
+					LaptopSaveInfo.fFirstVisitSinceServerWentDown = FALSE;
+				}
+				else if (what == "mercbackup")
+				{
+					// Test aid: the M.E.R.C. server comes back up again (the "the site is back" email and
+					// Speck's comment on the next visit), the state the real event leaves behind.
+					GetMercSiteBackOnline();
 				}
 				else if (what == "hiretransit")
 				{
