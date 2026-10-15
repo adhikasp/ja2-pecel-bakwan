@@ -566,6 +566,9 @@ void QuadDraw()
 void OverlayDraw()
 {
 	if (!g_pass || g_overlayIndices.empty()) return;
+	// The native UI sets its own scissor rect per draw; reset it so an overlay is not clipped by whatever it left.
+	SDL_Rect const full{ 0, 0, g_w, g_h };
+	SDL_SetGPUScissor(g_pass, &full);
 	SDL_BindGPUGraphicsPipeline(g_pass, g_pipeline);
 	SDL_GPUBufferBinding const vbind{ g_overlayVertBuf, 0 };
 	SDL_BindGPUVertexBuffers(g_pass, 0, &vbind, 1);
