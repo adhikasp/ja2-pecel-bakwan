@@ -31,7 +31,28 @@ endif()
 
 project(ja2-pecel-bakwan)
 set(JA2_BINARY "ja2")
-set(CMAKE_CXX_STANDARD 20)
+
+# C++23 (#292). The standard is declared in two shapes on purpose, and both are
+# load-bearing:
+#
+#   * CMAKE_CXX_STANDARD here is the tree-wide default every target that does not
+#     set its own inherits, AND cmake/external-project-cache.cmake.in forwards it
+#     to the external projects (RmlUi, string_theory, ...) so they build at the
+#     same standard as the game.
+#   * the per-target `cxx_std_23` in src/CMakeLists.txt, src/nativeui and src/spike
+#     turns the requirement into a *public compile feature* of those targets, so
+#     anything linking them (the spikes, the unit tests, a future tool) inherits it
+#     and CMake fails at configure time on a compiler that cannot do C++23.
+#
+# Move both together. Changing only the global leaves the libraries advertising an
+# older requirement to their consumers; changing only the targets leaves the
+# external projects on the old standard; deleting one as "duplication" silently
+# downgrades something. Keep them in step.
+#
+# Do NOT raise the PUBLIC cxx_std_17 on ja2-rmlui (src/nativeui/CMakeLists.txt):
+# a lower requirement is satisfied by this higher one, and raising it would change
+# that vendored target's contract for no reason.
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # linker: lld links the monolithic ja2 binary (450+ objects, debug info) several times faster

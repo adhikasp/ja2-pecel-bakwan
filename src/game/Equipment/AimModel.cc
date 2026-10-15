@@ -1,6 +1,7 @@
 #include "AimModel.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace Equipment
 {
@@ -31,7 +32,10 @@ namespace
 		return std::max(lo, std::min(hi, v));
 	}
 
-	int DisciplineIndex(AimDiscipline d) { return static_cast<int>(d); }
+	int DisciplineIndex(AimDiscipline d)
+	{
+		return std::to_underlying(d);
+	}
 }
 
 AimDiscipline DisciplineForWeapon(int const weaponClass, int const rangeTiles)

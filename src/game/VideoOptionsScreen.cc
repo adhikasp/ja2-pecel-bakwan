@@ -46,6 +46,7 @@
 #include <optional>
 #include <string_theory/format>
 #include <string_theory/string>
+#include <utility>
 #include <vector>
 
 
@@ -185,7 +186,7 @@ bool ChangeVideoSettings(VideoDisplaySettings const& want, VideoScaleQuality con
 	if (persist && GCM)
 	{
 		if (!GCM->saveVideoSettings(want.resX, want.resY, want.uiScale, want.worldZoom,
-					static_cast<int>(want.windowMode), static_cast<int>(quality)))
+									std::to_underlying(want.windowMode), std::to_underlying(quality)))
 		{
 			SLOGW("Could not write the video settings to ja2.json");
 		}

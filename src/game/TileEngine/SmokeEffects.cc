@@ -25,6 +25,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 #define NUM_SMOKE_EFFECT_SLOTS 25
 
@@ -165,7 +166,7 @@ void NewSmokeEffect(const INT16 sGridNo, const UINT16 usItem, const INT8 bLevel,
 	pSmoke->ubRadius    = smokeEffect->initialRadius;
 	pSmoke->bAge		= 0;
 	pSmoke->fAllocated  = TRUE;
-	pSmoke->bType		= static_cast<int8_t>(smokeEffect->smokeEffect->getID());
+	pSmoke->bType = std::to_underlying(smokeEffect->smokeEffect->getID());
 	pSmoke->owner       = owner;
 
 	if ( pSmoke->bFlags & SMOKE_EFFECT_INDOORS )

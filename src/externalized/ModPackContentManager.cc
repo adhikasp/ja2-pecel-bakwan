@@ -1,5 +1,6 @@
 #include "ModPackContentManager.h"
 
+#include "Exceptions.h"
 #include "JsonUtility.h"
 
 #include "Logger.h"
@@ -45,10 +46,13 @@ ST::string ModPackContentManager::loadDialogQuoteFromFile(const ST::string& file
 		{
 			AutoSGPFile f(openGameResForReading(jsonFileName));
 			ST::string jsonQuotes = f->readStringToEnd();
-			std::vector<ST::string> quotes;
-			JsonUtility::parseJsonToListStrings(jsonQuotes.c_str(), quotes);
-			m_dialogQuotesMap[jsonFileName] = quotes;
-			return quotes[quote_number];
+			auto quotes = JsonUtility::parseJsonToListStrings(jsonQuotes.c_str());
+			if (!quotes)
+			{
+				throw DataError(quotes.error());
+			}
+			m_dialogQuotesMap[jsonFileName] = *quotes;
+			return (*quotes)[quote_number];
 		}
 		else
 		{

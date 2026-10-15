@@ -61,7 +61,9 @@ function(add_warnings target)
     #                       this tree for it to see, so it is dropped.
 endfunction()
 
-target_compile_features(${JA2_BINARY} PRIVATE cxx_std_20)
+# The target-side declaration of the C++ standard; the global CMAKE_CXX_STANDARD in
+# the root CMakeLists.txt is the other half and both must move together (#292).
+target_compile_features(${JA2_BINARY} PRIVATE cxx_std_23)
 
 target_include_directories(${JA2_BINARY} SYSTEM PRIVATE
     ${SOL_INCLUDE_DIR}
@@ -189,6 +191,7 @@ if(ENABLE_PCH)
         <ctime>
         <deque>
         <exception>
+        <expected>
         <filesystem>
         <forward_list>
         <fstream>

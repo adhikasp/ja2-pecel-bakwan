@@ -611,7 +611,7 @@ bool DefaultContentManager::loadSmokeEffects()
 	uint16_t idx = 1;
 	for (auto& element : json.toVec()) {
 		auto smokeEffect = SmokeEffectModel::deserialize(idx, element);
-		SLOGD("Loaded smoke effect {} {}", static_cast<uint16_t>(smokeEffect->getID()), smokeEffect->getName());
+		SLOGD("Loaded smoke effect {} {}", std::to_underlying(smokeEffect->getID()), smokeEffect->getName());
 		m_smokeEffects.push_back(smokeEffect);
 		idx++;
 	}
@@ -740,9 +740,12 @@ bool DefaultContentManager::loadAmmoTypes()
 
 bool DefaultContentManager::loadMusicModeList(const MusicMode mode, const JsonValue& array)
 {
-	std::vector<ST::string> utf8_encoded;
-	JsonUtility::parseListStrings(array, utf8_encoded);
-	for (const ST::string &str : utf8_encoded)
+	auto utf8_encoded = JsonUtility::parseListStrings(array);
+	if (!utf8_encoded)
+	{
+		throw DataError(utf8_encoded.error());
+	}
+	for (const ST::string& str : *utf8_encoded)
 	{
 		m_musicMap.insert(std::make_pair(mode, str));
 		SLOGD("Loaded music {}", str);
@@ -788,9 +791,12 @@ void DefaultContentManager::readWeaponTable(
 
 	size_t i = 0;
 	for (auto &element : document.toVec()) {
-		std::vector<ST::string> weaponNames;
-		JsonUtility::parseListStrings(element, weaponNames);
-		for (const ST::string &weapon : weaponNames)
+		auto weaponNames = JsonUtility::parseListStrings(element);
+		if (!weaponNames)
+		{
+			throw DataError(weaponNames.error());
+		}
+		for (const ST::string& weapon : *weaponNames)
 		{
 			weaponTable[i].push_back(getWeaponByName(weapon));
 		}
@@ -868,9 +874,12 @@ void DefaultContentManager::loadStringRes(const ST::string& name, std::vector<ST
 	ST::string const fullName = name + L10n::GetSuffix(m_gameVersion, true) + ".json";
 
 	auto json = readJsonDataFileWithSchema(fullName);
-	std::vector<ST::string> utf8_encoded;
-	JsonUtility::parseListStrings(json, utf8_encoded);
-	for (const ST::string &str : utf8_encoded)
+	auto utf8_encoded = JsonUtility::parseListStrings(json);
+	if (!utf8_encoded)
+	{
+		throw DataError(utf8_encoded.error());
+	}
+	for (const ST::string& str : *utf8_encoded)
 	{
 		strings.push_back(str);
 	}

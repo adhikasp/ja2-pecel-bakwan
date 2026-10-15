@@ -2,6 +2,8 @@
 
 #include "InventoryCore.h"
 
+#include <utility>
+
 using namespace Equipment;
 
 namespace
@@ -339,7 +341,7 @@ TEST(MoneySplit, AWithdrawalIsCappedAtOnePocket)
 
 TEST(InventoryCore, EveryRefusalHasWords)
 {
-	for (int i = 1; i <= static_cast<int>(InvWhy::DoesNotFit); ++i)
+	for (int i = 1; i <= std::to_underlying(InvWhy::DoesNotFit); ++i)
 	{
 		EXPECT_STRNE(Describe(static_cast<InvWhy>(i)), "") << i;
 	}

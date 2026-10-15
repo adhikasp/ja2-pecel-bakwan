@@ -200,7 +200,7 @@ void PrepareMockDocument(Rml::ElementDocument* const doc)
 	for (Rml::Element* const e : imgs)
 	{
 		std::string const src = e->GetAttribute<Rml::String>("src", "");
-		if (src.find('@') != std::string::npos) continue;
+		if (src.contains('@')) continue;
 		if (src.rfind("nitem-", 0) != 0 && src.rfind("nitembig-", 0) != 0 && src.rfind("sface-", 0) != 0 && src.rfind("bface-", 0) != 0 && src != "overhead-snap") continue;
 		auto const [w, h] = src == "overhead-snap" ? std::make_pair(640, 320) : PictureBaseSize(src);
 		if (!w) continue;

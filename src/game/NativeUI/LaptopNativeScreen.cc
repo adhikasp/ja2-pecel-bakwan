@@ -208,7 +208,7 @@ namespace
 				bool const down = e.usEvent == KEY_DOWN || e.usEvent == KEY_REPEAT;
 				if (e.usEvent == KEY_UP && e.usParam == SDLK_ESCAPE) { Escape(); continue; }
 				if (used || !down) continue;
-				bool const typing = FocusedId().find(".input") != std::string::npos;
+				bool const typing = FocusedId().contains(".input");
 				if (typing) continue;
 				switch (e.usParam)
 				{

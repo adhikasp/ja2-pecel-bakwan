@@ -59,7 +59,7 @@
 
 #include <algorithm>
 #include <iterator>
-
+#include <utility>
 
 static const BOOLEAN gbShowEnemies = FALSE; // XXX seems to be a debug switch
 
@@ -1228,8 +1228,8 @@ static INT16 ManLooksForMan(SOLDIERTYPE* pSoldier, SOLDIERTYPE* pOpponent, UINT8
 
 static void ManLooksForOtherTeams(SOLDIERTYPE* pSoldier)
 {
-	SLOGD("MANLOOKSFOROTHERTEAMS ID {}({}) team {} side {}",
-		pSoldier->ubID, pSoldier->name, pSoldier->bTeam, static_cast<UINT8>(pSoldier->bSide));
+	SLOGD("MANLOOKSFOROTHERTEAMS ID {}({}) team {} side {}", pSoldier->ubID, pSoldier->name, pSoldier->bTeam,
+		  std::to_underlying(pSoldier->bSide));
 
 	// one soldier (pSoldier) looks for every soldier on another team (pOpponent)
 	FOR_EACH_MERC(i)
@@ -1955,8 +1955,8 @@ static void OtherTeamsLookForMan(SOLDIERTYPE* pOpponent)
 		// assume he's no longer visible, until one of our mercs sees him again
 		pOpponent->bVisible = 0;
 	}
-		SLOGD("OTHERTEAMSLOOKFORMAN ID {}({}) team {} side {}",
-			pOpponent->ubID, pOpponent->name, pOpponent->bTeam, static_cast<UINT8>(pOpponent->bSide));
+	SLOGD("OTHERTEAMSLOOKFORMAN ID {}({}) team {} side {}", pOpponent->ubID, pOpponent->name, pOpponent->bTeam,
+		  std::to_underlying(pOpponent->bSide));
 
 	// all soldiers not on oppPtr's team now look for him
 	FOR_EACH_MERC(i)
@@ -2517,7 +2517,7 @@ void RadioSightings(SOLDIERTYPE* const pSoldier, SOLDIERTYPE* const about, UINT8
 		// NEW: Apr. 21 '96: must allow ALL non-humans to get radioed about
 		if ((pSoldier->bSide == pOpponent->bSide) && (pOpponent->uiStatusFlags & SOLDIER_PC))
 		{
-			SLOGD("RS: same side {}", static_cast<UINT8>(pSoldier->bSide));
+			SLOGD("RS: same side {}", std::to_underlying(pSoldier->bSide));
 			continue; // skip to the next merc
 		}
 
@@ -2699,7 +2699,7 @@ void DebugSoldierPage1()
 
 		MPrintStat(DEBUG_PAGE_FIRST_COLUMN, y += h, "ID:",   s->ubID);
 		MPrintStat(DEBUG_PAGE_FIRST_COLUMN, y += h, "TEAM:", s->bTeam);
-		MPrintStat(DEBUG_PAGE_FIRST_COLUMN, y += h, "SIDE:", static_cast<UINT8>(s->bSide));
+		MPrintStat(DEBUG_PAGE_FIRST_COLUMN, y += h, "SIDE:", std::to_underlying(s->bSide));
 
 		MHeader(DEBUG_PAGE_FIRST_COLUMN, y +=  h, "STATUS FLAGS:");
 		MPrint(DEBUG_PAGE_FIRST_COLUMN+DEBUG_PAGE_LABEL_WIDTH, y, ST::format("{x}", s->uiStatusFlags));

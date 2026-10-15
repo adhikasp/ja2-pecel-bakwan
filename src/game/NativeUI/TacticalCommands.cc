@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <utility>
 
 // The table of tactical commands and their availability (see TacticalCommands.h). The rules are the ones the legacy
 // single-merc panel enabled and disabled its buttons by (UpdateSMPanel) and the key handlers checked before they ran.
@@ -216,7 +217,7 @@ namespace
 
 	Availability MercN(Context const& c, Id const id)
 	{
-		int const n = static_cast<int>(id) - static_cast<int>(Id::Merc1);
+		int const n = std::to_underlying(id) - std::to_underlying(Id::Merc1);
 		if (n < 0 || n > 9 || !(c.slotMask & (1u << n))) return Off(Why::Nobody);
 		return On();
 	}
@@ -265,9 +266,11 @@ namespace
 		static char const* const fKey[10] = { "f1", "f2", "f3", "f4", "f5", "f6", "f7", "f8", "f9", "f10" };
 		static char const* const nKey[10] = { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
 		for (int i = 0; i < 10; ++i)
-			add(static_cast<Id>(static_cast<int>(Id::Merc1) + i), mercName[i], "select", "face-gear", fKey[i], "", MercN, i);
+			add(static_cast<Id>(std::to_underlying(Id::Merc1) + i), mercName[i], "select", "face-gear", fKey[i], "",
+				MercN, i);
 		for (int i = 0; i < 10; ++i)
-			add(static_cast<Id>(static_cast<int>(Id::Squad1) + i), squadName[i], "select", "squad", nKey[i], "", AlwaysOn, i);
+			add(static_cast<Id>(std::to_underlying(Id::Squad1) + i), squadName[i], "select", "squad", nKey[i], "",
+				AlwaysOn, i);
 
 		// the label of a command is its name under tac.cmd. in the string table
 		static std::vector<std::string> labels;
@@ -315,7 +318,7 @@ std::vector<Command> const& All()
 
 Command const& Get(Id const id)
 {
-	return All()[static_cast<size_t>(id)];
+	return All()[std::to_underlying(id)];
 }
 
 Command const* Find(std::string_view const name)

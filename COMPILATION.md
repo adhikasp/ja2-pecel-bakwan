@@ -265,6 +265,21 @@ The minimum compiler is **GCC 14**, recorded in [`min-gcc-version`](min-gcc-vers
 version-gated (`git grep __GNUC__` finds nothing outside vendored dependencies), and the tree
 builds with both the pinned GCC 14 and the GCC 16.1 that MSYS2 ships.
 
+The tree builds as **C++23** (`CMAKE_CXX_STANDARD 23`, and a per-target `cxx_std_23` on the
+libraries — the two must move together; see the comment in `CMakeLists.txt`). What from C++23 is in
+use, and what is deliberately not (issue #292):
+
+* **In use**: `std::expected` (the content loader, `JsonUtility`, replacing the `bool` + out-param
+  pattern), `std::to_underlying` (the hand-written enum-to-integer casts), `std::unreachable`, and
+  `std::string::contains`.
+* **Deliberately not adopted.** `std::format`: the string surface is `string_theory` (`ST::string`
+  is the clear majority of the string uses in `src/`), so format strings would mean a second string
+  library and a rewrite of that surface — a rewrite, not a modernization. The explicit object
+  parameter ("deducing `this`"): portable on this toolchain set, but essentially no production use
+  anywhere; not worth being the only project on it. `std::mdspan` and `std::generator`: not portable
+  across the compilers here (GCC 16 only / absent from the MSVC STL); use `std::span` with stride
+  arithmetic instead.
+
 It was **GCC 10** until #289, and that made the CI compiler the oldest thing in the loop:
 `-std=c++23` first exists in GCC 11, so CI could not verify a standard bump was green, a defect
 that only reproduces on a modern compiler shipped silently, and a developer could build green
