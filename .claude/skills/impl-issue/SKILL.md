@@ -31,6 +31,8 @@ Don't ask about things with a conventional default or that the code answers. Ask
 1. `gh issue edit`/board: set Status `In Progress`. Work in a worktree/branch off up-to-date `master` (`python tools/dev.py setup` in a fresh worktree).
 2. Follow the layered shape from AGENTS.md: gtest-covered core → thin adapter → `Observable` at decision points → small Lua surface. Lua only drives/tests.
 3. Loop short: `python tools/dev.py build`, `test`, then `e2e` for integration. Assert results through `ja2ctl state/eval`, not screenshots.
+
+   **Run the build and the suites on the configured build box, not on the machine you are editing on.** See the `bagong-build-box` skill and AGENTS.md, "A build box can do the building": it is ~1.7x faster than a laptop on a cold build and ~1.5x on the full sweeps, and those suites are CPU-bound. Check `python tools/dev.py status` on the box first — `active: 0` means it is free; anything else means build locally and say so in the PR. The few-file edit → build loop is the exception, where the ssh hop costs more than the seconds it saves. Two things do **not** work on the box: `--show` (no interactive desktop under sshd), so a window-visible proof is a local run — say which you did; and regenerating goldens, which stays on the machine whose change it is.
 4. **Pre-existing problems**: if you hit a bug, warning, flaky test or stale doc in the area you touch, fix it in the same PR (mention it under "Also fixed"). If it is large and unrelated, open a separate issue and say so instead of bloating the PR.
 
 ## 4. Open the PR
@@ -59,7 +61,7 @@ For each defect: fix, rebuild, re-run `test` + relevant `e2e`, push, refresh scr
 Only when **all** are true:
 
 - the latest QA round is PASS;
-- `python tools/dev.py test` and the relevant e2e / `ctest -L resolution` pass locally;
+- `python tools/dev.py test` and the relevant e2e / `ctest -L resolution` pass **on the build box** (`bagong-build-box`; local is the fallback when the box is busy, and say which you used);
 - GitHub CI on the PR is green (`gh pr checks`; use the ccd_pr tools to read CI — don't poll yourself);
 - no unresolved review comments; branch is current with `master` (sync, re-test if conflicts).
 
