@@ -4,6 +4,7 @@
 
 #include <set>
 #include <string>
+#include <utility>
 
 using namespace TacticalCommands;
 
@@ -28,7 +29,7 @@ namespace
 TEST(TacticalCommands, theTableCoversEveryId)
 {
 	ASSERT_EQ(All().size(), static_cast<size_t>(COUNT));
-	for (int i = 0; i < COUNT; ++i) EXPECT_EQ(static_cast<int>(All()[i].id), i) << i;
+	for (int i = 0; i < COUNT; ++i) EXPECT_EQ(std::to_underlying(All()[i].id), i) << i;
 }
 
 TEST(TacticalCommands, noTwoCommandsShareAKeyOrAName)
@@ -101,8 +102,8 @@ TEST(TacticalCommands, nobodyIsSelected)
 	for (Id id : { Id::StanceStand, Id::StanceCrouch, Id::Run, Id::Burst, Id::Look, Id::Climb })
 	{
 		Availability const a = Check(c, id);
-		EXPECT_FALSE(a.enabled) << static_cast<int>(id);
-		EXPECT_EQ(a.why, Why::NoMerc) << static_cast<int>(id);
+		EXPECT_FALSE(a.enabled) << std::to_underlying(id);
+		EXPECT_EQ(a.why, Why::NoMerc) << std::to_underlying(id);
 	}
 	// the game flow still works without a merc
 	EXPECT_TRUE(Check(c, Id::Map).enabled);
@@ -153,7 +154,7 @@ TEST(TacticalCommands, anItemInHandBlocksWhatTheLegacyKeysBlocked)
 	Context c = Ready();
 	c.handFull = true;
 	for (Id id : { Id::Burst, Id::Look, Id::Stealth, Id::Level, Id::Map, Id::Options, Id::StanceUp, Id::StanceDown })
-		EXPECT_EQ(Check(c, id).why, Why::HandFull) << static_cast<int>(id);
+		EXPECT_EQ(Check(c, id).why, Why::HandFull) << std::to_underlying(id);
 	// a stance key never did
 	EXPECT_TRUE(Check(c, Id::StanceCrouch).enabled);
 }
@@ -234,7 +235,7 @@ TEST(TacticalCommands, cyclingNeedsSomeoneElse)
 
 TEST(TacticalCommands, everyWhyHasAName)
 {
-	for (int w = 1; w <= static_cast<int>(Why::NoDetail); ++w)
+	for (int w = 1; w <= std::to_underlying(Why::NoDetail); ++w)
 		EXPECT_NE(std::string(WhyName(static_cast<Why>(w))), "") << w;
 	EXPECT_EQ(std::string(WhyName(Why::None)), "");
 }

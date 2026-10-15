@@ -52,6 +52,8 @@
 #include "GamePolicy.h"
 #include "AimModel.h"
 
+#include <utility>
+
 // NB this is arbitrary, chances in DG ranged from 1 in 6 to 1 in 20
 #define BASIC_DEPRECIATE_CHANCE	15
 
@@ -2067,7 +2069,7 @@ UINT8 MaxShownAimTime(const SOLDIERTYPE* const pSoldier)
 	if (!GCM->getItem(o.usItem)->isWeapon()) return REFINE_AIM_5;
 	int const ceiling = Equipment::AimCeiling(Equipment::DisciplineForWeapon(
 		GCM->getWeapon(o.usItem)->ubWeaponClass, GunRange(o) / CELL_X_SIZE));
-	return (UINT8)std::min(2 * ceiling, (int)REFINE_AIM_8);
+	return (UINT8)std::min<int>(2 * ceiling, std::to_underlying(REFINE_AIM_8));
 }
 
 UINT32 CalcChanceToHitGun(SOLDIERTYPE *pSoldier, UINT16 sGridNo, UINT8 ubAimTime, UINT8 ubAimPos, BOOLEAN fModify )

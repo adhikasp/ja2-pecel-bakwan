@@ -88,7 +88,7 @@ MoveLine ParseMoveLine(std::string const& line)
 MessageKind Classify(bool const red, bool const dialog, std::string const& text)
 {
 	if (red) return MessageKind::Combat;
-	if (text.find('$') != std::string::npos) return MessageKind::Money;
+	if (text.contains('$')) return MessageKind::Money;
 	if (dialog) return MessageKind::Team;
 	return MessageKind::Info;
 }

@@ -3,6 +3,7 @@
 #include "GamePolicy.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace Equipment
 {
@@ -90,8 +91,14 @@ namespace
 		return static_cast<int16_t>(std::max(low, std::min(high, value)));
 	}
 
-	int16_t Index(AmmoType ammo)  { return static_cast<int16_t>(ammo); }
-	int16_t Index(ArmourTier tier) { return static_cast<int16_t>(tier); }
+	int16_t Index(AmmoType ammo)
+	{
+		return std::to_underlying(ammo);
+	}
+	int16_t Index(ArmourTier tier)
+	{
+		return std::to_underlying(tier);
+	}
 }
 
 AmmoVersusArmour CounterFor(AmmoType ammo, ArmourTier tier)

@@ -13,6 +13,7 @@
 #include <cstdint>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 namespace TacticalCommands
@@ -38,7 +39,7 @@ namespace TacticalCommands
 		Count
 	};
 
-	constexpr int COUNT = static_cast<int>(Id::Count);
+	constexpr int COUNT = std::to_underlying(Id::Count);
 
 	/** Why a command is off: a key under tac.cmd.why.* in the string table. */
 	enum class Why : uint8_t

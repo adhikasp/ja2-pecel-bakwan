@@ -53,7 +53,7 @@
 
 #include <string_theory/format>
 #include <string_theory/string>
-
+#include <utility>
 
 //--------------------------------------------------
 //	NON_CIV_GROUP,
@@ -1649,7 +1649,8 @@ void SetMercEditingMode( UINT8 ubNewMode )
 			HideEditorButtons( MERCS_SCHEDULE, MERCS_GLOWSCHEDULE );
 			ShowEditorButtons( FIRST_MERCS_GETITEM_BUTTON, LAST_MERCS_GETITEM_BUTTON );
 			InitEditorItemsInfo( eInfo.uiItemType );
-			ClickEditorButton(static_cast<INT32>(ITEMS_WEAPONS) + static_cast<INT32>(eInfo.uiItemType) - static_cast<INT32>(TBAR_MODE_ITEM_WEAPONS));
+			ClickEditorButton(std::to_underlying(ITEMS_WEAPONS) + std::to_underlying(eInfo.uiItemType) -
+							  std::to_underlying(TBAR_MODE_ITEM_WEAPONS));
 			break;
 		case MERC_INVENTORYMODE:
 			UpdateMercItemSlots();

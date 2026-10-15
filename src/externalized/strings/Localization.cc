@@ -5,7 +5,7 @@
 #include <string_theory/format>
 #include <string_theory/string>
 #include <algorithm>
-
+#include <utility>
 
 namespace L10n
 {
@@ -27,8 +27,7 @@ char const * GetSuffix(VanillaVersion const version, bool const combineRusAndRus
 		return combineRusAndRusGold ? "-rus" : "-rusgold";
 
 	default:
-		SLOGE("unknown game version {}, using English as fallback option",
-		      static_cast<int>(version));
+		SLOGE("unknown game version {}, using English as fallback option", std::to_underlying(version));
 		return "-eng";
 	}
 }

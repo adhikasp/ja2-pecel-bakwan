@@ -119,6 +119,7 @@
 #include <set>
 #include <cstring>
 #include <sstream>
+#include <utility>
 
 namespace Automation
 {
@@ -410,7 +411,7 @@ namespace
 		s["time"] = time;
 
 		s["money"]      = LaptopSaveInfo.iCurrentBalance;
-		s["laptopMode"] = static_cast<int>(guiCurrentLaptopMode);
+		s["laptopMode"] = std::to_underlying(guiCurrentLaptopMode);
 		s["sector"]     = gWorldSector.AsShortString().to_std_string();
 
 		sol::table tactical = L.create_table();
@@ -579,7 +580,7 @@ namespace
 			// The NCTH recoil pool and the chosen fire mode (issue #102): what an
 			// automatic burst has cost the shooter so far, and how it is aimed.
 			t["recoil"]     = static_cast<int>(m->bRecoil);
-			t["weaponMode"] = static_cast<int>(m->bWeaponMode);
+			t["weaponMode"] = std::to_underlying(m->bWeaponMode);
 			t["aimTime"]    = static_cast<int>(m->bAimTime);
 			t["autofireRounds"] = static_cast<int>(m->bAutofireRounds);
 			if (guiCurrentScreen == GAME_SCREEN && m->bInSector && m->sGridNo != NOWHERE)
@@ -654,7 +655,7 @@ namespace
 			{
 				sol::table lk = g_lua.create_table();
 				People::QuestDef const* const qd = People::FindQuest(l.quest);
-				lk["id"]   = static_cast<int>(l.quest);
+				lk["id"] = std::to_underlying(l.quest);
 				lk["name"] = qd ? qd->name : "";
 				lk["role"] = People::QuestRoleName(l.role);
 				quests[q++] = lk;
@@ -683,7 +684,7 @@ namespace
 		for (People::QuestDef const& q : People::QuestDefs())
 		{
 			sol::table t = g_lua.create_table();
-			t["id"]            = static_cast<int>(q.id);
+			t["id"] = std::to_underlying(q.id);
 			t["name"]          = q.name;
 			t["title"]         = q.title;
 			t["status"]        = QuestStatusName(q.id < MAX_QUESTS ? gubQuest[q.id] : QUESTNOTSTARTED);

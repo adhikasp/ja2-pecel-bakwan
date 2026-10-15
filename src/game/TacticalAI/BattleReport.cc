@@ -174,7 +174,7 @@ void Recorder::SetObjective(int const grid, Side const side)
 {
 	if (!report_.started) return;
 	report_.objectiveGrid = grid;
-	report_.objectiveSide = static_cast<int>(side);
+	report_.objectiveSide = std::to_underlying(side);
 }
 
 void Recorder::Finish(int const ms, std::vector<SoldierState> const& living, bool const objectiveHeld)

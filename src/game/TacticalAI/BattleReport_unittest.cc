@@ -2,6 +2,8 @@
 
 #include "BattleReport.h"
 
+#include <utility>
+
 // The battle report core is pure: it takes sides, life totals and times, and the tests
 // drive it without a world. The world adapter (combat lifecycle, shot/impact/death
 // events) is exercised by the battle e2e scenarios (tests/e2e/battle_ai_eval.lua).
@@ -164,7 +166,7 @@ TEST(BattleReportRecorder, objectiveIsHeldWhenTheSideStandsOnIt)
 	Recorder r = Started();
 	r.SetObjective(12714, Side::Player);
 	EXPECT_EQ(r.report().objectiveGrid, 12714);
-	EXPECT_EQ(r.report().objectiveSide, static_cast<int>(Side::Player));
+	EXPECT_EQ(r.report().objectiveSide, std::to_underlying(Side::Player));
 
 	r.Finish(1100, { Man(Side::Player, 100) }, true);
 	EXPECT_TRUE(r.report().objectiveHeld);

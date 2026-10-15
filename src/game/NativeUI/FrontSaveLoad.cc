@@ -121,7 +121,7 @@ public:
 			{
 				std::string hay = r.name + " " + r.sector + " " + r.file;
 				std::transform(hay.begin(), hay.end(), hay.begin(), [](unsigned char c) { return char(std::tolower(c)); });
-				if (hay.find(f) == std::string::npos) continue;
+				if (!hay.contains(f)) continue;
 			}
 			rows.push_back(r);
 		}

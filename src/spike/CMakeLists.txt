@@ -31,7 +31,8 @@ add_library(ja2-spike-lib STATIC
     WorldSpikeRaster.cc
     "${SPIKE_EMBED_CC}")
 target_include_directories(ja2-spike-lib PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" PRIVATE "${CMAKE_SOURCE_DIR}/src/sgp")
-target_compile_features(ja2-spike-lib PUBLIC cxx_std_20)
+# PUBLIC requirement, alongside the global CMAKE_CXX_STANDARD in the root CMakeLists.txt (#292).
+target_compile_features(ja2-spike-lib PUBLIC cxx_std_23)
 target_link_libraries(ja2-spike-lib PUBLIC SDL3::SDL3-shared ja2-nativeui-core PRIVATE Freetype::Freetype)
 set_target_properties(ja2-spike-lib PROPERTIES UNITY_BUILD OFF)
 if(NOT MSVC)

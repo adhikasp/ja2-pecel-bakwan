@@ -50,8 +50,7 @@
 
 #include <string_theory/format>
 #include <string_theory/string>
-
-
+#include <utility>
 
 //editor icon storage vars
 SGPVObject* guiMercInventoryPanel;
@@ -387,7 +386,8 @@ void DoTaskbar(void)
 			SetFont( FONT10ARIAL );
 			SetFontForeground( FONT_YELLOW );
 			ClickEditorButton( TAB_ITEMS );
-			ClickEditorButton(static_cast<INT32>(ITEMS_WEAPONS) + static_cast<INT32>(eInfo.uiItemType) - static_cast<INT32>(TBAR_MODE_ITEM_WEAPONS));
+			ClickEditorButton(std::to_underlying(ITEMS_WEAPONS) + std::to_underlying(eInfo.uiItemType) -
+							  std::to_underlying(TBAR_MODE_ITEM_WEAPONS));
 			InitEditorItemsInfo( eInfo.uiItemType );
 			ShowItemStatsPanel();
 			gfShowPits = TRUE;

@@ -1,5 +1,6 @@
 #include "DefaultIMPPolicy.h"
 
+#include "Exceptions.h"
 #include "ItemSystem.h"
 #include "JsonUtility.h"
 
@@ -16,9 +17,12 @@ static void readListOfItems(const JsonValue& value, std::vector<IMPStartingItemS
 			itemSet.slot = Internals::getInventorySlotEnumFromString(setObject.GetString("slot"));
 		}
 
-		std::vector<ST::string> strings;
-		JsonUtility::parseListStrings(setObject["items"], strings);
-		for (const ST::string &str : strings)
+		auto parsedItems = JsonUtility::parseListStrings(setObject["items"]);
+		if (!parsedItems)
+		{
+			throw DataError(parsedItems.error());
+		}
+		for (const ST::string& str : *parsedItems)
 		{
 			itemSet.items.push_back(itemSystem->getItemByName(str));
 		}
@@ -109,7 +113,12 @@ DefaultIMPPolicy::DefaultIMPPolicy(const JsonValue& json, const ItemSystem *item
 {
 	auto r = json.toObject();
 
-	JsonUtility::parseListStrings(r["activation_codes"], m_activationCodes);
+	auto activationCodes = JsonUtility::parseListStrings(r["activation_codes"]);
+	if (!activationCodes)
+	{
+		throw DataError(activationCodes.error());
+	}
+	m_activationCodes = std::move(*activationCodes);
 
 	m_startingLevel = r.getOptionalUInt("starting_level", 1);
 	m_sendsProfileResultsEmail = r.getOptionalBool("send_profile_results_email", true);

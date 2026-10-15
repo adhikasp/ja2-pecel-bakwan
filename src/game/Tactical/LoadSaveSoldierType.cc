@@ -9,6 +9,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <utility>
 
 #include "Logger.h"
 
@@ -657,7 +658,7 @@ void InjectSoldierType(BYTE* const data, const SOLDIERTYPE* const s)
 	INJ_BOOL(d, s->fContinueMoveAfterStanceChange)
 	INJ_SKIP(d, 15)
 	INJ_I8(d, s->bLife)
-	INJ_U8(d, static_cast<UINT8>(s->bSide))
+	INJ_U8(d, std::to_underlying(s->bSide))
 	INJ_SKIP(d, 1)
 	INJ_I8(d, s->bNewOppCnt)
 	INJ_SKIP(d, 2)

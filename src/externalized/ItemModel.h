@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <string_theory/string>
+#include <utility>
 
 class JsonObject;
 class JsonObject;
@@ -26,9 +27,9 @@ struct WeaponModel;
 template <typename T>
 inline T* nonNull(T* const p) noexcept
 {
-#if defined(__GNUC__) || defined(__clang__)
-	if (p == nullptr) __builtin_unreachable();
-#endif
+	// std::unreachable() is portable C++23, so the __GNUC__/__clang__ guard this
+	// used to need around __builtin_unreachable() is gone (it did nothing on MSVC).
+	if (p == nullptr) std::unreachable();
 	return p;
 }
 

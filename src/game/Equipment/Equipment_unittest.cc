@@ -9,6 +9,8 @@
 #include "Slots.h"
 #include "Weapons.h"
 
+#include <utility>
+
 using namespace Equipment;
 
 namespace
@@ -252,7 +254,7 @@ TEST(EquipmentCatalog, everyLbeProvidesTypedPockets)
 		EXPECT_LT(all[i].itemId, MAXITEMS);
 		for (int j = 0; j < all[i].pocketCount; ++j)
 		{
-			EXPECT_LE(static_cast<int>(all[i].pockets[j]), static_cast<int>(PocketKind::Magazine));
+			EXPECT_LE(std::to_underlying(all[i].pockets[j]), std::to_underlying(PocketKind::Magazine));
 		}
 		for (size_t j = i + 1; j < count; ++j)
 		{

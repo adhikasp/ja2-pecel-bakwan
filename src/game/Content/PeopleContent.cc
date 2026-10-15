@@ -8,6 +8,8 @@
 #include "PeopleContent.h"
 #include "Soldier_Profile.h"
 
+#include <utility>
+
 namespace People
 {
 
@@ -273,11 +275,11 @@ void ApplyQuestTransition(QuestTransition const& transition, const SGPSector& se
 {
 	if (transition.change == QuestChange::Start)
 	{
-		StartQuest(static_cast<UINT8>(transition.quest), sector);
+		StartQuest(std::to_underlying(transition.quest), sector);
 	}
 	else
 	{
-		EndQuest(static_cast<UINT8>(transition.quest), sector);
+		EndQuest(std::to_underlying(transition.quest), sector);
 	}
 }
 

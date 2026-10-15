@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <cmath>
 #include <optional>
+#include <utility>
 
 namespace NativeUI
 {
@@ -208,7 +209,7 @@ public:
 		int i = 0;
 		for (auto const& [m, k] : { std::pair{ WindowMode::Windowed, "options.window.windowed" }, std::pair{ WindowMode::BorderlessDesktop, "options.window.borderless" },
 			std::pair{ WindowMode::Fullscreen, "options.window.fullscreen" } })
-			choices.push_back({ i++, "window", Str(k), std::to_string(int(m)), v.windowMode == m });
+			choices.push_back({ i++, "window", Str(k), std::to_string(std::to_underlying(m)), v.windowMode == m });
 		i = 0;
 		int32_t const fps = VideoGetTargetFPS();
 		for (int f : FPS_CHOICES) choices.push_back({ i++, "fps", f ? std::to_string(f) : Str("options.fps_unlimited"), std::to_string(f), f == fps });
@@ -216,7 +217,7 @@ public:
 		VideoScaleQuality const q = VideoGetScaleQuality();
 		for (auto const& [m, k] : { std::pair{ VideoScaleQuality::PERFECT, "options.filter.perfect" }, std::pair{ VideoScaleQuality::NEAR_PERFECT, "options.filter.sharp" },
 			std::pair{ VideoScaleQuality::LINEAR, "options.filter.linear" } })
-			choices.push_back({ i++, "filter", Str(k), std::to_string(int(m)), q == m });
+			choices.push_back({ i++, "filter", Str(k), std::to_string(std::to_underlying(m)), q == m });
 		for (int z = 0; z <= VideoLayout::MAX_UI_SCALE; ++z)
 			choices.push_back({ z, "zoom", z == 0 ? Str("options.world_zoom_auto") : std::to_string(z) + "x", std::to_string(z), v.worldZoom == z });
 		i = 0;

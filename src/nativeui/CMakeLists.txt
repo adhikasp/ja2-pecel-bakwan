@@ -77,7 +77,11 @@ add_library(ja2-nativeui-core STATIC
     UiGpu.cc
     IconRaster.cc)
 target_include_directories(ja2-nativeui-core PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
-target_compile_features(ja2-nativeui-core PUBLIC cxx_std_20)
+# PUBLIC: consumers (the spikes, the unit tests) inherit C++23 from here.
+# The other declaration is the global CMAKE_CXX_STANDARD in the root CMakeLists.txt;
+# both must move together (#292). The cxx_std_17 on ja2-rmlui above stays lower on
+# purpose - a higher requirement satisfies a lower one.
+target_compile_features(ja2-nativeui-core PUBLIC cxx_std_23)
 target_link_libraries(ja2-nativeui-core PUBLIC SDL3::SDL3-shared ja2-rmlui)
 set_target_properties(ja2-nativeui-core PROPERTIES UNITY_BUILD OFF)
 if(NOT MSVC)

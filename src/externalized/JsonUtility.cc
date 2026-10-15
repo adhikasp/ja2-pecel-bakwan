@@ -3,6 +3,7 @@
 #include "FileMan.h"
 
 #include <array>
+#include <expected>
 
 /** Write list of strings to file. */
 bool JsonUtility::writeToFile(const ST::string &name, const std::vector<ST::string> &strings)
@@ -24,20 +25,39 @@ bool JsonUtility::writeToFile(const ST::string &name, const std::vector<ST::stri
 }
 
 /** Parse json to a list of strings. */
-bool JsonUtility::parseJsonToListStrings(const char* jsonData, std::vector<ST::string> &strings)
+std::expected<std::vector<ST::string>, ST::string> JsonUtility::parseJsonToListStrings(const char* jsonData)
 {
-	auto val = JsonValue::deserialize(jsonData);
-
-	return parseListStrings(val, strings);
+	try
+	{
+		auto val = JsonValue::deserialize(jsonData);
+		return parseListStrings(val);
+	}
+	catch (const std::exception& ex)
+	{
+		return std::unexpected(ST::format("invalid JSON: {}", ex.what()));
+	}
 }
 
 /** Parse value as list of strings. */
-bool JsonUtility::parseListStrings(const JsonValue& value, std::vector<ST::string> &strings)
+std::expected<std::vector<ST::string>, ST::string> JsonUtility::parseListStrings(const JsonValue& value)
 {
-	for (auto& i : value.toVec()) {
-		strings.emplace_back(i.toString());
+	if (!value.isVec())
+	{
+		return std::unexpected(ST::string("expected an array of strings"));
 	}
-	return true;
+
+	std::vector<ST::string> strings;
+	std::size_t index = 0;
+	for (auto& element : value.toVec())
+	{
+		if (!element.isString())
+		{
+			return std::unexpected(ST::format("expected an array of strings, but element {} is not a string", index));
+		}
+		strings.emplace_back(element.toString());
+		++index;
+	}
+	return strings;
 }
 
 uint8_t JsonUtility::parseSectorID(const JsonValue& value)
