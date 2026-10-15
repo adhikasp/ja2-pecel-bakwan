@@ -352,17 +352,14 @@ class RenderTiles
 	INT32 iStartPointY_S;
 	INT32 iEndXS;
 	INT32 iEndYS;
+	INT8 iXOddFlag; // the walk alternates a half-tile x offset per row: which one this walk starts on
 
-public:
-	constexpr RenderTiles(INT32 iStartPointX_M_, INT32 iStartPointY_M_,
-	                      INT32 iStartPointX_S_, INT32 iStartPointY_S_,
-	                      INT32 iEndXS_,         INT32 iEndYS_)	noexcept :
-		iStartPointX_M{ iStartPointX_M_ },
-		iStartPointY_M{ iStartPointY_M_ },
-		iStartPointX_S{ iStartPointX_S_ },
-		iStartPointY_S{ iStartPointY_S_ },
-		iEndXS{ iEndXS_ },
-		iEndYS{ iEndYS_ }
+  public:
+	// iXOddFlag is 0 for the whole-view walks (the only ones before the static cache recorded single rows).
+	constexpr RenderTiles(INT32 iStartPointX_M_, INT32 iStartPointY_M_, INT32 iStartPointX_S_, INT32 iStartPointY_S_,
+						  INT32 iEndXS_, INT32 iEndYS_, INT8 iXOddFlag_ = 0) noexcept
+		: iStartPointX_M{ iStartPointX_M_ }, iStartPointY_M{ iStartPointY_M_ }, iStartPointX_S{ iStartPointX_S_ },
+		  iStartPointY_S{ iStartPointY_S_ }, iEndXS{ iEndXS_ }, iEndYS{ iEndYS_ }, iXOddFlag{ iXOddFlag_ }
 	{
 	}
 
@@ -415,7 +412,7 @@ private: void Render(RenderTilesFlags const uiFlags, size_t const ubNumLevels, R
 		check_for_mouse_detections = !gfEditMode;
 	}
 
-	INT8 bXOddFlag = 0;
+	INT8 bXOddFlag = iXOddFlag;
 	do
 	{
 		for (UINT32 cnt = 0; cnt < ubNumLevels; cnt++)

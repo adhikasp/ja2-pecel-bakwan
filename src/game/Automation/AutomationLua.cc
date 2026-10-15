@@ -1759,6 +1759,8 @@ namespace
 				t["ops"] = ops;
 				t["staticHits"] = r.staticHits;
 				t["staticMisses"] = r.staticMisses;
+				t["stripsRecorded"] = r.staticStripsRecorded;
+				t["stripsReused"] = r.staticStripsReused;
 				t["pixels"] = double(r.pixels);
 				t["pipelineDifferent"] = double(r.pipelineDifferent);
 				t["pipelinePercent"] = r.pipelinePercent;
@@ -1801,6 +1803,8 @@ namespace
 			t["frameMs"] = s.frameMs;
 			t["staticHits"] = s.staticHits;
 			t["staticMisses"] = s.staticMisses;
+			t["stripsRecorded"] = s.stripsRecorded;
+			t["stripsReused"] = s.stripsReused;
 			t["wallMs"] = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count(); // wall clock, for frame-rate measurements
 			return t;
 		});

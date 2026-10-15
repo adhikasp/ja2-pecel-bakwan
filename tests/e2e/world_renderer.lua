@@ -80,30 +80,21 @@ end
 ja2.expect(roofOff, "there is a building on screen")
 scene("interior")
 
--- 4. Night, with the lights on (shade tables of every tile and merc change)
-ja2.debug("light", 12, true)
-scene("night", true)
-
--- 5. Scrolled to another part of the sector, still at night
-ja2.keydown("down"); ja2.wait(1200); ja2.keyup("down")
-ja2.keydown("right"); ja2.wait(800); ja2.keyup("right")
-scene("scrolled", true)
-
--- 5a. The static cache across camera moves: with `cache` the record runs with the cache on, and `scroll` moves the
+-- 4. The static cache across camera moves: with `cache` the record runs with the cache on, and `scroll` moves the
 -- camera (tiles) between priming it and recording the frame under test. The frame must still be the software
 -- renderer's, pixel for pixel. One assertion covers everything the cache has to get right at once - the layer
 -- order of the assembled strips, the obscured checkerboard phase, palette/column/glow rebasing and a sprite-pool
 -- reset. Every scroll here stays a *small* camera move except the last, which jumps past any recorded margin and
--- must fall back to a full record.
+-- must fall back to a full record. It runs in daylight (the night scene below is where the lights come on).
 local function scrollScene(tx, ty)
 	local name = ("scroll_%d_%d"):format(tx, ty)
 	ja2.waitIdle()
 	ja2.step(2)
 	local r = ja2.worldEquivalence("world/" .. name, { cache = true, scroll = { tx, ty } })
-	ja2.log(("%s: scroll %d,%d tiles; %dx%d, %d instances, pipeline %d px differ (%.4f%%), gpu %s; cache %d hits / %d misses, record %.2f ms")
+	ja2.log(("%s: scroll %d,%d tiles; %dx%d, %d instances, pipeline %d px differ (%.4f%%), gpu %s; %d rows recorded / %d reused, record %.2f ms")
 		:format(name, tx, ty, r.width, r.height, r.instances, r.pipelineDifferent, r.pipelinePercent,
 			r.gpuRan and ("%d px differ (%.4f%%)"):format(r.gpuDifferent, r.gpuPercent) or "not run",
-			r.staticHits, r.staticMisses, r.recordMs))
+			r.stripsRecorded, r.stripsReused, r.recordMs))
 	ja2.expect(r.instances > 0, name .. ": the view has instances (" .. r.instances .. ")")
 	ja2.expect(r.pipelineDifferent == 0,
 		("%s: the pipeline matches the software renderer after the scroll (%d px differ)"):format(name, r.pipelineDifferent))
@@ -112,8 +103,8 @@ local function scrollScene(tx, ty)
 	else
 		ja2.expect(not needGpu, name .. ": the GPU ran (" .. tostring(r.gpuError) .. ")")
 	end
-	ja2.expect(r.staticHits + r.staticMisses >= 2,
-		("%s: the static cache recorded both frames (%d hits, %d misses)"):format(name, r.staticHits, r.staticMisses))
+	ja2.expect(r.stripsRecorded >= 0 and r.stripsReused > 0,
+		("%s: the cache served the frame (%d rows recorded, %d reused)"):format(name, r.stripsRecorded, r.stripsReused))
 	return r
 end
 scrollScene(1, 0)
@@ -122,6 +113,15 @@ scrollScene(1, 1)
 scrollScene(-1, -1)
 scrollScene(2, -2)
 scrollScene(0, 16) -- a jump: more than any recorded margin, so a full re-record
+
+-- 4b. Night, with the lights on (shade tables of every tile and merc change)
+ja2.debug("light", 12, true)
+scene("night", true)
+
+-- 5. Scrolled to another part of the sector, still at night
+ja2.keydown("down"); ja2.wait(1200); ja2.keyup("down")
+ja2.keydown("right"); ja2.wait(800); ja2.keyup("right")
+scene("scrolled", true)
 
 -- 5b. Fractional zoom (1/8 steps): the world layer scaled by 1.5, picking through the same mapping. Each tile the
 -- automation aims at by its centre on screen must be the tile the mouse picks; checked at 1x first.

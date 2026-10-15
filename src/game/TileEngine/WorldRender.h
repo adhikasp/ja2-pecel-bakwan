@@ -55,6 +55,7 @@ struct WorldRenderStats
 	size_t uploadBytes = 0;
 	double frameMs = 0;
 	int    staticHits = 0, staticMisses = 0; // frames that reused / re-recorded the static layers       // wall-clock time since the previous RenderWorld (any renderer)
+	int stripsRecorded = 0, stripsReused = 0; // this frame's static rows re-recorded / taken from the cache
 };
 /** Called whenever a frame is presented: measures the frame interval. */
 void WorldRenderFrameTick();
@@ -69,6 +70,7 @@ struct WorldEquivalenceResult
 	int         instances = 0, sprites = 0, palettes = 0;
 	std::map<std::string, int> ops;            // instances per op
 	int staticHits = 0, staticMisses = 0;      // frames that reused / re-recorded the static layers
+	int staticStripsRecorded = 0, staticStripsReused = 0; // static rows the frame under test recorded / reused
 	long long   pixels = 0;
 	long long   pipelineDifferent = 0;          // CPU pipeline vs software renderer
 	double      pipelinePercent = 0;
