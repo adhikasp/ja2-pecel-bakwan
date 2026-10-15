@@ -270,3 +270,14 @@ it redraws incrementally; it does not scale or zoom fractionally.
   sees the GPU texture scaled with SDL's pixel-art filter.
 - Night vision has no separate render path in the game (lighting is the shade palettes, covered). Explosions are
   anitiles and go through the recording; there is no live-explosion scene in the equivalence test.
+
+# Save format
+
+Decisions that change what a saved game holds. The [Dev mindset](../../AGENTS.md) applies: we own the save format,
+the revamp is the game, and there is no vanilla mode and no byte-compatible save to preserve.
+
+| Question | Decision |
+|---|---|
+| The map-screen message log's game minute and kind (issue #43) | **Both are saved**, in the per-message record the log writes after each message's text (`MapScreenMessageRecord.h`, used by `Message.cc`). The log is rebuilt from the file on load, so without them every loaded message came back with `gameMinute == 0` and showed under **Earlier** with no clock time, and `priority == 0` lost the kind that puts a merc's dialogue under the log's **Team** tab. The record's size and field order live in one place (the writer and the reader used to spell the same layout out twice; a disagreement would silently shift every message after the first) |
+| What "kind" means | **`ubPriority`**, the `MSG_*` constant the message was posted with (`MSG_INTERFACE`, `MSG_DIALOG`, ...). There is no separate message-class notion: that is the value `MapModel::Classify` reads (`it->priority == MSG_DIALOG`) to classify a line as Team, and the one `MapScreenMessage` and `ScreenMsg` already carry. The log's other two kinds are not a stored field: Combat is the message's colour (red) and Money is its text (it names a sum) |
+| Saves written before this | **Not migrated and not read.** An older save does not round-trip the two fields, and nothing tries to make it: there is no version gate, no fallback that keeps reading the 28-byte record, and no shim. An old save simply loads with the log's game minutes unknown (as every save did before), which is the intended outcome; the project does not carry compatibility code for saves it did not write |

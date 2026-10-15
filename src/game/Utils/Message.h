@@ -52,7 +52,7 @@ void LoadMapScreenMessagesFromSaveGameFile(HWFILE);
 void SaveMapScreenMessagesToSaveGameFile(HWFILE);
 
 // The map screen message list, oldest first, one entry per message (wrapped lines joined), with its font colour, the
-// game minute it was added (0: unknown, a message loaded from a save) and its kind (MSG_INTERFACE, MSG_DIALOG, ...).
+// game minute it was added (0: unknown); the minute and the kind are saved with the message, so a loaded log keeps them.
 struct MapScreenMessage_t { ST::string text; UINT16 color; UINT32 gameMinute; UINT8 priority; };
 std::vector<MapScreenMessage_t> GetMapScreenMessages();
 

@@ -203,9 +203,10 @@ the militia pick-up/drop bookkeeping), but the native document draws the panel a
 The item description box and the stack popup are native modals too. With these, nothing on the map screen is handed
 back to the legacy UI (`PassThrough` is always false); the legacy screen still owns the state they drive.
 
-**Message log.** Messages now carry the game minute and their kind (not saved: a loaded save's messages show under
-"Earlier"); the log groups by day, has All/Combat/Team/Money tabs (combat = the red messages, money = they name a sum,
-team = merc dialogue), a search field, and a link to the sector a message names.
+**Message log.** Messages carry the game minute they were added and their kind, and both are saved with the message,
+so a reloaded save's log shows each message under its own day and time; the log groups by day, has
+All/Combat/Team/Money tabs (combat = the red messages, money = they name a sum, team = merc dialogue), a search
+field, and a link to the sector a message names.
 
 **Sector inventory.** Items move by drag and drop or click, click (through the legacy slots); category filters,
 search, sort by type/name/condition/count, and "Stack & merge". The gear panel's **Loadout** button opens the

@@ -3,6 +3,7 @@
 #include "Directories.h"
 #include "Font.h"
 #include "LoadSaveData.h"
+#include "MapScreenMessageRecord.h"
 #include "Types.h"
 #include "Font_Control.h"
 #include "Message.h"
@@ -36,8 +37,8 @@ struct ScrollStringSt
 	UINT16  usColor;
 	BOOLEAN fBeginningOfNewString;
 	UINT32  uiTimeOfLastUpdate;
-	// for the native map screen's log: when (game minutes, 0 = unknown, e.g. loaded from a save) and of what kind
-	// (MSG_INTERFACE, MSG_DIALOG, ...). Not saved: the save format is unchanged.
+	// for the native map screen's log: the game minute it was added (0 = unknown) and its kind
+	// (MSG_INTERFACE, MSG_DIALOG, ...). Both are saved with the message (MapScreenMessageRecord).
 	UINT32  uiGameMinute = 0;
 	UINT8   ubPriority = 0;
 
@@ -503,17 +504,15 @@ static std::shared_ptr<ScrollStringSt> ExtractScrollStringFromFile(HWFILE const 
 		s->pString = reader.readUTF16(len);
 	}
 
-	BYTE data[28];
+	BYTE data[MAP_SCREEN_MESSAGE_RECORD_SIZE];
 	f->read(data, sizeof(data));
 
-	DataReader d{data};
-	EXTR_SKIP(d, 4)
-	EXTR_U32(d, s->uiTimeOfLastUpdate)
-	EXTR_SKIP(d, 16)
-	EXTR_U16(d, s->usColor)
-	EXTR_BOOL(d, s->fBeginningOfNewString)
-	EXTR_SKIP(d, 1)
-	Assert(d.getConsumed() == lengthof(data));
+	MapScreenMessageRecord const r = ReadMapScreenMessageRecord(data);
+	s->uiTimeOfLastUpdate = r.timeOfLastUpdate;
+	s->usColor = r.color;
+	s->fBeginningOfNewString = r.beginningOfNewString;
+	s->uiGameMinute = r.gameMinute;
+	s->ubPriority = r.priority;
 
 	return s;
 }
@@ -533,15 +532,15 @@ static void InjectScrollStringIntoFile(HWFILE const f, ScrollStringSt const* con
 	f->write(&size, sizeof(size));
 	f->write(utf16data.c_str(), size);
 
-	BYTE data[28];
-	DataWriter d{data};
-	INJ_SKIP(d, 4)
-	INJ_U32(d, s->uiTimeOfLastUpdate)
-	INJ_SKIP(d, 16)
-	INJ_U16(d, s->usColor)
-	INJ_BOOL(d, s->fBeginningOfNewString)
-	INJ_SKIP(d, 1)
-	Assert(d.getConsumed() == lengthof(data));
+	MapScreenMessageRecord const record{
+		.timeOfLastUpdate = s->uiTimeOfLastUpdate,
+		.color = s->usColor,
+		.beginningOfNewString = s->fBeginningOfNewString,
+		.gameMinute = s->uiGameMinute,
+		.priority = s->ubPriority,
+	};
+	BYTE data[MAP_SCREEN_MESSAGE_RECORD_SIZE];
+	WriteMapScreenMessageRecord(data, record);
 
 	f->write(data, sizeof(data));
 }
