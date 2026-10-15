@@ -130,10 +130,17 @@ tooling environment; `python tools/dev.py setup` installs the latter (it runs
 
 ```bash
 python tools/dev.py e2e                                             # all, job-capped across agents
+python tools/dev.py e2e --changed                                   # only the tests the diff vs master can affect (+ smoke)
+python tools/dev.py e2e --changed=origin/master                     # ... against an explicit base ref
 python tools/dev.py e2e tests/e2e/laptop_tour.lua --isolated        # one, from the repo root
 python tools/ja2ctl.py run tests/e2e/laptop_tour.lua --isolated --show   # and watch it
 ctest -L e2e -j8 --output-on-failure                                # raw form, from the build directory
+ctest -L smoke --output-on-failure                                  # the fast tier only
 ```
+
+Every test carries **area labels** — `tactical`, `mapscreen`, `laptop`, `campaign`, `equipment`, `nativeui`, `world-renderer`, `automation` — declared in `CMakeLists.txt` next to the test, so `ctest -L tactical` (or `dev.py e2e -L tactical`) runs just that area. `ctest -L smoke` is the fast tier: boot, main menu, new game to tactical and one native-UI tour, all at 1280x720, all four under a ~30 s budget.
+
+`dev.py e2e --changed` maps `git diff --name-only master` (plus uncommitted and untracked files) to those areas through the path→area table in `tools/e2e_select.py`, adds smoke, and runs the result. **A path it cannot place — the original `assets/`/`externalized/` data, `rust/`, most of `src/sgp/` — falls back to the whole suite**, so the selector never silently skips a test a change could break. The two halves are joined through CTest's own `ctest --show-only=json-v1` (the labels are not written down twice), and the drift guard in `tools/tests/test_e2e_select.py` fails if they ever disagree. A run prints the slowest tests when it finishes.
 
 `ctest` uses `.venv` when it exists, so re-run `cmake` once after `uv sync`
 (`tools/dev.py setup` does both, in the right order).

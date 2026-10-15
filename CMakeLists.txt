@@ -517,6 +517,97 @@ if (WITH_UNITTESTS)
             LABELS e2e
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>"
         )
+        # --- e2e area and tier labels (issue #169) ---
+        # The selector's vocabulary: `ctest -L tactical`, and `python tools/dev.py
+        # e2e --changed`, which maps a changed path to one of these areas and then
+        # asks CTest which tests carry it (`ctest --show-only=json-v1`). This is
+        # the one place a test's areas are decided; the path half lives in
+        # tools/e2e_select.py and the drift guard in tools/tests/test_e2e_select.py
+        # fails when the two sets of names separate. `LABELS` is a list property
+        # and `set_property(... APPEND)` adds to it, so this pass must run *after*
+        # the blanket `LABELS e2e` above, which replaces the list; running it
+        # before would lose the `e2e` label every dev.py command selects on.
+        # A test may carry several areas: `new_game_to_tactical` walks the laptop,
+        # the campaign and tactical in one run.
+        set(E2E_AREA_LABELS
+            "autoresolve_parity=mapscreen,tactical"
+            "battle_ai_eval=tactical"
+            "battle_campaign=tactical,mapscreen,campaign"
+            "battle_cursor=tactical"
+            "battle_drag=tactical,equipment"
+            "battle_loadout_arc=tactical,equipment"
+            "battle_los=tactical"
+            "battle_militia=tactical"
+            "battle_ncth=tactical"
+            "battle_smoke=tactical"
+            "campaign_state=campaign"
+            "credits_parity=nativeui"
+            "determinism=automation"
+            "epilogue_parity=nativeui"
+            "intro_parity=nativeui"
+            "inventory_core=equipment,tactical"
+            "laptop_parity=laptop"
+            "laptop_tour=laptop"
+            "legacy_script=automation"
+            "loadingscreen_parity=nativeui"
+            "loadout_matrix=equipment"
+            "loadout_screen=equipment,nativeui"
+            "loadout_spec=equipment"
+            "main_menu=nativeui"
+            "mainmenu_parity=nativeui"
+            "map_screen_tour=mapscreen"
+            "mapscreen_equivalence=mapscreen"
+            "mapscreen_overlays=mapscreen"
+            "mapscreen_parity=mapscreen"
+            "mapscreen_states=mapscreen"
+            "menus_tour=nativeui,mapscreen"
+            "native_ui=nativeui"
+            "new_game_to_tactical=campaign,laptop,tactical"
+            "newgame_parity=nativeui"
+            "options_parity=nativeui"
+            "people_content=campaign"
+            "saveload_parity=nativeui,campaign"
+            "sector_stock=campaign"
+            "sessions=automation"
+            "shopkeeper_parity=campaign,nativeui"
+            "tactical_commands=tactical"
+            "tactical_hud=tactical"
+            "tactical_move_merc=tactical"
+            "tactical_overhead=tactical"
+            "tactical_overlays=tactical"
+            "tactical_parity=tactical"
+            "tactical_popups=tactical"
+            "video_options=nativeui"
+            "video_switch=nativeui"
+            "weapon_readout=equipment,tactical"
+            "world_map_actions=mapscreen,campaign"
+            "world_map_steps=mapscreen"
+            "world_renderer=world-renderer"
+            "world_renderer_light=world-renderer"
+        )
+        foreach(entry IN LISTS E2E_AREA_LABELS)
+            string(REPLACE "=" ";" pair "${entry}")
+            list(GET pair 0 name)
+            list(GET pair 1 areas)
+            if(NOT "e2e_${name}" IN_LIST E2E_TESTS)
+                message(FATAL_ERROR "E2E_AREA_LABELS names a test that does not exist: e2e_${name}")
+            endif()
+            string(REPLACE "," ";" area_list "${areas}")
+            set_property(TEST e2e_${name} APPEND PROPERTY LABELS ${area_list})
+        endforeach()
+        # The layered tests are generated in a loop, so they are labelled by
+        # prefix rather than by naming every generated combination.
+        foreach(t ${E2E_TESTS})
+            if(t MATCHES "^e2e_tactical_layers")
+                set_property(TEST ${t} APPEND PROPERTY LABELS tactical world-renderer)
+            endif()
+        endforeach()
+        # The smoke tier: boot, main menu, new game to tactical, one native-UI
+        # tour - all at 1280x720, the smallest output the game runs at. `ctest -L
+        # smoke` is the fast local sanity run; the target is under 30 s.
+        foreach(smoke main_menu mainmenu_parity new_game_to_tactical native_ui)
+            set_property(TEST e2e_${smoke} APPEND PROPERTY LABELS smoke)
+        endforeach()
         set_tests_properties(e2e_tactical_layers_pipeline PROPERTIES
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>;JA2_WORLD_RENDERER=pipeline")
         # Resolution matrix: every tour at every supported resolution, with a
