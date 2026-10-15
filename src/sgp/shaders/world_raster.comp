@@ -5,7 +5,8 @@
 // destination (shade-table shadows, 50 % translucency), is exact. A finished pixel is lit (ambient + sun +
 // point lights). ApplyPixel and ApplyLighting in WorldPipeline.h are the reference; keep the two in step.
 //
-// Compiled to SPIR-V by tools/shaders/build.sh (glslangValidator) into world_raster.comp.spv.h.
+// tools/shaders/build.sh compiles it for every backend (SPIR-V, DXBC, MSL) into the committed world_raster.comp.h;
+// after editing this file regenerate that header with `python tools/dev.py build --target shaders`.
 // SDL_GPU compute resource layout: set 0 = read-only storage buffers, set 1 = read-write storage
 // textures then buffers, set 2 = uniform buffers.
 
