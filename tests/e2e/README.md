@@ -206,6 +206,12 @@ screen) and can register the shot for comparison with `golden/<res>/`. See
 `golden/README.md`. Use `campaign.std{...}` to convert classic 640x480
 coordinates (e.g. in `within=`) to the current screen.
 
+Each test has a watchdog: 900 s by default, 2400 s for every map screen tour and
+every 3440x1440 tour (the tier where the matrix is expensive enough for the
+watchdog to fire when the machine is loaded). The audit behind that, with a time
+for every 3440x1440 tour, is in
+[`docs/plan/native-modern-game-decisions.md`](../../docs/plan/native-modern-game-decisions.md#test-infrastructure-the-resolution-matrix-issue-45).
+
 ## Layers (world zoom)
 
 `tactical_layers.lua` and `tactical_layers_ui.lua` run tactical with the world as a layer of its own:

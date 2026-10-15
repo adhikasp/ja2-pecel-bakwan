@@ -281,3 +281,139 @@ the revamp is the game, and there is no vanilla mode and no byte-compatible save
 | The map-screen message log's game minute and kind (issue #43) | **Both are saved**, in the per-message record the log writes after each message's text (`MapScreenMessageRecord.h`, used by `Message.cc`). The log is rebuilt from the file on load, so without them every loaded message came back with `gameMinute == 0` and showed under **Earlier** with no clock time, and `priority == 0` lost the kind that puts a merc's dialogue under the log's **Team** tab. The record's size and field order live in one place (the writer and the reader used to spell the same layout out twice; a disagreement would silently shift every message after the first) |
 | What "kind" means | **`ubPriority`**, the `MSG_*` constant the message was posted with (`MSG_INTERFACE`, `MSG_DIALOG`, ...). There is no separate message-class notion: that is the value `MapModel::Classify` reads (`it->priority == MSG_DIALOG`) to classify a line as Team, and the one `MapScreenMessage` and `ScreenMsg` already carry. The log's other two kinds are not a stored field: Combat is the message's colour (red) and Money is its text (it names a sum) |
 | Saves written before this | **Not migrated and not read.** An older save does not round-trip the two fields, and nothing tries to make it: there is no version gate, no fallback that keeps reading the 28-byte record, and no shim. An old save simply loads with the log's game minutes unknown (as every save did before), which is the intended outcome; the project does not carry compatibility code for saves it did not write |
+
+# Test infrastructure: the resolution matrix (issue #45)
+
+The matrix is the 36 tours at 4 resolutions — 144 tests. `ctest -L resolution` is the default
+1080p-only sweep (`tests/e2e/README.md`), `ctest -R resolution_` the full matrix, `ctest -L matrix`
+the three non-1080p tiers. Everything below was measured on 2026-10-15, with the box otherwise
+idle: **bagong** is the Ryzen 5 5600 desktop (12 threads), **the laptop** the Ryzen 5 5560U dev
+machine that normally drives the agent.
+
+## A failing tour says which layer failed
+
+A resolution test runs a tour and then compares its shots, so a nonzero exit can come from three
+places. It used to print `script failed with exit code 4294967295` for all of them — including the
+case where the tour's own log said `passed`. `0xffffffff` is -1, what PowerShell's `Stop-Process`
+and .NET's `Process.Kill` leave behind, so it read as a crash and a reader had to guess between the
+script, the golden compare and the process. Now each layer has its own code and its own message:
+
+| Exit code | Message | What failed |
+|---|---|---|
+| the driver's 1–4 | `the script failed: exit code N, <meaning>` | the tour itself (an expectation, a setup error, the game, a timeout) |
+| 5 | `the golden compare failed, the script did not:` | the pixels |
+| anything else | `the script passed and the process died after it …` / `the process died before the script reached its verdict …` | the process — a kill or a crash, never the script |
+
+`tools/ja2ctl.py` owns the exit-code vocabulary (the driver's 0–4 are `Automation::ExitCode`; there
+is no driver code outside them) and describes anything else as an external kill, an unhandled
+exception, a signal or an unknown code. `tests/e2e/check_resolution.py` keeps the tour's own
+`passed`/`FAILED` line and uses it to name the layer. Reproduce the third row by killing the game
+process of a running tour (`Stop-Process -Force` on Windows); the first with any script that fails.
+`tools/tests/test_exit_codes.py` pins all of it, including that the wording it greps for is still
+what `Automation.cc` prints.
+
+## The 3440x1440 watchdog: the whole tier gets 2400 s
+
+Per test the watchdog is now 900 s by default, 2400 s for every map screen tour (since #24) and for
+**every 3440x1440 tour** (this issue). The tier rule is worth spelling out, because the obvious
+per-tour reading — raise the tours that measured close to 900 s — is not what the numbers support.
+
+The one timeout the tier has produced is `menus_tour` at **900.37 s of its 900 s** under `-j8`, and
+that tour costs **78 s on bagong and 106 s on the laptop** in a quiet `-j8` run: on the machine that
+hit the watchdog it measured **411.77 s** alone, and it still hit 900 s in parallel. That is a 4–8x
+spread for one tour across runs and machines, so a quiet-run cost does not predict which tour needs
+the headroom — and the tier's cost ranking does not match the incidents either (`tactical_popups`
+is the most expensive tour at this resolution and never timed out; `menus_tour` is mid-table and
+did). On a tier whose worst tour finishes in 184 s (bagong) / 367 s (laptop), the 900 s default
+buys a false failure as soon as the machine is loaded; 2400 s costs only a delayed report if a tour
+genuinely hangs, and it is the value #24 already uses.
+
+The other three resolutions keep 900 s: the measured maximum on the laptop at `-j8` is 183 s
+(1080p) and their pixel counts are well below 3440x1440's.
+
+### The audit: every 3440x1440 tour, one `-j8` run per machine
+
+`ctest -R resolution_.*_3440x1440 -j8`. Both runs passed 36/36; wall time 363.23 s (bagong) and
+610.00 s (laptop). The timeout column is what the tour had before this issue; 2400 for the map
+screen tours was #24's.
+
+| 3440x1440 tour | timeout before | bagong `-j8` | laptop `-j8` | laptop margin |
+|---|---|---|---|---|
+| tactical_popups | 900 | 179.16 | 366.71 | 2.5x |
+| laptop_parity | 900 | 146.02 | 260.26 | 3.5x |
+| world_map_steps | 900 | 109.93 | 244.91 | 3.7x |
+| mapscreen_parity | 2400 | 184.04 | 243.28 | 3.7x |
+| world_map_actions | 900 | 97.04 | 211.47 | 4.3x |
+| options_parity | 900 | 158.10 | 207.15 | 4.3x |
+| tactical_overhead | 900 | 93.45 | 163.06 | 5.5x |
+| saveload_parity | 900 | 117.19 | 155.75 | 5.8x |
+| tactical_overlays | 900 | 74.47 | 116.55 | 7.7x |
+| menus_tour | 900 | 78.32 | 106.33 | 8.5x (900.37 s used on the reporter's machine) |
+| mapscreen_overlays | 900 | 69.22 | 92.93 | 9.7x |
+| mapscreen_states | 2400 | 65.01 | 92.50 | 9.7x |
+| mapscreen_equivalence | 2400 | 62.11 | 87.83 | 10.2x |
+| tactical_parity | 900 | 59.84 | 84.47 | 10.7x |
+| video_switch | 900 | 55.76 | 74.39 | 12.1x |
+| autoresolve_parity | 900 | 54.69 | 72.00 | 12.5x |
+| sector_stock | 900 | 47.37 | 68.34 | 13.2x |
+| weapon_readout | 900 | 40.95 | 65.16 | 13.8x |
+| tactical_hud | 900 | 46.39 | 63.49 | 14.2x |
+| loadout_screen | 900 | 41.80 | 56.57 | 15.9x |
+| shopkeeper_parity | 900 | 37.03 | 55.47 | 16.2x |
+| new_game_to_tactical | 900 | 33.62 | 50.01 | 18.0x |
+| tactical_commands | 900 | 29.05 | 44.11 | 20.4x |
+| map_screen_tour | 900 | 30.06 | 42.29 | 21.3x |
+| newgame_parity | 900 | 32.55 | 41.77 | 21.5x |
+| tactical_move_merc | 900 | 29.98 | 41.10 | 21.9x |
+| people_content | 900 | 28.77 | 38.31 | 23.5x |
+| campaign_state | 900 | 28.89 | 37.31 | 24.1x |
+| native_ui | 900 | 22.35 | 27.87 | 32.3x |
+| mainmenu_parity | 900 | 19.42 | 24.93 | 36.1x |
+| laptop_tour | 900 | 15.09 | 19.87 | 45.3x |
+| credits_parity | 900 | 15.03 | 19.83 | 45.4x |
+| loadingscreen_parity | 900 | 14.23 | 18.94 | 47.5x |
+| epilogue_parity | 900 | 13.35 | 17.69 | 50.9x |
+| main_menu | 900 | 5.07 | 6.48 | 138.9x |
+| intro_parity | 900 | 3.90 | 5.70 | 157.9x |
+
+Laptop margin is 900 s over the laptop's measured time: how much headroom the default watchdog
+gave a quiet run. Every row is above 2.4x, and one of the two tours that ever hit the watchdog is
+at 8.5x — which is the point above: the margin is a property of the run, not of the tour.
+
+### The full matrix, green in one run
+
+`ctest -R resolution_ -j8` on bagong, at its `268eb54b8` build (the commits after it change docs and
+tests only):
+**144/144 passed, 910.78 s of
+wall time** (5292.81 s\*proc under the `matrix` label, 1504.46 s\*proc under `resolution`). It is a
+single run — not a re-run until green: no test needed the new watchdog and nothing was retried. No
+golden image drifted (`git status tests/e2e/golden` empty). The same commit's e2e suite is 59/59 in
+288.75 s, also `-j8`; `tools/tests/test_exit_codes.py` and `ctest -L tooling` cover the reporting
+change.
+
+The same day, for the other tiers: the laptop's 1080p sweep (`ctest -L resolution`, 36 tests) is
+36/36 in 317.16 s and its 3440x1440 subset 36/36 in 610.00 s, both `-j8`.
+
+## What "green" means for this matrix
+
+Green is one run in which no test failed *as a test*: no failed expectation, no golden compare
+failure, no watchdog. Nothing in the suite is currently flaky in that sense — the four runs above
+(36 + 36 + 36 + 144 tests) had no such failure on machines with the box otherwise idle. What the
+matrix does produce on a machine that is doing something else is two other things:
+
+- **A timeout.** The default 900 s was too close at 3440x1440 once the machine was loaded, which is
+  what the section above fixes: with the tier at 2400 s, a slow run has headroom and a hung run is
+  still reported.
+- **A killed process.** Issue #45's `script failed with exit code 4294967295` and the orchestration
+  note's two failures are all `0xffffffff` = -1, which no code in this repository emits — the
+  driver's codes are 0-4, and the test harness only ever returns those or its own 5 (verified:
+  `Stop-Process -Force` on the game process reproduces 4294967295, and the tour's own log line said
+  `passed` both times). That is an external kill of the game process — an agent harness or a tool
+  reaping a process tree — not a test result, and it is not retried: the harness now reports it as
+  the process layer so the run can be judged as "not a test failure" or repeated *whole*, with a
+  reason.
+
+So the honest operating rule: run the sweep with the machine to itself (bagong's `dev.py status`
+`active: 0` is the gate), and read a failure by the layer it names. A matrix that is green in one
+run under contention is not a target worth a retry policy; a matrix that reports *what* failed is.
+
