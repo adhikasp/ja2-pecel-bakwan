@@ -26,6 +26,7 @@
 #include "SGP.h"
 #include "Soldier_Control.h"
 #include "Video.h"
+#include "VideoGpu.h"
 
 #include <SDL3/SDL.h>
 #include <string_theory/format>
@@ -776,7 +777,10 @@ std::string ResolveOutputPath(std::string const& path)
 
 void Screenshot(std::string const& path)
 {
-	if (VideoGetOutputMapping().gpu)
+	// Read the presented frame back when the SDL_GPU compositor owns the window: it draws the world, the UI and
+	// the debug overlays itself, so a read of ScreenBuffer would miss what is actually on screen. The native UI's
+	// own GPU renderer does the same; a software native UI is composed into ScreenBuffer before the compositor.
+	if (VideoGpu::Active() || VideoGetOutputMapping().gpu)
 	{
 		// The native UI is drawn by the GPU (a window with JA2_NATIVE_UI_RENDERER=gpu): read the window back
 		std::vector<uint8_t> out;

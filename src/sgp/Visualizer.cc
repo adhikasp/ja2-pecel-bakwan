@@ -9,6 +9,7 @@
 #include "SDL3/SDL.h"
 #include "Soldier_Control.h"
 #include "Structure_Internals.h"
+#include "VideoGpu.h"
 #include "WorldDef.h"
 
 #include <memory>
@@ -17,6 +18,7 @@ namespace Visualizer
 {
 
 bool toggledOn{ };
+unsigned long long DrawnFrames{};
 
 std::unique_ptr<SDL_Texture, SDLDeleter> bgTexture;
 std::unique_ptr<SDL_Texture, SDLDeleter> finalTexture;
@@ -68,7 +70,17 @@ GridNo lastCell{ 0 };
 int16_t lastInterfaceLvl{ I_GROUND_LEVEL };
 AnimationStates lastAnimState{ NOTUSEDANIM1 };
 
-static void DrawHitbox(SDL_Renderer * const renderer, float const x, float const y, float const z, bool const drawRoofOnly = false)
+bool Enabled()
+{
+	return toggledOn;
+}
+
+unsigned long long Drawn()
+{
+	return DrawnFrames;
+}
+
+int HitboxFaces(int const x, int const y, int const z, bool const roofOnly, Face out[3])
 {
 	float const offsetX = baseCoord.position.x + (x - y) * adjBoxLegLength;
 	float const offsetY = baseCoord.position.y + (x + y) * oppBoxLegLength - boxHeight * (z + 1);
@@ -81,49 +93,65 @@ static void DrawHitbox(SDL_Renderer * const renderer, float const x, float const
 		isAlt = !isAlt;
 	}
 
-	SDL_Vertex topFace[4];
-	SDL_Vertex rightFace[4];
-	SDL_Vertex leftFace[4];
+	// Top face: the rhombus of the tile.
+	out[0].color = roofOnly ? tileColorLvl1 : (isAlt ? boxTopColorAlt : boxTopColor);
+	out[0].x[0] = offsetX;
+	out[0].y[0] = offsetY;
+	out[0].x[1] = offsetX + adjBoxLegLength;
+	out[0].y[1] = offsetY + oppBoxLegLength;
+	out[0].x[2] = offsetX;
+	out[0].y[2] = offsetY + oppBoxLegLength * 2;
+	out[0].x[3] = offsetX - adjBoxLegLength;
+	out[0].y[3] = offsetY + oppBoxLegLength;
 
-	SDL_FColor currTopColor;
-	if (drawRoofOnly)
-	{
-		currTopColor = tileColorLvl1;
-	}
-	else
-	{
-		currTopColor = isAlt ? boxTopColorAlt : boxTopColor;
-	}
-	topFace[0] =   { { offsetX,                   offsetY },                       currTopColor };
-	topFace[1] =   { { offsetX + adjBoxLegLength, offsetY + oppBoxLegLength },     currTopColor };
-	topFace[2] =   { { offsetX,                   offsetY + oppBoxLegLength * 2 }, currTopColor };
-	topFace[3] =   { { offsetX - adjBoxLegLength, offsetY + oppBoxLegLength },     currTopColor };
-	SDL_RenderGeometry(renderer, nullptr, &topFace[0], 4, indices, 6);
+	if (roofOnly) return 1;
 
-	if (drawRoofOnly)
-		return;
+	// Right face: the top's right edge, dropped by the box height.
+	out[1].color = isAlt ? boxRightColorAlt : boxRightColor;
+	out[1].x[0] = out[0].x[1];
+	out[1].y[0] = out[0].y[1];
+	out[1].x[1] = offsetX + adjBoxLegLength;
+	out[1].y[1] = offsetY + oppBoxLegLength + boxHeight;
+	out[1].x[2] = offsetX;
+	out[1].y[2] = offsetY + oppBoxLegLength * 2 + boxHeight;
+	out[1].x[3] = out[0].x[2];
+	out[1].y[3] = out[0].y[2];
 
-	SDL_FColor currRightColor{ isAlt ? boxRightColorAlt : boxRightColor };
-	rightFace[0] = { topFace[1].position,                                                     currRightColor };
-	rightFace[1] = { { offsetX + adjBoxLegLength, offsetY + oppBoxLegLength + boxHeight },    currRightColor };
-	rightFace[2] = { { offsetX,                   offsetY + oppBoxLegLength * 2 + boxHeight}, currRightColor };
-	rightFace[3] = { topFace[2].position,                                                     currRightColor };
-	SDL_RenderGeometry(renderer, nullptr, &rightFace[0], 4, indices, 6);
+	// Left face: the top's left edge and the right face's lower edge.
+	out[2].color = isAlt ? boxLeftColorAlt : boxLeftColor;
+	out[2].x[0] = out[0].x[3];
+	out[2].y[0] = out[0].y[3];
+	out[2].x[1] = out[0].x[2];
+	out[2].y[1] = out[0].y[2];
+	out[2].x[2] = out[1].x[2];
+	out[2].y[2] = out[1].y[2];
+	out[2].x[3] = offsetX - adjBoxLegLength;
+	out[2].y[3] = offsetY + oppBoxLegLength + boxHeight;
 
-	SDL_FColor currLeftColor { isAlt ? boxLeftColorAlt  : boxLeftColor };
-	leftFace[0] =  { topFace[3].position,                                                  currLeftColor };
-	leftFace[1] =  { topFace[2].position,                                                  currLeftColor };
-	leftFace[2] =  { rightFace[2].position,                                                currLeftColor };
-	leftFace[3] =  { { offsetX - adjBoxLegLength, offsetY + oppBoxLegLength + boxHeight }, currLeftColor };
-	SDL_RenderGeometry(renderer, nullptr, &leftFace[0], 4, indices, 6);
+	return 3;
 }
 
-static void UpdateTexture(SDL_Renderer * const renderer)
+static void DrawHitbox(SDL_Renderer* const renderer, int const x, int const y, int const z,
+					   bool const drawRoofOnly = false)
 {
-	SDL_SetRenderTarget(renderer, finalTexture.get());
+	Face faces[3];
+	int const count = HitboxFaces(x, y, z, drawRoofOnly, faces);
+	for (int i = 0; i < count; ++i)
+	{
+		SDL_Vertex vertices[4];
+		for (int v = 0; v < 4; ++v)
+		{
+			vertices[v].position = { faces[i].x[v], faces[i].y[v] };
+			vertices[v].color = faces[i].color;
+		}
+		SDL_RenderGeometry(renderer, nullptr, vertices, 4, indices, 6);
+	}
+}
 
-	SDL_RenderTexture( renderer, bgTexture.get(), nullptr, nullptr);
-
+/** Walks every hitbox the tile at lastCell has, at the current interface level, calling @a draw for each one.
+ * The shape coalescing is the same for the SDL_Renderer overlay and the SDL_GPU one. */
+template <typename Draw> static void ForEachHitbox(Draw&& draw)
+{
 	uint8_t combinedShapeLvl0[PROFILE_X_SIZE][PROFILE_Y_SIZE]{};
 	uint8_t combinedShapeLvl1[PROFILE_X_SIZE][PROFILE_Y_SIZE]{};
 	bool isWalkableRoofPresent{ (bool)gpWorldLevelData[lastCell].pRoofHead };
@@ -153,11 +181,11 @@ static void UpdateTexture(SDL_Renderer * const renderer)
 			{
 				if (combinedShapeLvl0[loopX][loopY] & AtHeight[loopZ])
 				{
-					DrawHitbox(renderer, loopX, loopY, loopZ);
+					draw(loopX, loopY, loopZ, false);
 				}
 				if (loopZ == PROFILE_Z_SIZE - 1 && isWalkableRoofPresent && lastInterfaceLvl == I_ROOF_LEVEL)
 				{
-					DrawHitbox(renderer, loopX, loopY, loopZ, true);
+					draw(loopX, loopY, loopZ, true);
 				}
 			}
 
@@ -168,11 +196,21 @@ static void UpdateTexture(SDL_Renderer * const renderer)
 			{
 				if (combinedShapeLvl1[loopX][loopY] & AtHeight[loopZ])
 				{
-					DrawHitbox(renderer, loopX, loopY, loopZ + PROFILE_Z_SIZE);
+					draw(loopX, loopY, loopZ + PROFILE_Z_SIZE, false);
 				}
 			}
 		}
 	}
+}
+
+static void UpdateTexture(SDL_Renderer* const renderer)
+{
+	SDL_SetRenderTarget(renderer, finalTexture.get());
+
+	SDL_RenderTexture(renderer, bgTexture.get(), nullptr, nullptr);
+
+	ForEachHitbox([&](int const x, int const y, int const z, bool const roofOnly)
+				  { DrawHitbox(renderer, x, y, z, roofOnly); });
 
 	SDL_SetRenderTarget(renderer, nullptr);
 }
@@ -229,6 +267,57 @@ void Render(SDL_Renderer * const renderer)
 	SDL_RenderTexture(renderer, finalTexture.get(), nullptr, &bgRectDest);
 	// set this back to total black for subsequent SDL_RenderClear
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, SDL_ALPHA_OPAQUE);
+	++DrawnFrames;
+}
+
+bool RecordGpuQuads(float const originX, float const originY, float const scale)
+{
+	if (!toggledOn)
+	{
+		return false;
+	}
+
+	if (guiCurrentScreen != GAME_SCREEN)
+	{
+		ToggleOnOff();
+		return false;
+	}
+
+	lastCell = guiCurrentCursorGridNo;
+	lastInterfaceLvl = gsInterfaceLevel;
+
+	auto const px = [&](float const x) { return originX + (bgRectDest.x + x) * scale; };
+	auto const py = [&](float const y) { return originY + (bgRectDest.y + y) * scale; };
+	auto const quad = [&](Face const& f)
+	{
+		VideoGpu::OverlayQuad(px(f.x[0]), py(f.y[0]), px(f.x[1]), py(f.y[1]), px(f.x[2]), py(f.y[2]), px(f.x[3]),
+							  py(f.y[3]), f.color.r, f.color.g, f.color.b, f.color.a);
+	};
+
+	// The dark panel the hitboxes sit on.
+	VideoGpu::OverlayQuad(px(0), py(0), px(bgRectDest.w), py(0), px(bgRectDest.w), py(bgRectDest.h), px(0),
+						  py(bgRectDest.h), 10.0f / 255.0f, 10.0f / 255.0f, 10.0f / 255.0f, 1.0f);
+
+	// The green ground rhombus.
+	Face ground{};
+	for (int i = 0; i < 4; ++i)
+	{
+		ground.x[i] = verticesLvl0[i].position.x;
+		ground.y[i] = verticesLvl0[i].position.y;
+	}
+	ground.color = verticesLvl0[0].color;
+	quad(ground);
+
+	Face faces[3];
+	ForEachHitbox(
+		[&](int const x, int const y, int const z, bool const roofOnly)
+		{
+			int const count = HitboxFaces(x, y, z, roofOnly, faces);
+			for (int i = 0; i < count; ++i) quad(faces[i]);
+		});
+
+	++DrawnFrames;
+	return true;
 }
 
 void ToggleOnOff()

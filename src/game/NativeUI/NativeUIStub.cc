@@ -1,5 +1,7 @@
 // Built without the native UI (WITH_NATIVE_UI=OFF, e.g. Android): every screen and overlay uses its legacy UI.
 #include "NativeUI.h"
+#include "FPS.h"
+#include "Visualizer.h"
 
 #include <stdexcept>
 
@@ -11,7 +13,13 @@ static float g_scale = 1;
 float UserScale() { return g_scale; }
 void  SetUserScale(float s) { g_scale = s; }
 float DpScale() { return 0; }
-Info GetInfo() { return {}; }
+Info GetInfo()
+{
+	Info i;
+	i.fps = { FPS::Enabled(), FPS::Drawn() };
+	i.visualizer = { Visualizer::Enabled(), Visualizer::Drawn() };
+	return i;
+}
 void BeginFrame() {}
 void CaptureFrame() {}
 bool CapturesMouse() { return false; }

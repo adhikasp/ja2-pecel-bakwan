@@ -1572,6 +1572,16 @@ static void PresentGpuFrame(SDL_Rect const&)
 			0, 0, 1, 1, b, b, b, 1.0f, false);
 	VideoGpu::QuadUpload();
 
+	// The debug overlays (the tile Visualizer, then the FPS counter): a batch of their own, drawn on top of
+	// everything after the native UI. Their positions are in canvas pixels, mapped onto the letterboxed screen.
+	{
+		float const canvasScale = R.w / float(SCREEN_WIDTH);
+		VideoGpu::OverlayReset();
+		bool const visualizerOn = Visualizer::RecordGpuQuads(R.x, R.y, canvasScale);
+		bool const fpsOn = FPS::RecordGpuQuad(R.x, R.y, canvasScale);
+		if (visualizerOn || fpsOn) VideoGpu::OverlayUpload();
+	}
+
 	// The native UI records and uploads its triangles before the pass (it is all CPU there).
 	bool const overlayGpu = Overlay && Overlay->UsesGpu();
 	if (overlayGpu) Overlay->GpuFramePrepare(VideoGpu::Cmd());
@@ -1580,6 +1590,7 @@ static void PresentGpuFrame(SDL_Rect const&)
 	VideoGpu::BeginPass(LETTERBOX_COLOR / 255.0f, LETTERBOX_COLOR / 255.0f, LETTERBOX_COLOR / 255.0f, capture);
 	VideoGpu::QuadDraw();
 	if (overlayGpu) Overlay->GpuFrameRender(VideoGpu::Pass(), VideoGpu::Width(), VideoGpu::Height());
+	VideoGpu::OverlayDraw();
 	VideoGpu::EndPass();
 	VideoGpu::Submit();
 
