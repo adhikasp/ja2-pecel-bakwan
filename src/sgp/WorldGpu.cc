@@ -20,6 +20,64 @@ struct Params
 static_assert(sizeof(Params) == 64);
 
 uint32_t Align4(size_t v) { return uint32_t((v + 3) & ~size_t(3)); }
+} // namespace
+
+/** Whether the target already holds exactly this frame: same target, instances, depth runs and palettes (which
+ * the instances index into), clear, lighting and sprite pool. */
+bool Renderer::SameFrame(WorldPipe::Frame const& f, uint32_t const poolGeneration, uint16_t const* shadeTable) const
+{
+	FrameKey const& last = m_last;
+	if (!last.valid || last.width != f.width || last.height != f.height) return false;
+	if (last.shade.size() != 65536 || std::memcmp(last.shade.data(), shadeTable, 65536 * sizeof(uint16_t)) != 0)
+		return false;
+	if (last.clearColor != f.clearColor || last.clearDepth != f.clearDepth || last.mask != f.translucentMask)
+		return false;
+	if (last.poolGeneration != poolGeneration) return false;
+	if (last.ambientR != f.lighting.ambientR || last.ambientG != f.lighting.ambientG ||
+		last.ambientB != f.lighting.ambientB || last.sunR != f.lighting.sunR || last.sunG != f.lighting.sunG ||
+		last.sunB != f.lighting.sunB || last.falloff != f.lighting.falloff || last.points != f.lighting.points.size())
+		return false;
+	if (last.instances.size() != f.instances.size() || last.palettes.size() != f.palettes.size() ||
+		last.columns.size() != f.columns.size())
+		return false;
+	if (!f.instances.empty() &&
+		std::memcmp(last.instances.data(), f.instances.data(), f.instances.size() * sizeof(WorldPipe::Instance)) != 0)
+		return false;
+	if (!f.palettes.empty() &&
+		std::memcmp(last.palettes.data(), f.palettes.data(), f.palettes.size() * sizeof(uint32_t)) != 0)
+		return false;
+	if (!f.columns.empty() &&
+		std::memcmp(last.columns.data(), f.columns.data(), f.columns.size() * sizeof(uint16_t)) != 0)
+		return false;
+	if (!f.lighting.points.empty() && std::memcmp(last.lights.data(), f.lighting.points.data(),
+												  f.lighting.points.size() * sizeof(WorldPipe::PointLight)) != 0)
+		return false;
+	return true;
+}
+
+void Renderer::RememberFrame(WorldPipe::Frame const& f, uint32_t const poolGeneration, uint16_t const* shadeTable)
+{
+	FrameKey& last = m_last;
+	last.valid = true;
+	last.shade.assign(shadeTable, shadeTable + 65536);
+	last.width = f.width;
+	last.height = f.height;
+	last.clearColor = f.clearColor;
+	last.clearDepth = f.clearDepth;
+	last.mask = f.translucentMask;
+	last.poolGeneration = poolGeneration;
+	last.ambientR = f.lighting.ambientR;
+	last.ambientG = f.lighting.ambientG;
+	last.ambientB = f.lighting.ambientB;
+	last.sunR = f.lighting.sunR;
+	last.sunG = f.lighting.sunG;
+	last.sunB = f.lighting.sunB;
+	last.falloff = f.lighting.falloff;
+	last.points = uint32_t(f.lighting.points.size());
+	last.instances = f.instances;
+	last.palettes = f.palettes;
+	last.columns = f.columns;
+	last.lights = f.lighting.points;
 }
 
 SDL_GPUShaderFormat ShaderFormats()
@@ -124,6 +182,7 @@ void Renderer::Shutdown()
 	m_ownDevice = false;
 	m_poolGeneration = 0;
 	m_shadeCopy.clear();
+	m_last = {};
 }
 
 bool Renderer::Ensure(Buffer& b, uint32_t bytes, SDL_GPUBufferUsageFlags usage)
@@ -163,14 +222,23 @@ bool Renderer::EnsureTarget(int w, int h)
 bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, uint16_t const* shadeTable, bool readback)
 {
 	if (!m_pipeline || f.width <= 0 || f.height <= 0) return false;
+	m_stats = {};
+	// The frame is the one the target already holds: nothing to bin, upload or dispatch. (Only when it is not
+	// read back - a readback has to wait for a submission, and the frame's own pixels are already there.)
+	if (!readback && SameFrame(f, pool.generation, shadeTable))
+	{
+		m_stats.skipped = true;
+		return true;
+	}
+
 	auto const t0 = clock_type::now();
 	m_bins.Build(f);
 	auto const t1 = clock_type::now();
-	m_stats = {};
 	m_stats.buildMs = Ms(t0, t1);
 	m_stats.binItems = m_bins.items.size();
 
 	if (!EnsureTarget(f.width, f.height)) return false;
+	m_last.valid = false; // until this frame is fully submitted
 
 	SDL_GPUBufferUsageFlags const ro = SDL_GPU_BUFFERUSAGE_COMPUTE_STORAGE_READ;
 	// The sprite pool: appended to, or all again when it was reset or outgrew the buffer
@@ -320,6 +388,7 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 		SDL_SubmitGPUCommandBuffer(cmd);
 	}
 	m_stats.uploadMs = Ms(t1, clock_type::now());
+	RememberFrame(f, pool.generation, shadeTable);
 	return true;
 }
 

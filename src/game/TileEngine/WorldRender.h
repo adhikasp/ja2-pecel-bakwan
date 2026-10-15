@@ -55,6 +55,8 @@ struct WorldRenderStats
 	size_t uploadBytes = 0;
 	double frameMs = 0;
 	int    staticHits = 0, staticMisses = 0; // frames that reused / re-recorded the static layers       // wall-clock time since the previous RenderWorld (any renderer)
+	int stripsRecorded = 0, stripsReused = 0; // this frame's static rows re-recorded / taken from the cache
+	bool gpuSkipped = false; // the GPU renderer found the target already held this frame and dispatched nothing
 };
 /** Called whenever a frame is presented: measures the frame interval. */
 void WorldRenderFrameTick();
@@ -68,6 +70,8 @@ struct WorldEquivalenceResult
 	int         width = 0, height = 0;          // the compared area: the world viewport
 	int         instances = 0, sprites = 0, palettes = 0;
 	std::map<std::string, int> ops;            // instances per op
+	int staticHits = 0, staticMisses = 0;      // frames that reused / re-recorded the static layers
+	int staticStripsRecorded = 0, staticStripsReused = 0; // static rows the frame under test recorded / reused
 	long long   pixels = 0;
 	long long   pipelineDifferent = 0;          // CPU pipeline vs software renderer
 	double      pipelinePercent = 0;
@@ -81,8 +85,20 @@ struct WorldEquivalenceResult
 	std::string legacyPng, pipelinePng, gpuPng, pipelineDiffPng, gpuDiffPng;
 };
 
+/** How to record the view under test besides the default (re-record everything with the static cache off). */
+struct WorldEquivalenceOptions
+{
+	/** Record with the static cache on. With a scroll the frame under test is recorded after a camera move, so
+	 * it exercises whatever the cache does across camera moves (the scroll-with-cache regression guard). */
+	bool cache = false;
+	/** Camera move between the priming frame and the frame under test, in tiles. Applied only with `cache`. */
+	int scrollTilesX = 0, scrollTilesY = 0;
+
+	bool Scrolled() const { return scrollTilesX != 0 || scrollTilesY != 0; }
+};
+
 /** Renders the current view three ways: the software renderer as a full redraw (static and dynamic layers:
  * land, objects, shadows, structures, mercs, items, corpses, roofs, on-roof, topmost), the recorded instances on
  * the CPU pipeline and, when `gpu` and a device is available, on the GPU; and compares them pixel by pixel.
  * PNGs go to outDir when it is not empty. Leaves a full redraw pending. Throws if there is no world. */
-WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool gpu);
+WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool gpu, WorldEquivalenceOptions const& = {});

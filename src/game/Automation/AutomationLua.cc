@@ -1726,15 +1726,28 @@ namespace
 			return t;
 		});
 
-		// ja2.worldEquivalence([dir], [{gpu = true}]): the Phase 8 world renderer against the software renderer on the
-		// current view (WorldRender.h): the recorded instances on the CPU pipeline and on the GPU (when a device
-		// is available), each compared pixel by pixel with a full software redraw. PNGs to dir (relative to -out).
+		// ja2.worldEquivalence([dir], [{gpu = true, cache = false, scroll = {tilesX, tilesY}}]): the Phase 8 world
+		// renderer against the software renderer on the current view (WorldRender.h): the recorded instances on the
+		// CPU pipeline and on the GPU (when a device is available), each compared pixel by pixel with a full
+		// software redraw. PNGs to dir (relative to -out). With `cache` the record runs with the static cache on;
+		// with `scroll` (tiles) the camera moves between priming that cache and recording the frame under test, so
+		// the comparison covers the cache across a camera move.
 		ja2.set_function("worldEquivalence", [](sol::optional<std::string> dir, sol::optional<sol::table> opts) {
 			return Guarded([&] {
 				std::string out;
 				if (dir && !dir->empty()) { out = Session::ResolveOutputPath(*dir); std::filesystem::create_directories(out); }
 				bool const gpu = opts ? opts->get_or("gpu", true) : true;
-				WorldEquivalenceResult const r = RunWorldEquivalence(out, gpu);
+				WorldEquivalenceOptions wo;
+				wo.cache = opts ? opts->get_or("cache", false) : false;
+				if (opts)
+				{
+					if (sol::optional<sol::table> s = (*opts)["scroll"])
+					{
+						wo.scrollTilesX = int((*s).get_or(1, 0));
+						wo.scrollTilesY = int((*s).get_or(2, 0));
+					}
+				}
+				WorldEquivalenceResult const r = RunWorldEquivalence(out, gpu, wo);
 				sol::table t = g_lua.create_table();
 				t["width"] = r.width;
 				t["height"] = r.height;
@@ -1744,6 +1757,10 @@ namespace
 				sol::table ops = g_lua.create_table();
 				for (auto const& [name, n] : r.ops) ops[name] = n;
 				t["ops"] = ops;
+				t["staticHits"] = r.staticHits;
+				t["staticMisses"] = r.staticMisses;
+				t["stripsRecorded"] = r.staticStripsRecorded;
+				t["stripsReused"] = r.staticStripsReused;
 				t["pixels"] = double(r.pixels);
 				t["pipelineDifferent"] = double(r.pipelineDifferent);
 				t["pipelinePercent"] = r.pipelinePercent;
@@ -1786,6 +1803,9 @@ namespace
 			t["frameMs"] = s.frameMs;
 			t["staticHits"] = s.staticHits;
 			t["staticMisses"] = s.staticMisses;
+			t["stripsRecorded"] = s.stripsRecorded;
+			t["stripsReused"] = s.stripsReused;
+			t["gpuSkipped"] = s.gpuSkipped;
 			t["wallMs"] = std::chrono::duration<double, std::milli>(std::chrono::steady_clock::now().time_since_epoch()).count(); // wall clock, for frame-rate measurements
 			return t;
 		});

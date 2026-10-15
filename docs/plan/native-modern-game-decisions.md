@@ -259,10 +259,40 @@ Recording costs 3.3 ms per frame with the cache (dynamic layers only) and 13 ms 
 at zoom 2 always; scrolling at 4K zoom 1 runs at 57 fps.** The software renderer's still frames are cheap because
 it redraws incrementally; it does not scale or zoom fractionally.
 
+### Re-measured on a slower box (#37): what is left of that
+
+The table above was taken on the machine PR #19 used. On a second box (Windows/MSYS2, AMD Radeon iGPU, D3D12,
+3840x2160 @ 59 Hz) the same harness with `#37`'s strip cache and its GPU frame-identity check measures:
+
+| 4K, world zoom 1 | mean (fps) | median | p95 | record | static rows |
+|---|---|---|---|---|---|
+| gpu, still, cache on | 78.9 ms (13) | 96.7 | 102.1 | 7.4 ms | 102 recorded / 380 reused |
+| gpu, still, cache off | 77.4 ms (13) | 99.0 | 103.0 | 10.6 ms | all re-recorded |
+| gpu, **scrolling**, cache on | 48.6 ms (21) | **17.1** | 99.1 | 7.8 ms | 102 / 380 |
+| gpu, scrolling, cache off | 102.0 ms (10) | 101.1 | 108.7 | 10.9 ms | all re-recorded |
+| software, still | 47.1 ms (21) | 17.2 | 99.1 | 0 | — |
+
+The baseline on that box (before the strip cache) was 85.4/86.8 ms (12 fps) standing still with a hot cache and
+87.5/81.0 ms re-recording, with 10.5–10.8 ms of it record. So:
+
+- **The GPU dispatch dominates, not the record.** The CPU half lands: record drops to ~7.4–7.8 ms at 4K in a real
+  window (10.5 before), and in the driven path the equivalence scenes' scrolled frame records in 1.1–1.4 ms at
+  1920x1080 (against 3–5 ms re-recording) and 4.4 ms at 4K (against 8.7).
+- **The GPU half only lands where consecutive frames are identical.** In the scrolling case more than half the
+  frames are the one already in the target and cost 17 ms (the 60 fps budget) instead of 101 ms: the median is
+  17 ms and the mean over the case halves (102 → 49 ms). Standing still the item glow and idle merc animations
+  change the frame every frame, so the floor stays ~79 ms.
+- **The exposed-region dispatch is what is left.** Dispatching only what a camera move exposes needs the shader
+  to take a dispatch origin and the previous frame as input (a texture-to-texture shift, so the translated part
+  is not recomputed at all). That is a shader change, and it is the GPU half that still has to be done.
+
 ## Gaps
 
-- Scrolling at 4K world zoom 1 misses 60 fps by a little (57). Next step: keep the static cache across camera
-  moves by recording a margin around the view and re-recording only strips, as the software renderer does.
+- The static cache now keeps its strips across camera moves (#37): a scrolled frame re-records only the rows that
+  came into view. On a slower box than the table above, the GPU dispatch is what is left of a 4K frame (see
+  *Re-measured on a slower box*): the frame is only skipped when it is identical to the one in the target, so a
+  camera move still re-dispatches the whole 4K target. Next step: give the shader a dispatch origin and shift the
+  old frame into the new one (a texture-to-texture blit) so only the exposed region is dispatched.
 - The camera still moves in the game's own steps. Zoom is fractional (1/8 steps), but there is no free sub-pixel
   camera or zoom animation between steps; each step rebuilds the world layer.
 - MSL is generated but not compiled or run (no Mac).

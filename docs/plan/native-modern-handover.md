@@ -27,7 +27,7 @@ Decisions and measured numbers are in [native-modern-game-decisions.md](native-m
 - Phase 10 legacy removal.
 
 ## Known follow-ups from merged phases
-- World renderer: 4K at world zoom 1 while scrolling is 57 fps (worst case, cache off); needs strip-based cache reuse across camera moves. MSL shaders generated but never run on a Mac. No sub-tile camera / animated zoom.
+- World renderer: the static cache keeps its strips across camera moves (issue #37, `WorldRender.inl`), so a scrolled frame re-records only the rows entering the view. What is left of a 4K frame is the GPU dispatch: it is skipped when the frame is identical to the one already in the target (`WorldGpu.cc`), but a camera move still dispatches the whole target. Giving the shader a dispatch origin and shifting the old frame instead of recomputing it is the next step (needs the shader tools: `tools/shaders/build.sh`). MSL shaders generated but never run on a Mac. No sub-tile camera / animated zoom.
 - Translations: new UI strings and the 40 loading tips need translator review (marked `_todo`).
 - Phase 2: the UI now shares SDL_GPU's one compositor and present path with the world (issue #50, `src/sgp/VideoGpu.cc` + `src/nativeui/UiGpu.cc`); the SDL_Renderer stays only for the headless/software path and the editor's debug overlays (FPS, Visualizer) are not drawn on the SDL_GPU path yet.
 

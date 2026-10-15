@@ -221,8 +221,8 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.check(value, message)` | Records a failure and carries on; the script exits 1 at the end. |
 | `ja2.log(...)` | To stderr and the log. |
 | `ja2.args` | Values of `-arg`. |
-| `ja2.worldEquivalence([dir], [{gpu=true}])` | Phase 8: the current view by the software renderer, the recorded pipeline on the CPU and on the GPU; pixel diffs, op counts, timings, PNGs to `dir`. |
-| `ja2.setWorldRenderer(name)` / `ja2.worldRenderer()` | Switch the world renderer (`software`, `gpu`, `pipeline`; the latter two need the world as a layer: `--worldzoom`, or start with `JA2_WORLD_RENDERER`) / what is active and last-frame stats. |
+| `ja2.worldEquivalence([dir], [{gpu=true, cache=false, scroll={tx,ty}}])` | Phase 8: the current view by the software renderer, the recorded pipeline on the CPU and on the GPU; pixel diffs, op counts, timings, PNGs to `dir`. `cache` records with the static cache on, and `scroll` moves the camera that many tiles between priming it and recording the frame under test (the cache-across-camera-moves guard). |
+| `ja2.setWorldRenderer(name)` / `ja2.worldRenderer()` | Switch the world renderer (`software`, `gpu`, `pipeline`; the latter two need the world as a layer: `--worldzoom`, or start with `JA2_WORLD_RENDERER`) / what is active and last-frame stats (instances, `recordMs`, `stripsRecorded`/`stripsReused` for the static cache, `gpuSkipped` when the GPU found the target already held the frame). |
 | `ja2.pick()` | What the mouse picks in tactical: `{grid, interactive, target}`. |
 | `ja2.debug("light", level, nightLights)`, `("item", grid, item)`, `("corpse", grid, dir)`, `("roof", grid)`, `("explosion", grid, [item])` | Renderer test scenes: ambient light, an item or a corpse on the ground, a room's roof taken off, a live explosion (item defaults to a tear-gas grenade, translucent from its first frame). |
 | `ja2.debug("flashitem", grid, [item])` | An unseen item at `grid` that is then spotted, so the new-item locator (and the list beside it) plays; read it back with `ja2.overlays()`. |
