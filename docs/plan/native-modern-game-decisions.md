@@ -392,12 +392,13 @@ at 8.5x — which is the point above: the margin is a property of the run, not o
 
 ### The full matrix, green in one run
 
-`ctest -R resolution_ -j8` on bagong, at its `268eb54b8` build (the commits after it change docs and
-tests only): **144/144 passed, 910.78 s of wall time** (5292.81 s\*proc under the `matrix` label,
-1504.46 s\*proc under `resolution`). It is a single run — not a re-run until green: no test needed
-the new watchdog and nothing was retried. No golden image drifted (`git status tests/e2e/golden`
-empty). The same commit's e2e suite is 59/59 in 288.75 s, also `-j8`; `tools/tests/test_exit_codes.py`
-and `ctest -L tooling` cover the reporting change.
+`ctest -R resolution_ -j8` on bagong, twice, one run each: **144/144 passed both times — 910.78 s of
+wall time at `268eb54b8`, and 827.10 s at `d0cd839b0`** (the build that carries the reporting fix;
+5292.81 / 5180.82 s\*proc under the `matrix` label, 1504.46 / 1425.70 s\*proc under `resolution`).
+Each is a single run — not a re-run until green: no test needed the new watchdog and nothing was
+retried. No golden image drifted in either (`git status tests/e2e/golden` empty). The same commit's
+e2e suite is 59/59 in 288.75 s, also `-j8`; `tools/tests/test_exit_codes.py` (17 tests) and
+`ctest -L tooling` cover the reporting change.
 
 The same day, for the other tiers: the laptop's 1080p sweep (`ctest -L resolution`, 36 tests) is
 36/36 in 317.16 s and its 3440x1440 subset 36/36 in 610.00 s, both `-j8`.
