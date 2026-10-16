@@ -5,7 +5,8 @@
 // destination (shade-table shadows, 50 % translucency), is exact. A finished pixel is lit (ambient + sun +
 // point lights). ApplyPixel and ApplyLighting in WorldPipeline.h are the reference; keep the two in step.
 //
-// Compiled to SPIR-V by tools/shaders/build.sh (glslangValidator) into world_raster.comp.spv.h.
+// tools/shaders/build.sh compiles it for every backend (SPIR-V, DXBC, MSL) into the committed world_raster.comp.h;
+// after editing this file regenerate that header with `python tools/dev.py build --target shaders`.
 // SDL_GPU compute resource layout: set 0 = read-only storage buffers, set 1 = read-write storage
 // textures then buffers, set 2 = uniform buffers.
 
@@ -46,6 +47,10 @@ layout(std140, UNIFORM) uniform Params
 	uint  clearDepth;
 	uint  mask;         // 0x7BEF (the RGB565 halving mask; translucency stays in 565)
 	uint  pointCount;
+	uint  originX;      // the dispatch origin: the target pixel this grid's (0,0) is (16-aligned)
+	uint  originY;
+	uint  regionW;      // the size of the region being dispatched: pixels in [origin, origin + region)
+	uint  regionH;
 	uint  pad0;
 	float ambientR;
 	float ambientG;
@@ -86,14 +91,17 @@ shared uvec4 sharedB[256];
 
 void main()
 {
-	uint x = gl_GlobalInvocationID.x;
-	uint y = gl_GlobalInvocationID.y;
-	bool inside = x < width && y < height;
+	// The workgroup's bin is fixed by the dispatch origin: a 16-aligned origin means this grid's workgroup
+	// (gl_WorkGroupID) covers exactly the target pixels of one bin. Lanes past the region (or the target) do no
+	// pixel work, but they still take part in the barriers below, so the region may end mid-workgroup.
+	uint x = originX + gl_GlobalInvocationID.x;
+	uint y = originY + gl_GlobalInvocationID.y;
+	bool inside = gl_GlobalInvocationID.x < regionW && gl_GlobalInvocationID.y < regionH && x < width && y < height;
 
 	uint D = clearColor;
 	uint Z = clearDepth;
 	// The whole workgroup is one bin: its instances are loaded into shared memory 256 at a time
-	uint bin = gl_WorkGroupID.y * binCols + gl_WorkGroupID.x;
+	uint bin = ((originY >> 4u) + gl_WorkGroupID.y) * binCols + ((originX >> 4u) + gl_WorkGroupID.x);
 	uint first = ranges[bin * 2u];
 	uint count = ranges[bin * 2u + 1u];
 	for (uint base = 0u; base < count; base += 256u)

@@ -370,6 +370,30 @@ add_custom_target(run-${JA2_BINARY}-unittests
     DEPENDS "${JA2_BINARY}"
 )
 
+# --- SDL_GPU shaders (tools/shaders/build.sh) ---
+# src/sgp/shaders/*.{comp,vert,frag} are compiled for every backend (SPIR-V, DXBC, MSL) into the committed
+# headers world_raster.comp.h and quad.h, so building the game itself needs no shader tools. This target is how
+# an edit to a shader gets into those headers:
+#
+#     python tools/dev.py build --target shaders
+#
+# It is not part of ALL, and it does nothing when the tools are missing (then the committed headers are what
+# builds use). The DXBC half needs Windows and its d3dcompiler_47.dll, so the target is only wired where the
+# whole of build.sh can run.
+find_program(GLSLANG_VALIDATOR NAMES glslangValidator)
+find_program(SPIRV_CROSS NAMES spirv-cross)
+if (WIN32 AND GLSLANG_VALIDATOR AND SPIRV_CROSS)
+    add_custom_target(shaders
+        COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/tools/shaders/build.sh"
+        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+        COMMENT "Compiling the SDL_GPU shaders into src/sgp/shaders/*.h (tools/shaders/build.sh)")
+else()
+    add_custom_target(shaders
+        COMMAND ${CMAKE_COMMAND} -E echo
+            "glslangValidator/spirv-cross (and Windows' d3dcompiler for DXBC) are not all available: \
+the committed src/sgp/shaders/*.h are used as they are")
+endif()
+
 # --- E2E tests: the real game, headless, driven by Lua scripts ---
 # They need the original game data (game_dir in your ja2.json) and Python 3
 # (tools/ja2ctl.py gives every run a fresh, throwaway home directory).

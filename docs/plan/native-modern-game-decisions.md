@@ -286,13 +286,43 @@ The baseline on that box (before the strip cache) was 85.4/86.8 ms (12 fps) stan
   to take a dispatch origin and the previous frame as input (a texture-to-texture shift, so the translated part
   is not recomputed at all). That is a shader change, and it is the GPU half that still has to be done.
 
+### The dispatch origin, and what the 4K floor actually is (issue #37, second half)
+
+The shader now takes a **dispatch origin**, and `WorldGpu::Renderer` uses it to dispatch only the region that
+changed since the last frame: the bounding box of the instances whose own bytes, resolved palette colours or
+depth runs differ (a readback still dispatches the whole target, so the equivalence path still sees every
+pixel). A frame that changed nothing is not dispatched at all. Standing still the region is typically 32x64 to
+48x64 pixels of a 3840x2160 target, against the whole target before.
+
+The measurement on this machine (Ryzen 5 5560U, AMD Radeon iGPU, D3D12, 3840x2160 @ 59 Hz, display at 300 %
+scaling) says the region does not move the frame interval, because **the dispatch is not what limits a 4K
+frame here**:
+
+- Through the driven read-back path (no window present involved), a full 4K dispatch of 32,171 instances plus
+  the read-back is **17-19 ms**. The dispatch itself is a few ms of that.
+- In a real window the GPU frame interval is **~99 ms** (median), while the software renderer's is **~17 ms**
+  (median). A frame the GPU renderer *skipped entirely* - an identical frame, nothing bin/uploaded/dispatched -
+  is **also ~99 ms**. The interval is therefore independent of the world dispatch: presenter/compositor, not
+  `RenderWorld`. The arithmetic alone settles it: the software renderer's whole 4K frame is 17 ms, so even a
+  world dispatch on *every* frame would put the GPU path at ~35 ms, nowhere near 99 ms.
+- The harness's own numbers, before and after the change, are the same within noise: GPU cached still 86.5 to
+  86.4 ms mean (96.8 to 98.9 median), GPU uncached still 76.3 to 74.4 ms mean (99.2 to 99.1 median), GPU cached
+  scrolling 48.0 to 53.0 ms mean (17.3 to 17.1 median). At 1920x1080 every GPU case is at the 60 fps vsync cap
+  both before and after, so there is no headroom to measure either.
+
+So the dispatch-origin half is landed, exact (the six scroll scenes are still 0 px) and cheap, but the 4K
+floor it was meant to move is not where the issue's plan put it. The texture-to-texture **frame shift is not
+done**: a camera move that changed nothing but the camera would still dispatch the whole target, and with the
+dispatch at a few ms it would not move the frame interval either. The next thing to measure for the 4K frame
+rate is the SDL_GPU present/compositor path (`src/sgp/VideoGpu.cc`), not the world renderer.
+
 ## Gaps
 
-- The static cache now keeps its strips across camera moves (#37): a scrolled frame re-records only the rows that
-  came into view. On a slower box than the table above, the GPU dispatch is what is left of a 4K frame (see
-  *Re-measured on a slower box*): the frame is only skipped when it is identical to the one in the target, so a
-  camera move still re-dispatches the whole 4K target. Next step: give the shader a dispatch origin and shift the
-  old frame into the new one (a texture-to-texture blit) so only the exposed region is dispatched.
+- The static cache keeps its strips across camera moves (#37) and the GPU dispatches only the region that
+  changed, not the whole target (a dispatch origin; see *The dispatch origin, and what the 4K floor actually
+  is*). That does not move the 4K frame interval on the machine it was measured on, because the interval is the
+  SDL_GPU present/compositor path, not the world dispatch; the next measurement belongs there. The camera-move
+  frame shift (a texture-to-texture blit of the retained region) is not done, and is not what limits the frame.
 - The camera still moves in the game's own steps. Zoom is fractional (1/8 steps), but there is no free sub-pixel
   camera or zoom animation between steps; each step rebuilds the world layer.
 - MSL is generated but not compiled or run (no Mac).

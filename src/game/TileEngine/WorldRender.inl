@@ -930,6 +930,8 @@ bool RenderWorldRecorded()
 		gWorldStats.gpuSubmitMs = gpu->LastStats().uploadMs;
 		gWorldStats.uploadBytes = gpu->LastStats().uploadBytes;
 		gWorldStats.gpuSkipped = gpu->LastStats().skipped;
+		gWorldStats.gpuDirtyW = gpu->LastStats().dirtyW;
+		gWorldStats.gpuDirtyH = gpu->LastStats().dirtyH;
 		if (cpuCopy)
 		{
 			// The GPU's 888 texture is only seen in a real window; a driven session reads the frame back as RGB565

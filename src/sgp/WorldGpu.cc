@@ -14,45 +14,124 @@ double Ms(clock_type::time_point a, clock_type::time_point b) { return std::chro
 
 struct Params
 {
-	uint32_t width, height, binCols, clearColor, clearDepth, mask, pointCount, pad0;
+	uint32_t width, height, binCols, clearColor, clearDepth, mask, pointCount;
+	uint32_t originX, originY, regionW, regionH, pad0;
 	float ambientR, ambientG, ambientB, sunR, sunG, sunB, falloff, pad1;
 };
-static_assert(sizeof(Params) == 64);
+static_assert(sizeof(Params) == 80);
 
 uint32_t Align4(size_t v) { return uint32_t((v + 3) & ~size_t(3)); }
 } // namespace
 
-/** Whether the target already holds exactly this frame: same target, instances, depth runs and palettes (which
- * the instances index into), clear, lighting and sprite pool. */
-bool Renderer::SameFrame(WorldPipe::Frame const& f, uint32_t const poolGeneration, uint16_t const* shadeTable) const
+/** The target pixels the frame changed since the last dispatch, and so the region to dispatch. The shader
+ * recomputes a pixel from the clear, the instances covering its bin and the frame-wide palettes/depths/lighting,
+ * so a bin whose covering instances are unchanged and whose frame-wide inputs are unchanged already holds the
+ * right pixels: dispatching it again would only reproduce them. This is the bounding box of the bins that do
+ * need dispatching (a dispatch is one grid, so it is a rectangle), nothing when the frame is exactly the one in
+ * the target, and the whole target when something outside the instances changed. */
+WorldGpu::Region Renderer::DirtyRegion(WorldPipe::Frame const& f, uint32_t const poolGeneration,
+									   uint16_t const* const shadeTable) const
 {
+	Region const full{ 0, 0, m_w, m_h };
 	FrameKey const& last = m_last;
-	if (!last.valid || last.width != f.width || last.height != f.height) return false;
-	if (last.shade.size() != 65536 || std::memcmp(last.shade.data(), shadeTable, 65536 * sizeof(uint16_t)) != 0)
-		return false;
+	if (!last.valid || last.width != f.width || last.height != f.height) return full;
 	if (last.clearColor != f.clearColor || last.clearDepth != f.clearDepth || last.mask != f.translucentMask)
-		return false;
-	if (last.poolGeneration != poolGeneration) return false;
+		return full;
+	if (last.poolGeneration != poolGeneration) return full;
+	// The shade table is a frame-wide input of the darkening ops: any change is a full dispatch.
+	if (last.shade.size() != 65536 || std::memcmp(last.shade.data(), shadeTable, 65536 * sizeof(uint16_t)) != 0)
+		return full;
+	// Palettes and depth runs are indexed by the instances; a change anywhere in them is conservatively full.
+	if (last.palettes.size() != f.palettes.size() ||
+		(!f.palettes.empty() &&
+		 std::memcmp(last.palettes.data(), f.palettes.data(), f.palettes.size() * sizeof(uint32_t)) != 0))
+		return full;
+	if (last.columns.size() != f.columns.size() ||
+		(!f.columns.empty() &&
+		 std::memcmp(last.columns.data(), f.columns.data(), f.columns.size() * sizeof(uint16_t)) != 0))
+		return full;
 	if (last.ambientR != f.lighting.ambientR || last.ambientG != f.lighting.ambientG ||
 		last.ambientB != f.lighting.ambientB || last.sunR != f.lighting.sunR || last.sunG != f.lighting.sunG ||
 		last.sunB != f.lighting.sunB || last.falloff != f.lighting.falloff || last.points != f.lighting.points.size())
-		return false;
-	if (last.instances.size() != f.instances.size() || last.palettes.size() != f.palettes.size() ||
-		last.columns.size() != f.columns.size())
-		return false;
-	if (!f.instances.empty() &&
-		std::memcmp(last.instances.data(), f.instances.data(), f.instances.size() * sizeof(WorldPipe::Instance)) != 0)
-		return false;
-	if (!f.palettes.empty() &&
-		std::memcmp(last.palettes.data(), f.palettes.data(), f.palettes.size() * sizeof(uint32_t)) != 0)
-		return false;
-	if (!f.columns.empty() &&
-		std::memcmp(last.columns.data(), f.columns.data(), f.columns.size() * sizeof(uint16_t)) != 0)
-		return false;
+		return full;
 	if (!f.lighting.points.empty() && std::memcmp(last.lights.data(), f.lighting.points.data(),
 												  f.lighting.points.size() * sizeof(WorldPipe::PointLight)) != 0)
-		return false;
-	return true;
+		return full;
+	// A different count means the instance list was reordered, so this per-index comparison says nothing: full.
+	if (last.instances.size() != f.instances.size()) return full;
+	if (f.instances.empty()) return Region{};
+
+	// A palette or a depth run is content the instance reads, not content the instance names: an instance is dirty
+	// when its own bytes differ, when the palette it indexes holds different colours, or when its depth run does.
+	// (Naming it by index would call every instance of a re-recorded frame dirty even when the colours matched.)
+	auto const paletteHashes = [](std::vector<uint32_t> const& palettes)
+	{
+		std::vector<uint32_t> h(palettes.size() / 256);
+		for (size_t p = 0; p < h.size(); ++p)
+		{
+			uint32_t v = 2166136261u;
+			for (size_t k = 0; k < 256; ++k) v = (v ^ palettes[p * 256 + k]) * 16777619u;
+			h[p] = v;
+		}
+		return h;
+	};
+	auto const depthRun = [](WorldPipe::Instance const& in, std::vector<uint16_t> const& columns,
+							 uint16_t const*& out) -> size_t
+	{
+		if (in.columns == WorldPipe::NO_COLUMNS)
+		{
+			out = nullptr;
+			return 0;
+		}
+		size_t const n =
+			(in.parity & WorldPipe::PER_PIXEL_DEPTH) ? size_t(in.y1 - in.y0) * (in.x1 - in.x0) : size_t(in.x1 - in.x0);
+		out = columns.data() + in.columns;
+		return n;
+	};
+	std::vector<uint32_t> const newPal = paletteHashes(f.palettes);
+	std::vector<uint32_t> const oldPal = paletteHashes(last.palettes);
+	Region r;
+	bool any = false;
+	auto cover = [&r](WorldPipe::Instance const& in)
+	{
+		if (in.x0 >= in.x1 || in.y0 >= in.y1) return;
+		if (r.Empty())
+		{
+			r.x0 = in.x0;
+			r.x1 = in.x1;
+			r.y0 = in.y0;
+			r.y1 = in.y1;
+			return;
+		}
+		r.x0 = std::min<int>(r.x0, in.x0);
+		r.x1 = std::max<int>(r.x1, in.x1);
+		r.y0 = std::min<int>(r.y0, in.y0);
+		r.y1 = std::max<int>(r.y1, in.y1);
+	};
+	for (size_t k = 0; k < f.instances.size(); ++k)
+	{
+		WorldPipe::Instance const& in = f.instances[k];
+		WorldPipe::Instance const& old = last.instances[k];
+		if (std::memcmp(&in, &old, sizeof(WorldPipe::Instance)) == 0 && newPal[in.palette] == oldPal[old.palette])
+		{
+			uint16_t const* na;
+			uint16_t const* oa;
+			size_t const nn = depthRun(in, f.columns, na), no = depthRun(old, last.columns, oa);
+			if (nn == no && (nn == 0 || std::memcmp(na, oa, nn * sizeof(uint16_t)) == 0)) continue;
+		}
+		// Dirty: it draws different pixels in the new frame, and the ones it drew in the old frame have to go too.
+		any = true;
+		cover(in);
+		cover(old);
+	}
+	if (!any) return Region{}; // the frame is exactly the one the target holds
+	// A dispatch is a grid of 16x16 bins: the origin is bin-aligned and the extent covers the last partial bin.
+	r.x0 = (r.x0 / WorldPipe::BIN) * WorldPipe::BIN;
+	r.y0 = (r.y0 / WorldPipe::BIN) * WorldPipe::BIN;
+	r.x1 = std::min(f.width, ((r.x1 + WorldPipe::BIN - 1) / WorldPipe::BIN) * WorldPipe::BIN);
+	r.y1 = std::min(f.height, ((r.y1 + WorldPipe::BIN - 1) / WorldPipe::BIN) * WorldPipe::BIN);
+	if (r.Empty()) return Region{}; // off the target (a fully clipped instance)
+	return r;
 }
 
 void Renderer::RememberFrame(WorldPipe::Frame const& f, uint32_t const poolGeneration, uint16_t const* shadeTable)
@@ -223,13 +302,23 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 {
 	if (!m_pipeline || f.width <= 0 || f.height <= 0) return false;
 	m_stats = {};
-	// The frame is the one the target already holds: nothing to bin, upload or dispatch. (Only when it is not
-	// read back - a readback has to wait for a submission, and the frame's own pixels are already there.)
-	if (!readback && SameFrame(f, pool.generation, shadeTable))
+	bool const fresh = !(m_texture && m_w == f.width && m_h == f.height);
+	if (!EnsureTarget(f.width, f.height)) return false;
+
+	// What the dispatch has to cover. A readback sees every pixel of the target, and a fresh target holds none,
+	// so both dispatch it whole; otherwise only what changed since the last dispatch. A frame that changed nothing
+	// is not dispatched at all - the target already holds it.
+	Region const region =
+		(readback || fresh) ? Region{ 0, 0, f.width, f.height } : DirtyRegion(f, pool.generation, shadeTable);
+	if (!readback && region.Empty())
 	{
 		m_stats.skipped = true;
 		return true;
 	}
+	m_stats.dirtyX = region.x0;
+	m_stats.dirtyY = region.y0;
+	m_stats.dirtyW = region.x1 - region.x0;
+	m_stats.dirtyH = region.y1 - region.y0;
 
 	auto const t0 = clock_type::now();
 	m_bins.Build(f);
@@ -237,7 +326,6 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 	m_stats.buildMs = Ms(t0, t1);
 	m_stats.binItems = m_bins.items.size();
 
-	if (!EnsureTarget(f.width, f.height)) return false;
 	m_last.valid = false; // until this frame is fully submitted
 
 	SDL_GPUBufferUsageFlags const ro = SDL_GPU_BUFFERUSAGE_COMPUTE_STORAGE_READ;
@@ -348,12 +436,46 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 	SDL_BindGPUComputePipeline(pass, m_pipeline);
 	SDL_GPUBuffer* ros[8] = { m_instances.buf, m_ranges.buf, m_items.buf, m_pixels.buf, m_palettes.buf, m_columns.buf, m_shade.buf, m_lights.buf };
 	SDL_BindGPUComputeStorageBuffers(pass, 0, ros, 8);
-	Params const params{ uint32_t(f.width), uint32_t(f.height), uint32_t(m_bins.cols), f.clearColor, f.clearDepth, f.translucentMask,
-		uint32_t(f.lighting.points.size()), 0,
-		f.lighting.ambientR, f.lighting.ambientG, f.lighting.ambientB,
-		f.lighting.sunR, f.lighting.sunG, f.lighting.sunB, f.lighting.falloff, 0.0f };
-	SDL_PushGPUComputeUniformData(cmd, 0, &params, sizeof(params));
-	SDL_DispatchGPUCompute(pass, uint32_t((f.width + 15) / 16), uint32_t((f.height + 15) / 16), 1);
+	auto dispatch = [&](Region const& rg)
+	{
+		Params const params{ uint32_t(f.width),
+							 uint32_t(f.height),
+							 uint32_t(m_bins.cols),
+							 f.clearColor,
+							 f.clearDepth,
+							 f.translucentMask,
+							 uint32_t(f.lighting.points.size()),
+							 uint32_t(rg.x0),
+							 uint32_t(rg.y0),
+							 uint32_t(rg.x1 - rg.x0),
+							 uint32_t(rg.y1 - rg.y0),
+							 0,
+							 f.lighting.ambientR,
+							 f.lighting.ambientG,
+							 f.lighting.ambientB,
+							 f.lighting.sunR,
+							 f.lighting.sunG,
+							 f.lighting.sunB,
+							 f.lighting.falloff,
+							 0.0f };
+		SDL_PushGPUComputeUniformData(cmd, 0, &params, sizeof(params));
+		// One workgroup per 16x16 bin of the region; the origin is bin-aligned so a workgroup is one bin.
+		SDL_DispatchGPUCompute(pass, uint32_t((rg.x1 - rg.x0 + WorldPipe::BIN - 1) / WorldPipe::BIN),
+							   uint32_t((rg.y1 - rg.y0 + WorldPipe::BIN - 1) / WorldPipe::BIN), 1);
+	};
+	// A readback (and a fresh target) dispatches the whole target, and that is split in two: the changed-region
+	// path is a real window's, which no headless test drives, so this keeps the shader's non-zero dispatch origin
+	// on the equivalence gate's path too.
+	int const splitY = region.y0 + (region.y1 - region.y0) / 2 / WorldPipe::BIN * WorldPipe::BIN;
+	if (splitY > region.y0 && splitY < region.y1)
+	{
+		dispatch({ region.x0, region.y0, region.x1, splitY });
+		dispatch({ region.x0, splitY, region.x1, region.y1 });
+	}
+	else
+	{
+		dispatch(region);
+	}
 	SDL_EndGPUComputePass(pass);
 
 	if (m_fence)
