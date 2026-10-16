@@ -374,11 +374,17 @@ mod tests {
             .unwrap();
 
         assert_eq!(
-            engine_options.key_bindings.get("stance.crouch").map(String::as_str),
+            engine_options
+                .key_bindings
+                .get("stance.crouch")
+                .map(String::as_str),
             Some("j")
         );
         assert_eq!(
-            engine_options.key_bindings.get("move.climb").map(String::as_str),
+            engine_options
+                .key_bindings
+                .get("move.climb")
+                .map(String::as_str),
             Some("")
         );
     }
