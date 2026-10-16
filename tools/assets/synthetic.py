@@ -178,6 +178,17 @@ PCX_SIZE = (640, 480)
 # wherever the frame lands; what a screen looks like is not what these runs assert.
 PLACEHOLDER_FRAME = (1, 1)
 
+# The exception to that rule: the files the game reads as one whole uncompressed picture rather
+# than as a frame of a sheet. AddVideoSurfaceFromFile copies width*height*depth/8 bytes of the
+# file's pixel data straight into a surface, so for these the manifest's size *is* the picture and
+# there is no frame to be smaller than. The loading screens are the ones - the file the
+# loading-screen list names goes to that loader, from Loading_Screen.cc and the native
+# "loadscreen-<n>" source - and the originals are a single uncompressed 640x480 16-bit RGB image.
+# An ETRLE placeholder (compressed sub-images, so a far shorter buffer) made that copy read 300 KB
+# past the data it was handed: a heap-buffer-overflow under ASan in CI, and 3 bytes away from the
+# end of the allocation otherwise.
+WHOLE_PICTURES = {"loadscreens/ls_daytown1.sti", "loadscreens/ls_nightgeneric.sti"}
+
 
 def placeholder(w: int, h: int, seed: int) -> tuple[bytes, bytes]:
     """A fully opaque (w, h) image: a diagonal ramp, so two files differ but each run does not."""
@@ -224,6 +235,17 @@ def pcx_bytes(asset: dict, seed: int) -> bytes:
     w, h = PCX_SIZE
     idx, _ = placeholder(w, h, seed)
     return pcx.build(w, h, idx, PALETTE)
+
+
+def whole_picture_bytes(asset: dict, seed: int) -> bytes:
+    """A whole uncompressed 16-bit RGB picture at the manifest's size (see WHOLE_PICTURES)."""
+    w, h = asset.get("size") or PCX_SIZE
+    pixels = bytearray()
+    for y in range(h):
+        row = [((v >> 3) << 11) | ((v >> 2) << 5) | (v >> 3)          # the same ramp, in 565
+               for v in ((seed + x + y) & 0xFF for x in range(w))]
+        pixels += struct.pack(f"<{w}H", *row)
+    return sti.build_rgb565(w, h, bytes(pixels))
 
 
 def font_bytes(seed: int) -> bytes:
@@ -452,7 +474,9 @@ def build_files(manifest: dict) -> tuple[dict[str, dict[str, bytes]], dict[str, 
         path, archive = asset["path"], asset["archive"]
         emitted.add(path.lower())
         seed = n * 7 + 1
-        if path.lower().endswith(".pcx"):
+        if path.lower() in WHOLE_PICTURES:
+            content = whole_picture_bytes(asset, seed)
+        elif path.lower().endswith(".pcx"):
             content = pcx_bytes(asset, seed)
         else:
             content = sti_bytes(asset, seed)
@@ -466,6 +490,9 @@ def build_files(manifest: dict) -> tuple[dict[str, dict[str, bytes]], dict[str, 
     missing = [p for p in EXTRA_IMAGES if p.lower() not in emitted]
     if missing:
         raise ValueError(f"EXTRA_IMAGES not found in the manifest: {missing}")
+    for path in WHOLE_PICTURES:  # one the tree does not emit would be a silent no-op
+        if path not in emitted:
+            raise ValueError(f"WHOLE_PICTURES names an image the tree does not emit: {path}")
     for i, name in enumerate(FONT_FILES):
         archives.setdefault("Fonts.slf", {})[name] = font_bytes(1000 + i)
     archives.setdefault("Binarydata.slf", {})["prof.dat"] = prof_dat_bytes()

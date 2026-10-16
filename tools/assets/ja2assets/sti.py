@@ -197,3 +197,22 @@ def build_indexed(frames: list[tuple[int, int, int, int, bytes, bytes]], palette
     for i, (r, g, b) in enumerate(palette[:256]):
         pal[i * 3:i * 3 + 3] = bytes((r, g, b))
     return bytes(header) + bytes(pal) + bytes(table) + bytes(pixels) + app_data
+
+
+def build_rgb565(width: int, height: int, pixels: bytes) -> bytes:
+    """Builds one uncompressed 16-bit RGB (565) whole picture.
+
+    Not a sheet: there is no sub-image table and nothing is compressed, so the stored size is
+    exactly width*height*2. This is the shape the original loading screens have and the shape the
+    game's AddVideoSurfaceFromFile reads - it copies width*height*depth/8 bytes of pixel data
+    straight into a surface, which an ETRLE image does not have to give it."""
+    if len(pixels) != width * height * 2:
+        raise ValueError(f"expected {width * height * 2} bytes of {width}x{height} pixels, got {len(pixels)}")
+    header = bytearray(64)
+    header[0:4] = b"STCI"
+    struct.pack_into("<IIIIHH", header, 4, len(pixels), len(pixels), 0, RGB, height, width)
+    struct.pack_into("<IIII", header, 24, 0xF800, 0x07E0, 0x001F, 0x0000)
+    header[40:44] = bytes((5, 6, 5, 0))
+    header[44] = 16
+    struct.pack_into("<I", header, 48, 0)
+    return bytes(header) + pixels

@@ -97,6 +97,20 @@ class Formats(unittest.TestCase):
         self.assertEqual(img.pixel(2, 0), (*PALETTE[200], 255))
         self.assertEqual(img.pixel(0, 1), (*PALETTE[255], 255))
 
+    def test_sti_rgb565_whole_picture(self):
+        pixels = struct.pack("<4H", 0xF800, 0x07E0, 0x001F, 0x0000)   # red, green, blue, black
+        data = sti.build_rgb565(2, 2, pixels)
+        self.assertEqual(struct.unpack_from("<I", data, 8)[0], 8, "stored size is the whole picture")
+        s = sti.parse(data)
+        self.assertFalse(s.indexed, "a whole picture is not an indexed sheet")
+        self.assertFalse(s.flags & sti.ETRLE_COMPRESSED)
+        self.assertEqual((s.width, s.height, s.depth), (2, 2, 16))
+        self.assertEqual([(f.width, f.height) for f in s.frames], [(2, 2)])
+        self.assertEqual(s.frames[0].rgb565, [0xF800, 0x07E0, 0x001F, 0x0000])
+        self.assertEqual(s.frame_rgba(0).pixel(0, 0), (255, 0, 0, 255))
+        with self.assertRaises(ValueError):
+            sti.build_rgb565(2, 2, b"\0\0\0")
+
     def test_slf(self):
         with tempfile.TemporaryDirectory() as d:
             f = Path(d) / "Test.slf"
@@ -186,6 +200,27 @@ class SyntheticData(unittest.TestCase):
             self.assertEqual(len(image.frames), real["frames"], "frame count from the manifest")
             self.assertEqual((image.width, image.height), tuple(real["size"]), "header from the manifest")
             self.assertEqual((image.frames[0].width, image.frames[0].height), synthetic.PLACEHOLDER_FRAME)
+
+    def test_whole_picture_images_are_whole(self):
+        """The loading screens are read by AddVideoSurfaceFromFile, which copies width*height*depth/8
+        bytes of the file's pixel data straight into a surface, so the file has to hold exactly that
+        many and not be a compressed sheet: an ETRLE placeholder made the copy read past the end of
+        its buffer (issue #302, a heap-buffer-overflow under ASan in CI)."""
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "data"
+            self.generate(out)
+            manifest_data = json.loads(synthetic.DEFAULT_MANIFEST.read_text(encoding="utf-8"))
+            by_path = {a["path"].lower(): a for a in manifest_data["assets"]}
+            with SlfArchive(out / "Data" / "Loadscreens.slf") as a:
+                entries = {e.name.lower(): e for e in a.files()}
+                for path in sorted(synthetic.WHOLE_PICTURES):
+                    raw = a.read(entries[path.rsplit("/", 1)[1]])
+                    image = sti.parse(raw)
+                    size = tuple(by_path[path]["size"])
+                    self.assertFalse(image.flags & sti.ETRLE_COMPRESSED, path)
+                    self.assertEqual((image.width, image.height), size, path)
+                    self.assertEqual([(f.width, f.height) for f in image.frames], [size], path)
+                    self.assertEqual(struct.unpack_from("<I", raw, 8)[0], size[0] * size[1] * 2, path)
 
     def test_fonts_have_a_glyph_per_translation_entry(self):
         with tempfile.TemporaryDirectory() as d:
