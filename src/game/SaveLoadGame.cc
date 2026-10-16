@@ -2111,7 +2111,10 @@ static void LoadGeneralInfo(HWFILE const f, UINT32 const savegame_version)
 	EXTR_I8(   d, gfPlayerTeamSawJoey)
 	EXTR_I8(   d, gfMikeShouldSayHi)
 	EXTR_BOOL( d, gfStrategicMilitiaChangesMade)
-	EXTR_SKIP( d, 549)
+	// 537, not 549, and the same number SaveGeneralInfo writes: the camera's two fields above grew
+	// from INT16 to DOUBLE for the free camera (#38), so the record's tail shrank by 12 bytes. The
+	// pair has to move together - the record is a fixed 1024 bytes and this is what is left of it.
+	EXTR_SKIP(d, 537)
 	Assert(d.getConsumed() == lengthof(data));
 }
 
