@@ -585,6 +585,7 @@ if (WITH_UNITTESTS)
             "battle_militia=tactical"
             "battle_ncth=tactical"
             "battle_smoke=tactical"
+            "camera=world-renderer,tactical"
             "campaign_state=campaign"
             "credits_parity=nativeui"
             "determinism=automation"
@@ -712,7 +713,7 @@ if (WITH_UNITTESTS)
             # The sweep exists to compare screenshots. The battle_, inventory_ and loadout_ fixture scripts
             # assert on data the game hands back, take no shots, and have nothing to
             # compare at another resolution - they run once, in the loops above.
-            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|video_options|world_renderer|battle_|inventory_|loadout_(spec|matrix))")
+            if(NOT ext STREQUAL ".lua" OR n MATCHES "^(tactical_layers|camera|video_options|world_renderer|battle_|inventory_|loadout_(spec|matrix))")
                 continue()
             endif()
             foreach(res ${RESOLUTION_MATRIX})

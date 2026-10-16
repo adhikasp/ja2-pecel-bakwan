@@ -13,7 +13,11 @@ void MarkMapIndexDirty( INT32 iMapIndex )
 void CenterScreenAtMapIndex(const INT32 iMapIndex)
 {
 	//Set the render values, so that the screen will render here next frame.
-	ConvertGridNoToCellXY(iMapIndex, &gsRenderCenterX, &gsRenderCenterY);
+	INT16 sCenterX;
+	INT16 sCenterY;
+	ConvertGridNoToCellXY(iMapIndex, &sCenterX, &sCenterY);
+	gsRenderCenterX = sCenterX;
+	gsRenderCenterY = sCenterY;
 	SetRenderFlags(RENDER_FLAG_FULL);
 }
 

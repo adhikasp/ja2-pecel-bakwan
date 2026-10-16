@@ -204,6 +204,23 @@ click attacks). The marker diamond replaces the snapping tile cursor, the path i
 solid for this turn's action points, dashed amber beyond; the footstep tile nodes are not drawn while the native HUD is
 up. The chance to hit is always worked out for the chip (`show_hit_chance` only gates the legacy cursor text).
 
+### The camera (#38)
+
+The view the world is drawn from is `Camera::Centre` (`TileEngine/Camera.h`): the centre in world coordinates
+where one tile is `CELL_X_SIZE` (= 10) units, kept as a `double` so the camera can rest **between** two tile
+centres - before #38 the type was an `INT16` cell and every pan rounded to the nearest centre. The renderer
+places the tile grid at the nearest whole pixel to the centre (`CalcRenderParameters`), so every blit stays on a
+pixel and the strip cache still translates cached rows by whole pixels. `Camera::kFreeCamera` is the one-line
+switch back to the legacy settle (`SnapToTileCentre`).
+
+The pan itself is still the game's step (`ScrollWorld`), so nothing eases yet; the eased camera and the animated
+zoom are #38's remaining slices (decisions A2/B2/C2 in
+[docs/plan/native-modern-game-decisions.md](../plan/native-modern-game-decisions.md#the-camera-is-free-issue-38)).
+`ja2.camera()` reads the centre, the tile under it, whether it rests on a tile centre, the world viewport and the
+world zoom, and `ja2.camera{ x, y }` / `ja2.camera{ grid = n }` place it (the surface
+`tests/e2e/camera.lua` asserts against); picking still goes through `WorldPointer::World()`, which is the exact
+inverse of the same camera math.
+
 ### World overlays (#322)
 
 `RenderTopmostTacticalInterface` used to draw the locators, the new-item markers, the burst impacts, the arrows, the

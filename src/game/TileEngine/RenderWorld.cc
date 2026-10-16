@@ -1,5 +1,6 @@
 #include "Animation_Control.h"
 #include "Animation_Data.h"
+#include "Camera.h"
 #include "Debug.h"
 #include "English.h"
 #include "Font.h"
@@ -198,8 +199,8 @@ static RenderFlags gRenderFlags = RENDER_FLAG_NONE;
 
 #define gClippingRect (g_ui.m_worldClippingRect)
 static SGPRect gOldClipRect;
-INT16   gsRenderCenterX;
-INT16   gsRenderCenterY;
+double gsRenderCenterX;
+double gsRenderCenterY;
 INT16   gsRenderWorldOffsetX = 0;
 INT16   gsRenderWorldOffsetY = 10;
 
@@ -1671,8 +1672,8 @@ enum ScrollType {
 	ScrollType_Vertical
 };
 
-static BOOLEAN ApplyScrolling(INT16 sTempRenderCenterX, INT16 sTempRenderCenterY, BOOLEAN fForceAdjust, BOOLEAN fCheckOnly,
-				ScrollType scrollType=ScrollType_Undefined);
+static BOOLEAN ApplyScrolling(double sTempRenderCenterX, double sTempRenderCenterY, BOOLEAN fForceAdjust,
+							  BOOLEAN fCheckOnly, ScrollType scrollType = ScrollType_Undefined);
 static void ClearMarkedTiles(void);
 static void ExamineZBufferRect(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sBottom);
 static void RenderDynamicWorld(void);
@@ -2011,8 +2012,8 @@ static BOOLEAN HandleScrollDirections(UINT32 ScrollFlags, INT16 sScrollXStep, IN
 		INT16 sTempX_W;
 		INT16 sTempY_W;
 		FromScreenToCellCoordinates(scroll_x, 0, &sTempX_W, &sTempY_W);
-		const INT16 sTempRenderCenterX = gsRenderCenterX + sTempX_W;
-		const INT16 sTempRenderCenterY = gsRenderCenterY + sTempY_W;
+		const double sTempRenderCenterX = gsRenderCenterX + sTempX_W;
+		const double sTempRenderCenterY = gsRenderCenterY + sTempY_W;
 		if (!ApplyScrolling(sTempRenderCenterX, sTempRenderCenterY, FALSE, fCheckOnly, ScrollType_Horizontal))
 		{
 			scroll_x = 0;
@@ -2025,8 +2026,8 @@ static BOOLEAN HandleScrollDirections(UINT32 ScrollFlags, INT16 sScrollXStep, IN
 		INT16 sTempX_W;
 		INT16 sTempY_W;
 		FromScreenToCellCoordinates(0, scroll_y, &sTempX_W, &sTempY_W);
-		const INT16 sTempRenderCenterX = gsRenderCenterX + sTempX_W;
-		const INT16 sTempRenderCenterY = gsRenderCenterY + sTempY_W;
+		const double sTempRenderCenterX = gsRenderCenterX + sTempX_W;
+		const double sTempRenderCenterY = gsRenderCenterY + sTempY_W;
 		if (!ApplyScrolling(sTempRenderCenterX, sTempRenderCenterY, FALSE, fCheckOnly, ScrollType_Vertical))
 		{
 			scroll_y = 0;
@@ -2300,21 +2301,29 @@ void InitRenderParams(UINT8 ubRestrictionID)
 }
 
 /** This function checks whether the render screen can be moved to new position. */
-static BOOLEAN ApplyScrolling(INT16 sTempRenderCenterX, INT16 sTempRenderCenterY, BOOLEAN fForceAdjust, BOOLEAN fCheckOnly,
-				ScrollType scrollType)
+static BOOLEAN ApplyScrolling(double sTempRenderCenterX, double sTempRenderCenterY, BOOLEAN fForceAdjust,
+							  BOOLEAN fCheckOnly, ScrollType scrollType)
 {
-	// Make sure it's a multiple of 5
-	sTempRenderCenterX = sTempRenderCenterX / CELL_X_SIZE * CELL_X_SIZE + CELL_X_SIZE / 2;
-	sTempRenderCenterY = sTempRenderCenterY / CELL_X_SIZE * CELL_Y_SIZE + CELL_Y_SIZE / 2;
+	// The free camera (Camera.h): the pan is what it asked for. The legacy settle rounded it to the nearest
+	// tile centre, which is one flag away if the free rest ever feels wrong.
+	if (!Camera::kFreeCamera)
+	{
+		Camera::Centre const c = Camera::SnapToTileCentre({ sTempRenderCenterX, sTempRenderCenterY });
+		sTempRenderCenterX = c.x;
+		sTempRenderCenterY = c.y;
+	}
 
 	// From render center in world coords, convert to render center in "screen" coords
-	INT16 sScreenCenterX;
-	INT16 sScreenCenterY;
-	FromCellToScreenCoordinates(sTempRenderCenterX, sTempRenderCenterY, &sScreenCenterX, &sScreenCenterY);
+	FLOAT dScreenCenterX;
+	FLOAT dScreenCenterY;
+	FloatFromCellToScreenCoordinates(sTempRenderCenterX, sTempRenderCenterY, &dScreenCenterX, &dScreenCenterY);
 
 	// Adjust for offset position on screen
-	sScreenCenterX -=  0;
-	sScreenCenterY -= 10;
+	dScreenCenterX -= 0;
+	dScreenCenterY -= 10;
+
+	INT16 const sScreenCenterX = INT16(std::lround(dScreenCenterX));
+	INT16 const sScreenCenterY = INT16(std::lround(dScreenCenterY));
 
 	const INT16 sX_S = g_ui.m_tacticalMapCenterX;
 	const INT16 sY_S = g_ui.m_tacticalMapCenterY;
@@ -2417,9 +2426,9 @@ static BOOLEAN ApplyScrolling(INT16 sTempRenderCenterX, INT16 sTempRenderCenterY
 
 	if (fScrollGood && !fCheckOnly)
 	{
-		// Make sure it's a multiple of 5
-		gsRenderCenterX = sTempRenderCenterX / CELL_X_SIZE * CELL_X_SIZE + CELL_X_SIZE / 2;
-		gsRenderCenterY = sTempRenderCenterY / CELL_X_SIZE * CELL_Y_SIZE + CELL_Y_SIZE / 2;
+		// The restored position is the free one (the settle above, if it is on, has already run).
+		gsRenderCenterX = sTempRenderCenterX;
+		gsRenderCenterY = sTempRenderCenterY;
 
 		gsTopLeftWorldX = sTopLeftWorldX - gsLeftX;
 		gsTopLeftWorldY = sTopLeftWorldY - gsTopY;
@@ -3577,8 +3586,11 @@ static void CalcRenderParameters(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sB
 	gsEndXS = sRight  + VIEWPORT_XOFFSET_S;
 	gsEndYS = sBottom + VIEWPORT_YOFFSET_S;
 
-	const INT16 sRenderCenterX_W = gsRenderCenterX;
-	const INT16 sRenderCenterY_W = gsRenderCenterY;
+	// The camera's centre is fractional since #38 (the free camera): the walk's tile grid is placed at the
+	// nearest whole pixel to the centre, so the view can rest between tile centres. (gsStartPointX_S/Y stay
+	// integer: every blit is at a whole pixel, and #37's strip cache translates cached rows by whole pixels.)
+	const double sRenderCenterX_W = gsRenderCenterX;
+	const double sRenderCenterY_W = gsRenderCenterY;
 
 	// STEP THREE - determine starting point in world coords
 	// a) Determine where in screen coords to start rendering
@@ -3589,8 +3601,8 @@ static void CalcRenderParameters(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sB
 	FromScreenToCellCoordinates(gsStartPointX_S, gsStartPointY_S, &sTempPosX_W, &sTempPosY_W);
 
 	// c) World start point is Render center minus this distance
-	const INT16 sStartPointX_W = sRenderCenterX_W - sTempPosX_W + CELL_X_SIZE;
-	const INT16 sStartPointY_W = sRenderCenterY_W - sTempPosY_W;
+	const double sStartPointX_W = sRenderCenterX_W - sTempPosX_W + CELL_X_SIZE;
+	const double sStartPointY_W = sRenderCenterY_W - sTempPosY_W;
 
 	// d) screen start point is screen distances minus screen center
 	gsStartPointX_S = sLeft - VIEWPORT_XOFFSET_S;
@@ -3598,17 +3610,19 @@ static void CalcRenderParameters(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sB
 
 	// STEP FOUR - Determine Start block
 	// a) Find start block
-	gsStartPointX_M = floor(DOUBLE(sStartPointX_W) / DOUBLE(CELL_X_SIZE));
-	gsStartPointY_M = floor(DOUBLE(sStartPointY_W) / DOUBLE(CELL_Y_SIZE));
+	gsStartPointX_M = floor(sStartPointX_W / DOUBLE(CELL_X_SIZE));
+	gsStartPointY_M = floor(sStartPointY_W / DOUBLE(CELL_Y_SIZE));
 
 	// STEP 5 - Determine offsets for tile center and convert to screen values
-	// Make sure these coordinates are multiples of scroll steps
-	const INT16 sOffsetX_W = sStartPointX_W - gsStartPointX_M * CELL_X_SIZE;
-	const INT16 sOffsetY_W = sStartPointY_W - gsStartPointY_M * CELL_Y_SIZE;
+	const double sOffsetX_W = sStartPointX_W - gsStartPointX_M * CELL_X_SIZE;
+	const double sOffsetY_W = sStartPointY_W - gsStartPointY_M * CELL_Y_SIZE;
 
-	INT16 sOffsetX_S;
-	INT16 sOffsetY_S;
-	FromCellToScreenCoordinates(sOffsetX_W, sOffsetY_W, &sOffsetX_S, &sOffsetY_S);
+	FLOAT dOffsetX_S;
+	FLOAT dOffsetY_S;
+	FloatFromCellToScreenCoordinates(sOffsetX_W, sOffsetY_W, &dOffsetX_S, &dOffsetY_S);
+
+	const INT16 sOffsetX_S = INT16(std::lround(dOffsetX_S));
+	const INT16 sOffsetY_S = INT16(std::lround(dOffsetY_S));
 
 	gsStartPointX_S -= sOffsetX_S;
 	gsStartPointY_S -= sOffsetY_S;
@@ -3627,8 +3641,8 @@ static void CalcRenderParameters(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sB
 	FromScreenToCellCoordinates(gsLStartPointX_S, gsLStartPointY_S, &sTempPosX_W, &sTempPosY_W);
 
 	// c) World start point is Render center minus this distance
-	const INT16 sLStartPointX_W = sRenderCenterX_W - sTempPosX_W + CELL_X_SIZE;
-	const INT16 sLStartPointY_W = sRenderCenterY_W - sTempPosY_W;
+	const double sLStartPointX_W = sRenderCenterX_W - sTempPosX_W + CELL_X_SIZE;
+	const double sLStartPointY_W = sRenderCenterY_W - sTempPosY_W;
 
 	// d) screen start point is screen distances minus screen center
 	gsLStartPointX_S = sLeft - LARGER_VIEWPORT_XOFFSET_S;
@@ -3636,8 +3650,8 @@ static void CalcRenderParameters(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sB
 
 	// STEP FOUR - Determine Start block
 	// a) Find start block
-	gsLStartPointX_M = floor(DOUBLE(sLStartPointX_W) / DOUBLE(CELL_X_SIZE));
-	gsLStartPointY_M = floor(DOUBLE(sLStartPointY_W) / DOUBLE(CELL_Y_SIZE));
+	gsLStartPointX_M = floor(sLStartPointX_W / DOUBLE(CELL_X_SIZE));
+	gsLStartPointY_M = floor(sLStartPointY_W / DOUBLE(CELL_Y_SIZE));
 
 	// STEP 5 - Adjust screen coordinates to tile center, so it matches small viewport
 	gsLStartPointX_S -= sOffsetX_S;
@@ -3701,8 +3715,7 @@ static BOOLEAN IsTileRedundant(UINT16* pZBuffer, UINT16 usZValue, HVOBJECT hSrcV
 	return TRUE;
 }
 
-
-void SetRenderCenter(INT16 sNewX, INT16 sNewY)
+void SetRenderCenter(double sNewX, double sNewY)
 {
 	if (gfIgnoreScrolling) return;
 

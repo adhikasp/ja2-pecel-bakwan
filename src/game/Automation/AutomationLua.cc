@@ -19,6 +19,7 @@
 #include "TacticalScenario.h"
 
 #include "Assignments.h"
+#include "Camera.h"
 #include "Font_Control.h"
 #include "Game_Clock.h"
 #include "Timer_Control.h"
@@ -112,6 +113,7 @@
 #include <string_theory/format>
 
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
@@ -634,6 +636,56 @@ namespace
 		return s;
 	}
 
+	// The tactical camera table and its setter, for `ja2.camera()` (#38): see the binding for what each field
+	// is and what the write form accepts.
+	sol::table CameraLua(sol::optional<sol::table> const spec)
+	{
+		if (spec)
+		{
+			if (guiCurrentScreen != GAME_SCREEN)
+				throw std::runtime_error("ja2.camera{...}: the tactical screen has the world camera");
+			if (sol::optional<int> grid = (*spec)["grid"])
+			{
+				if (*grid < 0 || *grid >= WORLD_MAX) throw std::out_of_range("ja2.camera: bad grid");
+				INT16 cx, cy;
+				ConvertGridNoToCenterCellXY(*grid, &cx, &cy);
+				gsRenderCenterX = cx;
+				gsRenderCenterY = cy;
+			}
+			else
+			{
+				sol::optional<double> x = (*spec)["x"], y = (*spec)["y"];
+				if (!x || !y) throw std::runtime_error("ja2.camera{...}: needs x and y, or a grid");
+				gsRenderCenterX = *x;
+				gsRenderCenterY = *y;
+			}
+			SetRenderFlags(RENDER_FLAG_FULL);
+		}
+
+		sol::table t = g_lua.create_table();
+		Camera::Centre const c{ gsRenderCenterX, gsRenderCenterY };
+		t["x"] = c.x;
+		t["y"] = c.y;
+		t["tileX"] = int(std::floor(c.x / CELL_X_SIZE));
+		t["tileY"] = int(std::floor(c.y / CELL_Y_SIZE));
+		t["onTileCentre"] = Camera::OnTileCentre(c);
+		t["zoom"] = double(g_ui.m_worldZoomQ) / VideoLayout::WORLD_ZOOM_STEPS;
+		t["zoomQ"] = int(g_ui.m_worldZoomQ);
+		t["uiScale"] = int(g_ui.m_uiScale);
+		t["layered"] = VideoIsLayered();
+		sol::table vp = g_lua.create_table();
+		vp["w"] = int(WORLD_SCREEN_WIDTH);
+		vp["h"] = int(WORLD_SCREEN_HEIGHT);
+		t["viewport"] = vp;
+		sol::table view = g_lua.create_table();
+		view["left"] = double(gsTopLeftWorldX);
+		view["top"] = double(gsTopLeftWorldY);
+		view["right"] = double(gsBottomRightWorldX);
+		view["bottom"] = double(gsBottomRightWorldY);
+		t["view"] = view;
+		return t;
+	}
+
 	// The compiled people & quest registry (PeopleContent.h), for `ja2.game.npcs()`
 	// and `ja2.game.quests()`. Definitions come from the registry; quests also carry
 	// the live status so an e2e script can assert a transition.
@@ -985,6 +1037,18 @@ namespace
 			t["stdX"] = STD_SCREEN_X; t["stdY"] = STD_SCREEN_Y;
 			return t;
 		});
+
+		// The tactical camera as data (#38). Read: { x, y } is its centre in world coordinates (CELL_X_SIZE =
+		// 10 units per tile - the game's "cell" space, so a tile is 10 by 10 and its centre is at a multiple of
+		// 10 plus 5), which is fractional because the camera is free to rest between tile centres; tileX/tileY is
+		// the tile it is over and onTileCentre whether it happens to sit on one; viewport is the world layer in
+		// world pixels, view the viewport's corners in world coordinates, and zoom/zoomQ/uiScale/layered the
+		// world's scale. Write: ja2.camera{ x = ..., y = ... } places the centre (fractional world coordinates),
+		// ja2.camera{ grid = N } its tile's centre. Nothing else reads the camera out, so this is what a headless
+		// run asserts a pan, a slide or a centring with instead of a screenshot. A position off the map is
+		// clamped to it when the view renders.
+		ja2.set_function("camera",
+						 [](sol::optional<sol::table> spec) { return Guarded([&] { return CameraLua(spec); }); });
 
 		// Where the strategic map shows sector (x, y), 1..16 (A..P = 1..16): {x, y, w, h, cx, cy} in screen
 		// pixels, for the current layout (the map is scaled on big screens, see MapScreenGeometry).

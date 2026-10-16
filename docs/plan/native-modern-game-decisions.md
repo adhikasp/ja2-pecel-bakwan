@@ -373,6 +373,41 @@ resolution goldens and the e2e suite cannot see this change either: their green 
 everything around it, and the proof is the before/after stills of a real window, pixel for pixel (13 stills at
 1280x720, 1920x1080 and 2560x1080, plus the `--worldzoom` world-layer stills).
 
+### The camera is free (issue #38)
+
+The world camera (`gsRenderCenterX/Y`, `src/game/TileEngine/Camera.h`) was an `INT16` **cell** - one tile is
+`CELL_X_SIZE` (= 10) of them - so there was no fraction anywhere in the type, and a pan always ended on a tile
+centre. #37 made that visible: the strip cache already draws a recorded row at an offset, which is a sub-tile
+camera, and the `StaticKey()` that still named the camera would have re-recorded 13 ms of world on every panning
+frame. That key no longer names the camera (#37), so this issue was the small piece that was left.
+
+**The three decisions (owner, 2026-10-15; the escalation is on #38):**
+
+| Question | Decision |
+|---|---|
+| Camera ease | **A2 - eased.** A3's inertia is wall-clock dependent and would make headless runs non-reproducible |
+| Resting position | **B2 - free camera, map-edge clamp only.** Coupled to A2 (with easing a snap is visible); reversible behind `Camera::kFreeCamera` |
+| Mid-zoom sharpness | **C2 - at most one band behind.** One rebuild per zoom command (~13 ms), invisible at rest, pixel art stays crisp |
+
+**Slice 1, implemented here: the camera type, the Lua surface, the tests.**
+
+- `gsRenderCenterX/Y` are `double` cells, and `ApplyScrolling` no longer rounds the pan to the nearest tile
+  centre (`Camera::kFreeCamera`); the legacy settle is `Camera::SnapToTileCentre`, one flag away. The renderer
+  rounds the centre to the pixel it draws (`CalcRenderParameters`), so every blit stays at a whole pixel and
+  #37's strip cache keeps translating cached rows by whole pixels - a camera move does not invalidate it.
+- `ja2.camera()` is the headless surface: it reads the centre (fractional world coordinates), the tile over it,
+  whether it rests on a tile centre, the world viewport and the world zoom, and `ja2.camera{x, y}` /
+  `ja2.camera{grid = n}` place it. `tests/e2e/camera.lua` asserts a sub-tile centre survives a rendered frame
+  (a re-introduced settle would snap it back), that centring on a tile still lands on its centre, that a pan
+  moves the camera, and that the zoom the camera reports is the one `ja2.setVideo` set.
+- A free camera lands a pan on a half tile, so a scroll step is half the tiles it used to be; the six
+  `world_renderer.lua` scroll scenes still compare 0 px against the software renderer.
+
+**Left: slices 2-4** (animated zoom - split the raster scale from the present zoom, `m_worldRasterQ` /
+`PresentScale`; the eased camera with goldens regenerated; the 3840x2160 perf re-run). An eased camera also
+needs `SoldierLocationRelativeToScreen`'s 20 px dead zone retuned for the smaller step, which is the thing
+slice 1 was meant to measure first.
+
 ## Gaps
 
 - The static cache keeps its strips across camera moves (#37) and the GPU dispatches only the region that
@@ -382,8 +417,11 @@ everything around it, and the proof is the before/after stills of a real window,
   layer upload removed, and with the world texture copy removed as well, it is still ~128 ms. The next
   measurement belongs further along the present path (the swapchain acquire/present). The camera-move
   frame shift (a texture-to-texture blit of the retained region) is not done, and is not what limits the frame.
-- The camera still moves in the game's own steps. Zoom is fractional (1/8 steps), but there is no free sub-pixel
-  camera or zoom animation between steps; each step rebuilds the world layer.
+- The camera is free (#38, *The camera is free*): it no longer rounds every pan to a tile centre, and
+  `ja2.camera()` reads it out. The pan itself is still the game's own step - a **scroll eases nothing and a zoom
+  step still rebuilds the world layer**, so "zoom is fractional (1/8 steps), but the raster scale is the present
+  zoom and there is no animation between steps" is still true (decisions A2/B2's easing and C2's raster/present
+  split are slices 2 and 3).
 - MSL is generated but not compiled or run (no Mac).
 - The screenshots of driven windows are composed from the read-back world buffer with nearest scaling; the player
   sees the GPU texture scaled with SDL's pixel-art filter.

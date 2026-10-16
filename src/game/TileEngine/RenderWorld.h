@@ -71,9 +71,10 @@ extern INT16 gsScrollXIncrement;
 extern INT16 gsScrollYIncrement;
 extern INT16 gsRenderHeight;
 
-
-extern INT16 gsRenderCenterX;
-extern INT16 gsRenderCenterY;
+// The tactical camera's centre in world coordinates: CELL_X_SIZE (= 10) units per tile. A double since #38 -
+// the camera is free to rest between tile centres (Camera.h holds the type and the settle it used to use).
+extern double gsRenderCenterX;
+extern double gsRenderCenterY;
 extern INT16 gsRenderWorldOffsetX;
 extern INT16 gsRenderWorldOffsetY;
 
@@ -121,7 +122,7 @@ void RenderStaticWorldRect(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sBottom,
 
 void InvalidateWorldRedundency(void);
 
-void SetRenderCenter(INT16 sNewX, INT16 sNewY);
+void SetRenderCenter(double sNewX, double sNewY);
 
 #if defined _DEBUG
 void RenderFOVDebug(void);

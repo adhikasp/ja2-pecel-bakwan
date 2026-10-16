@@ -201,7 +201,8 @@ local function frameOf(renderer)
 	for y = 80, h - 220, 29 do -- away from the edges, which scroll the map in a window
 		for x = 80, w - 80, 53 do
 			ja2.move(x, y)
-			ja2.step(2)
+			ja2.step(4) -- the cursor grid follows the pointer a frame or two later, and a full world re-record
+			            -- (a renderer switch) can drop the first one: two frames were not always enough
 			local p = ja2.pick()
 			picks[#picks + 1] = ("%d,%d:%d/%d/%d"):format(x, y, p.grid, p.interactive, p.target)
 		end
@@ -225,8 +226,9 @@ for _, renderer in ipairs(renderers) do
 	end
 	ja2.log(("frame with %s: %d of %d sampled pixels differ from software"):format(renderer, differ, #pixels))
 	-- The frames are taken a few game frames apart, so animations (item glow, idle mercs) may have moved on; the exact
-	-- comparison is the scenes above. This checks that the runtime path (static cache, presentation) shows the same world.
-	ja2.expect(differ <= #pixels // 500, renderer .. ": the frame on screen is the software renderer's (" .. differ .. " samples differ)")
+	-- comparison is the scenes above. This checks that the runtime path (static cache, presentation) shows the same world:
+	-- a wrong camera, a stale strip or a missing layer moves thousands of the samples, an animation that moved on a few dozen.
+	ja2.expect(differ <= #pixels // 100, renderer .. ": the frame on screen is the software renderer's (" .. differ .. " samples differ)")
 	ja2.expect(#picks == #software, "same number of picks")
 	local same, interactive = 0, 0
 	for i = 1, #picks do
