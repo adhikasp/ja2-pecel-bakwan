@@ -112,6 +112,7 @@ static std::vector<uint32_t> ScreenLayerLut;  // RGB565 -> RGBA8 with the transp
 static std::vector<uint32_t> ScreenOpaqueLut; // RGB565 -> opaque RGBA8
 static std::vector<uint32_t> WorldRgbaLut;    // RGB565 -> opaque RGBA8
 static bool             GpuCaptureWanted = false;
+static VideoUploadStats gUploadStats;
 static void PresentGpuFrame(SDL_Rect const& uiUpdate);
 
 // A driven session composes the frame only when something reads it (VideoComposePending): gComposePending
@@ -1263,6 +1264,14 @@ void VideoComposePending()
 
 uint64_t VideoComposeCount() { return gComposeCount; }
 
+VideoUploadStats VideoGetUploadStats()
+{
+	return gUploadStats;
+}
+void VideoResetUploadStats()
+{
+	gUploadStats = {};
+}
 
 /* Clip an SDL Rect to the SDL_Surface. This was previously done automatically by SDL_BlitSurface */
 static SDL_Rect ClipToSurface(SDL_Rect const& rect, SDL_Surface const* const surface)
@@ -1496,24 +1505,52 @@ static void EnsureGpuLuts()
 	}
 }
 
-/** Turns an RGB565 surface into RGBA8 (R,G,B,A byte order), through @a lut. */
-static void RowsToRgba(SDL_Surface const* const src, std::vector<uint32_t> const& lut, std::vector<uint32_t>& out)
+/** Turns the @a r part of an RGB565 surface into RGBA8 (R,G,B,A byte order) through @a lut, into @a out, which
+ * holds src->w * src->h pixels. */
+static void RowsToRgbaRegion(SDL_Surface const* const src, std::vector<uint32_t> const& lut, SDL_Rect const& r,
+							 std::vector<uint32_t>& out)
 {
 	out.resize(size_t(src->w) * src->h);
-	for (int y = 0; y < src->h; ++y)
+	for (int y = r.y; y < r.y + r.h; ++y)
 	{
 		auto const* row = reinterpret_cast<UINT16 const*>(static_cast<UINT8 const*>(src->pixels) + size_t(y) * src->pitch);
 		uint32_t* const dst = &out[size_t(y) * src->w];
-		for (int x = 0; x < src->w; ++x) dst[x] = lut[row[x]];
+		for (int x = r.x; x < r.x + r.w; ++x) dst[x] = lut[row[x]];
 	}
 }
 
+/** The part of a w x h layer to upload: @a dirty, or the whole image when the layer's texture does not exist yet or
+ * has another size. Only that part is uploaded, so the whole image goes up when a fresh texture would otherwise be
+ * left with garbage outside @a dirty. Empty means there is nothing to upload; the texture keeps its pixels. */
+static SDL_Rect LayerUploadRect(SDL_GPUTexture* const tex, int const texW, int const texH, int const w, int const h,
+								SDL_Rect const& dirty)
+{
+	if (!tex || texW != w || texH != h) return SDL_Rect{ 0, 0, w, h };
+	SDL_Rect const bounds{ 0, 0, w, h };
+	SDL_Rect r;
+	if (!SDL_GetRectIntersection(&dirty, &bounds, &r) || r.w <= 0 || r.h <= 0) return SDL_Rect{ 0, 0, 0, 0 };
+	return r;
+}
+
+/** The world pixels that changed since the last upload into the GPU texture, clipped to w x h, and cleared. Empty
+ * means nothing did, and the texture already holds the frame. */
+static SDL_Rect TakeWorldDirty(int const w, int const h)
+{
+	SDL_Rect const bounds{ 0, 0, w, h };
+	SDL_Rect r;
+	bool const any = SDL_GetRectIntersection(&WorldDirty, &bounds, &r) && r.w > 0 && r.h > 0;
+	WorldDirty = { 0, 0, 0, 0 };
+	return any ? r : SDL_Rect{ 0, 0, 0, 0 };
+}
+
 /** The SDL_GPU compositor: the world layer, the legacy UI (ScreenBuffer) and the native UI in one render pass on
- * the swapchain, presented by SDL_GPU. */
-static void PresentGpuFrame(SDL_Rect const&)
+ * the swapchain, presented by SDL_GPU. @a uiUpdate is the ScreenBuffer region that changed since the last frame:
+ * only that is converted and uploaded, so the rest of the texture is reused as it is. */
+static void PresentGpuFrame(SDL_Rect const& uiUpdate)
 {
 	if (!VideoGpu::BeginFrame()) return;
 	EnsureGpuLuts();
+	VideoGpu::ResetUploadBytes();
 
 	static std::vector<uint32_t> ScreenPixels;
 	static std::vector<uint32_t> WorldPixels;
@@ -1537,7 +1574,8 @@ static void PresentGpuFrame(SDL_Rect const&)
 				uint32_t const c = World888[i];
 				W888[i] = ((c >> 16) & 0xFF) | (((c >> 8) & 0xFF) << 8) | ((c & 0xFF) << 16) | 0xFF000000u;
 			}
-			worldTex = VideoGpu::UploadRgba(GpuWorldUpload, GpuWorldUploadW, GpuWorldUploadH, W888.data(), World888W, World888H);
+			worldTex = VideoGpu::UploadRgba(GpuWorldUpload, GpuWorldUploadW, GpuWorldUploadH, W888.data(), World888W,
+											World888H, SDL_Rect{ 0, 0, World888W, World888H });
 			worldW = World888W; worldH = World888H;
 		}
 		else if (WorldGpuTexture)
@@ -1548,16 +1586,36 @@ static void PresentGpuFrame(SDL_Rect const&)
 		}
 		else if (WorldBuffer)
 		{
-			RowsToRgba(WorldBuffer, WorldRgbaLut, WorldPixels);
-			worldTex = VideoGpu::UploadRgba(GpuWorldUpload, GpuWorldUploadW, GpuWorldUploadH,
-				WorldPixels.data(), WorldBuffer->w, WorldBuffer->h);
+			// The software WORLD_BUFFER: the renderer invalidates the rectangles it redrew (InvalidateWorldRegion),
+			// so only those go up. The rest is what the texture already holds.
+			SDL_Rect const r = LayerUploadRect(GpuWorldUpload, GpuWorldUploadW, GpuWorldUploadH, WorldBuffer->w,
+											   WorldBuffer->h, TakeWorldDirty(WorldBuffer->w, WorldBuffer->h));
+			if (r.w > 0 && r.h > 0)
+			{
+				RowsToRgbaRegion(WorldBuffer, WorldRgbaLut, r, WorldPixels);
+				VideoGpu::UploadRgba(GpuWorldUpload, GpuWorldUploadW, GpuWorldUploadH, WorldPixels.data(),
+									 WorldBuffer->w, WorldBuffer->h, r);
+			}
+			worldTex = GpuWorldUpload;
 			worldW = WorldBuffer->w; worldH = WorldBuffer->h;
 		}
 	}
+	uint64_t const worldBytes = VideoGpu::UploadBytes();
 
-	RowsToRgba(ScreenBuffer, Layered ? ScreenLayerLut : ScreenOpaqueLut, ScreenPixels);
-	SDL_GPUTexture* const screenTex = VideoGpu::UploadRgba(GpuScreenTexture, GpuScreenW, GpuScreenH,
-		ScreenPixels.data(), ScreenBuffer->w, ScreenBuffer->h);
+	// The legacy UI: only the part of ScreenBuffer that changed goes up, exactly the rectangle the SDL_Renderer
+	// path updated its screen texture with (the dirty regions, the mouse, the software overlay).
+	SDL_Rect const uiRect =
+		LayerUploadRect(GpuScreenTexture, GpuScreenW, GpuScreenH, ScreenBuffer->w, ScreenBuffer->h, uiUpdate);
+	if (uiRect.w > 0 && uiRect.h > 0)
+	{
+		RowsToRgbaRegion(ScreenBuffer, Layered ? ScreenLayerLut : ScreenOpaqueLut, uiRect, ScreenPixels);
+		VideoGpu::UploadRgba(GpuScreenTexture, GpuScreenW, GpuScreenH, ScreenPixels.data(), ScreenBuffer->w,
+							 ScreenBuffer->h, uiRect);
+	}
+	SDL_GPUTexture* const screenTex = GpuScreenTexture;
+	gUploadStats.worldBytes += worldBytes;
+	gUploadStats.uiBytes += VideoGpu::UploadBytes() - worldBytes;
+	++gUploadStats.frames;
 
 	VideoGpu::QuadReset();
 	if (worldTex)

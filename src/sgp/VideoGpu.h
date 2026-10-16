@@ -51,9 +51,17 @@ namespace VideoGpu
 	/** Whether the swapchain is a B8G8R8A8 format (the read-back path needs to know). */
 	bool SwapchainIsBgra();
 
-	/** Uploads w x h RGBA8 pixels into a texture owned by VideoGpu (created or resized as needed; the handle is
-	 * kept in @a slot). Returns null on failure. The return value is valid until the next resize of the slot. */
-	SDL_GPUTexture* UploadRgba(SDL_GPUTexture*& slot, int& slotW, int& slotH, void const* pixels, int w, int h);
+	/** Uploads @a rect of a w x h RGBA8 @a pixels image into a texture owned by VideoGpu (created or resized as
+	 * needed; the handle is kept in @a slot), and nothing else: the rest of the texture keeps what earlier uploads
+	 * put there. A texture that had to be created or resized is filled whole whatever @a rect (the caller passes the
+	 * whole image with it then, or the parts @a rect leaves out would be garbage). Returns null on failure. The
+	 * return value is valid until the next resize of the slot. */
+	SDL_GPUTexture* UploadRgba(SDL_GPUTexture*& slot, int& slotW, int& slotH, void const* pixels, int w, int h,
+							   SDL_Rect const& rect);
+
+	/** Bytes of pixels the layer uploads have copied into their textures since the last ResetUploadBytes(). */
+	uint64_t UploadBytes();
+	void ResetUploadBytes();
 
 	/** Copies @a src into a managed texture used only for sampling. Some backends (D3D12) need the explicit
 	 * transition a copy performs before a texture another pass wrote as storage can be sampled. Returns the

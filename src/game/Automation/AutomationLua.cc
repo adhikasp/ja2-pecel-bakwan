@@ -1829,6 +1829,20 @@ namespace
 			return t;
 		});
 
+		// ja2.videoStats([reset]): what the SDL_GPU compositor has uploaded per layer since the last reset,
+		// {frames, uiBytes, worldBytes}. Only a real window uploads through it; divide by frames for the mean.
+		ja2.set_function("videoStats",
+						 [](sol::optional<bool> reset)
+						 {
+							 VideoUploadStats const s = VideoGetUploadStats();
+							 if (reset.value_or(false)) VideoResetUploadStats();
+							 sol::table t = g_lua.create_table();
+							 t["frames"] = double(s.frames);
+							 t["uiBytes"] = double(s.uiBytes);
+							 t["worldBytes"] = double(s.worldBytes);
+							 return t;
+						 });
+
 		// ja2.setWorldRenderer("software" | "gpu" | "pipeline"): switches now; returns what is active afterwards
 		ja2.set_function("setWorldStaticCache", [](bool on) { WorldRendererSetStaticCache(on); });
 		ja2.set_function("setWorldRenderer", [](std::string const& name) {

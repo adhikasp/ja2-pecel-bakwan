@@ -51,6 +51,9 @@ namespace
 	SDL_GPUTransferBuffer*   g_upload = nullptr;
 	uint32_t                 g_uploadSize = 0;
 
+	// What the layer uploads (UploadRgba) copied into their textures since the last ResetUploadBytes().
+	uint64_t g_uploadBytes = 0;
+
 	// The capture path.
 	SDL_GPUTexture*          g_captureTex = nullptr;
 	int                      g_captureW = 0, g_captureH = 0;
@@ -297,6 +300,7 @@ void Shutdown()
 	g_nearest = g_linear = nullptr;
 	g_vertBufSize = g_indexBufSize = g_uploadSize = g_downloadSize = 0;
 	g_overlayVertBufSize = g_overlayIndexBufSize = 0;
+	g_uploadBytes = 0;
 	g_verts.clear();
 	g_indices.clear();
 	g_layers.clear();
@@ -317,6 +321,14 @@ SDL_GPURenderPass* Pass() { return g_pass; }
 int Width() { return g_w; }
 int Height() { return g_h; }
 bool SwapchainIsBgra() { return g_format == SDL_GPU_TEXTUREFORMAT_B8G8R8A8_UNORM; }
+uint64_t UploadBytes()
+{
+	return g_uploadBytes;
+}
+void ResetUploadBytes()
+{
+	g_uploadBytes = 0;
+}
 int CaptureWidth() { return g_captureOutW; }
 int CaptureHeight() { return g_captureOutH; }
 std::vector<uint8_t> const& CaptureRgb() { return g_captureRgb; }
@@ -343,10 +355,12 @@ bool BeginFrame()
 	return true;
 }
 
-SDL_GPUTexture* UploadRgba(SDL_GPUTexture*& slot, int& slotW, int& slotH, void const* const pixels, int const w, int const h)
+SDL_GPUTexture* UploadRgba(SDL_GPUTexture*& slot, int& slotW, int& slotH, void const* const pixels, int const w,
+						   int const h, SDL_Rect const& rect)
 {
 	if (!Active() || !g_cmd || w <= 0 || h <= 0) return nullptr;
-	if (!slot || slotW != w || slotH != h)
+	bool const fresh = !slot || slotW != w || slotH != h;
+	if (fresh)
 	{
 		if (slot) SDL_ReleaseGPUTexture(g_device, slot);
 		slot = CreateTexture(w, h, SDL_GPU_TEXTUREFORMAT_R8G8B8A8_UNORM, SDL_GPU_TEXTUREUSAGE_SAMPLER);
@@ -354,17 +368,31 @@ SDL_GPUTexture* UploadRgba(SDL_GPUTexture*& slot, int& slotW, int& slotH, void c
 		slotH = slot ? h : 0;
 		if (!slot) { g_error = std::string("creating a layer texture failed: ") + SDL_GetError(); return nullptr; }
 	}
-	size_t const bytes = size_t(w) * h * 4;
+	// A texture that had to be created holds nothing: it is filled whole, whatever the caller asked for.
+	SDL_Rect r{ 0, 0, w, h };
+	if (!fresh)
+	{
+		SDL_Rect const bounds{ 0, 0, w, h };
+		if (!SDL_GetRectIntersection(&rect, &bounds, &r)) return slot; // nothing of it is on the image
+	}
+	if (r.w <= 0 || r.h <= 0) return slot;
+
+	// Only the rows of the region go through the staging buffer, packed tight: one upload, region sized.
+	size_t const rowBytes = size_t(r.w) * 4;
+	size_t const bytes = rowBytes * size_t(r.h);
 	if (!EnsureUpload(uint32_t(bytes))) return nullptr;
-	void* const map = SDL_MapGPUTransferBuffer(g_device, g_upload, true);
+	uint8_t* const map = static_cast<uint8_t*>(SDL_MapGPUTransferBuffer(g_device, g_upload, true));
 	if (!map) { g_error = "mapping the upload buffer failed"; return nullptr; }
-	std::memcpy(map, pixels, bytes);
+	auto const* const src = static_cast<uint8_t const*>(pixels);
+	for (int y = 0; y < r.h; ++y)
+		std::memcpy(map + size_t(y) * rowBytes, src + (size_t(r.y + y) * w + r.x) * 4, rowBytes);
 	SDL_UnmapGPUTransferBuffer(g_device, g_upload);
 	SDL_GPUCopyPass* const copy = SDL_BeginGPUCopyPass(g_cmd);
-	SDL_GPUTextureTransferInfo const src{ g_upload, 0, uint32_t(w), uint32_t(h) };
-	SDL_GPUTextureRegion const dst{ slot, 0, 0, 0, 0, 0, uint32_t(w), uint32_t(h), 1 };
-	SDL_UploadToGPUTexture(copy, &src, &dst, false);
+	SDL_GPUTextureTransferInfo const info{ g_upload, 0, uint32_t(r.w), uint32_t(r.h) };
+	SDL_GPUTextureRegion const dst{ slot, 0, 0, uint32_t(r.x), uint32_t(r.y), 0, uint32_t(r.w), uint32_t(r.h), 1 };
+	SDL_UploadToGPUTexture(copy, &info, &dst, false);
 	SDL_EndGPUCopyPass(copy);
+	g_uploadBytes += bytes;
 	return slot;
 }
 

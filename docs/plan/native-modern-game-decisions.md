@@ -316,12 +316,65 @@ done**: a camera move that changed nothing but the camera would still dispatch t
 dispatch at a few ms it would not move the frame interval either. The next thing to measure for the 4K frame
 rate is the SDL_GPU present/compositor path (`src/sgp/VideoGpu.cc`), not the world renderer.
 
+### The layer uploads are not the 4K interval either (issue #276)
+
+The compositor uploaded each layer whole every frame: the legacy `ScreenBuffer` at the UI size (1920x1080 =
+8,294,400 B at 4K world zoom 1 with UI scale 2) and, with the world renderer on the CPU, the software
+`WORLD_BUFFER` (3840x2160 = 33,177,600 B) - **41,472,000 B/frame**, every frame, standing still. The layer
+texture upload (`VideoGpu::UploadRgba`) now takes the rectangle to upload, and the compositor feeds it the
+bookkeeping the retired SDL_Renderer path already had:
+
+- **The UI layer** goes up in the rectangle `RefreshScreen` already computed for that path
+  (`ScreenTextureUpdateRect` - the dirty `InvalidateRegion`s, the mouse cursor and the software overlay), the
+  same rectangle the SDL_Renderer used to update its screen texture with.
+- **The software world layer** goes up in `WorldDirty`, the union of the `InvalidateWorldRegion` rectangles the
+  software renderer redrew, which the upload clears. A frame that changed nothing uploads nothing.
+- **The CPU pipeline's 888 layer still goes up whole**: its rasterizer redraws the whole target every frame, so
+  the whole target is what changed.
+- A layer texture that had to be created or resized is filled whole whatever the rectangle, so a layer never
+  starts stale; only the rectangle's rows go through the staging buffer.
+
+The bytes are measured per layer and per frame and exposed as `ja2.videoStats()` (`{frames, uiBytes,
+worldBytes}`, reset between samples), which `tests/perf/world_renderer_perf.lua` logs next to the interval.
+4K real window, `--uiscale 2 --worldzoom 1` (UI 1920x1080, world 3840x2160), same counters on both sides -
+"before" is the same code with the uploads forced to the whole image, which is what master does:
+
+| 4K, world zoom 1, still | UI layer | World layer | total |
+|---|---|---|---|
+| before | 8,294,400 B | 33,177,600 B | **41,472,000 B/frame** |
+| after, software world | 0 B | 4,056-4,077 B | **~4 KB/frame** |
+| after, GPU world | 0 B | 0 B (the GPU texture is copied, not uploaded) | **0 B/frame** |
+
+The still HUD does not change, so those 8.3 MB/frame were the same pixels every frame; the software world
+changed a few hundred pixels (the item glow, an idle merc). **The frame interval did not move with the bytes**,
+5 s per case, two runs each, same machine and harness (mean / median):
+
+| 4K, world zoom 1 | before | after |
+|---|---|---|
+| gpu, still, cache on | 126.2 / 131.5 ms, 113.2 / 101.9 ms | 123.2 / 128.4 ms, 121.5 / 128.4 ms |
+| gpu, uncached still | 111.1 / 133.1 ms, 109.2 / 132.6 ms | 89.8 / 116.9 ms, 92.1 / 99.6 ms |
+| gpu, uncached scrolling | 68.3 / 100.2 ms, 131.2 / 133.8 ms | 86.7 / 98.7 ms, 106.7 / 129.5 ms |
+| software world, still | 117.2 / 132.0 ms, 90.3 / 105.8 ms | 76.3 / 116.7 ms, 67.4 / 89.0 ms |
+
+The GPU cases sit at the same ~128 ms median before and after 41 MB/frame became 0. The software case's *mean*
+does land, but the software renderer is not the 4K target and its median is the same order; it also skips a
+10.4 M pixel LUT pass, which is CPU work, not upload. **The layer uploads are not the 4K interval** - measured
+twice over, because removing the world texture copy as well (sampling the compute texture directly, black on
+D3D12 but fine for a frame interval) also leaves the interval where it was, as does a world frame the renderer
+skips entirely. The next suspect is therefore further along the present path than the compositor's transfers:
+the swapchain acquire/present and what the driver does with a borderless 3840x2160@59 window. The absolute
+floor moved since #37 measured 99 ms on the same box (128 ms here with the machine otherwise busy), so the
+A/B pairs, not the absolute numbers, are what the table is for. At 1920x1080 every GPU case is at the 60 fps
+vsync cap, so this change cannot be seen there at all.
+
 ## Gaps
 
 - The static cache keeps its strips across camera moves (#37) and the GPU dispatches only the region that
   changed, not the whole target (a dispatch origin; see *The dispatch origin, and what the 4K floor actually
-  is*). That does not move the 4K frame interval on the machine it was measured on, because the interval is the
-  SDL_GPU present/compositor path, not the world dispatch; the next measurement belongs there. The camera-move
+  is*). The compositor now uploads only the dirty part of each layer too (#276, *The layer uploads are not the
+  4K interval either*). Neither moves the 4K frame interval on the machine they were measured on: with every
+  layer upload removed, and with the world texture copy removed as well, it is still ~128 ms. The next
+  measurement belongs further along the present path (the swapchain acquire/present). The camera-move
   frame shift (a texture-to-texture blit of the retained region) is not done, and is not what limits the frame.
 - The camera still moves in the game's own steps. Zoom is fractional (1/8 steps), but there is no free sub-pixel
   camera or zoom animation between steps; each step rebuilds the world layer.
