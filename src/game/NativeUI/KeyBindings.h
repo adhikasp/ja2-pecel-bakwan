@@ -69,7 +69,7 @@ namespace KeyBindings
 		/** Gives @a key to @a name. Whichever action held @a key is left unbound and named in the outcome; an
 		 * empty @a key unbinds @a name itself. */
 		BindOutcome Bind(std::string_view name, std::string_view key);
-		/** Gives @a name its default key back. */
+		/** Gives @a name its default key back, taking it from whichever action holds it now. */
 		void Reset(std::string_view name);
 		/** Gives every action its default key back. */
 		void ResetAll();
