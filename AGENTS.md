@@ -80,6 +80,8 @@ Tests and their shared helpers (`lib/campaign.lua`) live in `tests/e2e/`; see it
 
 `ctest -L smoke` is the fast tier — boot, main menu, new game to tactical, one native-UI tour, all at 1280x720 — and `python tools/dev.py e2e --changed[=REF]` runs only the tests the diff against `REF` (default `master`) can affect, plus smoke; an unmapped path (frozen data, `rust/`, most of `src/sgp/`) falls back to the whole suite. Every e2e test carries area labels (`tactical`, `mapscreen`, `laptop`, `campaign`, `equipment`, `nativeui`, `world-renderer`, `automation`), so `ctest -L tactical` works too. The labels are the single source of truth: they are declared in `CMakeLists.txt`, the path→area table is `tools/e2e_select.py`, and the two are joined through CTest's own `ctest --show-only=json-v1` and kept honest by the drift guard in the `tooling` tests. A run prints the slowest tests when it finishes.
 
+**Two sides, by data source.** `e2e-real` runs against the install `game_dir` points at; `e2e-synthetic` runs boot, the main menu, the native UI, the laptop, the campaign state and the front-end parity tours against a `Data/` tree `tools/assets/synthetic.py` generates (into the build dir, from the committed manifest — nothing committed, nothing from the install). CI runs `-L '^e2e-synthetic$'`, never bare `-L e2e`, and every script asserts which source it got through `campaign.assertDataSource()`; `ja2ctl state` prints it as `data`. Everything tactical, the map screen and the battles still need a real install (#395, #396).
+
 Image-only widgets need `SetName(...)` in C++ to be clickable by label; new animations/loading states belong in `NothingInFlight()` in `src/game/Automation/AutomationSession.cc`.
 
 ### Golden / resolution suite

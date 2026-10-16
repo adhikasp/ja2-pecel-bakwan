@@ -399,6 +399,10 @@ namespace
 		s["frame"]      = Session::Frame();
 		s["ms"]         = Session::ElapsedMs();
 		s["idle"]       = Session::IsIdle();
+		// What data this session runs on: tools/assets/synthetic.py leaves a `SYNTHETIC`
+		// marker at the root of a build-time Data/, so a log excerpt or a screenshot says which
+		// one it came from. The e2e suite's shared assertion reads this (issue #302).
+		s["dataSource"] = GCM->doesGameResExists("SYNTHETIC") ? "synthetic" : "real";
 		s["messageBox"] = gfInMsgBox;
 		if (gfInMsgBox) s["messageBoxText"] = Session::MessageBoxText();
 

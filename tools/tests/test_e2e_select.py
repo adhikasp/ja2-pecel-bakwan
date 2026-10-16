@@ -143,23 +143,28 @@ class CTestJson(unittest.TestCase):
 
     DUMP = json.dumps({"kind": "ctestInfo", "tests": [
         {"name": "e2e_battle_smoke",
-         "properties": [{"name": "LABELS", "value": ["e2e", "tactical"]},
+         "properties": [{"name": "LABELS", "value": ["e2e", "tactical", "e2e-real"]},
                         {"name": "ENVIRONMENT", "value": ["JA2_BIN=/x"]}]},
         {"name": "e2e_new_game_to_tactical",
          "properties": [{"name": "LABELS", "value": ["e2e", "campaign", "laptop", "tactical", "smoke"]}]},
+        {"name": "e2e_syn_battle_smoke",
+         "properties": [{"name": "LABELS", "value": ["e2e", "e2e-synthetic"]}]},
         {"name": "unittests", "properties": [{"name": "LABELS", "value": []}]},
         {"name": "spike_unittests", "properties": [{"name": "LABELS", "value": ["spike"]}]},
     ]})
 
     def test_only_e2e_tests_are_kept(self):
         areas = e2e_select.parse_ctest_json(self.DUMP)
-        self.assertEqual({"e2e_battle_smoke", "e2e_new_game_to_tactical"}, set(areas))
+        self.assertEqual({"e2e_battle_smoke", "e2e_new_game_to_tactical", "e2e_syn_battle_smoke"},
+                         set(areas))
 
     def test_tier_labels_are_stripped_from_the_areas(self):
         areas = e2e_select.parse_ctest_json(self.DUMP)
         self.assertEqual({"tactical"}, areas["e2e_battle_smoke"])
         self.assertEqual({"campaign", "laptop", "tactical"},
                          areas["e2e_new_game_to_tactical"])
+        # A synthetic run is selected by its data-source label, not by an area: it carries none.
+        self.assertEqual(set(), areas["e2e_syn_battle_smoke"])
 
     def test_broken_json_is_refused_with_the_reason(self):
         with self.assertRaises(e2e_select.CTestError):
@@ -346,7 +351,13 @@ class DriftGuard(unittest.TestCase):
         e2e = {name: ls for name, ls in labels.items() if "e2e" in ls}
         self.assertTrue(e2e, "ctest reported no e2e tests at all")
 
-        real_areas = {name: ls - {"e2e", "smoke"} for name, ls in e2e.items()}
+        real_areas = {name: ls - set(e2e_select.TIER_LABELS) for name, ls in e2e.items()
+                      if e2e_select.SYNTHETIC_LABEL not in ls}
+        # The synthetic side is selected by its data-source label, not by area (issue #302), so it
+        # carries none; every real run has one.
+        self.assertEqual({name for name, ls in e2e.items() if e2e_select.SYNTHETIC_LABEL in ls},
+                         {name for name, ls in e2e.items() if not ls - set(e2e_select.TIER_LABELS)},
+                         "a test with no area label is not a synthetic one")
         for name, areas in real_areas.items():
             self.assertTrue(areas, f"{name} carries no area label")
             self.assertLessEqual(areas, set(e2e_select.AREAS),

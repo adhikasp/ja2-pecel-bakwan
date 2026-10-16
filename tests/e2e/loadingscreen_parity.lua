@@ -1,7 +1,9 @@
 -- Parity tour of the native loading screen (docs/ui/loadingscreen.md, section 9). Loading blocks the game loop, so
 -- ja2.debug("loadscreen", id) shows it with the bar at 60% and the screenshot is taken in the same frame.
 local shots = require("lib.shots")
+local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
 ja2.waitScreen("MAINMENU_SCREEN")
 ja2.waitIdle()
 local s = ja2.screenSize()

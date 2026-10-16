@@ -51,6 +51,14 @@ AREAS = (
 # smoke pass must carry exactly these; the drift guard checks that.
 SMOKE = ("main_menu", "mainmenu_parity", "new_game_to_tactical", "native_ui")
 
+# Labels that are not areas: the tier (`e2e`, `smoke`) and — issue #302 — which
+# data a run booted from. The behavioural suite has two sides and CI selects on
+# the second one (`ctest -L '^e2e-synthetic$'`), so a synthetic run is never read
+# as a real one; `--changed` keeps selecting the real runs by area.
+TIER_LABELS = ("e2e", "smoke", "e2e-real", "e2e-synthetic")
+REAL_LABEL = "e2e-real"
+SYNTHETIC_LABEL = "e2e-synthetic"
+
 _ALL = tuple(AREAS)
 # A single test's own script: map to that test's areas, read back from CTest, so
 # a renamed, moved or brand-new script is never guessed at - it just falls back
@@ -244,7 +252,7 @@ def parse_ctest_labels(text):
 def parse_ctest_json(text):
     """{e2e test name: area labels}, the join input for `select`."""
     all_labels = parse_ctest_labels(text)
-    return {name: labels - {"e2e", "smoke"}
+    return {name: labels - set(TIER_LABELS)
             for name, labels in all_labels.items() if "e2e" in labels}
 
 

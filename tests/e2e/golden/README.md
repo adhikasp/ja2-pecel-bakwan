@@ -4,6 +4,14 @@
 (a pixel differs if any channel is off by more than 8/255; a shot fails if more
 than 0.05% of its pixels differ). Run through `ctest -L resolution`.
 
+**These goldens are captured from a real game install and are not comparable to a
+synthetic `Data/`.** A synthetic run (the generated tree `ctest -L e2e-synthetic`
+boots, see [../../tools/assets/synthetic.py](../../tools/assets/synthetic.py)) draws
+placeholder art, so its pixels are its own — the resolution suite stays on a real
+install and nothing here changes for it (issue #302). What a synthetic run does
+check is layout: `ja2.assertInsideScreen()` runs on every shot inside the e2e
+scripts themselves, not in the comparator.
+
 `ctest -L resolution` is the default sweep and runs only 1080p. Run the full
 matrix (`ctest -R resolution_`) only when the change alters how the game
 renders — a new menu, a texture/asset, or the renderer itself. See

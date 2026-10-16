@@ -1,7 +1,9 @@
 -- The main menu comes up and offers its entries; without saves, loading is
 -- greyed out. Preferences and Credits open and return.
 local shots = require("lib.shots")
+local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
 ja2.waitScreen("MAINMENU_SCREEN")
 ja2.expect(ja2.exists("Pecel Bakwan"), "the version line is shown")
 -- From 1280x720 up the native main menu runs; mainmenu_parity.lua covers it.

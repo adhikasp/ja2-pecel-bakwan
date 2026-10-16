@@ -3,6 +3,8 @@
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
+
 -- This is the tour of the legacy map screen (the native one has tests/e2e/mapscreen_parity.lua).
 ja2.setUiMode("mapscreen", "legacy")
 

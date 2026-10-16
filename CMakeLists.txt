@@ -331,6 +331,37 @@ if(WITH_NATIVE_UI)
     add_dependencies(${JA2_BINARY} ja2-ui-assets)
 endif()
 
+## A *relative* EXTRA_DATA_DIR describes an installed layout, because the game resolves it against
+## its own binary's directory (get_assets_dir in rust/pecel_bakwan/src/pecel_bakwan.rs). The
+## AppImage's "../share/ja2" is therefore AppDir/usr/share/ja2 as seen from AppDir/usr/bin/ja2, and
+## .ci/ci-build.sh configures the Linux build with exactly that value. In a build tree the binary
+## sits in the build directory, so the same string names a directory one level *above* it, which
+## nothing creates: the lookup then falls back to the relative string itself, VFS init aborts with
+## "No such file or directory" and nothing on that build can boot (#302 — the e2e suite's first run
+## on Linux CI). Create the path the binary will look for and point it at the build tree's own
+## assets (the externalized/, mods/ and ui/ copied next to the binary just above), which is the
+## same directory an empty EXTRA_DATA_DIR resolves to; a build configured the way the packager
+## configures it is then runnable where it was built. Absolute values (COMPILATION.md's
+## /usr/local/share/ja2) already resolve to themselves and are not ours to create. Windows is
+## left out: its install rules put the assets next to the binary (see below), so it never needs a
+## relative EXTRA_DATA_DIR, and creating a symlink there needs a privilege the build cannot assume.
+if(NOT WIN32 AND NOT "${EXTRA_DATA_DIR}" STREQUAL "" AND NOT IS_ABSOLUTE "${EXTRA_DATA_DIR}")
+    set(_ja2_extra_data_dir "${CMAKE_CURRENT_BINARY_DIR}/${EXTRA_DATA_DIR}")
+    # Re-configure, or a build directory that moved, leaves the link behind: drop it so the link
+    # below is re-created rather than clashing with what is already there.
+    if(IS_SYMLINK "${_ja2_extra_data_dir}")
+        file(REMOVE "${_ja2_extra_data_dir}")
+    endif()
+    if(NOT EXISTS "${_ja2_extra_data_dir}")
+        get_filename_component(_ja2_extra_data_dir_parent "${_ja2_extra_data_dir}" DIRECTORY)
+        file(MAKE_DIRECTORY "${_ja2_extra_data_dir_parent}")
+        file(CREATE_LINK "${CMAKE_CURRENT_BINARY_DIR}" "${_ja2_extra_data_dir}" SYMBOLIC)
+        message(STATUS "Linking EXTRA_DATA_DIR ${EXTRA_DATA_DIR} -> ${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+    unset(_ja2_extra_data_dir)
+    unset(_ja2_extra_data_dir_parent)
+endif()
+
 if(WITH_EDITOR_SLF)
     set(EDITORSLF_FILE "${CMAKE_CURRENT_BINARY_DIR}/externalized/editor.slf")
     find_package(EditorSlf REQUIRED)
@@ -468,6 +499,31 @@ if (WITH_UNITTESTS)
         file(GLOB E2E_SCRIPTS
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.lua"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
+        # A synthetic Data/ tree, so the behavioural e2e suite runs where there is no game install
+        # (issue #302). It is generated here — from the committed manifest, the usage map and the
+        # explicit non-image list — into the build directory, which is gitignored: generated data,
+        # not content. The game reports which tree a run booted from as state().dataSource, and
+        # lib/campaign.lua asserts it against the `data=` argument below, so a synthetic run cannot
+        # silently stand in for a real one. The golden resolution suite keeps running on a real
+        # install; see tests/e2e/golden/README.md.
+        set(JA2_SYNTHETIC_DIR "${CMAKE_CURRENT_BINARY_DIR}/synthetic-data")
+        execute_process(
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/assets/synthetic.py"
+                --out "${JA2_SYNTHETIC_DIR}" --quiet
+            RESULT_VARIABLE _ja2_synthetic_data
+        )
+        if (_ja2_synthetic_data)
+            message(WARNING "tools/assets/synthetic.py failed (${_ja2_synthetic_data}): the "
+                "e2e-synthetic tests cannot run")
+        endif()
+        # The scripts the synthetic tree reaches: boot, the main menu, the native UI, the laptop,
+        # the campaign state and the front-end parity tours. Everything tactical, the map screen
+        # and the battles need the world — the tileset surface names in binarydata/ja2set.dat and
+        # the maps — which is the next slice of #302 and stays on a real install for now.
+        set(E2E_SYNTHETIC_SCRIPTS
+            main_menu native_ui laptop_tour campaign_state
+            mainmenu_parity credits_parity newgame_parity video_options loadingscreen_parity
+        )
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             if(n MATCHES "^(tactical_layers|world_renderer|battle_|weapon_readout|loadout_screen)")
@@ -653,6 +709,26 @@ if (WITH_UNITTESTS)
         # smoke` is the fast local sanity run; the target is under 30 s.
         foreach(smoke main_menu mainmenu_parity new_game_to_tactical native_ui)
             set_property(TEST e2e_${smoke} APPEND PROPERTY LABELS smoke)
+        endforeach()
+        # The synthetic side of the split: the same scripts, booted from the generated tree, so the
+        # data source is part of what the label says. CI runs `ctest -L '^e2e-synthetic$'` and never
+        # bare `-L e2e` (which would run both sides); a developer with a Steam install runs
+        # `-L '^e2e-real$'` (appended to every other e2e test below) or all of e2e. The area labels
+        # above are the real runs': `dev.py e2e --changed` selects by area, and it selects the runs
+        # that drive an install.
+        foreach(n ${E2E_SYNTHETIC_SCRIPTS})
+            add_test(
+                NAME e2e_syn_${n}
+                COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/${n}.lua" --isolated
+                    --game-dir "${JA2_SYNTHETIC_DIR}" --arg data=synthetic
+                    --res 1280x720 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/syn-${n}"
+            )
+            set_tests_properties(e2e_syn_${n} PROPERTIES
+                LABELS "e2e;e2e-synthetic"
+                ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>")
+        endforeach()
+        foreach(t ${E2E_TESTS})
+            set_property(TEST ${t} APPEND PROPERTY LABELS e2e-real)
         endforeach()
         set_tests_properties(e2e_tactical_layers_pipeline PROPERTIES
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>;JA2_WORLD_RENDERER=pipeline")

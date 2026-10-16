@@ -140,6 +140,34 @@ ctest -L smoke --output-on-failure                                  # the fast t
 
 Every test carries **area labels** — `tactical`, `mapscreen`, `laptop`, `campaign`, `equipment`, `nativeui`, `world-renderer`, `automation` — declared in `CMakeLists.txt` next to the test, so `ctest -L tactical` (or `dev.py e2e -L tactical`) runs just that area. `ctest -L smoke` is the fast tier: boot, main menu, new game to tactical and one native-UI tour, all at 1280x720, all four under a ~30 s budget.
 
+## Synthetic data: `e2e-synthetic` and `e2e-real`
+
+The behavioural suite has two sides, and the labels say which data a run booted from:
+
+| Label | Data | Runs |
+|---|---|---|
+| `e2e-real` | the install `game_dir` points at | every test that drives a screen other than the synthetic ones |
+| `e2e-synthetic` | a `Data/` cmake generates (`tools/assets/synthetic.py`) | boot, the main menu, the native UI, the laptop, the campaign state and the front-end parity tours |
+
+`ctest -L '^e2e-synthetic$'` is the side CI runs, because a runner has no game install:
+it needs no `uv sync` either (`ja2ctl` is standard-library Python). It is deliberately
+**not** `-L e2e`, which would run both sides — CI must not report a synthetic pass as a
+real one. A developer with a Steam install runs `-L '^e2e-real$'`, or everything, which
+is what `dev.py e2e` does.
+
+A synthetic run cannot be mistaken for a real one even by eye: the game reports which tree
+it booted from as `ja2.state().dataSource` (`ja2ctl state` prints `data synthetic`), the
+generator leaves a `SYNTHETIC` marker at the root of the tree, and every script that drives
+the game asserts the source it was launched against through one shared helper,
+`campaign.assertDataSource()` in `lib/campaign.lua`, against the harness's `-arg data=…`.
+The pixels are placeholders — the golden resolution suite stays on a real install and is
+not comparable to this tree (`golden/README.md`). What a synthetic run does check is
+layout, because `ja2.assertInsideScreen()` runs inside the scripts, not in the comparator.
+
+The world — `binarydata/ja2set.dat`'s surface names and the `Maps/*.dat` they load — is not
+in the tree yet, so everything tactical, the map screen and the battles stay on `e2e-real`.
+That is the next slice of [issue #302](https://github.com/adhikasp/ja2-pecel-bakwan/issues/302).
+
 `dev.py e2e --changed` maps `git diff --name-only master` (plus uncommitted and untracked files) to those areas through the path→area table in `tools/e2e_select.py`, adds smoke, and runs the result. **A path it cannot place — the original `assets/`/`externalized/` data, `rust/`, most of `src/sgp/` — falls back to the whole suite**, so the selector never silently skips a test a change could break. The two halves are joined through CTest's own `ctest --show-only=json-v1` (the labels are not written down twice), and the drift guard in `tools/tests/test_e2e_select.py` fails if they ever disagree. A run prints the slowest tests when it finishes.
 
 `ctest` uses `.venv` when it exists, so re-run `cmake` once after `uv sync`

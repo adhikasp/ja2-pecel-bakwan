@@ -121,6 +121,12 @@ if [[ "$RUN_TESTS" == "true" ]]; then
   # The developer tooling tests (dev.py worktrees / shots): Python and git only,
   # no build and no game data, and they touch nothing in this checkout.
   ctest -L '^tooling$' --output-on-failure
+  # The behavioural e2e suite on the synthetic Data/ tree cmake generated (#302):
+  # boot, the main menu, the native UI, the laptop, the campaign state and the
+  # front-end parity tours, with no game install. The label is explicit: bare
+  # `-L e2e` would also pull in the runs that need a real install (e2e-real), and
+  # those are not this job's to pretend passed.
+  ctest -L '^e2e-synthetic$' --output-on-failure
   # Diff-scoped C++ lint: clang-format on the changed lines, clang-tidy on the
   # changed translation units. Never whole-tree — see .ci/ci-lint-cpp.sh for
   # the measured reason. Runs where the tools are present and the change has a
