@@ -215,7 +215,7 @@ public:
 			r.name = zOptionsToggleText[p.opt].to_std_string();
 			r.help = zOptionsScreenHelpText[p.opt].to_std_string();
 			r.help.erase(std::remove(r.help.begin(), r.help.end(), '|'), r.help.end());
-			r.kbd = p.kbd;
+			r.kbd = ToggleHint(p.opt, p.kbd);
 			r.on = gGameSettings.fOptions[p.opt];
 			options.push_back(r);
 		}
@@ -482,8 +482,21 @@ public:
 
 	void ResetKey(std::string const& name)
 	{
-		KeyBindings::Bindings().Reset(name);
-		KeyChanged();
+		KeyBindings::Registry& reg = KeyBindings::Bindings();
+		KeyBindings::BindOutcome const out = reg.Reset(name);
+		m_lost.clear();
+		bindWarn.clear();
+		// a reset that takes the default key back from another action leaves it unbound: say so, as a bind does
+		if (!out.loser.empty())
+		{
+			KeyBindings::Action const* const l = reg.Find(out.loser);
+			m_lost = out.loser;
+			bindWarn =
+				ST::format(Str("options.bind.reset_loser").c_str(), l ? Str(l->label) : out.loser).to_std_string();
+		}
+		SaveKeys();
+		Refresh();
+		Changed();
 	}
 
 	void ResetAllKeys()
@@ -547,6 +560,15 @@ public:
 		BindKey(k);
 	}
 
+	/** A toggle's hint chip: the command's key when the same action is in the command table (Tree tops is
+	 * view.roofs), so rebinding it cannot leave this page's hint stale either (issue #48). */
+	static std::string ToggleHint(int const opt, char const* const kbd)
+	{
+		if (opt != TOPTION_TOGGLE_TREE_TOPS) return kbd;
+		std::string const key = KeyBindings::Bindings().Key("view.roofs");
+		return key.empty() ? std::string() : KeyBindings::KeyLabel(key);
+	}
+
 	std::string FormatNow() const
 	{
 		return ST::format("{} {}, {02d}:{02d}", pMessageStrings[MSG_DAY], GetWorldDay(), GetWorldHour(), GetWorldMinutesInDay() % 60).to_std_string();
@@ -566,15 +588,16 @@ public:
 	std::string difficulty, style, guns, saving;
 	std::string lSave, lLoad, lQuit, lDone, lEffects, lSpeech, lMusic;
 	std::map<std::string, std::string> labels,
-		strs = { { "s_resolution", "" },  { "s_window", "" },       { "s_fps", "" },
-				 { "s_filter", "" },      { "s_zoom", "" },         { "s_ui_size", "" },
-				 { "s_difficulty", "" },  { "s_style", "" },        { "s_guns", "" },
-				 { "s_saving", "" },      { "s_motion", "" },       { "s_motion_help", "" },
-				 { "s_colour_note", "" }, { "s_keys_note", "" },    { "s_page", "" },
-				 { "s_next", "" },        { "s_change", "" },       { "s_saved_note", "" },
-				 { "s_play", "" },        { "s_ui_size_help", "" }, { "s_bind_title", "" },
-				 { "s_bind_hint", "" },   { "s_bind_press", "" },   { "s_bind_cancel", "" },
-				 { "s_bind_reset", "" },  { "s_bind_unbound", "" }, { "s_keys_reference_note", "" } };
+		strs = { { "s_resolution", "" },    { "s_window", "" },       { "s_fps", "" },
+				 { "s_filter", "" },        { "s_zoom", "" },         { "s_ui_size", "" },
+				 { "s_difficulty", "" },    { "s_style", "" },        { "s_guns", "" },
+				 { "s_saving", "" },        { "s_motion", "" },       { "s_motion_help", "" },
+				 { "s_colour_note", "" },   { "s_keys_note", "" },    { "s_page", "" },
+				 { "s_next", "" },          { "s_change", "" },       { "s_saved_note", "" },
+				 { "s_play", "" },          { "s_ui_size_help", "" }, { "s_bind_title", "" },
+				 { "s_bind_hint", "" },     { "s_bind_press", "" },   { "s_bind_cancel", "" },
+				 { "s_bind_reset", "" },    { "s_bind_unbound", "" }, { "s_keys_reference_note", "" },
+				 { "s_bind_reset_row", "" } };
 
 	std::function<void(std::string const&)> onAction;
 	std::function<void()> onRefused;
@@ -609,7 +632,8 @@ public:
 																   { "s_bind_reset", "options.bind.reset" },
 																   { "s_bind_unbound", "options.bind.unbound" },
 																   { "s_keys_reference_note",
-																	 "options.keys_reference_note" } };
+																	 "options.keys_reference_note" },
+																   { "s_bind_reset_row", "options.bind.reset_row" } };
 		for (auto const& [k, v] : map) strs[k] = Str(v);
 	}
 

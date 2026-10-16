@@ -131,9 +131,44 @@ TEST(KeyBindings, resetGivesTheDefaultBack)
 	r.Bind("two.a", "c");
 	EXPECT_EQ(r.Key("one.a"), "");
 	EXPECT_EQ(r.Key("two.a"), "c");
-	r.Reset("one.a");
+	BindOutcome const out = r.Reset("one.a");
 	EXPECT_EQ(r.Key("one.a"), "c");
 	EXPECT_EQ(r.Key("two.a"), "");
+	EXPECT_EQ(out.loser, "two.a"); // the reset says whose key it took
+	// a reset that has to take nothing names nobody
+	EXPECT_TRUE(r.Reset("one.b").loser.empty());
+	// and an action this registry does not have
+	EXPECT_EQ(r.Reset("no.such").result, BindResult::UnknownAction);
+}
+
+TEST(KeyBindings, loadNeverLeavesTwoActionsOnAKey)
+{
+	// an override that collides with another action's default takes it from that action
+	Registry r = Make();
+	r.Load({ { "two.a", "d" } }); // one.b's default
+	EXPECT_EQ(r.Key("two.a"), "d");
+	EXPECT_EQ(r.Key("one.b"), "");
+	EXPECT_TRUE(r.Find("one.b")->changed);
+	// and the saved state says so, so the next save keeps it
+	EXPECT_EQ(r.Overrides().at("one.b"), "");
+	// two overrides for one key: the table order settles it
+	Registry two = Make();
+	two.Load({ { "one.a", "z" }, { "one.b", "z" } });
+	EXPECT_EQ(two.Key("one.a"), "z");
+	EXPECT_EQ(two.Key("one.b"), "");
+	// a default that collides with nothing is left alone
+	Registry plain = Make();
+	plain.Load({ { "two.a", "j" } });
+	EXPECT_EQ(plain.Key("one.a"), "c");
+	EXPECT_EQ(plain.Key("one.b"), "d");
+	EXPECT_EQ(plain.Key("two.a"), "j");
+	// whatever the file said, one action per key
+	for (Registry* reg : { &r, &two, &plain })
+	{
+		std::set<std::string> keys;
+		for (Action const& a : reg->Actions())
+			if (!a.key.empty()) EXPECT_TRUE(keys.insert(a.key).second) << a.key << " on " << a.name;
+	}
 }
 
 TEST(KeyBindings, resetAllClearsEveryChange)

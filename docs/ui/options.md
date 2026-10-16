@@ -52,8 +52,10 @@ round trip is a Rust unit test.
 
 **Conflicts: one owner, and a key never runs two actions.** Binding a key another action holds moves the key to the new
 action and leaves the other one unbound; the page marks that row and names it in a warning. Reset gives an action its
-default key back, taking it from whoever holds it now. A key that is not a key (an unknown name, a modifier on its own, a
-key that has no name) is refused.
+default key back, taking it from whoever holds it now — and when it takes one, it is reported the same way, so a reset
+can never silently cost a neighbour its key. A saved `key_bindings` entry that another action's default also claims takes
+it from that action too, so the file cannot produce two actions on one key either. A key that is not a key (an unknown
+name, a modifier on its own, a key that has no name) is refused.
 
 ## 3. Actions
 
@@ -71,7 +73,7 @@ key that has no name) is refused.
 | A10 | Pages (new) | — | 1–5, Tab / arrows / Space |
 | A11 | Rebind an action | click its key on the Controls page, then press a key; Esc cancels | `KeyBindings::Bind`, and the next key press runs the action |
 | A12 | A key another action holds | — | the key moves to the new action; the action that had it is left unbound and named in a warning |
-| A13 | Reset a binding | the row's reset, or Reset all | `KeyBindings::Reset` / `ResetAll`: the defaults come back |
+| A13 | Reset a binding | the row's reset, or Reset all | `KeyBindings::Reset` / `ResetAll`: the defaults come back, and a row reset that takes a key from another action names it |
 | A14 | A key that cannot be bound | — | refused with a note, the capture stays open |
 
 On exit the legacy screen re-applies tree tops, item glow and smoke when a world is loaded (`ExitOptionsScreen`); the
@@ -124,7 +126,7 @@ volumes, the video settings and `gGameOptions`):
 | A10 | keys 2, 4, 5 change pages; reduced motion on/off |
 | I7, A11 | the Controls page lists every action of `ja2.bindings()`; clicking a row's key opens the capture modal, the next key lands on the row, and `ja2.tactical.key` runs it |
 | A12 | binding a key another action holds: `ja2.bind` moves it, names the loser, and the page marks that row and warns |
-| A13, A14 | the row's reset and Reset all give the defaults back; a key that cannot be bound is refused |
+| A13, A14 | the row's reset takes its default key back and names whoever lost it, Reset all restores every default, and a key that cannot be bound is refused |
 | A7 | Done returns to the main menu; the volume stays |
 | S2, I6 | in game: saving available, the campaign panel shows the difficulty |
 | A5 | Quit: No stays, Yes goes to the main menu |

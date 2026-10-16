@@ -55,7 +55,7 @@ class Registry
 {
   public:
 	/** Adds a screen's actions, with their default keys (Load applies the saved overrides afterwards). */
-	void AddSource(std::string scope, Source);
+	void AddSource(std::string const& scope, Source);
 
 	/** The actions of every source, in registration order, with their current keys. */
 	std::vector<Action> const& Actions() const { return m_actions; }
@@ -69,15 +69,17 @@ class Registry
 	/** Gives @a key to @a name. Whichever action held @a key is left unbound and named in the outcome; an
 		 * empty @a key unbinds @a name itself. */
 	BindOutcome Bind(std::string_view name, std::string_view key);
-	/** Gives @a name its default key back, taking it from whichever action holds it now. */
-	void Reset(std::string_view name);
+	/** Gives @a name its default key back, taking it from whichever action holds it now; the outcome names that
+		 * action when there is one, so a caller can report it the way a bind is reported. */
+	BindOutcome Reset(std::string_view name);
 	/** Gives every action its default key back. */
 	void ResetAll();
 
 	/** What the player changed, to save: name -> key ("" = bound to nothing; the default when unlisted). */
 	std::map<std::string, std::string> Overrides() const;
 	/** Applies saved overrides. An unknown action name is ignored, and so is a key that is not one - except
-		 * "" which is an unbind. */
+		 * "" which is an unbind. A saved key that another action's default also claims takes it from that action:
+		 * a key never runs two actions, even out of the file. */
 	void Load(std::map<std::string, std::string> const& overrides);
 
   private:
@@ -86,6 +88,8 @@ class Registry
 	/** Sets @a a's key, records it in the overrides when it is not the default, and undoes the record when it
 		 * is. */
 	void SetKey(Action& a, std::string key);
+	/** One action per key: an override beats a default, and two of a kind are settled by the table's order. */
+	void ResolveConflicts();
 
 	std::vector<std::pair<std::string, Source>> m_sources;
 	std::map<std::string, std::string> m_overrides; // name -> key, only where it differs from the default

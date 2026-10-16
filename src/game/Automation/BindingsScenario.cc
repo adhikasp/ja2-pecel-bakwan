@@ -73,10 +73,15 @@ void RegisterBindingsLua(sol::state& L, sol::table& ja2)
 						 return t;
 					 });
 	ja2.set_function("resetBinding",
-					 [](std::string const& name)
+					 [&L](std::string const& name)
 					 {
 						 Require(name);
-						 KeyBindings::Bindings().Reset(name);
+						 KeyBindings::BindOutcome const out = KeyBindings::Bindings().Reset(name);
+						 sol::table t = L.create_table();
+						 t["ok"] = true;
+						 t["why"] = ResultName(out.result);
+						 t["loser"] = out.loser;
+						 return t;
 					 });
 	ja2.set_function("resetBindings", [] { KeyBindings::Bindings().ResetAll(); });
 }

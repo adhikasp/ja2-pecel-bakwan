@@ -38,7 +38,7 @@ std::vector<Action> TacticalActions()
 }
 }
 
-void Registry::AddSource(std::string scope, Source const source)
+void Registry::AddSource(std::string const& scope, Source const source)
 {
 	m_sources.emplace_back(scope, source);
 	for (Action& a : source())
@@ -120,15 +120,17 @@ BindOutcome Registry::Bind(std::string_view const name, std::string_view const k
 	return out;
 }
 
-void Registry::Reset(std::string_view const name)
+BindOutcome Registry::Reset(std::string_view const name)
 {
 	Action* const a = FindMutable(name);
-	if (!a) return;
+	if (!a) return { BindResult::UnknownAction, {} };
 	// the default comes back to this action; if another action holds it now, it loses it (a key runs one action)
 	if (a->def.empty())
+	{
 		SetKey(*a, std::string());
-	else
-		Bind(name, a->def);
+		return {};
+	}
+	return Bind(name, a->def);
 }
 
 void Registry::ResetAll()
@@ -167,6 +169,29 @@ void Registry::Load(std::map<std::string, std::string> const& overrides)
 		{
 			a.key = it->second;
 			a.changed = true;
+		}
+	}
+	ResolveConflicts();
+}
+
+void Registry::ResolveConflicts()
+{
+	// a key runs one action: a saved override that another action's default also claims takes it from that action
+	std::map<std::string, size_t> holder; // key -> the index of the action that holds it
+	for (size_t i = 0; i < m_actions.size(); ++i)
+	{
+		Action& a = m_actions[i];
+		if (a.key.empty()) continue;
+		auto const [it, fresh] = holder.emplace(a.key, i);
+		if (fresh) continue;
+		if (a.changed && !m_actions[it->second].changed)
+		{
+			SetKey(m_actions[it->second], std::string()); // the override wins over the default
+			it->second = i;
+		}
+		else
+		{
+			SetKey(a, std::string()); // two of a kind: the earlier row keeps it
 		}
 	}
 }

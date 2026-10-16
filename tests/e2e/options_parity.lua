@@ -142,13 +142,19 @@ ja2.expect(ja2.find{id = "options.bind.warn"} ~= nil, "the warning is on the pag
 shots.take("options_bind_conflict.png", true)
 ja2.assertInsideScreen()
 
--- A13: reset gives the defaults back - on the row that took a key, on the row that lost one, and all at once
+-- A13: reset gives the defaults back - and a reset that takes a key back from another action says who lost it
+ja2.click{id = "options.key[stance.crouch]"}
+ja2.step(2)
+ja2.key("p") -- Crouch takes Go prone's default key
+ja2.step(2)
+ja2.expect(ja2.binding("stance.crouch") == "p" and ja2.binding("stance.prone") == "j", "crouch is on p, prone keeps j")
 ja2.click{id = "options.key.reset[stance.prone]"}
 ja2.step(2)
 ja2.expect(ja2.binding("stance.prone") == "p", "the reset row has its default key back")
-ja2.click{id = "options.key.reset[stance.crouch]"}
-ja2.step(2)
-ja2.expect(ja2.binding("stance.crouch") == "c", "the row that lost its key has its default back too")
+ja2.expect(ja2.binding("stance.crouch") == "", "and the action that held it lost it")
+local resetWarn = ja2.viewModel("options").bind_warn
+ja2.expect(resetWarn:find("Crouch") ~= nil, "the reset names the action that lost its key: " .. resetWarn)
+ja2.expect(bind("stance.crouch").lost and not bind("stance.crouch").bound, "and marks that row")
 ja2.click{id = "options.keys.reset"}
 ja2.step(2)
 for _, b in ipairs(ja2.viewModel("options").binds) do
