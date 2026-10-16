@@ -339,7 +339,11 @@ EDT_ROW_LAYOUT = {
     "insurancemulti.edt": [400], "imptext.edt": [400], "flowercard.edt": [400],
     "flowerdesc.edt": [80, 80, 320],
 }
-EDT_GENERIC_TEXT = "Synthetic game data for the e2e suite. "
+EDT_GENERIC_TEXT = "Synthetic e2e data"
+# The generic fill is a run of short strings, not one long one: every read stops at the NUL that
+# follows the text, so a screen that shows a field has short placeholder text rather than hundreds
+# of characters (the native UI audit fails a shot whose text is truncated by its box).
+EDT_GENERIC_BLOCK = 40
 
 
 def _edt_encode(text: str) -> bytes:
@@ -355,8 +359,9 @@ def edt_bytes(name: str, size: int) -> bytes:
     body = bytearray(size)
     cols = EDT_ROW_LAYOUT.get(name)
     if not cols:
-        text = _edt_encode(EDT_GENERIC_TEXT * (size // 2 // len(EDT_GENERIC_TEXT) + 1))
-        body[:len(text)] = text[:size]
+        text = _edt_encode(EDT_GENERIC_TEXT)
+        block = text + bytes(2 * (EDT_GENERIC_BLOCK - len(text)))
+        body[:] = (block * (size // len(block) + 1))[:size]
         return bytes(body)
     row_len = sum(cols)
     for row in range(size // (row_len * 2)):
