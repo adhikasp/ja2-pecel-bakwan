@@ -364,8 +364,14 @@ D3D12 but fine for a frame interval) also leaves the interval where it was, as d
 skips entirely. The next suspect is therefore further along the present path than the compositor's transfers:
 the swapchain acquire/present and what the driver does with a borderless 3840x2160@59 window. The absolute
 floor moved since #37 measured 99 ms on the same box (128 ms here with the machine otherwise busy), so the
-A/B pairs, not the absolute numbers, are what the table is for. At 1920x1080 every GPU case is at the 60 fps
-vsync cap, so this change cannot be seen there at all.
+A/B pairs, not the absolute numbers, are what the table is for. At 1920x1080 (UI 960x540, world 1920x1080) the
+same counters read 2,073,600 B/frame (the UI layer; the GPU world is copied, not uploaded) and 10,368,000
+B/frame with the software world, falling to **0 B/frame standing still** and 21-257 KB/frame scrolling, but
+every case there is at the 60 fps vsync cap (16.68 ms) before and after, so this change cannot be seen at
+1080p at all. Headless sessions never reach this path at all (`VideoGpu::Active()` needs a window), so the
+resolution goldens and the e2e suite cannot see this change either: their green run is a regression check on
+everything around it, and the proof is the before/after stills of a real window, pixel for pixel (13 stills at
+1280x720, 1920x1080 and 2560x1080, plus the `--worldzoom` world-layer stills).
 
 ## Gaps
 
