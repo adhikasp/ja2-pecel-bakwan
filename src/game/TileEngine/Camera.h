@@ -15,31 +15,30 @@
  */
 namespace Camera
 {
-	struct Centre
-	{
-		double x = 0.0;
-		double y = 0.0;
-	};
+struct Centre
+{
+	double x = 0.0;
+	double y = 0.0;
+};
 
-	/**
+/**
 	 * The camera is free: it rests where a pan leaves it, not only on a tile centre. This is decision B2, kept
 	 * behind a flag because it is the one part of #38 that was called out as cheap to reverse: flipping it to
 	 * false restores the pre-#38 settle, where every pan rounded to the nearest tile centre.
 	 */
-	constexpr bool kFreeCamera = true;
+constexpr bool kFreeCamera = true;
 
-	/** A tile's centre: the position the legacy camera could only ever rest on. */
-	constexpr Centre FromTile(int const tileX, int const tileY)
-	{
-		return { double(tileX) * CELL_X_SIZE + CELL_X_SIZE / 2.0,
-		         double(tileY) * CELL_Y_SIZE + CELL_Y_SIZE / 2.0 };
-	}
+/** A tile's centre: the position the legacy camera could only ever rest on. */
+constexpr Centre FromTile(int const tileX, int const tileY)
+{
+	return { double(tileX) * CELL_X_SIZE + CELL_X_SIZE / 2.0, double(tileY) * CELL_Y_SIZE + CELL_Y_SIZE / 2.0 };
+}
 
-	/** The nearest tile centre (the legacy settle). */
-	Centre SnapToTileCentre(Centre c);
+/** The nearest tile centre (the legacy settle). */
+Centre SnapToTileCentre(Centre c);
 
-	/** Whether a centre sits exactly on a tile centre: true of every resting position before #38. */
-	bool OnTileCentre(Centre c);
+/** Whether a centre sits exactly on a tile centre: true of every resting position before #38. */
+bool OnTileCentre(Centre c);
 }
 
 #endif
