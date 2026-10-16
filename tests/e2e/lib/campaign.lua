@@ -3,6 +3,22 @@
 
 local campaign = {}
 
+-- Which data source this session runs on: "synthetic" for a generated Data/ (tools/assets/
+-- synthetic.py leaves a SYNTHETIC marker at its root) or "real" for a game install. The harness
+-- passes -arg data=synthetic for the e2e-synthetic tests (and the game reports it as
+-- ja2.state().dataSource), so a synthetic run cannot silently stand in for a real one: every script
+-- that drives the game asserts the source it was launched against, in this one place (issue #302).
+function campaign.assertDataSource()
+	local want = "real"
+	for _, a in ipairs(ja2.args or {}) do
+		local v = a:match("^data=(.*)$")
+		if v then want = v end
+	end
+	local got = ja2.state().dataSource
+	ja2.expect(got == want, "this run used the " .. want .. " game data (got " .. tostring(got) .. ")")
+	return got
+end
+
 -- Reset the RNG to the run's seed, so a flow point and everything after it is a
 -- function of the seed alone and not of how many incidental numbers the screens
 -- driven before it happened to draw. A UI change then cannot churn the goldens of

@@ -468,6 +468,31 @@ if (WITH_UNITTESTS)
         file(GLOB E2E_SCRIPTS
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.lua"
             "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/*.txt")
+        # A synthetic Data/ tree, so the behavioural e2e suite runs where there is no game install
+        # (issue #302). It is generated here — from the committed manifest, the usage map and the
+        # explicit non-image list — into the build directory, which is gitignored: generated data,
+        # not content. The game reports which tree a run booted from as state().dataSource, and
+        # lib/campaign.lua asserts it against the `data=` argument below, so a synthetic run cannot
+        # silently stand in for a real one. The golden resolution suite keeps running on a real
+        # install; see tests/e2e/golden/README.md.
+        set(JA2_SYNTHETIC_DIR "${CMAKE_CURRENT_BINARY_DIR}/synthetic-data")
+        execute_process(
+            COMMAND "${Python3_EXECUTABLE}" "${CMAKE_CURRENT_SOURCE_DIR}/tools/assets/synthetic.py"
+                --out "${JA2_SYNTHETIC_DIR}" --quiet
+            RESULT_VARIABLE _ja2_synthetic_data
+        )
+        if (_ja2_synthetic_data)
+            message(WARNING "tools/assets/synthetic.py failed (${_ja2_synthetic_data}): the "
+                "e2e-synthetic tests cannot run")
+        endif()
+        # The scripts the synthetic tree reaches: boot, the main menu, the native UI, the laptop,
+        # the campaign state and the front-end parity tours. Everything tactical, the map screen
+        # and the battles need the world — the tileset surface names in binarydata/ja2set.dat and
+        # the maps — which is the next slice of #302 and stays on a real install for now.
+        set(E2E_SYNTHETIC_SCRIPTS
+            main_menu native_ui laptop_tour campaign_state
+            mainmenu_parity credits_parity newgame_parity video_options loadingscreen_parity
+        )
         foreach(f ${E2E_SCRIPTS})
             get_filename_component(n ${f} NAME_WE)
             if(n MATCHES "^(tactical_layers|world_renderer|battle_|weapon_readout|loadout_screen)")
@@ -653,6 +678,26 @@ if (WITH_UNITTESTS)
         # smoke` is the fast local sanity run; the target is under 30 s.
         foreach(smoke main_menu mainmenu_parity new_game_to_tactical native_ui)
             set_property(TEST e2e_${smoke} APPEND PROPERTY LABELS smoke)
+        endforeach()
+        # The synthetic side of the split: the same scripts, booted from the generated tree, so the
+        # data source is part of what the label says. CI runs `ctest -L '^e2e-synthetic$'` and never
+        # bare `-L e2e` (which would run both sides); a developer with a Steam install runs
+        # `-L '^e2e-real$'` (appended to every other e2e test below) or all of e2e. The area labels
+        # above are the real runs': `dev.py e2e --changed` selects by area, and it selects the runs
+        # that drive an install.
+        foreach(n ${E2E_SYNTHETIC_SCRIPTS})
+            add_test(
+                NAME e2e_syn_${n}
+                COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/${n}.lua" --isolated
+                    --game-dir "${JA2_SYNTHETIC_DIR}" --arg data=synthetic
+                    --res 1280x720 --timeout 600 --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/syn-${n}"
+            )
+            set_tests_properties(e2e_syn_${n} PROPERTIES
+                LABELS "e2e;e2e-synthetic"
+                ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>")
+        endforeach()
+        foreach(t ${E2E_TESTS})
+            set_property(TEST ${t} APPEND PROPERTY LABELS e2e-real)
         endforeach()
         set_tests_properties(e2e_tactical_layers_pipeline PROPERTIES
             ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>;JA2_WORLD_RENDERER=pipeline")

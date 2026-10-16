@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import struct
 import sys
 import tempfile
 import unittest
@@ -16,10 +17,24 @@ sys.path.insert(0, str(HERE.parent))
 import baseline  # noqa: E402
 import extract  # noqa: E402
 import manifest  # noqa: E402
+import synthetic  # noqa: E402
 import usage  # noqa: E402
 from ja2assets import gates, pcx, png, sti  # noqa: E402
 from ja2assets.classify import classify  # noqa: E402
 from ja2assets.slf import SlfArchive, write_slf  # noqa: E402
+
+
+def tree_digest(root: Path) -> str:
+    """A hash of every file under `root`, by relative path: two runs must agree byte for byte."""
+    import hashlib
+    h = hashlib.sha256()
+    for f in sorted(root.rglob("*")):
+        if f.is_file():
+            h.update(f.relative_to(root).as_posix().encode("utf-8"))
+            h.update(b"\0")
+            h.update(f.read_bytes())
+            h.update(b"\0")
+    return h.hexdigest()
 
 PALETTE = [(i, 255 - i, (i * 7) % 256) for i in range(256)]
 
@@ -141,6 +156,88 @@ class Pipeline(unittest.TestCase):
         self.assertEqual(by_path["Radarmaps/A9.STI"]["method"], "regenerate")
         self.assertEqual(by_path["tilesets/0/grass.sti"]["method"], "upscale")
         self.assertIn("Faces/07.STI", report.read_text())
+
+
+class SyntheticData(unittest.TestCase):
+    """The synthetic Data/ tree the e2e suite boots on (issue #302)."""
+
+    def generate(self, out: Path) -> dict:
+        return synthetic.generate(out, quiet=True)
+
+    def test_generator_is_deterministic(self):
+        with tempfile.TemporaryDirectory() as d:
+            a, b = Path(d) / "a", Path(d) / "b"
+            self.generate(a)
+            self.generate(b)
+            self.assertEqual(tree_digest(a), tree_digest(b), "two generator runs differ")
+
+    def test_images_carry_the_manifest_shape(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "data"
+            summary = self.generate(out)
+            manifest_data = json.loads(synthetic.DEFAULT_MANIFEST.read_text(encoding="utf-8"))
+            self.assertEqual(summary["images"], len(synthetic.used_assets(manifest_data)))
+            self.assertGreaterEqual(summary["images"], 300, "the 300-image usage set")
+            by_path = {a["path"].lower(): a for a in manifest_data["assets"]}
+            with SlfArchive(out / "Data" / "Interface.slf") as a:
+                entry = next(e for e in a.files() if e.name.upper() == "TACTPOPUP.STI")
+                image = sti.parse(a.read(entry))
+            real = by_path["interface/tactpopup.sti"]
+            self.assertEqual(len(image.frames), real["frames"], "frame count from the manifest")
+            self.assertEqual((image.width, image.height), tuple(real["size"]), "header from the manifest")
+            self.assertEqual((image.frames[0].width, image.frames[0].height), synthetic.PLACEHOLDER_FRAME)
+
+    def test_fonts_have_a_glyph_per_translation_entry(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "data"
+            self.generate(out)
+            with SlfArchive(out / "Data" / "Fonts.slf") as a:
+                self.assertEqual(sorted(e.name for e in a.files()), sorted(synthetic.FONT_FILES))
+                font = sti.parse(a.read(a.entries[0]))
+            self.assertGreater(len(font.frames), 187, "every codepoint the table names has a glyph")
+            self.assertGreater(font.frames[0].width + font.frames[0].offset_x, 0, "text advances")
+
+    def test_prof_dat_decodes_to_named_profiles(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "data"
+            self.generate(out)
+            with SlfArchive(out / "Data" / "Binarydata.slf") as a:
+                entry = next(e for e in a.files() if e.name.lower() == "prof.dat")
+                raw = a.read(entry)
+            self.assertEqual(len(raw), synthetic.PROFILES * synthetic.PROFILE_SIZE)
+            names = []
+            for pid in range(2):
+                block = raw[pid * synthetic.PROFILE_SIZE:(pid + 1) * synthetic.PROFILE_SIZE]
+                plain = bytearray(len(block))
+                last = 0
+                for i, b in enumerate(block):     # JA2EncryptedFileRead
+                    plain[i] = (b - last - synthetic.ROTATION[i % len(synthetic.ROTATION)]) & 0xFF
+                    last = b
+                names.append(plain[:synthetic.NAME_LENGTH * 2].decode("utf-16-le").split("\0", 1)[0])
+            self.assertEqual(names, ["Barry", "Blood"])
+
+    def test_ja2set_dat_passes_the_loader_checks(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "data"
+            self.generate(out)
+            with SlfArchive(out / "Data" / "Binarydata.slf") as a:
+                entry = next(e for e in a.files() if e.name.lower() == "ja2set.dat")
+                raw = a.read(entry)
+            self.assertEqual(raw[0], 50)                       # VANILLA_NUM_TILESETS
+            self.assertEqual(struct.unpack_from("<I", raw, 1)[0], 151)   # NUMBEROFTILETYPES
+
+    def test_marker_and_non_image_list(self):
+        with tempfile.TemporaryDirectory() as d:
+            out = Path(d) / "data"
+            self.generate(out)
+            data = out / "Data"
+            self.assertTrue((data / synthetic.SYNTHETIC_MARKER).is_file())
+            present = {f.relative_to(data).as_posix().lower() for f in data.rglob("*") if f.is_file()}
+            for slf in sorted(data.glob("*.slf")):
+                with SlfArchive(slf) as a:
+                    present.update(a.full_path(e).lower() for e in a.files())
+            for path in synthetic.all_non_image_files():
+                self.assertIn(path.lower(), present, path)
 
 
 class Classify(unittest.TestCase):

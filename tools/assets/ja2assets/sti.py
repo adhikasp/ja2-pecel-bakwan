@@ -175,8 +175,11 @@ def parse(data: bytes) -> Sti:
 
 
 def build_indexed(frames: list[tuple[int, int, int, int, bytes, bytes]], palette: list[tuple[int, int, int]],
-                  app_data: bytes = b"") -> bytes:
-    """Builds an ETRLE STI from (w, h, offset_x, offset_y, indices, mask) frames (for tests)."""
+                  app_data: bytes = b"", size: tuple[int, int] | None = None) -> bytes:
+    """Builds an ETRLE STI from (w, h, offset_x, offset_y, indices, mask) frames (for tests).
+
+    `size` overrides the header's width/height, which is a nominal bounds rather than the frame
+    size for a sprite sheet (the original files use 640x480 for animations and tiles)."""
     table = bytearray()
     pixels = bytearray()
     for w, h, ox, oy, idx, mask in frames:
@@ -185,8 +188,7 @@ def build_indexed(frames: list[tuple[int, int, int, int, bytes, bytes]], palette
         pixels += enc
     header = bytearray(64)
     header[0:4] = b"STCI"
-    width = max(f[0] for f in frames)
-    height = max(f[1] for f in frames)
+    width, height = size if size else (max(f[0] for f in frames), max(f[1] for f in frames))
     struct.pack_into("<IIIIHH", header, 4, len(pixels), len(pixels), 0, INDEXED | ETRLE_COMPRESSED | TRANSPARENT, height, width)
     struct.pack_into("<IH", header, 24, 256, len(frames))
     header[44] = 8

@@ -2,7 +2,9 @@
 -- native UI does not run: the legacy menu is checked instead. Continue (loading the newest save) is covered by
 -- saveload_parity.lua, which has a save to load.
 local shots = require("lib.shots")
+local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
 ja2.waitScreen("MAINMENU_SCREEN")
 ja2.waitIdle()
 local s = ja2.screenSize()

@@ -5,6 +5,8 @@
 local campaign = require("lib.campaign")
 local shots = require("lib.shots")
 
+campaign.assertDataSource()
+
 ja2.waitScreen("MAINMENU_SCREEN")
 campaign.newGame()
 ja2.expect(ja2.screen() == "LAPTOP_SCREEN", "a new campaign opens the laptop, got " .. ja2.screen())

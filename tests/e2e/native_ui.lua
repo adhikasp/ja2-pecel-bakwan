@@ -5,6 +5,8 @@
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
+
 ja2.waitScreen("MAINMENU_SCREEN")
 local s = ja2.screenSize()
 local native = s.w >= 1280 and s.h >= 720

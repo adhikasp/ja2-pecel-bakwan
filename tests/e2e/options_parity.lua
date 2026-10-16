@@ -1,7 +1,9 @@
 -- Parity tour of the native options screen (docs/ui/options.md, section 9), driven by element id, with the game
 -- settings checked through a fresh view model (it reads gGameSettings, the volumes and the video settings).
 local shots = require("lib.shots")
+local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
 ja2.waitScreen("MAINMENU_SCREEN")
 ja2.waitIdle()
 local s = ja2.screenSize()

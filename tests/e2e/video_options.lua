@@ -4,7 +4,9 @@
 -- options_parity.lua).
 ja2.setUiMode("options", "legacy")
 local shots = require("lib.shots")
+local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
 ja2.click("Preferences")
 ja2.waitScreen("OPTIONS_SCREEN")
 ja2.key("v")

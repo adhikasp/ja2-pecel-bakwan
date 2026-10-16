@@ -294,6 +294,9 @@ def format_text(items):
 def format_state(s):
     t = s.get("time", {})
     print(f'screen   {s.get("screen")}  (idle: {s.get("idle")})')
+    # Which data the session runs on: "synthetic" for a generated Data/ (tools/assets/synthetic.py),
+    # "real" for a game install. Any log or screenshot then carries its provenance (issue #302).
+    print(f'data     {s.get("dataSource", "unknown")}')
     if s.get("messageBox"):
         print(f'message  "{s.get("messageBoxText", "")}"')
     print(f'time     day {t.get("day")} {t.get("hour", 0):02}:{t.get("minute", 0):02}' + (" (paused)" if t.get("paused") else ""))

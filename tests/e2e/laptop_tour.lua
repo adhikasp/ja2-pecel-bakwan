@@ -2,6 +2,8 @@
 local shots = require("lib.shots")
 local campaign = require("lib.campaign")
 
+campaign.assertDataSource()
+
 campaign.newGame()
 
 -- The native laptop (1280x720 and larger): every program opens by id; laptop_parity.lua goes deeper.
