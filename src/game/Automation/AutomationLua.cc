@@ -638,7 +638,7 @@ namespace
 
 	// The tactical camera table and its setter, for `ja2.camera()` (#38): see the binding for what each field
 	// is and what the write form accepts.
-	sol::table CameraLua(sol::optional<sol::table> const spec)
+	sol::table CameraLua(sol::optional<sol::table> const& spec)
 	{
 		if (spec)
 		{
