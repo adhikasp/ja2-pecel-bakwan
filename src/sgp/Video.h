@@ -126,6 +126,19 @@ uint32_t VideoComposePixel(int uiX, int uiY);
  * a no-op when the frame is already current, and it does not tick the virtual clock. */
 void VideoComposePending();
 
+/** The layer upload bytes the SDL_GPU compositor (VideoGpu) has copied into its textures since the last
+ * VideoResetUploadStats(), counted apart per layer: the legacy ScreenBuffer (the UI layer) and the world (the
+ * software WORLD_BUFFER or the CPU pipeline's 888 layer). Only that path uploads through VideoGpu, so this is a
+ * window's numbers; the rate a run cares about is the per-frame mean (bytes / frames). */
+struct VideoUploadStats
+{
+	uint64_t frames = 0;
+	uint64_t uiBytes = 0;
+	uint64_t worldBytes = 0;
+};
+VideoUploadStats VideoGetUploadStats();
+void VideoResetUploadStats();
+
 /** Number of full composes (RefreshScreen calls) since start-up. A headless driven session is composed
  * on demand, so this is also the number of frames it actually rendered: automation guards read it to keep
  * unobserved animations and loading screens from going back to per-frame software work. */

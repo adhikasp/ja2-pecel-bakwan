@@ -126,8 +126,8 @@ bool RecordGpuQuad(float const originX, float const originY, float const scale)
 										Surface->h, 0, GpuRgba.data());
 	}
 
-	SDL_GPUTexture* const tex =
-		VideoGpu::UploadRgba(GpuTexture, GpuTextureW, GpuTextureH, GpuRgba.data(), Surface->w, Surface->h);
+	SDL_GPUTexture* const tex = VideoGpu::UploadRgba(GpuTexture, GpuTextureW, GpuTextureH, GpuRgba.data(), Surface->w,
+													 Surface->h, SDL_Rect{ 0, 0, Surface->w, Surface->h });
 	if (!tex) return false;
 
 	VideoGpu::OverlayTextured(tex, originX + FPS_X * scale, originY + FPS_Y * scale, Surface->w * scale,
