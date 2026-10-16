@@ -59,6 +59,8 @@ pub struct Ja2JsonContent {
     #[serde(skip_serializing_if = "Option::is_none")]
     reduced_motion: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    key_bindings: Option<BTreeMap<String, String>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     world_renderer: Option<String>,
 }
 
@@ -135,6 +137,7 @@ impl Ja2Json {
         copy_to!(content.ui_mode, engine_options.ui_mode);
         copy_to!(content.native_ui_scale, engine_options.native_ui_scale);
         copy_to!(content.reduced_motion, engine_options.reduced_motion);
+        copy_to!(content.key_bindings, engine_options.key_bindings);
         copy_to!(content.world_renderer, engine_options.world_renderer);
 
         Ok(())
@@ -166,6 +169,7 @@ impl Ja2Json {
             ui_mode: None,
             native_ui_scale: None,
             reduced_motion: None,
+            key_bindings: None,
             world_renderer: None,
         };
 
@@ -190,6 +194,9 @@ impl Ja2Json {
         }
         if engine_options.reduced_motion {
             copy_to!(engine_options.reduced_motion, content.reduced_motion);
+        }
+        if !engine_options.key_bindings.is_empty() {
+            copy_to!(engine_options.key_bindings, content.key_bindings);
         }
         if !engine_options.world_renderer.is_empty() {
             copy_to!(engine_options.world_renderer, content.world_renderer);
@@ -352,6 +359,52 @@ mod tests {
             Some("native")
         );
         assert_eq!(engine_options.native_ui_scale, 1.5);
+    }
+
+    #[test]
+    fn apply_to_engine_options_should_read_key_bindings() {
+        let mut engine_options = EngineOptions::default();
+        let temp_dir = write_temp_folder_with_ja2_json(
+            br#"{ "key_bindings": { "stance.crouch": "j", "move.climb": "" } }"#,
+        );
+        let ja2json = Ja2Json::from_pecel_bakwan_home(temp_dir.path().join(".ja2"));
+
+        ja2json
+            .apply_to_engine_options(&mut engine_options)
+            .unwrap();
+
+        assert_eq!(
+            engine_options.key_bindings.get("stance.crouch").map(String::as_str),
+            Some("j")
+        );
+        assert_eq!(
+            engine_options.key_bindings.get("move.climb").map(String::as_str),
+            Some("")
+        );
+    }
+
+    #[test]
+    fn write_should_round_trip_key_bindings_and_leave_them_out_when_empty() {
+        let mut engine_options = EngineOptions {
+            key_bindings: [("stance.crouch".to_string(), "j".to_string())]
+                .into_iter()
+                .collect(),
+            ..Default::default()
+        };
+        let temp_dir = write_temp_folder_with_ja2_json(b"Invalid JSON");
+        engine_options.pecel_bakwan_home = temp_dir.path().join(".ja2");
+        let ja2json = Ja2Json::from_pecel_bakwan_home(&engine_options.pecel_bakwan_home);
+
+        ja2json.write(&engine_options).unwrap();
+        let mut got = EngineOptions::default();
+        ja2json.apply_to_engine_options(&mut got).unwrap();
+        assert_eq!(got.key_bindings, engine_options.key_bindings);
+
+        // nothing rebound: the key is not in the file at all
+        engine_options.key_bindings.clear();
+        ja2json.write(&engine_options).unwrap();
+        let written = std::fs::read_to_string(temp_dir.path().join(".ja2/ja2.json")).unwrap();
+        assert!(!written.contains("key_bindings"));
     }
 
     #[test]

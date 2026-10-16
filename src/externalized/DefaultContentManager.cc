@@ -1133,6 +1133,17 @@ bool DefaultContentManager::saveNativeUiSettings(float const scale, bool const r
 }
 
 
+bool DefaultContentManager::saveKeyBindings(std::map<std::string, std::string> const& overrides)
+{
+	EngineOptions* const options = m_engineOptions.get();
+	if (!options) return false;
+	// the map is the truth: an action the player put back to its default is not in it any more
+	EngineOptions_clearKeyBindings(options);
+	for (auto const& [name, key] : overrides) EngineOptions_setKeyBinding(options, name.c_str(), key.c_str());
+	return EngineOptions_write(options);
+}
+
+
 const GamePolicy* DefaultContentManager::getGamePolicy() const
 {
 	return m_gamePolicy.get();

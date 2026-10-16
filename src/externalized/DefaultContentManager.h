@@ -147,6 +147,7 @@ public:
 
 	virtual bool saveVideoSettings(int resX, int resY, int uiScale, int worldZoom, int windowMode, int scalingQuality) override;
 	virtual bool saveNativeUiSettings(float scale, bool reducedMotion) override;
+	virtual bool saveKeyBindings(std::map<std::string, std::string> const& overrides) override;
 	virtual const GamePolicy* getGamePolicy() const override;
 	virtual const IMPPolicy* getIMPPolicy() const override;
 	virtual const StrategicAIPolicy* getStrategicAIPolicy() const override;

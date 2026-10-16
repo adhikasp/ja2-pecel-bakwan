@@ -26,6 +26,7 @@
 #include "InventoryActions.h"
 #include "SquadRoster.h"
 #include "InventoryAdapter.h"
+#include "KeyBindings.h"
 #include "PointerRouter.h"
 #include "TacticalCommands.h"
 #include "TacticalCommandsAdapter.h"
@@ -669,7 +670,9 @@ namespace
 				// "End turn" in a battle, "Start turn-based combat" outside one
 				if (c.id == TacticalCommands::Id::EndTurn && !ctx.combat) label = Str("tac.cmd.turn.start");
 				std::string t = label;
-				if (c.key[0] != '\0') t += " (" + TacticalCommands::KeyLabel(c.key) + ")";
+				// the key it runs now, not the table's default: the player can have changed it (issue #48)
+				std::string const bound = KeyBindings::Bindings().Key(c.name);
+				if (!bound.empty()) t += " (" + KeyBindings::KeyLabel(bound) + ")";
 				if (!a.enabled && a.why != TacticalCommands::Why::None)
 					t += " — " + Str(std::string("tac.cmd.why.") + TacticalCommands::WhyName(a.why));
 				cmdTitle[i] = std::move(t);

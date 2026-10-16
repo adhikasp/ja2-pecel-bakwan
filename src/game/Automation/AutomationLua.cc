@@ -3,6 +3,7 @@
 #include "AutomationSession.h"
 #include "BattleReport.h"
 #include "BattleScenario.h"
+#include "BindingsScenario.h"
 #include "ScenarioItems.h"
 #include "CampaignScenario.h"
 #include "RangeLane.h"
@@ -1031,6 +1032,9 @@ namespace
 		// The tactical commands, the squad roster and the world pointer as data (issue #319): ja2.tactical.commands(),
 		// .run(name), .key(combo), .roster(), .pointer(). See TacticalScenario.h.
 		RegisterTacticalLua(g_lua, ja2);
+		// The rebindable actions as data (issue #48 slice 1): ja2.bindings(), .binding(name), .bind(name, key),
+		// .resetBinding(name), .resetBindings(). See BindingsScenario.h.
+		RegisterBindingsLua(g_lua, ja2);
 		ja2.set_function("inventoryOp", [](std::string const& op, sol::optional<sol::table> spec) {
 			return Guarded([&] { return InventoryOp(g_lua, op, spec); });
 		});

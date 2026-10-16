@@ -1,7 +1,8 @@
 #include "TacticalCommands.h"
 
+#include "KeyBindings.h"
+
 #include <algorithm>
-#include <cctype>
 #include <utility>
 
 // The table of tactical commands and their availability (see TacticalCommands.h). The rules are the ones the legacy
@@ -330,52 +331,9 @@ Command const* Find(std::string_view const name)
 
 Command const* ForKey(std::string_view const key, bool const ctrl, bool const shift, bool const alt)
 {
-	std::string want;
-	if (ctrl)  want += "ctrl+";
-	if (shift) want += "shift+";
-	if (alt)   want += "alt+";
-	want += key;
-	for (Command const& c : All())
-		if (c.key[0] != '\0' && want == c.key) return &c;
-	return nullptr;
-}
-
-std::string KeyName(std::string_view const named, char32_t const ch, bool const ctrl, bool const shift, bool const alt)
-{
-	std::string s;
-	if (ctrl)  s += "ctrl+";
-	if (shift) s += "shift+";
-	if (alt)   s += "alt+";
-	if (!named.empty()) s += named;
-	else if (ch > 0 && ch < 128) s += static_cast<char>(std::tolower(static_cast<int>(ch)));
-	return s;
-}
-
-std::string KeyLabel(std::string_view const key)
-{
-	std::string out;
-	size_t i = 0;
-	while (i <= key.size())
-	{
-		size_t const j = key.find('+', i);
-		std::string_view part = key.substr(i, j == std::string_view::npos ? std::string_view::npos : j - i);
-		if (!part.empty())
-		{
-			std::string p(part);
-			if (p == "pageup") p = "PgUp";
-			else if (p == "pagedown") p = "PgDn";
-			else if (p == "`") p = "`";
-			else
-			{
-				p[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(p[0])));
-			}
-			if (!out.empty()) out += "+";
-			out += p;
-		}
-		if (j == std::string_view::npos) break;
-		i = j + 1;
-	}
-	return out;
+	// the key that runs a command is the rebindable one (KeyBindings), not the table's default
+	KeyBindings::Action const* const a = KeyBindings::Bindings().Owner(KeyBindings::KeyName(key, 0, ctrl, shift, alt));
+	return a ? Find(a->name) : nullptr;
 }
 
 Availability Check(Context const& c, Id const id)

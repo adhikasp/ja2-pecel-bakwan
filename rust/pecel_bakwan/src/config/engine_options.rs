@@ -93,6 +93,9 @@ pub struct EngineOptions {
     pub native_ui_scale: f32,
     /// Native UI: no transitions or automatic scrolling (the Accessibility page of the options)
     pub reduced_motion: bool,
+    /// The rebindable actions the player changed from their defaults: action name -> key ("" = bound to nothing).
+    /// The defaults and the conflict rules are in `src/game/NativeUI/KeyBindings.cc` (issue #48).
+    pub key_bindings: BTreeMap<String, String>,
     /// What draws the tactical world: "software", "gpu" or "pipeline" (empty = the engine's default).
     /// See docs/plan/native-modern-game.md, Phase 8.
     pub world_renderer: String,
@@ -122,6 +125,7 @@ impl Default for EngineOptions {
             ui_mode: BTreeMap::new(),
             native_ui_scale: 1.0,
             reduced_motion: false,
+            key_bindings: BTreeMap::new(),
             world_renderer: String::new(),
         }
     }

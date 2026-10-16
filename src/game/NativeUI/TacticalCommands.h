@@ -127,13 +127,9 @@ namespace TacticalCommands
 	Command const& Get(Id);
 	/** The command named @a name ("stance.crouch"), or nullptr. */
 	Command const* Find(std::string_view name);
-	/** The command a key runs: @a key is the key's name as KeyName gives it, nullptr when none. */
+	/** The command a key runs: @a key is the key's name as KeyBindings::KeyName gives it, nullptr when none. The
+	 * keys are the rebindable ones (KeyBindings): the default unless the player changed it. */
 	Command const* ForKey(std::string_view key, bool ctrl, bool shift, bool alt);
-	/** The canonical name of a key press: "c", "tab", "space", "f3", "`", "insert", "pageup", with "ctrl+", "shift+",
-	 * "alt+" in front. @a ch is the character the key makes (lower case), or 0 when it has a name instead. */
-	std::string KeyName(std::string_view named, char32_t ch, bool ctrl, bool shift, bool alt);
-	/** "Shift+Space", "Tab", "C": a key as the HUD prints it. */
-	std::string KeyLabel(std::string_view key);
 
 	Availability Check(Context const&, Id);
 	inline Availability Check(Context const& c, Command const& cmd) { return Check(c, cmd.id); }

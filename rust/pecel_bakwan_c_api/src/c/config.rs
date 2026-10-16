@@ -307,6 +307,40 @@ pub extern "C" fn EngineOptions_getUiModes(ptr: *const EngineOptions) -> *mut c_
     c_string_from_str(&pairs.join("\n")).into_raw()
 }
 
+/// Gets `EngineOptions.key_bindings` as `action=key` pairs separated by newlines (for example
+/// "stance.crouch=j\nmove.climb="). An empty key means the action is bound to nothing; an action that is not listed
+/// runs its default. The caller is responsible for the returned memory.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_getKeyBindings(ptr: *const EngineOptions) -> *mut c_char {
+    let engine_options = unsafe_ref(ptr);
+    let pairs: Vec<String> = engine_options
+        .key_bindings
+        .iter()
+        .map(|(k, v)| format!("{k}={v}"))
+        .collect();
+    c_string_from_str(&pairs.join("\n")).into_raw()
+}
+
+/// Sets `EngineOptions.key_bindings[action]` (an empty key = bound to nothing).
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_setKeyBinding(
+    ptr: *mut EngineOptions,
+    action: *const c_char,
+    key: *const c_char,
+) {
+    let engine_options = unsafe_mut(ptr);
+    let action = str_from_c_str_or_panic(unsafe_c_str(action)).to_owned();
+    let key = str_from_c_str_or_panic(unsafe_c_str(key)).to_owned();
+    engine_options.key_bindings.insert(action, key);
+}
+
+/// Clears `EngineOptions.key_bindings`.
+#[unsafe(no_mangle)]
+pub extern "C" fn EngineOptions_clearKeyBindings(ptr: *mut EngineOptions) {
+    let engine_options = unsafe_mut(ptr);
+    engine_options.key_bindings.clear();
+}
+
 /// Gets `EngineOptions.world_renderer` ("" when not set).
 #[unsafe(no_mangle)]
 pub extern "C" fn EngineOptions_getWorldRenderer(ptr: *const EngineOptions) -> *mut c_char {
@@ -503,6 +537,45 @@ mod tests {
   "nosound": false
 }"##
         );
+    }
+
+    #[test]
+    fn key_bindings_should_round_trip_through_ja2_json() {
+        let mut engine_options = EngineOptions::default();
+        let temp_dir = write_temp_folder_with_ja2_json(b"Invalid JSON");
+        engine_options.pecel_bakwan_home = temp_dir.path().join(".ja2");
+
+        let action = c_string_from_str("stance.crouch");
+        let key = c_string_from_str("j");
+        EngineOptions_setKeyBinding(&mut engine_options, action.as_ptr(), key.as_ptr());
+        let unbound = c_string_from_str("move.climb");
+        let nothing = c_string_from_str("");
+        EngineOptions_setKeyBinding(&mut engine_options, unbound.as_ptr(), nothing.as_ptr());
+
+        assert!(EngineOptions_write(&mut engine_options));
+
+        let mut got = EngineOptions::default();
+        Ja2Json::from_pecel_bakwan_home(&engine_options.pecel_bakwan_home)
+            .apply_to_engine_options(&mut got)
+            .unwrap();
+        assert_eq!(
+            got.key_bindings.get("stance.crouch").map(String::as_str),
+            Some("j")
+        );
+        // an explicit unbind is written out as an empty key, not dropped
+        assert_eq!(
+            got.key_bindings.get("move.climb").map(String::as_str),
+            Some("")
+        );
+
+        // the getter hands them to C as "action=key" lines
+        let lines = EngineOptions_getKeyBindings(&got);
+        let read = str_from_c_str_or_panic(unsafe_c_str(lines)).to_owned();
+        CString_destroy(lines);
+        assert_eq!(read, "move.climb=\nstance.crouch=j");
+
+        EngineOptions_clearKeyBindings(&mut got);
+        assert!(got.key_bindings.is_empty());
     }
 
     #[test]
