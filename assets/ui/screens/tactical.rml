@@ -183,7 +183,7 @@
 				</div>
 			</div>
 		</div>
-		<div class="foot"><span class="kbd">Click</span><span>pick up / put down</span><span class="kbd">RMB</span><span>details</span><span class="kbd">Ctrl+Q</span><span>swap hands</span><span class="kbd">Space</span><span>next merc</span></div>
+		<div class="foot"><span class="kbd">Click</span><span>pick up / put down</span><span class="kbd">RMB</span><span>details</span><span class="kbd" data-if="k_act_swap_hands != ''">{{k_act_swap_hands}}</span><span>swap hands</span><span class="kbd" data-if="k_merc_next != ''">{{k_merc_next}}</span><span>next merc</span></div>
 	</div>
 
 	<!-- item description (right click on an item): the item sheet. A lit picture well with condition and weight,
@@ -273,25 +273,25 @@
 		</div>
 		<div class="tools" id="tac.tools">
 			<div class="row">
-				<button class="icon-btn" id="tac.stance.stand" data-class-on="stance == 'stand'" data-attr-title="t_stance_stand" data-class-is-disabled="!c_stance_stand" data-event-click="cmd('stance.stand')"><img class="icon" src="icon-stance-stand"/><span class="kk">S</span></button>
-				<button class="icon-btn" id="tac.stance.crouch" data-class-on="stance == 'crouch'" data-attr-title="t_stance_crouch" data-class-is-disabled="!c_stance_crouch" data-event-click="cmd('stance.crouch')"><img class="icon" src="icon-stance-crouch"/><span class="kk">C</span></button>
-				<button class="icon-btn" id="tac.stance.prone" data-class-on="stance == 'prone'" data-attr-title="t_stance_prone" data-class-is-disabled="!c_stance_prone" data-event-click="cmd('stance.prone')"><img class="icon" src="icon-stance-prone"/><span class="kk">P</span></button>
+				<button class="icon-btn" id="tac.stance.stand" data-class-on="stance == 'stand'" data-attr-title="t_stance_stand" data-class-is-disabled="!c_stance_stand" data-event-click="cmd('stance.stand')"><img class="icon" src="icon-stance-stand"/><span class="kk" data-if="k_stance_stand != ''">{{k_stance_stand}}</span></button>
+				<button class="icon-btn" id="tac.stance.crouch" data-class-on="stance == 'crouch'" data-attr-title="t_stance_crouch" data-class-is-disabled="!c_stance_crouch" data-event-click="cmd('stance.crouch')"><img class="icon" src="icon-stance-crouch"/><span class="kk" data-if="k_stance_crouch != ''">{{k_stance_crouch}}</span></button>
+				<button class="icon-btn" id="tac.stance.prone" data-class-on="stance == 'prone'" data-attr-title="t_stance_prone" data-class-is-disabled="!c_stance_prone" data-event-click="cmd('stance.prone')"><img class="icon" src="icon-stance-prone"/><span class="kk" data-if="k_stance_prone != ''">{{k_stance_prone}}</span></button>
 				<div class="sep"></div>
-				<button class="icon-btn" id="tac.move.run" data-class-on="run" data-attr-title="t_move_run" data-class-is-disabled="!c_move_run" data-event-click="cmd('move.run')"><img class="icon" src="icon-run"/><span class="kk">R</span></button>
-				<button class="icon-btn" id="tac.stealth" data-class-on="stealth" data-attr-title="t_move_stealth" data-class-is-disabled="!c_move_stealth" data-event-click="cmd('move.stealth')"><img class="icon" src="icon-sneak"/><span class="kk">Z</span></button>
+				<button class="icon-btn" id="tac.move.run" data-class-on="run" data-attr-title="t_move_run" data-class-is-disabled="!c_move_run" data-event-click="cmd('move.run')"><img class="icon" src="icon-run"/><span class="kk" data-if="k_move_run != ''">{{k_move_run}}</span></button>
+				<button class="icon-btn" id="tac.stealth" data-class-on="stealth" data-attr-title="t_move_stealth" data-class-is-disabled="!c_move_stealth" data-event-click="cmd('move.stealth')"><img class="icon" src="icon-sneak"/><span class="kk" data-if="k_move_stealth != ''">{{k_move_stealth}}</span></button>
 			</div>
 			<div class="row">
-				<button class="icon-btn" id="tac.burst" data-class-on="burst" data-attr-title="t_act_burst" data-class-is-disabled="!c_act_burst" data-event-click="cmd('act.burst')"><img class="icon" src="icon-burst"/><span class="kk">B</span></button>
-				<button class="icon-btn" id="tac.look" data-attr-title="t_act_look" data-class-is-disabled="!c_act_look" data-event-click="cmd('act.look')"><img class="icon" src="icon-look"/><span class="kk">L</span></button>
+				<button class="icon-btn" id="tac.burst" data-class-on="burst" data-attr-title="t_act_burst" data-class-is-disabled="!c_act_burst" data-event-click="cmd('act.burst')"><img class="icon" src="icon-burst"/><span class="kk" data-if="k_act_burst != ''">{{k_act_burst}}</span></button>
+				<button class="icon-btn" id="tac.look" data-attr-title="t_act_look" data-class-is-disabled="!c_act_look" data-event-click="cmd('act.look')"><img class="icon" src="icon-look"/><span class="kk" data-if="k_act_look != ''">{{k_act_look}}</span></button>
 				<button class="icon-btn" id="tac.talk" data-attr-title="t_act_talk" data-class-is-disabled="!c_act_talk" data-event-click="cmd('act.talk')"><img class="icon" src="icon-talk"/></button>
 				<div class="sep"></div>
-				<button class="icon-btn" id="tac.climb" data-attr-title="t_move_climb" data-class-is-disabled="!c_move_climb" data-event-click="cmd('move.climb')"><img class="icon" src="icon-climb"/><span class="kk">J</span></button>
-				<button class="icon-btn" id="tac.level" data-class-on="roof" data-attr-title="t_level_toggle" data-class-is-disabled="!c_level_toggle" data-event-click="cmd('level.toggle')"><img class="icon" src="icon-chevron-up"/><span class="kk">Tab</span></button>
+				<button class="icon-btn" id="tac.climb" data-attr-title="t_move_climb" data-class-is-disabled="!c_move_climb" data-event-click="cmd('move.climb')"><img class="icon" src="icon-climb"/><span class="kk" data-if="k_move_climb != ''">{{k_move_climb}}</span></button>
+				<button class="icon-btn" id="tac.level" data-class-on="roof" data-attr-title="t_level_toggle" data-class-is-disabled="!c_level_toggle" data-event-click="cmd('level.toggle')"><img class="icon" src="icon-chevron-up"/><span class="kk" data-if="k_level_toggle != ''">{{k_level_toggle}}</span></button>
 			</div>
 		</div>
 		<div class="sys" id="tac.sys">
-			<button class="btn" id="tac.endturn" data-class-btn-primary="can_end" data-attr-title="t_turn_end" data-class-is-disabled="!c_turn_end" data-event-click="cmd('turn.end')"><img class="icon" src="icon-end-turn"/><span class="label" data-if="combat">{{l_end_turn}}</span><span class="label" data-if="!combat">{{l_turn_based}}</span><span class="kbd">D</span></button>
-			<button class="btn" id="tac.map" data-attr-title="t_nav_map" data-class-is-disabled="!c_nav_map" data-event-click="cmd('nav.map')"><img class="icon" src="icon-map"/><span class="label">{{l_map}}</span><span class="kbd">M</span></button>
+			<button class="btn" id="tac.endturn" data-class-btn-primary="can_end" data-attr-title="t_turn_end" data-class-is-disabled="!c_turn_end" data-event-click="cmd('turn.end')"><img class="icon" src="icon-end-turn"/><span class="label" data-if="combat">{{l_end_turn}}</span><span class="label" data-if="!combat">{{l_turn_based}}</span><span class="kbd" data-if="k_turn_end != ''">{{k_turn_end}}</span></button>
+			<button class="btn" id="tac.map" data-attr-title="t_nav_map" data-class-is-disabled="!c_nav_map" data-event-click="cmd('nav.map')"><img class="icon" src="icon-map"/><span class="label">{{l_map}}</span><span class="kbd" data-if="k_nav_map != ''">{{k_nav_map}}</span></button>
 			<div class="row"><button class="icon-btn" id="tac.inventory" data-attr-title="t_panel_detail" data-class-is-disabled="!c_panel_detail" data-event-click="cmd('panel.detail')"><img class="icon" src="icon-inventory"/></button><button class="icon-btn" id="tac.logbtn" data-attr-title="t_panel_log" data-class-is-disabled="!c_panel_log" data-event-click="cmd('panel.log')"><img class="icon" src="icon-menu"/></button><button class="icon-btn last" id="tac.options" data-attr-title="t_nav_options" data-class-is-disabled="!c_nav_options" data-event-click="cmd('nav.options')"><img class="icon" src="icon-options"/></button></div>
 		</div>
 	</div>
@@ -377,7 +377,7 @@
 		</div>
 		<div class="foot"><span class="hint" style="padding: 0;">{{key_hint}}</span><div class="grow"></div>
 			<button class="btn btn-primary" id="tac.keyring.put" data-if="key_holding" data-event-click="key_put"><span class="label">{{l_put_key}}</span></button>
-			<button class="btn" id="tac.keyring.done" data-event-click="key_close"><span class="label">{{l_close}}</span><span class="kbd">K</span></button></div>
+			<button class="btn" id="tac.keyring.done" data-event-click="key_close"><span class="label">{{l_close}}</span><span class="kbd" data-if="k_panel_keyring != ''">{{k_panel_keyring}}</span></button></div>
 	</div>
 
 	<!-- the talk panel (the approved Phase 5 layout): centred over the bar, never over the speaker. The NPC's face and

@@ -158,7 +158,7 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .tools { display: flex; flex-direction: column; justify-content: center; margin-left: var(--sp-2); }
 .tools .row { display: flex; margin-bottom: var(--sp-1); }
 .tools .icon-btn { width: 44dp; height: 40dp; margin-right: var(--sp-1); position: relative; }
-.tools .icon-btn .kk { position: absolute; right: 2dp; bottom: 0; font-family: var(--font-mono); font-size: 10dp; color: var(--c-text-faint); }
+.tools .icon-btn .kk { position: absolute; right: 2dp; bottom: 0; max-width: 44dp; overflow: hidden; font-family: var(--font-mono); font-size: 10dp; color: var(--c-text-faint); }
 .tools .icon-btn.on .kk { color: var(--c-on-accent); }
 .tools .sep { width: var(--sp-2); }
 .sys { display: flex; flex-direction: column; justify-content: center; width: 196dp; margin-left: var(--sp-2); }
@@ -412,7 +412,7 @@ body.t5 { width: 100%; height: 100%; background-color: transparent; font-family:
 .menu-title .m { display: block; font-family: var(--font-mono); font-size: var(--fs-xs); color: var(--c-select); }
 .grid3 { display: flex; flex-wrap: wrap; width: 216dp; padding: var(--sp-2); }
 .grid3 .icon-btn { width: 64dp; height: 48dp; margin: 0 var(--sp-1) var(--sp-1) 0; flex-direction: column; position: relative; }
-.grid3 .icon-btn .kk { position: absolute; right: 3dp; bottom: 1dp; font-family: var(--font-mono); font-size: 10dp; color: var(--c-text-faint); }
+.grid3 .icon-btn .kk { position: absolute; right: 3dp; bottom: 1dp; max-width: 44dp; overflow: hidden; font-family: var(--font-mono); font-size: 10dp; color: var(--c-text-faint); }
 .pick { width: 360dp; }
 .pick .row { display: flex; align-items: center; height: 52dp; padding: 0 var(--sp-3); border-bottom: var(--border) var(--c-panel-3); }
 .pick .row .chk { width: 18dp; height: 18dp; margin-right: var(--sp-3); border: var(--border) var(--c-line-2); border-radius: var(--r-1); }
