@@ -107,7 +107,7 @@ ja2.expect(#ja2.viewModel("options").binds == #actions, "the page lists every on
 ja2.expect(bind("stance.crouch").key == "C" and bind("stance.crouch").bound, "crouch starts on C")
 ja2.expect(ja2.binding("stance.crouch") == "c", "and the registry agrees")
 ja2.expect(ja2.exists{id = "options.key[stance.crouch]"}, "the crouch key slot is addressable by id")
-ja2.expect(ja2.exists{id = "options.key.reset[stance.crouch]"}, "so is its reset")
+ja2.expect(not ja2.exists{id = "options.key.reset[stance.crouch]"}, "a row at its default has nothing to reset")
 ja2.expect(ja2.tactical.key("c") == "stance.crouch", "c crouches in the game")
 
 -- A11: the key-capture modal takes the next key and the row changes
@@ -123,6 +123,7 @@ ja2.expect(ja2.binding("stance.crouch") == "j", "crouch is bound to j now")
 ja2.expect(ja2.tactical.key("j") == "stance.crouch", "j crouches in the game")
 ja2.expect(ja2.tactical.key("c") == nil, "and c is free")
 ja2.expect(bind("stance.crouch").key == "J" and bind("stance.crouch").changed, "the row shows J and is marked as changed")
+ja2.expect(ja2.exists{id = "options.key.reset[stance.crouch]"}, "and it can be reset now")
 shots.take("options_bind_done.png", true)
 ja2.assertInsideScreen()
 

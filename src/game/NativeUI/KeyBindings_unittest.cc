@@ -14,28 +14,28 @@ using namespace KeyBindings;
 
 namespace
 {
-	/** A screen's worth of actions: two with a default key, one without. */
-	std::vector<Action> TestActions()
-	{
-		return {
-			{ "", "one.a", "g1", "l.one.a", "c", "", false },
-			{ "", "one.b", "g1", "l.one.b", "d", "", false },
-			{ "", "two.a", "g2", "l.two.a", "",  "", false },
-		};
-	}
-
-	Registry Make()
-	{
-		Registry r;
-		r.AddSource("test", TestActions);
-		return r;
-	}
-
-	/** Gives the process-wide registry its defaults back whatever happens (the tactical key tests must see them). */
-	struct DefaultsBack
-	{
-		~DefaultsBack() { Bindings().ResetAll(); }
+/** A screen's worth of actions: two with a default key, one without. */
+std::vector<Action> TestActions()
+{
+	return {
+		{ "", "one.a", "g1", "l.one.a", "c", "", false },
+		{ "", "one.b", "g1", "l.one.b", "d", "", false },
+		{ "", "two.a", "g2", "l.two.a", "", "", false },
 	};
+}
+
+Registry Make()
+{
+	Registry r;
+	r.AddSource("test", TestActions);
+	return r;
+}
+
+/** Gives the process-wide registry its defaults back whatever happens (the tactical key tests must see them). */
+struct DefaultsBack
+{
+	~DefaultsBack() { Bindings().ResetAll(); }
+};
 }
 
 TEST(KeyBindings, sourcesGiveEveryActionWithItsDefault)
@@ -51,8 +51,8 @@ TEST(KeyBindings, sourcesGiveEveryActionWithItsDefault)
 	EXPECT_FALSE(r.Actions()[0].changed);
 	EXPECT_EQ(r.Key("one.a"), "c");
 	EXPECT_EQ(r.Key("one.b"), "d");
-	EXPECT_EQ(r.Key("two.a"), "");      // no default key
-	EXPECT_EQ(r.Key("no.such"), "");    // no such action
+	EXPECT_EQ(r.Key("two.a"), "");   // no default key
+	EXPECT_EQ(r.Key("no.such"), ""); // no such action
 	EXPECT_EQ(r.Owner("c")->name, "one.a");
 	EXPECT_EQ(r.Owner("d")->name, "one.b");
 	EXPECT_EQ(r.Owner(""), nullptr);
@@ -169,14 +169,15 @@ TEST(KeyBindings, loadIgnoresUnknownNamesAndBadKeysButTakesAnUnbind)
 	EXPECT_EQ(r.Key("one.a"), "j");
 	EXPECT_EQ(r.Key("one.b"), "d"); // the bad key was ignored
 	EXPECT_EQ(r.Key("two.a"), "");
-	EXPECT_FALSE(r.Find("no.such"));       // an unknown action is not invented
-	EXPECT_EQ(r.Overrides().size(), 1u);   // and is not kept either
+	EXPECT_FALSE(r.Find("no.such"));     // an unknown action is not invented
+	EXPECT_EQ(r.Overrides().size(), 1u); // and is not kept either
 	EXPECT_EQ(r.Overrides().at("one.a"), "j");
 }
 
 TEST(KeyBindings, overridesRoundTripThroughTheConfigFormat)
 {
-	Registry const saved = [] {
+	Registry const saved = []
+	{
 		Registry r = Make();
 		r.Bind("one.a", "j");
 		r.Bind("one.b", "");
@@ -225,11 +226,11 @@ TEST(KeyBindings, keyNamesAreCanonical)
 
 TEST(KeyBindings, isKeyRejectsWhatIsNotAKey)
 {
-	for (std::string const key : { "c", "1", "0", "`", "/", "-", "f1", "f12", "pageup", "space", "insert",
-		"shift+c", "ctrl+q", "ctrl+shift+space", "ctrl+alt+f12" })
+	for (std::string const key : { "c", "1", "0", "`", "/", "-", "f1", "f12", "pageup", "space", "insert", "shift+c",
+								   "ctrl+q", "ctrl+shift+space", "ctrl+alt+f12" })
 		EXPECT_TRUE(IsKey(key)) << key;
 	for (std::string const key : { "", " ", "C", "+", "a+b", "ctrl+", "shift+", "ctrl+ctrl+q", "ctrl+shift+",
-		"noSuchKey", "42", "ctrl+F1", "\t" })
+								   "noSuchKey", "42", "ctrl+F1", "\t" })
 		EXPECT_FALSE(IsKey(key)) << key;
 }
 
@@ -251,7 +252,8 @@ TEST(KeyBindings, keyFromInputIsTheVocabulary)
 
 TEST(KeyBindings, parseOverridesReadsTheLines)
 {
-	std::map<std::string, std::string> const o = ParseOverrides("stance.crouch=j\nmove.climb=\nsquad.next=shift+space\n");
+	std::map<std::string, std::string> const o =
+		ParseOverrides("stance.crouch=j\nmove.climb=\nsquad.next=shift+space\n");
 	ASSERT_EQ(o.size(), 3u);
 	EXPECT_EQ(o.at("stance.crouch"), "j");
 	EXPECT_EQ(o.at("move.climb"), "");

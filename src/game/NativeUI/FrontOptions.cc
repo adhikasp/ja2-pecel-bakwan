@@ -88,8 +88,8 @@ struct BindRow
 	bool bound = false, changed = false, lost = false;
 	static void Describe(RowFields<BindRow>& f)
 	{
-		f("group", &BindRow::group)("name", &BindRow::name)("label", &BindRow::label)("key", &BindRow::key)
-		 ("bound", &BindRow::bound)("changed", &BindRow::changed)("lost", &BindRow::lost);
+		f("group", &BindRow::group)("name", &BindRow::name)("label", &BindRow::label)("key", &BindRow::key);
+		f("bound", &BindRow::bound)("changed", &BindRow::changed)("lost", &BindRow::lost);
 	}
 };
 
@@ -135,7 +135,7 @@ class OptionsViewModel final : public ViewModel
 public:
 	OptionsViewModel() : ViewModel("options", TOPIC_SETTINGS)
 	{
-		Command("tab", [this](Args const& a) { if (!a.empty()) { tab = a[0]; openMenu.clear(); CaptureCancel(); SetHelp(-1); Changed(); } });
+		Command("tab", [this](Args const& a) { if (!a.empty()) { tab = a[0]; openMenu.clear(); SetHelp(-1); Changed(); } });
 		Command("toggle", [this](Args const& a) { if (!a.empty()) Toggle(std::atoi(a[0].c_str())); });
 		Command("help", [this](Args const& a) { SetHelp(a.empty() ? -1 : std::atoi(a[0].c_str())); });
 		Command("help_text", [this](Args const& a) { if (a.size() >= 2) { helpTitle = a[0]; helpText = a[1]; helpMeta = ""; Changed(); } });
@@ -146,12 +146,12 @@ public:
 		Command("choose", [this](Args const& a) { if (a.size() >= 2) Choose(a[0], std::atoi(a[1].c_str())); });
 		Command("motion", [this](Args const&) { reducedMotion = !reducedMotion; SetReducedMotion(reducedMotion); SaveNative(); Changed(); });
 		// the rebindable keys (issue #48 slice 1): the page is a view of the KeyBindings registry
-		Command("capture", [this](Args const& a) { if (!a.empty()) Capture(a[0]); });
+		Command("capture", [this](Args const& a) { Capture(a.empty() ? "" : a[0]); });
 		Command("capture_cancel", [this](Args const&) { CaptureCancel(); });
-		Command("bind_refused", [this](Args const&) { bindWarn = Str("options.bind.bad_key"); Changed(); });
-		Command("reset", [this](Args const& a) { if (!a.empty()) ResetKey(a[0]); });
+		Command("bind_refused", [this](Args const&) { BindRefused(); });
+		Command("reset", [this](Args const& a) { ResetKey(a.empty() ? "" : a[0]); });
 		Command("reset_all", [this](Args const&) { ResetAllKeys(); });
-		Command("key_help", [this](Args const& a) { if (!a.empty()) SetKeyHelp(a[0]); });
+		Command("key_help", [this](Args const& a) { SetKeyHelp(a.empty() ? "" : a[0]); });
 		for (char const* c : { "save", "load", "quit", "done" })
 		{
 			std::string const cmd = c;
@@ -180,16 +180,25 @@ public:
 		// next slices of #48 give them actions too.
 		keys.clear();
 		for (auto const& [k, a, b] : std::initializer_list<std::tuple<char const*, char const*, char const*>>{
-			{ "options.key.time", "Space", "" }, { "options.key.compress", "+", "-" }, { "options.key.laptop", "L", "" },
-			{ "options.key.tactical", "Esc", "" }, { "options.key.reload", "R", "" }, { "options.key.quick_save", "Alt", "S" },
-			{ "options.key.quick_load", "Alt", "L" }, { "options.key.cursor3d", "Home", "" } })
+				 { "options.key.time", "Space", "" },
+				 { "options.key.compress", "+", "-" },
+				 { "options.key.laptop", "L", "" },
+				 { "options.key.tactical", "Esc", "" },
+				 { "options.key.reload", "R", "" },
+				 { "options.key.quick_save", "Alt", "S" },
+				 { "options.key.quick_load", "Alt", "L" },
+				 { "options.key.cursor3d", "Home", "" } })
 			keys.push_back({ "reference", Str(k), a, b });
-		for (char const* k : { "gameplay", "video", "audio", "controls", "access", "combat", "campaign", "this_campaign", "display",
-			"world", "volume", "dialogue", "mouse", "keys_reference", "keys_tactical", "reading", "motion",
-			"keys_stance", "keys_move", "keys_act", "keys_turn", "keys_nav", "keys_panel", "keys_select", "keys_view" })
+		for (char const* k :
+			 { "gameplay", "video", "audio", "controls", "access", "combat", "campaign", "this_campaign", "display",
+			   "world", "volume", "dialogue", "mouse", "keys_reference", "keys_tactical", "reading", "motion" })
 		{
 			labels[k] = Str(std::string(k).find('_') == std::string::npos && std::string("gameplay video audio controls access").find(k) != std::string::npos
 				? std::string("options.tab.") + k : std::string("options.group.") + k);
+		}
+		for (char const* g : { "stance", "move", "act", "turn", "nav", "panel", "select", "view" })
+		{
+			labels[std::string("keys_") + g] = Str(std::string("options.group.keys_") + g);
 		}
 		Refresh();
 		SetHelp(-1);
@@ -254,13 +263,13 @@ public:
 		for (KeyBindings::Action const& a : KeyBindings::Bindings().Actions())
 		{
 			BindRow r;
-			r.group   = a.group;
-			r.name    = a.name;
-			r.label   = Str(a.label);
-			r.bound   = !a.key.empty();
-			r.key     = r.bound ? KeyBindings::KeyLabel(a.key) : Str("options.bind.unbound");
+			r.group = a.group;
+			r.name = a.name;
+			r.label = Str(a.label);
+			r.bound = !a.key.empty();
+			r.key = r.bound ? KeyBindings::KeyLabel(a.key) : Str("options.bind.unbound");
 			r.changed = a.changed;
-			r.lost    = !m_lost.empty() && a.name == m_lost;
+			r.lost = !m_lost.empty() && a.name == m_lost;
 			binds.push_back(std::move(r));
 		}
 	}
@@ -275,7 +284,9 @@ public:
 		f.Rows("keys", keys);
 		f.Rows("binds", binds);
 		f.Field("open_menu", openMenu);
-		f.Field("capturing", capturing); f.Field("capture_label", captureLabel); f.Field("bind_warn", bindWarn);
+		f.Field("capturing", capturing);
+		f.Field("capture_label", captureLabel);
+		f.Field("bind_warn", bindWarn);
 		f.Field("res_text", resText); f.Field("fps_text", fpsText); f.Field("filter_text", filterText); f.Field("effect_now", effectNow);
 		f.Field("effects", effects); f.Field("speech", speech); f.Field("music", music);
 		f.Field("effects_text", effectsText); f.Field("speech_text", speechText); f.Field("music_text", musicText);
@@ -417,13 +428,13 @@ public:
 	{
 		KeyBindings::Action const* const a = KeyBindings::Bindings().Find(name);
 		if (!a) return;
-		capturing     = name;
-		captureLabel  = Str(a->label);
+		capturing = name;
+		captureLabel = Str(a->label);
 		bindWarn.clear();
 		m_lost.clear();
-		helpWarn  = false;
+		helpWarn = false;
 		helpTitle = captureLabel;
-		helpText  = Str("options.bind.help");
+		helpText = Str("options.bind.help");
 		helpMeta.clear();
 		Changed();
 	}
@@ -432,6 +443,7 @@ public:
 	{
 		capturing.clear();
 		bindWarn.clear();
+		SetHelp(-1);
 		Changed();
 	}
 
@@ -446,9 +458,14 @@ public:
 	void BindKey(std::string const& key)
 	{
 		if (capturing.empty()) return;
+		std::string const name = capturing;
 		KeyBindings::Registry& reg = KeyBindings::Bindings();
-		KeyBindings::BindOutcome const out = reg.Bind(capturing, key);
-		if (out.result == KeyBindings::BindResult::BadKey) { BindRefused(); return; }
+		KeyBindings::BindOutcome const out = reg.Bind(name, key);
+		if (out.result == KeyBindings::BindResult::BadKey)
+		{
+			BindRefused();
+			return;
+		}
 		capturing.clear();
 		bindWarn.clear();
 		m_lost = out.loser;
@@ -459,22 +476,25 @@ public:
 		}
 		SaveKeys();
 		Refresh();
+		SetKeyHelp(name);
 		Changed();
 	}
 
 	void ResetKey(std::string const& name)
 	{
 		KeyBindings::Bindings().Reset(name);
-		m_lost.clear();
-		bindWarn.clear();
-		SaveKeys();
-		Refresh();
-		Changed();
+		KeyChanged();
 	}
 
 	void ResetAllKeys()
 	{
 		KeyBindings::Bindings().ResetAll();
+		KeyChanged();
+	}
+
+	/** What every change to a binding shares: nothing was left unbound by a reset, save, redraw. */
+	void KeyChanged()
+	{
 		m_lost.clear();
 		bindWarn.clear();
 		SaveKeys();
@@ -486,10 +506,13 @@ public:
 	{
 		KeyBindings::Action const* const a = KeyBindings::Bindings().Find(name);
 		if (!a) return;
-		helpWarn  = false;
+		auto const keyLabel = [](std::string const& key)
+		{ return key.empty() ? Str("options.bind.unbound") : KeyBindings::KeyLabel(key); };
+		helpWarn = false;
 		helpTitle = Str(a->label);
-		helpText  = ST::format(Str("options.bind.key_help").c_str(),
-			a->def.empty() ? Str("options.bind.unbound") : KeyBindings::KeyLabel(a->def)).to_std_string();
+		helpText = ST::format(Str("options.bind.key_help").c_str(), keyLabel(a->key)).to_std_string();
+		if (a->changed)
+			helpText += " " + ST::format(Str("options.bind.key_default").c_str(), keyLabel(a->def)).to_std_string();
 		helpMeta.clear();
 		Changed();
 	}
@@ -511,12 +534,17 @@ public:
 			if (e.usParam == SDLK_ESCAPE) CaptureCancel();
 			return;
 		}
-		if (e.usEvent != KEY_DOWN) return;      // the first press binds; a repeat does nothing
-		if (e.usParam == SDLK_ESCAPE) return;   // wait for the release
-		std::string const k = KeyBindings::KeyFromInput(e.usParam,
-			(e.usKeyState & CTRL_DOWN) != 0, (e.usKeyState & SHIFT_DOWN) != 0, (e.usKeyState & ALT_DOWN) != 0);
-		if (k.empty()) BindRefused();
-		else           BindKey(k);
+		if (e.usEvent != KEY_DOWN) return;    // the first press binds; a repeat does nothing
+		if (e.usParam == SDLK_ESCAPE) return; // wait for the release
+		std::string const k =
+			KeyBindings::KeyFromInput(e.usParam, (e.usKeyState & CTRL_DOWN) != 0, (e.usKeyState & SHIFT_DOWN) != 0,
+									  (e.usKeyState & ALT_DOWN) != 0);
+		if (k.empty())
+		{
+			BindRefused();
+			return;
+		}
+		BindKey(k);
 	}
 
 	std::string FormatNow() const
@@ -537,13 +565,16 @@ public:
 	std::string helpTitle, helpText, helpMeta;
 	std::string difficulty, style, guns, saving;
 	std::string lSave, lLoad, lQuit, lDone, lEffects, lSpeech, lMusic;
-	std::map<std::string, std::string> labels, strs = {
-		{ "s_resolution", "" }, { "s_window", "" }, { "s_fps", "" }, { "s_filter", "" }, { "s_zoom", "" }, { "s_ui_size", "" },
-		{ "s_difficulty", "" }, { "s_style", "" }, { "s_guns", "" }, { "s_saving", "" }, { "s_motion", "" }, { "s_motion_help", "" },
-		{ "s_colour_note", "" }, { "s_keys_note", "" }, { "s_page", "" }, { "s_next", "" }, { "s_change", "" }, { "s_saved_note", "" },
-		{ "s_play", "" }, { "s_ui_size_help", "" },
-		{ "s_bind_title", "" }, { "s_bind_hint", "" }, { "s_bind_press", "" }, { "s_bind_cancel", "" }, { "s_bind_reset", "" },
-		{ "s_bind_unbound", "" }, { "s_keys_reference_note", "" } };
+	std::map<std::string, std::string> labels,
+		strs = { { "s_resolution", "" },  { "s_window", "" },       { "s_fps", "" },
+				 { "s_filter", "" },      { "s_zoom", "" },         { "s_ui_size", "" },
+				 { "s_difficulty", "" },  { "s_style", "" },        { "s_guns", "" },
+				 { "s_saving", "" },      { "s_motion", "" },       { "s_motion_help", "" },
+				 { "s_colour_note", "" }, { "s_keys_note", "" },    { "s_page", "" },
+				 { "s_next", "" },        { "s_change", "" },       { "s_saved_note", "" },
+				 { "s_play", "" },        { "s_ui_size_help", "" }, { "s_bind_title", "" },
+				 { "s_bind_hint", "" },   { "s_bind_press", "" },   { "s_bind_cancel", "" },
+				 { "s_bind_reset", "" },  { "s_bind_unbound", "" }, { "s_keys_reference_note", "" } };
 
 	std::function<void(std::string const&)> onAction;
 	std::function<void()> onRefused;
@@ -551,18 +582,34 @@ public:
 
 	void LoadStrs()
 	{
-		static std::pair<char const*, char const*> const map[] = {
-			{ "s_resolution", "options.resolution" }, { "s_window", "options.window" }, { "s_fps", "options.fps" },
-			{ "s_filter", "options.filter" }, { "s_zoom", "options.world_zoom" }, { "s_ui_size", "options.ui_size" },
-			{ "s_difficulty", "options.difficulty" }, { "s_style", "options.style" }, { "s_guns", "options.guns" },
-			{ "s_saving", "options.saving" }, { "s_motion", "options.reduced_motion" }, { "s_motion_help", "options.reduced_motion_help" },
-			{ "s_colour_note", "options.colour_note" }, { "s_keys_note", "options.keys_note" }, { "s_page", "options.page" },
-			{ "s_next", "options.next" }, { "s_change", "options.change" }, { "s_saved_note", "options.saved_note" },
-			{ "s_play", "options.play_sample" }, { "s_ui_size_help", "options.ui_size_help" },
-			{ "s_bind_title", "options.bind.title" }, { "s_bind_hint", "options.bind.hint" },
-			{ "s_bind_press", "options.bind.press" }, { "s_bind_cancel", "options.bind.cancel" },
-			{ "s_bind_reset", "options.bind.reset" }, { "s_bind_unbound", "options.bind.unbound" },
-			{ "s_keys_reference_note", "options.keys_reference_note" } };
+		static std::pair<char const*, char const*> const map[] = { { "s_resolution", "options.resolution" },
+																   { "s_window", "options.window" },
+																   { "s_fps", "options.fps" },
+																   { "s_filter", "options.filter" },
+																   { "s_zoom", "options.world_zoom" },
+																   { "s_ui_size", "options.ui_size" },
+																   { "s_difficulty", "options.difficulty" },
+																   { "s_style", "options.style" },
+																   { "s_guns", "options.guns" },
+																   { "s_saving", "options.saving" },
+																   { "s_motion", "options.reduced_motion" },
+																   { "s_motion_help", "options.reduced_motion_help" },
+																   { "s_colour_note", "options.colour_note" },
+																   { "s_keys_note", "options.keys_note" },
+																   { "s_page", "options.page" },
+																   { "s_next", "options.next" },
+																   { "s_change", "options.change" },
+																   { "s_saved_note", "options.saved_note" },
+																   { "s_play", "options.play_sample" },
+																   { "s_ui_size_help", "options.ui_size_help" },
+																   { "s_bind_title", "options.bind.title" },
+																   { "s_bind_hint", "options.bind.hint" },
+																   { "s_bind_press", "options.bind.press" },
+																   { "s_bind_cancel", "options.bind.cancel" },
+																   { "s_bind_reset", "options.bind.reset" },
+																   { "s_bind_unbound", "options.bind.unbound" },
+																   { "s_keys_reference_note",
+																	 "options.keys_reference_note" } };
 		for (auto const& [k, v] : map) strs[k] = Str(v);
 	}
 
@@ -637,7 +684,11 @@ namespace
 			while (DequeueEvent(&e))
 			{
 				// a key being captured takes every event: nothing else sees the press (issue #48)
-				if (m_vm.Capturing()) { m_vm.CaptureEvent(e); continue; }
+				if (m_vm.Capturing())
+				{
+					m_vm.CaptureEvent(e);
+					continue;
+				}
 				bool const used = ProcessKey(e);
 				if (e.usEvent == KEY_UP && e.usParam == SDLK_ESCAPE)
 				{

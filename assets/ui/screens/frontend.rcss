@@ -179,8 +179,10 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .keyrow .kbd.bind:hover { color: var(--c-accent-2); border-color: var(--c-accent-2); }
 .keyrow .kbd.bind.changed { color: var(--c-select); border-color: var(--c-select); }
 .keyrow .kbd.bind.none { color: var(--c-text-faint); }
-.keyrow .icon-btn { width: 26dp; height: 26dp; margin-left: var(--sp-2); }
-.keyrow .icon-btn .icon { width: 15dp; height: 15dp; }
+.keyrow .icon-btn { width: 26dp; height: 26dp; margin-left: var(--sp-2); background-color: #00000000; border-color: #00000000; decorator: none; }
+.keyrow .icon-btn:hover { background-color: var(--c-panel-2); border-color: var(--c-line-2); decorator: image(gen-mottle repeat); }
+.keyrow .icon-btn .icon { width: 15dp; height: 15dp; image-color: var(--c-text-faint); }
+.keyrow .icon-btn:hover .icon { image-color: var(--c-text); }
 .keyrow.is-error { border-left: 3dp var(--c-danger); }
 .keyrow.is-error .name { color: var(--c-danger); }
 .keyrow.is-error .kbd { border-color: var(--c-danger); color: var(--c-danger); }

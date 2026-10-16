@@ -27,12 +27,33 @@
 | I4 | "In effect now" (window, canvas, UI scale, world layer) | video globals | left text block | note on the Video page |
 | I5 | Save Game available | in a game and not Iron Man in combat (`CanGameBeSaved`) | button disabled | button disabled + tooltip |
 | I6 | Campaign settings (new, read-only) | `gGameOptions` | — | Gameplay page panel |
+| I7 | The rebindable actions and the key each runs | `KeyBindings` (`src/game/NativeUI/KeyBindings.cc`), whose first source is the tactical command table (`NativeUI/TacticalCommands.cc`) | keys typed into the screen's own switch (no table) | Controls page: a row per action, grouped, with the key it runs and a reset |
 
 Toggle placement: **Gameplay** Show Misses, Hide Bullets, Tracking Mode, Real Time Confirmation, Show Movement Path,
 sleep/wake notifications, Metric, Blood n Gore. **Video** Animate Smoke, Tree Tops, Wireframes, Items Glow, 3D Cursor, Lights
 under Mercs, Merc Lights during Movement. **Audio** Speech, SubTitles, Pause Text Dialogue, Mute Confirmations.
-**Controls** Never Move My Mouse, Old Selection Method, Snap Cursor to Mercs/Doors, plus a read-only key reference.
+**Controls** Never Move My Mouse, Old Selection Method, Snap Cursor to Mercs/Doors, a rebindable list of every action a
+table owns, and a read-only reference for the shortcuts no table drives yet.
 **Accessibility** native UI scale, reduced motion (new), SubTitles and Pause Text Dialogue mirrored.
+
+### 2.1 Where a binding lives
+
+The rebindable actions are one registry (`KeyBindings::Bindings()`): a screen hands its actions in as a *source* with
+its default key, and the registry is the only place that knows every action and resolves a conflict. The tactical HUD's
+command table is the first source; the strategic map's actions join it in the next slice (#48), with no change to the
+options page or to this rule.
+
+A binding is an **override of the source's default**, saved in `ja2.json` under `key_bindings` (action name -> key, `""`
+for bound to nothing) beside `native_ui_scale` and `reduced_motion`. Only what differs from the default is written, so a
+player who never rebinds keeps the file they had. Reading happens once at startup (`SGP.cc`), writing through
+`ContentManager::saveKeyBindings`; a headless run never writes it (`FrontOptions.cc` guards every save with
+`!sgp::IsHeadless()`), which is why the tour proves the binding is *applied*, not that the file was written — the file
+round trip is a Rust unit test.
+
+**Conflicts: one owner, and a key never runs two actions.** Binding a key another action holds moves the key to the new
+action and leaves the other one unbound; the page marks that row and names it in a warning. Reset gives an action its
+default key back, taking it from whoever holds it now. A key that is not a key (an unknown name, a modifier on its own, a
+key that has no name) is refused.
 
 ## 3. Actions
 
@@ -48,16 +69,22 @@ under Mercs, Merc Lights during Movement. **Audio** Speech, SubTitles, Pause Tex
 | A8 | Video options | Video button, V | Video page (key 2; V kept) |
 | A9 | Change a video setting | click to cycle, then Apply | `RequestVideoSettings` (applied at the next frame, persisted to ja2.json); FPS with `VideoSetTargetFPS` (not persisted, as legacy) |
 | A10 | Pages (new) | — | 1–5, Tab / arrows / Space |
+| A11 | Rebind an action | click its key on the Controls page, then press a key; Esc cancels | `KeyBindings::Bind`, and the next key press runs the action |
+| A12 | A key another action holds | — | the key moves to the new action; the action that had it is left unbound and named in a warning |
+| A13 | Reset a binding | the row's reset, or Reset all | `KeyBindings::Reset` / `ResetAll`: the defaults come back |
+| A14 | A key that cannot be bound | — | refused with a note, the capture stays open |
 
 On exit the legacy screen re-applies tree tops, item glow and smoke when a world is loaded (`ExitOptionsScreen`); the
 native screen calls the same code.
 
 ## 4. States
 S1 from main menu (Save disabled, Quit hidden, no campaign panel) · S2 in game · S3 message box (quit / speech rule) · S4 a
-video change pending (applied at the start of the next frame; the page reads the settings back then).
+video change pending (applied at the start of the next frame; the page reads the settings back then) · S5 a key is being
+captured (the page takes every key; Esc cancels) · S6 a row lost its key to another action (marked, named in the warning).
 
 ## 5. Popups
 Quit confirmation (yes/no), speech/subtitle warning (ok): native message box.
+Key capture ("Press a key"): a modal over the Controls page, with the action's name and Cancel.
 
 ## 6. Cues
 Toggle click sound, slider sample sounds, music volume live.
@@ -65,6 +92,9 @@ Toggle click sound, slider sample sounds, music volume live.
 ## 7. Edge cases
 - [ ] Iron Man in combat: Save disabled. [ ] Headless: video changes only change the canvas.
 - [ ] Long toggle labels (German) wrap in the row. [ ] 640x480: legacy screens.
+- [x] A key another action already holds is not refused: it moves to the new action and the other one is left unbound and
+  named in the warning. A key that cannot be bound (a modifier on its own, an unnamed key) is refused and the capture
+  stays open. A binding saved last session is applied before the first frame (`ja2.json` `key_bindings`).
 
 ## 8. Dropped or changed
 
@@ -73,13 +103,14 @@ Toggle click sound, slider sample sounds, music volume live.
 | Separate video sub-screen with Apply | folded into the Video page, applied at once (persisted as before) | one place for settings | owner |
 | Help only as tooltip | a side panel for the hovered or focused setting | readable | owner |
 | Key reference, reduced motion, interface size, campaign panel | added; reduced motion and the interface size are saved to ja2.json (`reduced_motion`, `native_ui_scale`) | accessibility / info | owner |
-| Key rebinding | not in Phase 3 | the game has no remap layer yet | owner |
+| Key rebinding | shipped for the actions a table owns (the tactical command table, #48 slice 1); the strategic map and the other per-screen shortcuts still read raw key codes and stay a read-only reference until their slices land | the screens have no action table yet; the registry the map will be refactored onto is here | owner (scope C, sliced) |
 | Toggle sounds and slider samples | kept (the samples play when a slider stops, and on the play buttons) | parity | — |
 | Esc | acts on key release (legacy: press), so that its release does not reach the main menu, which quits on release | a legacy quirk the native path avoids | — |
 
 ## 9. Parity tour
 
-`tests/e2e/options_parity.lua` (goldens `options_gameplay/audio/video/controls/access/ingame.png`). Game state is read
+`tests/e2e/options_parity.lua` (goldens `options_gameplay/audio/video/controls/access/ingame.png` and, for the
+rebinding states, `options_bind_capture/done/conflict.png`). Game state is read
 through a view model made for the check (`ja2.viewModel("options")` outside the screen reads `gGameSettings`, the
 volumes, the video settings and `gGameOptions`):
 
@@ -91,7 +122,14 @@ volumes, the video settings and `gGameOptions`):
 | I2, A2 | volumes by command and by a click on the middle of a slider |
 | I3, A9 | the resolution list opens; interface size 150 % applies at once (`ja2.nativeUi().uiScale`), layout audit, back to 100 % |
 | A10 | keys 2, 4, 5 change pages; reduced motion on/off |
+| I7, A11 | the Controls page lists every action of `ja2.bindings()`; clicking a row's key opens the capture modal, the next key lands on the row, and `ja2.tactical.key` runs it |
+| A12 | binding a key another action holds: `ja2.bind` moves it, names the loser, and the page marks that row and warns |
+| A13, A14 | the row's reset and Reset all give the defaults back; a key that cannot be bound is refused |
 | A7 | Done returns to the main menu; the volume stays |
 | S2, I6 | in game: saving available, the campaign panel shows the difficulty |
 | A5 | Quit: No stays, Yes goes to the main menu |
 | < 1280x720 | the legacy screen runs |
+
+`tests/e2e/tactical_commands.lua` takes the last step: it rebinds crouch to `j`, presses `j` in the tactical screen and
+checks the merc crouched — the binding, applied through the same registry `ForKey` reads.
+

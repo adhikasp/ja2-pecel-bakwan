@@ -20,5 +20,5 @@
  */
 namespace Automation
 {
-	void RegisterBindingsLua(sol::state& L, sol::table& ja2);
+void RegisterBindingsLua(sol::state& L, sol::table& ja2);
 }

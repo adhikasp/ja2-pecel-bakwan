@@ -1132,7 +1132,6 @@ bool DefaultContentManager::saveNativeUiSettings(float const scale, bool const r
 	return EngineOptions_write(options);
 }
 
-
 bool DefaultContentManager::saveKeyBindings(std::map<std::string, std::string> const& overrides)
 {
 	EngineOptions* const options = m_engineOptions.get();
@@ -1142,7 +1141,6 @@ bool DefaultContentManager::saveKeyBindings(std::map<std::string, std::string> c
 	for (auto const& [name, key] : overrides) EngineOptions_setKeyBinding(options, name.c_str(), key.c_str());
 	return EngineOptions_write(options);
 }
-
 
 const GamePolicy* DefaultContentManager::getGamePolicy() const
 {
