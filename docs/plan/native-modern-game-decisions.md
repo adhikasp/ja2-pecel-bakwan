@@ -303,7 +303,8 @@ frame here**:
 - In a real window the GPU frame interval is **~99 ms** (median), while the software renderer's is **~17 ms**
   (median). A frame the GPU renderer *skipped entirely* - an identical frame, nothing bin/uploaded/dispatched -
   is **also ~99 ms**. The interval is therefore independent of the world dispatch: presenter/compositor, not
-  `RenderWorld`.
+  `RenderWorld`. The arithmetic alone settles it: the software renderer's whole 4K frame is 17 ms, so even a
+  world dispatch on *every* frame would put the GPU path at ~35 ms, nowhere near 99 ms.
 - The harness's own numbers, before and after the change, are the same within noise: GPU cached still 86.5 to
   86.4 ms mean (96.8 to 98.9 median), GPU uncached still 76.3 to 74.4 ms mean (99.2 to 99.1 median), GPU cached
   scrolling 48.0 to 53.0 ms mean (17.3 to 17.1 median). At 1920x1080 every GPU case is at the 60 fps vsync cap
