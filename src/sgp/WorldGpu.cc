@@ -436,30 +436,46 @@ bool Renderer::Render(WorldPipe::Frame const& f, WorldPipe::SpritePool& pool, ui
 	SDL_BindGPUComputePipeline(pass, m_pipeline);
 	SDL_GPUBuffer* ros[8] = { m_instances.buf, m_ranges.buf, m_items.buf, m_pixels.buf, m_palettes.buf, m_columns.buf, m_shade.buf, m_lights.buf };
 	SDL_BindGPUComputeStorageBuffers(pass, 0, ros, 8);
-	Params const params{ uint32_t(f.width),
-						 uint32_t(f.height),
-						 uint32_t(m_bins.cols),
-						 f.clearColor,
-						 f.clearDepth,
-						 f.translucentMask,
-						 uint32_t(f.lighting.points.size()),
-						 uint32_t(region.x0),
-						 uint32_t(region.y0),
-						 uint32_t(region.x1 - region.x0),
-						 uint32_t(region.y1 - region.y0),
-						 0,
-						 f.lighting.ambientR,
-						 f.lighting.ambientG,
-						 f.lighting.ambientB,
-						 f.lighting.sunR,
-						 f.lighting.sunG,
-						 f.lighting.sunB,
-						 f.lighting.falloff,
-						 0.0f };
-	SDL_PushGPUComputeUniformData(cmd, 0, &params, sizeof(params));
-	// One workgroup per 16x16 bin of the region; the origin is bin-aligned so a workgroup is one bin.
-	SDL_DispatchGPUCompute(pass, uint32_t((region.x1 - region.x0 + WorldPipe::BIN - 1) / WorldPipe::BIN),
-						   uint32_t((region.y1 - region.y0 + WorldPipe::BIN - 1) / WorldPipe::BIN), 1);
+	auto dispatch = [&](Region const& rg)
+	{
+		Params const params{ uint32_t(f.width),
+							 uint32_t(f.height),
+							 uint32_t(m_bins.cols),
+							 f.clearColor,
+							 f.clearDepth,
+							 f.translucentMask,
+							 uint32_t(f.lighting.points.size()),
+							 uint32_t(rg.x0),
+							 uint32_t(rg.y0),
+							 uint32_t(rg.x1 - rg.x0),
+							 uint32_t(rg.y1 - rg.y0),
+							 0,
+							 f.lighting.ambientR,
+							 f.lighting.ambientG,
+							 f.lighting.ambientB,
+							 f.lighting.sunR,
+							 f.lighting.sunG,
+							 f.lighting.sunB,
+							 f.lighting.falloff,
+							 0.0f };
+		SDL_PushGPUComputeUniformData(cmd, 0, &params, sizeof(params));
+		// One workgroup per 16x16 bin of the region; the origin is bin-aligned so a workgroup is one bin.
+		SDL_DispatchGPUCompute(pass, uint32_t((rg.x1 - rg.x0 + WorldPipe::BIN - 1) / WorldPipe::BIN),
+							   uint32_t((rg.y1 - rg.y0 + WorldPipe::BIN - 1) / WorldPipe::BIN), 1);
+	};
+	// A readback (and a fresh target) dispatches the whole target, and that is split in two: the changed-region
+	// path is a real window's, which no headless test drives, so this keeps the shader's non-zero dispatch origin
+	// on the equivalence gate's path too.
+	int const splitY = region.y0 + (region.y1 - region.y0) / 2 / WorldPipe::BIN * WorldPipe::BIN;
+	if (splitY > region.y0 && splitY < region.y1)
+	{
+		dispatch({ region.x0, region.y0, region.x1, splitY });
+		dispatch({ region.x0, splitY, region.x1, region.y1 });
+	}
+	else
+	{
+		dispatch(region);
+	}
 	SDL_EndGPUComputePass(pass);
 
 	if (m_fence)
