@@ -12,6 +12,7 @@
 #include <cstdint>
 #include <string_theory/string>
 #include <map>
+#include <string>
 #include <string_view>
 #include <vector>
 
@@ -164,6 +165,8 @@ public:
 	virtual bool saveVideoSettings(int resX, int resY, int uiScale, int worldZoom, int windowMode, int scalingQuality) { return false; }
 	/** The native UI's scale and reduced motion to ja2.json (the options screen). */
 	virtual bool saveNativeUiSettings(float scale, bool reducedMotion) { return false; }
+	/** The rebindable actions' keys to ja2.json (the options screen): name -> key, "" for bound to nothing. */
+	virtual bool saveKeyBindings(std::map<std::string, std::string> const& overrides) { return false; }
 
 	virtual const GamePolicy* getGamePolicy() const = 0;
 	virtual const IMPPolicy* getIMPPolicy() const = 0;

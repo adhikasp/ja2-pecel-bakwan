@@ -1,6 +1,7 @@
 #include "TacticalScenario.h"
 
 #include "Input.h"
+#include "KeyBindings.h"
 #include "Overhead.h"
 #include "Soldier_Control.h"
 #include "SquadRoster.h"
@@ -28,7 +29,8 @@ namespace
 			sol::table e = L.create_table();
 			e["name"]    = std::string(c.name);
 			e["group"]   = std::string(c.group);
-			e["key"]     = std::string(c.key);
+			e["key"] = KeyBindings::Bindings().Key(c.name); // the key it runs now, not the default
+			e["default"] = std::string(c.key);
 			e["label"]   = std::string(c.label);
 			e["icon"]    = std::string(c.icon);
 			e["hud"]     = std::string(c.hud);

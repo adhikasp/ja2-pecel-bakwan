@@ -4,6 +4,7 @@
 #include "GameSettings.h"
 #include "Input.h"
 #include "Intro.h"
+#include "KeyBindings.h"
 #include "JA2_Splash.h"
 #include "Random.h"
 #include "SGP.h"
@@ -534,6 +535,9 @@ int main(int argc, char* argv[])
 			RustPointer<char> modes(EngineOptions_getUiModes(params.get()));
 			NativeUI::Configure(modes.get() ? modes.get() : "", EngineOptions_getNativeUiScale(params.get()));
 			NativeUI::SetReducedMotion(EngineOptions_getReducedMotion(params.get()));
+			// ja2.json "key_bindings": the actions the player rebound (issue #48, docs/ui/options.md)
+			RustPointer<char> bindings(EngineOptions_getKeyBindings(params.get()));
+			KeyBindings::Bindings().Load(KeyBindings::ParseOverrides(bindings.get() ? bindings.get() : ""));
 		}
 
 		GameVersion version = EngineOptions_getResourceVersion(params.get());

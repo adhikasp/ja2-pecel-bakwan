@@ -85,15 +85,12 @@ TEST(TacticalCommands, findByNameAndByKey)
 	EXPECT_EQ(ForKey("x", false, false, false), nullptr);
 }
 
-TEST(TacticalCommands, keyNamesAreCanonical)
+TEST(TacticalCommands, keyNamesAreNotItsBusiness)
 {
-	EXPECT_EQ(KeyName("", U'C', false, false, false), "c");
-	EXPECT_EQ(KeyName("space", 0, false, true, false), "shift+space");
-	EXPECT_EQ(KeyName("", U'q', true, false, false), "ctrl+q");
-	EXPECT_EQ(KeyName("f10", 0, false, false, true), "alt+f10");
-	EXPECT_EQ(KeyLabel("shift+space"), "Shift+Space");
-	EXPECT_EQ(KeyLabel("c"), "C");
-	EXPECT_EQ(KeyLabel("pageup"), "PgUp");
+	// the key vocabulary lives in KeyBindings (the vocab the map screen and the options page share); the table
+	// only answers with the default, and ForKey goes through the rebindable keys
+	EXPECT_EQ(std::string(Find("stance.crouch")->key), "c");
+	EXPECT_EQ(ForKey("c", false, false, false)->id, Id::StanceCrouch);
 }
 
 TEST(TacticalCommands, nobodyIsSelected)

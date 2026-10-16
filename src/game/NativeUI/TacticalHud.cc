@@ -26,6 +26,7 @@
 #include "InventoryActions.h"
 #include "SquadRoster.h"
 #include "InventoryAdapter.h"
+#include "KeyBindings.h"
 #include "PointerRouter.h"
 #include "TacticalCommands.h"
 #include "TacticalCommandsAdapter.h"
@@ -413,6 +414,8 @@ namespace
 		// the command table's state (TacticalCommands.h): enabled, and the tooltip: label, key and the reason when off
 		std::array<bool, TacticalCommands::COUNT> cmdOn{};
 		std::array<std::string, TacticalCommands::COUNT> cmdTitle;
+		// the key each command runs now, as the HUD prints it ("" when unbound): the player can rebind it (#48)
+		std::array<std::string, TacticalCommands::COUNT> cmdKey;
 
 		std::string signature;
 
@@ -564,13 +567,14 @@ namespace
 
 		void Describe(Fields& f) override
 		{
-			// "stance.crouch" is c_stance_crouch (enabled) and t_stance_crouch (its tooltip)
+			// "stance.crouch" is c_stance_crouch (enabled), t_stance_crouch (its tooltip) and k_stance_crouch (its key)
 			for (TacticalCommands::Command const& c : TacticalCommands::All())
 			{
 				std::string n = c.name;
 				std::replace(n.begin(), n.end(), '.', '_');
 				f.Field(("c_" + n).c_str(), cmdOn[size_t(c.id)]);
 				f.Field(("t_" + n).c_str(), cmdTitle[size_t(c.id)]);
+				f.Field(("k_" + n).c_str(), cmdKey[size_t(c.id)]);
 			}
 			f.Rows("cards", cards);
 			f.Rows("squads", squads);
@@ -669,7 +673,10 @@ namespace
 				// "End turn" in a battle, "Start turn-based combat" outside one
 				if (c.id == TacticalCommands::Id::EndTurn && !ctx.combat) label = Str("tac.cmd.turn.start");
 				std::string t = label;
-				if (c.key[0] != '\0') t += " (" + TacticalCommands::KeyLabel(c.key) + ")";
+				// the key it runs now, not the table's default: the player can have changed it (issue #48)
+				std::string const bound = KeyBindings::Bindings().Key(c.name);
+				cmdKey[i] = bound.empty() ? std::string() : KeyBindings::KeyLabel(bound);
+				if (!cmdKey[i].empty()) t += " (" + cmdKey[i] + ")";
 				if (!a.enabled && a.why != TacticalCommands::Why::None)
 					t += " — " + Str(std::string("tac.cmd.why.") + TacticalCommands::WhyName(a.why));
 				cmdTitle[i] = std::move(t);

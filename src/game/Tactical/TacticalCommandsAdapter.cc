@@ -21,6 +21,7 @@
 #include "Items.h"
 #include "JAScreens.h"
 #include "Keys.h"
+#include "KeyBindings.h"
 #include "Message.h"
 #include "NativeUI.h"
 #include "Overhead.h"
@@ -43,7 +44,6 @@
 #include "Weapons.h"
 #include "WorldMan.h"
 
-#include <SDL3/SDL_keycode.h>
 #include <string_theory/format>
 
 using namespace TacticalCommands;
@@ -296,33 +296,10 @@ CommandOutcome RunTacticalCommand(Id const id, bool const announce)
 
 bool RunTacticalKey(unsigned const key, unsigned const mods)
 {
-	std::string name;
-	char32_t ch = 0;
-	switch (key)
-	{
-		case SDLK_TAB:      name = "tab"; break;
-		case SDLK_SPACE:    name = "space"; break;
-		case SDLK_INSERT:   name = "insert"; break;
-		case SDLK_PAGEUP:   name = "pageup"; break;
-		case SDLK_PAGEDOWN: name = "pagedown"; break;
-		case SDLK_F1:  name = "f1";  break;
-		case SDLK_F2:  name = "f2";  break;
-		case SDLK_F3:  name = "f3";  break;
-		case SDLK_F4:  name = "f4";  break;
-		case SDLK_F5:  name = "f5";  break;
-		case SDLK_F6:  name = "f6";  break;
-		case SDLK_F7:  name = "f7";  break;
-		case SDLK_F8:  name = "f8";  break;
-		case SDLK_F9:  name = "f9";  break;
-		case SDLK_F10: name = "f10"; break;
-		default:
-			if (key >= 0x20 && key < 0x7f) ch = static_cast<char32_t>(key);
-			else return false;
-			break;
-	}
 	bool const ctrl = (mods & CTRL_DOWN) != 0, shift = (mods & SHIFT_DOWN) != 0, alt = (mods & ALT_DOWN) != 0;
-	std::string const k = KeyName(name, ch, false, false, false);
-	Command const* const cmd = ForKey(k, ctrl, shift, alt);
+	std::string const k = KeyBindings::KeyFromInput(key, ctrl, shift, alt);
+	if (k.empty()) return false;
+	Command const* const cmd = ForKey(k, false, false, false);
 	if (!cmd) return false;
 	RunTacticalCommand(cmd->id);
 	return true;

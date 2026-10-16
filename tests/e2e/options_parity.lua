@@ -92,10 +92,76 @@ ja2.click{id = "options.video.uiscale[0]"}
 ja2.step(3)
 ja2.expect(math.abs(ja2.nativeUi().uiScale - 1) < 0.01, "back to 100%")
 
--- controls and accessibility pages (keys 4, 5); reduced motion
+-- controls and accessibility pages (keys 4, 5); rebinding (issue #48 slice 1); reduced motion
 ja2.key("4")
 ja2.step(2)
 shots.take("options_controls.png", true)
+
+-- the Controls page is generated from the action registry: one row per rebindable action, addressable by id
+local function bind(name)
+	for _, b in ipairs(ja2.viewModel("options").binds) do if b.name == name then return b end end
+end
+local actions = ja2.bindings()
+ja2.expect(#actions >= 44, "the registry holds every rebindable action (" .. #actions .. ")")
+ja2.expect(#ja2.viewModel("options").binds == #actions, "the page lists every one of them")
+ja2.expect(bind("stance.crouch").key == "C" and bind("stance.crouch").bound, "crouch starts on C")
+ja2.expect(ja2.binding("stance.crouch") == "c", "and the registry agrees")
+ja2.expect(ja2.exists{id = "options.key[stance.crouch]"}, "the crouch key slot is addressable by id")
+ja2.expect(not ja2.exists{id = "options.key.reset[stance.crouch]"}, "a row at its default has nothing to reset")
+ja2.expect(ja2.tactical.key("c") == "stance.crouch", "c crouches in the game")
+
+-- A11: the key-capture modal takes the next key and the row changes
+ja2.click{id = "options.key[stance.crouch]"}
+ja2.step(2)
+ja2.expect(ja2.exists{id = "options.capture"}, "the key-capture modal is up")
+ja2.expect(ja2.find{id = "options.capture.name"}.text == "Crouch", "and names the action")
+shots.take("options_bind_capture.png", true)
+ja2.key("j")
+ja2.step(2)
+ja2.expect(not ja2.exists{id = "options.capture"}, "the modal closes on the key")
+ja2.expect(ja2.binding("stance.crouch") == "j", "crouch is bound to j now")
+ja2.expect(ja2.tactical.key("j") == "stance.crouch", "j crouches in the game")
+ja2.expect(ja2.tactical.key("c") == nil, "and c is free")
+ja2.expect(bind("stance.crouch").key == "J" and bind("stance.crouch").changed, "the row shows J and is marked as changed")
+ja2.expect(ja2.exists{id = "options.key.reset[stance.crouch]"}, "and it can be reset now")
+shots.take("options_bind_done.png", true)
+ja2.assertInsideScreen()
+
+-- A12: a key another action holds moves to the new action and leaves that one unbound, named in the warning
+ja2.click{id = "options.key[stance.prone]"}
+ja2.step(2)
+ja2.key("j")
+ja2.step(2)
+ja2.expect(ja2.binding("stance.prone") == "j", "prone took j")
+ja2.expect(ja2.binding("stance.crouch") == "", "crouch lost it")
+local warn = ja2.viewModel("options").bind_warn
+ja2.expect(warn:find("Crouch") ~= nil, "the warning names the action that lost its key: " .. warn)
+local crouch = bind("stance.crouch")
+ja2.expect(crouch.lost and not crouch.bound, "the crouch row is marked and unbound")
+ja2.expect(ja2.find{id = "options.bind.warn"} ~= nil, "the warning is on the page")
+shots.take("options_bind_conflict.png", true)
+ja2.assertInsideScreen()
+
+-- A13: reset gives the defaults back - and a reset that takes a key back from another action says who lost it
+ja2.click{id = "options.key[stance.crouch]"}
+ja2.step(2)
+ja2.key("p") -- Crouch takes Go prone's default key
+ja2.step(2)
+ja2.expect(ja2.binding("stance.crouch") == "p" and ja2.binding("stance.prone") == "j", "crouch is on p, prone keeps j")
+ja2.click{id = "options.key.reset[stance.prone]"}
+ja2.step(2)
+ja2.expect(ja2.binding("stance.prone") == "p", "the reset row has its default key back")
+ja2.expect(ja2.binding("stance.crouch") == "", "and the action that held it lost it")
+local resetWarn = ja2.viewModel("options").bind_warn
+ja2.expect(resetWarn:find("Crouch") ~= nil, "the reset names the action that lost its key: " .. resetWarn)
+ja2.expect(bind("stance.crouch").lost and not bind("stance.crouch").bound, "and marks that row")
+ja2.click{id = "options.keys.reset"}
+ja2.step(2)
+for _, b in ipairs(ja2.viewModel("options").binds) do
+	ja2.expect(not b.changed, "every row is back to its default: " .. b.name)
+end
+ja2.expect(ja2.binding("stance.crouch") == "c" and ja2.tactical.key("c") == "stance.crouch", "and the game agrees")
+
 ja2.key("5")
 ja2.step(2)
 ja2.click{id = "options.access.motion"}

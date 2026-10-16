@@ -171,9 +171,30 @@ body.p3 { position: absolute; left: 0; top: 0; right: 0; bottom: 0; background-c
 .vol .volv { display: block; width: 52dp; text-align: right; font-family: var(--font-mono); font-size: var(--fs-md); color: var(--c-text); }
 .vol .icon-spacer { display: block; width: 36dp; margin-left: var(--sp-3); }
 .vol .slider { width: 260dp; }
-.keyrow { display: flex; align-items: center; height: 36dp; padding: 0 var(--sp-3); border-bottom: var(--border) var(--c-panel-2); }
+.keyrow { display: flex; align-items: center; height: 34dp; padding: 0 var(--sp-3); border-bottom: var(--border) var(--c-panel-2); }
 .keyrow .name { display: block; flex: 1 1 0; font-size: var(--fs-md); color: var(--c-text); }
 .keyrow .kbd { margin-left: var(--sp-1); }
+/* the rebindable rows (issue #48): the key is what the player clicks, and the row says when it is not the default */
+.keyrow .kbd.bind { min-width: 40dp; }
+.keyrow .kbd.bind:hover { color: var(--c-accent-2); border-color: var(--c-accent-2); }
+.keyrow .kbd.bind.changed { color: var(--c-select); border-color: var(--c-select); }
+.keyrow .kbd.bind.none { color: var(--c-text-faint); }
+.keyrow .icon-btn { width: 26dp; height: 26dp; margin-left: var(--sp-2); background-color: #00000000; border-color: #00000000; decorator: none; }
+.keyrow .icon-btn:hover { background-color: var(--c-panel-2); border-color: var(--c-line-2); decorator: image(gen-mottle repeat); }
+.keyrow .icon-btn .icon { width: 15dp; height: 15dp; image-color: var(--c-text-faint); }
+.keyrow .icon-btn:hover .icon { image-color: var(--c-text); }
+.keyrow.is-error { border-left: 3dp var(--c-danger); }
+.keyrow.is-error .name { color: var(--c-danger); }
+.keyrow.is-error .kbd { border-color: var(--c-danger); color: var(--c-danger); }
+.keybar { display: flex; align-items: center; margin-bottom: var(--sp-2); }
+.keybar .hint { display: block; flex: 1 1 0; min-width: 0; font-size: var(--fs-sm); color: var(--c-text-dim); }
+/* the key-capture modal (issue #48): a scrim over the page and the "press a key" sheet in the middle */
+.capture-layer { position: absolute; left: 0; top: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; z-index: 20; }
+.modal.bind { position: relative; width: 480dp; }
+.modal.bind .bind-now { display: flex; flex-direction: column; align-items: center; padding: var(--sp-3) 0 var(--sp-4) 0; }
+.modal.bind .bind-now .name { display: block; font-family: var(--font-plate); font-weight: 700; font-size: var(--fs-lg); text-transform: uppercase; color: var(--c-text-strong); }
+.modal.bind .kbd.press { margin-top: var(--sp-3); height: 32dp; line-height: 32dp; padding: 0 var(--sp-4); font-size: var(--fs-md); color: var(--c-accent-2); border-color: var(--c-accent-2); }
+.modal.bind .modal-foot { justify-content: center; }
 .op-search { display: block; width: 360dp; margin-bottom: var(--sp-4); }
 
 /* =============================================================== save / load */
