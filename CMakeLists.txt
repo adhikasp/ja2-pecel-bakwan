@@ -331,6 +331,37 @@ if(WITH_NATIVE_UI)
     add_dependencies(${JA2_BINARY} ja2-ui-assets)
 endif()
 
+## A *relative* EXTRA_DATA_DIR describes an installed layout, because the game resolves it against
+## its own binary's directory (get_assets_dir in rust/pecel_bakwan/src/pecel_bakwan.rs). The
+## AppImage's "../share/ja2" is therefore AppDir/usr/share/ja2 as seen from AppDir/usr/bin/ja2, and
+## .ci/ci-build.sh configures the Linux build with exactly that value. In a build tree the binary
+## sits in the build directory, so the same string names a directory one level *above* it, which
+## nothing creates: the lookup then falls back to the relative string itself, VFS init aborts with
+## "No such file or directory" and nothing on that build can boot (#302 — the e2e suite's first run
+## on Linux CI). Create the path the binary will look for and point it at the build tree's own
+## assets (the externalized/, mods/ and ui/ copied next to the binary just above), which is the
+## same directory an empty EXTRA_DATA_DIR resolves to; a build configured the way the packager
+## configures it is then runnable where it was built. Absolute values (COMPILATION.md's
+## /usr/local/share/ja2) already resolve to themselves and are not ours to create. Windows is
+## left out: its install rules put the assets next to the binary (see below), so it never needs a
+## relative EXTRA_DATA_DIR, and creating a symlink there needs a privilege the build cannot assume.
+if(NOT WIN32 AND NOT "${EXTRA_DATA_DIR}" STREQUAL "" AND NOT IS_ABSOLUTE "${EXTRA_DATA_DIR}")
+    set(_ja2_extra_data_dir "${CMAKE_CURRENT_BINARY_DIR}/${EXTRA_DATA_DIR}")
+    # Re-configure, or a build directory that moved, leaves the link behind: drop it so the link
+    # below is re-created rather than clashing with what is already there.
+    if(IS_SYMLINK "${_ja2_extra_data_dir}")
+        file(REMOVE "${_ja2_extra_data_dir}")
+    endif()
+    if(NOT EXISTS "${_ja2_extra_data_dir}")
+        get_filename_component(_ja2_extra_data_dir_parent "${_ja2_extra_data_dir}" DIRECTORY)
+        file(MAKE_DIRECTORY "${_ja2_extra_data_dir_parent}")
+        file(CREATE_LINK "${CMAKE_CURRENT_BINARY_DIR}" "${_ja2_extra_data_dir}" SYMBOLIC)
+        message(STATUS "Linking EXTRA_DATA_DIR ${EXTRA_DATA_DIR} -> ${CMAKE_CURRENT_BINARY_DIR}")
+    endif()
+    unset(_ja2_extra_data_dir)
+    unset(_ja2_extra_data_dir_parent)
+endif()
+
 if(WITH_EDITOR_SLF)
     set(EDITORSLF_FILE "${CMAKE_CURRENT_BINARY_DIR}/externalized/editor.slf")
     find_package(EditorSlf REQUIRED)
