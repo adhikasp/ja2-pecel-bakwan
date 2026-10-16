@@ -3,6 +3,7 @@ file(GLOB LOCAL_JA2_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/*.h)
 set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Ambient_Control.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Buildings.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/Camera.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Environment.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Exit_Grids.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/Explosion_Control.cc
@@ -58,6 +59,13 @@ set_property(
     DIRECTORY ${CMAKE_SOURCE_DIR}
     PROPERTY UNITY_GROUP "LoadSaveDataTypes"
 )
+
+if (WITH_UNITTESTS)
+    set(LOCAL_JA2_SOURCES
+        ${LOCAL_JA2_SOURCES}
+        ${CMAKE_CURRENT_SOURCE_DIR}/Camera_unittest.cc
+    )
+endif()
 
 set(JA2_SOURCES
     ${JA2_SOURCES}

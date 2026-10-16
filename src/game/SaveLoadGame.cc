@@ -1834,8 +1834,10 @@ static void SaveGeneralInfo(HWFILE const f)
 	INJ_U8(   d, (UINT8)gubMusicMode)
 	INJ_SKIP( d, 1)
 	INJ_U16(  d, Soldier2ID(GetSelectedMan()))
-	INJ_I16(  d, gsRenderCenterX)
-	INJ_I16(  d, gsRenderCenterY)
+	// The camera is fractional since #38 (the free camera): a whole number of cells would snap the restored
+	// view back onto a tile centre.
+	INJ_DOUBLE(d, gsRenderCenterX)
+	INJ_DOUBLE(d, gsRenderCenterY)
 	INJ_BOOL( d, gfAtLeastOneMercWasHired)
 	INJ_BOOL( d, fShowItemsFlag)
 	INJ_BOOL( d, fShowTownFlag)
@@ -1950,7 +1952,8 @@ static void SaveGeneralInfo(HWFILE const f)
 	INJ_I8(   d, gfPlayerTeamSawJoey)
 	INJ_I8(   d, gfMikeShouldSayHi)
 	INJ_BOOL( d, gfStrategicMilitiaChangesMade)
-	INJ_SKIP( d, 549)
+	// 537, not 549: the camera's two fields above grew from INT16 to DOUBLE for the free camera (#38).
+	INJ_SKIP(d, 537)
 	Assert(d.getConsumed() == lengthof(data));
 
 	f->write(data, sizeof(data));
@@ -1974,8 +1977,8 @@ static void LoadGeneralInfo(HWFILE const f, UINT32 const savegame_version)
 	UINT16 sel;
 	EXTR_U16(  d, sel)
 	SetSelectedMan(ID2Soldier(sel));
-	EXTR_I16(  d, gsRenderCenterX)
-	EXTR_I16(  d, gsRenderCenterY)
+	EXTR_DOUBLE(d, gsRenderCenterX)
+	EXTR_DOUBLE(d, gsRenderCenterY)
 	EXTR_BOOL( d, gfAtLeastOneMercWasHired)
 	EXTR_BOOL( d, fShowItemsFlag)
 	EXTR_BOOL( d, fShowTownFlag)

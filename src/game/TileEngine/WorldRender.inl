@@ -975,8 +975,8 @@ WorldEquivalenceResult RunWorldEquivalence(std::string const& outDir, bool const
 		RecordWorldFrame(false, false, true);
 		if (opts.Scrolled())
 		{
-			gsRenderCenterX = INT16(gsRenderCenterX + opts.scrollTilesX * CELL_X_SIZE);
-			gsRenderCenterY = INT16(gsRenderCenterY + opts.scrollTilesY * CELL_Y_SIZE);
+			gsRenderCenterX = gsRenderCenterX + opts.scrollTilesX * CELL_X_SIZE;
+			gsRenderCenterY = gsRenderCenterY + opts.scrollTilesY * CELL_Y_SIZE;
 			ApplyScrolling(gsRenderCenterX, gsRenderCenterY, FALSE, FALSE);
 			CalcRenderParameters(gsWORLD_VIEWPORT_START_X, gsWORLD_VIEWPORT_START_Y, gsWORLD_VIEWPORT_END_X, gsWORLD_VIEWPORT_END_Y);
 		}
