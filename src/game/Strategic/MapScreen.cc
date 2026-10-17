@@ -3037,7 +3037,7 @@ static void HandleModAlt(UINT32 const key)
 			{
 				//Display a message saying the player cant save now
 				DoMapMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], MAP_SCREEN,
-								MSG_BOX_FLAG_OK, 0);
+								MSG_BOX_FLAG_OK, nullptr);
 			}
 		}
 		break;
