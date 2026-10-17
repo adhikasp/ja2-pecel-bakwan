@@ -2,6 +2,7 @@
 #define RENDERWORLD_H
 
 #include "Types.h"
+#include "Camera.h"
 
 extern BOOLEAN gfDoVideoScroll;
 extern UINT8   gubCurScrollSpeedID;
@@ -123,6 +124,18 @@ void RenderStaticWorldRect(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sBottom,
 void InvalidateWorldRedundency(void);
 
 void SetRenderCenter(double sNewX, double sNewY);
+
+/** An eased centring move (decision A2, Camera.h): the camera glides from where it is to (sNewX, sNewY) over
+ * Camera::kEaseFrames frames instead of jumping there. The target is clamped to the map before the move starts.
+ * Held-key scrolling and the slide to a merc stay direct and cancel a move in flight. */
+void EaseRenderCenter(double sNewX, double sNewY);
+
+/** Whether an eased centring move is still running: a camera tween is "in flight" for the automation (a screenshot
+ * taken now would catch it mid-move). */
+bool CameraIsEasing();
+
+/** Where the camera is heading: the eased move's target, or the resting centre when nothing is in flight. */
+Camera::Centre CameraEaseTarget();
 
 #if defined _DEBUG
 void RenderFOVDebug(void);

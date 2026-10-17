@@ -649,20 +649,28 @@ namespace
 		{
 			if (guiCurrentScreen != GAME_SCREEN)
 				throw std::runtime_error("ja2.camera{...}: the tactical screen has the world camera");
-			if (sol::optional<int> grid = (*spec)["grid"])
+
+			// An eased centring move (A2) is the default: it is what locating a merc and a click on the radar do, and
+			// it is the thing a test has to be able to wait out (NothingInFlight) and to read back (animating/target).
+			// { instant = true } places the camera where it is asked, for a scenario that wants an exact view now.
+			bool const instant = (*spec)["instant"].valid() && (*spec)["instant"].get<bool>();
+			if (sol::optional<int> slide = (*spec)["slideTo"])
+			{
+				// The slide to a merc (SlideToLocation): the game's own per-frame step, so a test can share it.
+				SlideToLocation(static_cast<INT16>(*slide));
+			}
+			else if (sol::optional<int> grid = (*spec)["grid"])
 			{
 				if (*grid < 0 || *grid >= WORLD_MAX) throw std::out_of_range("ja2.camera: bad grid");
 				INT16 cx, cy;
 				ConvertGridNoToCenterCellXY(*grid, &cx, &cy);
-				gsRenderCenterX = cx;
-				gsRenderCenterY = cy;
+				if (instant) SetRenderCenter(cx, cy); else EaseRenderCenter(cx, cy);
 			}
 			else
 			{
 				sol::optional<double> x = (*spec)["x"], y = (*spec)["y"];
 				if (!x || !y) throw std::runtime_error("ja2.camera{...}: needs x and y, or a grid");
-				gsRenderCenterX = *x;
-				gsRenderCenterY = *y;
+				if (instant) SetRenderCenter(*x, *y); else EaseRenderCenter(*x, *y);
 			}
 			SetRenderFlags(RENDER_FLAG_FULL);
 		}
@@ -674,6 +682,17 @@ namespace
 		t["tileX"] = int(std::floor(c.x / CELL_X_SIZE));
 		t["tileY"] = int(std::floor(c.y / CELL_Y_SIZE));
 		t["onTileCentre"] = Camera::OnTileCentre(c);
+		// The eased centring move (A2): where the camera is headed, whether it is still moving, and whether it has
+		// settled on the target. An ease that only ever approaches is the failure mode, so a test asserts `settled`
+		// and the arrival, not just the final position.
+		Camera::Centre const target = CameraIsEasing() ? CameraEaseTarget() : c;
+		t["target"] = g_lua.create_table_with("x", target.x, "y", target.y);
+		t["animating"] = CameraIsEasing();
+		t["settled"] = !CameraIsEasing();
+		sol::table slide = g_lua.create_table();
+		slide["active"] = gTacticalStatus.sSlideTarget != NOWHERE;
+		slide["target"] = int(gTacticalStatus.sSlideTarget);
+		t["slide"] = slide;
 		t["zoom"] = double(g_ui.m_worldZoomQ) / VideoLayout::WORLD_ZOOM_STEPS;
 		t["zoomQ"] = int(g_ui.m_worldZoomQ);
 		t["uiScale"] = int(g_ui.m_uiScale);
@@ -1051,10 +1070,13 @@ namespace
 		// 10 plus 5), which is fractional because the camera is free to rest between tile centres; tileX/tileY is
 		// the tile it is over and onTileCentre whether it happens to sit on one; viewport is the world layer in
 		// world pixels, view the viewport's corners in world coordinates, and zoom/zoomQ/uiScale/layered the
-		// world's scale. Write: ja2.camera{ x = ..., y = ... } places the centre (fractional world coordinates),
-		// ja2.camera{ grid = N } its tile's centre. Nothing else reads the camera out, so this is what a headless
-		// run asserts a pan, a slide or a centring with instead of a screenshot. A position off the map is
-		// clamped to it when the view renders.
+		// world's scale. target/animating/settled are the eased centring move (A2): where the camera is headed,
+		// whether it is still moving, and whether it has arrived. slide is the game's own slide to a merc
+		// (sSlideTarget). Write: ja2.camera{ x = ..., y = ... } eases the centre there (fractional world
+		// coordinates), ja2.camera{ grid = N } to the centre of that tile; { instant = true } places it at once,
+		// and { slideTo = N } starts the game's slide to that tile. Nothing else reads the camera out, so this is
+		// what a headless run asserts a pan, a slide or a centring with instead of a screenshot. A position off the
+		// map is clamped to it when the view renders (and an eased move is clamped before it starts).
 		ja2.set_function("camera",
 						 [](sol::optional<sol::table> spec) { return Guarded([&] { return CameraLua(spec); }); });
 

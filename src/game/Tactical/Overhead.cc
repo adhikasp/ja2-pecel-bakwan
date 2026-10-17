@@ -2099,7 +2099,8 @@ void LocateSoldier(SOLDIERTYPE* s, BOOLEAN fSetLocator)
 		// Center on guy
 		const INT16 sNewCenterWorldX = (INT16)s->dXPos;
 		const INT16 sNewCenterWorldY = (INT16)s->dYPos;
-		SetRenderCenter(sNewCenterWorldX, sNewCenterWorldY);
+		// An eased move (A2): the view glides to him instead of jumping.
+		EaseRenderCenter(sNewCenterWorldX, sNewCenterWorldY);
 
 		// Plot new path!
 		gfPlotNewMovement = TRUE;
