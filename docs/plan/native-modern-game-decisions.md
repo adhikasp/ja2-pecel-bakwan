@@ -403,10 +403,47 @@ frame. That key no longer names the camera (#37), so this issue was the small pi
 - A free camera lands a pan on a half tile, so a scroll step is half the tiles it used to be; the six
   `world_renderer.lua` scroll scenes still compare 0 px against the software renderer.
 
-**Left: slices 2-4** (animated zoom - split the raster scale from the present zoom, `m_worldRasterQ` /
-`PresentScale`; the eased camera with goldens regenerated; the 3840x2160 perf re-run). An eased camera also
-needs `SoldierLocationRelativeToScreen`'s 20 px dead zone retuned for the smaller step, which is the thing
-slice 1 was meant to measure first.
+**Slice 3, implemented here: the eased camera (A2) and the slide measured.**
+
+- `Camera::Ease` (`TileEngine/Camera.h`) is a frame-counted cubic ease-out: a discrete move - locating a merc, the
+  radar, the next turn's centring - covers its distance in 12 frames and **lands exactly on the target**, which is
+  the assertion the feature needs (an ease that only ever approaches is the failure). The frame count, never
+  milliseconds, is what makes it reproducible in a driven run; A3's inertia is out for the same reason.
+- Centring paths the player drives ease (`LocateSoldier(..., ease = true)`: the HUD's Locate command, a squad card
+  click, the radar, the sector entry, the next turn); the pan and the slide stay direct, a pan or slide cancels an
+  ease in flight, and an ease a menu freezes (`gfIgnoreScrolling`) is cancelled rather than left in flight. The
+  callers that read the merc's screen position immediately (the door menu, the item and dialogue panels) keep the
+  immediate locate. `ja2.camera()` reports `target`/`animating`/`settled`, `{ instant = true }` places at once and
+  `{ slideTo = n }` starts the game's slide, and `NothingInFlight()` counts an ease so a screenshot cannot race it.
+- **The auto-slide was measured, not tuned by eye** (`tests/e2e/camera.lua`): at the sub-tile step
+  `SoldierLocationRelativeToScreen` only ever closes in on the merc - no frame moves away from him - and the slide
+  ends in bounded time. Its 20 px dead zone is the same size as the game's scroll step, so a step can leave the merc
+  at most that far off centre and cannot oscillate; it is left as it is, with the measurement as the evidence.
+- **A pre-existing freeze fixed on the way:** `gfIgnoreScrollDueToCenterAdjust` was cleared only by the software
+  presenter, so on a layered screen (every world renderer, and every driven run) the first `SetRenderCenter` left it
+  set and `ScrollWorld` returned for the rest of the session - keyboard scrolling froze, and the slide above was
+  unreachable to test. `ScrollWorld` now spends the flag at the one place that reads it.
+- **Goldens did not move.** The ease changes what is on screen *during* a move, but it lands where the old jump
+  landed, so every settled scene (the 1080p resolution suite and the smoke scenes) is pixel-identical; the proof is
+  the passing suite and the `--changed` e2e run, not a regenerated image.
+- **A crash met on the way is filed, not fixed:** a zoom step that lands in a slide's last frame corrupts the heap
+  (`0xc0000374`/`0xc0000005`) - the slide is the legacy per-frame step and the video teardown was always reachable
+  while a scroll settled, but slice 3's test is what walked into it. #399 carries the repro; the test waits for idle
+  before its video change.
+
+**The 3840x2160 re-run, for the record.** `tests/perf/world_renderer_perf.lua` on the machine that measured #393's
+floor (Ryzen 5 5560U, D3D12, borderless 3840x2160 @ 59 Hz, `--uiscale 2 --worldzoom 1`, 5 s per case): gpu cached
+still mean 72.7 / median 96.8 / p95 103.9 ms; gpu uncached still 83.6 / 97.9 / 103.2; gpu cached scrolling
+47.5 / 17.1 / 99.9; gpu uncached scrolling 100.3 / 99.4 / 104.6. That is the same order as #393's ~128 ms
+present-path floor, and it keeps the bimodality #393 describes (some frames at the 16.7 ms vsync, the rest stuck at
+the floor). **The camera work is not the 4K interval and no frame-rate win is claimed for it:** a centring move
+adds nothing to a scroll frame, and the harness scrolls with the keys, which stay direct. The number is here so the
+next person does not mistake this change for a frame-rate one.
+
+**Left: slice 2, the animated zoom.** C2 - the raster scale split from the present zoom, so a zoom step animates
+the present scale with at most one band of raster behind instead of rebuilding the world layer whole,
+`m_worldRasterQ` / `PresentScale` - is the one part of A2/B2/C2 this change does not land. Slice 4 (this page and
+`docs/ui/tactical.md`) and the 3840x2160 re-run above are done.
 
 ## Gaps
 
@@ -417,11 +454,12 @@ slice 1 was meant to measure first.
   layer upload removed, and with the world texture copy removed as well, it is still ~128 ms. The next
   measurement belongs further along the present path (the swapchain acquire/present). The camera-move
   frame shift (a texture-to-texture blit of the retained region) is not done, and is not what limits the frame.
-- The camera is free (#38, *The camera is free*): it no longer rounds every pan to a tile centre, and
-  `ja2.camera()` reads it out. The pan itself is still the game's own step - a **scroll eases nothing and a zoom
-  step still rebuilds the world layer**, so "zoom is fractional (1/8 steps), but the raster scale is the present
-  zoom and there is no animation between steps" is still true (decisions A2/B2's easing and C2's raster/present
-  split are slices 2 and 3).
+- The camera is free and centres eased (#38, *The camera is free*): it no longer rounds every pan to a tile centre,
+  a discrete centring move glides to its target in 12 frames and lands on it exactly, and `ja2.camera()` reads the
+  centre, the move and the slide out. The 20 px auto-slide is measured rather than tuned and does not chatter at the
+  sub-tile step. **Still open: the animated zoom** - a zoom step rebuilds the world layer whole; the raster scale is
+  not yet split from the present zoom (C2's *at most one band behind*). A zoom step in a slide's last frame also
+  crashes (#399).
 - MSL is generated but not compiled or run (no Mac).
 - The screenshots of driven windows are composed from the read-back world buffer with nearest scaling; the player
   sees the GPU texture scaled with SDL's pixel-art filter.

@@ -51,6 +51,14 @@
 UINT16* gpZBuffer = nullptr;
 UINT16  gZBufferPitch = 0;
 
+namespace
+{
+/** The one eased centring move in flight (decision A2): see Camera::Ease and EaseRenderCenter. */
+Camera::Ease gCameraEase;
+}
+
+static void StepCameraEase();
+
 static INT16 gsCurrentGlowFrame     = 0;
 static INT16 gsCurrentItemGlowFrame = 0;
 
@@ -1673,7 +1681,8 @@ enum ScrollType {
 };
 
 static BOOLEAN ApplyScrolling(double sTempRenderCenterX, double sTempRenderCenterY, BOOLEAN fForceAdjust,
-							  BOOLEAN fCheckOnly, ScrollType scrollType = ScrollType_Undefined);
+							  BOOLEAN fCheckOnly, ScrollType scrollType = ScrollType_Undefined,
+							  Camera::Centre* clamped = nullptr);
 static void ClearMarkedTiles(void);
 static void ExamineZBufferRect(INT16 sLeft, INT16 sTop, INT16 sRight, INT16 sBottom);
 static void RenderDynamicWorld(void);
@@ -1998,6 +2007,9 @@ static void RenderDynamicWorld(void)
 static BOOLEAN HandleScrollDirections(UINT32 ScrollFlags, INT16 sScrollXStep, INT16 sScrollYStep, BOOLEAN fCheckOnly)
 {
 	// printf("HandleScrollDirections: %d, (%4d, %4d), %d\n", ScrollFlags, sScrollXStep, sScrollYStep, fCheckOnly);
+	// The rendered camera position is the one the ease last put down; a pan the player makes changes it directly.
+	if (!fCheckOnly) gCameraEase.Cancel();
+
 	INT16 scroll_x = 0;
 	if (ScrollFlags & SCROLL_LEFT)  scroll_x -= sScrollXStep;
 	if (ScrollFlags & SCROLL_RIGHT) scroll_x += sScrollXStep;
@@ -2057,11 +2069,18 @@ void ScrollWorld(void)
 	static UINT8   ubOldScrollSpeed        = 0;
 	static BOOLEAN fFirstTimeInSlideToMode = TRUE;
 
+	// A centre adjust (SetRenderCenter) suppresses the frame that follows it. The flag is spent here, at the one
+	// place that reads it, rather than in the presenter: a driven run does not present every frame, and a flag left
+	// set with the layered path (the world renderers) froze keyboard scrolling for good.
 	if (gfIgnoreScrollDueToCenterAdjust)
 	{
-		//	gfIgnoreScrollDueToCenterAdjust = FALSE;
+		gfIgnoreScrollDueToCenterAdjust = FALSE;
 		return;
 	}
+
+	// An eased centring move (A2) is a camera move of its own: it takes its frame first, so a pan the player makes
+	// this frame (or a slide to a merc) cancels it in HandleScrollDirections and takes over from there.
+	if (!gfIgnoreScrolling) StepCameraEase();
 
 	BOOLEAN fIgnoreInput = FALSE;
 
@@ -2302,7 +2321,7 @@ void InitRenderParams(UINT8 ubRestrictionID)
 
 /** This function checks whether the render screen can be moved to new position. */
 static BOOLEAN ApplyScrolling(double sTempRenderCenterX, double sTempRenderCenterY, BOOLEAN fForceAdjust,
-							  BOOLEAN fCheckOnly, ScrollType scrollType)
+							  BOOLEAN fCheckOnly, ScrollType scrollType, Camera::Centre* const clamped)
 {
 	// The free camera (Camera.h): the pan is what it asked for. The legacy settle rounded it to the nearest
 	// tile centre, which is one flag away if the free rest ever feels wrong.
@@ -2422,6 +2441,13 @@ static BOOLEAN ApplyScrolling(double sTempRenderCenterX, double sTempRenderCente
 			sTempRenderCenterY = sTempPosY_W;
 			fScrollGood = TRUE;
 		}
+	}
+
+	if (fScrollGood)
+	{
+		// Where the move may land, even when it is only being asked: the eased camera clamps its target this way
+		// before it starts, so the frame it arrives on is the frame it stops on (no post-settle jump).
+		if (clamped) *clamped = { sTempRenderCenterX, sTempRenderCenterY };
 	}
 
 	if (fScrollGood && !fCheckOnly)
@@ -3715,9 +3741,59 @@ static BOOLEAN IsTileRedundant(UINT16* pZBuffer, UINT16 usZValue, HVOBJECT hSrcV
 	return TRUE;
 }
 
+/** One frame of the eased centring move (A2): the next centre on the ease's path, applied through the same map-edge
+ * clamp every other camera move goes through. The last frame is the clamped target exactly. */
+static void StepCameraEase()
+{
+	if (!gCameraEase.Active()) return;
+
+	// Scrolling is ignored (a menu holds the view: the door menu, the inventory, a dialogue). The move cannot run,
+	// and leaving it in flight would leave the view mid-glide and the game never idle again - cancel it instead.
+	if (gfIgnoreScrolling)
+	{
+		gCameraEase.Cancel();
+		return;
+	}
+
+	Camera::Centre const next = gCameraEase.Advance();
+	ApplyScrolling(next.x, next.y, TRUE, FALSE, ScrollType_Undefined);
+	SetRenderFlags(RENDER_FLAG_FULL);
+}
+
+void EaseRenderCenter(double const sNewX, double const sNewY)
+{
+	if (gfIgnoreScrolling) return;
+
+	// Where the move may land, asked of the scroll clamp without moving anything: a locate at a merc near the map
+	// edge must ease to the clamped position, or the ease would arrive off-map and the next frame would snap back.
+	Camera::Centre target{ sNewX, sNewY };
+	ApplyScrolling(sNewX, sNewY, TRUE, TRUE, ScrollType_Undefined, &target);
+	gCameraEase.Start({ gsRenderCenterX, gsRenderCenterY }, target);
+
+	if (gCameraEase.Active())
+	{
+		// The move redraws the world every frame it runs; the map may be somewhere else entirely by the time it ends.
+		SetRenderFlags(RENDER_FLAG_FULL);
+		gfPlotNewMovement = TRUE;
+	}
+}
+
+bool CameraIsEasing()
+{
+	return gCameraEase.Active();
+}
+
+Camera::Centre CameraEaseTarget()
+{
+	return gCameraEase.Target();
+}
+
 void SetRenderCenter(double sNewX, double sNewY)
 {
 	if (gfIgnoreScrolling) return;
+
+	// An explicit placement wins over a centring move that is still in flight.
+	gCameraEase.Cancel();
 
 	// Apply these new coordinates to the renderer!
 	ApplyScrolling(sNewX, sNewY, TRUE, FALSE);

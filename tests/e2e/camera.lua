@@ -1,7 +1,8 @@
 -- The tactical camera (#38): ja2.camera() reads the centre, the tile it is over, whether it rests on a tile
--- centre, the world viewport and the zoom, and places the centre. The camera is player-visible but a screenshot
--- cannot say where the view sits, so the free camera is asserted here as data (see Camera.h and the decision in
--- docs/plan/native-modern-game-decisions.md). Runs at 1280x720 and takes no shots.
+-- centre, the world viewport and the zoom, places the centre directly or as an eased move, and starts the game's
+-- slide to a merc. The camera is player-visible but a screenshot cannot say where the view sits, so all of it is
+-- asserted here as data (see Camera.h and the decisions in docs/plan/native-modern-game-decisions.md).
+-- Runs at 1280x720 and takes no shots.
 local campaign = require("lib.campaign")
 
 campaign.startWithMerc("Barry")
@@ -13,6 +14,8 @@ ja2.move(math.floor(size.w / 2), math.floor(size.h / 2))
 ja2.waitIdle()
 
 local function camera(spec) return ja2.camera(spec) end
+-- The Lua here is 5.1-shaped: no math.hypot.
+local function hypot(x, y) return math.sqrt(x * x + y * y) end
 local function log(what, c)
 	ja2.log(("%s: centre (%.4f, %.4f) over tile (%d, %d)%s; zoom %g, viewport %dx%d, view %d,%d..%d,%d")
 		:format(what, c.x, c.y, c.tileX, c.tileY, c.onTileCentre and ", on a tile centre" or ", between tile centres",
@@ -28,11 +31,14 @@ ja2.expect(c.zoom > 0, "the world zoom is positive (" .. c.zoom .. ")")
 ja2.expect(c.viewport.w > 0 and c.viewport.h > 0,
 	("the world viewport has a size (%dx%d)"):format(c.viewport.w, c.viewport.h))
 ja2.expect(c.view.right > c.view.left and c.view.bottom > c.view.top, "the viewport corners are ordered")
+ja2.expect(c.settled and not c.animating, "at rest nothing is in flight")
+ja2.expect(c.target.x == c.x and c.target.y == c.y, "at rest the target is where the camera is")
 
 -- 2. The camera is free (#38): it can rest between two tile centres, and a rendered frame leaves it there. The
 --    position is fractional cells, which the pre-#38 INT16 cell could not hold, and the frame's camera move
 --    (ApplyScrolling) used to round every resting position up to the next tile centre - it must not any more.
-local sub = camera({ x = c.x + 0.5, y = c.y + 0.25 })
+--    { instant = true } places the camera at once, for a scenario that wants an exact view now.
+local sub = camera({ x = c.x + 0.5, y = c.y + 0.25, instant = true })
 log("placed between tile centres", sub)
 ja2.expect(not sub.onTileCentre, ("a fractional centre is not on a tile centre (%.2f, %.2f)"):format(sub.x, sub.y))
 ja2.expect(math.abs(sub.x - (c.x + 0.5)) < 1e-9 and math.abs(sub.y - (c.y + 0.25)) < 1e-9,
@@ -43,17 +49,43 @@ log("after a rendered frame", kept)
 ja2.expect(math.abs(kept.x - sub.x) < 1e-9 and math.abs(kept.y - sub.y) < 1e-9,
 	("the frame keeps the sub-tile centre (%.4f, %.4f)"):format(kept.x, kept.y))
 
--- 3. Centring on a tile still rests on its centre, and puts it on screen. The tile under the middle of the view
---    is not near a map edge, so the move is not clamped.
+-- 3. An eased centring move (decision A2): placing the camera *without* { instant = true } heads for the target
+--    over a bounded number of frames, only ever gets closer, and arrives exactly on it - an ease that only ever
+--    approaches is the failure this asserts against. The tile under the middle of the view is not near a map edge,
+--    so the move is not clamped.
 local mid = ja2.gridAt(math.floor(size.w / 2), math.floor(size.h / 2))
 ja2.expect(mid >= 0, "there is a tile under the middle of the view")
-local centred = camera({ grid = mid })
-log("centred on the middle tile", centred)
-ja2.expect(centred.onTileCentre, ("centring on a tile rests on its centre (%.2f, %.2f)"):format(centred.x, centred.y))
+local far = camera({ grid = ja2.gridAt(math.floor(size.w / 2), math.floor(size.h / 4)), instant = true })
+ja2.expect(not far.animating and far.settled, "an instant placement is there at once, with no ease to wait out")
+
+local centring = camera({ grid = mid }) -- eased
+log("eased centring", centring)
+ja2.expect(centring.animating, "a centring move without instant starts an ease")
+local targetX, targetY = centring.target.x, centring.target.y
+
+local last = hypot(targetX - centring.x, targetY - centring.y)
+local frames, arrived = 0, nil
+for i = 1, 60 do
+	ja2.step(1)
+	local now = camera()
+	local distance = hypot(targetX - now.x, targetY - now.y)
+	ja2.expect(distance <= last + 1e-9,
+		("frame %d is no further from the target than the last (%.4f -> %.4f)"):format(i, last, distance))
+	ja2.expect(now.target.x == targetX and now.target.y == targetY, "the target does not move")
+	last = distance
+	frames = i
+	if not now.animating then arrived = now break end
+end
+ja2.expect(arrived, "the ease settles within 60 frames")
+ja2.expect(frames <= 20, ("the ease arrives in bounded time (%d frames)"):format(frames))
+ja2.expect(arrived.settled and not arrived.animating, "the settled camera is not animating")
+ja2.expect(arrived.x == targetX and arrived.y == targetY,
+	("the ease arrives on the target exactly (%.4f, %.4f)"):format(arrived.x, arrived.y))
+ja2.expect(arrived.onTileCentre, "centring on a tile rests on its centre")
 ja2.gridPos(mid) -- throws if that tile is off screen, i.e. if centring did not work
 
--- 4. A pan moves the camera: it follows the keys, and where it lands is where it stays. The direction that is
---    not blocked by a map edge is the one that moves.
+-- 4. A pan moves the camera directly: it follows the keys, and where it lands is where it stays. The direction
+--    that is not blocked by a map edge is the one that moves. A pan also cancels an ease in flight.
 local function pan(key)
 	local before = camera()
 	ja2.keydown(key)
@@ -70,6 +102,49 @@ for _, key in ipairs({ "right", "down", "left", "up" }) do
 	if did then after = now break end
 end
 ja2.expect(after, "the camera pans in some direction")
+
+-- 4b. The game's own slide to a merc (SlideTo/SoldierLocationRelativeToScreen): with the free camera the step is
+--     the game's 20 px screen step, not a whole tile, which is the thing that used to chatter. Measured, not tuned
+--     by eye: the view only ever closes in on the merc (no frame moves it further away) and the slide ends.
+local function mercCentre()
+	local g = merc.gridNo
+	local cols = 160 -- WORLD_COLS
+	return (g % cols) * 10 + 5, math.floor(g / cols) * 10 + 5
+end
+local mx, my = mercCentre()
+-- Park the view a long way from him - a step of 40 tiles sideways is 800 screen pixels, further than the 640 px
+-- half-view - and then ask for the slide: SlideToLocation does nothing when he is already on screen.
+local tileX, tileY = merc.gridNo % 160, math.floor(merc.gridNo / 160)
+local parked
+for _, d in ipairs({ { -40, 40 }, { 40, -40 }, { -40, -40 }, { 40, 40 } }) do
+	local x, y = tileX + d[1], tileY + d[2]
+	if x >= 1 and x <= 158 and y >= 1 and y <= 158 then parked = y * 160 + x break end
+end
+ja2.expect(parked, "a tile a long way from Barry is still on the map")
+camera({ grid = parked, instant = true })
+ja2.waitIdle()
+local slid = camera({ slideTo = merc.gridNo })
+log("slide to Barry", slid)
+ja2.expect(slid.slide.active, "the slide starts (he was off screen)")
+local previous = hypot(slid.x - mx, slid.y - my)
+local slideFrames, ended = 0, nil
+for i = 1, 200 do
+	ja2.step(1)
+	local now = camera()
+	local distance = hypot(now.x - mx, now.y - my)
+	ja2.expect(distance <= previous + 1e-9,
+		("slide frame %d does not back away from him (%.4f -> %.4f)"):format(i, previous, distance))
+	previous = distance
+	slideFrames = i
+	if not now.slide.active then ended = now break end
+end
+ja2.expect(ended, "the slide ends within 200 frames")
+ja2.log(("slide ended after %d frames, %g cells from Barry"):format(slideFrames, previous))
+ja2.expect(not ended.animating, "the slide is not an ease, and it leaves nothing in flight")
+-- The video change below rebuilds every buffer under the game. A zoom that lands in the frame a slide ends trips a
+-- latent video-change bug (a heap-corruption crash, issue #399: a slide from a placed camera, then a zoom step in the
+-- slide's last frame); letting the view settle first is also simply what a test should do before changing the video.
+ja2.waitIdle()
 
 -- 5. The zoom state, and the viewport it implies: the world layer is its own at a fractional zoom, and a finer
 --    zoom (1.5x) covers less of the world.

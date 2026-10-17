@@ -223,7 +223,7 @@ void HandleLocateSelectMerc(SOLDIERTYPE* const s, bool const force_select)
 	// ATE: No matter what we do... if below OKLIFE, just locate....
 	if (s->bLife < OKLIFE)
 	{
-		LocateSoldier(s, SETLOCATOR);
+		LocateSoldier(s, SETLOCATOR, true);
 		return;
 	}
 
@@ -239,7 +239,7 @@ void HandleLocateSelectMerc(SOLDIERTYPE* const s, bool const force_select)
 		else
 		{
 			// Just locate....
-			LocateSoldier(s, SETLOCATOR);
+			LocateSoldier(s, SETLOCATOR, true);
 		}
 	}
 	else
@@ -257,7 +257,7 @@ void HandleLocateSelectMerc(SOLDIERTYPE* const s, bool const force_select)
 			{
 				if (gGameSettings.fOptions[TOPTION_OLD_SELECTION_METHOD])
 				{
-					LocateSoldier(s, SETLOCATOR);
+					LocateSoldier(s, SETLOCATOR, true);
 				}
 				else
 				{
@@ -276,7 +276,7 @@ void HandleLocateSelectMerc(SOLDIERTYPE* const s, bool const force_select)
 				}
 				else
 				{
-					LocateSoldier(s, DONTSETLOCATOR);
+					LocateSoldier(s, DONTSETLOCATOR, true);
 				}
 
 				fSelect = TRUE;
@@ -285,7 +285,7 @@ void HandleLocateSelectMerc(SOLDIERTYPE* const s, bool const force_select)
 			{
 				if (s == GetSelectedMan())
 				{
-					LocateSoldier(s, DONTSETLOCATOR);
+					LocateSoldier(s, DONTSETLOCATOR, true);
 				}
 				else
 				{

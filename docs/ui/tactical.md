@@ -213,13 +213,38 @@ places the tile grid at the nearest whole pixel to the centre (`CalcRenderParame
 pixel and the strip cache still translates cached rows by whole pixels. `Camera::kFreeCamera` is the one-line
 switch back to the legacy settle (`SnapToTileCentre`).
 
-The pan itself is still the game's step (`ScrollWorld`), so nothing eases yet; the eased camera and the animated
-zoom are #38's remaining slices (decisions A2/B2/C2 in
-[docs/plan/native-modern-game-decisions.md](../plan/native-modern-game-decisions.md#the-camera-is-free-issue-38)).
-`ja2.camera()` reads the centre, the tile under it, whether it rests on a tile centre, the world viewport and the
-world zoom, and `ja2.camera{ x, y }` / `ja2.camera{ grid = n }` place it (the surface
-`tests/e2e/camera.lua` asserts against); picking still goes through `WorldPointer::World()`, which is the exact
-inverse of the same camera math.
+**Centring eases (decision A2).** A discrete move of the view - the player's own centring - glides to its
+destination instead of jumping: `Camera::Ease` is a **frame-counted** cubic ease-out (12 frames, 200 ms at 60 Hz)
+that lands on the target exactly, so the same path is walked on a fast machine, a slow one and the virtual clock
+of a driven run. Inertia (A3) is deliberately not here: it is wall-clock dependent and would make a headless run
+non-reproducible. Which callers ease is explicit (`LocateSoldier(..., ease = true)`): the HUD's **Locate**
+command, a **squad card click**, the **radar**, the sector entry and the next turn's centring. The callers that
+read the merc's screen position on the very next line - the door menu, the item and dialogue panels - **stay
+immediate**, because an ease would leave their panel drawn where the merc is not yet. Held-key and mouse-edge
+scrolling stay direct too (the input is already a per-frame step), and any pan or slide in flight cancels an ease
+rather than fighting it; an ease that cannot run at all (a menu holds the view, `gfIgnoreScrolling`) is
+cancelled, not frozen mid-glide. `EaseRenderCenter` clamps its target to the map before the move starts, so the
+frame it arrives on is the frame it stops on.
+
+The game's own slide to a merc (`SlideTo`, with `SoldierLocationRelativeToScreen`'s 20 px dead zone and
+`fCountdown`) is the legacy per-frame step and is **not** eased; it stays the way it was, and it is measured
+rather than tuned (`tests/e2e/camera.lua`: at the sub-tile step the view only ever closes in on the merc, no
+frame backs away, and it ends in bounded time). One thing it needed: `ScrollWorld` spends
+`gfIgnoreScrollDueToCenterAdjust` at the single place that reads it. Left to the presenter the flag was never
+cleared on a layered screen (the world renderers, and every driven run), so the first `SetRenderCenter` - a
+`ja2.debug("camera")`, a radar click, entering a sector - froze keyboard scrolling for the rest of the session.
+
+`ja2.camera()` is the headless surface: it reads the centre (fractional world coordinates), the tile over it,
+whether it rests on a tile centre, the world viewport and zoom, the eased move (`target`, `animating`,
+`settled`) and the slide, and `ja2.camera{ x, y }` / `ja2.camera{ grid = n }` **ease** the centre there
+(`{ instant = true }` places it at once, `{ slideTo = n }` starts the game's slide). A tween counts as
+in-flight for `NothingInFlight()`, so `ja2.waitIdle()` - and `ja2ctl shot` - wait it out instead of racing it.
+Picking still goes through `WorldPointer::World()`, which is the exact inverse of the same camera math.
+
+**Not yet:** the **animated zoom** (decision C2's raster/present split) is still to come - a zoom step still
+rebuilds the world layer whole instead of animating the present scale with at most one band of raster behind,
+which is #38's slice 2. A zoom step that lands in a slide's last frame also corrupts the heap today: that is
+#399, with the repro.
 
 ### World overlays (#322)
 

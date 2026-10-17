@@ -188,7 +188,9 @@ namespace
 			case Id::Loadout:      NativeUI::OpenLoadout(); break;
 			case Id::MercNext:     NextMerc(); break;
 			case Id::SquadNext:    NextSquad(); break;
-			case Id::Locate:       if (SOLDIERTYPE* const s = GetSelectedMan()) LocateSoldier(s, 10); break;
+			case Id::Locate:
+				if (SOLDIERTYPE* const s = GetSelectedMan()) LocateSoldier(s, 10, true);
+				break;
 			case Id::Roofs:        ToggleTreeTops(); break;
 			case Id::Glow:         ToggleItemGlow(!gGameSettings.fOptions[TOPTION_GLOW_ITEMS]); break;
 			case Id::Merc1: case Id::Merc2: case Id::Merc3: case Id::Merc4: case Id::Merc5:

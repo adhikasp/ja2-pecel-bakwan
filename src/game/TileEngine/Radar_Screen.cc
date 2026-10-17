@@ -344,7 +344,7 @@ static void AdjustWorldCenterFromRadarCoords(INT16 sRadarX, INT16 sRadarY)
 	FromScreenToCellCoordinates( sScreenX, sScreenY, &sTempX_W, &sTempY_W );
 
 	// Adjust these to world center
-	SetRenderCenter( gCenterWorldX + sTempX_W, gCenterWorldY + sTempY_W);
+	EaseRenderCenter(gCenterWorldX + sTempX_W, gCenterWorldY + sTempY_W);
 }
 
 

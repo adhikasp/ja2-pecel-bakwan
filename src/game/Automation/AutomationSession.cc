@@ -220,6 +220,8 @@ namespace
 		{
 			if (gTacticalStatus.ubAttackBusyCount > 0) return false;
 			if (HeliDropInProgress()) return false;
+			// an eased centring move (A2) is still moving the view: a screenshot taken now would catch it mid-move
+			if (CameraIsEasing()) return false;
 			// the view is sliding to a merc (a click on a card centres him) or scrolling
 			if (gTacticalStatus.sSlideTarget != NOWHERE) return false;
 			if (gfScrollPending || g_scroll_inertia) return false;
