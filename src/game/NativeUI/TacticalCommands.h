@@ -18,6 +18,9 @@
 
 namespace TacticalCommands
 {
+	/** The screen the commands belong to, in the KeyBindings registry (issue #48): a key runs one action per screen. */
+	inline constexpr char const* SCOPE = "tactical";
+
 	enum class Id : uint8_t
 	{
 		// a soldier's body
