@@ -195,6 +195,7 @@ actually reach count: a button behind a modal dialog does not.
 | `ja2.battleReport()` | The battle in the loaded sector as data (`nil` until one has started): `started, finished, sector, outcome` (`player`/`enemy`/`draw`/`unresolved`), `endedBy` (`wiped_out`/`lull`/`in_progress`), `rounds, seconds, contactSeconds, firstCasualtySeconds, firstBreakSeconds, disengageSeconds`, `objective{grid,side,held}`, and per-side `player`/`enemy` tallies `{soldiers,alive,dead,wounded,lifeStart,lifeEnd,shots,hits,impacts,damageDealt,damageTaken,breaks}` — see [plan/ai-evaluation.md](plan/ai-evaluation.md). |
 | `ja2.gridPos(gridNo, [level])` | Screen point to click to hit that tactical tile. |
 | `ja2.gridAt(x, y)` | Tactical tile under a screen point (or -1). |
+| `ja2.camera([spec])` | The tactical camera (#38). Reads `x, y` (fractional world coordinates), `tileX, tileY, onTileCentre, viewport, view, zoom, zoomQ, uiScale, layered`, the eased centring move `target/animating/settled` and the game's `slide{active, target}`. Writes: `{ x, y }` or `{ grid = n }` **ease** the centre there, `{ instant = true }` places it at once, `{ slideTo = n }` starts the game's own slide. An ease counts as in flight for `ja2.waitIdle()`. |
 | `ja2.los(fromGrid, toGrid, [fromLevel], [toLevel])` | Is there an unobstructed line of sight between two tiles? A wall or a closed door blocks it; independent of distance and of who is looking. |
 
 **Game**

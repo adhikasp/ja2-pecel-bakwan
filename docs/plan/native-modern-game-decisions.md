@@ -409,8 +409,11 @@ frame. That key no longer names the camera (#37), so this issue was the small pi
   radar, the next turn's centring - covers its distance in 12 frames and **lands exactly on the target**, which is
   the assertion the feature needs (an ease that only ever approaches is the failure). The frame count, never
   milliseconds, is what makes it reproducible in a driven run; A3's inertia is out for the same reason.
-- Centring paths ease (`LocateSoldier` -> `EaseRenderCenter`); the pan and the slide stay direct, and both cancel an
-  ease in flight. `ja2.camera()` reports `target`/`animating`/`settled`, `{ instant = true }` places at once and
+- Centring paths the player drives ease (`LocateSoldier(..., ease = true)`: the HUD's Locate command, a squad card
+  click, the radar, the sector entry, the next turn); the pan and the slide stay direct, a pan or slide cancels an
+  ease in flight, and an ease a menu freezes (`gfIgnoreScrolling`) is cancelled rather than left in flight. The
+  callers that read the merc's screen position immediately (the door menu, the item and dialogue panels) keep the
+  immediate locate. `ja2.camera()` reports `target`/`animating`/`settled`, `{ instant = true }` places at once and
   `{ slideTo = n }` starts the game's slide, and `NothingInFlight()` counts an ease so a screenshot cannot race it.
 - **The auto-slide was measured, not tuned by eye** (`tests/e2e/camera.lua`): at the sub-tile step
   `SoldierLocationRelativeToScreen` only ever closes in on the merc - no frame moves away from him - and the slide
@@ -437,10 +440,10 @@ the floor). **The camera work is not the 4K interval and no frame-rate win is cl
 adds nothing to a scroll frame, and the harness scrolls with the keys, which stay direct. The number is here so the
 next person does not mistake this change for a frame-rate one.
 
-**Left: slices 2 and 4.** The **animated zoom** (C2: the raster scale split from the present zoom, so a zoom step
-animates the present scale with at most one band of raster behind instead of rebuilding the world layer whole,
-`m_worldRasterQ` / `PresentScale`) is untouched - it is the one part of A2/B2/C2 this change does not land. The
-3840x2160 perf re-run is done and reported in the *Gaps* section; it is not a frame-rate win for the camera work.
+**Left: slice 2, the animated zoom.** C2 - the raster scale split from the present zoom, so a zoom step animates
+the present scale with at most one band of raster behind instead of rebuilding the world layer whole,
+`m_worldRasterQ` / `PresentScale` - is the one part of A2/B2/C2 this change does not land. Slice 4 (this page and
+`docs/ui/tactical.md`) and the 3840x2160 re-run above are done.
 
 ## Gaps
 

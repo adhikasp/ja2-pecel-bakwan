@@ -213,14 +213,18 @@ places the tile grid at the nearest whole pixel to the centre (`CalcRenderParame
 pixel and the strip cache still translates cached rows by whole pixels. `Camera::kFreeCamera` is the one-line
 switch back to the legacy settle (`SnapToTileCentre`).
 
-**Centring eases (decision A2).** A discrete move of the view - `LocateSoldier`, the radar, the next turn's
-centring - glides to its destination instead of jumping: `Camera::Ease` is a **frame-counted** cubic ease-out
-(12 frames, 200 ms at 60 Hz) that lands on the target exactly, so the same path is walked on a fast machine, a
-slow one and the virtual clock of a driven run. Inertia (A3) is deliberately not here: it is wall-clock
-dependent and would make a headless run non-reproducible. Held-key and mouse-edge scrolling stay **direct** -
-the input is already a per-frame step - and any pan or slide in flight cancels an ease rather than fighting it.
-`EaseRenderCenter` clamps its target to the map before the move starts, so the frame it arrives on is the frame
-it stops on.
+**Centring eases (decision A2).** A discrete move of the view - the player's own centring - glides to its
+destination instead of jumping: `Camera::Ease` is a **frame-counted** cubic ease-out (12 frames, 200 ms at 60 Hz)
+that lands on the target exactly, so the same path is walked on a fast machine, a slow one and the virtual clock
+of a driven run. Inertia (A3) is deliberately not here: it is wall-clock dependent and would make a headless run
+non-reproducible. Which callers ease is explicit (`LocateSoldier(..., ease = true)`): the HUD's **Locate**
+command, a **squad card click**, the **radar**, the sector entry and the next turn's centring. The callers that
+read the merc's screen position on the very next line - the door menu, the item and dialogue panels - **stay
+immediate**, because an ease would leave their panel drawn where the merc is not yet. Held-key and mouse-edge
+scrolling stay direct too (the input is already a per-frame step), and any pan or slide in flight cancels an ease
+rather than fighting it; an ease that cannot run at all (a menu holds the view, `gfIgnoreScrolling`) is
+cancelled, not frozen mid-glide. `EaseRenderCenter` clamps its target to the map before the move starts, so the
+frame it arrives on is the frame it stops on.
 
 The game's own slide to a merc (`SlideTo`, with `SoldierLocationRelativeToScreen`'s 20 px dead zone and
 `fCountdown`) is the legacy per-frame step and is **not** eased; it stays the way it was, and it is measured
