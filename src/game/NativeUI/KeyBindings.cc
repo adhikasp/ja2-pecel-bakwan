@@ -282,6 +282,10 @@ std::string KeyLabel(std::string_view const key)
 				p = "Esc";
 			else if (p == "return")
 				p = "Enter";
+			else if (p == "left")
+				p = "\u2190"; // the arrows as glyphs: the team list's hint prints the two side by side
+			else if (p == "right")
+				p = "\u2192";
 			else
 			{
 				p[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(p[0])));

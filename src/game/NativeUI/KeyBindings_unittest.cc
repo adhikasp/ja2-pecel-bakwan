@@ -280,6 +280,8 @@ TEST(KeyBindings, keyNamesAreCanonical)
 	EXPECT_EQ(KeyLabel("escape"), "Esc");
 	EXPECT_EQ(KeyLabel("return"), "Enter");
 	EXPECT_EQ(KeyLabel("up"), "Up");
+	EXPECT_EQ(KeyLabel("left"), "\u2190");
+	EXPECT_EQ(KeyLabel("shift+right"), "Shift+\u2192");
 	EXPECT_EQ(KeyLabel(""), "");
 }
 
