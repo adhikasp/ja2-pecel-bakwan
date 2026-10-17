@@ -240,7 +240,7 @@ void SelectSoldier(SOLDIERTYPE* s, SelSoldierFlags flags);
 
 void InternalLocateGridNo(UINT16 sGridNo, BOOLEAN fForce);
 void LocateGridNo( UINT16 sGridNo );
-void LocateSoldier(SOLDIERTYPE* s, BOOLEAN fSetLocator);
+void LocateSoldier(SOLDIERTYPE* s, BOOLEAN fSetLocator, bool ease = false);
 
 void BeginTeamTurn( UINT8 ubTeam );
 void SlideTo(SOLDIERTYPE* tgt, BOOLEAN fSetLocator);

@@ -3746,6 +3746,15 @@ static BOOLEAN IsTileRedundant(UINT16* pZBuffer, UINT16 usZValue, HVOBJECT hSrcV
 static void StepCameraEase()
 {
 	if (!gCameraEase.Active()) return;
+
+	// Scrolling is ignored (a menu holds the view: the door menu, the inventory, a dialogue). The move cannot run,
+	// and leaving it in flight would leave the view mid-glide and the game never idle again - cancel it instead.
+	if (gfIgnoreScrolling)
+	{
+		gCameraEase.Cancel();
+		return;
+	}
+
 	Camera::Centre const next = gCameraEase.Advance();
 	ApplyScrolling(next.x, next.y, TRUE, FALSE, ScrollType_Undefined);
 	SetRenderFlags(RENDER_FLAG_FULL);

@@ -2088,7 +2088,7 @@ void SelectSoldier(SOLDIERTYPE* const s, const SelSoldierFlags flags)
 }
 
 
-void LocateSoldier(SOLDIERTYPE* s, BOOLEAN fSetLocator)
+void LocateSoldier(SOLDIERTYPE* s, BOOLEAN fSetLocator, bool const ease)
 {
 	//if (!bCenter && SoldierOnScreen(s)) return;
 
@@ -2099,8 +2099,10 @@ void LocateSoldier(SOLDIERTYPE* s, BOOLEAN fSetLocator)
 		// Center on guy
 		const INT16 sNewCenterWorldX = (INT16)s->dXPos;
 		const INT16 sNewCenterWorldY = (INT16)s->dYPos;
-		// An eased move (A2): the view glides to him instead of jumping.
-		EaseRenderCenter(sNewCenterWorldX, sNewCenterWorldY);
+		// An eased move (A2) for the player's own centring actions. Immediate for the callers that read the merc's
+		// screen position on the next line (the door menu, the item and dialogue panels), which an ease would break.
+		if (ease) EaseRenderCenter(sNewCenterWorldX, sNewCenterWorldY);
+		else      SetRenderCenter(sNewCenterWorldX, sNewCenterWorldY);
 
 		// Plot new path!
 		gfPlotNewMovement = TRUE;

@@ -583,7 +583,7 @@ static void TacticalScreenLocateToSoldier(void)
 		gPreferredInitialSelectedGuy = nullptr;
 		if (OK_CONTROLLABLE_MERC(prefer) && OK_INTERRUPT_MERC(prefer))
 		{
-			LocateSoldier(prefer, 10);
+			LocateSoldier(prefer, 10, true);
 			SelectSoldier(prefer, SELSOLDIER_FORCE_RESELECT);
 			return;
 		}
@@ -594,7 +594,7 @@ static void TacticalScreenLocateToSoldier(void)
 	{
 		if (OkControllableMerc(s) && OK_INTERRUPT_MERC(s))
 		{
-			LocateSoldier(s, 10);
+			LocateSoldier(s, 10, true);
 			SelectSoldier(s, SELSOLDIER_FORCE_RESELECT);
 			break;
 		}
