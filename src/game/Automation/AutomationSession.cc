@@ -33,6 +33,7 @@
 #include <string_theory/string>
 
 #include <algorithm>
+#include <array>
 #include <cctype>
 #include <filesystem>
 #include <map>
@@ -197,9 +198,38 @@ namespace
 		}
 	}
 
+	// RmlUi animates a wheel scroll over several frames (its smooth-scroll controller): while it runs, the geometry the
+	// element list reports and what is drawn disagree, and a click is dropped - RmlUi dispatches a click only when the
+	// element under the mouse is the same when the button goes down and up, and the page has moved in between. So a
+	// wheel leaves the native UI where it will be, and a caller that reads a rect or clicks straight after sees the
+	// settled page. (Other scroll sources - a scrollbar drag, Tab's ScrollIntoView - are not covered yet: see the note
+	// in NothingInFlight.)
+	void SettleNativeUI()
+	{
+		constexpr unsigned MAX_FRAMES = 30;
+		auto boxes = []
+		{
+			std::vector<std::array<int, 4>> v;
+			for (NativeUI::ElementInfo const& e : NativeUI::Elements()) v.push_back({ e.x, e.y, e.w, e.h });
+			return v;
+		};
+		std::vector<std::array<int, 4>> last = boxes();
+		if (last.empty()) return; // no native screen is up
+		for (unsigned i = 0; i < MAX_FRAMES; ++i)
+		{
+			Session::Step();
+			std::vector<std::array<int, 4>> now = boxes();
+			if (now == last) return;
+			last = std::move(now);
+		}
+	}
+
 	// Structural "nothing is in flight" test; see Session::IsIdle().
 	bool NothingInFlight()
 	{
+		// A native-UI scroll animates over several frames (RmlUi's smooth-scroll controller). Session::Wheel waits
+		// that one out itself, so a wheel is not a reason to call the game busy here; a scroll started another way (a
+		// scrollbar drag, Tab's ScrollIntoView) is still in flight while this says idle.
 		if (guiPendingScreen != NO_PENDING_SCREEN) return false;
 		if (VideoChangePending()) return false;
 		switch (guiCurrentScreen)
@@ -409,6 +439,7 @@ void Wheel(int const x, int const y, int const dy)
 		Dispatch(e);
 		Step();
 	}
+	SettleNativeUI();
 }
 
 void KeyDown(std::string const& name)

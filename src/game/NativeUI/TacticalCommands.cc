@@ -331,8 +331,9 @@ Command const* Find(std::string_view const name)
 
 Command const* ForKey(std::string_view const key, bool const ctrl, bool const shift, bool const alt)
 {
-	// the key that runs a command is the rebindable one (KeyBindings), not the table's default
-	KeyBindings::Action const* const a = KeyBindings::Bindings().Owner(KeyBindings::KeyName(key, 0, ctrl, shift, alt));
+	// the key that runs a command is the rebindable one (KeyBindings) for this screen, not the table's default
+	KeyBindings::Action const* const a =
+		KeyBindings::Bindings().Owner(SCOPE, KeyBindings::KeyName(key, 0, ctrl, shift, alt));
 	return a ? Find(a->name) : nullptr;
 }
 

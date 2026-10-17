@@ -38,6 +38,7 @@ sol::table BindingsTable(sol::state_view L)
 		e["key"] = a.key;
 		e["default"] = a.def;
 		e["changed"] = a.changed;
+		e["shared"] = a.shared;
 		t[i++] = e;
 	}
 	return t;

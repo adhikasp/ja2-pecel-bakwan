@@ -4,6 +4,7 @@
 #include "BattleReport.h"
 #include "BattleScenario.h"
 #include "BindingsScenario.h"
+#include "MapScenario.h"
 #include "ScenarioItems.h"
 #include "CampaignScenario.h"
 #include "RangeLane.h"
@@ -1060,6 +1061,9 @@ namespace
 		// The rebindable actions as data (issue #48 slice 1): ja2.bindings(), .binding(name), .bind(name, key),
 		// .resetBinding(name), .resetBindings(). See BindingsScenario.h.
 		RegisterBindingsLua(g_lua, ja2);
+		// The map screen's actions as data (issue #48 slice 2): ja2.map.actions(), .key(combo), .run(name). See
+		// MapScenario.h.
+		RegisterMapLua(g_lua, ja2);
 		ja2.set_function("inventoryOp", [](std::string const& op, sol::optional<sol::table> spec) {
 			return Guarded([&] { return InventoryOp(g_lua, op, spec); });
 		});

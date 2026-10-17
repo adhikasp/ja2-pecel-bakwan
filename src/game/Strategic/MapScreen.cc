@@ -52,6 +52,7 @@
 #include "Map_Screen_Interface_Map.h"
 #include "Map_Screen_Interface_Map_Inventory.h"
 #include "Map_Screen_Interface_TownMine_Info.h"
+#include "MapCommandsAdapter.h"
 #include "Meanwhile.h"
 #include "Merc_Contract.h"
 #include "Merc_Hiring.h"
@@ -2775,162 +2776,200 @@ static void RequestContractMenu(void);
 static void RequestToggleMercInventoryPanel(void);
 static void SelectAllCharactersInSquad(INT8 bSquadNumber);
 
+/** Runs one of the map screen's actions (issue #48 slice 2): the work its raw keycase did, named. The key tables
+ * (NativeUI/MapCommands) say what a key runs; this is what the action does, through the legacy functions - never
+ * through a key event, so the buttons, the keyboard and Lua all run the same code. */
+void RunMapAction(MapCommands::Id const id)
+{
+	using Id = MapCommands::Id;
+	switch (id)
+	{
+	case Id::TimeToggle:
+		if (fShowUpdateBox)
+		{ // Restart time compression
+			EndUpdateBox(TRUE);
+		}
+		else if (!CommonTimeCompressionChecks())
+		{ // Toggle time compression
+			RequestToggleTimeCompression();
+		}
+		break;
 
+	case Id::TimeMore:
+		if (!CommonTimeCompressionChecks()) RequestIncreaseInTimeCompression();
+		break;
+	case Id::TimeLess:
+		if (!CommonTimeCompressionChecks()) RequestDecreaseInTimeCompression();
+		break;
+
+	case Id::MsgUp: MapScreenMsgScrollUp(1); break;
+	case Id::MsgDown: MapScreenMsgScrollDown(1); break;
+	case Id::MsgPageUp: MapScreenMsgScrollUp(MAX_MESSAGES_ON_MAP_BOTTOM); break;
+	case Id::MsgPageDown: MapScreenMsgScrollDown(MAX_MESSAGES_ON_MAP_BOTTOM); break;
+	case Id::MsgFirst: ChangeCurrentMapscreenMessageIndex(0); break;
+	case Id::MsgLast: MoveToEndOfMapScreenMessageList(); break;
+
+	case Id::MsgStopSpeech: StopAnyCurrentlyTalkingSpeech(); break;
+
+	case Id::LevelUp: GoUpOneLevelInMap(); break;
+	case Id::LevelDown: GoDownOneLevelInMap(); break;
+
+	case Id::TeamNext: GoToNextCharacterInList(SDLK_RIGHT); break;
+	case Id::TeamPrev: GoToNextCharacterInList(SDLK_LEFT); break;
+
+	case Id::PanelMercInventory: RequestToggleMercInventoryPanel(); break;
+
+	case Id::TeamSortName:
+	case Id::TeamSortAssignment:
+	case Id::TeamSortStatus:
+	case Id::TeamSortLocation:
+	case Id::TeamSortDestination:
+	case Id::TeamSortContract: ChangeCharacterListSortMethod(MapCommands::Get(id).arg); break;
+
+	case Id::Squad1:
+	case Id::Squad2:
+	case Id::Squad3:
+	case Id::Squad4:
+	case Id::Squad5:
+	case Id::Squad6:
+	case Id::Squad7:
+	case Id::Squad8:
+	case Id::Squad9:
+	case Id::Squad10:
+	case Id::Squad11:
+	case Id::Squad12:
+	case Id::Squad13:
+	case Id::Squad14:
+	case Id::Squad15:
+	case Id::Squad16:
+	case Id::Squad17:
+	case Id::Squad18:
+	case Id::Squad19:
+	case Id::Squad20: SelectAllCharactersInSquad(static_cast<INT8>(MapCommands::Get(id).arg)); break;
+
+	// the border button keyboard equivalents only fire while the button is visible
+	case Id::ViewTowns:
+		if (!fShowMapInventoryPool) ToggleShowTownsMode();
+		break;
+	case Id::ViewMines:
+		if (!fShowMapInventoryPool) ToggleShowMinesMode();
+		break;
+	case Id::ViewTeams:
+		if (!fShowMapInventoryPool) ToggleShowTeamsMode();
+		break;
+	case Id::ViewMilitia:
+		if (!fShowMapInventoryPool) ToggleShowMilitiaMode();
+		break;
+	case Id::ViewItems:
+		if (!fShowMapInventoryPool) ToggleItemsFilter();
+		break;
+	case Id::ViewAirspace:
+		// 'a' is the pre-battle interface's autoresolve key too, as the legacy case was
+		if (gfPreBattleInterfaceActive)
+		{
+			ActivatePreBattleAutoresolveAction();
+		}
+		else if (!fShowMapInventoryPool)
+		{
+			ToggleAirspaceMode();
+		}
+		break;
+
+	case Id::ActContract: RequestContractMenu(); break;
+
+	case Id::ActHelp:
+		// ARM: Feb01/98 - Cancel out of mapscreen movement plotting if Help subscreen is coming up
+		if (bSelectedDestChar != -1 || fPlotForHelicopter)
+		{
+			AbortMovementPlottingMode();
+		}
+		ShouldTheHelpScreenComeUp(HELP_SCREEN_MAPSCREEN, TRUE);
+		break;
+
+	case Id::ActSettings: DisplayGameSettings(); break;
+
+	case Id::ActAssign:
+		if (giHighLine != -1)
+		{
+			if (gCharactersList[giHighLine].merc)
+			{
+				bSelectedAssignChar = (INT8)giHighLine;
+				RebuildAssignmentsBox();
+				ChangeSelectedInfoChar((INT8)giHighLine, FALSE);
+				fShowAssignmentMenu = TRUE;
+			}
+		}
+		else if (GetSelectedInfoChar())
+		{
+			bSelectedAssignChar = bSelectedInfoChar;
+			RebuildAssignmentsBox();
+			fShowAssignmentMenu = TRUE;
+		}
+		break;
+
+	case Id::ActSectorInventory:
+		if (gamepolicy(isHotkeyEnabled(UI_Map, HKMOD_CTRL, 'i')))
+		{
+			ToggleSectorInventory();
+		}
+		break;
+
+	case Id::PrebattleEnter:
+		// Activate enter sector in prebattle interface.
+		if (gfPreBattleInterfaceActive) gfHotKeyEnterSector = TRUE;
+		break;
+
+	case Id::PrebattleRetreat:
+		if (gfPreBattleInterfaceActive) ActivatePreBattleRetreatAction();
+		break;
+
+	case Id::NavLaptop: RequestTriggerExitFromMapscreen(MAP_EXIT_TO_LAPTOP); break;
+	case Id::NavOptions: RequestTriggerExitFromMapscreen(MAP_EXIT_TO_OPTIONS); break;
+	case Id::NavSave:
+		// go to SAVE screen
+		gfSaveGame = TRUE;
+		RequestTriggerExitFromMapscreen(MAP_EXIT_TO_SAVE);
+		break;
+	case Id::NavLoad:
+		// go to LOAD screen
+		gfSaveGame = FALSE;
+		RequestTriggerExitFromMapscreen(MAP_EXIT_TO_LOAD);
+		break;
+
+	case Id::NavBack: HandleKeyESC(); break;
+
+	case Id::Count: break;
+	}
+}
+
+bool RunMapActionNamed(std::string_view const name)
+{
+	MapCommands::Command const* const c = MapCommands::Find(name);
+	if (!c) return false;
+	RunMapAction(c->id);
+	return true;
+}
+
+/** The map screen's keys (issue #48 slice 2): a key the registry binds to one of the map's actions runs it. True when
+ * the key was one of them - whether the action could run or not. @a repeat is a held key, which only the actions that
+ * repeat on the map run again. */
+static bool RunMapKey(UINT32 const key, UINT16 const mods, bool const repeat)
+{
+	bool const ctrl = (mods & CTRL_DOWN) != 0, shift = (mods & SHIFT_DOWN) != 0, alt = (mods & ALT_DOWN) != 0;
+	std::string const k = KeyBindings::KeyFromInput(key, ctrl, shift, alt);
+	if (k.empty()) return false;
+	MapCommands::Command const* const c = MapCommands::ForKey(k);
+	if (!c) return false;
+	if (!repeat || c->repeat) RunMapAction(c->id);
+	return true;
+}
+
+/** What is left of the map screen's own keycases: the keys that are not player actions. */
 static void HandleModNone(UINT32 const key)
 {
 	switch (key)
 	{
-		case SDLK_ESCAPE: if (HandleKeyESC()) return; break;
-
-		case SDLK_PAUSE: HandlePlayerPauseUnPauseOfGame(); break;
-
-		case SDLK_LEFT:
-		case SDLK_RIGHT: GoToNextCharacterInList(key); break;
-
-		case SDLK_UP:   MapScreenMsgScrollUp(1);   break;
-		case SDLK_DOWN: MapScreenMsgScrollDown(1); break;
-
-		case SDLK_PAGEUP:   MapScreenMsgScrollUp(MAX_MESSAGES_ON_MAP_BOTTOM);   break;
-		case SDLK_PAGEDOWN: MapScreenMsgScrollDown(MAX_MESSAGES_ON_MAP_BOTTOM); break;
-
-		case SDLK_HOME: ChangeCurrentMapscreenMessageIndex(0); break;
-		case SDLK_END:  MoveToEndOfMapScreenMessageList();     break;
-
-		case SDLK_INSERT: GoUpOneLevelInMap();   break;
-		case SDLK_DELETE: GoDownOneLevelInMap(); break;
-
-		case SDLK_RETURN: RequestToggleMercInventoryPanel(); break;
-
-		case SDLK_BACKSPACE: StopAnyCurrentlyTalkingSpeech(); break;
-
-		case SDLK_F1:
-		case SDLK_F2:
-		case SDLK_F3:
-		case SDLK_F4:
-		case SDLK_F5:
-		case SDLK_F6: ChangeCharacterListSortMethod(key - SDLK_F1); break;
-
-		case '+':
-		case '=':
-			if (!CommonTimeCompressionChecks()) RequestIncreaseInTimeCompression();
-			break;
-
-		case '-':
-		case '_':
-			if (!CommonTimeCompressionChecks()) RequestDecreaseInTimeCompression();
-			break;
-
-		case SDLK_SPACE:
-			if (fShowUpdateBox)
-			{ // Restart time compression
-				EndUpdateBox(TRUE);
-			}
-			else
-			{ // Toggle time compression
-				if (!CommonTimeCompressionChecks()) RequestToggleTimeCompression();
-			}
-			break;
-
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		{ // Select all characters in squad 1-10
-			UINT const squad_no = (key - SDLK_0 + 9) % 10U;
-			SelectAllCharactersInSquad(squad_no);
-			break;
-		}
-
-		case 'a':
-			if (gfPreBattleInterfaceActive)
-			{ // Activate autoresolve in prebattle interface.
-				ActivatePreBattleAutoresolveAction();
-			}
-			else if (!fShowMapInventoryPool) // only handle border button keyboard equivalents if the button is visible!
-			{
-				ToggleAirspaceMode();
-			}
-			break;
-
-		case 'c': RequestContractMenu(); break;
-
-		case 'e':
-			// Activate enter sector in prebattle interface.
-			if (gfPreBattleInterfaceActive) gfHotKeyEnterSector = TRUE;
-			break;
-
-		case 'h':
-			// ARM: Feb01/98 - Cancel out of mapscreen movement plotting if Help subscreen is coming up
-			if (bSelectedDestChar != -1 || fPlotForHelicopter)
-			{
-				AbortMovementPlottingMode();
-			}
-			ShouldTheHelpScreenComeUp(HELP_SCREEN_MAPSCREEN, TRUE);
-			break;
-
-		case 'i':
-			// Only handle border button keyboard equivalents if the button is visible
-			if (!fShowMapInventoryPool) ToggleItemsFilter();
-			break;
-
-		case 'l': RequestTriggerExitFromMapscreen(MAP_EXIT_TO_LAPTOP); break;
-
-		case 'm':
-			// Only handle border button keyboard equivalents if the button is visible
-			if (!fShowMapInventoryPool) ToggleShowMinesMode();
-			break;
-
-		case 'o': RequestTriggerExitFromMapscreen(MAP_EXIT_TO_OPTIONS); break;
-
-		case 'r':
-			if (gfPreBattleInterfaceActive) ActivatePreBattleRetreatAction();
-			break;
-
-		case 't':
-			// Only handle border button keyboard equivalents if the button is visible
-			if (!fShowMapInventoryPool) ToggleShowTeamsMode();
-			break;
-
-		case 'v': DisplayGameSettings(); break;
-
-		case 'w':
-			// Only handle border button keyboard equivalents if the button is visible
-			if (!fShowMapInventoryPool) ToggleShowTownsMode();
-			break;
-
-		case 'z':
-			// Only handle border button keyboard equivalents if the button is visible
-			if (!fShowMapInventoryPool) ToggleShowMilitiaMode();
-			break;
-	}
-}
-
-
-static void HandleModShift(UINT const key)
-{
-	switch (key)
-	{
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		{ // Select all characters in squad 11-20
-			UINT const squad_no = 10 + (key - SDLK_0 + 9) % 10U;
-			SelectAllCharactersInSquad(squad_no);
-			break;
-		}
+	case SDLK_PAUSE: HandlePlayerPauseUnPauseOfGame(); break;
 	}
 }
 
@@ -2954,25 +2993,6 @@ static void HandleModCtrl(UINT const key)
 			}
 			break;
 
-	case 'i':
-		if (gamepolicy(isHotkeyEnabled(UI_Map, HKMOD_CTRL, 'i')))
-		{
-			ToggleSectorInventory();
-		}
-		break;
-
-		case 'l':
-			// go to LOAD screen
-			gfSaveGame = FALSE;
-			RequestTriggerExitFromMapscreen(MAP_EXIT_TO_LOAD);
-			break;
-
-		case 's':
-			// go to SAVE screen
-			gfSaveGame = TRUE;
-			RequestTriggerExitFromMapscreen(MAP_EXIT_TO_SAVE);
-			break;
-
 		case 't': if (CHEATER_CHEAT_LEVEL()) Teleport(); break;
 
 		case 'z':
@@ -2992,54 +3012,37 @@ static void HandleModCtrl(UINT const key)
 	}
 }
 
-
+/** Alt+S/L are the quick save and load the tactical screen reads raw as well (issue #48 slice 3 names them once, for
+ * both); Alt+X is the shortcut-exit cheat. */
 static void HandleModAlt(UINT32 const key)
 {
 	switch (key)
 	{
-		case 'a':
-			if (giHighLine != -1)
-			{
-				if (gCharactersList[giHighLine].merc)
-				{
-					bSelectedAssignChar = (INT8)giHighLine;
-					RebuildAssignmentsBox();
-					ChangeSelectedInfoChar((INT8)giHighLine, FALSE);
-					fShowAssignmentMenu = TRUE;
-				}
-			}
-			else if (GetSelectedInfoChar())
-			{
-				bSelectedAssignChar = bSelectedInfoChar;
-				RebuildAssignmentsBox();
-				fShowAssignmentMenu = TRUE;
-			}
-			break;
+	case 'l':
+		// Although we're not actually going anywhere, we must still be in a state where this is permitted
+		if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_LOAD)) DoQuickLoad();
+		break;
 
-		case 'l':
-			// Although we're not actually going anywhere, we must still be in a state where this is permitted
-			if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_LOAD)) DoQuickLoad();
-			break;
-
-		case 's':
-			// although we're not actually going anywhere, we must still be in a state where this is permitted
-			if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_SAVE))
+	case 's':
+		// although we're not actually going anywhere, we must still be in a state where this is permitted
+		if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_SAVE))
+		{
+			//if the game CAN be saved
+			if (CanGameBeSaved())
 			{
-				//if the game CAN be saved
-				if (CanGameBeSaved())
-				{
-					guiPreviousOptionScreen = guiCurrentScreen;
-					DoQuickSave();
-				}
-				else
-				{
-					//Display a message saying the player cant save now
-					DoMapMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], MAP_SCREEN, MSG_BOX_FLAG_OK, 0);
-				}
+				guiPreviousOptionScreen = guiCurrentScreen;
+				DoQuickSave();
 			}
-			break;
+			else
+			{
+				//Display a message saying the player cant save now
+				DoMapMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], MAP_SCREEN,
+								MSG_BOX_FLAG_OK, nullptr);
+			}
+		}
+		break;
 
-		case 'x': HandleShortCutExitState(); break;
+	case 'x': HandleShortCutExitState(); break;
 	}
 }
 
@@ -3065,27 +3068,19 @@ static void GetMapKeyboardInput()
 			}
 
 			UINT32 const key = InputEvent.usParam;
+			// a key bound to one of the map's actions runs that action, whatever modifier and whatever key it is
+			if (RunMapKey(key, InputEvent.usKeyState, false)) continue;
+
 			switch (InputEvent.usKeyState)
 			{
-				case 0:          HandleModNone( key ); break;
-				case SHIFT_DOWN: HandleModShift(key); break;
-				case CTRL_DOWN:  HandleModCtrl( key); break;
-				case ALT_DOWN:   HandleModAlt(  key); break;
+			case 0: HandleModNone(key); break;
+			case CTRL_DOWN: HandleModCtrl(key); break;
+			case ALT_DOWN: HandleModAlt(key); break;
 			}
 		}
 		else if (InputEvent.usEvent == KEY_REPEAT)
 		{
-			switch (InputEvent.usParam)
-			{
-				case SDLK_LEFT:
-				case SDLK_RIGHT: GoToNextCharacterInList(InputEvent.usParam); break;
-
-				case SDLK_UP:   MapScreenMsgScrollUp(1);   break;
-				case SDLK_DOWN: MapScreenMsgScrollDown(1); break;
-
-				case SDLK_PAGEUP:   MapScreenMsgScrollUp(MAX_MESSAGES_ON_MAP_BOTTOM);   break;
-				case SDLK_PAGEDOWN: MapScreenMsgScrollDown(MAX_MESSAGES_ON_MAP_BOTTOM); break;
-			}
+			RunMapKey(InputEvent.usParam, InputEvent.usKeyState, true);
 		}
 	}
 }
@@ -8189,12 +8184,15 @@ void SectorClick(SGPSector const& sector, bool const right)
 
 void Key(UINT32 const key, int const mods)
 {
+	// what a key press runs is a binding now (issue #48 slice 2): the registry first, the raw keycases after it
+	UINT16 const state = mods == 1 ? SHIFT_DOWN : mods == 2 ? CTRL_DOWN : mods == 3 ? ALT_DOWN : 0;
+	if (RunMapKey(key, state, false)) return;
 	switch (mods)
 	{
-		case 1:  HandleModShift(key); break;
-		case 2:  HandleModCtrl(key);  break;
-		case 3:  HandleModAlt(key);   break;
-		default: HandleModNone(key);  break;
+	case 1: break; // no shift-only keycase is left
+	case 2: HandleModCtrl(key); break;
+	case 3: HandleModAlt(key); break;
+	default: HandleModNone(key); break;
 	}
 }
 

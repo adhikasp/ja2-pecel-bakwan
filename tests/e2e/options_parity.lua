@@ -187,6 +187,106 @@ vm = ja2.viewModel("options")
 ja2.expect(vm.in_game and vm.can_save, "in game: saving is available")
 ja2.expect(vm.difficulty ~= "", "the campaign panel shows the difficulty: " .. vm.difficulty)
 shots.take("options_ingame.png", true)
+
+-- #48 slice 2: the map screen's shortcuts are rows on the same Controls page, and a rebind on one lands on the map
+-- screen. The page is taller than its panel, so the two columns are one scroll container (#401): the wheel over the
+-- page scrolls both of them together (the help panel beside them does not move) and brings the rows below the fold
+-- into the panel, where they are clickable.
+ja2.key("4")
+ja2.step(2)
+
+-- Returns the wheel notches it took to bring @a id into the panel, or -1 if it never came. ja2.wheel leaves the
+-- native UI settled (the page animates its scroll for a few frames otherwise, and a click mid-scroll is dropped).
+local function scrollDownTo(id)
+	for n = 1, 40 do
+		local e = ja2.find{id = id}
+		if e and e.clickable then return n - 1 end
+		local s = ja2.screenSize()
+		ja2.wheel(-3, math.floor(s.w / 2), math.floor(s.h / 2))
+	end
+	return -1
+end
+
+local controls = ja2.viewModel("options")
+local reference, mapRows = 0, 0
+local byMap = {}
+for _, c in ipairs(ja2.map.actions()) do byMap[c.name] = true end
+for _, k in ipairs(controls.keys) do reference = reference + 1 end
+for _, b in ipairs(controls.binds) do if byMap[b.name] then mapRows = mapRows + 1 end end
+ja2.expect(reference == 4, "only the tactical screen's raw shortcuts are left in the reference (" .. reference .. ")")
+ja2.expect(mapRows == #ja2.map.actions(), "the page lists every one of the map's actions (" .. mapRows .. ")")
+ja2.expect(ja2.exists{id = "options.key[time.toggle]"}, "the map's rows are addressable by id")
+ja2.expect(bind("time.toggle").key == "Space" and bind("time.toggle").bound, "the map's clock starts on Space")
+ja2.expect(bind("view.mines").key == "M", "and the filters are there too")
+shots.take("options_controls_map.png", true)
+
+-- A11 on a map action: the modal takes the next key and the map's dispatch follows it
+ja2.click{id = "options.key[time.toggle]"}
+ja2.step(2)
+ja2.expect(ja2.exists{id = "options.capture"}, "the key-capture modal opens on a map action")
+ja2.expect(ja2.find{id = "options.capture.name"}.text == "Start / stop time", "and names it: " .. ja2.find{id = "options.capture.name"}.text)
+shots.take("options_bind_map_capture.png", true)
+ja2.key("n")
+ja2.step(2)
+ja2.expect(not ja2.exists{id = "options.capture"}, "the modal closes on the key")
+ja2.expect(ja2.binding("time.toggle") == "n", "the map's clock is on n now")
+ja2.expect(ja2.map.key("n") == "time.toggle" and ja2.map.key("space") == nil, "and the map screen's dispatch agrees")
+ja2.expect(bind("time.toggle").key == "N" and bind("time.toggle").changed, "the row shows N and is marked as changed")
+shots.take("options_bind_map_done.png", true)
+ja2.assertInsideScreen()
+ja2.resetBinding("time.toggle")
+ja2.expect(ja2.map.key("space") == "time.toggle", "the default comes back")
+
+-- the rebind is the map screen's, and it is the effect that moves: the towns filter on a key of the player's own. The
+-- row is below the fold at the smallest resolution, so it is scrolled into the panel and clicked there - the page's
+-- own path, not a command.
+local notches = scrollDownTo("options.key[view.towns]")
+ja2.expect(notches >= 0, "the towns row comes into the panel by scrolling")
+ja2.expect(notches > 0, "and it was below the fold (" .. notches .. " wheel notches)")
+ja2.click{id = "options.key[view.towns]"}
+ja2.step(2)
+ja2.key("n")
+ja2.step(2)
+ja2.expect(ja2.binding("view.towns") == "n", "the towns filter is on n now")
+
+-- #401, and the bar for this slice at the smallest resolution the game runs at: the last row of the last map group is
+-- reachable. The columns scroll, so the page's deepest row - the last row of the last map group - comes into the panel
+-- and is clickable there, and a click on it reaches the row.
+local lastMapRow = nil
+for _, a in ipairs(ja2.map.actions()) do if a.group == "map_nav" then lastMapRow = a.name end end
+local rowId = "options.key[" .. lastMapRow .. "]"
+notches = scrollDownTo(rowId)
+ja2.expect(notches >= 0, "the last row of the last map group comes into the panel by scrolling (" .. rowId .. ")")
+ja2.expect(notches > 0, "and it was below the fold (" .. notches .. " wheel notches)")
+local row = ja2.find{id = rowId}
+ja2.expect(row.y + row.h < ja2.find{id = "options.done"}.y, "and it is drawn inside the panel: " .. rowId)
+ja2.click{id = rowId}
+ja2.step(2)
+local capture = ja2.find{id = "options.capture.name"}
+ja2.expect(capture ~= nil, "and a click on it starts the capture")
+ja2.expect(capture and capture.text ~= "", "naming the action: " .. tostring(capture and capture.text))
+ja2.key("escape")
+ja2.step(2)
+ja2.expect(not ja2.exists{id = "options.capture"}, "and Escape closes it")
+
+ja2.click{id = "options.done"}
+ja2.waitScreen("MAP_SCREEN")
+local function mapvm() return ja2.viewModel("mapscreen") end
+local towns = mapvm().f_towns
+ja2.key("n")
+ja2.waitIdle()
+ja2.expect(mapvm().f_towns ~= towns, "the rebound key toggles the towns on the map screen")
+ja2.key("w")
+ja2.waitIdle()
+ja2.expect(mapvm().f_towns ~= towns, "and the default key, unbound now, does nothing")
+ja2.key("n")
+ja2.waitIdle()
+ja2.expect(mapvm().f_towns == towns, "n toggles it back")
+ja2.key("o")
+ja2.waitScreen("OPTIONS_SCREEN")
+ja2.resetBinding("view.towns")
+ja2.expect(ja2.map.key("w") == "view.towns", "the default comes back on it too")
+
 ja2.click{id = "options.quit"}
 ja2.waitScreen("MSG_BOX_SCREEN")
 ja2.click{id = "msgbox.no"}

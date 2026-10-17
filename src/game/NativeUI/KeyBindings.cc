@@ -1,5 +1,6 @@
 #include "KeyBindings.h"
 
+#include "MapCommands.h"
 #include "TacticalCommands.h"
 
 #include <SDL3/SDL_keycode.h>
@@ -9,7 +10,7 @@
 #include <utility>
 
 // The action registry and the key vocabulary (see KeyBindings.h). The tactical command table is the first source; the
-// strategic map's will be the next, registered in Bindings() beside it.
+// strategic map's is the second, and the actions both implement are one row on both screens.
 
 namespace KeyBindings
 {
@@ -17,9 +18,10 @@ namespace KeyBindings
 namespace
 {
 /** The keys that have a name instead of a character. */
-char const* const NAMED_KEYS[] = { "tab",    "space",    "insert", "home", "end", "delete", "backspace",
-								   "pageup", "pagedown", "f1",     "f2",   "f3",  "f4",     "f5",
-								   "f6",     "f7",       "f8",     "f9",   "f10", "f11",    "f12" };
+char const* const NAMED_KEYS[] = { "tab",    "space",    "insert", "home",   "end", "delete", "backspace",
+								   "pageup", "pagedown", "escape", "return", "up",  "down",   "left",
+								   "right",  "f1",       "f2",     "f3",     "f4",  "f5",     "f6",
+								   "f7",     "f8",       "f9",     "f10",    "f11", "f12" };
 
 bool IsNamedKey(std::string_view const s)
 {
@@ -36,6 +38,16 @@ std::vector<Action> TacticalActions()
 		out.push_back({ "", c.name, c.group, c.label, c.key, c.key, false }); // the scope comes from AddSource
 	return out;
 }
+
+/** The strategic map's actions, as the registry wants them (issue #48 slice 2); the shared ones are declared here
+	 * too, so the registry knows both screens run them. */
+std::vector<Action> MapActions()
+{
+	std::vector<Action> out;
+	for (MapCommands::Command const& c : MapCommands::All())
+		out.push_back({ "", c.name, c.group, c.label, c.key, c.key, false }); // the scope comes from AddSource
+	return out;
+}
 }
 
 void Registry::AddSource(std::string const& scope, Source const source)
@@ -46,6 +58,14 @@ void Registry::AddSource(std::string const& scope, Source const source)
 		a.scope = scope;
 		a.key = a.def; // the overrides are applied by Load, after every source is in
 		a.changed = false;
+		// a name another screen already declared is the same action on both: one row, one key, each screen's own
+		// effect. It is registered once, by the first screen that has it.
+		if (Action* const existing = FindMutable(a.name))
+		{
+			existing->shared = true;
+			continue;
+		}
+		a.shared = false;
 		m_actions.push_back(std::move(a));
 	}
 }
@@ -68,17 +88,31 @@ std::string Registry::Key(std::string_view const name) const
 	return a ? a->key : std::string();
 }
 
-Action* Registry::OwnerMutable(std::string_view const key)
+Action* Registry::OwnerMutable(std::string_view const scope, std::string_view const key)
 {
 	if (key.empty()) return nullptr;
 	for (Action& a : m_actions)
-		if (!a.key.empty() && a.key == key) return &a;
+		if (!a.key.empty() && a.key == key && (a.scope == scope || a.shared)) return &a;
 	return nullptr;
+}
+
+Action const* Registry::Owner(std::string_view const scope, std::string_view const key) const
+{
+	return const_cast<Registry*>(this)->OwnerMutable(scope, key);
 }
 
 Action const* Registry::Owner(std::string_view const key) const
 {
-	return const_cast<Registry*>(this)->OwnerMutable(key);
+	if (key.empty()) return nullptr;
+	for (Action const& a : m_actions)
+		if (!a.key.empty() && a.key == key) return &a;
+	return nullptr;
+}
+
+bool Registry::SameKeyboard(Action const& a, Action const& b)
+{
+	// the same screen's keys, or one of the two is on every screen (a shared action): a key press reaches both
+	return a.scope == b.scope || a.shared || b.shared;
 }
 
 void Registry::SetKey(Action& a, std::string key)
@@ -110,8 +144,8 @@ BindOutcome Registry::Bind(std::string_view const name, std::string_view const k
 		out.result = BindResult::Unchanged;
 		return out;
 	}
-	// whichever action holds the key gives it up: a key is never bound to two actions
-	if (Action* const held = OwnerMutable(key); held && held != a)
+	// whichever action of the same screen holds the key gives it up: a key is never bound to two actions on a screen
+	if (Action* const held = OwnerMutable(a->scope, key); held && held != a)
 	{
 		out.loser = held->name;
 		SetKey(*held, std::string());
@@ -176,23 +210,31 @@ void Registry::Load(std::map<std::string, std::string> const& overrides)
 
 void Registry::ResolveConflicts()
 {
-	// a key runs one action: a saved override that another action's default also claims takes it from that action
-	std::map<std::string, size_t> holder; // key -> the index of the action that holds it
+	// a key runs one action per screen: a saved override that another action of the same screen also claims takes it
+	// from that action. The holders are kept in table order, so two of a kind are settled by the earlier row.
+	std::map<std::string, std::vector<size_t>> holders; // key -> the indices of the actions that hold it
 	for (size_t i = 0; i < m_actions.size(); ++i)
 	{
 		Action& a = m_actions[i];
 		if (a.key.empty()) continue;
-		auto const [it, fresh] = holder.emplace(a.key, i);
-		if (fresh) continue;
-		if (a.changed && !m_actions[it->second].changed)
+		std::vector<size_t>& held = holders[a.key];
+		bool taken = false;
+		for (size_t const j : held)
 		{
-			SetKey(m_actions[it->second], std::string()); // the override wins over the default
-			it->second = i;
+			Action& other = m_actions[j];
+			if (!SameKeyboard(a, other)) continue;
+			if (a.changed && !other.changed)
+			{
+				SetKey(other, std::string()); // the override wins over the default
+				// the action it took the key from no longer holds it: it is this one's now
+				std::erase(held, j);
+				break;
+			}
+			SetKey(a, std::string()); // two of a kind on one screen: the earlier row keeps it
+			taken = true;
+			break;
 		}
-		else
-		{
-			SetKey(a, std::string()); // two of a kind: the earlier row keeps it
-		}
+		if (!taken && !a.key.empty()) held.push_back(i);
 	}
 }
 
@@ -201,7 +243,8 @@ Registry& Bindings()
 	static Registry registry = []
 	{
 		Registry r;
-		r.AddSource("tactical", TacticalActions);
+		r.AddSource(TacticalCommands::SCOPE, TacticalActions);
+		r.AddSource(MapCommands::SCOPE, MapActions);
 		return r;
 	}();
 	return registry;
@@ -235,6 +278,14 @@ std::string KeyLabel(std::string_view const key)
 				p = "PgUp";
 			else if (p == "pagedown")
 				p = "PgDn";
+			else if (p == "escape")
+				p = "Esc";
+			else if (p == "return")
+				p = "Enter";
+			else if (p == "left")
+				p = "\u2190"; // the arrows as glyphs: the team list's hint prints the two side by side
+			else if (p == "right")
+				p = "\u2192";
 			else
 			{
 				p[0] = static_cast<char>(std::toupper(static_cast<unsigned char>(p[0])));
@@ -263,6 +314,18 @@ std::string KeyFromInput(std::uint32_t const key, bool const ctrl, bool const sh
 	case SDLK_BACKSPACE: named = "backspace"; break;
 	case SDLK_PAGEUP: named = "pageup"; break;
 	case SDLK_PAGEDOWN: named = "pagedown"; break;
+	case SDLK_ESCAPE: named = "escape"; break;
+	case SDLK_RETURN: named = "return"; break;
+	case SDLK_UP: named = "up"; break;
+	case SDLK_DOWN: named = "down"; break;
+	case SDLK_LEFT: named = "left"; break;
+	case SDLK_RIGHT: named = "right"; break;
+	case SDLK_PLUS:
+		// the numpad's + is the '=' key, which the map's clock answers to (the legacy accepted both); with shift it is
+		// the '=' key's shifted form, which no action binds
+		if (shift) return {};
+		ch = U'=';
+		break;
 	case SDLK_F1: named = "f1"; break;
 	case SDLK_F2: named = "f2"; break;
 	case SDLK_F3: named = "f3"; break;

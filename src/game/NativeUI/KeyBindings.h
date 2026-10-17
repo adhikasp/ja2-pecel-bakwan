@@ -1,16 +1,22 @@
 #pragma once
-// The rebindable actions and the keys they run (issue #48 slice 1; docs/ui/options.md §2). One place knows every
-// action, its default key and who holds it now: a screen hands its actions in as a *source* (the tactical HUD's
-// command table is the first, the strategic map's the next), so the screens cannot drift and the conflict check has
-// one owner. A binding is an override of a source's default, under the action's canonical name.
+// The rebindable actions and the keys they run (issue #48; docs/ui/options.md §2). One place knows every action, its
+// default key and who holds it now: a screen hands its actions in as a *source* (the tactical HUD's command table is
+// the first, the strategic map's the second), so the screens cannot drift and the conflict check has one owner. A
+// binding is an override of a source's default, under the action's canonical name.
 //
-// Binding a key another action holds moves the key to the new action and leaves the other one unbound - never two
-// actions on one key - and names it in the outcome so the screen can say who lost it. Reset gives the default back.
-// The keys themselves are the vocabulary the command tables already use ("c", "shift+space", "pageup"), and
-// KeyFromInput turns an input event into it.
+// A key runs one action *per screen*, because the two screens' legacy keys collide: 'c' contracts on the map and
+// crouches in tactical, and a single global key space would have to re-key one of the two screens. So an action
+// belongs to the screen that registered it, and a name two sources declare is one action on both (`shared`): it keeps
+// one key and a bind moves it on every screen that runs it. Binding a key another action of the same screen holds
+// moves the key to the new action and leaves the other one unbound - never two actions on one key - and names it in
+// the outcome so the screen can say who lost it. Reset gives the default back.
+//
+// The keys themselves are the vocabulary the command tables already use ("c", "shift+space", "pageup", "escape"),
+// and KeyFromInput turns an input event into it.
 //
 // No globals and no RmlUi: Registry is plain data an adapter owns (Bindings() is the process-wide one), so the rules
-// are unit-tested without a screen. TacticalCommands::ForKey, the options page and ja2.bind* all read the same one.
+// are unit-tested without a screen. TacticalCommands::ForKey, MapCommands::ForKey, the options page and ja2.bind* all
+// read the same one.
 
 #include <cstdint>
 #include <map>
@@ -23,13 +29,14 @@ namespace KeyBindings
 /** One action a screen can have the player rebind. */
 struct Action
 {
-	std::string scope;    // the screen that owns it: "tactical", "map", ...
+	std::string scope;    // the screen that registered it: "tactical", "map", ...
 	std::string name;     // "stance.crouch"
 	std::string group;    // "stance": how the owning screen groups its actions
 	std::string label;    // the string key of its name ("tac.cmd.stance.crouch")
 	std::string def;      // the default key, "" when the action has none
 	std::string key;      // the key it runs now, "" when unbound
 	bool changed = false; // the player changed it from the default
+	bool shared = false;  // more than one screen implements it: one action, one key, a screen's own effect
 };
 
 /** A screen's actions, in the order the screen lists them. */
@@ -54,7 +61,9 @@ struct BindOutcome
 class Registry
 {
   public:
-	/** Adds a screen's actions, with their default keys (Load applies the saved overrides afterwards). */
+	/** Adds a screen's actions, with their default keys (Load applies the saved overrides afterwards). A name
+		 * another source already declared is the same action on both screens: it stays one row and is marked
+		 * shared, and both screens dispatch it. */
 	void AddSource(std::string const& scope, Source);
 
 	/** The actions of every source, in registration order, with their current keys. */
@@ -63,11 +72,13 @@ class Registry
 	Action const* Find(std::string_view name) const;
 	/** The key @a name runs now, "" when there is no such action or it is unbound. */
 	std::string Key(std::string_view name) const;
-	/** The action @a key runs, or nullptr. */
+	/** The action @a key runs on @a scope's screen, or nullptr. A shared action runs on every screen. */
+	Action const* Owner(std::string_view scope, std::string_view key) const;
+	/** The first action @a key runs on any screen, or nullptr. */
 	Action const* Owner(std::string_view key) const;
 
-	/** Gives @a key to @a name. Whichever action held @a key is left unbound and named in the outcome; an
-		 * empty @a key unbinds @a name itself. */
+	/** Gives @a key to @a name. Whichever action of the same screen held @a key is left unbound and named in the
+		 * outcome; an empty @a key unbinds @a name itself. */
 	BindOutcome Bind(std::string_view name, std::string_view key);
 	/** Gives @a name its default key back, taking it from whichever action holds it now; the outcome names that
 		 * action when there is one, so a caller can report it the way a bind is reported. */
@@ -78,17 +89,20 @@ class Registry
 	/** What the player changed, to save: name -> key ("" = bound to nothing; the default when unlisted). */
 	std::map<std::string, std::string> Overrides() const;
 	/** Applies saved overrides. An unknown action name is ignored, and so is a key that is not one - except
-		 * "" which is an unbind. A saved key that another action's default also claims takes it from that action:
-		 * a key never runs two actions, even out of the file. */
+		 * "" which is an unbind. A saved key that another action of the same screen also claims takes it from that
+		 * action: a key never runs two actions on one screen, even out of the file. */
 	void Load(std::map<std::string, std::string> const& overrides);
 
   private:
 	Action* FindMutable(std::string_view name);
-	Action* OwnerMutable(std::string_view key);
+	Action* OwnerMutable(std::string_view scope, std::string_view key);
+	/** Whether two actions could be reached by the same key press: the same screen, or one shared by both. */
+	static bool SameKeyboard(Action const& a, Action const& b);
 	/** Sets @a a's key, records it in the overrides when it is not the default, and undoes the record when it
 		 * is. */
 	void SetKey(Action& a, std::string key);
-	/** One action per key: an override beats a default, and two of a kind are settled by the table's order. */
+	/** One action per key per screen: an override beats a default, and two of a kind are settled by the table's
+		 * order. */
 	void ResolveConflicts();
 
 	std::vector<std::pair<std::string, Source>> m_sources;

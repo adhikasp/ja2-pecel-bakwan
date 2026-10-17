@@ -92,6 +92,29 @@
 | A30 | Cheats | Ctrl+T teleport, Ctrl+A ambush, Ctrl+Z AI aware | | keep behind cheat level |
 | A31 | Range and ballistics readout (new) | toolbar chart button (`map.ballistics`) | `NativeUI::OpenWeaponReadout` | a view over the damage pipeline; see [weapon-readout.md](weapon-readout.md) |
 
+### 3.1 The shortcuts are actions
+
+Every key above is a **named action** in one table, `src/game/NativeUI/MapCommands.{h,cc}` (issue #48 slice 2), and the
+key it runs is a **binding** in the KeyBindings registry rather than a keycode match: the legacy screen's four
+`HandleMod*` switches are one table and one `RunMapKey`. The table is data (no globals, no legacy headers, gtest); the
+action's effect lives in `RunMapAction` (Strategic/MapScreen.cc, beside the legacy handlers) and the screen's own
+buttons run the same action by name, so a button and its key can never drift. The Options > Controls page lists every
+one of them and rebinds them; the map's buttons and tooltips print the key each runs now.
+
+Names are for the action, not the screen: `squad.select.4` and `nav.options` are the tactical table's actions too (one
+row, one key, each screen's own effect - the map selects the squad's mercs, tactical switches to it), and the shifted
+digits `squad.select.11` to `.20` are the map's own (tactical has no eleventh squad). A key runs one action **per
+screen**: the two screens' legacy keys collide on plenty of letters (`c` contracts here and crouches in tactical, `m` is
+mines here and the map button there), so the registry resolves conflicts within the screen that owns the action and a
+rebind on one leaves the other alone.
+
+Not actions, and so still raw keycases: the cheats (Ctrl+A/T/Z), Alt+X, and the Pause key. Quick save/load (Alt+S/L)
+stay raw here as well - the tactical screen reads the same keys raw, so naming them for the map alone would make a
+rebind work on one screen and silently not the other; they become one shared action with the tactical screen's slice.
+
+The map's dispatch is assertable headless (`ja2.map.actions()`, `.key(combo)`, `.run(name)`); `tests/e2e/map_keys.lua`
+drives every group of shortcuts by key and asserts the effect on the game.
+
 ## 4. States and modes
 
 | # | State | Entered by | Left by |
@@ -263,6 +286,10 @@ automation can address it as `map.team[N].sleep`.
 | A15b | `sector_stock.lua`: staged stash, sort, mark, exit |
 | A24 | laptop and back, options and back, tactical |
 | layout | UI scale 150 % and 200 %: layout audit |
+
+`tests/e2e/map_keys.lua` is the shortcuts as data (issue #48 slice 2): the table, the key of every action, and each
+group's effect on the game - the filters, the levels, the sort, the merc list, the squads, the inventory panel, the help
+overlay and the exits - plus a rebind reaching the map screen and a shared action moving on both screens.
 
 `tests/e2e/mapscreen_states.lua` (with test aids `ja2.debug("hiretransit" | "updatebox" | "helicopter" | "killmerc")`):
 a merc in transit (dimmed, own group), the update box (Stop), the helicopter and arrival point in airspace mode, a dead

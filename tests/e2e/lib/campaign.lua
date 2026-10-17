@@ -170,8 +170,9 @@ end
 -- Laptop -> map screen -> run time until the hired mercs land in tactical.
 function campaign.landInArulco()
 	campaign.toMap()
-	-- Compressing time runs the clock until the helicopter drop.
-	ja2.click("Time Compress (+)")
+	-- Compressing time runs the clock until the helicopter drop. The button by id on the native map screen: its tooltip
+	-- prints the key it runs now, and that is a binding since #48 slice 2.
+	if ja2.exists({ id = "map.time.faster" }) then ja2.click({ id = "map.time.faster" }) else ja2.click("Time Compress (+)") end
 	ja2.waitScreen("GAME_SCREEN", 600000)
 	campaign.dismissHelp()
 end

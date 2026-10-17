@@ -116,6 +116,27 @@
 						<div class="keyrow" data-for="k : keys" data-class-gone="k.group != 'reference'"><span class="name">{{k.name}}</span><span class="kbd">{{k.k1}}</span><span class="kbd" data-if="k.k2 != ''">{{k.k2}}</span></div>
 						<div class="op-note"><img class="icon" src="icon-info"/><span>{{s_keys_reference_note}}</span></div>
 					</div>
+					<div class="op-group"><span class="section">{{l_keys_map_time}}</span>
+						<div class="keyrow" data-for="k : binds" data-class-gone="k.group != 'map_time'" data-class-is-error="k.lost"><span class="name">{{k.label}}</span><span class="kbd bind" data-class-none="!k.bound" data-class-changed="k.changed" data-attr-id="'options.key[' + k.name + ']'" data-event-click="capture(k.name)" data-event-mouseover="key_help(k.name)">{{k.key}}</span><button class="icon-btn" data-if="k.changed" data-attr-title="s_bind_reset_row" data-attr-id="'options.key.reset[' + k.name + ']'" data-event-click="reset(k.name)"><img class="icon sm" src="icon-reload"/></button></div>
+					</div>
+					<div class="op-group"><span class="section">{{l_keys_map_log}}</span>
+						<div class="keyrow" data-for="k : binds" data-class-gone="k.group != 'map_log'" data-class-is-error="k.lost"><span class="name">{{k.label}}</span><span class="kbd bind" data-class-none="!k.bound" data-class-changed="k.changed" data-attr-id="'options.key[' + k.name + ']'" data-event-click="capture(k.name)" data-event-mouseover="key_help(k.name)">{{k.key}}</span><button class="icon-btn" data-if="k.changed" data-attr-title="s_bind_reset_row" data-attr-id="'options.key.reset[' + k.name + ']'" data-event-click="reset(k.name)"><img class="icon sm" src="icon-reload"/></button></div>
+					</div>
+					<div class="op-group"><span class="section">{{l_keys_map_view}}</span>
+						<div class="keyrow" data-for="k : binds" data-class-gone="k.group != 'map_view'" data-class-is-error="k.lost"><span class="name">{{k.label}}</span><span class="kbd bind" data-class-none="!k.bound" data-class-changed="k.changed" data-attr-id="'options.key[' + k.name + ']'" data-event-click="capture(k.name)" data-event-mouseover="key_help(k.name)">{{k.key}}</span><button class="icon-btn" data-if="k.changed" data-attr-title="s_bind_reset_row" data-attr-id="'options.key.reset[' + k.name + ']'" data-event-click="reset(k.name)"><img class="icon sm" src="icon-reload"/></button></div>
+					</div>
+					<div class="op-group"><span class="section">{{l_keys_map_team}}</span>
+						<div class="keyrow" data-for="k : binds" data-class-gone="k.group != 'map_team'" data-class-is-error="k.lost"><span class="name">{{k.label}}</span><span class="kbd bind" data-class-none="!k.bound" data-class-changed="k.changed" data-attr-id="'options.key[' + k.name + ']'" data-event-click="capture(k.name)" data-event-mouseover="key_help(k.name)">{{k.key}}</span><button class="icon-btn" data-if="k.changed" data-attr-title="s_bind_reset_row" data-attr-id="'options.key.reset[' + k.name + ']'" data-event-click="reset(k.name)"><img class="icon sm" src="icon-reload"/></button></div>
+					</div>
+					<div class="op-group"><span class="section">{{l_keys_map_squad}}</span>
+						<div class="keyrow" data-for="k : binds" data-class-gone="k.group != 'map_squad'" data-class-is-error="k.lost"><span class="name">{{k.label}}</span><span class="kbd bind" data-class-none="!k.bound" data-class-changed="k.changed" data-attr-id="'options.key[' + k.name + ']'" data-event-click="capture(k.name)" data-event-mouseover="key_help(k.name)">{{k.key}}</span><button class="icon-btn" data-if="k.changed" data-attr-title="s_bind_reset_row" data-attr-id="'options.key.reset[' + k.name + ']'" data-event-click="reset(k.name)"><img class="icon sm" src="icon-reload"/></button></div>
+					</div>
+					<div class="op-group"><span class="section">{{l_keys_map_act}}</span>
+						<div class="keyrow" data-for="k : binds" data-class-gone="k.group != 'map_act'" data-class-is-error="k.lost"><span class="name">{{k.label}}</span><span class="kbd bind" data-class-none="!k.bound" data-class-changed="k.changed" data-attr-id="'options.key[' + k.name + ']'" data-event-click="capture(k.name)" data-event-mouseover="key_help(k.name)">{{k.key}}</span><button class="icon-btn" data-if="k.changed" data-attr-title="s_bind_reset_row" data-attr-id="'options.key.reset[' + k.name + ']'" data-event-click="reset(k.name)"><img class="icon sm" src="icon-reload"/></button></div>
+					</div>
+					<div class="op-group"><span class="section">{{l_keys_map_nav}}</span>
+						<div class="keyrow" data-for="k : binds" data-class-gone="k.group != 'map_nav'" data-class-is-error="k.lost"><span class="name">{{k.label}}</span><span class="kbd bind" data-class-none="!k.bound" data-class-changed="k.changed" data-attr-id="'options.key[' + k.name + ']'" data-event-click="capture(k.name)" data-event-mouseover="key_help(k.name)">{{k.key}}</span><button class="icon-btn" data-if="k.changed" data-attr-title="s_bind_reset_row" data-attr-id="'options.key.reset[' + k.name + ']'" data-event-click="reset(k.name)"><img class="icon sm" src="icon-reload"/></button></div>
+					</div>
 				</div>
 				<div class="op-col">
 					<div class="op-group">
