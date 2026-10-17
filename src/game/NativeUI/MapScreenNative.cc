@@ -413,7 +413,11 @@ public:
 		});
 		// the map's shortcuts as actions (issue #48 slice 2): a button runs the same named action its key runs,
 		// so the key can be rebound and the button still does what it says
-		Command("act", [this](Args const& a) { if (!a.empty() && RunMapActionNamed(a[0])) Poke(); });
+		Command("act",
+				[this](Args const& a)
+				{
+					if (!a.empty() && RunMapActionNamed(a[0])) Poke();
+				});
 		Command("exit", [this](Args const& a) {
 			if (a.empty()) return;
 			menuOpen = false;
@@ -528,19 +532,38 @@ public:
 	void KeyHints()
 	{
 		static std::pair<char const*, char const*> const HINTS[] = {
-			{ "towns", "view.towns" }, { "mines", "view.mines" }, { "teams", "view.teams" },
-			{ "militia", "view.militia" }, { "airspace", "view.airspace" }, { "items", "view.items" },
-			{ "time", "time.toggle" }, { "time_more", "time.more" }, { "time_less", "time.less" },
-			{ "level_up", "level.up" }, { "level_down", "level.down" },
-			{ "team_prev", "team.prev" }, { "team_next", "team.next" },
-			{ "sort_name", "team.sort.name" }, { "sort_assign", "team.sort.assignment" },
-			{ "sort_cond", "team.sort.status" }, { "sort_loc", "team.sort.location" },
-			{ "sort_dest", "team.sort.destination" }, { "sort_left", "team.sort.contract" },
-			{ "squad_first", "squad.select.1" }, { "squad_last", "squad.select.10" },
-			{ "inventory", "panel.merc_inventory" }, { "assign", "act.assign" }, { "contract", "act.contract" },
-			{ "help", "act.help" }, { "settings", "act.settings" },
-			{ "laptop", "nav.laptop" }, { "back", "nav.back" }, { "options", "nav.options" },
-			{ "save", "nav.save" }, { "load", "nav.load" }, { "msg_page_up", "msg.page_up" },
+			{ "towns", "view.towns" },
+			{ "mines", "view.mines" },
+			{ "teams", "view.teams" },
+			{ "militia", "view.militia" },
+			{ "airspace", "view.airspace" },
+			{ "items", "view.items" },
+			{ "time", "time.toggle" },
+			{ "time_more", "time.more" },
+			{ "time_less", "time.less" },
+			{ "level_up", "level.up" },
+			{ "level_down", "level.down" },
+			{ "team_prev", "team.prev" },
+			{ "team_next", "team.next" },
+			{ "sort_name", "team.sort.name" },
+			{ "sort_assign", "team.sort.assignment" },
+			{ "sort_cond", "team.sort.status" },
+			{ "sort_loc", "team.sort.location" },
+			{ "sort_dest", "team.sort.destination" },
+			{ "sort_left", "team.sort.contract" },
+			{ "squad_first", "squad.select.1" },
+			{ "squad_last", "squad.select.10" },
+			{ "inventory", "panel.merc_inventory" },
+			{ "assign", "act.assign" },
+			{ "contract", "act.contract" },
+			{ "help", "act.help" },
+			{ "settings", "act.settings" },
+			{ "laptop", "nav.laptop" },
+			{ "back", "nav.back" },
+			{ "options", "nav.options" },
+			{ "save", "nav.save" },
+			{ "load", "nav.load" },
+			{ "msg_page_up", "msg.page_up" },
 		};
 		for (auto const& [field, action] : HINTS)
 			keyHints[field] = KeyBindings::KeyLabel(KeyBindings::Bindings().Key(action));

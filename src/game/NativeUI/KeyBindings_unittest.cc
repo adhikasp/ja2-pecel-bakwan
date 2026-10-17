@@ -285,9 +285,10 @@ TEST(KeyBindings, keyNamesAreCanonical)
 
 TEST(KeyBindings, isKeyRejectsWhatIsNotAKey)
 {
-	for (std::string const key : { "c", "1", "0", "`", "/", "-", "=", "f1", "f12", "pageup", "space", "insert",
-								   "escape", "return", "up", "down", "left", "right", "shift+c", "ctrl+q",
-								   "ctrl+shift+space", "ctrl+alt+f12" })
+	for (std::string const key : { "c",           "1",    "0",      "`",     "/",       "-",      "=",
+								   "f1",          "f12",  "pageup", "space", "insert",  "escape", "return",
+								   "up",          "down", "left",   "right", "shift+c", "ctrl+q", "ctrl+shift+space",
+								   "ctrl+alt+f12" })
 		EXPECT_TRUE(IsKey(key)) << key;
 	for (std::string const key : { "", " ", "C", "+", "a+b", "ctrl+", "shift+", "ctrl+ctrl+q", "ctrl+shift+",
 								   "noSuchKey", "42", "ctrl+F1", "\t" })
@@ -431,7 +432,7 @@ TEST(KeyBindings, theProcessRegistryHasTheWholeMapTable)
 	DefaultsBack const guard;
 	Registry& r = Bindings();
 	ASSERT_EQ(r.Actions().size(),
-		static_cast<size_t>(TacticalCommands::COUNT) + static_cast<size_t>(MapCommands::COUNT) - 11u);
+			  static_cast<size_t>(TacticalCommands::COUNT) + static_cast<size_t>(MapCommands::COUNT) - 11u);
 	for (MapCommands::Command const& c : MapCommands::All())
 	{
 		Action const* const a = r.Find(c.name);
@@ -439,7 +440,10 @@ TEST(KeyBindings, theProcessRegistryHasTheWholeMapTable)
 		EXPECT_EQ(a->key, std::string(c.key)) << c.name;
 		EXPECT_EQ(a->def, std::string(c.key)) << c.name;
 		EXPECT_EQ(a->shared, c.shared) << c.name;
-		if (!c.shared) { EXPECT_EQ(a->scope, MapCommands::SCOPE) << c.name; }
+		if (!c.shared)
+		{
+			EXPECT_EQ(a->scope, MapCommands::SCOPE) << c.name;
+		}
 	}
 	// the two screens' defaults collide on plenty of keys and each keeps its own: space is the map's clock and the
 	// tactical HUD's next merc, 'c' the map's contract and the HUD's crouch, 'm' the map's mines and the HUD's map

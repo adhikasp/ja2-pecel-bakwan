@@ -18,10 +18,10 @@ namespace KeyBindings
 namespace
 {
 /** The keys that have a name instead of a character. */
-char const* const NAMED_KEYS[] = { "tab",    "space",    "insert", "home",   "end",     "delete", "backspace",
-								   "pageup", "pagedown", "escape", "return", "up",      "down",   "left",
-								   "right",  "f1",       "f2",     "f3",     "f4",      "f5",     "f6",
-								   "f7",     "f8",       "f9",     "f10",    "f11",     "f12" };
+char const* const NAMED_KEYS[] = { "tab",    "space",    "insert", "home",   "end", "delete", "backspace",
+								   "pageup", "pagedown", "escape", "return", "up",  "down",   "left",
+								   "right",  "f1",       "f2",     "f3",     "f4",  "f5",     "f6",
+								   "f7",     "f8",       "f9",     "f10",    "f11", "f12" };
 
 bool IsNamedKey(std::string_view const s)
 {

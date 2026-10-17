@@ -17,8 +17,11 @@ using namespace MapCommands;
 
 namespace
 {
-	/** Every action the map screen dispatches, in table order. */
-	std::vector<Command> const& Dispatched() { return All(); }
+/** Every action the map screen dispatches, in table order. */
+std::vector<Command> const& Dispatched()
+{
+	return All();
+}
 }
 
 TEST(MapCommands, everyActionIsNamedGroupedAndLabelled)
@@ -30,7 +33,10 @@ TEST(MapCommands, everyActionIsNamedGroupedAndLabelled)
 		EXPECT_EQ(static_cast<size_t>(std::to_underlying(c.id)), i) << c.name << " is out of Id order";
 		EXPECT_FALSE(std::string(c.name).empty());
 		// a shared action keeps the group of the screen that registered it; the map's own are its own groups
-		if (!c.shared) { EXPECT_NE(std::string(c.group).find("map_"), std::string::npos) << c.name << " is not in a map group"; }
+		if (!c.shared)
+		{
+			EXPECT_NE(std::string(c.group).find("map_"), std::string::npos) << c.name << " is not in a map group";
+		}
 		EXPECT_EQ(std::string(c.label), std::string("map.cmd.") + c.name);
 		EXPECT_TRUE(c.key == nullptr || KeyBindings::IsKey(c.key)) << c.name << " has a default that is not a key";
 	}
@@ -121,7 +127,7 @@ TEST(MapCommands, theEntryCarriesWhatTheEffectNeeds)
 	}
 	// the keys that repeat while held are the ones the legacy KEY_REPEAT block repeated
 	for (Command const* c : { &Get(Id::MsgUp), &Get(Id::MsgDown), &Get(Id::MsgPageUp), &Get(Id::MsgPageDown),
-			&Get(Id::TeamNext), &Get(Id::TeamPrev) })
+							  &Get(Id::TeamNext), &Get(Id::TeamPrev) })
 		EXPECT_TRUE(c->repeat) << c->name;
 	EXPECT_FALSE(Get(Id::MsgFirst).repeat);
 	EXPECT_FALSE(Get(Id::TimeToggle).repeat);

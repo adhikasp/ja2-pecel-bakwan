@@ -192,8 +192,8 @@ public:
 			labels[k] = Str(std::string(k).find('_') == std::string::npos && std::string("gameplay video audio controls access").find(k) != std::string::npos
 				? std::string("options.tab.") + k : std::string("options.group.") + k);
 		}
-		for (char const* g : { "stance", "move", "act", "turn", "nav", "panel", "select", "view", "map_time",
-				"map_log", "map_view", "map_team", "map_squad", "map_act", "map_nav" })
+		for (char const* g : { "stance", "move", "act", "turn", "nav", "panel", "select", "view", "map_time", "map_log",
+							   "map_view", "map_team", "map_squad", "map_act", "map_nav" })
 		{
 			labels[std::string("keys_") + g] = Str(std::string("options.group.keys_") + g);
 		}

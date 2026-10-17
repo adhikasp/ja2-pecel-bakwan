@@ -25,51 +25,99 @@
 
 namespace MapCommands
 {
-	/** The screen these actions belong to, in the KeyBindings registry. */
-	inline constexpr char const* SCOPE = "map";
+/** The screen these actions belong to, in the KeyBindings registry. */
+inline constexpr char const* SCOPE = "map";
 
-	enum class Id : uint8_t
-	{
-		// the clock
-		TimeToggle, TimeMore, TimeLess,
-		// the message log
-		MsgUp, MsgDown, MsgPageUp, MsgPageDown, MsgFirst, MsgLast, MsgStopSpeech,
-		// what the map shows
-		LevelUp, LevelDown,
-		ViewTowns, ViewMines, ViewTeams, ViewMilitia, ViewAirspace, ViewItems,
-		// the team list
-		TeamNext, TeamPrev, PanelMercInventory,
-		TeamSortName, TeamSortAssignment, TeamSortStatus, TeamSortLocation, TeamSortDestination, TeamSortContract,
-		// squads: 1-10 are the tactical table's action as well, 11-20 are the map's
-		Squad1, Squad2, Squad3, Squad4, Squad5, Squad6, Squad7, Squad8, Squad9, Squad10,
-		Squad11, Squad12, Squad13, Squad14, Squad15, Squad16, Squad17, Squad18, Squad19, Squad20,
-		// the map's own actions
-		ActContract, ActHelp, ActSettings, ActAssign, ActSectorInventory,
-		PrebattleEnter, PrebattleRetreat,
-		// the screens it leaves to
-		NavLaptop, NavBack, NavSave, NavLoad, NavOptions,
-		Count
-	};
+enum class Id : uint8_t
+{
+	// the clock
+	TimeToggle,
+	TimeMore,
+	TimeLess,
+	// the message log
+	MsgUp,
+	MsgDown,
+	MsgPageUp,
+	MsgPageDown,
+	MsgFirst,
+	MsgLast,
+	MsgStopSpeech,
+	// what the map shows
+	LevelUp,
+	LevelDown,
+	ViewTowns,
+	ViewMines,
+	ViewTeams,
+	ViewMilitia,
+	ViewAirspace,
+	ViewItems,
+	// the team list
+	TeamNext,
+	TeamPrev,
+	PanelMercInventory,
+	TeamSortName,
+	TeamSortAssignment,
+	TeamSortStatus,
+	TeamSortLocation,
+	TeamSortDestination,
+	TeamSortContract,
+	// squads: 1-10 are the tactical table's action as well, 11-20 are the map's
+	Squad1,
+	Squad2,
+	Squad3,
+	Squad4,
+	Squad5,
+	Squad6,
+	Squad7,
+	Squad8,
+	Squad9,
+	Squad10,
+	Squad11,
+	Squad12,
+	Squad13,
+	Squad14,
+	Squad15,
+	Squad16,
+	Squad17,
+	Squad18,
+	Squad19,
+	Squad20,
+	// the map's own actions
+	ActContract,
+	ActHelp,
+	ActSettings,
+	ActAssign,
+	ActSectorInventory,
+	PrebattleEnter,
+	PrebattleRetreat,
+	// the screens it leaves to
+	NavLaptop,
+	NavBack,
+	NavSave,
+	NavLoad,
+	NavOptions,
+	Count
+};
 
-	constexpr int COUNT = std::to_underlying(Id::Count);
+constexpr int COUNT = std::to_underlying(Id::Count);
 
-	struct Command
-	{
-		Id          id;
-		char const* name;   // "view.mines"
-		char const* group;  // "map_view": how the page groups it
-		char const* label;  // string key: map.cmd.<name>
-		char const* key;    // the default key, "" for none ("space", "=", "shift+1", "escape")
-		int         arg;    // the n of a Squad<n> / TeamSort<n> action (0-based), else 0
-		bool        repeat; // the key keeps running it while it is held (the message scroll, the team list)
-		bool        shared; // another screen registered this name: one row, and the map runs it too
-	};
+struct Command
+{
+	Id id;
+	char const* name;  // "view.mines"
+	char const* group; // "map_view": how the page groups it
+	char const* label; // string key: map.cmd.<name>
+	char const* key;   // the default key, "" for none ("space", "=", "shift+1", "escape")
+	int arg;           // the n of a Squad<n> / TeamSort<n> action (0-based), else 0
+	bool repeat;       // the key keeps running it while it is held (the message scroll, the team list)
+	bool shared;       // another screen registered this name: one row, and the map runs it too
+};
 
-	/** The table, in Id order. */
-	std::vector<Command> const& All();
-	Command const& Get(Id);
-	/** The action named @a name ("view.mines"), or nullptr. */
-	Command const* Find(std::string_view name);
-	/** The action a key runs now - the rebindable one, not the table's default - or nullptr. */
-	Command const* ForKey(std::string_view key);
+/** The table, in Id order. */
+std::vector<Command> const& All();
+Command const& Get(Id);
+/** The action named @a name ("view.mines"), or nullptr. */
+Command const* Find(std::string_view name);
+/** The action a key runs now - the rebindable one, not the table's default - or nullptr. */
+Command const* ForKey(std::string_view key);
 }

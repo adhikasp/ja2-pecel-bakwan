@@ -18,29 +18,70 @@
 
 namespace TacticalCommands
 {
-	/** The screen the commands belong to, in the KeyBindings registry (issue #48): a key runs one action per screen. */
-	inline constexpr char const* SCOPE = "tactical";
+/** The screen the commands belong to, in the KeyBindings registry (issue #48): a key runs one action per screen. */
+inline constexpr char const* SCOPE = "tactical";
 
-	enum class Id : uint8_t
-	{
-		// a soldier's body
-		StanceStand, StanceCrouch, StanceProne, StanceUp, StanceDown,
-		Run, Stealth, Climb, Level,
-		// what the pointer does next
-		Burst, Look, Talk, SwapHands,
-		// the turn and the game flow
-		EndTurn, Map, Options, Overhead, Pause,
-		// the HUD's own panels
-		Detail, DetailClose, KeyRing, Log, Mute, Readout, Loadout,
-		// who is selected
-		MercNext, SquadNext, Locate,
-		// what the world shows
-		Roofs, Glow,
-		// F1..F10 select the n-th merc of the squad bar, 1..0 the n-th squad
-		Merc1, Merc2, Merc3, Merc4, Merc5, Merc6, Merc7, Merc8, Merc9, Merc10,
-		Squad1, Squad2, Squad3, Squad4, Squad5, Squad6, Squad7, Squad8, Squad9, Squad10,
-		Count
-	};
+enum class Id : uint8_t
+{
+	// a soldier's body
+	StanceStand,
+	StanceCrouch,
+	StanceProne,
+	StanceUp,
+	StanceDown,
+	Run,
+	Stealth,
+	Climb,
+	Level,
+	// what the pointer does next
+	Burst,
+	Look,
+	Talk,
+	SwapHands,
+	// the turn and the game flow
+	EndTurn,
+	Map,
+	Options,
+	Overhead,
+	Pause,
+	// the HUD's own panels
+	Detail,
+	DetailClose,
+	KeyRing,
+	Log,
+	Mute,
+	Readout,
+	Loadout,
+	// who is selected
+	MercNext,
+	SquadNext,
+	Locate,
+	// what the world shows
+	Roofs,
+	Glow,
+	// F1..F10 select the n-th merc of the squad bar, 1..0 the n-th squad
+	Merc1,
+	Merc2,
+	Merc3,
+	Merc4,
+	Merc5,
+	Merc6,
+	Merc7,
+	Merc8,
+	Merc9,
+	Merc10,
+	Squad1,
+	Squad2,
+	Squad3,
+	Squad4,
+	Squad5,
+	Squad6,
+	Squad7,
+	Squad8,
+	Squad9,
+	Squad10,
+	Count
+};
 
 	constexpr int COUNT = std::to_underlying(Id::Count);
 

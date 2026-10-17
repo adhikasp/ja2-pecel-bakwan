@@ -27,7 +27,7 @@
 | I4 | "In effect now" (window, canvas, UI scale, world layer) | video globals | left text block | note on the Video page |
 | I5 | Save Game available | in a game and not Iron Man in combat (`CanGameBeSaved`) | button disabled | button disabled + tooltip |
 | I6 | Campaign settings (new, read-only) | `gGameOptions` | — | Gameplay page panel |
-| I7 | The rebindable actions and the key each runs | `KeyBindings` (`src/game/NativeUI/KeyBindings.cc`), whose first source is the tactical command table (`NativeUI/TacticalCommands.cc`) | keys typed into the screen's own switch (no table) | Controls page: a row per action, grouped, with the key it runs and a reset |
+| I7 | The rebindable actions and the key each runs | `KeyBindings` (`src/game/NativeUI/KeyBindings.cc`), whose sources are the tactical command table (`NativeUI/TacticalCommands.cc`) and the strategic map's action table (`NativeUI/MapCommands.cc`) | keys typed into the screen's own switch (no table) | Controls page: a row per action, grouped, with the key it runs and a reset |
 
 Toggle placement: **Gameplay** Show Misses, Hide Bullets, Tracking Mode, Real Time Confirmation, Show Movement Path,
 sleep/wake notifications, Metric, Blood n Gore. **Video** Animate Smoke, Tree Tops, Wireframes, Items Glow, 3D Cursor, Lights
@@ -40,22 +40,30 @@ table owns, and a read-only reference for the shortcuts no table drives yet.
 
 The rebindable actions are one registry (`KeyBindings::Bindings()`): a screen hands its actions in as a *source* with
 its default key, and the registry is the only place that knows every action and resolves a conflict. The tactical HUD's
-command table is the first source; the strategic map's actions join it in the next slice (#48), with no change to the
-options page or to this rule.
+command table is the first source; the strategic map's action table (`NativeUI/MapCommands.cc`) is the second, and the
+rules below are the ones that govern both.
+
+A key runs one action **per screen**. The two screens' legacy keys collide on plenty of letters - `c` contracts on the
+map and crouches in tactical, space is the map's clock and the tactical HUD's next merc, F1 to F6 sort the map's team
+list and select the HUD's first six mercs - and a single global key space would have to re-key one of the two screens to
+say anything. So an action belongs to the screen that registered it, and a name **two** sources declare is one action on
+both (`shared`): it keeps one key and a bind moves it on every screen that runs it (`squad.select.4`, `nav.options`).
+The conflict check is still the registry's, over the actions of the screen the key belongs to, and never a second check
+inside a screen's own table.
 
 A binding is an **override of the source's default**, saved in `ja2.json` under `key_bindings` (action name -> key, `""`
 for bound to nothing) beside `native_ui_scale` and `reduced_motion`. Only what differs from the default is written, so a
 player who never rebinds keeps the file they had. Reading happens once at startup (`SGP.cc`), writing through
 `ContentManager::saveKeyBindings`; a headless run never writes it (`FrontOptions.cc` guards every save with
-`!sgp::IsHeadless()`), which is why the tour proves the binding is *applied*, not that the file was written — the file
+`!sgp::IsHeadless()`), which is why the tour proves the binding is *applied*, not that the file was written - the file
 round trip is a Rust unit test.
 
-**Conflicts: one owner, and a key never runs two actions.** Binding a key another action holds moves the key to the new
-action and leaves the other one unbound; the page marks that row and names it in a warning. Reset gives an action its
-default key back, taking it from whoever holds it now — and when it takes one, it is reported the same way, so a reset
-can never silently cost a neighbour its key. A saved `key_bindings` entry that another action's default also claims takes
-it from that action too, so the file cannot produce two actions on one key either. A key that is not a key (an unknown
-name, a modifier on its own, a key that has no name) is refused.
+**Conflicts: one owner, and a key never runs two actions of one screen.** Binding a key another action of that screen
+holds moves the key to the new action and leaves the other one unbound; the page marks that row and names it in a
+warning. Reset gives an action its default key back, taking it from whoever holds it now - and when it takes one, it is
+reported the same way, so a reset can never silently cost a neighbour its key. A saved `key_bindings` entry that another
+action of the same screen also claims takes it from that action too, so the file cannot produce two actions on one key
+either. A key that is not a key (an unknown name, a modifier on its own, a key that has no name) is refused.
 
 ## 3. Actions
 
@@ -105,7 +113,7 @@ Toggle click sound, slider sample sounds, music volume live.
 | Separate video sub-screen with Apply | folded into the Video page, applied at once (persisted as before) | one place for settings | owner |
 | Help only as tooltip | a side panel for the hovered or focused setting | readable | owner |
 | Key reference, reduced motion, interface size, campaign panel | added; reduced motion and the interface size are saved to ja2.json (`reduced_motion`, `native_ui_scale`) | accessibility / info | owner |
-| Key rebinding | shipped for the actions a table owns (the tactical command table, #48 slice 1); the strategic map and the other per-screen shortcuts still read raw key codes and stay a read-only reference until their slices land | the screens have no action table yet; the registry the map will be refactored onto is here | owner (scope C, sliced) |
+| Key rebinding | shipped for the actions the tables own: the tactical command table (#48 slice 1) and the strategic map's action table (slice 2); the remaining per-screen shortcuts still read raw key codes and stay a read-only reference until their slices land | the other screens have no action table yet | owner (scope C, sliced) |
 | Toggle sounds and slider samples | kept (the samples play when a slider stops, and on the play buttons) | parity | — |
 | Esc | acts on key release (legacy: press), so that its release does not reach the main menu, which quits on release | a legacy quirk the native path avoids | — |
 
@@ -127,11 +135,14 @@ volumes, the video settings and `gGameOptions`):
 | I7, A11 | the Controls page lists every action of `ja2.bindings()`; clicking a row's key opens the capture modal, the next key lands on the row, and `ja2.tactical.key` runs it |
 | A12 | binding a key another action holds: `ja2.bind` moves it, names the loser, and the page marks that row and warns |
 | A13, A14 | the row's reset takes its default key back and names whoever lost it, Reset all restores every default, and a key that cannot be bound is refused |
+| I7 (map) | the map's rows are on the same page (`options_controls_map.png`), the reference list is down to the tactical screen's four raw shortcuts, the capture modal opens on a map action (`options_bind_map_capture.png`) and the rebind lands on its row (`options_bind_map_done.png`) and on the map screen's own dispatch |
 | A7 | Done returns to the main menu; the volume stays |
 | S2, I6 | in game: saving available, the campaign panel shows the difficulty |
 | A5 | Quit: No stays, Yes goes to the main menu |
 | < 1280x720 | the legacy screen runs |
 
 `tests/e2e/tactical_commands.lua` takes the last step: it rebinds crouch to `j`, presses `j` in the tactical screen and
-checks the merc crouched — the binding, applied through the same registry `ForKey` reads.
+checks the merc crouched — the binding, applied through the same registry `ForKey` reads. `tests/e2e/map_keys.lua` does
+the same for the map's table: every group of shortcuts by key, the effect asserted on the game, a rebind on one leaving
+the other screen's key alone, and a shared action (a squad) moving on both screens at once.
 
