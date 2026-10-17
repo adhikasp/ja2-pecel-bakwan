@@ -32,9 +32,9 @@ double EaseProgress(int const frame, int const frames)
 
 void Ease::Start(Centre const from, Centre const to)
 {
-	m_from   = from;
+	m_from = from;
 	m_target = to;
-	m_frame  = 0;
+	m_frame = 0;
 	m_active = from.x != to.x || from.y != to.y;
 }
 

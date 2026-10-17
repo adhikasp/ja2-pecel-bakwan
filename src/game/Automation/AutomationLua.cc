@@ -664,13 +664,19 @@ namespace
 				if (*grid < 0 || *grid >= WORLD_MAX) throw std::out_of_range("ja2.camera: bad grid");
 				INT16 cx, cy;
 				ConvertGridNoToCenterCellXY(*grid, &cx, &cy);
-				if (instant) SetRenderCenter(cx, cy); else EaseRenderCenter(cx, cy);
+				if (instant)
+					SetRenderCenter(cx, cy);
+				else
+					EaseRenderCenter(cx, cy);
 			}
 			else
 			{
 				sol::optional<double> x = (*spec)["x"], y = (*spec)["y"];
 				if (!x || !y) throw std::runtime_error("ja2.camera{...}: needs x and y, or a grid");
-				if (instant) SetRenderCenter(*x, *y); else EaseRenderCenter(*x, *y);
+				if (instant)
+					SetRenderCenter(*x, *y);
+				else
+					EaseRenderCenter(*x, *y);
 			}
 			SetRenderFlags(RENDER_FLAG_FULL);
 		}

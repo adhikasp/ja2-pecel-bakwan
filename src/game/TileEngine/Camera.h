@@ -63,7 +63,7 @@ constexpr int kEaseFrames = 12; // 200 ms at the game's 60 Hz frame
  */
 class Ease
 {
-public:
+  public:
 	/** Start the move. Calling it again (a new target while one is in flight) starts again from @a from, so the
 	 * centre never jumps. */
 	void Start(Centre from, Centre target);
@@ -77,11 +77,11 @@ public:
 	/** The centre for this frame. The kEaseFrames-th call returns the target exactly and deactivates the move. */
 	Centre Advance();
 
-private:
+  private:
 	Centre m_from{};
 	Centre m_target{};
-	int    m_frame = 0;
-	bool   m_active = false;
+	int m_frame = 0;
+	bool m_active = false;
 };
 
 /** Progress along an eased move after @a frame of @a frames: a cubic ease-out from 0 to exactly 1. */

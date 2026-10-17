@@ -51,7 +51,8 @@
 UINT16* gpZBuffer = nullptr;
 UINT16  gZBufferPitch = 0;
 
-namespace {
+namespace
+{
 /** The one eased centring move in flight (decision A2): see Camera::Ease and EaseRenderCenter. */
 Camera::Ease gCameraEase;
 }
@@ -3750,7 +3751,6 @@ static void StepCameraEase()
 	SetRenderFlags(RENDER_FLAG_FULL);
 }
 
-
 void EaseRenderCenter(double const sNewX, double const sNewY)
 {
 	if (gfIgnoreScrolling) return;
@@ -3769,18 +3769,15 @@ void EaseRenderCenter(double const sNewX, double const sNewY)
 	}
 }
 
-
 bool CameraIsEasing()
 {
 	return gCameraEase.Active();
 }
 
-
 Camera::Centre CameraEaseTarget()
 {
 	return gCameraEase.Target();
 }
-
 
 void SetRenderCenter(double sNewX, double sNewY)
 {

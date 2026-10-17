@@ -90,13 +90,14 @@ TEST(Camera, theEaseIsAFastStartThatSettles)
 	EXPECT_DOUBLE_EQ(Camera::EaseProgress(Camera::kEaseFrames, Camera::kEaseFrames), 1.0);
 	EXPECT_GT(Camera::EaseProgress(Camera::kEaseFrames / 4, Camera::kEaseFrames), 0.5);
 	EXPECT_LT(Camera::EaseProgress(Camera::kEaseFrames / 2, Camera::kEaseFrames),
-	          Camera::EaseProgress(Camera::kEaseFrames * 3 / 4, Camera::kEaseFrames));
+			  Camera::EaseProgress(Camera::kEaseFrames * 3 / 4, Camera::kEaseFrames));
 }
 
 TEST(Camera, theEaseTakesTheSamePathEveryTime)
 {
 	// Decision A3's inertia is out precisely so that this holds: no wall clock, no carried velocity.
-	auto run = [] {
+	auto run = []
+	{
 		Camera::Ease ease;
 		ease.Start({ 0.0, 0.0 }, { 100.0, 50.0 });
 		std::vector<Camera::Centre> path;
@@ -137,4 +138,3 @@ TEST(Camera, aCancelledEaseStaysWhereItIsAndAnEaseToItsOwnPositionDoesNothing)
 	ease.Start({ 12.0, 34.0 }, { 12.0, 34.0 });
 	EXPECT_FALSE(ease.Active()) << "a move to where the camera already is has nothing to animate";
 }
-
