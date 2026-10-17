@@ -46,6 +46,8 @@
 #include "Map_Screen_Interface_TownMine_Info.h"
 #include "MapScreen.h"
 #include "MapScreenBridge.h"
+#include "MapCommandsAdapter.h"
+#include "KeyBindings.h"
 #include "Message.h"
 #include "SectorStock.h"
 #include "MineModel.h"
@@ -409,31 +411,13 @@ public:
 			SectorHover(&s);
 			Poke();
 		});
-		Command("time", [this](Args const& a) {
-			if (a.empty()) return;
-			if (a[0] == "toggle") Key(SDLK_SPACE, 0);
-			else if (a[0] == "more") Key('+', 0);
-			else if (a[0] == "less") Key('-', 0);
-			Poke();
-		});
-		Command("filter", [this](Args const& a) { if (!a.empty()) Key(UINT32(a[0][0]), 0); Poke(); });
-		Command("sort", [this](Args const& a) { if (!a.empty()) Key(SDLK_F1 + std::atoi(a[0].c_str()), 0); Poke(); });
-		Command("key", [this](Args const& a) {
-			if (a.empty()) return;
-			std::string const& k = a[0];
-			UINT32 const key = k == "enter" ? SDLK_RETURN : k == "escape" ? SDLK_ESCAPE : UINT32(k[0]);
-			Key(key, 0);
-			Poke();
-		});
-		Command("assign", [this](Args const&) { Key('a', 3); Poke(); });
+		// the map's shortcuts as actions (issue #48 slice 2): a button runs the same named action its key runs,
+		// so the key can be rebound and the button still does what it says
+		Command("act", [this](Args const& a) { if (!a.empty() && RunMapActionNamed(a[0])) Poke(); });
 		Command("exit", [this](Args const& a) {
 			if (a.empty()) return;
 			menuOpen = false;
-			if (a[0] == "laptop") RequestTriggerExitFromMapscreen(MAP_EXIT_TO_LAPTOP);
-			else if (a[0] == "tactical") RequestTriggerExitFromMapscreen(MAP_EXIT_TO_TACTICAL);
-			else if (a[0] == "options") RequestTriggerExitFromMapscreen(MAP_EXIT_TO_OPTIONS);
-			else if (a[0] == "save") Key('s', 2);
-			else if (a[0] == "load") Key('l', 2);
+			if (a[0] == "tactical") RequestTriggerExitFromMapscreen(MAP_EXIT_TO_TACTICAL);
 			Poke();
 		});
 		Command("menu", [this](Args const&) { menuOpen = !menuOpen; Poke(); });
@@ -533,10 +517,34 @@ public:
 		Command("help_close",     [this](Args const&) { HelpScreenClose(); Poke(); });
 		Command("help_dont_show", [this](Args const&) { HelpScreenToggleDontShow(); Poke(); });
 		Labels();
+		KeyHints();
 	}
 
 	/** Reads the game again now (after forwarding input) instead of at the next frame. */
 	void Poke() { Refresh(); }
+
+	/** The key each of the map's shortcuts runs now (issue #48 slice 2): the buttons print these, so a rebind is
+	 * visible on the screen that runs it, not only on the Options page. */
+	void KeyHints()
+	{
+		static std::pair<char const*, char const*> const HINTS[] = {
+			{ "towns", "view.towns" }, { "mines", "view.mines" }, { "teams", "view.teams" },
+			{ "militia", "view.militia" }, { "airspace", "view.airspace" }, { "items", "view.items" },
+			{ "time", "time.toggle" }, { "time_more", "time.more" }, { "time_less", "time.less" },
+			{ "level_up", "level.up" }, { "level_down", "level.down" },
+			{ "team_prev", "team.prev" }, { "team_next", "team.next" },
+			{ "sort_name", "team.sort.name" }, { "sort_assign", "team.sort.assignment" },
+			{ "sort_cond", "team.sort.status" }, { "sort_loc", "team.sort.location" },
+			{ "sort_dest", "team.sort.destination" }, { "sort_left", "team.sort.contract" },
+			{ "squad_first", "squad.select.1" }, { "squad_last", "squad.select.10" },
+			{ "inventory", "panel.merc_inventory" }, { "assign", "act.assign" }, { "contract", "act.contract" },
+			{ "help", "act.help" }, { "settings", "act.settings" },
+			{ "laptop", "nav.laptop" }, { "back", "nav.back" }, { "options", "nav.options" },
+			{ "save", "nav.save" }, { "load", "nav.load" }, { "msg_page_up", "msg.page_up" },
+		};
+		for (auto const& [field, action] : HINTS)
+			keyHints[field] = KeyBindings::KeyLabel(KeyBindings::Bindings().Key(action));
+	}
 
 	void Labels()
 	{
@@ -613,6 +621,7 @@ public:
 		f.Field("help_multi", helpMulti);
 		f.Rows("help_pages", helpPages); f.Rows("help_paras", helpParas);
 		for (auto& [k, v] : labels) f.Field(("l_" + k).c_str(), v);
+		for (auto& [k, v] : keyHints) f.Field(("k_" + k).c_str(), v);
 	}
 
 	void Refresh() override
@@ -700,6 +709,7 @@ public:
 	std::vector<PoolItem> pool;
 	std::vector<Category> cats;
 	std::map<std::string, std::string> labels;
+	std::map<std::string, std::string> keyHints;
 
 	// Phase 7 overlays (pre-battle, militia redistribution, help)
 	bool pbOpen = false, pbCanAuto = true, pbCanEnter = true, pbCanRetreat = true, pbBlink = false;

@@ -311,6 +311,10 @@ TEST(KeyBindings, keyFromInputIsTheVocabulary)
 	EXPECT_EQ(KeyFromInput(SDLK_LEFT, false, false, false), "left");
 	EXPECT_EQ(KeyFromInput(SDLK_RIGHT, false, false, false), "right");
 	EXPECT_EQ(KeyFromInput(SDLK_RIGHT, false, true, false), "shift+right");
+	// the numpad's + is the '=' key the map's clock runs; its shifted form is nobody's
+	EXPECT_EQ(KeyFromInput(SDLK_PLUS, false, false, false), "=");
+	EXPECT_EQ(KeyFromInput(SDLK_PLUS, false, true, false), "");
+	EXPECT_EQ(KeyFromInput(SDLK_MINUS, false, false, false), "-");
 	// a key that cannot be bound
 	EXPECT_EQ(KeyFromInput(SDLK_LSHIFT, false, true, false), "");
 	EXPECT_EQ(KeyFromInput(SDLK_KP_ENTER, false, false, false), "");

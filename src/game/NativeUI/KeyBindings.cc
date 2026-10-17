@@ -316,6 +316,12 @@ std::string KeyFromInput(std::uint32_t const key, bool const ctrl, bool const sh
 	case SDLK_DOWN: named = "down"; break;
 	case SDLK_LEFT: named = "left"; break;
 	case SDLK_RIGHT: named = "right"; break;
+	case SDLK_PLUS:
+		// the numpad's + is the '=' key, which the map's clock answers to (the legacy accepted both); with shift it is
+		// the '=' key's shifted form, which no action binds
+		if (shift) return {};
+		ch = U'=';
+		break;
 	case SDLK_F1: named = "f1"; break;
 	case SDLK_F2: named = "f2"; break;
 	case SDLK_F3: named = "f3"; break;

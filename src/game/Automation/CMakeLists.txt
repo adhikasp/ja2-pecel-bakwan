@@ -8,6 +8,7 @@ set(LOCAL_JA2_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/BindingsScenario.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/CampaignScenario.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/InventoryScenario.cc
+    ${CMAKE_CURRENT_SOURCE_DIR}/MapScenario.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/CursorScenario.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/OverlayScenario.cc
     ${CMAKE_CURRENT_SOURCE_DIR}/OverheadScenario.cc

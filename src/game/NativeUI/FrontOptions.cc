@@ -175,15 +175,11 @@ public:
 		saving = gzGIOScreenText[gGameOptions.ubGameSaveMode == DIF_IRON_MAN ? GIO_IRON_MAN_TEXT :
 			gGameOptions.ubGameSaveMode == DIF_DEAD_IS_DEAD ? GIO_DEAD_IS_DEAD_TEXT : GIO_SAVE_ANYWHERE_TEXT].to_std_string();
 		reducedMotion = ReducedMotion();
-		// the shortcuts no table drives yet: the strategic map's, and the tactical ones that are not commands
-		// (reload, quick save/load, the 3D cursor). They are still raw key codes, so they stay a reference until the
-		// next slices of #48 give them actions too.
+		// the shortcuts no table drives yet: the tactical screen's, which is all that is left of them (the map's
+		// became actions in #48 slice 2). They are still raw key codes, so they stay a reference until that screen's
+		// slice gives them actions too.
 		keys.clear();
 		for (auto const& [k, a, b] : std::initializer_list<std::tuple<char const*, char const*, char const*>>{
-				 { "options.key.time", "Space", "" },
-				 { "options.key.compress", "+", "-" },
-				 { "options.key.laptop", "L", "" },
-				 { "options.key.tactical", "Esc", "" },
 				 { "options.key.reload", "R", "" },
 				 { "options.key.quick_save", "Alt", "S" },
 				 { "options.key.quick_load", "Alt", "L" },
@@ -196,7 +192,8 @@ public:
 			labels[k] = Str(std::string(k).find('_') == std::string::npos && std::string("gameplay video audio controls access").find(k) != std::string::npos
 				? std::string("options.tab.") + k : std::string("options.group.") + k);
 		}
-		for (char const* g : { "stance", "move", "act", "turn", "nav", "panel", "select", "view" })
+		for (char const* g : { "stance", "move", "act", "turn", "nav", "panel", "select", "view", "map_time",
+				"map_log", "map_view", "map_team", "map_squad", "map_act", "map_nav" })
 		{
 			labels[std::string("keys_") + g] = Str(std::string("options.group.keys_") + g);
 		}

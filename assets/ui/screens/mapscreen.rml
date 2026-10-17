@@ -13,34 +13,34 @@
 	<div class="p4-top">
 		<div class="timectl" id="map.time" data-class-paused="paused" data-class-is-disabled="!can_compress" data-attr-title="l_time_help">
 			<div class="clock" id="map.clock"><span class="day">{{day}}</span>{{clock}}</div>
-			<div class="tc-btn" id="map.time.pause" data-class-active="paused" data-event-click="time('toggle')" title="Start/Stop Time (Space)"><img class="icon" src="icon-pause"/></div>
-			<div class="tc-btn" id="map.time.slower" data-event-click="time('less')" title="Time Compress (-)"><img class="icon" src="icon-chevron-left"/></div>
+			<div class="tc-btn" id="map.time.pause" data-class-active="paused" data-event-click="act('time.toggle')" data-attr-title="'Start/Stop Time (' + k_time + ')'"><img class="icon" src="icon-pause"/></div>
+			<div class="tc-btn" id="map.time.slower" data-event-click="act('time.less')" data-attr-title="'Time Compress (' + k_time_less + ')'"><img class="icon" src="icon-chevron-left"/></div>
 			<div class="tc-btn tc-rate" id="map.time.rate" data-class-active="!paused"><span>{{rate}}</span></div>
-			<div class="tc-btn" id="map.time.faster" data-event-click="time('more')" title="Time Compress (+)"><img class="icon" src="icon-chevron-right"/></div>
+			<div class="tc-btn" id="map.time.faster" data-event-click="act('time.more')" data-attr-title="'Time Compress (' + k_time_more + ')'"><img class="icon" src="icon-chevron-right"/></div>
 		</div>
 		<div class="filters" id="map.filters">
-			<div class="flt first" id="map.filter.towns" data-class-on="f_towns" data-event-click="filter('w')" title="Show Towns (W)"><img class="icon" src="icon-town"/><span>{{l_towns}}</span><span class="kbd">W</span></div>
-			<div class="flt" id="map.filter.mines" data-class-on="f_mines" data-event-click="filter('m')" title="Show Mines (M)"><img class="icon" src="icon-mine"/><span>{{l_mines}}</span><span class="kbd">M</span></div>
-			<div class="flt" id="map.filter.teams" data-class-on="f_teams" data-event-click="filter('t')" title="Show Teams &amp; Enemies (T)"><img class="icon" src="icon-player-group"/><span>{{l_teams}}</span><span class="kbd">T</span></div>
-			<div class="flt" id="map.filter.militia" data-class-on="f_militia" data-event-click="filter('z')" title="Show Militia &amp; Enemies (Z)"><img class="icon" src="icon-militia"/><span>{{l_militia}}</span><span class="kbd">Z</span></div>
-			<div class="flt" id="map.filter.airspace" data-class-on="f_airspace" data-event-click="filter('a')" title="Show Airspace (A)"><img class="icon" src="icon-helicopter"/><span>{{l_airspace}}</span><span class="kbd">A</span></div>
-			<div class="flt" id="map.filter.items" data-class-on="f_items" data-event-click="filter('i')" title="Show Items (I)"><img class="icon" src="icon-sector-inventory"/><span>{{l_items}}</span><span class="kbd">I</span></div>
+			<div class="flt first" id="map.filter.towns" data-class-on="f_towns" data-event-click="act('view.towns')" data-attr-title="'Show Towns (' + k_towns + ')'"><img class="icon" src="icon-town"/><span>{{l_towns}}</span><span class="kbd">{{k_towns}}</span></div>
+			<div class="flt" id="map.filter.mines" data-class-on="f_mines" data-event-click="act('view.mines')" data-attr-title="'Show Mines (' + k_mines + ')'"><img class="icon" src="icon-mine"/><span>{{l_mines}}</span><span class="kbd">{{k_mines}}</span></div>
+			<div class="flt" id="map.filter.teams" data-class-on="f_teams" data-event-click="act('view.teams')" data-attr-title="'Show Teams &amp; Enemies (' + k_teams + ')'"><img class="icon" src="icon-player-group"/><span>{{l_teams}}</span><span class="kbd">{{k_teams}}</span></div>
+			<div class="flt" id="map.filter.militia" data-class-on="f_militia" data-event-click="act('view.militia')" data-attr-title="'Show Militia &amp; Enemies (' + k_militia + ')'"><img class="icon" src="icon-militia"/><span>{{l_militia}}</span><span class="kbd">{{k_militia}}</span></div>
+			<div class="flt" id="map.filter.airspace" data-class-on="f_airspace" data-event-click="act('view.airspace')" data-attr-title="'Show Airspace (' + k_airspace + ')'"><img class="icon" src="icon-helicopter"/><span>{{l_airspace}}</span><span class="kbd">{{k_airspace}}</span></div>
+			<div class="flt" id="map.filter.items" data-class-on="f_items" data-event-click="act('view.items')" data-attr-title="'Show Items (' + k_items + ')'"><img class="icon" src="icon-sector-inventory"/><span>{{l_items}}</span><span class="kbd">{{k_items}}</span></div>
 		</div>
 		<div class="grow"></div>
 		<div class="money" id="map.balance" data-attr-title="l_balance"><span class="k">{{l_balance}}</span><span class="v">{{money}} <span class="inc">{{income}}</span></span></div>
-		<button class="btn" id="map.laptop" data-label="Laptop" data-event-click="exit('laptop')"><img class="icon" src="icon-laptop"/><span class="label">{{l_laptop}}</span><span class="badge info" data-if="new_mail">!</span><span class="kbd">L</span></button>
-		<button class="btn" id="map.tactical" data-label="Tactical" data-class-is-disabled="!can_tactical" data-event-click="exit('tactical')"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_tactical}}</span><span class="kbd">Esc</span></button>
+		<button class="btn" id="map.laptop" data-label="Laptop" data-event-click="act('nav.laptop')"><img class="icon" src="icon-laptop"/><span class="label">{{l_laptop}}</span><span class="badge info" data-if="new_mail">!</span><span class="kbd">{{k_laptop}}</span></button>
+		<button class="btn" id="map.tactical" data-label="Tactical" data-class-is-disabled="!can_tactical" data-event-click="exit('tactical')"><img class="icon" src="icon-exit-sector"/><span class="label">{{l_tactical}}</span><span class="kbd">{{k_back}}</span></button>
 		<button class="icon-btn" id="map.ballistics" data-label="Ballistics" title="Range &amp; ballistics" data-event-click="ballistics"><img class="icon" src="icon-chart"/></button>
-		<button class="icon-btn" id="map.options" data-label="Options" title="Options (O)" data-event-click="exit('options')"><img class="icon" src="icon-options"/></button>
+		<button class="icon-btn" id="map.options" data-label="Options" data-attr-title="'Options (' + k_options + ')'" data-event-click="act('nav.options')"><img class="icon" src="icon-options"/></button>
 		<button class="icon-btn" id="map.menu" data-label="Menu" title="Save, load, help, game settings" data-class-on="menu_open" data-event-click="menu"><img class="icon" src="icon-menu"/></button>
 	</div>
 	<div class="ctx-drop audit-over" id="map.menu.list" data-if="menu_open">
 		<div class="menu">
-			<div class="menu-item" id="map.menu.save" data-event-click="exit('save')"><img class="icon" src="icon-save"/><span class="label">{{l_save}}</span><span class="kbd">Ctrl+S</span></div>
-			<div class="menu-item" id="map.menu.load" data-event-click="exit('load')"><img class="icon" src="icon-load"/><span class="label">{{l_load}}</span><span class="kbd">Ctrl+L</span></div>
+			<div class="menu-item" id="map.menu.save" data-event-click="act('nav.save')"><img class="icon" src="icon-save"/><span class="label">{{l_save}}</span><span class="kbd">{{k_save}}</span></div>
+			<div class="menu-item" id="map.menu.load" data-event-click="act('nav.load')"><img class="icon" src="icon-load"/><span class="label">{{l_load}}</span><span class="kbd">{{k_load}}</span></div>
 			<div class="menu-sep"></div>
-			<div class="menu-item" id="map.menu.help" data-event-click="key('h')"><img class="icon" src="icon-info"/><span class="label">{{l_help}}</span><span class="kbd">H</span></div>
-			<div class="menu-item" id="map.menu.settings" data-event-click="key('v')"><img class="icon" src="icon-options"/><span class="label">{{l_settings}}</span><span class="kbd">V</span></div>
+			<div class="menu-item" id="map.menu.help" data-event-click="act('act.help')"><img class="icon" src="icon-info"/><span class="label">{{l_help}}</span><span class="kbd">{{k_help}}</span></div>
+			<div class="menu-item" id="map.menu.settings" data-event-click="act('act.settings')"><img class="icon" src="icon-options"/><span class="label">{{l_settings}}</span><span class="kbd">{{k_settings}}</span></div>
 		</div>
 	</div>
 
@@ -52,12 +52,12 @@
 			</div>
 			<div class="team table" id="map.team">
 				<div class="thead"><span class="th c-st"></span>
-					<span class="th c-nm sortable" id="map.sort.name" data-class-sorted="sort == 0" data-event-click="sort(0)" title="Sort by Name (F1)"><span>{{l_col_name}}</span><span class="kbd">F1</span></span>
-					<span class="th c-as sortable" id="map.sort.assignment" data-class-sorted="sort == 1" data-event-click="sort(1)" title="Sort by Assignment (F2)"><span>{{l_col_assign}}</span><span class="kbd">F2</span></span>
-					<span class="th c-lo sortable" id="map.sort.location" data-class-sorted="sort == 3" data-event-click="sort(3)" title="Sort by Location (F4)"><span>{{l_col_loc}}</span></span>
-					<span class="th c-de sortable" id="map.sort.destination" data-class-sorted="sort == 4" data-event-click="sort(4)" title="Sort by Destination (F5)"><span>{{l_col_dest}}</span></span>
+					<span class="th c-nm sortable" id="map.sort.name" data-class-sorted="sort == 0" data-event-click="act('team.sort.name')" data-attr-title="'Sort by Name (' + k_sort_name + ')'"><span>{{l_col_name}}</span><span class="kbd">{{k_sort_name}}</span></span>
+					<span class="th c-as sortable" id="map.sort.assignment" data-class-sorted="sort == 1" data-event-click="act('team.sort.assignment')" data-attr-title="'Sort by Assignment (' + k_sort_assign + ')'"><span>{{l_col_assign}}</span><span class="kbd">{{k_sort_assign}}</span></span>
+					<span class="th c-lo sortable" id="map.sort.location" data-class-sorted="sort == 3" data-event-click="act('team.sort.location')" data-attr-title="'Sort by Location (' + k_sort_loc + ')'"><span>{{l_col_loc}}</span></span>
+					<span class="th c-de sortable" id="map.sort.destination" data-class-sorted="sort == 4" data-event-click="act('team.sort.destination')" data-attr-title="'Sort by Destination (' + k_sort_dest + ')'"><span>{{l_col_dest}}</span></span>
 					<span class="th c-hp wide-only"><span>{{l_col_cond}}</span></span>
-					<span class="th c-co sortable" id="map.sort.contract" data-class-sorted="sort == 5" data-event-click="sort(5)" title="Sort by Departure Time (F6)"><span>{{l_col_left}}</span></span>
+					<span class="th c-co sortable" id="map.sort.contract" data-class-sorted="sort == 5" data-event-click="act('team.sort.contract')" data-attr-title="'Sort by Departure Time (' + k_sort_left + ')'"><span>{{l_col_left}}</span></span>
 				</div>
 				<div class="team-rows scroll" id="map.team.rows">
 					<div data-for="r : team">
@@ -75,10 +75,10 @@
 					<div class="team-empty" data-if="team_empty"><img class="icon" src="icon-laptop"/><span>{{l_no_team}}</span></div>
 				</div>
 			</div>
-			<div class="team-foot"><span class="kbd">1</span><span>-</span><span class="kbd">0</span><span>{{l_hint_squad}}</span><span class="kbd">Ctrl</span><span>{{l_hint_add}}</span><span class="kbd">&#8592;</span><span class="kbd">&#8594;</span><span>{{l_hint_next}}</span></div>
+			<div class="team-foot"><span class="kbd">{{k_squad_first}}</span><span>-</span><span class="kbd">{{k_squad_last}}</span><span>{{l_hint_squad}}</span><span class="kbd">Ctrl</span><span>{{l_hint_add}}</span><span class="kbd">{{k_team_prev}}</span><span class="kbd">{{k_team_next}}</span><span>{{l_hint_next}}</span></div>
 			<div class="merc" id="map.merc" data-if="has_merc">
 				<div class="merc-top">
-					<div class="merc-face" id="map.merc.face" title="Enter Inventory (Enter)" data-event-click="key('enter')"><img data-if="m_face != ''" data-attr-src="m_face"/><img class="icon lg" src="icon-vehicle" data-if="m_face == ''"/></div>
+					<div class="merc-face" id="map.merc.face" data-attr-title="'Enter Inventory (' + k_inventory + ')'" data-event-click="act('panel.merc_inventory')"><img data-if="m_face != ''" data-attr-src="m_face"/><img class="icon lg" src="icon-vehicle" data-if="m_face == ''"/></div>
 					<div class="merc-id">
 						<span class="nick">{{m_nick}}</span><span class="full">{{m_full}}</span>
 						<div class="asg"><img class="icon" data-attr-src="'icon-' + m_assign_icon"/><span>{{m_assign}}</span></div>
@@ -96,9 +96,9 @@
 					<div class="kv2"><span class="k">{{l_insured}}</span><span class="v"><span>{{m_insured}}</span></span></div>
 				</div>
 				<div class="merc-acts">
-					<button class="btn" id="map.merc.inventory" data-label="Enter Inventory" data-event-click="key('enter')"><img class="icon" src="icon-inventory"/><span class="label">{{l_gear}}</span><span class="kbd">Enter</span></button>
-					<button class="btn" id="map.merc.assign" data-label="Assign" data-event-click="assign"><img class="icon" src="icon-squad"/><span class="label">{{l_assign}}</span><span class="kbd">Alt+A</span></button>
-					<button class="btn last" id="map.merc.contract" data-label="Contract" data-class-is-disabled="m_mech" data-event-click="key('c')"><img class="icon" src="icon-contract"/><span class="label">{{l_contract}}</span><span class="kbd">C</span></button>
+					<button class="btn" id="map.merc.inventory" data-label="Enter Inventory" data-event-click="act('panel.merc_inventory')"><img class="icon" src="icon-inventory"/><span class="label">{{l_gear}}</span><span class="kbd">{{k_inventory}}</span></button>
+					<button class="btn" id="map.merc.assign" data-label="Assign" data-event-click="act('act.assign')"><img class="icon" src="icon-squad"/><span class="label">{{l_assign}}</span><span class="kbd">{{k_assign}}</span></button>
+					<button class="btn last" id="map.merc.contract" data-label="Contract" data-class-is-disabled="m_mech" data-event-click="act('act.contract')"><img class="icon" src="icon-contract"/><span class="label">{{l_contract}}</span><span class="kbd">{{k_contract}}</span></button>
 				</div>
 			</div>
 		</div>
@@ -124,7 +124,7 @@
 					<div class="site arrive" id="map.arrival" data-if="arrive_on" data-attr-style="arrive_style" title="Arrivals land here"><img class="icon" src="icon-destination"/></div>
 				</div>
 			</div>
-			<div class="levels audit-over" id="map.levels" title="Map level (Insert, Delete)"><span class="cap">{{l_level}}</span><span data-for="v : levels" data-attr-class="v.cls" data-attr-id="'map.level[' + v.z + ']'" data-event-click="level(v.z)">{{v.label}}</span></div>
+			<div class="levels audit-over" id="map.levels" data-attr-title="'Map level (' + k_level_up + ', ' + k_level_down + ')'"><span class="cap">{{l_level}}</span><span data-for="v : levels" data-attr-class="v.cls" data-attr-id="'map.level[' + v.z + ']'" data-event-click="level(v.z)">{{v.label}}</span></div>
 			<div class="map-tools audit-over" id="map.zoom">
 				<button class="icon-btn" id="map.zoom.out" title="Zoom out (wheel)" data-event-click="zoom(-1)"><img class="icon" src="icon-remove"/></button>
 				<span class="zoom">{{zoom_text}}</span>
@@ -140,7 +140,7 @@
 			</div>
 			<div class="banner audit-over" id="map.plot.banner" data-if="banner != ''" data-class-heli="banner_heli"><img class="icon" data-attr-src="banner_heli ? 'icon-helicopter' : 'icon-destination'"/>
 				<div class="txt"><span class="t1">{{banner}}</span><span class="t2">{{banner_sub}}</span></div>
-				<button class="btn" id="map.plot.cancel" data-label="Cancel" data-event-click="key('escape')"><span class="label">{{l_cancel}}</span><span class="kbd">Esc</span></button>
+				<button class="btn" id="map.plot.cancel" data-label="Cancel" data-event-click="act('nav.back')"><span class="label">{{l_cancel}}</span><span class="kbd">{{k_back}}</span></button>
 			</div>
 			<div class="map-msg audit-over" id="map.uimsg" data-if="ui_message != ''" data-event-click="dismiss"><span>{{ui_message}}</span></div>
 		</div>
@@ -216,7 +216,7 @@
 
 	<!-- ============================================================== bottom bar and log -->
 	<div class="p4-bottom" id="map.log.bar">
-		<button class="icon-btn" id="map.log.expand" title="Message log (Page Up)" data-event-click="log"><img class="icon" data-attr-src="log_open ? 'icon-chevron-down' : 'icon-chevron-up'"/></button>
+		<button class="icon-btn" id="map.log.expand" data-attr-title="'Message log (' + k_msg_page_up + ')'" data-event-click="log"><img class="icon" data-attr-src="log_open ? 'icon-chevron-down' : 'icon-chevron-up'"/></button>
 		<span class="msg" id="map.log.last" data-attr-title="last_message">{{last_message}}</span>
 		<span class="hint">{{l_map_hint}}</span>
 	</div>

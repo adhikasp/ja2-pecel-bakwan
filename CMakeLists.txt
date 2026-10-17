@@ -658,6 +658,7 @@ if (WITH_UNITTESTS)
             "main_menu=nativeui"
             "mainmenu_parity=nativeui"
             "map_screen_tour=mapscreen"
+            "map_keys=mapscreen,nativeui"
             "mapscreen_equivalence=mapscreen"
             "mapscreen_overlays=mapscreen"
             "mapscreen_parity=mapscreen"
