@@ -72,9 +72,15 @@ function campaign.newGame()
 	ja2.click("New Game")
 	ja2.waitScreen("GAME_INIT_OPTIONS_SCREEN")
 	ja2.click{text = "Ok", exact = true}
-	-- The difficulty confirmation.
+	-- The difficulty confirmation. The native box names its buttons by id, which
+	-- does not change with the game's language; a legacy box is labelled with the
+	-- localised string, so fall back to the English one there.
 	ja2.waitScreen("MSG_BOX_SCREEN")
-	ja2.click{text = "YES", exact = true}
+	if ja2.exists{id = "msgbox.yes"} then
+		ja2.click{id = "msgbox.yes"}
+	else
+		ja2.click{text = "YES", exact = true}
+	end
 	ja2.waitScreen("LAPTOP_SCREEN")
 	campaign.dismissLaptopPopups()
 end
