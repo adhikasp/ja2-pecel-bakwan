@@ -191,9 +191,9 @@ What [native-modern-game.md](native-modern-game.md) Phase 3 built. The per-scree
 **The front end's native UI layer costs 0.30–3.34 ms of host time per frame at 3840x2160 on the GPU, so the
 ≤ 2 ms budget is met on three of the four screens and missed on the options screen (3.34 ms mean, p95 3.48).**
 Measured on the dev machine (AMD Ryzen 5560U, Radeon Vega 7 integrated, Windows 11, D3D12 through SDL_GPU 3.4,
-RelWithDebInfo `-O2`) in a real 3840x2160 window at `1dp = 2px`, on an otherwise idle machine: the same session's
-whole-frame interval differed by ~15 ms between a busy and a quiet box, so a number taken while a build runs is not
-a number.
+RelWithDebInfo `-O2`) in a real 3840x2160 window at `1dp = 2px`, on an otherwise idle machine: the research saw the
+same session's whole-frame interval differ by ~15 ms between a busy and a quiet box, so a number taken while a build
+runs is not a number.
 
 `uiMs` is `ja2.uiFrameTiming` (`src/sgp/FrameTiming.h`, `NativeUI::UiFrameTiming`): the native UI layer's own CPU time
 per frame, from the start of `Runtime::GpuFramePrepare` (RmlUi `ctx->Update()` + `ctx->Render()` + the vertex/index
@@ -224,7 +224,7 @@ Three 4K runs landed within 0.06 ms of each other on every screen (mainmenu 0.25
 0.33–0.37, options 3.31–3.34), so these are stable numbers rather than one lucky session.
 
 - **The options screen is the one miss, and it is not fill.** It costs about the same at 1080p (2.82 ms, `1dp`) as at
-  4K (3.34 ms, `2dp`), so the cost is CPU-side layout/record work in that dense screen — three independently scrolling
+  4K (3.34 ms, `2dp`), so the cost is CPU-side layout/record work in that dense screen — its independently scrolling
   columns (`.op-cols`, `.op-help`) — not triangles or pixels. The other three screens are an order of magnitude under
   the budget. That is the honest state of the budget: met by the front end generally, missed by options.
 - **The whole-frame column cannot stand in for it.** At 4K the whole frame is a single 59.9 Hz refresh (16.7 ms) on
