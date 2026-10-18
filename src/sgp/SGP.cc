@@ -640,7 +640,10 @@ int main(int argc, char* argv[])
 		SLOGD("Initializing Video Surface Manager");
 		InitializeVideoSurfaceManager();
 
-		InitJA2SplashScreen();
+		// The startup splash is the only art loaded before the main menu could
+		// fail on a localised run; -no-intro skips it, as it already skips the
+		// intro videos (#411).
+		InitJA2SplashScreen(!automation.noIntro);
 
 		SLOGD("Initializing Sound Manager");
 		InitializeSoundManager();
