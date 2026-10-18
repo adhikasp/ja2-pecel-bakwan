@@ -9,7 +9,7 @@ python tools/dev.py setup     # once per worktree (idempotent): build dir, uv sy
 python tools/dev.py build     # incremental build
 python tools/dev.py test      # C++ unit tests
 python tools/dev.py e2e [..]  # e2e tests: ctest -L e2e, or one script (tests/e2e/foo.lua --isolated)
-python tools/dev.py e2e --changed  # e2e for the diff vs master (+ smoke), not all 59
+python tools/dev.py e2e --changed  # e2e for the diff vs master (+ smoke), not the whole suite
 python tools/dev.py run [..]  # play the game (default -res 1280x720)
 python tools/dev.py status    # what dev.py sees: paths, tools, build state
 python tools/dev.py roadmap   # regenerate docs/roadmap/roadmap.html from the issues
@@ -79,6 +79,23 @@ python tools/dev.py e2e                                       # all e2e tests (c
 Tests and their shared helpers (`lib/campaign.lua`) live in `tests/e2e/`; see its README. `python tools/dev.py setup` runs `uv sync` for you — it creates `.venv/` with Pillow and numpy, which `ctest` picks up for the resolution/golden-image tests after a fresh cmake configure.
 
 `ctest -L smoke` is the fast tier — boot, main menu, new game to tactical, one native-UI tour, all at 1280x720 — and `python tools/dev.py e2e --changed[=REF]` runs only the tests the diff against `REF` (default `master`) can affect, plus smoke; an unmapped path (frozen data, `rust/`, most of `src/sgp/`) falls back to the whole suite. Every e2e test carries area labels (`tactical`, `mapscreen`, `laptop`, `campaign`, `equipment`, `nativeui`, `world-renderer`, `automation`), so `ctest -L tactical` works too. The labels are the single source of truth: they are declared in `CMakeLists.txt`, the path→area table is `tools/e2e_select.py`, and the two are joined through CTest's own `ctest --show-only=json-v1` and kept honest by the drift guard in the `tooling` tests. A run prints the slowest tests when it finishes.
+
+### Which tests to run for a change
+
+`python tools/dev.py e2e --changed` is the answer to "I edited files, which tests?": it maps the diff to the areas below and runs those plus smoke. When the area is already known, name its label — `dev.py e2e` hands everything else to `ctest`:
+
+| You are changing | Run |
+|---|---|
+| combat, movement, the tactical HUD (`src/game/Tactical/`, `TacticalAI/`) | `python tools/dev.py e2e -L tactical` |
+| equipment rules — a mount, a pocket, ammo, wear (`src/game/Equipment/`) | `python tools/dev.py e2e -L equipment` |
+| the campaign state, sector stock, the strategic actions (`src/game/Strategic/`) | `python tools/dev.py e2e -L campaign` |
+| the map screen and the world map | `python tools/dev.py e2e -L mapscreen` |
+| a native screen's own layout and copying | `python tools/dev.py e2e -L nativeui` |
+| the world renderer, tiles or shaders | `python tools/dev.py e2e -L world-renderer` |
+| the harness itself (`ja2ctl`, `dev.py`) | `python tools/dev.py e2e -L automation` |
+| one scenario, no ctest at all | `python tools/ja2ctl.py run tests/e2e/<script>.lua --isolated` |
+
+There is deliberately **no `mechanics` label** on top of these: "the gameplay scenarios" are exactly these areas, and a second label over the same tests is a second list to drift (#163). The gameplay union in one command is `ctest -L 'tactical|campaign|equipment'` — and it is not much cheaper than the whole suite, because the wall is one test (`e2e_tactical_popups`), not the test count. Timings: [tests/e2e/README.md](tests/e2e/README.md#what-a-run-costs).
 
 **Two sides, by data source.** `e2e-real` runs against the install `game_dir` points at; `e2e-synthetic` runs boot, the main menu, the native UI, the laptop, the campaign state and the front-end parity tours against a `Data/` tree `tools/assets/synthetic.py` generates (into the build dir, from the committed manifest — nothing committed, nothing from the install). CI runs `-L '^e2e-synthetic$'`, never bare `-L e2e`, and every script asserts which source it got through `campaign.assertDataSource()`; `ja2ctl state` prints it as `data`. Everything tactical, the map screen and the battles still need a real install (#395, #396).
 

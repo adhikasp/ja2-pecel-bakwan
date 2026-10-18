@@ -140,6 +140,31 @@ ctest -L smoke --output-on-failure                                  # the fast t
 
 Every test carries **area labels** — `tactical`, `mapscreen`, `laptop`, `campaign`, `equipment`, `nativeui`, `world-renderer`, `automation` — declared in `CMakeLists.txt` next to the test, so `ctest -L tactical` (or `dev.py e2e -L tactical`) runs just that area. `ctest -L smoke` is the fast tier: boot, main menu, new game to tactical and one native-UI tour, all at 1280x720, all four under a ~30 s budget.
 
+### What a run costs
+
+Measured 2026-10-19 on **bagong** (Ryzen 5 5600, 12 threads), the box otherwise idle, ctest 4.4.4,
+at `--parallel 12` unless noted. Re-measure rather than trust these once the suite has moved.
+
+| Selection | Tests | Wall |
+|---|---|---|
+| `ctest -L e2e` (everything, both data sides) | 71 | **291.7 s** |
+| `ctest -L 'tactical\|campaign\|equipment'` (the gameplay union) | 36 | **211.3 s** |
+| `ctest -L smoke` (sequential, its own run) | 4 | **23.7 s** |
+
+A run costs about its **slowest test**, not its test count. `e2e_tactical_popups` is 211 s of the
+36-test union's 211 s wall, and 241 s of the full suite's 292 s — everything else finishes inside
+those. The rest of the pole, at `-j12`: `e2e_tactical_layers_ui` 202 s,
+`e2e_tactical_layers_2560x1440_su2_zw1` 181 s, `e2e_tactical_layers_3840x2160_su3_zw2` 181 s,
+`e2e_battle_cursor` 170 s, `e2e_battle_drag` 142 s, `e2e_tactical_layers_pipeline` 97 s. Every other
+test is under 100 s and most are 5–40 s.
+
+Starting one run is not the cost. A script that only boots the game reports `44 frames, 749 ms of
+game time`, so a warm session that amortises boot saves ~0.75 s per scenario — noise against a
+scenario that takes seconds to minutes. The two battle tours that used to be the pole when
+[#163](https://github.com/adhikasp/ja2-pecel-bakwan/issues/163) was filed (`battle_smoke` 116.8 s,
+`battle_campaign` 100.3 s) are now **44.5 s** and **11.3 s**: the headless sector-load fade they
+measured was fixed in #159/#265. The pole is a popup tour now, not a battle.
+
 ## Synthetic data: `e2e-synthetic` and `e2e-real`
 
 The behavioural suite has two sides, and the labels say which data a run booted from:

@@ -1,4 +1,8 @@
 _bin
+# ctest's own scratch/log directory. `dev.py` and a `cd _bin` run leave it in the build dir,
+# but a ctest run from the repo root drops one here instead — and an untracked `Testing/` is
+# an unmapped path to `dev.py e2e --changed`, which then falls back to the whole suite.
+/Testing/
 .DS_Store
 .vagrant
 .cache
