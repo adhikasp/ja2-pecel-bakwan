@@ -27,13 +27,9 @@ void InitJA2SplashScreen(bool const showSplash)
 		else
 		{
 			const char* const ImageFile = GetMLGFilename(MLG_SPLASH);
-			SLOGD("Splash screen: {}", ImageFile);
+			SLOGI("Splash screen: {}", ImageFile);
 			BltVideoSurfaceOnceWithStretch(FRAME_BUFFER, ImageFile);
 		}
-	}
-	else
-	{
-		SLOGD("Splash screen: skipped");
 	}
 
 	InvalidateScreen();
