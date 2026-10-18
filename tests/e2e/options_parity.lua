@@ -219,6 +219,8 @@ ja2.expect(ja2.exists{id = "options.key[file.quick_save]"}, "quick save is a row
 ja2.expect(ja2.exists{id = "options.key[view.cursor_3d]"}, "and the 3D cursor")
 ja2.expect(ja2.exists{id = "options.key[act.reload]"}, "and reload")
 ja2.expect(ja2.exists{id = "options.key[file.quick_load]"}, "and quick load")
+ja2.expect(ja2.exists{id = "options.key[audio.music_down]"}, "and the music key")
+ja2.expect(ja2.exists{id = "options.key[msg.stop_speech]"}, "and stop-speech, which the map shares")
 ja2.expect(bind("file.quick_save").key == "Alt+S" and bind("file.quick_save").bound, "quick save starts on Alt+S")
 ja2.expect(mapRows == #ja2.map.actions(), "the page lists every one of the map's actions (" .. mapRows .. ")")
 ja2.expect(ja2.exists{id = "options.key[time.toggle]"}, "the map's rows are addressable by id")

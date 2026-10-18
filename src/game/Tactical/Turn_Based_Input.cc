@@ -1453,30 +1453,23 @@ static void HandleModAlt(UINT32 const key, UIEventKind* const new_event)
 {
 	switch (key)
 	{
-		case '-':
+	case 'm':
+		if (INFORMATION_CHEAT_LEVEL())
 		{
-			UINT32 const vol = MusicGetVolume();
-			MusicSetVolume(vol > 20 ? vol - 20 : 0);
-			break;
+			SLOGD("Entering Level Node Debug Mode");
+			*new_event = I_LEVELNODEDEBUG;
 		}
+		break;
 
-		case 'm':
-			if (INFORMATION_CHEAT_LEVEL())
-			{
-				SLOGD("Entering Level Node Debug Mode");
-				*new_event = I_LEVELNODEDEBUG;
-			}
-			break;
-
-		case 'n':
-			if (INFORMATION_CHEAT_LEVEL() && gUIFullTarget)
-			{
-				static UINT16 gQuoteNum = 0;
-				SLOGD("Playing Quote {}", gQuoteNum);
-				TacticalCharacterDialogue(gUIFullTarget, gQuoteNum++);
-			}
-			break;
+	case 'n':
+		if (INFORMATION_CHEAT_LEVEL() && gUIFullTarget)
+		{
+			static UINT16 gQuoteNum = 0;
+			SLOGD("Playing Quote {}", gQuoteNum);
+			TacticalCharacterDialogue(gUIFullTarget, gQuoteNum++);
 		}
+		break;
+	}
 }
 
 /** Runs one of the tactical screen's remaining shortcuts (issue #48 slice 3): the work its raw keycase did, named.
@@ -1704,6 +1697,21 @@ static void RunTacticalShortcut(TacticalShortcuts::Id const id, UIEventKind* con
 		break;
 
 	case Id::ClearLog: ClearDisplayedListOfTacticalStrings(); break;
+
+	case Id::StopSpeech: StopAnyCurrentlyTalkingSpeech(); break;
+
+	case Id::MusicDown:
+	{
+		UINT32 const vol = MusicGetVolume();
+		MusicSetVolume(vol > 20 ? vol - 20 : 0);
+		break;
+	}
+
+	case Id::CycleKnownEnemies:
+		// the legacy Return key cycled the known enemies only in our own combat turn
+		if ((gTacticalStatus.uiFlags & INCOMBAT) && gTacticalStatus.ubCurrentTeam == OUR_TEAM)
+			CycleThroughKnownEnemies();
+		break;
 
 	case Id::SelectAll:
 		// The legacy '=' did the display-size tweak when End/Delete was held, the sector select otherwise
@@ -1970,11 +1978,6 @@ void GetKeyboardInput(UIEventKind* const puiNewEvent)
 					//UNLOCK UI
 					EscapeUILock( );
 				}
-				else if (InputEvent.usEvent == KEY_DOWN && InputEvent.usParam == SDLK_RETURN)
-				{
-					// Cycle through enemys
-					CycleThroughKnownEnemies( );
-				}
 			}
 		}
 
@@ -2061,13 +2064,6 @@ void GetKeyboardInput(UIEventKind* const puiNewEvent)
 			}
 
 		}
-
-		// CHECK ESC KEYS HERE....
-		if (InputEvent.usEvent == KEY_DOWN && InputEvent.usParam == SDLK_BACKSPACE)
-		{
-			StopAnyCurrentlyTalkingSpeech( );
-		}
-
 
 		// IF UI HAS LOCKED, ONLY ALLOW EXIT!
 		if ( gfDisableRegionActive || gfUserTurnRegionActive )

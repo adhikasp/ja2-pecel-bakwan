@@ -37,6 +37,7 @@ local SHORTCUTS = {
 	{ "move.continue", "end" },     { "move.climb_window", "shift+j" }, { "move.squad_stealth", "alt+z" },
 	{ "nav.help", "shift+h" },      { "nav.save", "ctrl+s" },        { "nav.load", "ctrl+l" },
 	{ "panel.clear_log", "f12" },   { "select.all", "=" },
+	{ "msg.stop_speech", "backspace" }, { "audio.music_down", "alt+-" }, { "act.cycle_known_enemies", "return" },
 }
 for _, s in ipairs(SHORTCUTS) do
 	local a = byName[s[1]]
@@ -51,7 +52,7 @@ for _, a in ipairs(actions) do
 		owner[a.key] = a.name
 	end
 end
-for _, name in ipairs({ "file.quick_save", "file.quick_load", "nav.save", "nav.load", "act.settings" }) do
+for _, name in ipairs({ "file.quick_save", "file.quick_load", "nav.save", "nav.load", "act.settings", "msg.stop_speech" }) do
 	ja2.expect(byName[name].shared, name .. " is one shared action, not two with one key")
 	ja2.expect(ja2.map.key(byName[name].key) == name, name .. " runs on the map screen too")
 end

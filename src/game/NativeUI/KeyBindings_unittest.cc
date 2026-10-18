@@ -434,11 +434,11 @@ TEST(KeyBindings, theProcessRegistryHasTheWholeMapTable)
 {
 	DefaultsBack const guard;
 	Registry& r = Bindings();
-	// every action of the three sources, minus the names two of them declare (the shared ones: the squads and the
-	// options screen between tactical and map, and the save/load and quick save/load and settings added in slice 3)
+	// every action of the three sources, minus the names two of them declare (the shared ones: the squads, the
+	// options screen, the save/load screens, quick save/load, settings and stop-speech between tactical and map)
 	ASSERT_EQ(r.Actions().size(), static_cast<size_t>(TacticalCommands::COUNT) +
 									  static_cast<size_t>(TacticalShortcuts::COUNT) +
-									  static_cast<size_t>(MapCommands::COUNT) - 16u);
+									  static_cast<size_t>(MapCommands::COUNT) - 17u);
 	for (MapCommands::Command const& c : MapCommands::All())
 	{
 		Action const* const a = r.Find(c.name);

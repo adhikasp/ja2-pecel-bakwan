@@ -92,6 +92,9 @@ TEST(TacticalShortcuts, theLegacyKeysAreKept)
 	EXPECT_EQ(key("nav.save"), "ctrl+s");
 	EXPECT_EQ(key("nav.load"), "ctrl+l");
 	EXPECT_EQ(key("panel.clear_log"), "f12");
+	EXPECT_EQ(key("msg.stop_speech"), "backspace");
+	EXPECT_EQ(key("audio.music_down"), "alt+-");
+	EXPECT_EQ(key("act.cycle_known_enemies"), "return");
 	EXPECT_EQ(key("select.all"), "=");
 	// what is not a player action is not in the table (and so stays a raw keycase)
 	for (char const* notAnAction : { "act.cheat.cliff", "view.merc_lights_debug", "select.cover_size" })
@@ -101,7 +104,8 @@ TEST(TacticalShortcuts, theLegacyKeysAreKept)
 TEST(TacticalShortcuts, theSharedNamesAreTheMapsToo)
 {
 	// the names the map screen declares as well: one action, one key, each screen's own effect (issue #48 slice 3)
-	for (char const* name : { "file.quick_save", "file.quick_load", "nav.save", "nav.load", "act.settings" })
+	for (char const* name :
+		 { "file.quick_save", "file.quick_load", "nav.save", "nav.load", "act.settings", "msg.stop_speech" })
 	{
 		EXPECT_TRUE(Find(name)->shared) << name;
 		ASSERT_NE(MapCommands::Find(name), nullptr) << name;

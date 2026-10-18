@@ -41,7 +41,7 @@ std::vector<Command> BuildTable()
 	add(Id::MsgPageDown, "msg.page_down", "map_log", "pagedown", 0, true);
 	add(Id::MsgFirst, "msg.first", "map_log", "home");
 	add(Id::MsgLast, "msg.last", "map_log", "end");
-	add(Id::MsgStopSpeech, "msg.stop_speech", "map_log", "backspace");
+	add(Id::MsgStopSpeech, "msg.stop_speech", "map_log", "backspace", 0, false, true);
 
 	// what the map shows: its levels, then the filters
 	add(Id::LevelUp, "level.up", "map_view", "insert");

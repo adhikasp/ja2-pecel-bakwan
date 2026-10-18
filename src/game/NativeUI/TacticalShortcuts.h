@@ -44,6 +44,7 @@ enum class Id : uint8_t
 	AutoReload,
 	SwitchHeadgear,
 	Settings,
+	CycleKnownEnemies,
 	// what the world shows
 	Cursor3D,
 	LightEffects,
@@ -61,6 +62,9 @@ enum class Id : uint8_t
 	Load,
 	// the message log
 	ClearLog,
+	StopSpeech,
+	// the audio
+	MusicDown,
 	// who is selected
 	SelectAll,
 	Count

@@ -32,6 +32,7 @@ std::vector<Command> BuildTable()
 	add(Id::AutoReload, "act.auto_reload", "act", "reload", "ctrl+shift+r");
 	add(Id::SwitchHeadgear, "act.switch_headgear", "act", "face-gear", "ctrl+n");
 	add(Id::Settings, "act.settings", "act", "options", "v", true);
+	add(Id::CycleKnownEnemies, "act.cycle_known_enemies", "act", "enemy", "return");
 
 	// what the world shows
 	add(Id::Cursor3D, "view.cursor_3d", "view", "pointer", "home");
@@ -53,6 +54,10 @@ std::vector<Command> BuildTable()
 
 	// the message log
 	add(Id::ClearLog, "panel.clear_log", "panel", "close", "f12");
+	add(Id::StopSpeech, "msg.stop_speech", "map_log", "mute", "backspace", true);
+
+	// the audio
+	add(Id::MusicDown, "audio.music_down", "audio", "play", "alt+-");
 
 	// who is selected
 	add(Id::SelectAll, "select.all", "select", "squad", "=");
