@@ -1,4 +1,5 @@
 #include "AutomationSession.h"
+#include "ScrollMotion.h"
 #include "RenderWorld.h"
 #include "Isometric_Utils.h"
 #include "NativeUI.h"
@@ -202,8 +203,7 @@ namespace
 	// element list reports and what is drawn disagree, and a click is dropped - RmlUi dispatches a click only when the
 	// element under the mouse is the same when the button goes down and up, and the page has moved in between. So a
 	// wheel leaves the native UI where it will be, and a caller that reads a rect or clicks straight after sees the
-	// settled page. (Other scroll sources - a scrollbar drag, Tab's ScrollIntoView - are not covered yet: see the note
-	// in NothingInFlight.)
+	// settled page. (A scroll started another way is waited out by NothingInFlight instead: see the note there.)
 	void SettleNativeUI()
 	{
 		constexpr unsigned MAX_FRAMES = 30;
@@ -224,12 +224,31 @@ namespace
 		}
 	}
 
+	// The native UI's scroll, sampled once a frame by TrackIdle and read by NothingInFlight. See ScrollMotion.h for
+	// why the offsets are the honest predicate and how the wait is bounded.
+	ScrollMotion g_scrollMotion;
+	bool     g_nativeScrolling = false;
+	uint64_t g_scrollSampledFrame = ~0ull;
+
+	// Sample at most once a frame: WaitIdle() calls TrackIdle() before its loop, so two samples of one frame's
+	// signature would look like a settled page and drop the scroll.
+	void SampleNativeScroll()
+	{
+		uint64_t const frame = sgp::Clock::FrameCount();
+		if (frame == g_scrollSampledFrame) return;
+		g_scrollSampledFrame = frame;
+		g_nativeScrolling = g_scrollMotion.Sample(NativeUI::ScrollSignature());
+	}
+
 	// Structural "nothing is in flight" test; see Session::IsIdle().
 	bool NothingInFlight()
 	{
-		// A native-UI scroll animates over several frames (RmlUi's smooth-scroll controller). Session::Wheel waits
-		// that one out itself, so a wheel is not a reason to call the game busy here; a scroll started another way (a
-		// scrollbar drag, Tab's ScrollIntoView) is still in flight while this says idle.
+		// A native-UI scroll animates over several frames (RmlUi's smooth-scroll controller): while it runs the
+		// geometry the element list reports and what is drawn disagree, and a click is dropped. Session::Wheel
+		// settles a wheel itself, but a scroll starts other ways too - a scrollbar page-up/down or thumb drag,
+		// Tab's ScrollIntoView, anything that calls ScrollTo - so the session samples the native UI's scroll
+		// offsets once a frame (SampleNativeScroll) and a scroll that is still moving counts as in flight.
+		if (g_nativeScrolling) return false;
 		if (guiPendingScreen != NO_PENDING_SCREEN) return false;
 		if (VideoChangePending()) return false;
 		switch (guiCurrentScreen)
@@ -270,6 +289,7 @@ namespace
 
 	void TrackIdle()
 	{
+		SampleNativeScroll();
 		bool const quiet = NothingInFlight() && guiCurrentScreen == g_lastScreen;
 		g_lastScreen = guiCurrentScreen;
 		if (quiet && !g_quiet) g_quietSinceFrame = sgp::Clock::FrameCount();
