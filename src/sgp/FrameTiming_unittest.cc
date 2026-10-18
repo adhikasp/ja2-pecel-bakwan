@@ -35,8 +35,8 @@ TEST(FrameTiming, distributionIsMeanP50P95AndWorst)
 	FrameTiming::Stats const s = t.Take(false);
 	EXPECT_EQ(s.samples, 100);
 	EXPECT_DOUBLE_EQ(s.meanMs, 50.5);
-	EXPECT_DOUBLE_EQ(s.p50Ms, 51);  // v[100 / 2], the same convention as WorldRenderTiming
-	EXPECT_DOUBLE_EQ(s.p95Ms, 96);  // v[100 * 95 / 100]
+	EXPECT_DOUBLE_EQ(s.p50Ms, 51); // v[100 / 2], the same convention as WorldRenderTiming
+	EXPECT_DOUBLE_EQ(s.p95Ms, 96); // v[100 * 95 / 100]
 	EXPECT_DOUBLE_EQ(s.maxMs, 100);
 }
 

@@ -90,10 +90,10 @@ namespace NativeUI
 	struct FrameTiming
 	{
 		unsigned long long frames = 0; // every timed frame since the last reset
-		int                samples = 0;
-		double             meanMs = 0, p50Ms = 0, p95Ms = 0, maxMs = 0;
-		bool               gpu = false;
-		bool               recording = false;
+		int samples = 0;
+		double meanMs = 0, p50Ms = 0, p95Ms = 0, maxMs = 0;
+		bool gpu = false;
+		bool recording = false;
 	};
 	/** Start or stop recording the UI layer timing. Off by default: when nobody measures, a frame pays one branch. */
 	void SetFrameTimingRecording(bool);

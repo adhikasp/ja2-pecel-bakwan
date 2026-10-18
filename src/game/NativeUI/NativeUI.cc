@@ -160,8 +160,8 @@ namespace
 	// pays one branch and no clock read; that is the point of a timing that must not perturb what it measures.
 	using ui_clock = std::chrono::steady_clock;
 	sgp::FrameTiming g_uiTiming;
-	bool             g_uiTimingOn = false;
-	double           g_uiPendingMs = 0; // the segments of the frame being timed, until its last one closes it
+	bool g_uiTimingOn = false;
+	double g_uiPendingMs = 0; // the segments of the frame being timed, until its last one closes it
 
 	double UiMsSince(ui_clock::time_point const& since)
 	{
@@ -170,9 +170,15 @@ namespace
 
 	struct UiScope
 	{
-		UiScope(bool const on, double& sink) : sink_(on ? &sink : nullptr), start_(on ? ui_clock::now() : ui_clock::time_point{}) {}
-		~UiScope() { if (sink_) *sink_ += UiMsSince(start_); }
-		double*              sink_;
+		UiScope(bool const on, double& sink)
+			: sink_(on ? &sink : nullptr), start_(on ? ui_clock::now() : ui_clock::time_point{})
+		{
+		}
+		~UiScope()
+		{
+			if (sink_) *sink_ += UiMsSince(start_);
+		}
+		double* sink_;
 		ui_clock::time_point start_;
 	};
 
@@ -716,7 +722,8 @@ void Runtime::SoftwareCompose(SDL_Surface* const dst, SDL_Rect const& a)
 		int const x1 = std::min({ a.x + a.w, dst->w, layer->w }), y1 = std::min({ a.y + a.h, dst->h, layer->h });
 		for (int y = y0; y < y1; ++y)
 		{
-			auto const* src = reinterpret_cast<Uint32 const*>(static_cast<Uint8 const*>(layer->pixels) + size_t(y) * layer->pitch);
+			auto const* src =
+				reinterpret_cast<Uint32 const*>(static_cast<Uint8 const*>(layer->pixels) + size_t(y) * layer->pitch);
 			auto* d = reinterpret_cast<Uint16*>(static_cast<Uint8*>(dst->pixels) + size_t(y) * dst->pitch);
 			for (int x = x0; x < x1; ++x)
 			{
@@ -727,7 +734,8 @@ void Runtime::SoftwareCompose(SDL_Surface* const dst, SDL_Rect const& a)
 				if (alpha < 255)
 				{
 					Uint16 const q = d[x];
-					Uint32 const dr = ((q >> 11) & 0x1F) * 255 / 31, dg = ((q >> 5) & 0x3F) * 255 / 63, db = (q & 0x1F) * 255 / 31;
+					Uint32 const dr = ((q >> 11) & 0x1F) * 255 / 31, dg = ((q >> 5) & 0x3F) * 255 / 63,
+								 db = (q & 0x1F) * 255 / 31;
 					Uint32 const k = 255 - alpha;
 					r = std::min<Uint32>(255, r + dr * k / 255);
 					g = std::min<Uint32>(255, g + dg * k / 255);
