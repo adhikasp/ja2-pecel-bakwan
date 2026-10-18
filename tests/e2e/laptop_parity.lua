@@ -76,7 +76,7 @@ click("aim.hire.transfer")
 ja2.expect(vm().hire_state == "hired", "transfer succeeded")
 local s = ja2.state()
 ja2.expect(#s.mercs == 1 and s.money == 45000 - total, "Barry is hired and the money is gone")
-click("aim.hire.done"); campaign.acceptMessageBox("should arrive")
+click("aim.hire.done"); campaign.acceptMessageBox()
 ja2.expect(vm().team == "1" and vm().balance:find(tostring(s.money // 1000)), "system bar follows")
 click("laptop.app.finances"); ja2.expect(vm().ledger_count == 2, "ledger has the payment")
 click("laptop.app.personnel")
@@ -204,7 +204,7 @@ ja2.expect(ja2.exists{id = "merc.hire[" .. merc.id .. "]"}, "Hire appears once t
 shots.take("laptop_merc.png")
 -- a M.E.R.C. hire charges nothing up front (the fee accrues daily and is authorized later)
 local mercMoney, mercTeam = ja2.state().money, #ja2.state().mercs
-click("merc.hire[" .. merc.id .. "]"); campaign.acceptMessageBox("should arrive")
+click("merc.hire[" .. merc.id .. "]"); campaign.acceptMessageBox()
 ja2.expect(ja2.state().money == mercMoney, "a M.E.R.C. hire charges nothing up front")
 ja2.expect(#ja2.state().mercs == mercTeam + 1 and vm().team == tostring(mercTeam + 1), "the merc joins in transit, the system bar follows it")
 click("merc.nav.account")
@@ -219,8 +219,10 @@ ja2.expect(sel ~= nil, "the hired M.E.R.C. merc is on the personnel roster")
 click("personnel.merc[" .. I(sel) .. "]")
 v = vm()
 ja2.expect(v.pd_name == merc.title, "personnel shows " .. merc.title)
+-- the daily cost is the row whose value is the merc's fee: the row's label is
+-- translated (GERMAN "Tägliche Kosten:"), so match the money, not the wording (#175)
 local daily
-for _, row in ipairs(v.pd_employment) do if row.title:find("Daily Cost") then daily = row.value end end
+for _, row in ipairs(v.pd_employment) do if row.value == merc.meta then daily = row.value end end
 ja2.expect(daily == merc.meta, "personnel shows the daily cost: " .. tostring(daily))
 -- the server goes down (the broken link) and comes back up again
 ja2.debug("mercsitedown"); ja2.step(1)

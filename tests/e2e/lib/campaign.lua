@@ -86,11 +86,17 @@ function campaign.newGame()
 end
 
 -- The laptop greets you with first-visit help and "You have new mail...",
--- in either order; close both.
+-- in either order; close both. The new-mail wording is translated (it comes from
+-- assets/externalized/strings), so the native box is matched by its Yes button's
+-- id rather than by its English text; the legacy box below 1280x720 keeps the
+-- wording path.
 function campaign.dismissLaptopPopups()
 	for _ = 1, 3 do
 		campaign.dismissHelp()
-		if ja2.exists("You have new mail...") then
+		if ja2.exists{id = "msgbox.yes"} then
+			ja2.click{id = "msgbox.yes"}
+			ja2.waitIdle()
+		elseif ja2.exists("You have new mail...") then
 			ja2.click{text = "Yes", exact = true}
 			ja2.waitIdle()
 		end
@@ -136,7 +142,9 @@ function campaign.hireFromAim(name, contract, equipment)
 		ja2.waitFor{id = "aim.hire.done"}
 		ja2.click{id = "aim.hire.done"}
 		ja2.waitIdle()
-		campaign.acceptMessageBox("should arrive")
+		-- "<name> should arrive at the designated drop-off point ...", in whatever
+		-- language this run booted (the text is translated, so no English pattern).
+		campaign.acceptMessageBox()
 		return
 	end
 	ja2.click("Web")
@@ -159,16 +167,26 @@ function campaign.hireFromAim(name, contract, equipment)
 	ja2.waitFor("TRANSFER SUCCESSFUL")
 	ja2.click{text = "OK", exact = true}
 	ja2.waitIdle()
-	-- "<name> should arrive at the designated drop-off point ..."
-	campaign.acceptMessageBox("should arrive")
+	-- "<name> should arrive at the designated drop-off point ..." (translated).
+	campaign.acceptMessageBox()
 end
 
--- If a message box containing `pattern` is open, press its OK button.
+-- If a message box is open, press its OK button. `pattern` is an English fragment
+-- of the box's text, used where a specific box is expected; the localisation sweep
+-- (issue #175) passes none, because the text is translated there while the button's
+-- id is not. Returns true when a box was accepted.
 function campaign.acceptMessageBox(pattern)
 	ja2.waitIdle()
 	local s = ja2.state()
-	if not (s.messageBox and s.messageBoxText and s.messageBoxText:find(pattern, 1, true)) then return false end
-	ja2.click{text = "OK", exact = true}
+	if not (s.messageBox and s.messageBoxText) then return false end
+	if pattern and not s.messageBoxText:find(pattern, 1, true) then return false end
+	-- The native box names its buttons by id, which does not change with the
+	-- language; a legacy box is labelled from pMessageStrings, where OK/YES are
+	-- already the same three letters in every shipped translation.
+	if ja2.exists{id = "msgbox.ok"} then ja2.click{id = "msgbox.ok"}
+	elseif ja2.exists{id = "msgbox.yes"} then ja2.click{id = "msgbox.yes"}
+	elseif ja2.exists{text = "OK", exact = true} then ja2.click{text = "OK", exact = true}
+	else ja2.click{text = "YES", exact = true} end
 	ja2.waitIdle()
 	return true
 end
@@ -225,7 +243,8 @@ end
 function campaign.toMap()
 	ja2.waitIdle()
 	if ja2.screen() == "LAPTOP_SCREEN" then
-		ja2.click("Shut Down")
+		-- The native dock's close button by id; its label is translated (issue #175).
+		if ja2.exists{id = "laptop.close"} then ja2.click{id = "laptop.close"} else ja2.click("Shut Down") end
 		-- Entering the map is a flow point: reseed before the map loads, so the map's
 		-- random draws (and everything after) do not depend on how the laptop was driven.
 		campaign.reseed()

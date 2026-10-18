@@ -102,7 +102,12 @@ span, div { display: block; }
 .m-dot { flex: 0 0 22dp; } .m-dot .icon { width: 10dp; height: 10dp; image-color: var(--c-accent); }
 .m-from { flex: 0 0 30%; white-space: nowrap; overflow: hidden; }
 .m-subj { flex: 1 1 0; min-width: 0; white-space: nowrap; overflow: hidden; }
-.m-day { flex: 0 0 64dp; text-align: right; font-family: var(--font-mono); color: var(--c-text-dim); }
+/* wide enough for the longest translated day header (GERMAN "Datum:", POLISH
+   "Dzień:", RUSSIAN "Дата:") next to the sort icon, not just the English "Day:"
+   (issue #175: a 64dp column truncated the header mid-glyph at 1920x1080). The
+   day numbers and the header are right-aligned, so the extra width grows leftward
+   and moves neither. */
+.m-day { flex: 0 0 76dp; text-align: right; font-family: var(--font-mono); color: var(--c-text-dim); }
 .tr.unread .m-from, .tr.unread .m-subj { color: var(--c-text-strong); font-weight: 700; }
 .tr.read .m-from, .tr.read .m-subj { color: var(--c-text-dim); }
 .ml-read { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; }
@@ -378,6 +383,10 @@ span, div { display: block; }
 .pd-name { font-family: var(--font-display); font-weight: 700; font-size: var(--fs-3xl); text-transform: uppercase; color: var(--c-text-strong); line-height: 52dp; }
 .pd-full { color: var(--c-text-dim); margin-bottom: var(--sp-3); }
 .pd-id .stat { max-width: 520dp; }
+/* the morale value is a translated word ("Stabilne", "Stabil"), so size the value
+   to its text rather than a fixed 56dp that fits only the English "Normal"
+   (issue #175); the bar takes up the slack. */
+.pd-id .stat .v { width: auto; min-width: 56dp; }
 .pd-tabs { margin: var(--sp-5) 0 var(--sp-4) 0; }
 .pd-body { display: flex; flex: 1 1 0; min-height: 0; }
 .pd-col { flex: 1 1 0; margin-right: var(--sp-5); }
