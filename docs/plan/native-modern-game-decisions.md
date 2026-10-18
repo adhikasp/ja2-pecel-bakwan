@@ -140,7 +140,7 @@ What [native-modern-game.md](native-modern-game.md) Phase 2 built, and the decis
 | Question | Decision |
 |---|---|
 | Where the runtime lives | `src/nativeui/` (toolkit layer, no game code: render interface, clock, tokens, fonts, icons; shared with the spikes and unit tests) and `src/game/NativeUI/` (the game side: `NativeUI.h`). `WITH_NATIVE_UI` (default on, off on Android) builds it; without it a stub keeps every screen legacy |
-| Render paths | **One SDL_GPU compositor and present path** (`src/sgp/VideoGpu.cc`, the Phase 2 follow-up issue #50). In a window the game builds an SDL_GPU device, claims the window, and draws everything — the world layer (the Phase 8 texture, or the software WORLD_BUFFER uploaded), the legacy 8-bit `ScreenBuffer` and the native UI — as triangles of one shared graphics pipeline (`src/sgp/shaders/quad.vert`/`quad.frag`), then presents with `SDL_SubmitGPUCommandBuffer`. There is no `SDL_Renderer` on this path. The world's compute-written texture is copied into a sample-only texture first, which is what makes it sampleable on D3D12 (without it, D3D12 returned black while Vulkan was fine). The native UI's triangles come from `src/nativeui/UiGpu.cc` (`nui::SdlGpuRenderInterface`, RmlUi's own premultiplied colours); the UI records and uploads before the pass (`VideoOverlay::GpuFramePrepare`) and draws inside it (`GpuFrameRender`). **Software:** headless and every automation session (or `JA2_NATIVE_UI_RENDERER=software`) rasterize the native layer into a premultiplied ARGB layer that is blended into the ScreenBuffer, so screenshots, pixel reads and goldens include it; there the game keeps the `SDL_Renderer` path. `JA2_NATIVE_UI_RENDERER=gpu` forces the GPU UI in a shown automation session |
+| Render paths | **One SDL_GPU compositor and present path** (`src/sgp/VideoGpu.cc`, the Phase 2 follow-up issue #50). In a window the game builds an SDL_GPU device, claims the window, and draws everything — the world layer (the Phase 8 texture, or the software WORLD_BUFFER uploaded), the legacy 8-bit `ScreenBuffer` and the native UI — as triangles of one shared graphics pipeline (`src/sgp/shaders/quad.vert`/`quad.frag`), then presents with `SDL_SubmitGPUCommandBuffer`. There is no `SDL_Renderer` on this path. The world's compute-written texture is copied into a sample-only texture first, which is what makes it sampleable on D3D12 (without it, D3D12 returned black while Vulkan was fine). The native UI's triangles come from `src/nativeui/UiGpu.cc` (`nui::SdlGpuRenderInterface`, RmlUi's own premultiplied colours); the UI records and uploads before the pass (`VideoOverlay::GpuFramePrepare`) and draws inside it (`GpuFrameRender`). **Software:** headless and every automation session (or `JA2_NATIVE_UI_RENDERER=software`) rasterize the native layer into a premultiplied ARGB layer that is blended into the ScreenBuffer, so screenshots, pixel reads and goldens include it; there the game keeps the `SDL_Renderer` path. `JA2_NATIVE_UI_RENDERER=gpu` forces the GPU UI in a shown automation session. The layer's own per-frame cost is timed separately with `ja2.uiFrameTiming` (see [Performance](#performance)) |
 | Size and scale | output pixels (window pixels on the GPU path, the ScreenBuffer headless); `1dp = min(w / 1920, h / 1080) × native_ui_scale`, clamped so the layout is never smaller than 1280x720 dp. Resizes, video-mode changes and DPI changes are picked up every frame |
 | Minimum output | 1280x720 pixels. Below that the native UI does not run and every screen resolves to legacy (so 640x480 keeps the legacy screens) |
 | ui_mode | `ja2.json` `"ui_mode": { "credits": "native", "msgbox": "legacy", ... }` and `"native_ui_scale": 1.25`; runtime override `ja2.setUiMode(key, mode)`. Resolved once when a screen is entered (`NativeUI::HandleScreen` in the game loop). Keys: `credits` (default native), `msgbox`, `tooltip`, `toasts`, `cursor` (default legacy) |
@@ -185,6 +185,73 @@ What [native-modern-game.md](native-modern-game.md) Phase 3 built. The per-scree
 | Keys on release | Esc and Enter act on key release on the native options, new-game and save/load screens, so a release never answers the next message box or quits the main menu (which acts on release, as legacy) |
 | Automation | `ja2.viewModel(name)` prefers an open screen's view model to one it made before, and makes a new one each time otherwise (`options`, `mainmenu`, `saveload` read the game when made); `ja2.state().messageBoxText` reads native message boxes; `ja2.debug("mock", "phase3/<name>")` shows a wireframe through the runtime |
 | Strings | new strings are English in `assets/ui/strings/strings-eng.json`; the other languages fall back to English and carry a `_todo.phase3` note for a translator |
+
+## Performance
+
+**The front end's native UI layer costs 0.30–3.34 ms of host time per frame at 3840x2160 on the GPU, so the
+≤ 2 ms budget is met on three of the four screens and missed on the options screen (3.34 ms mean, p95 3.48).**
+Measured on the dev machine (AMD Ryzen 5560U, Radeon Vega 7 integrated, Windows 11, D3D12 through SDL_GPU 3.4,
+RelWithDebInfo `-O2`) in a real 3840x2160 window at `1dp = 2px`, on an otherwise idle machine: the same session's
+whole-frame interval differed by ~15 ms between a busy and a quiet box, so a number taken while a build runs is not
+a number.
+
+`uiMs` is `ja2.uiFrameTiming` (`src/sgp/FrameTiming.h`, `NativeUI::UiFrameTiming`): the native UI layer's own CPU time
+per frame, from the start of `Runtime::GpuFramePrepare` (RmlUi `ctx->Update()` + `ctx->Render()` + the vertex/index
+upload) through the end of `Runtime::GpuFrameRender` (the UI draw submission), summed into one sample. It is the same
+quantity class the Phase 0 table measured (`screen->update()` + `screen->render()`), minus the 1-pixel readback that
+forced the GPU to finish — and unlike `ja2.frameTiming` it is not a present-to-present interval.
+
+Reproduce (PowerShell; `--arg` is seconds per screen, default 4):
+
+```powershell
+$env:JA2_NATIVE_UI_RENDERER="gpu"
+# once, so the save/load screen has a row
+python tools/ja2ctl.py run tests/perf/native_ui_perf.lua --isolated --saves DIR --arg save
+# the budget number: 4K on the GPU
+python tools/ja2ctl.py run tests/perf/native_ui_perf.lua --show --res 3840x2160 --isolated --saves DIR --out OUT
+# contrast in a real 1080p window (`-res` alone only sets the logical canvas)
+python tools/ja2ctl.py run tests/perf/native_ui_perf.lua --show --isolated --saves DIR --out OUT --arg 4 --arg window=1920x1080
+```
+
+| Screen | 4K `uiMs` mean / p50 / p95 / worst | 1080p `uiMs` mean / p95 | 4K whole frame (context) |
+|---|---|---|---|
+| mainmenu | 0.30 / 0.29 / 0.38 / 0.43 | 0.18 / 0.26 | 16.75 ms |
+| newgame | 0.43 / 0.43 / 0.52 / 0.59 | 0.24 / 0.34 | 16.75 ms |
+| saveload | 0.37 / 0.37 / 0.46 / 0.52 | 0.21 / 0.31 | 16.96 ms |
+| **options** | **3.34 / 3.36 / 3.48 / 3.63** | **2.82 / 3.05** | 16.68 ms |
+
+Three 4K runs landed within 0.06 ms of each other on every screen (mainmenu 0.25–0.30, newgame 0.37–0.43, saveload
+0.33–0.37, options 3.31–3.34), so these are stable numbers rather than one lucky session.
+
+- **The options screen is the one miss, and it is not fill.** It costs about the same at 1080p (2.82 ms, `1dp`) as at
+  4K (3.34 ms, `2dp`), so the cost is CPU-side layout/record work in that dense screen — three independently scrolling
+  columns (`.op-cols`, `.op-help`) — not triangles or pixels. The other three screens are an order of magnitude under
+  the budget. That is the honest state of the budget: met by the front end generally, missed by options.
+- **The whole-frame column cannot stand in for it.** At 4K the whole frame is a single 59.9 Hz refresh (16.7 ms) on
+  this quiet machine; below 4K it is the same refresh at every size. A present-to-present interval therefore cannot
+  resolve a 2 ms layer, and at 4K it can only say "one refresh or two" (the research measured 19–37 ms when a build
+  was running).
+- **What `uiMs` does not include:** the GPU's execution of the UI draws (CPU host time only; SDL 3.4.16 exposes no
+  timestamp query, so that number is not obtainable), the compositor's world/`ScreenBuffer` work, the swapchain wait
+  and the present.
+- **It is off until asked for.** `ja2.uiFrameTiming(true)` starts a measurement and `ja2.uiFrameTiming("stop")` ends
+  one; between them a frame pays two `steady_clock` reads and a branch. A normal frame pays the branch only.
+
+Software path (second table, **not comparable to the budget**; `--arg software=1`, no `JA2_NATIVE_UI_RENDERER`):
+
+| Window | `uiMs` mean | Whole frame |
+|---|---|---|
+| 1280x720 | 438–679 ms | equal to `uiMs` |
+| 1920x1080 | 508–719 ms | equal to `uiMs` |
+
+The whole frame matching `uiMs` shows the software layer *is* the frame there, and the real front end's software
+rasteriser runs at ~2 fps on this machine — the Phase 0 spike (a save/load list, no full-window art) read 29 ms at
+1080p. The software path is a headless-screenshot path, as Phase 2 decided; these numbers are recorded so nobody
+quotes them against the 2 ms GPU budget.
+
+There is no CI threshold for this: `tests/perf/` is not registered with ctest (the number needs a window and a GPU),
+and `e2e/native_ui.lua` asserts only that the surface counts, resets and reports its path. The same conclusion #37
+reached for a perf gate.
 
 # Phase 8 — native world renderer
 

@@ -1470,10 +1470,12 @@ FrameTiming UiFrameTiming(bool const reset)
 {
 	if (reset)
 	{
+		// a reset starts a new measurement: it returns an empty distribution, not the previous screen's
 		g_uiTimingOn = true;
 		g_uiPendingMs = 0;
+		g_uiTiming.Reset();
 	}
-	sgp::FrameTiming::Stats const s = g_uiTiming.Take(reset);
+	sgp::FrameTiming::Stats const s = g_uiTiming.Take(false);
 	FrameTiming t;
 	t.frames = s.frames;
 	t.samples = s.samples;
