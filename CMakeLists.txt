@@ -675,6 +675,7 @@ if (WITH_UNITTESTS)
             "shopkeeper_parity=campaign,nativeui"
             "tactical_commands=tactical"
             "tactical_hud=tactical"
+            "tactical_keys=tactical"
             "tactical_move_merc=tactical"
             "tactical_overhead=tactical"
             "tactical_overlays=tactical"

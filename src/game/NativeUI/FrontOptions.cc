@@ -72,15 +72,6 @@ struct ChoiceRow
 	}
 };
 
-struct KeyRow
-{
-	std::string group, name, k1, k2;
-	static void Describe(RowFields<KeyRow>& f)
-	{
-		f("group", &KeyRow::group)("name", &KeyRow::name)("k1", &KeyRow::k1)("k2", &KeyRow::k2);
-	}
-};
-
 /** One rebindable action on the Controls page (issue #48): its row. */
 struct BindRow
 {
@@ -98,19 +89,32 @@ namespace
 	// where each toggle goes (docs/ui/options.md §2), in the order shown
 	struct Placement { int opt; char const* group; char const* kbd; };
 	Placement const PLACEMENT[] = {
-		{ TOPTION_SHOW_MISSES, "combat", "" }, { TOPTION_HIDE_BULLETS, "combat", "" }, { TOPTION_TRACKING_MODE, "combat", "" },
-		{ TOPTION_RTCONFIRM, "combat", "" }, { TOPTION_ALWAYS_SHOW_MOVEMENT_PATH, "combat", "Shift" },
-		{ TOPTION_SLEEPWAKE_NOTIFICATION, "campaign", "" }, { TOPTION_USE_METRIC_SYSTEM, "campaign", "" },
+		{ TOPTION_SHOW_MISSES, "combat", "" },
+		{ TOPTION_HIDE_BULLETS, "combat", "" },
+		{ TOPTION_TRACKING_MODE, "combat", "" },
+		{ TOPTION_RTCONFIRM, "combat", "" },
+		{ TOPTION_ALWAYS_SHOW_MOVEMENT_PATH, "combat", "Shift" },
+		{ TOPTION_SLEEPWAKE_NOTIFICATION, "campaign", "" },
+		{ TOPTION_USE_METRIC_SYSTEM, "campaign", "" },
 		{ TOPTION_BLOOD_N_GORE, "campaign", "" },
-		{ TOPTION_ANIMATE_SMOKE, "world", "" }, { TOPTION_TOGGLE_TREE_TOPS, "world", "T" }, { TOPTION_TOGGLE_WIREFRAME, "world", "" },
-		{ TOPTION_GLOW_ITEMS, "world", "" }, { TOPTION_3D_CURSOR, "world", "Home" }, { TOPTION_MERC_CASTS_LIGHT, "world", "G" },
+		{ TOPTION_ANIMATE_SMOKE, "world", "" },
+		{ TOPTION_TOGGLE_TREE_TOPS, "world", "T" },
+		{ TOPTION_TOGGLE_WIREFRAME, "world", "" },
+		{ TOPTION_GLOW_ITEMS, "world", "" },
+		{ TOPTION_3D_CURSOR, "world", "" },
+		{ TOPTION_MERC_CASTS_LIGHT, "world", "" },
 		{ TOPTION_MERC_ALWAYS_LIGHT_UP, "world", "" },
-		{ TOPTION_SPEECH, "dialogue", "" }, { TOPTION_SUBTITLES, "dialogue", "" }, { TOPTION_KEY_ADVANCE_SPEECH, "dialogue", "" },
+		{ TOPTION_SPEECH, "dialogue", "" },
+		{ TOPTION_SUBTITLES, "dialogue", "" },
+		{ TOPTION_KEY_ADVANCE_SPEECH, "dialogue", "" },
 		{ TOPTION_MUTE_CONFIRMATIONS, "dialogue", "" },
-		{ TOPTION_DONT_MOVE_MOUSE, "mouse", "" }, { TOPTION_OLD_SELECTION_METHOD, "mouse", "" }, { TOPTION_SMART_CURSOR, "mouse", "" },
+		{ TOPTION_DONT_MOVE_MOUSE, "mouse", "" },
+		{ TOPTION_OLD_SELECTION_METHOD, "mouse", "" },
+		{ TOPTION_SMART_CURSOR, "mouse", "" },
 		{ TOPTION_SNAP_CURSOR_TO_DOOR, "mouse", "" },
 		// mirrored on the accessibility page
-		{ TOPTION_SUBTITLES, "reading", "" }, { TOPTION_KEY_ADVANCE_SPEECH, "reading", "" },
+		{ TOPTION_SUBTITLES, "reading", "" },
+		{ TOPTION_KEY_ADVANCE_SPEECH, "reading", "" },
 	};
 	static_assert(std::size(PLACEMENT) == NUM_GAME_OPTIONS + 2, "every toggle has a place");
 
@@ -175,25 +179,15 @@ public:
 		saving = gzGIOScreenText[gGameOptions.ubGameSaveMode == DIF_IRON_MAN ? GIO_IRON_MAN_TEXT :
 			gGameOptions.ubGameSaveMode == DIF_DEAD_IS_DEAD ? GIO_DEAD_IS_DEAD_TEXT : GIO_SAVE_ANYWHERE_TEXT].to_std_string();
 		reducedMotion = ReducedMotion();
-		// the shortcuts no table drives yet: the tactical screen's, which is all that is left of them (the map's
-		// became actions in #48 slice 2). They are still raw key codes, so they stay a reference until that screen's
-		// slice gives them actions too.
-		keys.clear();
-		for (auto const& [k, a, b] : std::initializer_list<std::tuple<char const*, char const*, char const*>>{
-				 { "options.key.reload", "R", "" },
-				 { "options.key.quick_save", "Alt", "S" },
-				 { "options.key.quick_load", "Alt", "L" },
-				 { "options.key.cursor3d", "Home", "" } })
-			keys.push_back({ "reference", Str(k), a, b });
 		for (char const* k :
 			 { "gameplay", "video", "audio", "controls", "access", "combat", "campaign", "this_campaign", "display",
-			   "world", "volume", "dialogue", "mouse", "keys_reference", "keys_tactical", "reading", "motion" })
+			   "world", "volume", "dialogue", "mouse", "keys_tactical", "reading", "motion" })
 		{
 			labels[k] = Str(std::string(k).find('_') == std::string::npos && std::string("gameplay video audio controls access").find(k) != std::string::npos
 				? std::string("options.tab.") + k : std::string("options.group.") + k);
 		}
-		for (char const* g : { "stance", "move", "act", "turn", "nav", "panel", "select", "view", "map_time", "map_log",
-							   "map_view", "map_team", "map_squad", "map_act", "map_nav" })
+		for (char const* g : { "stance", "move", "act", "turn", "nav", "panel", "select", "view", "file", "audio",
+							   "map_time", "map_log", "map_view", "map_team", "map_squad", "map_act", "map_nav" })
 		{
 			labels[std::string("keys_") + g] = Str(std::string("options.group.keys_") + g);
 		}
@@ -278,7 +272,6 @@ public:
 		f.Field("in_game", inGame); f.Field("can_save", canSave);
 		f.Rows("options", options);
 		f.Rows("choices", choices);
-		f.Rows("keys", keys);
 		f.Rows("binds", binds);
 		f.Field("open_menu", openMenu);
 		f.Field("capturing", capturing);
@@ -557,12 +550,20 @@ public:
 		BindKey(k);
 	}
 
-	/** A toggle's hint chip: the command's key when the same action is in the command table (Tree tops is
-	 * view.roofs), so rebinding it cannot leave this page's hint stale either (issue #48). */
+	/** A toggle's hint chip: the key of the action an option is the same setting as (Tree tops is view.roofs, the 3D
+	 * cursor view.cursor_3d, the merc lights view.merc_lights), so rebinding it cannot leave this page's hint stale
+	 * either (issue #48). @a kbd is the hint for an option no action drives. */
 	static std::string ToggleHint(int const opt, char const* const kbd)
 	{
-		if (opt != TOPTION_TOGGLE_TREE_TOPS) return kbd;
-		std::string const key = KeyBindings::Bindings().Key("view.roofs");
+		char const* action = nullptr;
+		switch (opt)
+		{
+		case TOPTION_TOGGLE_TREE_TOPS: action = "view.roofs"; break;
+		case TOPTION_3D_CURSOR: action = "view.cursor_3d"; break;
+		case TOPTION_MERC_CASTS_LIGHT: action = "view.merc_lights"; break;
+		default: return kbd;
+		}
+		std::string const key = KeyBindings::Bindings().Key(action);
 		return key.empty() ? std::string() : KeyBindings::KeyLabel(key);
 	}
 
@@ -575,7 +576,6 @@ public:
 	bool inGame = false, canSave = false, reducedMotion = false, helpWarn = false, pendingVideo = false;
 	std::vector<OptionRow> options;
 	std::vector<ChoiceRow> choices;
-	std::vector<KeyRow> keys;
 	std::vector<BindRow> binds;
 	std::string capturing, captureLabel, bindWarn;
 	std::string resText, fpsText, filterText, effectNow;
@@ -585,16 +585,13 @@ public:
 	std::string difficulty, style, guns, saving;
 	std::string lSave, lLoad, lQuit, lDone, lEffects, lSpeech, lMusic;
 	std::map<std::string, std::string> labels,
-		strs = { { "s_resolution", "" },    { "s_window", "" },       { "s_fps", "" },
-				 { "s_filter", "" },        { "s_zoom", "" },         { "s_ui_size", "" },
-				 { "s_difficulty", "" },    { "s_style", "" },        { "s_guns", "" },
-				 { "s_saving", "" },        { "s_motion", "" },       { "s_motion_help", "" },
-				 { "s_colour_note", "" },   { "s_keys_note", "" },    { "s_page", "" },
-				 { "s_next", "" },          { "s_change", "" },       { "s_saved_note", "" },
-				 { "s_play", "" },          { "s_ui_size_help", "" }, { "s_bind_title", "" },
-				 { "s_bind_hint", "" },     { "s_bind_press", "" },   { "s_bind_cancel", "" },
-				 { "s_bind_reset", "" },    { "s_bind_unbound", "" }, { "s_keys_reference_note", "" },
-				 { "s_bind_reset_row", "" } };
+		strs = { { "s_resolution", "" },  { "s_window", "" },       { "s_fps", "" },           { "s_filter", "" },
+				 { "s_zoom", "" },        { "s_ui_size", "" },      { "s_difficulty", "" },    { "s_style", "" },
+				 { "s_guns", "" },        { "s_saving", "" },       { "s_motion", "" },        { "s_motion_help", "" },
+				 { "s_colour_note", "" }, { "s_keys_note", "" },    { "s_page", "" },          { "s_next", "" },
+				 { "s_change", "" },      { "s_saved_note", "" },   { "s_play", "" },          { "s_ui_size_help", "" },
+				 { "s_bind_title", "" },  { "s_bind_hint", "" },    { "s_bind_press", "" },    { "s_bind_cancel", "" },
+				 { "s_bind_reset", "" },  { "s_bind_unbound", "" }, { "s_bind_reset_row", "" } };
 
 	std::function<void(std::string const&)> onAction;
 	std::function<void()> onRefused;
@@ -628,8 +625,6 @@ public:
 																   { "s_bind_cancel", "options.bind.cancel" },
 																   { "s_bind_reset", "options.bind.reset" },
 																   { "s_bind_unbound", "options.bind.unbound" },
-																   { "s_keys_reference_note",
-																	 "options.keys_reference_note" },
 																   { "s_bind_reset_row", "options.bind.reset_row" } };
 		for (auto const& [k, v] : map) strs[k] = Str(v);
 	}

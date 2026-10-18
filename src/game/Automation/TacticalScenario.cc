@@ -67,9 +67,12 @@ namespace
 			else break;
 			key = key.substr(plus + 1);
 		}
-		TacticalCommands::Command const* const c = TacticalCommands::ForKey(key, ctrl, shift, alt);
-		if (!c) return sol::make_object(L, sol::lua_nil);
-		return sol::make_object(L, std::string(c->name));
+		// the registry owns the keys of every tactical action (the HUD's command table and the screen's remaining
+		// shortcuts alike), so this answers for both: the name of the action a key runs, or nil
+		KeyBindings::Action const* const a =
+			KeyBindings::Bindings().Owner(TacticalCommands::SCOPE, KeyBindings::KeyName(key, 0, ctrl, shift, alt));
+		if (!a) return sol::make_object(L, sol::lua_nil);
+		return sol::make_object(L, a->name);
 	}
 
 	sol::table RosterTable(sol::state_view L)
@@ -89,6 +92,7 @@ namespace
 			m["name"]     = s->name.to_std_string();
 			m["id"]       = static_cast<int>(s->ubID);
 			m["selected"] = s == sel;
+			m["multi"] = (s->uiStatusFlags & SOLDIER_MULTI_SELECTED) != 0;
 			members[++n]  = m;
 		}
 		t["filled"]  = n;

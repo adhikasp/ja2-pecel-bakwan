@@ -109,8 +109,8 @@ mines here and the map button there), so the registry resolves conflicts within 
 rebind on one leaves the other alone.
 
 Not actions, and so still raw keycases: the cheats (Ctrl+A/T/Z), Alt+X, and the Pause key. Quick save/load (Alt+S/L)
-stay raw here as well - the tactical screen reads the same keys raw, so naming them for the map alone would make a
-rebind work on one screen and silently not the other; they become one shared action with the tactical screen's slice.
+are shared with the tactical screen's own shortcut table (`NativeUI/TacticalShortcuts`, issue #48 slice 3): the same
+name is declared in both tables, so it is one action with one key, and each screen runs its own effect.
 
 The map's dispatch is assertable headless (`ja2.map.actions()`, `.key(combo)`, `.run(name)`); `tests/e2e/map_keys.lua`
 drives every group of shortcuts by key and asserts the effect on the game.

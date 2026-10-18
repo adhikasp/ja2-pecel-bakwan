@@ -13,9 +13,8 @@
 // dispatch (RunMapKey) asks the registry which of these actions a key runs.
 //
 // The legacy keycases that are not player actions are not here and stay raw: the cheats (Ctrl+A/T/Z), Alt+X, and the
-// Pause key. So do Quick save/load (Alt+S/L), which the tactical screen reads raw too - naming them here alone would
-// make a rebind work on one screen and silently not the other, so they are one shared action for the slice that
-// converts the tactical screen's remaining shortcuts.
+// Pause key. Quick save/load (Alt+S/L) are shared with the tactical screen's shortcut table (issue #48 slice 3): the
+// name is declared here and there, so they are one action with one key on both screens.
 
 #include "KeyBindings.h"
 
@@ -96,6 +95,10 @@ enum class Id : uint8_t
 	NavSave,
 	NavLoad,
 	NavOptions,
+	// the game flow: the tactical screen's shortcut table declares these too (issue #48 slice 3), so they are one
+	// shared action with one key on both screens
+	QuickSave,
+	QuickLoad,
 	Count
 };
 

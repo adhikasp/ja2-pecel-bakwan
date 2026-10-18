@@ -2,6 +2,7 @@
 
 #include "MapCommands.h"
 #include "TacticalCommands.h"
+#include "TacticalShortcuts.h"
 
 #include <SDL3/SDL_keycode.h>
 
@@ -433,8 +434,11 @@ TEST(KeyBindings, theProcessRegistryHasTheWholeMapTable)
 {
 	DefaultsBack const guard;
 	Registry& r = Bindings();
-	ASSERT_EQ(r.Actions().size(),
-			  static_cast<size_t>(TacticalCommands::COUNT) + static_cast<size_t>(MapCommands::COUNT) - 11u);
+	// every action of the three sources, minus the names two of them declare (the shared ones: the squads, the
+	// options screen, the save/load screens, quick save/load, settings and stop-speech between tactical and map)
+	ASSERT_EQ(r.Actions().size(), static_cast<size_t>(TacticalCommands::COUNT) +
+									  static_cast<size_t>(TacticalShortcuts::COUNT) +
+									  static_cast<size_t>(MapCommands::COUNT) - 17u);
 	for (MapCommands::Command const& c : MapCommands::All())
 	{
 		Action const* const a = r.Find(c.name);
@@ -474,5 +478,54 @@ TEST(KeyBindings, theProcessRegistryHasTheWholeMapTable)
 	r.Bind("view.mines", "n");
 	EXPECT_EQ(r.Key("view.mines"), "n");
 	EXPECT_EQ(r.Key("nav.map"), "m"); // the tactical HUD's m is its own screen's: the map's rebind leaves it alone
+	r.ResetAll();
+}
+
+TEST(KeyBindings, theProcessRegistryHasTheTacticalShortcutTable)
+{
+	DefaultsBack const guard;
+	Registry& r = Bindings();
+	for (TacticalShortcuts::Command const& c : TacticalShortcuts::All())
+	{
+		Action const* const a = r.Find(c.name);
+		ASSERT_TRUE(a) << c.name;
+		EXPECT_EQ(a->key, std::string(c.key)) << c.name;
+		EXPECT_EQ(a->def, std::string(c.key)) << c.name;
+		EXPECT_EQ(a->group, std::string(c.group)) << c.name;
+		// the shortcuts are the tactical screen's, including the ones it shares with the map
+		EXPECT_EQ(a->scope, TacticalShortcuts::SCOPE) << c.name;
+	}
+	// a rebind reaches the shortcut's key lookup, and the default key is free again
+	r.Bind("act.auto_bandage", "alt+b");
+	EXPECT_EQ(TacticalShortcuts::ForKey("alt+b")->id, TacticalShortcuts::Id::AutoBandage);
+	EXPECT_EQ(TacticalShortcuts::ForKey("a"), nullptr);
+	r.ResetAll();
+	EXPECT_EQ(TacticalShortcuts::ForKey("a")->id, TacticalShortcuts::Id::AutoBandage);
+}
+
+TEST(KeyBindings, quickSaveAndLoadAreOneSharedActionWithOneKey)
+{
+	// the deferred decision of slice 2: quick save/load are the tactical screen's and the map's together, so they
+	// are one action with one default - not two actions with the same key
+	DefaultsBack const guard;
+	Registry& r = Bindings();
+	for (char const* name : { "file.quick_save", "file.quick_load", "nav.save", "nav.load", "act.settings" })
+	{
+		Action const* const a = r.Find(name);
+		ASSERT_TRUE(a) << name;
+		EXPECT_TRUE(a->shared) << name;
+		// declared once, so it is one row: the tactical screen registered it first and keeps its group
+		EXPECT_EQ(a->scope, TacticalShortcuts::SCOPE) << name;
+	}
+	EXPECT_EQ(r.Owner(MapCommands::SCOPE, "alt+s")->name, "file.quick_save");
+	EXPECT_EQ(r.Owner(TacticalShortcuts::SCOPE, "alt+s")->name, "file.quick_save");
+	EXPECT_EQ(r.Owner(MapCommands::SCOPE, "alt+l")->name, "file.quick_load");
+	EXPECT_EQ(r.Owner(TacticalShortcuts::SCOPE, "alt+l")->name, "file.quick_load");
+	// one key, one action: a rebind moves it on both screens at once
+	r.Bind("file.quick_save", "alt+q");
+	EXPECT_EQ(r.Key("file.quick_save"), "alt+q");
+	EXPECT_EQ(r.Owner(MapCommands::SCOPE, "alt+q")->name, "file.quick_save");
+	EXPECT_EQ(r.Owner(TacticalShortcuts::SCOPE, "alt+q")->name, "file.quick_save");
+	EXPECT_EQ(r.Owner(MapCommands::SCOPE, "alt+s"), nullptr);
 	r.ResetAll();
 }
