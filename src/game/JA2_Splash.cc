@@ -4,6 +4,7 @@
 #include "MainMenuScreen.h"
 #include "Video.h"
 #include "GameRes.h"
+#include "Logger.h"
 
 UINT32 guiSplashFrameFade = 10;
 UINT32 guiSplashStartTime = 0;
@@ -26,8 +27,13 @@ void InitJA2SplashScreen(bool const showSplash)
 		else
 		{
 			const char* const ImageFile = GetMLGFilename(MLG_SPLASH);
+			SLOGD("Splash screen: {}", ImageFile);
 			BltVideoSurfaceOnceWithStretch(FRAME_BUFFER, ImageFile);
 		}
+	}
+	else
+	{
+		SLOGD("Splash screen: skipped");
 	}
 
 	InvalidateScreen();
