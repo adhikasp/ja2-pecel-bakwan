@@ -246,6 +246,31 @@ Things worth knowing:
 - **Pixels** (`ja2.pixelIs`, `ja2.waitPixel`) still work, but depend on the
   resolution; the tests run at 1280x720, the smallest output the game runs at (a smaller `--res` starts at it).
 
+## Localisation: the laptop at the shipped languages
+
+`ctest -L localisation` is the structural layout audit of the native laptop at the
+shipped languages ([#175](https://github.com/adhikasp/ja2-pecel-bakwan/issues/175)):
+the two laptop tours, run with the GERMAN, POLISH and RUSSIAN string tables loaded
+(`-- -resversion <LANG>`), where their existing `ja2.assertInsideScreen()` /
+`ja2.layoutProblems()` assertions *are* the audit — clipped, overlapping and
+truncated text fails them.
+
+It is a **structural run, not a pixel compare**: the tests go straight through
+`ja2ctl`, never through `check_resolution.py`, so no golden image is read or
+written and there is no second golden set (the owner's decision on
+[#302](https://github.com/adhikasp/ja2-pecel-bakwan/issues/302)). It is a tier of
+its own — deliberately not on `e2e` or `resolution` and not an area — so
+`ctest -L e2e`, `ctest -L resolution` and `dev.py e2e --changed` do not grow by it,
+and a drift guard keeps it that way.
+
+Two things the runs are **not**. The native chrome (`assets/ui/strings`) is
+English-only today (`#128`), so a German run renders translated *data* (dock
+labels, mail column headers, personnel labels) against English *chrome*. And the
+I.M.P. quiz answers come from `.edt` in the player's game data, which the repo does
+not ship, so the "Russian quiz answers" row of
+[`../../docs/ui/laptop.md`](../../docs/ui/laptop.md) stays open until #302's
+synthetic data or a Russian data install exists.
+
 ## Resolution matrix
 
 `ctest -L resolution` is the default sweep: every tour at 1920x1080. The other

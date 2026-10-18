@@ -189,7 +189,10 @@ motion (`--t-slow` panel transitions).
 - [x] M.E.R.C. server down (broken link, `laptop_parity.lua`)
 - [ ] Bobby Ray's not open yet, Speck's unpaid account
 - [ ] Rain delay; insufficient funds on every purchase path
-- [ ] Long translations: German page titles, Russian quiz answers (quiz answers wrap)
+- [x] Long translations: German page titles (the DE/RU/PL laptop sweep, `ctest -L localisation`, #175)
+- [ ] Long translations: Russian quiz answers (quiz answers wrap) — the I.M.P. quiz answers come from `.edt`
+      in the player's game data and the repo ships no localised `.edt`, so this stays open until #302's
+      synthetic data or a Russian install exists
 - [ ] 1280x720 to 3440x1440: the wireframes hold at all three sizes (no layout-audit findings)
 - [ ] Keyboard only: F1–F6, Tab, Esc, quiz answers by number, Enter confirms
 

@@ -375,6 +375,27 @@ class DriftGuard(unittest.TestCase):
         self.assertEqual({f"e2e_{s}" for s in e2e_select.SMOKE}, real_smoke,
                          "the smoke label and e2e_select.SMOKE disagree")
 
+    def test_the_localisation_tier_is_carried_and_stays_out_of_e2e(self):
+        """The DE/RU/PL laptop audit is a tier of its own (issue #175).
+
+        It must exist (`ctest -L localisation` selects the audit), and no run that
+        carries it may also be an `e2e` run or an area, or the e2e sweep and
+        `dev.py e2e --changed` would quietly grow by it. Read from CTest, so the
+        label cannot be renamed on one side only.
+        """
+        build_dir = self._build_dir()
+        if build_dir is None:
+            self.skipTest("no configured build dir to read real labels from")
+        if not shutil.which("ctest"):
+            self.skipTest("ctest is not on this process's PATH")
+        labels = e2e_select.parse_ctest_labels(
+            e2e_select.default_ctest_run(["ctest", "--show-only=json-v1"], build_dir))
+        localisation = {n: ls for n, ls in labels.items() if "localisation" in ls}
+        self.assertTrue(localisation, "no test carries the localisation label")
+        for name, ls in localisation.items():
+            self.assertEqual({"localisation"}, ls,
+                             f"{name} carries more than the localisation tier")
+
     @staticmethod
     def _build_dir():
         for candidate in (Path.cwd(), REPO / "_bin", REPO / "build"):
