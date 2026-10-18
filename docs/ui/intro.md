@@ -53,10 +53,10 @@ Every input the legacy screen has. There are no buttons and no cursor (`VIDEO_NO
 
 | # | State | Entered by | Left by | Differences |
 |---|---|---|---|---|
-| S1 | splash (`INTRO_SPLASH`) | start-up (`SGP.cc`) | the one video ends, A1 | `splashscreen.smk`, then the Sir-Tech logo (I2) and `gfDoneWithSplashScreen = TRUE` → `INIT_SCREEN` |
+| S1 | splash (`INTRO_SPLASH`) | start-up (`SGP.cc`) | the one video ends, A1 | the still before the video is `MLG_SPLASH`: `german/…`, `polish/…`, `russian/…` or `dutch/…` when that directory is present, the English `interface/splash.sti` when it is not (#411); then `splashscreen.smk`, the Sir-Tech logo (I2) and `gfDoneWithSplashScreen = TRUE` → `INIT_SCREEN` |
 | S2 | beginning (`INTRO_BEGINING`) | new game (`FrontNewGame.cc`, legacy `GameInitOptionsScreen.cc`) | the chain ends or A1 | `rebel_cr` → `omerta` → `prague_cr` → `prague` → `INIT_SCREEN` |
 | S3 | ending (`INTRO_ENDING`) | `DoneFadeOutEndCinematic()` (`End_Game.cc`) | the chain ends or A1 | `throne_mig`/`throne_nomig` (Miguel dead?) → `heli_flyby` → `heli_sky`/`heli_nosky` (Skyrider dead?) → `EPILOGUE_SCREEN` |
-| S4 | skipped (`-no-intro`, S1/S2 only) | `SetSkipIntroVideos(true)` | immediate | no video: exit at once (`EnterIntroScreen`). The ending still plays |
+| S4 | skipped (`-no-intro`, S1/S2 only) | `SetSkipIntroVideos(true)` | immediate | no video: exit at once (`EnterIntroScreen`). The ending still plays. The still art is not loaded either (its absence must not abort a headless run, #411) |
 | S5 | skipped by the player | A1 | immediate | the rest of the chain does not play; the exit target is unchanged |
 | S6 | video cannot be played | `SmkPlayFlic()` returns `nullptr` (missing, empty or broken flic — the Urban Chaos quirk in `Cinematics.cc`) | the card times out (4 s) or A2/A3 | the native screen shows the still card (I6) instead of black; the chain continues as if the video had played |
 

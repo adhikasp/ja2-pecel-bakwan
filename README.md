@@ -88,7 +88,7 @@ Want to contribute or watch how it works? Start with [AGENTS.md](AGENTS.md) and 
 
 The native setup screen replaced the old standalone launcher. The configuration lives in `%USERPROFILE%\Documents\JA2\ja2.json` on Windows, or `~/.ja2/ja2.json` on Unix-like systems. You can also edit `game_dir` by hand, or pass a version explicitly: `ja2.exe -resversion FRENCH`.
 
-Supported localizations: `DUTCH`, `ENGLISH`, `FRENCH`, `GERMAN`, `ITALIAN`, `POLISH`, `RUSSIAN`, `RUSSIAN_GOLD`. Run `ja2.exe -help` for the full list of options.
+Supported localizations: `DUTCH`, `ENGLISH`, `FRENCH`, `GERMAN`, `ITALIAN`, `POLISH`, `RUSSIAN`, `RUSSIAN_GOLD`. The localised art is a separate data directory; on an install without it (an English install has no `german/`, `polish/` or `russian/`), a localised run falls back to the English graphic rather than failing to start. Run `ja2.exe -help` for the full list of options.
 
 ## Building from source
 
