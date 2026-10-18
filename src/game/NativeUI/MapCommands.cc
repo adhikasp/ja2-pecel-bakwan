@@ -75,18 +75,24 @@ std::vector<Command> BuildTable()
 	// the map's own actions
 	add(Id::ActContract, "act.contract", "map_act", "c");
 	add(Id::ActHelp, "act.help", "map_act", "h");
-	add(Id::ActSettings, "act.settings", "map_act", "v");
+	add(Id::ActSettings, "act.settings", "map_act", "v", 0, false, true);
 	add(Id::ActAssign, "act.assign", "map_act", "alt+a");
 	add(Id::ActSectorInventory, "act.sector_inventory", "map_act", "ctrl+i");
 	add(Id::PrebattleEnter, "prebattle.enter_sector", "map_act", "e");
 	add(Id::PrebattleRetreat, "prebattle.retreat", "map_act", "r");
 
-	// the screens it leaves to (nav.options is the tactical HUD's action too: both open the options screen)
+	// the screens it leaves to (nav.options is the tactical HUD's action too: both open the options screen; nav.save
+	// and nav.load are the tactical shortcut table's as well, both open the save/load screens)
 	add(Id::NavLaptop, "nav.laptop", "map_nav", "l");
 	add(Id::NavBack, "nav.back", "map_nav", "escape");
-	add(Id::NavSave, "nav.save", "map_nav", "ctrl+s");
-	add(Id::NavLoad, "nav.load", "map_nav", "ctrl+l");
+	add(Id::NavSave, "nav.save", "map_nav", "ctrl+s", 0, false, true);
+	add(Id::NavLoad, "nav.load", "map_nav", "ctrl+l", 0, false, true);
 	add(Id::NavOptions, "nav.options", "nav", "o", 0, false, true);
+
+	// the game flow: the tactical screen's shortcut table declares these names too (issue #48 slice 3), so the
+	// registry keeps one shared row, with the tactical screen's group and label (it registers first)
+	add(Id::QuickSave, "file.quick_save", "map_act", "alt+s", 0, false, true);
+	add(Id::QuickLoad, "file.quick_load", "map_act", "alt+l", 0, false, true);
 
 	// the label of an action is its name under map.cmd. in the string table
 	static std::vector<std::string> labels;

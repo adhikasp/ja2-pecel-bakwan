@@ -207,13 +207,19 @@ local function scrollDownTo(id)
 	return -1
 end
 
+-- #48 slice 3: the tactical screen's remaining shortcuts are rows on the same page too, and the read-only "not
+-- rebindable yet" reference is gone - nothing is left raw.
 local controls = ja2.viewModel("options")
-local reference, mapRows = 0, 0
+local mapRows = 0
 local byMap = {}
 for _, c in ipairs(ja2.map.actions()) do byMap[c.name] = true end
-for _, k in ipairs(controls.keys) do reference = reference + 1 end
 for _, b in ipairs(controls.binds) do if byMap[b.name] then mapRows = mapRows + 1 end end
-ja2.expect(reference == 4, "only the tactical screen's raw shortcuts are left in the reference (" .. reference .. ")")
+ja2.expect(controls.keys == nil, "the not-rebindable reference section is gone")
+ja2.expect(ja2.exists{id = "options.key[file.quick_save]"}, "quick save is a row now")
+ja2.expect(ja2.exists{id = "options.key[view.cursor_3d]"}, "and the 3D cursor")
+ja2.expect(ja2.exists{id = "options.key[act.reload]"}, "and reload")
+ja2.expect(ja2.exists{id = "options.key[file.quick_load]"}, "and quick load")
+ja2.expect(bind("file.quick_save").key == "Alt+S" and bind("file.quick_save").bound, "quick save starts on Alt+S")
 ja2.expect(mapRows == #ja2.map.actions(), "the page lists every one of the map's actions (" .. mapRows .. ")")
 ja2.expect(ja2.exists{id = "options.key[time.toggle]"}, "the map's rows are addressable by id")
 ja2.expect(bind("time.toggle").key == "Space" and bind("time.toggle").bound, "the map's clock starts on Space")
@@ -242,21 +248,20 @@ ja2.expect(ja2.map.key("space") == "time.toggle", "the default comes back")
 -- own path, not a command.
 local notches = scrollDownTo("options.key[view.towns]")
 ja2.expect(notches >= 0, "the towns row comes into the panel by scrolling")
-ja2.expect(notches > 0, "and it was below the fold (" .. notches .. " wheel notches)")
 ja2.click{id = "options.key[view.towns]"}
 ja2.step(2)
 ja2.key("n")
 ja2.step(2)
 ja2.expect(ja2.binding("view.towns") == "n", "the towns filter is on n now")
 
--- #401, and the bar for this slice at the smallest resolution the game runs at: the last row of the last map group is
--- reachable. The columns scroll, so the page's deepest row - the last row of the last map group - comes into the panel
--- and is clickable there, and a click on it reaches the row.
-local lastMapRow = nil
-for _, a in ipairs(ja2.map.actions()) do if a.group == "map_nav" then lastMapRow = a.name end end
-local rowId = "options.key[" .. lastMapRow .. "]"
+-- #401, and the bar for this slice at the smallest resolution the game runs at: the page's deepest row is reachable.
+-- The columns scroll, so the last row of the last group (the tactical column's "World view", once the map's groups
+-- and the tactical shortcuts are above it) comes into the panel and is clickable there, and a click on it reaches it.
+local lastRow = nil
+for _, a in ipairs(ja2.bindings()) do if a.group == "view" then lastRow = a.name end end
+local rowId = "options.key[" .. lastRow .. "]"
 notches = scrollDownTo(rowId)
-ja2.expect(notches >= 0, "the last row of the last map group comes into the panel by scrolling (" .. rowId .. ")")
+ja2.expect(notches >= 0, "the page's deepest row comes into the panel by scrolling (" .. rowId .. ")")
 ja2.expect(notches > 0, "and it was below the fold (" .. notches .. " wheel notches)")
 local row = ja2.find{id = rowId}
 ja2.expect(row.y + row.h < ja2.find{id = "options.done"}.y, "and it is drawn inside the panel: " .. rowId)

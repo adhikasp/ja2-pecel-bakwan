@@ -2,6 +2,7 @@
 
 #include "MapCommands.h"
 #include "TacticalCommands.h"
+#include "TacticalShortcuts.h"
 
 #include <SDL3/SDL_keycode.h>
 
@@ -45,6 +46,16 @@ std::vector<Action> MapActions()
 {
 	std::vector<Action> out;
 	for (MapCommands::Command const& c : MapCommands::All())
+		out.push_back({ "", c.name, c.group, c.label, c.key, c.key, false }); // the scope comes from AddSource
+	return out;
+}
+
+/** The tactical screen's remaining shortcuts (issue #48 slice 3): the keys the HUD's command table does not own, on
+	 * the same "tactical" scope as it, so a key runs one action per screen across both. */
+std::vector<Action> TacticalShortcutActions()
+{
+	std::vector<Action> out;
+	for (TacticalShortcuts::Command const& c : TacticalShortcuts::All())
 		out.push_back({ "", c.name, c.group, c.label, c.key, c.key, false }); // the scope comes from AddSource
 	return out;
 }
@@ -244,6 +255,9 @@ Registry& Bindings()
 	{
 		Registry r;
 		r.AddSource(TacticalCommands::SCOPE, TacticalActions);
+		// the tactical screen's remaining shortcuts, before the map, so a name both declare takes the tactical
+		// screen's group and label (the row is shared: the map declares the same names in MapCommands)
+		r.AddSource(TacticalShortcuts::SCOPE, TacticalShortcutActions);
 		r.AddSource(MapCommands::SCOPE, MapActions);
 		return r;
 	}();

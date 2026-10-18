@@ -2938,6 +2938,30 @@ void RunMapAction(MapCommands::Id const id)
 
 	case Id::NavBack: HandleKeyESC(); break;
 
+	case Id::QuickSave:
+		// although we're not actually going anywhere, we must still be in a state where this is permitted
+		if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_SAVE))
+		{
+			//if the game CAN be saved
+			if (CanGameBeSaved())
+			{
+				guiPreviousOptionScreen = guiCurrentScreen;
+				DoQuickSave();
+			}
+			else
+			{
+				//Display a message saying the player cant save now
+				DoMapMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], MAP_SCREEN,
+								MSG_BOX_FLAG_OK, nullptr);
+			}
+		}
+		break;
+
+	case Id::QuickLoad:
+		// Although we're not actually going anywhere, we must still be in a state where this is permitted
+		if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_LOAD)) DoQuickLoad();
+		break;
+
 	case Id::Count: break;
 	}
 }
@@ -3012,36 +3036,12 @@ static void HandleModCtrl(UINT const key)
 	}
 }
 
-/** Alt+S/L are the quick save and load the tactical screen reads raw as well (issue #48 slice 3 names them once, for
- * both); Alt+X is the shortcut-exit cheat. */
+/** What is left of the map screen's own Alt keys: Alt+X is the shortcut-exit helper. Alt+S/L are quick save and load
+ * now (issue #48 slice 3), one shared action with the tactical screen's own key table. */
 static void HandleModAlt(UINT32 const key)
 {
 	switch (key)
 	{
-	case 'l':
-		// Although we're not actually going anywhere, we must still be in a state where this is permitted
-		if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_LOAD)) DoQuickLoad();
-		break;
-
-	case 's':
-		// although we're not actually going anywhere, we must still be in a state where this is permitted
-		if (AllowedToExitFromMapscreenTo(MAP_EXIT_TO_SAVE))
-		{
-			//if the game CAN be saved
-			if (CanGameBeSaved())
-			{
-				guiPreviousOptionScreen = guiCurrentScreen;
-				DoQuickSave();
-			}
-			else
-			{
-				//Display a message saying the player cant save now
-				DoMapMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], MAP_SCREEN,
-								MSG_BOX_FLAG_OK, nullptr);
-			}
-		}
-		break;
-
 	case 'x': HandleShortCutExitState(); break;
 	}
 }

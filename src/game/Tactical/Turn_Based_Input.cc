@@ -53,6 +53,8 @@
 #include "InventoryActions.h"
 #include "SquadRoster.h"
 #include "TacticalCommandsAdapter.h"
+#include "KeyBindings.h"
+#include "TacticalShortcuts.h"
 #include "WorldPointer.h"
 #include "Soldier_Tile.h"
 #include "Soldier_Functions.h"
@@ -1350,10 +1352,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			gTacticalStatus.uiFlags ^= RED_ITEM_GLOW_ON;
 			break;
 
-		// World zoom (Ctrl+= and Ctrl+- work too)
-		case SDLK_KP_PLUS:  StepWorldZoom(+1); break;
-		case SDLK_KP_MINUS: StepWorldZoom(-1); break;
-
 		case '-':
 			// If the display cover or line of sight is being displayed
 			if (_KeyDown(SDLK_END) || _KeyDown(SDLK_DELETE))
@@ -1365,122 +1363,12 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 			}
 			break;
 
-		case '=':
-			//if the display cover or line of sight is being displayed
-			if (_KeyDown(SDLK_END) || _KeyDown(SDLK_DELETE))
-			{
-				if (_KeyDown(SDLK_DELETE))
-					ChangeSizeOfDisplayCover(gGameSettings.ubSizeOfDisplayCover + 1);
-				if (_KeyDown(SDLK_END))
-					ChangeSizeOfLOS(gGameSettings.ubSizeOfLOS + 1);
-			}
-			else if (!(gTacticalStatus.uiFlags & INCOMBAT))
-			{ // ATE: This key will select everybody in the sector
-				FOR_EACH_IN_TEAM(s, OUR_TEAM)
-				{
-					if (!OkControllableMerc(s))
-						continue;
-					if (s->uiStatusFlags & (SOLDIER_VEHICLE | SOLDIER_PASSENGER | SOLDIER_DRIVER))
-						continue;
-					s->uiStatusFlags |= SOLDIER_MULTI_SELECTED;
-				}
-				EndMultiSoldierSelection(TRUE);
-			}
-			break;
-
-		case 'a': BeginAutoBandage(); break;
-
-		case 'e':
-			if (SOLDIERTYPE* const sel = GetSelectedMan())
-			{
-				if (sel->bOppCnt > 0)
-				{
-					CycleVisibleEnemies(sel);
-				}
-				else
-				{
-					ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, TacticalStr[NO_ENEMIES_IN_SIGHT_STR]);
-				}
-			}
-			break;
-
-		case 'f':
-			// If there is a selected soldier, and the cursor location is valid
-			if (SOLDIERTYPE* sel = GetSelectedMan())
-			{
-				GridNo const grid_no = gUIFullTarget ? gUIFullTarget->sGridNo : guiCurrentCursorGridNo;
-				DisplayRangeToTarget(sel, grid_no);
-			}
-			break;
-
-		case 'g': HandlePlayerTogglingLightEffects(TRUE);                      break;
-		case 'n':
-		{
-			GridNo const map_pos = guiCurrentCursorGridNo;
-			if (!CycleSoldierFindStack(map_pos)) // Are we over a merc stack?
-			{
-				CycleIntTileFindStack(map_pos); // If not, now check if we are over a struct stack
-			}
-			break;
-		}
-
-		case 'u':
-			if (GetSelectedMan())
-				*new_event = M_CHANGE_TO_ACTION;
-			break;
-		case 'v':
-			DisplayGameSettings();
-			break;
-		case 'w':
-			ToggleWireFrame();
-			break;
-
-		case 'x':
-		{ // Exchange places
-			SOLDIERTYPE* const s1 = GetSelectedMan();
-			SOLDIERTYPE* const s2 = gUIFullTarget;
-			if (s1 && s2 && s2 != s1 &&
-				s1->bLife >= OKLIFE && // Check if both OK
-				s2->bLife >= OKLIFE &&
-				CanSoldierReachGridNoInGivenTileLimit(s1, s2->sGridNo, 1, gsInterfaceLevel) &&
-				!IsHostileToOurTeam(*s2) && // Exclude enemies
-				CanExchangePlaces(s1, s2, TRUE))
-			{
-				SwapMercPositions(*s1, *s2);
-				DeductPoints(s1, AP_EXCHANGE_PLACES, 0);
-				DeductPoints(s2, AP_EXCHANGE_PLACES, 0);
-			}
-			break;
-		}
-
 		case 'y':
 			if (INFORMATION_CHEAT_LEVEL()) {
 				SLOGD("Entering LOS Debug Mode");
 				*new_event = I_LOSDEBUG;
 			}
 			break;
-		case SDLK_HOME:
-		{
-			BOOLEAN& cursor3d = gGameSettings.fOptions[TOPTION_3D_CURSOR];
-			cursor3d = !cursor3d;
-			ST::string msg =
-				cursor3d ? pMessageStrings[MSG_3DCURSOR_ON] :
-				pMessageStrings[MSG_3DCURSOR_OFF];
-			ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, msg);
-			break;
-		}
-
-		case SDLK_END:
-		{
-			SOLDIERTYPE* const sel = GetSelectedMan();
-			if (sel && CheckForMercContMove(sel))
-			{
-				ContinueMercMovement(sel);
-				ErasePath();
-			}
-			break;
-		}
-
 		case SDLK_F11:
 			if (DEBUG_CHEAT_LEVEL())
 			{
@@ -1488,43 +1376,6 @@ static void HandleModNone(UINT32 const key, UIEventKind* const new_event)
 				LeaveTacticalScreen(QUEST_DEBUG_SCREEN);
 			}
 			break;
-
-		case SDLK_F12:
-			ClearDisplayedListOfTacticalStrings();
-			break;
-	}
-}
-
-
-static void HandleModShift(UINT32 const key, UIEventKind* const new_event)
-{
-	switch (key)
-	{
-	case 'h':
-		if (NativeUI::TacticalHudActive()) ShouldTheHelpScreenComeUp(HELP_SCREEN_TACTICAL, TRUE);
-		break;
-	case 'j':
-		if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_SHIFT, 'j')))
-		{
-			HandleTBClimbWindow();
-		}
-		break;
-
-	}
-}
-
-
-static void HandleModCtrlShift(UINT32 const key, UIEventKind* const new_event)
-{
-	switch (key)
-	{
-		case 'r':
-			if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_CTRL_SHIFT, 'r')))
-			{
-				GroupAutoReload();
-			}
-			break;
-
 	}
 }
 
@@ -1532,14 +1383,9 @@ static void HandleModCtrl(UINT32 const key, UIEventKind* const new_event)
 {
 	switch (key)
 	{
-		// World zoom, independent of the UI scale
-		case '=':
-		case '+':
-		case SDLK_KP_PLUS:  StepWorldZoom(+1); break;
-		case '-':
-		case SDLK_KP_MINUS: StepWorldZoom(-1); break;
-
-		case 'c': if (CHEATER_CHEAT_LEVEL()) ToggleCliffDebug(); break;
+	case 'c':
+		if (CHEATER_CHEAT_LEVEL()) ToggleCliffDebug();
+		break;
 
 	case 'e':
 		if(GameMode::getInstance()->isEditorMode())
@@ -1552,52 +1398,7 @@ static void HandleModCtrl(UINT32 const key, UIEventKind* const new_event)
 
 		case 'k': if (CHEATER_CHEAT_LEVEL()) GrenadeTest(HAND_GRENADE, 0, -30); break;
 
-		case 'l':
-			if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
-			{
-				gfSaveGame              = FALSE;
-				gfCameDirectlyFromGame  = TRUE;
-				guiPreviousOptionScreen = GAME_SCREEN;
-				LeaveTacticalScreen(SAVE_LOAD_SCREEN);
-			}
-			break;
-
-		case 'n':
-			if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_CTRL, 'n')))
-			{
-				static BOOLEAN bHeadGearDirection = true;
-				if (bHeadGearDirection) {
-					SwitchHeadGear(true);
-				} else {
-					SwitchHeadGear(false);
-				}
-				bHeadGearDirection = !bHeadGearDirection;
-			}
-			break;
-
 		case 'o': if (CHEATER_CHEAT_LEVEL()) CreatePlayerControlledMonster(); break;
-
-		case 's':
-			if (!fDisableMapInterfaceDueToBattle && !(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
-			{
-				if (CanGameBeSaved() &&  gGameOptions.ubGameSaveMode != DIF_DEAD_IS_DEAD )
-				{
-					gfSaveGame              = TRUE;
-					gfCameDirectlyFromGame  = TRUE;
-					guiPreviousOptionScreen = GAME_SCREEN;
-					LeaveTacticalScreen(SAVE_LOAD_SCREEN);
-				}
-				else if ( gGameOptions.ubGameSaveMode == DIF_IRON_MAN )
-				{
-					// Display a message saying the player cannot save now
-					DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], GAME_SCREEN, MSG_BOX_FLAG_OK, 0, 0);
-				}
-				else
-				{
-					DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__DEAD_IS_DEAD_CANT_SAVE_NOW], GAME_SCREEN, MSG_BOX_FLAG_OK, 0, 0);
-				}
-			}
-			break;
 
 		case 't': if (CHEATER_CHEAT_LEVEL()) TestCapture(); break;
 
@@ -1640,7 +1441,7 @@ static void HandleModCtrl(UINT32 const key, UIEventKind* const new_event)
 			break;
 
 		case SDLK_F12: ClearTacticalMessageQueue(); break;
-	}
+		}
 }
 
 
@@ -1659,25 +1460,6 @@ static void HandleModAlt(UINT32 const key, UIEventKind* const new_event)
 			break;
 		}
 
-		case 'f':
-		{
-			BOOLEAN& tracking = gGameSettings.fOptions[TOPTION_TRACKING_MODE];
-			tracking = !tracking;
-			ST::string const& msg =
-				tracking ? pMessageStrings[MSG_TACKING_MODE_ON] :
-				pMessageStrings[MSG_TACKING_MODE_OFF];
-			ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, msg);
-			break;
-		}
-
-		case 'l':
-			if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
-			{
-				LeaveTacticalScreen(GAME_SCREEN);
-				DoQuickLoad();
-			}
-			break;
-
 		case 'm':
 			if (INFORMATION_CHEAT_LEVEL())
 			{
@@ -1694,63 +1476,271 @@ static void HandleModAlt(UINT32 const key, UIEventKind* const new_event)
 				TacticalCharacterDialogue(gUIFullTarget, gQuoteNum++);
 			}
 			break;
+		}
+}
 
-		case 'r':
-			if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_ALT, 'r')))
-			{
-				HandleTBReload();
-			}
-			break;
+/** Runs one of the tactical screen's remaining shortcuts (issue #48 slice 3): the work its raw keycase did, named.
+ * The table (NativeUI/TacticalShortcuts) says what a key runs; this is what the action does, through the legacy
+ * functions - never through a key event, so a rebind reaches the effect. The keycases still raw above this line (and
+ * in HandleModAltCheats) are the ones that are not player actions. */
+static void RunTacticalShortcut(TacticalShortcuts::Id const id, UIEventKind* const puiNewEvent)
+{
+	using Id = TacticalShortcuts::Id;
+	switch (id)
+	{
+	case Id::Reload:
+		if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_ALT, 'r'))) HandleTBReload();
+		break;
 
-		case 's':
-			if (!fDisableMapInterfaceDueToBattle && !(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
-			{
-				if (CanGameBeSaved())
-				{
-					guiPreviousOptionScreen = GAME_SCREEN;
-					DoQuickSave();
-				}
-				else
-				{
-					// Display a message saying the player cannot save now
-					DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], GAME_SCREEN, MSG_BOX_FLAG_OK, 0, 0);
-				}
-			}
-			break;
-
-		case 'z': // Toggle squad's stealth mode
+	case Id::QuickSave:
+		if (!fDisableMapInterfaceDueToBattle && !(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
 		{
-			// Check if at least one guy is on stealth
-			bool stealth_on = true;
-			CFOR_EACH_IN_TEAM(s, OUR_TEAM)
+			if (CanGameBeSaved())
 			{
-				if (!OkControllableMerc(s))           continue;
-				if (s->bAssignment != CurrentSquad()) continue;
-				if (!s->bStealthMode)                 continue;
-				stealth_on = false;
-				break;
+				guiPreviousOptionScreen = GAME_SCREEN;
+				DoQuickSave();
 			}
-
-			FOR_EACH_IN_TEAM(s, OUR_TEAM)
+			else
 			{
-				if (!OkControllableMerc(s))           continue;
-				if (s->bAssignment != CurrentSquad()) continue;
-				if (AM_A_ROBOT(s))                    continue;
-
-				s->bStealthMode = stealth_on;
+				// Display a message saying the player cannot save now
+				DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], GAME_SCREEN,
+							 MSG_BOX_FLAG_OK, 0, 0);
 			}
+		}
+		break;
 
-			fInterfacePanelDirty = DIRTYLEVEL2;
+	case Id::QuickLoad:
+		if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
+		{
+			LeaveTacticalScreen(GAME_SCREEN);
+			DoQuickLoad();
+		}
+		break;
 
-			// Display message
-			ST::string msg = stealth_on ? pMessageStrings[MSG_SQUAD_ON_STEALTHMODE] :
-								pMessageStrings[MSG_SQUAD_OFF_STEALTHMODE];
-			ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, msg);
+	case Id::AutoBandage: BeginAutoBandage(); break;
+
+	case Id::CycleEnemies:
+		if (SOLDIERTYPE* const sel = GetSelectedMan())
+		{
+			if (sel->bOppCnt > 0)
+			{
+				CycleVisibleEnemies(sel);
+			}
+			else
+			{
+				ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_UI_FEEDBACK, TacticalStr[NO_ENEMIES_IN_SIGHT_STR]);
+			}
+		}
+		break;
+
+	case Id::Range:
+		// If there is a selected soldier, and the cursor location is valid
+		if (SOLDIERTYPE* sel = GetSelectedMan())
+		{
+			GridNo const grid_no = gUIFullTarget ? gUIFullTarget->sGridNo : guiCurrentCursorGridNo;
+			DisplayRangeToTarget(sel, grid_no);
+		}
+		break;
+
+	case Id::CycleStack:
+	{
+		GridNo const map_pos = guiCurrentCursorGridNo;
+		if (!CycleSoldierFindStack(map_pos)) // Are we over a merc stack?
+		{
+			CycleIntTileFindStack(map_pos); // If not, now check if we are over a struct stack
+		}
+		break;
+	}
+
+	case Id::ActionMode:
+		if (GetSelectedMan()) *puiNewEvent = M_CHANGE_TO_ACTION;
+		break;
+
+	case Id::Exchange:
+	{ // Exchange places
+		SOLDIERTYPE* const s1 = GetSelectedMan();
+		SOLDIERTYPE* const s2 = gUIFullTarget;
+		if (s1 && s2 && s2 != s1 && s1->bLife >= OKLIFE && // Check if both OK
+			s2->bLife >= OKLIFE && CanSoldierReachGridNoInGivenTileLimit(s1, s2->sGridNo, 1, gsInterfaceLevel) &&
+			!IsHostileToOurTeam(*s2) && // Exclude enemies
+			CanExchangePlaces(s1, s2, TRUE))
+		{
+			SwapMercPositions(*s1, *s2);
+			DeductPoints(s1, AP_EXCHANGE_PLACES, 0);
+			DeductPoints(s2, AP_EXCHANGE_PLACES, 0);
+		}
+		break;
+	}
+
+	case Id::AutoReload:
+		if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_CTRL_SHIFT, 'r'))) GroupAutoReload();
+		break;
+
+	case Id::SwitchHeadgear:
+		if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_CTRL, 'n')))
+		{
+			static BOOLEAN bHeadGearDirection = true;
+			if (bHeadGearDirection)
+			{
+				SwitchHeadGear(true);
+			}
+			else
+			{
+				SwitchHeadGear(false);
+			}
+			bHeadGearDirection = !bHeadGearDirection;
+		}
+		break;
+
+	case Id::Settings: DisplayGameSettings(); break;
+
+	case Id::Cursor3D:
+	{
+		BOOLEAN& cursor3d = gGameSettings.fOptions[TOPTION_3D_CURSOR];
+		cursor3d = !cursor3d;
+		ST::string const msg = cursor3d ? pMessageStrings[MSG_3DCURSOR_ON] : pMessageStrings[MSG_3DCURSOR_OFF];
+		ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, msg);
+		break;
+	}
+
+	case Id::LightEffects: HandlePlayerTogglingLightEffects(TRUE); break;
+
+	case Id::Wireframe: ToggleWireFrame(); break;
+
+	case Id::ZoomIn: StepWorldZoom(+1); break;
+	case Id::ZoomOut: StepWorldZoom(-1); break;
+
+	case Id::Tracking:
+	{
+		BOOLEAN& tracking = gGameSettings.fOptions[TOPTION_TRACKING_MODE];
+		tracking = !tracking;
+		ST::string const& msg = tracking ? pMessageStrings[MSG_TACKING_MODE_ON] : pMessageStrings[MSG_TACKING_MODE_OFF];
+		ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, msg);
+		break;
+	}
+
+	case Id::Continue:
+	{
+		SOLDIERTYPE* const sel = GetSelectedMan();
+		if (sel && CheckForMercContMove(sel))
+		{
+			ContinueMercMovement(sel);
+			ErasePath();
+		}
+		break;
+	}
+
+	case Id::ClimbWindow:
+		if (gamepolicy(isHotkeyEnabled(UI_Tactical, HKMOD_SHIFT, 'j'))) HandleTBClimbWindow();
+		break;
+
+	case Id::SquadStealth: // Toggle squad's stealth mode
+	{
+		// Check if at least one guy is on stealth
+		bool stealth_on = true;
+		CFOR_EACH_IN_TEAM(s, OUR_TEAM)
+		{
+			if (!OkControllableMerc(s)) continue;
+			if (s->bAssignment != CurrentSquad()) continue;
+			if (!s->bStealthMode) continue;
+			stealth_on = false;
 			break;
 		}
+
+		FOR_EACH_IN_TEAM(s, OUR_TEAM)
+		{
+			if (!OkControllableMerc(s)) continue;
+			if (s->bAssignment != CurrentSquad()) continue;
+			if (AM_A_ROBOT(s)) continue;
+
+			s->bStealthMode = stealth_on;
+		}
+
+		fInterfacePanelDirty = DIRTYLEVEL2;
+
+		// Display message
+		ST::string msg =
+			stealth_on ? pMessageStrings[MSG_SQUAD_ON_STEALTHMODE] : pMessageStrings[MSG_SQUAD_OFF_STEALTHMODE];
+		ScreenMsg(FONT_MCOLOR_LTYELLOW, MSG_INTERFACE, msg);
+		break;
+	}
+
+	case Id::Help:
+		if (NativeUI::TacticalHudActive()) ShouldTheHelpScreenComeUp(HELP_SCREEN_TACTICAL, TRUE);
+		break;
+
+	case Id::Save:
+		if (!fDisableMapInterfaceDueToBattle && !(gTacticalStatus.uiFlags & ENGAGED_IN_CONV))
+		{
+			if (CanGameBeSaved() && gGameOptions.ubGameSaveMode != DIF_DEAD_IS_DEAD)
+			{
+				gfSaveGame = TRUE;
+				gfCameDirectlyFromGame = TRUE;
+				guiPreviousOptionScreen = GAME_SCREEN;
+				LeaveTacticalScreen(SAVE_LOAD_SCREEN);
+			}
+			else if (gGameOptions.ubGameSaveMode == DIF_IRON_MAN)
+			{
+				// Display a message saying the player cannot save now
+				DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], GAME_SCREEN,
+							 MSG_BOX_FLAG_OK, 0, 0);
+			}
+			else
+			{
+				DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__DEAD_IS_DEAD_CANT_SAVE_NOW],
+							 GAME_SCREEN, MSG_BOX_FLAG_OK, 0, 0);
+			}
+		}
+		break;
+
+	case Id::Load:
+		if (!(gTacticalStatus.uiFlags & ENGAGED_IN_CONV) && gGameOptions.ubGameSaveMode != DIF_DEAD_IS_DEAD)
+		{
+			gfSaveGame = FALSE;
+			gfCameDirectlyFromGame = TRUE;
+			guiPreviousOptionScreen = GAME_SCREEN;
+			LeaveTacticalScreen(SAVE_LOAD_SCREEN);
+		}
+		break;
+
+	case Id::ClearLog: ClearDisplayedListOfTacticalStrings(); break;
+
+	case Id::SelectAll:
+		// The legacy '=' did the display-size tweak when End/Delete was held, the sector select otherwise
+		if (_KeyDown(SDLK_END) || _KeyDown(SDLK_DELETE))
+		{
+			if (_KeyDown(SDLK_DELETE)) ChangeSizeOfDisplayCover(gGameSettings.ubSizeOfDisplayCover + 1);
+			if (_KeyDown(SDLK_END)) ChangeSizeOfLOS(gGameSettings.ubSizeOfLOS + 1);
+		}
+		else if (!(gTacticalStatus.uiFlags & INCOMBAT))
+		{ // ATE: This key will select everybody in the sector
+			FOR_EACH_IN_TEAM(s, OUR_TEAM)
+			{
+				if (!OkControllableMerc(s)) continue;
+				if (s->uiStatusFlags & (SOLDIER_VEHICLE | SOLDIER_PASSENGER | SOLDIER_DRIVER)) continue;
+				s->uiStatusFlags |= SOLDIER_MULTI_SELECTED;
+			}
+			EndMultiSoldierSelection(TRUE);
+		}
+		break;
+
+	case Id::Count: break;
 	}
 }
 
+/** A key press of the tactical screen's remaining shortcuts (issue #48 slice 3): the action bound to it runs. True
+ * when the key is one of them - whether the action could run or not. @a mods are the SHIFT_DOWN / CTRL_DOWN /
+ * ALT_DOWN bits. */
+static bool RunTacticalShortcutKey(UINT32 const key, UINT16 const mods, UIEventKind* const puiNewEvent)
+{
+	bool const ctrl = (mods & CTRL_DOWN) != 0, shift = (mods & SHIFT_DOWN) != 0, alt = (mods & ALT_DOWN) != 0;
+	std::string const k = KeyBindings::KeyFromInput(key, ctrl, shift, alt);
+	if (k.empty()) return false;
+	TacticalShortcuts::Command const* const c = TacticalShortcuts::ForKey(k);
+	if (!c) return false;
+	RunTacticalShortcut(c->id, puiNewEvent);
+	return true;
+}
 
 // Key combinations that are only enabled if CHEATER_CHEAT_LEVEL() is true.
 // Mainly useful for debugging; some stuff can be used for cheating.
@@ -1926,14 +1916,6 @@ void GetKeyboardInput(UIEventKind* const puiNewEvent)
 		if ((InputEvent.usEvent == KEY_DOWN )&& ( InputEvent.usParam == 'x') && ( InputEvent.usKeyState & ALT_DOWN ))
 		{
 			HandleShortCutExitState( );
-		}
-
-		if ((InputEvent.usEvent == KEY_DOWN )&& ( InputEvent.usParam == 'l') && ( InputEvent.usKeyState & CTRL_DOWN ) && gGameOptions.ubGameSaveMode != DIF_DEAD_IS_DEAD)
-		{
-			gfSaveGame              = FALSE;
-			gfCameDirectlyFromGame  = TRUE;
-			guiPreviousOptionScreen = GAME_SCREEN;
-			LeaveTacticalScreen( SAVE_LOAD_SCREEN );
 		}
 
 		if (InputEvent.usEvent == KEY_UP && InputEvent.usParam == SDLK_ESCAPE)
@@ -2164,20 +2146,20 @@ void GetKeyboardInput(UIEventKind* const puiNewEvent)
 			// the commands of the HUD (TacticalCommands) own their keys
 			if (RunTacticalKey(key, mod)) continue;
 
+			// then the screen's remaining shortcuts (TacticalShortcuts, issue #48 slice 3)
+			if (RunTacticalShortcutKey(key, mod, puiNewEvent)) continue;
+
 			switch (mod)
 			{
-				case 0:          HandleModNone( key, puiNewEvent); break;
-				case SHIFT_DOWN: HandleModShift(key, puiNewEvent); break;
-				case CTRL_DOWN:  HandleModCtrl( key, puiNewEvent); break;
-				case ALT_DOWN:
-					HandleModAlt(key, puiNewEvent);
-					if (CHEATER_CHEAT_LEVEL())
-					{
-						HandleModAltCheats(key, puiNewEvent);
-					}
-					break;
-
-				case CTRL_DOWN | SHIFT_DOWN:  HandleModCtrlShift( key, puiNewEvent); break;
+			case 0: HandleModNone(key, puiNewEvent); break;
+			case CTRL_DOWN: HandleModCtrl(key, puiNewEvent); break;
+			case ALT_DOWN:
+				HandleModAlt(key, puiNewEvent);
+				if (CHEATER_CHEAT_LEVEL())
+				{
+					HandleModAltCheats(key, puiNewEvent);
+				}
+				break;
 			}
 		}
 	}
