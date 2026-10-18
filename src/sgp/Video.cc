@@ -540,6 +540,15 @@ void VideoRebuildBuffers()
 {
 	Layered = g_ui.isLayered();
 
+	// A world scroll that is still waiting to be applied (gsScroll*Increment) is a number of pixels *of the
+	// buffer it was measured against*. Everything below is rebuilt at the new size and drawn again, so a scroll
+	// measured against the old buffers is void; left in place the next RefreshScreen applies it against the new
+	// geometry, where an amount the old viewport could absorb runs off the new, smaller one - the write that
+	// corrupted the heap in #399 (a zoom in a slide's last frame, with one slide's worth of scroll still pending,
+	// filled before the front of the Z buffer).
+	gsScrollXIncrement = 0;
+	gsScrollYIncrement = 0;
+
 	DestroyTextures();
 	SharpBilinearScale = 0;
 	PresentedWindowSize = { 0, 0 };
@@ -1722,7 +1731,12 @@ void RefreshScreen(void)
 		}
 	}
 
-	if (gfForceFullScreenRefresh || guiDirtyRegionCount > 0 || guiDirtyRegionExCount > 0)
+	// The world scroll is applied even when nothing else is dirty. ScrollBackground() only ever *adds* to the
+	// counters and this is the one place that applies and clears them, so a frame that returned without doing it
+	// would leave the world stale and hand the next frame's step a larger amount to apply - which is exactly what
+	// the deferred-scroll note in DeferCompose relies on not happening. See the buffer-rebuild reset for the other
+	// half: a pending scroll must not survive into new geometry.
+	if (gfForceFullScreenRefresh || guiDirtyRegionCount > 0 || guiDirtyRegionExCount > 0 || scrolling)
 	{
 		if (gfForceFullScreenRefresh)
 		{

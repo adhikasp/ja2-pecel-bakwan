@@ -139,13 +139,20 @@ for i = 1, 200 do
 	if not now.slide.active then ended = now break end
 end
 ja2.expect(ended, "the slide ends within 200 frames")
-ja2.log(("slide ended after %d frames, %g cells from Barry"):format(slideFrames, previous))
-ja2.expect(not ended.animating, "the slide is not an ease, and it leaves nothing in flight")
--- The video change below rebuilds every buffer under the game, and it is deliberately made in the frame the slide ends
--- (issue #399: a slide from a placed camera, then a zoom step in the slide's last frame, used to corrupt the heap).
+ja2.log(("slide ended after %d frames, %g px from Barry"):format(slideFrames, previous))
+-- What the slide left behind, before the video change below touches anything: the target is cleared, nothing is in
+-- flight, and the view actually reached him (gridPos throws if his tile is off screen).
+ja2.expect(not ended.slide.active, "the slide has ended (sSlideTarget is cleared)")
+ja2.expect(ended.settled and not ended.animating, "the slide is not an ease, and it leaves nothing in flight")
+ja2.gridPos(merc.gridNo)
+local slideEndX, slideEndY = ended.x, ended.y
 
 -- 5. The zoom state, and the viewport it implies: the world layer is its own at a fractional zoom, and a finer
 --    zoom (1.5x) covers less of the world.
+--    The video change is made in the slide's own last frame, without a waitIdle() (issue #399). It used to tear the
+--    world's buffers down while the scroll the slide had accumulated was still pending; the next frame applied it
+--    against the new, smaller viewport, and the strip fill ran off the front of the Z buffer and corrupted the heap.
+--    Dropping the waitIdle is the point of the fix: the window it papered over no longer exists.
 local at1 = camera()
 local v = ja2.setVideo({ zoom = 1.5 })
 ja2.waitIdle()
@@ -157,6 +164,24 @@ ja2.expect(zoomed.viewport.w < at1.viewport.w and zoomed.viewport.h < at1.viewpo
 		:format(zoomed.viewport.w, zoomed.viewport.h, at1.viewport.w, at1.viewport.h))
 ja2.expect(zoomed.layered, "a fractional zoom gives the world a layer of its own")
 ja2.expect(v.zoom == zoomed.zoom, "ja2.setVideo and ja2.camera agree on the zoom")
+
+-- 5b. The state the video change must leave: the camera is still where the slide took it (within the one cell the
+--     forced adjust may snap to), Barry is still on screen, and the frame still draws a world. The last one is not
+--     decoration: on a machine where the heap corruption was benign the process lives, and what a stale scroll left
+--     is a picture that no longer matches the camera - so the assertion is on the frame, not on the exit code.
+ja2.expect(math.abs(zoomed.x - slideEndX) <= 10 and math.abs(zoomed.y - slideEndY) <= 10,
+	("the zoom keeps the camera where the slide left it (%.2f, %.2f vs %.2f, %.2f)")
+		:format(zoomed.x, zoomed.y, slideEndX, slideEndY))
+ja2.expect(zoomed.tileX > 0 and zoomed.tileY > 0,
+	("the zoomed camera is over a real tile (%d, %d)"):format(zoomed.tileX, zoomed.tileY))
+ja2.gridPos(merc.gridNo)
+local colours, distinct = {}, 0
+for _, p in ipairs({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 1, 2 }, { 2, 2 }, { 3, 2 }, { 1, 3 }, { 2, 3 }, { 3, 3 } }) do
+	local colour = ja2.pixel(math.floor(p[1] * size.w / 4), math.floor(p[2] * size.h / 4))
+	if not colours[colour] then colours[colour] = true; distinct = distinct + 1 end
+end
+ja2.expect(distinct >= 2, ("the world still draws after the video change (%d colours on a 3x3 grid)"):format(distinct))
+
 ja2.setVideo({ zoom = 1 })
 ja2.waitIdle()
 ja2.expect(math.abs(camera().zoom - 1) < 1e-6, "the zoom is back at 1")
