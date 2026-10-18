@@ -1497,7 +1497,7 @@ static void RunTacticalShortcut(TacticalShortcuts::Id const id, UIEventKind* con
 			{
 				// Display a message saying the player cannot save now
 				DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], GAME_SCREEN,
-							 MSG_BOX_FLAG_OK, 0, 0);
+							 MSG_BOX_FLAG_OK, nullptr, nullptr);
 			}
 		}
 		break;
@@ -1676,12 +1676,12 @@ static void RunTacticalShortcut(TacticalShortcuts::Id const id, UIEventKind* con
 			{
 				// Display a message saying the player cannot save now
 				DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__IRON_MAN_CANT_SAVE_NOW], GAME_SCREEN,
-							 MSG_BOX_FLAG_OK, 0, 0);
+							 MSG_BOX_FLAG_OK, nullptr, nullptr);
 			}
 			else
 			{
 				DoMessageBox(MSG_BOX_BASIC_STYLE, zNewTacticalMessages[TCTL_MSG__DEAD_IS_DEAD_CANT_SAVE_NOW],
-							 GAME_SCREEN, MSG_BOX_FLAG_OK, 0, 0);
+							 GAME_SCREEN, MSG_BOX_FLAG_OK, nullptr, nullptr);
 			}
 		}
 		break;
