@@ -141,10 +141,8 @@ end
 ja2.expect(ended, "the slide ends within 200 frames")
 ja2.log(("slide ended after %d frames, %g cells from Barry"):format(slideFrames, previous))
 ja2.expect(not ended.animating, "the slide is not an ease, and it leaves nothing in flight")
--- The video change below rebuilds every buffer under the game. A zoom that lands in the frame a slide ends trips a
--- latent video-change bug (a heap-corruption crash, issue #399: a slide from a placed camera, then a zoom step in the
--- slide's last frame); letting the view settle first is also simply what a test should do before changing the video.
-ja2.waitIdle()
+-- The video change below rebuilds every buffer under the game, and it is deliberately made in the frame the slide ends
+-- (issue #399: a slide from a placed camera, then a zoom step in the slide's last frame, used to corrupt the heap).
 
 -- 5. The zoom state, and the viewport it implies: the world layer is its own at a fractional zoom, and a finer
 --    zoom (1.5x) covers less of the world.
