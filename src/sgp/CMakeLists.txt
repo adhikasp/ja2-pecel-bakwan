@@ -44,6 +44,7 @@ if (WITH_UNITTESTS)
         ${CMAKE_CURRENT_SOURCE_DIR}/Animation_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Clock_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/FileMan_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/FrameTiming_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/LoadSaveData_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/Logger_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/OverlayImage_unittest.cc
