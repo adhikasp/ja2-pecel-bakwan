@@ -700,3 +700,72 @@ static void ChangingAimPoliciesSubPage(UINT8 ubSubPageNumber)
 		fFastLoadFlag = TRUE;
 	}
 }
+
+// ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
+#include "LaptopContent.h"
+#include "LaptopNative.h"
+
+namespace LaptopNative
+{
+
+namespace
+{
+/** The policy text of @a record, "" when the file has no such row.  The page's own text (aimpol.edt),
+	 * read the way EnterAimPolicies opens it. */
+ST::string PolicyRecord(int const record)
+{
+	try
+	{
+		if (!gAimPolicyTexts) gAimPolicyTexts = EDTFile(EDTFile::AIM_POLICIES);
+		return gAimPolicyTexts->at(unsigned(record));
+	}
+	catch (...)
+	{
+		return {};
+	}
+}
+}
+
+int AimPolicyPageCount()
+{
+	// page 0 is the statement of policy, pages 1..9 the numbered sections
+	return 1 + int(LaptopContent::AimPolicySections().size());
+}
+
+std::vector<DocBlock> AimPolicyDoc(int const page)
+{
+	std::vector<DocBlock> doc;
+	DocBlock heading;
+	heading.kind = "head";
+
+	if (page == 0)
+	{
+		heading.text = PolicyRecord(LaptopContent::AimPolicyStatementRecord);
+		if (!heading.text.empty()) doc.push_back(heading);
+		for (int const record : LaptopContent::AimPolicyStatementParas())
+		{
+			DocBlock p;
+			p.kind = "para";
+			p.text = PolicyRecord(record);
+			if (!p.text.empty()) doc.push_back(p);
+		}
+		return doc;
+	}
+
+	auto const& sections = LaptopContent::AimPolicySections();
+	if (page < 1 || page > int(sections.size())) return doc;
+	LaptopContent::Section const& section = sections[page - 1];
+	heading.text = PolicyRecord(section.heading);
+	if (!heading.text.empty()) doc.push_back(heading);
+	for (LaptopContent::Para const& para : section.paras)
+	{
+		DocBlock p;
+		p.kind = "para";
+		p.number = para.number;
+		p.text = PolicyRecord(para.record);
+		if (!p.text.empty()) doc.push_back(p);
+	}
+	return doc;
+}
+
+} // namespace LaptopNative

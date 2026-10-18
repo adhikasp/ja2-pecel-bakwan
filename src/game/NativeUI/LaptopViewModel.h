@@ -6,6 +6,7 @@
 #include "ViewModel.h"
 
 #include "JA2Types.h"
+#include "LaptopNative.h"
 
 #include <functional>
 #include <map>
@@ -60,8 +61,9 @@ namespace NativeUI
 		std::string app, site, page;
 		int mailOpen = -1, fileOpen = -1;
 		std::string hireState; // "", "calling", "talk", "hire", "machine", "unavailable", "refused", "hired"
+		int funeralSel = -1;   // the mortuary service whose detail panel is open, -1 for none
 
-	private:
+	  private:
 		void History(int delta);
 		void Navigate(std::string const& site, std::string page, bool record);
 		int  SiteMode() const;
@@ -96,6 +98,13 @@ namespace NativeUI
 		void ReadImp();
 		void ReadFlorist();
 		void ReadInsurance();
+		void ReadFuneral();
+		void FollowLink(std::string const& id);
+		/** A document as the page renders it: one row per block, the kind in cls ("head" or "para"), the text
+		 * in title and the section number in value. */
+		void Document(std::vector<LaptopNative::DocBlock> const& blocks, std::vector<Row>& out);
+		/** The address bar host of a site (LaptopScreen.cc's table), "" for a site there is none for. */
+		std::string SiteHost(std::string const& id) const;
 
 		std::map<std::string, std::string> labels;
 		std::string appLabels[7], aimSortLabels[6], statLabels[11];
@@ -139,7 +148,16 @@ namespace NativeUI
 		int hireLength = 1; bool hireGear = false;
 		std::string hireQuote, hireContract, hireEquipment, hireDeposit, hireTotal, hireAfter, hireMessage;
 		bool hireAffordable = true;
-		std::vector<std::string> aimText;
+
+		// documents (the A.I.M. policies and history, the I.M.P. about page, the mortuary's letter) and the
+		// A.I.M. links and alumni pages
+		std::vector<Row> aimDoc, aimToc, aimAlumni, aimLinks, funeralDoc, funeralServices, funeralNotice, impDoc,
+			impQuotes;
+		int aimPolicyPage = 0, aimHistoryPage = 0, alumniSel = 0;
+		bool aimPolicyAgreed = false;
+		std::string alumniFace, alumniName, alumniFull, alumniBio;
+		std::string funeralTitle;
+		bool funeralFlowers = false;
 
 		// M.E.R.C.
 		std::vector<Row> mercFiles; std::string speck, mercOwed, mercAccount; int mercStatus = 0; bool mercHasAccount = false;
@@ -158,11 +176,12 @@ namespace NativeUI
 		int impQuestion = 0, impPortrait = 0, impVoice = 0, impBonus = 0;
 		std::vector<int> impAnswers; std::vector<Row> impAnswerRows, impSteps, impAttrs, impPortraits, impVoices, impSkills, impProgress;
 		std::string impQuestionText, impQuestionNo;
+		std::string impTagline, impNotAffiliated, impTitle, impActivation, impHint;
 		std::vector<std::string> impText;
 		std::vector<int> impAttrValues, impSkillPick;
 		std::vector<Row> flowers, floristTowns, floristCards; int flowerSel = 0, flowerTown = 0; bool flowerNextDay = true;
 		std::string flowerMessage, flowerName, flowerCost;
-		std::vector<std::string> floristText, insuranceText, funeralText;
+		std::vector<std::string> floristText, insuranceText;
 		std::vector<Row> insuranceRows;
 	};
 

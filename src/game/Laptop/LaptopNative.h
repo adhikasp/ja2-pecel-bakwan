@@ -83,6 +83,50 @@ namespace LaptopNative
 	/** The A.I.M. bio paragraphs of a member (aimbios.edt). */
 	std::vector<ST::string> AimBio(ProfileID);
 
+	// ---- documents (A.I.M. policies and history, the I.M.P. home and about pages; LaptopContent.h) -------------
+	/** A block of a document page: its kind ("head" for a heading, "para" for a paragraph), the number the
+	 * page prints beside it ("" when it prints none) and its text. */
+	struct DocBlock
+	{
+		ST::string kind, number, text;
+	};
+	/** The A.I.M. policies: page 0 the statement of policy, pages 1..9 the numbered sections (aimpol.edt). */
+	std::vector<DocBlock> AimPolicyDoc(int page);
+	int AimPolicyPageCount(); // 10
+	/** The A.I.M. history: pages 0..4 the five chapters (aimhist.edt). */
+	std::vector<DocBlock> AimHistoryDoc(int page);
+	int AimHistoryPageCount(); // 5
+	/** The I.M.P. About Us page, as IMP_Text_System.cc lays it out: a heading and its text per section. */
+	std::vector<DocBlock> ImpAboutDoc();
+	/** The I.M.P. home page: its headings and the two testimonials (imptext.edt). */
+	struct ImpTestimonial
+	{
+		ST::string quote, who;
+	};
+	struct ImpHomePage
+	{
+		ST::string tagline, notAffiliated, title, activation, hint;
+		std::vector<ImpTestimonial> testimonials;
+	};
+	ImpHomePage ImpHome();
+	/** The A.I.M. alumni gallery: the faces (old_aim.sti), captions (alumname.edt) and bios (alumni.edt) are
+	 * paired by the index (LaptopContent.h). */
+	struct AlumniEntry
+	{
+		int index;
+		ST::string name, fullName, bio;
+	};
+	std::vector<AlumniEntry> AimAlumni();
+	/** The mortuary's five services: the card's label and whether the link leads anywhere (Funeral.cc). */
+	struct FuneralService
+	{
+		ST::string title;
+		bool flowers;
+	};
+	std::vector<FuneralService> FuneralServices();
+	/** The notice the mortuary's sign carries: closed for a death in the family. */
+	std::vector<ST::string> FuneralNotice();
+
 	// ---- M.E.R.C. (Mercs*.cc) ---------------------------------------------------------------------------------
 	/** The M.E.R.C. files that can be shown now (availability by day and spending). */
 	std::vector<ProfileID> MercFiles();
@@ -151,7 +195,8 @@ namespace LaptopNative
 	enum class ImpResult { Created, NoFunds, Invalid };
 	ImpResult ImpCreate(ImpChoices const&);
 	std::vector<ST::string> ImpSkillNames();
-	/** I.M.P. text records: 0 home, 1 about us, 2 main page, 3 begin, 4 personality, 5 attributes, 6 portrait, 7 voice, 8 finish. */
+	/** I.M.P. text records of the profile flow: 0 main page, 1 begin, 2 personality, 3 attributes, 4 portrait,
+	 * 5 voice, 6 finish. The home and About Us pages are documents (ImpHome, ImpAboutDoc). */
 	std::vector<ST::string> ImpPageText(int page);
 
 	// ---- florist, insurance, mortuary -------------------------------------------------------------------------
@@ -169,5 +214,4 @@ namespace LaptopNative
 	void CancelInsurance(ProfileID); // the legacy contract page has no cancel: a no-op kept for symmetry
 	std::vector<ST::string> InsuranceText(int page); // 0 home, 1 info, 2 comments, 3 contract intro
 	std::vector<ST::string> FuneralText();
-	std::vector<ST::string> AimText(int page); // policies, history, links
 }

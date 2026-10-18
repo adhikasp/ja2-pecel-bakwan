@@ -3,6 +3,7 @@
 #include "EDT.h"
 #include "Font.h"
 #include "Laptop.h"
+#include "LaptopContent.h"
 #include "AIMArchives.h"
 #include "AIM.h"
 #include "WordWrap.h"
@@ -33,8 +34,9 @@
 #define AIM_ALUMNI_PAGE_COLOR_UP	FONT_MCOLOR_DKWHITE
 #define AIM_ALUMNI_PAGE_COLOR_DOWN	138
 
-
-#define   OLD_MERCS_COUNT		51
+// One old_aim.sti frame, one alumname.edt row and one alumni.edt row per alumnus; the native gallery reads
+// the same count (LaptopContent.h states the pairing), so the two sides cannot drift apart.
+#define OLD_MERCS_COUNT LaptopContent::AimAlumniCount
 #define   AIM_ALUMNI_NUM_FACE_COLS	5
 #define   AIM_ALUMNI_NUM_FACE_ROWS	4
 #define   MAX_NUMBER_OLD_MERCS_ON_PAGE	(AIM_ALUMNI_NUM_FACE_ROWS * AIM_ALUMNI_NUM_FACE_COLS)
@@ -454,3 +456,45 @@ static void ChangingAimArchiveSubPage(UINT8 ubSubPageNumber)
 		fFastLoadFlag = TRUE;
 	}
 }
+
+// ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
+#include "LaptopNative.h"
+
+namespace LaptopNative
+{
+
+std::vector<AlumniEntry> AimAlumni()
+{
+	// the three sources are paired by one index (LaptopContent.h): old_aim.sti frame i, alumname.edt row i
+	// (the caption) and alumni.edt row i (the full name in column 0, the bio in column 1).
+	std::vector<AlumniEntry> gallery;
+	std::optional<EDTFile> names, texts;
+	try
+	{
+		names = EDTFile(EDTFile::AIM_ALUMNI_NAMES);
+		texts = EDTFile(EDTFile::AIM_ALUMNI_TEXTS);
+	}
+	catch (...)
+	{
+		return gallery;
+	}
+	for (int i = 0; i < LaptopContent::AimAlumniCount; ++i)
+	{
+		AlumniEntry entry;
+		entry.index = i;
+		try
+		{
+			entry.name = names->at(unsigned(LaptopContent::AimAlumniNameRow(i)), 0);
+			entry.fullName = texts->at(unsigned(LaptopContent::AimAlumniBioRow(i)), 0);
+			entry.bio = texts->at(unsigned(LaptopContent::AimAlumniBioRow(i)), 1);
+		}
+		catch (...)
+		{
+			continue;
+		}
+		gallery.push_back(std::move(entry));
+	}
+	return gallery;
+}
+
+} // namespace LaptopNative

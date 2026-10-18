@@ -290,6 +290,7 @@ static void OffSetQuestionForFemaleSpecificQuestions(INT32* iCurrentOffset)
 
 
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
+#include "LaptopContent.h"
 #include "LaptopNative.h"
 
 namespace LaptopNative
@@ -327,21 +328,14 @@ std::vector<ImpQuestion> ImpQuiz(bool const female)
 
 std::vector<ST::string> ImpPageText(int const page)
 {
-	static INT32 const first[] = { IMP_HOME_1, IMP_ABOUT_US_1, IMP_MAIN_1, IMP_BEGIN_1, IMP_PERS_1, IMP_ATTRIB_1, IMP_POR_1, IMP_VOC_1, IMP_FIN_1 };
-	static INT32 const last[]  = { IMP_HOME_10, IMP_ABOUT_US_12, IMP_MAIN_2, IMP_BEGIN_11, IMP_PERS_12, IMP_ATTRIB_8, IMP_POR_7, IMP_VOC_7, IMP_FIN_10 };
+	// The pages of the profile flow; the home and About Us pages are documents of their own (ImpHome and
+	// ImpAboutDoc), so page 1 here is the profile's first page and not About Us.
+	static INT32 const first[] = { IMP_MAIN_1, IMP_BEGIN_1, IMP_PERS_1, IMP_ATTRIB_1, IMP_POR_1, IMP_VOC_1, IMP_FIN_1 };
+	static INT32 const last[] = {
+		IMP_MAIN_2, IMP_BEGIN_11, IMP_PERS_12, IMP_ATTRIB_8, IMP_POR_7, IMP_VOC_7, IMP_FIN_10
+	};
 	std::vector<ST::string> r;
 	if (page < 0 || page >= int(std::size(first))) return r;
-	if (page == 1)
-	{
-		// About Us: each heading sits above its paragraph, as the legacy page lays them out
-		static int const order[] = { 1, 2, 3, 10, 4, 11, 5, 8, 6, 9, 7 };
-		for (int const n : order)
-		{
-			ST::string const t = ImpRecord(IMP_ABOUT_US_1 + n - 1);
-			if (!t.empty()) r.push_back(t);
-		}
-		return r;
-	}
 	for (INT32 i = first[page]; i <= last[page]; ++i)
 	{
 		ST::string const t = ImpRecord(i);
@@ -350,4 +344,40 @@ std::vector<ST::string> ImpPageText(int const page)
 	return r;
 }
 
+std::vector<DocBlock> ImpAboutDoc()
+{
+	// PrintImpText's IMP_ABOUT_US case: a heading and its text per section, left column then right
+	std::vector<DocBlock> doc;
+	for (LaptopContent::Section const& section : LaptopContent::ImpAboutSections())
+	{
+		DocBlock heading;
+		heading.kind = "head";
+		heading.text = ImpRecord(section.heading);
+		if (!heading.text.empty()) doc.push_back(heading);
+		for (LaptopContent::Para const& para : section.paras)
+		{
+			DocBlock p;
+			p.kind = "para";
+			p.text = ImpRecord(para.record);
+			if (!p.text.empty()) doc.push_back(p);
+		}
+	}
+	return doc;
 }
+
+ImpHomePage ImpHome()
+{
+	// PrintImpText's IMP_HOME_PAGE case: the tagline over the title, a disclaimer under it, the two
+	// testimonials with their names, then the activation line above the code field
+	ImpHomePage home;
+	home.tagline = ImpRecord(IMP_HOME_1);
+	home.notAffiliated = ImpRecord(IMP_HOME_2);
+	home.title = ImpRecord(IMP_HOME_3);
+	home.activation = ImpRecord(IMP_HOME_5);
+	home.hint = ImpRecord(IMP_HOME_6);
+	home.testimonials.push_back({ ImpRecord(IMP_HOME_7), ImpRecord(IMP_HOME_9) });
+	home.testimonials.push_back({ ImpRecord(IMP_HOME_8), ImpRecord(IMP_HOME_10) });
+	return home;
+}
+
+} // namespace LaptopNative

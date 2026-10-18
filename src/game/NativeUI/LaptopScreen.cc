@@ -249,11 +249,26 @@ void LaptopViewModel::OpenSite(std::string const& id)
 	bool listed = false;
 	for (int b : LaptopNative::Bookmarks()) listed |= b == s->bookmark;
 	if (!listed) return;
+	FollowLink(id);
+}
+
+void LaptopViewModel::FollowLink(std::string const& id)
+{
+	// what GoToWebPage does from the A.I.M. links page and the mortuary: the site opens whether or not its
+	// bookmark has been set (the bookmark bar is the only place that waits for one)
+	SiteDef const* s = FindSite(id);
+	if (!s) return;
 	app = "web";
 	firstVisit = LaptopNative::VisitSite(s->bookmark);
 	loading = firstVisit ? 100 : 0;
 	if (onAction && firstVisit && LaptopNative::IsRaining()) onAction("rain");
 	Navigate(id, "", true);
+}
+
+std::string LaptopViewModel::SiteHost(std::string const& id) const
+{
+	SiteDef const* s = FindSite(id);
+	return s ? s->host : std::string();
 }
 
 void LaptopViewModel::GoPage(std::string const& p) { Navigate(site, p, true); }
@@ -283,6 +298,16 @@ void LaptopViewModel::Navigate(std::string const& s, std::string p, bool const r
 		else p = "home";
 	}
 	bool const enteringMerc = s == "merc" && (site != "merc" || app != "web") && p == "home";
+	// each document starts at its first page; the A.I.M. policies ask for agreement again on every entry, and
+	// a mortuary service's detail panel does not follow the player to another page
+	if (s == "aim" && p == "policies" && page != "policies")
+	{
+		aimPolicyAgreed = false;
+		aimPolicyPage = 0;
+	}
+	if (s == "aim" && p == "history" && page != "history") aimHistoryPage = 0;
+	// a mortuary service's detail panel does not follow the player to another page
+	if (!(s == "funeral" && p == "home" && site == "funeral" && page == "home")) funeralSel = -1;
 	site = s;
 	page = p;
 	if (record)

@@ -300,8 +300,49 @@
 					</div>
 				</div>
 			</div>
-			<div class="site-body text" data-if="page == 'policies' || page == 'history' || page == 'alumni'" id="aim.text"><div class="prose"><p data-for="t : aim_text">{{t}}</p></div></div>
-			<div class="site-body" data-if="page == 'links'" id="aim.links"><div class="dk-sites"><div class="site-tile" data-for="b : bookmarks" data-attr-id="'aim.link.' + b.id" data-attr-class="'site-tile ' + b.cls" data-event-click="site(b.id)"><span class="t">{{b.title}}</span><span class="h">{{b.sub}}</span></div></div></div>
+			<!-- the policies and the history: a sectioned document beside the design system's contents list.
+			     The policies open on their statement, behind the legacy Agree/Disagree gate. -->
+			<div class="site-body" data-if="page == 'policies' || page == 'history'" id="aim.doc">
+				<div class="doc-toc" data-if="page == 'history' || aim_policy_agreed">
+					<span class="section">{{l_doc_contents}}</span>
+					<div class="panel" id="aim.toc">
+						<div class="tr" data-for="t : aim_toc" data-attr-id="'aim.toc[' + t.id + ']'" data-attr-data-label="t.title" data-attr-title="t.title" data-class-selected="t.on" data-event-click="aim_doc_page(t.id)"><span class="c-tx">{{t.title}}</span></div>
+					</div>
+				</div>
+				<div class="grow">
+					<div class="doc" id="aim.doc.body">
+						<div class="blk" data-for="b : aim_doc" data-attr-id="'aim.doc[' + b.index + ']'" data-attr-class="'blk ' + b.cls">
+							<span class="num" data-if="b.value != ''">{{b.value}}</span>
+							<span class="h" data-if="b.cls == 'head'">{{b.title}}</span>
+							<p data-if="b.cls == 'para'">{{b.title}}</p>
+						</div>
+					</div>
+					<div class="row" data-if="page == 'policies' &amp;&amp; !aim_policy_agreed" id="aim.policy.gate">
+						<button class="btn-site" id="aim.policy.disagree" data-label="Disagree" data-event-click="aim_disagree"><span>{{l_aim_disagree}}</span></button>
+						<button class="btn-site" id="aim.policy.agree" data-label="Agree" data-event-click="aim_agree" style="margin-left: 12dp;"><span>{{l_aim_agree}}</span></button>
+					</div>
+					<div class="doc-nav" data-if="page == 'history' || aim_policy_agreed" id="aim.doc.nav">
+						<button class="btn" id="aim.doc.prev" data-label="Previous" data-event-click="aim_doc_step(-1)"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button>
+						<button class="btn" id="aim.doc.next" data-label="Next" data-event-click="aim_doc_step(1)"><span class="label">{{l_next}}</span><img class="icon" src="icon-chevron-right"/></button>
+					</div>
+				</div>
+			</div>
+			<!-- the links: link cards, the shell's own site shortcut, each in its target's identity -->
+			<div class="site-body" data-if="page == 'links'" id="aim.links"><div class="dk-sites">
+				<div class="site-tile" data-for="l : aim_links" data-attr-id="'aim.link.' + l.id" data-attr-data-label="l.title" data-attr-class="'site-tile ' + l.cls" data-event-click="link(l.id)"><span class="t">{{l.title}}</span><span class="h">{{l.sub}}</span></div>
+			</div></div>
+			<!-- the alumni: the member-card grid at the old_aim.sti faces' own size, with the selected member's
+			     face, name and bio beside it (the legacy page's faces and pop-up bios) -->
+			<div class="aim-page" data-if="page == 'alumni'" id="aim.alumni">
+				<div class="aim-grid grow" id="aim.alumni.grid">
+					<div class="mcard alum" data-for="a : aim_alumni" data-attr-id="'aim.alumnus[' + a.index + ']'" data-attr-data-label="a.title" data-class-selected="a.on" data-event-click="aim_alumni(a.index)"><div class="ph"><img data-attr-src="a.icon"/></div><span class="nm">{{a.title}}</span></div>
+				</div>
+				<div class="alum-detail" id="aim.alumni.detail">
+					<div class="aim-face"><div class="ph"><img data-attr-src="alumni_face"/></div></div>
+					<div class="aim-info"><span class="aim-name" id="aim.alumni.name">{{alumni_name}}</span><span class="aim-full" id="aim.alumni.full">{{alumni_full}}</span>
+						<div class="aim-bio"><p id="aim.alumni.bio">{{alumni_bio}}</p></div></div>
+				</div>
+			</div>
 		</div>
 
 		<!-- ------------------------------------------------ M.E.R.C. -->
@@ -406,12 +447,30 @@
 				<button class="btn btn-ghost" data-if="page != 'home' &amp;&amp; page != 'about'" id="imp.cancel" data-label="Cancel" data-event-click="imp_step('home')"><img class="icon" src="icon-close"/><span class="label">{{l_hangup}}</span></button></div>
 			<div class="imp-steps" id="imp.steps" data-if="page != 'home' &amp;&amp; page != 'about' &amp;&amp; page != 'main' &amp;&amp; page != 'done'">
 				<div class="step" data-for="s : imp_steps" data-attr-id="'imp.step[' + s.index + ']'" data-attr-data-label="s.title" data-class-done="s.alt" data-class-on="s.on" data-event-click="imp_goto(s.id)"><span class="n">{{s.index + 1}}</span><span>{{s.title}}</span></div></div>
-			<div class="quiz" data-if="page == 'home' || page == 'about'">
-				<div class="quiz-main prose"><p data-for="t : imp_text">{{t}}</p>
-					<div data-if="page == 'home'" class="row imp-code"><input type="text" class="field-input" id="imp.code.input" maxlength="10" data-value="imp_code"/><button class="btn btn-primary" id="imp.enter" data-label="Enter" data-event-click="imp_enter"><span class="label">{{l_imp_enter}}</span><span class="kbd">Enter</span></button>
+			<!-- the I.M.P. home: the tagline over the title, the two testimonials from imptext.edt, then the
+			     activation code the site is entered with -->
+			<div class="quiz" data-if="page == 'home'">
+				<div class="quiz-main">
+					<span class="imp-tagline" id="imp.tagline">{{imp_tagline}}</span>
+					<span class="imp-notaim" id="imp.notaim">{{imp_not_affiliated}}</span>
+					<span class="imp-title" id="imp.title">{{imp_title}}</span>
+					<div class="imp-quotes" id="imp.quotes"><div class="imp-quote" data-for="q : imp_quotes"><p>{{q.title}}</p><span class="who">{{q.value}}</span></div></div>
+					<span class="section">{{imp_activation}}</span>
+					<div class="row imp-code"><input type="text" class="field-input" id="imp.code.input" maxlength="10" data-value="imp_code"/><button class="btn btn-primary" id="imp.enter" data-label="Enter" data-event-click="imp_enter"><span class="label">{{l_imp_enter}}</span><span class="kbd">Enter</span></button>
 						<button class="btn" id="imp.about" data-label="About Us" data-event-click="imp_step('about')"><span class="label">{{l_imp_about}}</span></button></div>
+					<span class="dim">{{imp_hint}}</span>
 					<span class="danger-t" data-if="imp_error != ''">{{imp_error}}</span>
-					<button class="btn" data-if="page == 'about'" id="imp.about.back" data-event-click="imp_step('home')"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button>
+				</div></div>
+			<!-- the About Us page: a document, a heading and its text per section -->
+			<div class="quiz" data-if="page == 'about'">
+				<div class="quiz-main">
+					<div class="doc" id="imp.about.doc">
+						<div class="blk" data-for="b : imp_doc" data-attr-id="'imp.about[' + b.index + ']'" data-attr-class="'blk ' + b.cls">
+							<span class="h" data-if="b.cls == 'head'">{{b.title}}</span>
+							<p data-if="b.cls == 'para'">{{b.title}}</p>
+						</div>
+					</div>
+					<button class="btn" id="imp.about.back" data-label="Previous" data-event-click="imp_step('home')"><img class="icon" src="icon-chevron-left"/><span class="label">{{l_previous}}</span></button>
 				</div></div>
 			<div class="quiz" data-if="page == 'main'">
 				<div class="quiz-main prose"><p data-for="t : imp_text">{{t}}</p>
@@ -505,10 +564,34 @@
 
 		<!-- ------------------------------------------------ mortuary -->
 		<div class="fun" data-if="site == 'funeral'">
-			<div class="site-head"><span class="wm">McGillicutty&#8217;s Mortuary</span></div>
-			<div class="site-body"><div class="prose"><p data-for="t : funeral_text">{{t}}</p><p class="dim">{{l_funeral_closed}}</p></div></div>
+			<div class="site-head"><span class="wm">McGillicutty&#8217;s Mortuary</span><span class="grow"></span><span class="dim">{{l_funeral_closed}}</span></div>
+			<div class="site-body">
+				<div class="grow">
+					<div class="doc" id="funeral.doc">
+						<div class="blk para" data-for="b : funeral_doc" data-attr-id="'funeral.block[' + b.index + ']'"><p>{{b.title}}</p></div>
+					</div>
+					<span class="section" style="margin-top: 12dp;">{{l_funeral_services}}</span>
+					<div class="dk-sites" id="funeral.services">
+						<div class="site-tile" data-for="s : funeral_services" data-attr-id="'funeral.service[' + s.index + ']'" data-attr-data-label="s.title" data-class-selected="s.on" data-event-click="funeral_open(s.index)"><span class="t">{{s.title}}</span><span class="h" data-if="!s.alt">{{l_funeral_closed}}</span></div>
+					</div>
+				</div>
+			</div>
 		</div>
 
+		</div>
+
+		<!-- the mortuary's service detail: the same page's modal, the way the A.I.M. and I.M.P. leaves drill down -->
+		<div class="scrim audit-over" data-if="site == 'funeral' &amp;&amp; funeral_sel &gt;= 0" data-event-click="funeral_close"></div>
+		<div class="modal audit-over fun-modal" id="funeral.detail" data-if="site == 'funeral' &amp;&amp; funeral_sel &gt;= 0" style="left: 50%; top: 50%; width: 560dp; margin-left: -280dp; margin-top: -170dp;">
+			<div class="modal-head"><img class="icon status" src="icon-info" style="image-color: var(--site-funeral);"/><span class="title" id="funeral.detail.title">{{funeral_title}}</span><button class="icon-btn" id="funeral.detail.close" data-label="Close" title="Close" data-event-click="funeral_close"><img class="icon" src="icon-close"/></button></div>
+			<div class="modal-body" id="funeral.detail.body">
+				<p data-for="n : funeral_notice" data-if="!funeral_flowers">{{n.title}}</p>
+				<p class="dim" data-if="funeral_flowers">{{l_funeral_closed}}</p>
+			</div>
+			<div class="modal-foot">
+				<button class="btn btn-ghost" id="funeral.detail.dismiss" data-label="Close" data-event-click="funeral_close"><span class="label">{{l_dismiss}}</span><span class="kbd">Esc</span></button>
+				<button class="btn btn-primary" data-if="funeral_flowers" id="funeral.detail.visit" data-label="Send flowers" data-event-click="funeral_visit"><img class="icon" src="icon-cart"/><span class="label">{{l_funeral_visit}}</span></button>
+			</div>
 		</div>
 	</div>
 
