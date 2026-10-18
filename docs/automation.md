@@ -55,8 +55,11 @@ The design rationale is in [plan/headless-automation.md](plan/headless-automatio
   image-only widgets.
 - **Knowing when the game is idle.** "Idle" means no screen change or fade
   pending, no laptop page "loading", no window animating, nobody talking,
-  no helicopter drop, nobody walking, and no enemy turn in progress, for a
-  few frames in a row. `waitIdle()` replaces fixed sleeps.
+  no helicopter drop, nobody walking, no enemy turn in progress, and no
+  native-UI scroll still moving, for a few frames in a row. `waitIdle()`
+  replaces fixed sleeps. A native-UI scroll (RmlUi's smooth-scroll
+  controller) counts as in flight while the page keeps moving, and the wait
+  for it is bounded, so a scroll that never settles cannot hold it open.
 
 ## Command line
 
@@ -170,7 +173,7 @@ release).
 |---|---|
 | `ja2.click(locator \| x, y, [{button="right", count=2, timeout=ms}])` | Waits for the target, then clicks its centre. Returns what was clicked. |
 | `ja2.rclick`, `ja2.dblclick`, `ja2.hover` | Same arguments. |
-| `ja2.move(x, y)`, `ja2.mousedown([btn])`, `ja2.mouseup([btn])`, `ja2.drag(x0, y0, x1, y1)`, `ja2.wheel(dy, [x, y])`, `ja2.mouse()` | |
+| `ja2.move(x, y)`, `ja2.mousedown([btn])`, `ja2.mouseup([btn])`, `ja2.drag(x0, y0, x1, y1)`, `ja2.wheel(dy, [x, y])`, `ja2.mouse()` | `btn` is `"left"` (default), `"right"` or `"middle"`; `mousedown`/`mouseup` hold a button across frames (a scrollbar drag, RmlUi's middle-button autoscroll). |
 | `ja2.key(combo, [times])`, `ja2.keydown(key)`, `ja2.keyup(key)` | `"ESC"`, `"enter"`, `"f1"`, `"a"`, `"alt+c"`, `"shift+tab"`, ... |
 | `ja2.type(text)` | Types like a keyboard: a key event and a text event per character. |
 

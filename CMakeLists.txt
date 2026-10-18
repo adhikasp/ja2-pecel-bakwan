@@ -670,6 +670,7 @@ if (WITH_UNITTESTS)
             "options_parity=nativeui"
             "people_content=campaign"
             "saveload_parity=nativeui,campaign"
+            "scroll_idle=automation,nativeui"
             "sector_stock=campaign"
             "sessions=automation"
             "shopkeeper_parity=campaign,nativeui"

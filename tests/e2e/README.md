@@ -33,6 +33,7 @@ for the full API.
 | `battle_drag.lua` | Drag and drop in the tactical HUD (#320, runs at 1920x1080): a click still picks, a drag between pockets moves the item, a drag onto a squad card gives it (2 AP each) or on his own card drops it at his feet, the hover verdicts through `ja2.inventoryOp("plan_card" / "plan_slot")` |
 | `tactical_parity.lua` | Native tactical HUD parity tour by element id (docs/ui/tactical.md): squad bar, inventory, item description, money, log, the action, door and pick-up menus |
 | `native_ui.lua` | Native UI runtime on legacy screens: native message box (mouse, focus, shortcuts), toasts, UI scales, a view model |
+| `scroll_idle.lua` | The native UI's scroll is in flight for `ja2.waitIdle()` (#401): the wheel, the scrollbar's page-down and thumb drag and Tab's `ScrollIntoView` each leave the page where a click lands, and a scroll that will not settle (the middle-button autoscroll held open) still returns |
 | `legacy_script.txt` | The old line-based `-uitest` format still works |
 | `check_determinism.py` | Same script and seed, twice: identical screenshots |
 | `check_sessions.py` | Concurrent `ja2ctl` sessions: worktree-scoped roots, names, logs and free ports |
