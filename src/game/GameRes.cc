@@ -1,5 +1,7 @@
 #include "GameRes.h"
+#include "ContentManager.h"
 #include "Directories.h"
+#include "GameInstance.h"
 #include "Object_Cache.h"
 #include "VObject.h"
 #include <stdexcept>
@@ -71,10 +73,10 @@ FLOAT getMajorMapVersion()
 #define STI(LNG, x) LNG "/" x "_" LNG ".sti"
 #define PCX(LNG, x) LNG "/" x "_" LNG ".pcx"
 
-
-char const* GetMLGFilename(MultiLanguageGraphic const id)
+char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion const version)
 {
-	if((s_gameVersion == GameVersion::ENGLISH) || (s_gameVersion == GameVersion::FRENCH) || (s_gameVersion == GameVersion::RUSSIAN_GOLD) || (s_gameVersion == GameVersion::SIMPLIFIED_CHINESE))
+	if ((version == GameVersion::ENGLISH) || (version == GameVersion::FRENCH) ||
+		(version == GameVersion::RUSSIAN_GOLD) || (version == GameVersion::SIMPLIFIED_CHINESE))
 	{
 		switch (id)
 		{
@@ -115,7 +117,7 @@ char const* GetMLGFilename(MultiLanguageGraphic const id)
 				break;
 		}
 	}
-	else if(s_gameVersion == GameVersion::GERMAN)
+	else if (version == GameVersion::GERMAN)
 	{
 		switch (id)
 		{
@@ -156,7 +158,7 @@ char const* GetMLGFilename(MultiLanguageGraphic const id)
 				break;
 	}
 	}
-	else if(s_gameVersion == GameVersion::DUTCH)
+	else if (version == GameVersion::DUTCH)
 	{
 		switch (id)
 		{
@@ -197,7 +199,7 @@ char const* GetMLGFilename(MultiLanguageGraphic const id)
 				break;
 		}
 	}
-	else if(s_gameVersion == GameVersion::ITALIAN)
+	else if (version == GameVersion::ITALIAN)
 	{
 		switch (id)
 		{
@@ -238,7 +240,7 @@ char const* GetMLGFilename(MultiLanguageGraphic const id)
 				break;
 		}
 	}
-	else if(s_gameVersion == GameVersion::POLISH)
+	else if (version == GameVersion::POLISH)
 	{
 		switch (id)
 		{
@@ -279,7 +281,7 @@ char const* GetMLGFilename(MultiLanguageGraphic const id)
 				break;
 		}
 	}
-	else if(s_gameVersion == GameVersion::RUSSIAN)
+	else if (version == GameVersion::RUSSIAN)
 	{
 		switch (id)
 		{
@@ -324,6 +326,33 @@ char const* GetMLGFilename(MultiLanguageGraphic const id)
 	throw std::runtime_error(ST::format("Multilanguage resource {} is not found", id).to_std_string());
 }
 
+char const* ResolveMLGFilename(MultiLanguageGraphic const id, GameVersion const version, bool const localisedPresent)
+{
+	char const* const localised = GetMLGFilenameForVersion(id, version);
+	if (version == GameVersion::ENGLISH || localisedPresent)
+	{
+		return localised;
+	}
+	// The localised file is not on this install. A visible graphic in the wrong
+	// language beats aborting the process (#411), and it is what the string
+	// loader already does for a missing translation.
+	return GetMLGFilenameForVersion(id, GameVersion::ENGLISH);
+}
+
+char const* GetMLGFilename(MultiLanguageGraphic const id)
+{
+	if (s_gameVersion == GameVersion::ENGLISH)
+	{
+		return GetMLGFilenameForVersion(id, s_gameVersion);
+	}
+
+	// Every localized graphic may be absent on an English install (the shipped
+	// localized art is a separate directory), so ask the file system before
+	// committing to the localized path.
+	char const* const localised = GetMLGFilenameForVersion(id, s_gameVersion);
+	bool const present = GCM != nullptr && GCM->doesGameResExists(localised);
+	return ResolveMLGFilename(id, s_gameVersion, present);
+}
 
 SGPVObject* AddVideoObjectFromFile(MultiLanguageGraphic const mlg)
 {

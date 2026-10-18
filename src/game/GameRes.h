@@ -48,6 +48,15 @@ enum MultiLanguageGraphic : int8_t
 };
 
 char const* GetMLGFilename(MultiLanguageGraphic);
+/** The multilingual graphic's path for one game version, without asking the
+ * file system. Split out of GetMLGFilename so the choice is unit-testable. */
+char const* GetMLGFilenameForVersion(MultiLanguageGraphic, GameVersion);
+/** The path a game version should load. `localisedPresent` is the caller's
+ * answer to "does the path GetMLGFilenameForVersion() gives for @a version
+ * exist on disk?"; this function does not touch the file system itself. When
+ * it does not, the English graphic is used instead, as the string loader does
+ * for a missing translation (#411). English runs are unaffected. */
+char const* ResolveMLGFilename(MultiLanguageGraphic, GameVersion, bool localisedPresent);
 // Shortcut for AddVideoObjectFromFile(GetMLGFilename(id))
 SGPVObject* AddVideoObjectFromFile(MultiLanguageGraphic);
 
