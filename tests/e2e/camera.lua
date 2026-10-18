@@ -166,22 +166,32 @@ ja2.expect(zoomed.layered, "a fractional zoom gives the world a layer of its own
 ja2.expect(v.zoom == zoomed.zoom, "ja2.setVideo and ja2.camera agree on the zoom")
 
 -- 5b. The state the video change must leave: the camera is still where the slide took it (within the one cell the
---     forced adjust may snap to), Barry is still on screen, and the frame still draws a world. The last one is not
---     decoration: on a machine where the heap corruption was benign the process lives, and what a stale scroll left
---     is a picture that no longer matches the camera - so the assertion is on the frame, not on the exit code.
+--     forced adjust may snap to), Barry is still on screen, and the frame is the frame the same zoom draws once the
+--     view has settled. That last one is the assertion, not "the process lived": on a machine where the corruption
+--     happens to be benign nothing crashes, but a scroll left pending across the rebuild still shifts the world under
+--     the camera, so the two pictures differ. The settled zoom is the frame the waitIdle() used to buy, used here as
+--     the reference rather than as a workaround.
+local function frameColours()
+	local out = {}
+	for _, p in ipairs({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 1, 2 }, { 2, 2 }, { 3, 2 }, { 1, 3 }, { 2, 3 }, { 3, 3 } }) do
+		out[#out + 1] = ja2.pixel(math.floor(p[1] * size.w / 4), math.floor(p[2] * size.h / 4))
+	end
+	return table.concat(out, " ")
+end
+local inSlideFrame = frameColours()
 ja2.expect(math.abs(zoomed.x - slideEndX) <= 10 and math.abs(zoomed.y - slideEndY) <= 10,
 	("the zoom keeps the camera where the slide left it (%.2f, %.2f vs %.2f, %.2f)")
 		:format(zoomed.x, zoomed.y, slideEndX, slideEndY))
 ja2.expect(zoomed.tileX > 0 and zoomed.tileY > 0,
 	("the zoomed camera is over a real tile (%d, %d)"):format(zoomed.tileX, zoomed.tileY))
 ja2.gridPos(merc.gridNo)
-local colours, distinct = {}, 0
-for _, p in ipairs({ { 1, 1 }, { 2, 1 }, { 3, 1 }, { 1, 2 }, { 2, 2 }, { 3, 2 }, { 1, 3 }, { 2, 3 }, { 3, 3 } }) do
-	local colour = ja2.pixel(math.floor(p[1] * size.w / 4), math.floor(p[2] * size.h / 4))
-	if not colours[colour] then colours[colour] = true; distinct = distinct + 1 end
-end
-ja2.expect(distinct >= 2, ("the world still draws after the video change (%d colours on a 3x3 grid)"):format(distinct))
-
+ja2.setVideo({ zoom = 1 })
+ja2.waitIdle()
+ja2.setVideo({ zoom = 1.5 }) -- the same zoom, with nothing in flight before it
+ja2.waitIdle()
+ja2.expect(frameColours() == inSlideFrame,
+	("the zoom in the slide's last frame draws what a settled zoom draws (in the slide's frame: %s)")
+		:format(inSlideFrame))
 ja2.setVideo({ zoom = 1 })
 ja2.waitIdle()
 ja2.expect(math.abs(camera().zoom - 1) < 1e-6, "the zoom is back at 1")
