@@ -6,7 +6,7 @@ for the full API.
 
 | Script | Covers |
 |---|---|
-| `main_menu.lua` | Menu entries, Preferences and Credits and back |
+| `main_menu.lua` | The front end reaches the main menu and shows its version line (the native menu from 1280x720 up, covered by `mainmenu_parity.lua`); the legacy menu's entries, Preferences and Credits below 1280x720 |
 | `laptop_tour.lua` | New campaign; every laptop program, reading mail, A.I.M. |
 | `new_game_to_tactical.lua` | Hire a merc on A.I.M., land in Omerta, save/load round trip |
 | `tactical_move_merc.lua` | Select a merc and walk to a clicked tile and back |
@@ -283,6 +283,15 @@ renderer itself). Scripts take screenshots with
 screen) and can register the shot for comparison with `golden/<res>/`. See
 `golden/README.md`. Use `campaign.std{...}` to convert classic 640x480
 coordinates (e.g. in `within=`) to the current screen.
+
+A tour that registers no golden shot still runs and still checks the layout, and
+its `resolution_*` test says in its output that it compares nothing. That is
+deliberate: the pixel coverage of a screen the tour returns before belongs to the
+tour that does cover it (`main_menu.lua` returns to `mainmenu_parity.lua`). What
+is not tolerated is a script whose `shots.take()` calls register a golden image it
+never reaches: the harness fails it (the same exit code as a pixel mismatch)
+instead of reporting coverage the test does not have, and `--update` runs it only
+when it can write something (issue #389).
 
 Each test has a watchdog: 900 s by default, 2400 s for every map screen tour and
 every 3440x1440 tour (the tier where the matrix is expensive enough for the

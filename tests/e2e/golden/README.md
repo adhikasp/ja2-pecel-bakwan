@@ -38,6 +38,16 @@ running it would cost minutes of tour per test to write nothing. The
 comparison run still runs those tests — they still check the layout. Pass
 `--force` to run them under `--update` too.
 
+The count comes from the script's own `shots.take()` calls, so it is only honest
+when every one of them is reachable. A script that registers a golden image and
+then marks none fails the comparison with the same exit code as a pixel mismatch:
+the registration is unreachable, and an `--update` run would drive the tour to
+write nothing. `main_menu.lua` is the case that was fixed — from 1280x720 up (the
+matrix's floor) it returns as soon as the native menu is up, so it registers no
+golden at any resolution, `--update` skips it, and the native menu's golden is
+`<res>/mainmenu_parity/mainmenu_native.png` (issue
+[#389](https://github.com/adhikasp/ja2-pecel-bakwan/issues/389)).
+
 Full-screen tactical shots (`landed.png`, `moved.png`) are stored only at
 1280x720: at wider sizes they are 4-10 MB each. At every resolution
 the tours still run and call `ja2.assertInsideScreen()`.

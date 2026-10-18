@@ -17,6 +17,12 @@ ja2.waitIdle()
 local res = (ja2.args and ja2.args[1] or ""):match("^res=(%S+)$") or "1920x1080"
 ja2.setVideo{ res = res, uiscale = 1, worldzoom = 2 }
 ja2.waitIdle()
+-- This tour fixes its own resolution: its clicks are 1920x1080 coordinates, so it
+-- never runs at the 1280x720 that a full-screen shot would have to be small at -
+-- which is where the pop-up screenshots below would become golden images. They
+-- are layout-checked screenshots, registered as no golden at any resolution:
+-- check_resolution.py skips this tour in --update mode rather than run its three
+-- minutes to write nothing (issue #389).
 
 local function vm() return ja2.viewModel("tactical") end
 -- a choice is applied on the next frames: let the game see it before reading the popup back
@@ -52,7 +58,7 @@ local drawn = 0
 for _, m in ipairs(vm().menu) do if m.kind == "item" then drawn = drawn + 1 end end
 ja2.expect(drawn == #p.menu.rows, "the HUD shows the model's rows, got " .. drawn)
 ja2.expect(ja2.exists{ id = "tac.menu" }, "the menu is on screen")
-shots.take("popup_action.png", "small")
+shots.take("popup_action.png")
 ja2.mouseup("right")
 ja2.wait(300)
 local r = ja2.popupOp("menu", { cmd = "walk" })
@@ -89,7 +95,7 @@ ja2.expect(not lockpick.enabled and lockpick.why == "lockpick", "no lockpick kit
 ja2.expect(boot.enabled and boot.ap > 0, "forcing it costs AP (" .. tostring(boot.ap) .. ")")
 local doorGrid, doorLock = p.menu.doorGrid, p.menu.doorLock
 ja2.expect(doorGrid >= 0, "the menu knows the door's tile")
-shots.take("popup_door.png", "small")
+shots.take("popup_door.png")
 r = ja2.popupOp("menu", { cmd = "lockpick" })
 ja2.expect(not r.ok and r.why == "lockpick", "an off row cannot be chosen, and says why: " .. tostring(r.why))
 ja2.expect(popup().kind == "door", "the refusal leaves the menu open")
@@ -129,7 +135,7 @@ settle()
 ja2.expect(popup().kind == "pickup" and popup().pickup.total >= 3, "and it opens again")
 ja2.popupOp("pickup", { action = "toggle", row = 1 })
 ja2.expect(vm().pick_ok == "Take 1", "the HUD's button follows the model, got " .. tostring(vm().pick_ok))
-shots.take("popup_pickup.png", "small")
+shots.take("popup_pickup.png")
 local carried = 0
 for _, pk in pairs(ja2.inventory().pockets) do carried = carried + 1 end
 r = ja2.popupOp("pickup", { action = "take" })
@@ -156,7 +162,7 @@ ja2.expect(p.stack.count >= 3 and p.stack.slots >= p.stack.count, "the popup sho
 ja2.expect(ja2.exists{ id = "tac.bar" } and ja2.exists{ id = "tac.detail" }, "the HUD is not hidden by the popup")
 ja2.expect(ja2.exists{ id = "tac.stack" } and ja2.exists{ id = "tac.stack.box[0]" }, "the popup and its boxes are on screen")
 local total = p.stack.count
-shots.take("popup_stack.png", "small")
+shots.take("popup_stack.png")
 -- Esc closes it (with the hand empty), and it opens again
 ja2.key("escape")
 settle()
@@ -208,7 +214,7 @@ for _, k in ipairs(p.keyring.keys) do
 	ja2.expect(k.name ~= "" and k.sector ~= "", "each key has a name and where it was found")
 end
 ja2.expect(#vm().keys == 3, "the HUD shows the three rows")
-shots.take("popup_keyring.png", "small")
+shots.take("popup_keyring.png")
 r = ja2.popupOp("keyring", { action = "use", slot = 0 })
 ja2.expect(not r.ok and r.why == "no_door", "Use without a door is refused, got " .. tostring(r.why))
 -- Give: the key goes into the hand and the ring closes
@@ -309,7 +315,7 @@ for i, tr in ipairs(p.talk.rows) do
 	ja2.expect(tr.key == tostring(i) and tr.enabled, "approach " .. i .. " has key " .. i .. " and is on")
 end
 ja2.expect(#vm().talk == 6, "the HUD shows six approaches")
-shots.take("popup_talk.png", "small")
+shots.take("popup_talk.png")
 ja2.key("1")
 ja2.wait(300)
 ja2.expect(ja2.popup().last.what == "friendly", "the key 1 chooses Friendly, got " .. tostring(ja2.popup().last.what))
@@ -345,7 +351,7 @@ ja2.expect(p.exit.direction == "east" and p.exit.from == "A9" and p.exit.to == "
 ja2.expect(p.exit.single or p.exit.all, "one of the radios is on")
 ja2.expect(p.exit.canGo and p.exit.jump ~= "none", "Go is on and knows what it will do, got " .. tostring(p.exit.jump))
 ja2.expect(ja2.exists{ id = "tac.exit" } and ja2.exists{ id = "tac.exit.go" }, "the menu is on screen")
-shots.take("popup_exit.png", "small")
+shots.take("popup_exit.png")
 local loadWas = p.exit.load
 if not p.exit.loadOff then
 	ja2.popupOp("exit", { action = "load" })
