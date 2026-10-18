@@ -431,3 +431,45 @@ static void ChangingAimHistorySubPage(UINT8 ubSubPageNumber)
 		fFastLoadFlag = TRUE;
 	}
 }
+
+
+// ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
+#include "LaptopContent.h"
+#include "LaptopNative.h"
+
+namespace LaptopNative
+{
+
+namespace
+{
+	/** A row of the A.I.M. history text (aimhist.edt), "" when the file has no such row. */
+	ST::string HistoryRecord(int const record)
+	{
+		OpenAIMTexts();
+		try { return LoadAIMText(unsigned(record)); } catch (...) { return {}; }
+	}
+}
+
+int AimHistoryPageCount()
+{
+	return int(LaptopContent::AimHistoryChapters().size());
+}
+
+std::vector<DocBlock> AimHistoryDoc(int const page)
+{
+	std::vector<DocBlock> doc;
+	auto const& chapters = LaptopContent::AimHistoryChapters();
+	if (page < 0 || page >= int(chapters.size())) return doc;
+	LaptopContent::Section const& chapter = chapters[page];
+
+	DocBlock heading; heading.kind = "head"; heading.text = HistoryRecord(chapter.heading);
+	if (!heading.text.empty()) doc.push_back(heading);
+	for (LaptopContent::Para const& para : chapter.paras)
+	{
+		DocBlock p; p.kind = "para"; p.text = HistoryRecord(para.record);
+		if (!p.text.empty()) doc.push_back(p);
+	}
+	return doc;
+}
+
+} // namespace LaptopNative

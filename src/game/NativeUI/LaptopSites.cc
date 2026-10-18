@@ -33,6 +33,26 @@ namespace
 	std::string Money(INT32 const v) { return S(SPrintMoney(v)); }
 	std::string Kg(UINT32 const tenths) { return ST::format("{.1f} kg", tenths / 10.0f).to_std_string(); }
 	char const* const g_aimSortKeys[] = { "price", "experience", "marksmanship", "medical", "explosives", "mechanical" };
+
+	/** The three sites the A.I.M. links page points at (AIMLinks.cc's gubLinkPages), each in the shell's own
+	 * bookmark colour. */
+	struct AimLinkSite { int bookmark; char const* id; char const* cls; };
+	AimLinkSite const g_aimLinkSites[] = {
+		{ BOBBYR_BOOKMARK,    "bobby",     "bm-bobby" },
+		{ FUNERAL_BOOKMARK,   "funeral",   "bm-fun"   },
+		{ INSURANCE_BOOKMARK, "insurance", "bm-ins"   },
+	};
+}
+
+void LaptopViewModel::Document(std::vector<LaptopNative::DocBlock> const& blocks, std::vector<Row>& out)
+{
+	out.clear();
+	int i = 0;
+	for (LaptopNative::DocBlock const& b : blocks)
+	{
+		Row r; r.index = i++; r.cls = S(b.kind); r.title = S(b.text); r.value = S(b.number);
+		out.push_back(r);
+	}
 }
 
 void LaptopViewModel::RegisterSiteCommands()
@@ -136,6 +156,32 @@ void LaptopViewModel::RegisterSiteCommands()
 	// insurance
 	Command("insure", [this](Args const& a) { if (!a.empty()) { if (!LaptopNative::Insure(ProfileID(std::atoi(a[0].c_str()))) && onToast) onToast(labels["no_funds"], 3); ReadInsurance(); } });
 	Command("insure_cancel", [this](Args const& a) { if (!a.empty()) { LaptopNative::CancelInsurance(ProfileID(std::atoi(a[0].c_str()))); ReadInsurance(); } });
+
+	// A.I.M. documents: the policies' Agree/Disagree gate and the page each document is on
+	Command("aim_agree", [this](Args const&) { aimPolicyAgreed = true; ReadAim(); });
+	Command("aim_disagree", [this](Args const&) { GoPage("members"); });
+	Command("aim_doc_page", [this](Args const& a) {
+		if (a.empty()) return;
+		int const p = std::atoi(a[0].c_str());
+		if (page == "policies") aimPolicyPage = std::clamp(p, 0, LaptopNative::AimPolicyPageCount() - 1);
+		else if (page == "history") aimHistoryPage = std::clamp(p, 0, LaptopNative::AimHistoryPageCount() - 1);
+		ReadAim();
+	});
+	Command("aim_doc_step", [this](Args const& a) {
+		if (a.empty()) return;
+		int const delta = std::atoi(a[0].c_str());
+		if (page == "policies") aimPolicyPage = std::clamp(aimPolicyPage + delta, 0, LaptopNative::AimPolicyPageCount() - 1);
+		else if (page == "history") aimHistoryPage = std::clamp(aimHistoryPage + delta, 0, LaptopNative::AimHistoryPageCount() - 1);
+		ReadAim();
+	});
+	Command("aim_alumni", [this](Args const& a) { if (!a.empty()) { alumniSel = std::atoi(a[0].c_str()); ReadAim(); } });
+	// the A.I.M. links page and the mortuary's visit action go to a site without waiting for its bookmark
+	Command("link", [this](Args const& a) { if (!a.empty()) FollowLink(a[0]); });
+
+	// the mortuary: a service opens its detail panel on the page
+	Command("funeral_open", [this](Args const& a) { if (!a.empty()) { funeralSel = std::atoi(a[0].c_str()); ReadFuneral(); } });
+	Command("funeral_close", [this](Args const&) { funeralSel = -1; ReadFuneral(); });
+	Command("funeral_visit", [this](Args const&) { funeralSel = -1; FollowLink("florist"); });
 }
 
 void LaptopViewModel::LoadSiteLabels()
@@ -145,9 +191,13 @@ void LaptopViewModel::LoadSiteLabels()
 		"merc_closed", "bobby_closed", "funeral_closed", "insure", "insured", "cancel_insurance", "days_left", "premium",
 		"send_flowers", "card_message", "your_name", "next_day", "when_convenient", "flower_town", "broken_link",
 		"aim_members", "aim_alumni", "aim_policies", "aim_history", "aim_links", "per_day", "used_note", "imp_about", "imp_full",
-		"imp_restart", "imp_confirm", "imp_done", "florist_gallery", "ins_home", "ins_info", "ins_comments", "ins_contract", "level" })
+		"imp_restart", "imp_confirm", "imp_done", "florist_gallery", "ins_home", "ins_info", "ins_comments", "ins_contract", "level",
+		"doc_contents", "funeral_services", "funeral_visit", "dismiss" })
 		labels[k] = Str(std::string("laptop.") + k);
 	labels["imp_cost"] = ST::format(Str("laptop.imp_cost").c_str(), SPrintMoney(LaptopNative::ImpCost())).to_std_string();
+	// the policies' gate, as the legacy page labels it (AimPolicyText)
+	labels["aim_disagree"] = S(AimPolicyText[AIM_POLICIES_DISAGREE]);
+	labels["aim_agree"] = S(AimPolicyText[AIM_POLICIES_AGREE]);
 }
 
 void LaptopViewModel::ReadSite()
@@ -158,23 +208,68 @@ void LaptopViewModel::ReadSite()
 	else if (site == "imp") ReadImp();
 	else if (site == "florist") ReadFlorist();
 	else if (site == "insurance") ReadInsurance();
-	else if (site == "funeral")
-	{
-		funeralText.clear();
-		for (ST::string const& t : LaptopNative::FuneralText()) funeralText.push_back(S(t));
-	}
+	else if (site == "funeral") ReadFuneral();
 }
 
 // ---- A.I.M. ------------------------------------------------------------------------------------------------------
 
 void LaptopViewModel::ReadAim()
 {
-	if (page == "policies" || page == "history" || page == "links" || page == "alumni")
+	aimDoc.clear();
+	aimToc.clear();
+	aimAlumni.clear();
+	aimLinks.clear();
+
+	if (page == "policies" || page == "history")
 	{
-		aimText.clear();
-		int const p = page == "policies" ? 0 : page == "history" ? 1 : page == "links" ? 2 : 3;
-		for (ST::string const& t : LaptopNative::AimText(p)) aimText.push_back(S(t));
+		// a document page: one block list for what is shown, one contents list for the pages of the document
+		bool const policies = page == "policies";
+		int const pages = policies ? LaptopNative::AimPolicyPageCount() : LaptopNative::AimHistoryPageCount();
+		int const current = std::clamp(policies ? aimPolicyPage : aimHistoryPage, 0, std::max(0, pages - 1));
+		if (policies) aimPolicyPage = current; else aimHistoryPage = current;
+		if (pages > 0)
+		{
+			Document(policies ? LaptopNative::AimPolicyDoc(current) : LaptopNative::AimHistoryDoc(current), aimDoc);
+			for (int p = 0; p < pages; ++p)
+			{
+				auto const head = policies ? LaptopNative::AimPolicyDoc(p) : LaptopNative::AimHistoryDoc(p);
+				if (head.empty()) continue;
+				Row r; r.index = p; r.id = std::to_string(p); r.title = S(head.front().text); r.on = p == current;
+				aimToc.push_back(r);
+			}
+		}
 	}
+
+	if (page == "links")
+	{
+		// the three sites the legacy links page carves (AIMLinks.cc), whatever the bookmark list holds
+		for (AimLinkSite const& l : g_aimLinkSites)
+		{
+			Row r; r.id = l.id; r.title = S(pBookMarkStrings[l.bookmark]); r.sub = SiteHost(l.id); r.cls = l.cls;
+			aimLinks.push_back(r);
+		}
+	}
+
+	if (page == "alumni")
+	{
+		auto const gallery = LaptopNative::AimAlumni();
+		for (LaptopNative::AlumniEntry const& a : gallery)
+		{
+			Row r; r.index = a.index; r.id = std::to_string(a.index); r.title = S(a.name);
+			r.icon = "alumni-face-" + std::to_string(a.index);
+			aimAlumni.push_back(r);
+		}
+		alumniSel = std::clamp(alumniSel, 0, std::max(0, int(aimAlumni.size()) - 1));
+		for (Row& r : aimAlumni) r.on = r.index == alumniSel;
+		alumniFace.clear(); alumniName.clear(); alumniFull.clear(); alumniBio.clear();
+		for (LaptopNative::AlumniEntry const& a : gallery)
+		{
+			if (a.index != alumniSel) continue;
+			alumniFace = "alumni-face-" + std::to_string(a.index);
+			alumniName = S(a.name); alumniFull = S(a.fullName); alumniBio = S(a.bio);
+		}
+	}
+
 	aimSortChips.clear();
 	for (int i = 0; i < 6; ++i)
 	{
@@ -345,11 +440,50 @@ void LaptopViewModel::AimMessage()
 	Changed();
 }
 
+// ---- the mortuary ------------------------------------------------------------------------------------------------
+
+void LaptopViewModel::ReadFuneral()
+{
+	// the letter above the services, then the five services as link cards (Funeral.cc); a service's own
+	// response is what its detail panel shows
+	funeralDoc.clear();
+	int i = 0;
+	for (ST::string const& t : LaptopNative::FuneralText())
+	{
+		Row r; r.index = i++; r.cls = "para"; r.title = S(t);
+		funeralDoc.push_back(r);
+	}
+	funeralServices.clear();
+	funeralNotice.clear();
+	i = 0;
+	for (LaptopNative::FuneralService const& s : LaptopNative::FuneralServices())
+	{
+		Row r; r.index = i; r.id = std::to_string(i); r.title = S(s.title); r.alt = s.flowers;
+		r.on = i == funeralSel;
+		funeralServices.push_back(r);
+		++i;
+	}
+	for (ST::string const& t : LaptopNative::FuneralNotice())
+	{
+		Row r; r.index = int(funeralNotice.size()); r.title = S(t);
+		funeralNotice.push_back(r);
+	}
+	funeralSel = funeralSel >= 0 && funeralSel < int(funeralServices.size()) ? funeralSel : -1;
+	funeralTitle.clear(); funeralFlowers = false;
+	if (funeralSel >= 0)
+	{
+		// a service's detail is what the legacy page shows for it: the sign for everything but the florist
+		// link, which leads to the florist (Funeral.cc)
+		funeralTitle = funeralServices[funeralSel].title;
+		funeralFlowers = funeralServices[funeralSel].alt;
+	}
+	Changed();
+}
+
 // ---- M.E.R.C. ----------------------------------------------------------------------------------------------------
 
 void LaptopViewModel::ReadMerc()
-{
-	mercStatus = LaptopNative::MercAccountStatus();
+{	mercStatus = LaptopNative::MercAccountStatus();
 	mercHasAccount = mercStatus != 0;
 	mercSiteDown = LaptopNative::MercSiteDown();
 	mercOwed = Money(INT32(LaptopNative::MercOwed()));
@@ -531,7 +665,12 @@ void LaptopViewModel::DescribeSites(Fields& f)
 	f.Field("am_gear_cost", amGearCost); f.Field("am_status", amStatus); f.Field("am_can_call", amCanCall);
 	bool messageLeft = aimProfile >= 0 && (GetProfile(ProfileID(aimProfile)).ubMiscFlags3 & PROFILE_MISC_FLAG3_PLAYER_LEFT_MSG_FOR_MERC_AT_AIM) != 0;
 	f.Field("am_message_left", messageLeft); f.Rows("am_stats", amStats); f.Rows("am_gear", amGear);
-	f.List("am_bio", amBio); f.List("aim_text", aimText);
+	f.List("am_bio", amBio);
+	f.Rows("aim_doc", aimDoc); f.Rows("aim_toc", aimToc); f.Field("aim_policy_page", aimPolicyPage);
+	f.Field("aim_policy_agreed", aimPolicyAgreed); f.Field("aim_history_page", aimHistoryPage);
+	f.Rows("aim_alumni", aimAlumni); f.Field("alumni_sel", alumniSel); f.Field("alumni_face", alumniFace);
+	f.Field("alumni_name", alumniName); f.Field("alumni_full", alumniFull); f.Field("alumni_bio", alumniBio);
+	f.Rows("aim_links", aimLinks);
 	f.Field("hire_state", hireState); f.Field("hire_length", hireLength); f.Field("hire_gear", hireGear); f.Field("hire_quote", hireQuote);
 	f.Field("hire_contract", hireContract); f.Field("hire_equipment", hireEquipment); f.Field("hire_deposit", hireDeposit);
 	f.Field("hire_total", hireTotal); f.Field("hire_after", hireAfter); f.Field("hire_affordable", hireAffordable); f.Field("hire_message", hireMessage);
@@ -553,7 +692,13 @@ void LaptopViewModel::DescribeSites(Fields& f)
 	f.Rows("flowers", flowers); f.Rows("florist_towns", floristTowns); f.Rows("florist_cards", floristCards); f.Field("flower_sel", flowerSel);
 	f.Field("flower_town", flowerTown); f.Field("flower_next_day", flowerNextDay); f.Field("flower_message", flowerMessage);
 	f.Field("flower_name", flowerName); f.Field("flower_cost", flowerCost); f.List("florist_text", floristText);
-	f.Rows("insurance_rows", insuranceRows); f.List("insurance_text", insuranceText); f.List("funeral_text", funeralText);
+	f.Rows("insurance_rows", insuranceRows); f.List("insurance_text", insuranceText);
+	f.Rows("funeral_doc", funeralDoc); f.Rows("funeral_services", funeralServices);
+	f.Rows("funeral_notice", funeralNotice); f.Field("funeral_sel", funeralSel);
+	f.Field("funeral_title", funeralTitle); f.Field("funeral_flowers", funeralFlowers);
+	f.Rows("imp_doc", impDoc); f.Rows("imp_quotes", impQuotes); f.Field("imp_tagline", impTagline);
+	f.Field("imp_not_affiliated", impNotAffiliated); f.Field("imp_title", impTitle);
+	f.Field("imp_activation", impActivation); f.Field("imp_hint", impHint);
 }
 
 }

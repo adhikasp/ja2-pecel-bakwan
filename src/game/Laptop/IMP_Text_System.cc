@@ -290,6 +290,7 @@ static void OffSetQuestionForFemaleSpecificQuestions(INT32* iCurrentOffset)
 
 
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
+#include "LaptopContent.h"
 #include "LaptopNative.h"
 
 namespace LaptopNative
@@ -350,4 +351,36 @@ std::vector<ST::string> ImpPageText(int const page)
 	return r;
 }
 
+std::vector<DocBlock> ImpAboutDoc()
+{
+	// PrintImpText's IMP_ABOUT_US case: a heading and its text per section, left column then right
+	std::vector<DocBlock> doc;
+	for (LaptopContent::Section const& section : LaptopContent::ImpAboutSections())
+	{
+		DocBlock heading; heading.kind = "head"; heading.text = ImpRecord(section.heading);
+		if (!heading.text.empty()) doc.push_back(heading);
+		for (LaptopContent::Para const& para : section.paras)
+		{
+			DocBlock p; p.kind = "para"; p.text = ImpRecord(para.record);
+			if (!p.text.empty()) doc.push_back(p);
+		}
+	}
+	return doc;
 }
+
+ImpHomePage ImpHome()
+{
+	// PrintImpText's IMP_HOME_PAGE case: the tagline over the title, a disclaimer under it, the two
+	// testimonials with their names, then the activation line above the code field
+	ImpHomePage home;
+	home.tagline = ImpRecord(IMP_HOME_1);
+	home.notAffiliated = ImpRecord(IMP_HOME_2);
+	home.title = ImpRecord(IMP_HOME_3);
+	home.activation = ImpRecord(IMP_HOME_5);
+	home.hint = ImpRecord(IMP_HOME_6);
+	home.testimonials.push_back({ ImpRecord(IMP_HOME_7), ImpRecord(IMP_HOME_9) });
+	home.testimonials.push_back({ ImpRecord(IMP_HOME_8), ImpRecord(IMP_HOME_10) });
+	return home;
+}
+
+} // namespace LaptopNative

@@ -6,6 +6,7 @@
 #include "GraphicModel.h"
 #include "ItemModel.h"
 #include "ItemSystem.h"
+#include "LaptopContent.h"
 
 #include <cstdlib>
 
@@ -14,6 +15,14 @@ namespace NativeUI
 
 void RegisterLaptopImages()
 {
+	// "alumni-face-<index>": a former member's face from the A.I.M. alumni gallery
+	// (laptop/old_aim.sti), the frame the gallery's caption and bio are keyed by too (LaptopContent.h).
+	// Its frames are 56x50, so it is uplifted 2x and the card draws it at 112x100: a whole multiple,
+	// cropped nowhere.
+	RegisterImageSource("alumni-face-", [](std::string const& name) -> SDL_Surface* {
+		SDL_Surface* const face = LoadStiFrame(LaptopContent::AimAlumniFaceFile(), LaptopContent::AimAlumniFace(std::atoi(name.c_str() + 12)));
+		return face ? UpliftArt(face, 1) : nullptr;
+	});
 	// "shop-item-<index>": an item's big picture (the one Bobby Ray's and the item description box show), uplifted
 	// 2x with Scale2x. The page draws it at a whole multiple of that size, so its aspect ratio is always kept.
 	RegisterImageSource("shop-item-", [](std::string const& name) -> SDL_Surface* {

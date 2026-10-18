@@ -1053,11 +1053,4 @@ bool SendFlowers(FlowerOrder const& o)
 	return true;
 }
 
-std::vector<ST::string> FuneralText()
-{
-	std::vector<ST::string> r;
-	for (int i = FUNERAL_INTRO_1; i <= FUNERAL_OUR_SYMPATHIES; ++i) r.push_back(sFuneralString[i]);
-	return r;
-}
-
 }

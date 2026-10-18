@@ -479,3 +479,48 @@ span, div { display: block; }
 /* fit-ups from the review of the screenshots */
 .btn-site.wide { box-sizing: border-box; }
 .speck .bubble { max-height: 300dp; overflow-y: auto; }
+
+/* ---------------------------------------------------------------- documents (policies, history, a letter) */
+/* A document page: the letter itself, headings and numbered paragraphs, beside the design system's own
+ * contents list (a .list of .list-item, components.rcss). The A.I.M. policies, the A.I.M. history, the
+ * mortuary's letter and the I.M.P. about page are documents; the legacy pages are text screens with an
+ * index, so this is the construct that holds them. */
+.doc { flex: 1 1 0; min-width: 0; max-width: 1000dp; }
+.doc .blk { display: block; margin-bottom: var(--sp-4); }
+.doc .h { display: block; margin-bottom: var(--sp-3); font-family: var(--font-display); font-weight: 700; font-size: var(--fs-xl); text-transform: uppercase; letter-spacing: 1dp; color: var(--c-text-strong); }
+.doc p { display: block; line-height: 25dp; color: var(--c-text); }
+.doc .blk.para { display: flex; align-items: baseline; }
+.doc .blk.para .num { flex: 0 0 56dp; margin-right: var(--sp-3); font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-dim); }
+.doc .blk.para p { flex: 1 1 0; min-width: 0; }
+.doc-toc { flex: 0 0 320dp; margin-right: var(--sp-6); }
+.doc-toc .panel { overflow: hidden; }
+.doc-toc .tr { height: auto; min-height: 40dp; padding: var(--sp-1) var(--sp-4); font-size: var(--fs-sm); color: var(--c-text-dim); }
+.doc-toc .tr.selected { color: var(--c-text-strong); }
+.doc-toc .tr .c-tx { flex: 1 1 0; min-width: 0; white-space: normal; overflow: visible; line-height: 18dp; }
+.doc-nav { display: flex; align-items: center; margin-top: var(--sp-5); }
+.doc-nav .btn { margin-right: var(--sp-2); }
+
+/* the A.I.M. alumni gallery: the member card (the A.I.M. grid's own card) at the size of old_aim.sti's
+ * frames, which are 56x50 and are uplifted 2x, so the card draws them at a whole 112x100 */
+.mcard.alum { width: 132dp; }
+.mcard.alum .ph img { width: 112dp; }
+.mcard.alum .nm { font-size: var(--fs-md); }
+.alum-detail { flex: 0 0 420dp; margin-left: var(--sp-6); }
+.alum-detail .aim-info { margin-left: 0; }
+.alum-detail .aim-face, .alum-detail .aim-face .ph, .alum-detail .aim-face .ph img { width: 416dp; }
+
+/* the mortuary's letter and the modal its service cards open */
+.fun .doc p { color: #D8D2E4; }
+.fun .site-tile { width: 420dp; }
+.fun .site-tile.selected { border-color: var(--site-funeral); border-left-color: var(--site-funeral); }
+.fun .modal { border-top: 3dp var(--site-funeral); }
+.fun .modal .modal-body p { display: block; margin-bottom: var(--sp-3); line-height: 24dp; }
+
+/* the I.M.P. home: the tagline over the title, the two testimonials, then the activation field */
+.imp-tagline { display: block; margin-bottom: var(--sp-1); font-family: var(--font-mono); color: var(--site-imp); text-transform: uppercase; }
+.imp-title { display: block; margin-bottom: var(--sp-5); font-family: var(--font-display); font-weight: 700; font-size: var(--fs-2xl); text-transform: uppercase; color: #E9F6F8; }
+.imp-notaim { display: block; margin-bottom: var(--sp-3); font-size: var(--fs-sm); color: #8FB0B6; }
+.imp-quotes { display: flex; margin-bottom: var(--sp-6); }
+.imp-quote { flex: 1 1 0; margin-right: var(--sp-4); padding: var(--sp-3) var(--sp-4); background-color: var(--site-imp-band); border-left: 3dp var(--site-imp); }
+.imp-quote p { display: block; line-height: 24dp; color: #CFE3E6; font-size: var(--fs-sm); }
+.imp-quote .who { display: block; margin-top: var(--sp-2); font-family: var(--font-mono); font-size: var(--fs-xs); color: #8FB0B6; }

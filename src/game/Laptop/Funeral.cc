@@ -277,3 +277,35 @@ static void SelectRipSignRegionCallBack(MOUSE_REGION* pRegion, UINT32 iReason)
 		fPausedReDrawScreenFlag = TRUE;
 	}
 }
+
+
+// ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
+#include "LaptopNative.h"
+
+namespace LaptopNative
+{
+
+std::vector<ST::string> FuneralText()
+{
+	// the five sentences above the service links (FUNERAL_INTRO_1..5)
+	std::vector<ST::string> r;
+	for (int i = FUNERAL_INTRO_1; i <= FUNERAL_INTRO_5; ++i) r.push_back(sFuneralString[i]);
+	return r;
+}
+
+std::vector<ST::string> FuneralNotice()
+{
+	// what the sign says: the site is closed for a death in the family
+	return { sFuneralString[FUNERAL_OUR_CONDOLENCES], sFuneralString[FUNERAL_OUR_SYMPATHIES] };
+}
+
+std::vector<FuneralService> FuneralServices()
+{
+	// the five link carvings (FUNERAL_SEND_FLOWERS..FUNERAL_FUNERAL_ETTIQUETTE); only the first leads
+	// somewhere (the florist), the rest put up the sign
+	std::vector<FuneralService> r;
+	for (int i = 0; i < 5; ++i) r.push_back({ sFuneralString[FUNERAL_SEND_FLOWERS + i], i == 0 });
+	return r;
+}
+
+} // namespace LaptopNative
