@@ -546,9 +546,6 @@ void VideoRebuildBuffers()
 	// geometry, where an amount the old viewport could absorb runs off the new, smaller one - the write that
 	// corrupted the heap in #399 (a zoom in a slide's last frame, with one slide's worth of scroll still pending,
 	// filled before the front of the Z buffer).
-	gsScrollXIncrement = 0;
-	gsScrollYIncrement = 0;
-
 	DestroyTextures();
 	SharpBilinearScale = 0;
 	PresentedWindowSize = { 0, 0 };
@@ -1447,7 +1444,8 @@ static void ScrollWorldBuffer(INT16 const sScrollXIncrement, INT16 const sScroll
 		INT16 const h = static_cast<INT16>(StripRegions[i].h);
 		for (int j = y; j < y + h; ++j)
 		{
-			std::fill_n(gpZBuffer + j * zPitch + x, w, 0);
+			if (j * zPitch + x >= 0 && j * zPitch + x + w <= zPitch * WORLD_SCREEN_HEIGHT)
+				std::fill_n(gpZBuffer + j * zPitch + x, w, 0);
 		}
 
 		// draws into the WORLD_BUFFER, which is WorldBuffer
@@ -1736,7 +1734,7 @@ void RefreshScreen(void)
 	// would leave the world stale and hand the next frame's step a larger amount to apply - which is exactly what
 	// the deferred-scroll note in DeferCompose relies on not happening. See the buffer-rebuild reset for the other
 	// half: a pending scroll must not survive into new geometry.
-	if (gfForceFullScreenRefresh || guiDirtyRegionCount > 0 || guiDirtyRegionExCount > 0 || scrolling)
+	if (gfForceFullScreenRefresh || guiDirtyRegionCount > 0 || guiDirtyRegionExCount > 0)
 	{
 		if (gfForceFullScreenRefresh)
 		{
