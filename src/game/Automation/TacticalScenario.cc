@@ -92,6 +92,7 @@ namespace
 			m["name"]     = s->name.to_std_string();
 			m["id"]       = static_cast<int>(s->ubID);
 			m["selected"] = s == sel;
+			m["multi"] = (s->uiStatusFlags & SOLDIER_MULTI_SELECTED) != 0;
 			members[++n]  = m;
 		}
 		t["filled"]  = n;
