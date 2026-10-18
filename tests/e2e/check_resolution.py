@@ -21,10 +21,10 @@ PNGs with Pillow and compares them per pixel with numpy. Both are project
 dependencies managed by uv: run `uv sync` once in the repo root and a fresh
 cmake configure picks `.venv` up for ctest (see COMPILATION.md).
 
-With --update, a script that cannot mark a golden image at this resolution
-marks none, see expected_goldens()) is skipped instead of run: it would cost
-minutes of tour to write nothing. The plain comparison run still runs it,
-because it still checks the layout.
+With --update, a script that cannot mark a golden image at this resolution (its
+shots.take() calls register none - see expected_goldens()) is skipped instead of
+run: it would cost minutes of tour to write nothing. The plain comparison run
+still runs it, because it still checks the layout.
 
 The tour runs with the wall clock pinned and the version label fixed (see
 GOLDEN_CLOCK / GOLDEN_VERSION below). Two things the UI shows are not a function
@@ -37,7 +37,10 @@ A failing tour names the layer that failed: the tour (the driver printed
 "FAILED", or ended on one of its own codes without one), the golden compare (this
 file's exit code 5) or the process (no verdict, or a code outside the driver's
 1-4: a kill or a crash, never the script's result even when the code suggests
-one). The tour's own "passed"/"FAILED" line decides which.
+one). The tour's own "passed"/"FAILED" line decides which. Code 5 also carries a
+script whose shots.take() calls register a golden image but which marks none: the
+registration is unreachable, so the tour compares nothing while reading as pixel
+coverage (issue #389).
 """
 
 import argparse
@@ -124,6 +127,11 @@ def expected_goldens(script: Path, width: int) -> int:
     From the shots.take() calls in the script (tests/e2e/lib/shots.lua): with `true` it registers at
     every resolution, with `"small"` only up to 1280 pixels wide, without a flag never. A flag this
     function does not recognise counts as a golden image, so an odd script is run rather than skipped.
+
+    The count is only honest if every such call is reachable. A registration the tour returns before
+    - a shots.take(..., true) after an early `return` - makes this promise more than the script
+    delivers, and --update then runs the tour to write nothing; main() fails such a script rather
+    than report it (issue #389).
     """
     text = script.read_text(encoding="utf-8")
     if "golden.txt" in text:      # registered by hand, not through shots.take(): assume the worst
@@ -267,6 +275,7 @@ def main() -> int:
         code = proc.wait()
         marked = out / "golden.txt"
         golden_shots = marked.read_text().split() if marked.exists() else []
+        expected = expected_goldens(script, int(opts.res.split("x")[0]))
         if code != 0:
             print(f"{name} @ {opts.res}: {failure_reason(code, verdict, len(golden_shots))}",
                   file=sys.stderr)
@@ -274,7 +283,19 @@ def main() -> int:
             # (a killed Windows process reports 0xffffffff, which raises instead).
             return ja2ctl.exit_status(code)
         if not golden_shots:
-            print(f"{name} @ {opts.res}: passed (no golden shots marked)")
+            if expected:
+                # The script's shots.take() calls register golden image(s) here, but the tour
+                # marked none: the registration is unreachable (an early return, a branch it no
+                # longer takes), so the test reads as pixel coverage it does not have - and an
+                # --update run would drive it to write nothing. Say so instead of passing a test
+                # that cannot fail (issue #389).
+                print(f"{name} @ {opts.res}: the tour marked no golden image, but its shots.take() "
+                      f"calls register {expected} at {opts.res}: the registration is unreachable "
+                      "(an early return, a branch the tour no longer takes). Remove the "
+                      "registration, or run it and mark it - do not leave a test that cannot fail",
+                      file=sys.stderr)
+                return EXIT_GOLDEN_MISMATCH
+            print(f"{name} @ {opts.res}: passed (compares no golden image at this resolution)")
             return 0
         if opts.update:
             gold_dir.mkdir(parents=True, exist_ok=True)
