@@ -3,6 +3,7 @@
 #include "EDT.h"
 #include "Font.h"
 #include "Laptop.h"
+#include "LaptopContent.h"
 #include "AIMArchives.h"
 #include "AIM.h"
 #include "WordWrap.h"
@@ -33,8 +34,9 @@
 #define AIM_ALUMNI_PAGE_COLOR_UP	FONT_MCOLOR_DKWHITE
 #define AIM_ALUMNI_PAGE_COLOR_DOWN	138
 
-
-#define   OLD_MERCS_COUNT		51
+// One old_aim.sti frame, one alumname.edt row and one alumni.edt row per alumnus; the native gallery reads
+// the same count (LaptopContent.h states the pairing), so the two sides cannot drift apart.
+#define OLD_MERCS_COUNT LaptopContent::AimAlumniCount
 #define   AIM_ALUMNI_NUM_FACE_COLS	5
 #define   AIM_ALUMNI_NUM_FACE_ROWS	4
 #define   MAX_NUMBER_OLD_MERCS_ON_PAGE	(AIM_ALUMNI_NUM_FACE_ROWS * AIM_ALUMNI_NUM_FACE_COLS)
@@ -456,7 +458,6 @@ static void ChangingAimArchiveSubPage(UINT8 ubSubPageNumber)
 }
 
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
-#include "LaptopContent.h"
 #include "LaptopNative.h"
 
 namespace LaptopNative

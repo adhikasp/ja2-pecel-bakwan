@@ -481,10 +481,10 @@ span, div { display: block; }
 .speck .bubble { max-height: 300dp; overflow-y: auto; }
 
 /* ---------------------------------------------------------------- documents (policies, history, a letter) */
-/* A document page: the letter itself, headings and numbered paragraphs, beside the design system's own
- * contents list (a .list of .list-item, components.rcss). The A.I.M. policies, the A.I.M. history, the
- * mortuary's letter and the I.M.P. about page are documents; the legacy pages are text screens with an
- * index, so this is the construct that holds them. */
+/* A document page: the letter itself, headings and numbered paragraphs, beside a contents table (a .panel of
+ * the design system's .tr rows). The A.I.M. policies, the A.I.M. history, the mortuary's letter and the
+ * I.M.P. about page are documents; the legacy pages are text screens with an index, so this is the construct
+ * that holds them. */
 .doc { flex: 1 1 0; min-width: 0; max-width: 1000dp; }
 .doc .blk { display: block; margin-bottom: var(--sp-4); }
 .doc .h { display: block; margin-bottom: var(--sp-3); font-family: var(--font-display); font-weight: 700; font-size: var(--fs-xl); text-transform: uppercase; letter-spacing: 1dp; color: var(--c-text-strong); }
@@ -509,12 +509,13 @@ span, div { display: block; }
 .alum-detail .aim-info { margin-left: 0; }
 .alum-detail .aim-face, .alum-detail .aim-face .ph, .alum-detail .aim-face .ph img { width: 416dp; }
 
-/* the mortuary's letter and the modal its service cards open */
+/* the mortuary's letter and the modal its service cards open (the panel is a sibling of the page, outside
+ * the site's own element, so it carries the site's class itself) */
 .fun .doc p { color: #D8D2E4; }
 .fun .site-tile { width: 420dp; }
 .fun .site-tile.selected { border-color: var(--site-funeral); border-left-color: var(--site-funeral); }
-.fun .modal { border-top: 3dp var(--site-funeral); }
-.fun .modal .modal-body p { display: block; margin-bottom: var(--sp-3); line-height: 24dp; }
+.fun-modal { border-top: 3dp var(--site-funeral); }
+.fun-modal .modal-body p { display: block; margin-bottom: var(--sp-3); line-height: 24dp; }
 
 /* the I.M.P. home: the tagline over the title, the two testimonials, then the activation field */
 .imp-tagline { display: block; margin-bottom: var(--sp-1); font-family: var(--font-mono); color: var(--site-imp); text-transform: uppercase; }

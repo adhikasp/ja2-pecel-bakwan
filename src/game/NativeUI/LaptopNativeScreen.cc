@@ -73,13 +73,13 @@ void LaptopViewModel::ReadImp()
 	impText.clear();
 	if (impStep != "home" && impStep != "about")
 	{
-		int const textPage = impStep == "main"          ? 2
-							 : impStep == "begin"       ? 3
-							 : impStep == "personality" ? 4
-							 : impStep == "attributes"  ? 5
-							 : impStep == "portrait"    ? 6
-							 : impStep == "voice"       ? 7
-														: 8;
+		int const textPage = impStep == "main"          ? 0
+							 : impStep == "begin"       ? 1
+							 : impStep == "personality" ? 2
+							 : impStep == "attributes"  ? 3
+							 : impStep == "portrait"    ? 4
+							 : impStep == "voice"       ? 5
+														: 6;
 		for (ST::string const& t : LaptopNative::ImpPageText(textPage)) impText.push_back(S(t));
 	}
 

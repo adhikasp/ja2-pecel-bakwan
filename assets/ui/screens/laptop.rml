@@ -582,7 +582,7 @@
 
 		<!-- the mortuary's service detail: the same page's modal, the way the A.I.M. and I.M.P. leaves drill down -->
 		<div class="scrim audit-over" data-if="site == 'funeral' &amp;&amp; funeral_sel &gt;= 0" data-event-click="funeral_close"></div>
-		<div class="modal audit-over" id="funeral.detail" data-if="site == 'funeral' &amp;&amp; funeral_sel &gt;= 0" style="left: 50%; top: 50%; width: 560dp; margin-left: -280dp; margin-top: -170dp;">
+		<div class="modal audit-over fun-modal" id="funeral.detail" data-if="site == 'funeral' &amp;&amp; funeral_sel &gt;= 0" style="left: 50%; top: 50%; width: 560dp; margin-left: -280dp; margin-top: -170dp;">
 			<div class="modal-head"><img class="icon status" src="icon-info" style="image-color: var(--site-funeral);"/><span class="title" id="funeral.detail.title">{{funeral_title}}</span><button class="icon-btn" id="funeral.detail.close" data-label="Close" title="Close" data-event-click="funeral_close"><img class="icon" src="icon-close"/></button></div>
 			<div class="modal-body" id="funeral.detail.body">
 				<p data-for="n : funeral_notice" data-if="!funeral_flowers">{{n.title}}</p>

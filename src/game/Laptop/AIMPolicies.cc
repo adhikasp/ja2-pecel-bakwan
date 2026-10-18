@@ -714,9 +714,9 @@ namespace
 	 * read the way EnterAimPolicies opens it. */
 ST::string PolicyRecord(int const record)
 {
-	if (!gAimPolicyTexts) gAimPolicyTexts = EDTFile(EDTFile::AIM_POLICIES);
 	try
 	{
+		if (!gAimPolicyTexts) gAimPolicyTexts = EDTFile(EDTFile::AIM_POLICIES);
 		return gAimPolicyTexts->at(unsigned(record));
 	}
 	catch (...)

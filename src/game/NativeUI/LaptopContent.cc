@@ -60,14 +60,15 @@ std::vector<Section> const& AimHistoryChapters()
 
 std::vector<Section> const& ImpAboutSections()
 {
-	// IMP_Text_System.cc's IMP_ABOUT_US case: the left column is 1 -> 2, 10 -> 4 and the right column is
-	// 11 -> 5, 8 -> 6, 9 -> 7 (IMP_ABOUT_US_1 is the record of the first heading).
+	// IMP_Text_System.cc's IMP_ABOUT_US case, left column then right: "Can You Be Your Own Worst Enemy?"
+	// (its second text, record 12, is empty in the shipped data so it reads as one paragraph), "Why you need
+	// us:", "What you get:", "How much:", "When:".
 	static std::vector<Section> const v = {
-		{ 10, { { 11, "" } } }, // "Can You Be Your Own Worst Enemy?"
-		{ 19, { { 13, "" } } }, // "Why you need us:"
-		{ 20, { { 14, "" } } }, // "What you get:"
-		{ 17, { { 15, "" } } }, // "How much:"
-		{ 18, { { 16, "" } } }, // "When:"
+		{ 10, { { 11, "" }, { 12, "" } } },
+		{ 19, { { 13, "" } } },
+		{ 20, { { 14, "" } } },
+		{ 17, { { 15, "" } } },
+		{ 18, { { 16, "" } } },
 	};
 	return v;
 }

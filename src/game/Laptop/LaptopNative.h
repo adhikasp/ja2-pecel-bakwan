@@ -195,7 +195,8 @@ namespace LaptopNative
 	enum class ImpResult { Created, NoFunds, Invalid };
 	ImpResult ImpCreate(ImpChoices const&);
 	std::vector<ST::string> ImpSkillNames();
-	/** I.M.P. text records: 0 home, 1 about us, 2 main page, 3 begin, 4 personality, 5 attributes, 6 portrait, 7 voice, 8 finish. */
+	/** I.M.P. text records of the profile flow: 0 main page, 1 begin, 2 personality, 3 attributes, 4 portrait,
+	 * 5 voice, 6 finish. The home and About Us pages are documents (ImpHome, ImpAboutDoc). */
 	std::vector<ST::string> ImpPageText(int page);
 
 	// ---- florist, insurance, mortuary -------------------------------------------------------------------------

@@ -444,9 +444,9 @@ namespace
 /** A row of the A.I.M. history text (aimhist.edt), "" when the file has no such row. */
 ST::string HistoryRecord(int const record)
 {
-	OpenAIMTexts();
 	try
 	{
+		OpenAIMTexts();
 		return LoadAIMText(unsigned(record));
 	}
 	catch (...)
