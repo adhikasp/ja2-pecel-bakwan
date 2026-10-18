@@ -47,22 +47,7 @@ namespace
 		{ FUNERAL_BOOKMARK, "funeral", "bm-fun" },
 		{ INSURANCE_BOOKMARK, "insurance", "bm-ins" },
 	};
-	}
-
-	void LaptopViewModel::Document(std::vector<LaptopNative::DocBlock> const& blocks, std::vector<Row>& out)
-	{
-		out.clear();
-		int i = 0;
-		for (LaptopNative::DocBlock const& b : blocks)
-		{
-			Row r;
-			r.index = i++;
-			r.cls = S(b.kind);
-			r.title = S(b.text);
-			r.value = S(b.number);
-			out.push_back(r);
-		}
-	}
+}
 
 void LaptopViewModel::RegisterSiteCommands()
 {
@@ -803,4 +788,18 @@ void LaptopViewModel::DescribeSites(Fields& f)
 	f.Field("imp_hint", impHint);
 }
 
+void LaptopViewModel::Document(std::vector<LaptopNative::DocBlock> const& blocks, std::vector<Row>& out)
+{
+	out.clear();
+	int i = 0;
+	for (LaptopNative::DocBlock const& b : blocks)
+	{
+		Row r;
+		r.index = i++;
+		r.cls = S(b.kind);
+		r.title = S(b.text);
+		r.value = S(b.number);
+		out.push_back(r);
+	}
+}
 }
