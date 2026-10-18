@@ -53,7 +53,7 @@ TEST(TacticalShortcuts, oneActionPerKeyOnTheScreen)
 	for (Command const& c : All())
 	{
 		if (std::string(c.key).empty()) continue;
-		EXPECT_TRUE(keys.insert(c.key).second) << c.key << " runs both " << c.key << " actions";
+		EXPECT_TRUE(keys.insert(c.key).second) << c.key << " is declared by two shortcuts";
 	}
 	// and none collides with the HUD's command table (the registry resolves that; this is the table's own promise)
 	for (Command const& c : All())
