@@ -11,6 +11,13 @@ local native = size.w >= 1280 and size.h >= 720
 
 campaign.startWithMerc("Barry")
 
+-- The mercs land under the helicopter's exit animation, whose length is a function of the screen width
+-- (Merc_Entering.cc: REPEAT_HELI_MOVEAWAY repeats frames in proportion to it: 74 frames at 1280x720, 229
+-- at 3440x1440), and the game keeps drawing random numbers while it runs, so the RNG state here - and so
+-- the fight this panel stages - is a function of the resolution, not of the seed (issue #403). The battle
+-- is the state this tour's shots depend on: re-pin the RNG now, so it is a function of the seed alone.
+campaign.reseed()
+
 if not native then
 	ja2.expect(ja2.nativeUi().screen == "", "auto-resolve is legacy below 1280x720")
 	return

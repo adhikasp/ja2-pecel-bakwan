@@ -2,6 +2,7 @@
 -- game state checked after each action. Below 1280x720 the legacy screen runs and only that is checked.
 local shots = require("lib.shots")
 local mapcampaign = require("lib.mapcampaign")
+local campaign = require("lib.campaign")
 
 ja2.waitScreen("MAINMENU_SCREEN")
 ja2.waitIdle()
@@ -150,6 +151,13 @@ ja2.hover(id("map.sector[B9]"))
 ja2.waitIdle()
 ja2.expect(#vm().route > 0, "the temporary route follows the mouse")
 shots.take("mapscreen_plotting.png", true)
+-- Confirming a route picks a random awake selected merc to confirm it out loud
+-- (RandomAwakeSelectedMercConfirmsStrategicMove) and makes him the info char, so which merc the shots
+-- below show is a function of the RNG state - and of how many frames (and so how many time-based draws,
+-- merc faces blink) the run spent getting here, which is a function of the resolution (issue #403).
+-- Confirming is the point this tour's state depends on: re-pin the RNG here, as the campaign steps do at
+-- their flow points, so the pick is a function of the seed and not of the resolution.
+campaign.reseed()
 ja2.click(id("map.sector[B9]"))
 ja2.waitIdle()
 ja2.click(id("map.sector[B9]"))
@@ -157,6 +165,7 @@ ja2.waitIdle()
 ja2.expect(vm().banner == "", "a second click confirms the route")
 local dest = vm().team[1].destination
 ja2.expect(dest:find("B9"), "Barry's destination is B9 (" .. dest .. ")")
+ja2.expect(vm().m_nick == "Barry", "the seeded pick is Barry (" .. tostring(vm().m_nick) .. ")")
 shots.take("mapscreen_route.png")
 ja2.rclick(id("map.team[" .. barry .. "].destination"))
 ja2.waitIdle()
