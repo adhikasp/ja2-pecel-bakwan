@@ -701,7 +701,6 @@ static void ChangingAimPoliciesSubPage(UINT8 ubSubPageNumber)
 	}
 }
 
-
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
 #include "LaptopContent.h"
 #include "LaptopNative.h"
@@ -711,13 +710,20 @@ namespace LaptopNative
 
 namespace
 {
-	/** The policy text of @a record, "" when the file has no such row.  The page's own text (aimpol.edt),
+/** The policy text of @a record, "" when the file has no such row.  The page's own text (aimpol.edt),
 	 * read the way EnterAimPolicies opens it. */
-	ST::string PolicyRecord(int const record)
+ST::string PolicyRecord(int const record)
+{
+	if (!gAimPolicyTexts) gAimPolicyTexts = EDTFile(EDTFile::AIM_POLICIES);
+	try
 	{
-		if (!gAimPolicyTexts) gAimPolicyTexts = EDTFile(EDTFile::AIM_POLICIES);
-		try { return gAimPolicyTexts->at(unsigned(record)); } catch (...) { return {}; }
+		return gAimPolicyTexts->at(unsigned(record));
 	}
+	catch (...)
+	{
+		return {};
+	}
+}
 }
 
 int AimPolicyPageCount()
@@ -729,7 +735,8 @@ int AimPolicyPageCount()
 std::vector<DocBlock> AimPolicyDoc(int const page)
 {
 	std::vector<DocBlock> doc;
-	DocBlock heading; heading.kind = "head";
+	DocBlock heading;
+	heading.kind = "head";
 
 	if (page == 0)
 	{
@@ -737,7 +744,9 @@ std::vector<DocBlock> AimPolicyDoc(int const page)
 		if (!heading.text.empty()) doc.push_back(heading);
 		for (int const record : LaptopContent::AimPolicyStatementParas())
 		{
-			DocBlock p; p.kind = "para"; p.text = PolicyRecord(record);
+			DocBlock p;
+			p.kind = "para";
+			p.text = PolicyRecord(record);
 			if (!p.text.empty()) doc.push_back(p);
 		}
 		return doc;
@@ -750,7 +759,10 @@ std::vector<DocBlock> AimPolicyDoc(int const page)
 	if (!heading.text.empty()) doc.push_back(heading);
 	for (LaptopContent::Para const& para : section.paras)
 	{
-		DocBlock p; p.kind = "para"; p.number = para.number; p.text = PolicyRecord(para.record);
+		DocBlock p;
+		p.kind = "para";
+		p.number = para.number;
+		p.text = PolicyRecord(para.record);
 		if (!p.text.empty()) doc.push_back(p);
 	}
 	return doc;

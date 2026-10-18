@@ -357,11 +357,15 @@ std::vector<DocBlock> ImpAboutDoc()
 	std::vector<DocBlock> doc;
 	for (LaptopContent::Section const& section : LaptopContent::ImpAboutSections())
 	{
-		DocBlock heading; heading.kind = "head"; heading.text = ImpRecord(section.heading);
+		DocBlock heading;
+		heading.kind = "head";
+		heading.text = ImpRecord(section.heading);
 		if (!heading.text.empty()) doc.push_back(heading);
 		for (LaptopContent::Para const& para : section.paras)
 		{
-			DocBlock p; p.kind = "para"; p.text = ImpRecord(para.record);
+			DocBlock p;
+			p.kind = "para";
+			p.text = ImpRecord(para.record);
 			if (!p.text.empty()) doc.push_back(p);
 		}
 	}

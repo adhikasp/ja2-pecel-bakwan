@@ -300,7 +300,11 @@ void LaptopViewModel::Navigate(std::string const& s, std::string p, bool const r
 	bool const enteringMerc = s == "merc" && (site != "merc" || app != "web") && p == "home";
 	// each document starts at its first page; the A.I.M. policies ask for agreement again on every entry, and
 	// a mortuary service's detail panel does not follow the player to another page
-	if (s == "aim" && p == "policies" && page != "policies") { aimPolicyAgreed = false; aimPolicyPage = 0; }
+	if (s == "aim" && p == "policies" && page != "policies")
+	{
+		aimPolicyAgreed = false;
+		aimPolicyPage = 0;
+	}
 	if (s == "aim" && p == "history" && page != "history") aimHistoryPage = 0;
 	// a mortuary service's detail panel does not follow the player to another page
 	if (!(s == "funeral" && p == "home" && site == "funeral" && page == "home")) funeralSel = -1;

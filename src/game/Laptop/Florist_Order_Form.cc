@@ -1052,5 +1052,4 @@ bool SendFlowers(FlowerOrder const& o)
 	LaptopSaveInfo.uiFlowerOrderNumber += 1 + Random(2);
 	return true;
 }
-
 }

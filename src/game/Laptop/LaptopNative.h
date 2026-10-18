@@ -86,17 +86,23 @@ namespace LaptopNative
 	// ---- documents (A.I.M. policies and history, the I.M.P. home and about pages; LaptopContent.h) -------------
 	/** A block of a document page: its kind ("head" for a heading, "para" for a paragraph), the number the
 	 * page prints beside it ("" when it prints none) and its text. */
-	struct DocBlock { ST::string kind, number, text; };
+	struct DocBlock
+	{
+		ST::string kind, number, text;
+	};
 	/** The A.I.M. policies: page 0 the statement of policy, pages 1..9 the numbered sections (aimpol.edt). */
 	std::vector<DocBlock> AimPolicyDoc(int page);
-	int  AimPolicyPageCount(); // 10
+	int AimPolicyPageCount(); // 10
 	/** The A.I.M. history: pages 0..4 the five chapters (aimhist.edt). */
 	std::vector<DocBlock> AimHistoryDoc(int page);
-	int  AimHistoryPageCount(); // 5
+	int AimHistoryPageCount(); // 5
 	/** The I.M.P. About Us page, as IMP_Text_System.cc lays it out: a heading and its text per section. */
 	std::vector<DocBlock> ImpAboutDoc();
 	/** The I.M.P. home page: its headings and the two testimonials (imptext.edt). */
-	struct ImpTestimonial { ST::string quote, who; };
+	struct ImpTestimonial
+	{
+		ST::string quote, who;
+	};
 	struct ImpHomePage
 	{
 		ST::string tagline, notAffiliated, title, activation, hint;
@@ -105,10 +111,18 @@ namespace LaptopNative
 	ImpHomePage ImpHome();
 	/** The A.I.M. alumni gallery: the faces (old_aim.sti), captions (alumname.edt) and bios (alumni.edt) are
 	 * paired by the index (LaptopContent.h). */
-	struct AlumniEntry { int index; ST::string name, fullName, bio; };
+	struct AlumniEntry
+	{
+		int index;
+		ST::string name, fullName, bio;
+	};
 	std::vector<AlumniEntry> AimAlumni();
 	/** The mortuary's five services: the card's label and whether the link leads anywhere (Funeral.cc). */
-	struct FuneralService { ST::string title; bool flowers; };
+	struct FuneralService
+	{
+		ST::string title;
+		bool flowers;
+	};
 	std::vector<FuneralService> FuneralServices();
 	/** The notice the mortuary's sign carries: closed for a death in the family. */
 	std::vector<ST::string> FuneralNotice();

@@ -15,19 +15,19 @@ using namespace LaptopContent;
 
 namespace
 {
-	/** "3.21" as the number the page prints, compared numerically (3.2 < 3.21 < 3.3). */
-	double Number(char const* text)
-	{
-		if (!text || !*text) return -1;
-		return std::stod(text);
-	}
+/** "3.21" as the number the page prints, compared numerically (3.2 < 3.21 < 3.3). */
+double Number(char const* text)
+{
+	if (!text || !*text) return -1;
+	return std::stod(text);
+}
 
-	/** The major part of "3.21" (3), or -1. */
-	int Major(char const* text)
-	{
-		if (!text || !*text || !std::isdigit(static_cast<unsigned char>(*text))) return -1;
-		return *text - '0';
-	}
+/** The major part of "3.21" (3), or -1. */
+int Major(char const* text)
+{
+	if (!text || !*text || !std::isdigit(static_cast<unsigned char>(*text))) return -1;
+	return *text - '0';
+}
 }
 
 TEST(LaptopContent, aimPolicyTableCoversEverySectionInOrder)
@@ -66,7 +66,8 @@ TEST(LaptopContent, aimPolicyTableCoversEverySectionInOrder)
 
 TEST(LaptopContent, aimHistoryAndImpAboutReadEveryRecordOnce)
 {
-	auto checkUnique = [](std::vector<Section> const& sections, int expected, bool ordered) {
+	auto checkUnique = [](std::vector<Section> const& sections, int expected, bool ordered)
+	{
 		ASSERT_EQ(int(sections.size()), expected);
 		std::set<int> records;
 		for (Section const& s : sections)

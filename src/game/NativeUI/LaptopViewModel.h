@@ -63,7 +63,7 @@ namespace NativeUI
 		std::string hireState; // "", "calling", "talk", "hire", "machine", "unavailable", "refused", "hired"
 		int funeralSel = -1;   // the mortuary service whose detail panel is open, -1 for none
 
-	private:
+	  private:
 		void History(int delta);
 		void Navigate(std::string const& site, std::string page, bool record);
 		int  SiteMode() const;
@@ -151,11 +151,13 @@ namespace NativeUI
 
 		// documents (the A.I.M. policies and history, the I.M.P. about page, the mortuary's letter) and the
 		// A.I.M. links and alumni pages
-		std::vector<Row> aimDoc, aimToc, aimAlumni, aimLinks, funeralDoc, funeralServices, funeralNotice, impDoc, impQuotes;
+		std::vector<Row> aimDoc, aimToc, aimAlumni, aimLinks, funeralDoc, funeralServices, funeralNotice, impDoc,
+			impQuotes;
 		int aimPolicyPage = 0, aimHistoryPage = 0, alumniSel = 0;
 		bool aimPolicyAgreed = false;
 		std::string alumniFace, alumniName, alumniFull, alumniBio;
-		std::string funeralTitle; bool funeralFlowers = false;
+		std::string funeralTitle;
+		bool funeralFlowers = false;
 
 		// M.E.R.C.
 		std::vector<Row> mercFiles; std::string speck, mercOwed, mercAccount; int mercStatus = 0; bool mercHasAccount = false;

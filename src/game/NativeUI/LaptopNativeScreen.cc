@@ -53,13 +53,19 @@ void LaptopViewModel::ReadImp()
 	// the About Us page is a document (a heading and its text per section); the home page is the tagline,
 	// the two testimonials and the activation line, all from imptext.edt
 	auto const home = LaptopNative::ImpHome();
-	impTagline = S(home.tagline); impNotAffiliated = S(home.notAffiliated); impTitle = S(home.title);
-	impActivation = S(home.activation); impHint = S(home.hint);
+	impTagline = S(home.tagline);
+	impNotAffiliated = S(home.notAffiliated);
+	impTitle = S(home.title);
+	impActivation = S(home.activation);
+	impHint = S(home.hint);
 	impQuotes.clear();
 	int q = 0;
 	for (LaptopNative::ImpTestimonial const& t : home.testimonials)
 	{
-		Row r; r.index = q++; r.title = S(t.quote); r.value = S(t.who);
+		Row r;
+		r.index = q++;
+		r.title = S(t.quote);
+		r.value = S(t.who);
 		impQuotes.push_back(r);
 	}
 	Document(LaptopNative::ImpAboutDoc(), impDoc);
@@ -67,8 +73,13 @@ void LaptopViewModel::ReadImp()
 	impText.clear();
 	if (impStep != "home" && impStep != "about")
 	{
-		int const textPage = impStep == "main" ? 2 : impStep == "begin" ? 3 :
-			impStep == "personality" ? 4 : impStep == "attributes" ? 5 : impStep == "portrait" ? 6 : impStep == "voice" ? 7 : 8;
+		int const textPage = impStep == "main"          ? 2
+							 : impStep == "begin"       ? 3
+							 : impStep == "personality" ? 4
+							 : impStep == "attributes"  ? 5
+							 : impStep == "portrait"    ? 6
+							 : impStep == "voice"       ? 7
+														: 8;
 		for (ST::string const& t : LaptopNative::ImpPageText(textPage)) impText.push_back(S(t));
 	}
 
@@ -275,7 +286,11 @@ namespace
 			// the topmost thing first: the open mail, a page's detail panel, the hire panel, the web page, the
 			// program, then the laptop
 			if (m_vm.app == "email" && m_vm.mailOpen >= 0) { m_vm.Invoke("mail_close"); return; }
-			if (m_vm.app == "web" && m_vm.funeralSel >= 0) { m_vm.Invoke("funeral_close"); return; }
+			if (m_vm.app == "web" && m_vm.funeralSel >= 0)
+			{
+				m_vm.Invoke("funeral_close");
+				return;
+			}
 			if (m_vm.app == "web" && !m_vm.hireState.empty()) { m_vm.Invoke("aim_hangup"); return; }
 			if (m_vm.app != "desktop") { m_vm.OpenApp("desktop"); return; }
 			Action("close");

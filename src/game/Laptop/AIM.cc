@@ -1032,4 +1032,3 @@ static UINT8 GetNextAimAd(UINT8 ubCurrentAd)
 
 	return( ubNextAd );
 }
-

@@ -455,7 +455,6 @@ static void ChangingAimArchiveSubPage(UINT8 ubSubPageNumber)
 	}
 }
 
-
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
 #include "LaptopContent.h"
 #include "LaptopNative.h"
@@ -469,18 +468,29 @@ std::vector<AlumniEntry> AimAlumni()
 	// (the caption) and alumni.edt row i (the full name in column 0, the bio in column 1).
 	std::vector<AlumniEntry> gallery;
 	std::optional<EDTFile> names, texts;
-	try { names = EDTFile(EDTFile::AIM_ALUMNI_NAMES); texts = EDTFile(EDTFile::AIM_ALUMNI_TEXTS); }
-	catch (...) { return gallery; }
+	try
+	{
+		names = EDTFile(EDTFile::AIM_ALUMNI_NAMES);
+		texts = EDTFile(EDTFile::AIM_ALUMNI_TEXTS);
+	}
+	catch (...)
+	{
+		return gallery;
+	}
 	for (int i = 0; i < LaptopContent::AimAlumniCount; ++i)
 	{
-		AlumniEntry entry; entry.index = i;
+		AlumniEntry entry;
+		entry.index = i;
 		try
 		{
 			entry.name = names->at(unsigned(LaptopContent::AimAlumniNameRow(i)), 0);
 			entry.fullName = texts->at(unsigned(LaptopContent::AimAlumniBioRow(i)), 0);
 			entry.bio = texts->at(unsigned(LaptopContent::AimAlumniBioRow(i)), 1);
 		}
-		catch (...) { continue; }
+		catch (...)
+		{
+			continue;
+		}
 		gallery.push_back(std::move(entry));
 	}
 	return gallery;

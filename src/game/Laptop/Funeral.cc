@@ -278,7 +278,6 @@ static void SelectRipSignRegionCallBack(MOUSE_REGION* pRegion, UINT32 iReason)
 	}
 }
 
-
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
 #include "LaptopNative.h"
 
