@@ -73,10 +73,10 @@ FLOAT getMajorMapVersion()
 #define STI(LNG, x) LNG "/" x "_" LNG ".sti"
 #define PCX(LNG, x) LNG "/" x "_" LNG ".pcx"
 
-
 char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion const version)
 {
-	if((version == GameVersion::ENGLISH) || (version == GameVersion::FRENCH) || (version == GameVersion::RUSSIAN_GOLD) || (version == GameVersion::SIMPLIFIED_CHINESE))
+	if ((version == GameVersion::ENGLISH) || (version == GameVersion::FRENCH) ||
+		(version == GameVersion::RUSSIAN_GOLD) || (version == GameVersion::SIMPLIFIED_CHINESE))
 	{
 		switch (id)
 		{
@@ -117,7 +117,7 @@ char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion 
 				break;
 		}
 	}
-	else if(version == GameVersion::GERMAN)
+	else if (version == GameVersion::GERMAN)
 	{
 		switch (id)
 		{
@@ -158,7 +158,7 @@ char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion 
 				break;
 	}
 	}
-	else if(version == GameVersion::DUTCH)
+	else if (version == GameVersion::DUTCH)
 	{
 		switch (id)
 		{
@@ -199,7 +199,7 @@ char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion 
 				break;
 		}
 	}
-	else if(version == GameVersion::ITALIAN)
+	else if (version == GameVersion::ITALIAN)
 	{
 		switch (id)
 		{
@@ -240,7 +240,7 @@ char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion 
 				break;
 		}
 	}
-	else if(version == GameVersion::POLISH)
+	else if (version == GameVersion::POLISH)
 	{
 		switch (id)
 		{
@@ -281,7 +281,7 @@ char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion 
 				break;
 		}
 	}
-	else if(version == GameVersion::RUSSIAN)
+	else if (version == GameVersion::RUSSIAN)
 	{
 		switch (id)
 		{
@@ -326,7 +326,6 @@ char const* GetMLGFilenameForVersion(MultiLanguageGraphic const id, GameVersion 
 	throw std::runtime_error(ST::format("Multilanguage resource {} is not found", id).to_std_string());
 }
 
-
 char const* ResolveMLGFilename(MultiLanguageGraphic const id, GameVersion const version, bool const localisedPresent)
 {
 	char const* const localised = GetMLGFilenameForVersion(id, version);
@@ -339,7 +338,6 @@ char const* ResolveMLGFilename(MultiLanguageGraphic const id, GameVersion const 
 	// loader already does for a missing translation.
 	return GetMLGFilenameForVersion(id, GameVersion::ENGLISH);
 }
-
 
 char const* GetMLGFilename(MultiLanguageGraphic const id)
 {
@@ -355,7 +353,6 @@ char const* GetMLGFilename(MultiLanguageGraphic const id)
 	bool const present = GCM != nullptr && GCM->doesGameResExists(localised);
 	return ResolveMLGFilename(id, s_gameVersion, present);
 }
-
 
 SGPVObject* AddVideoObjectFromFile(MultiLanguageGraphic const mlg)
 {

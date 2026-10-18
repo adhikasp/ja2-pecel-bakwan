@@ -20,7 +20,7 @@ void InitJA2SplashScreen(bool const showSplash)
 	// the load aborts the process before the main menu (#411).
 	if (showSplash)
 	{
-		if(isEnglishVersion() || isChineseVersion())
+		if (isEnglishVersion() || isChineseVersion())
 		{
 			ClearMainMenu();
 		}

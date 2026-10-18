@@ -3,7 +3,6 @@
 
 #include "Types.h"
 
-
 void InitJA2SplashScreen(bool showSplash);
 
 extern UINT32 guiSplashFrameFade;
