@@ -17,6 +17,12 @@ matrix (`ctest -R resolution_`) only when the change alters how the game
 renders — a new menu, a texture/asset, or the renderer itself. See
 [../README.md](../README.md#resolution-matrix).
 
+A **localisation run** (`ctest -L localisation`, the DE/RU/PL laptop audit of
+[#175](https://github.com/adhikasp/ja2-pecel-bakwan/issues/175)) never comes
+through here: it drives the tours with `ja2ctl` and `-- -resversion`, registers
+and compares no golden image, and is a layout audit only. There is no golden set
+per language, and no language dimension in this directory.
+
 Regenerate after an intentional visual change (from the build dir):
 
     python ../tests/e2e/check_resolution.py ../tests/e2e/laptop_tour.lua 1280x720 --update

@@ -848,6 +848,40 @@ if (WITH_UNITTESTS)
             WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
             DEPENDS "${JA2_BINARY}"
         )
+        # --- localisation: the laptop at the shipped languages (issue #175) ---
+        # A structural audit, not a pixel comparison: the DE/RU/PL runs drive the two
+        # laptop tours with that language's string tables loaded (-- -resversion), and
+        # go straight through ja2ctl, never through check_resolution.py. So they
+        # register and compare no golden image and need no second golden set - the
+        # owner's decision on #302 (resolution stays real-and-local, behavioural e2e
+        # goes synthetic). What the tours already assert is what the audit is after:
+        # ja2.assertInsideScreen() / ja2.layoutProblems() catch clipped, overlapping
+        # and truncated text. Note that the native chrome (assets/ui/strings) is
+        # English in every language today - translating it is #128, not this - so
+        # these runs exercise translated *data* against English *chrome*.
+        # A tier of its own on purpose: not `e2e` and not `resolution`, so neither
+        # existing sweep grows, and not an area, so `dev.py e2e --changed` never
+        # selects it. Run it with `ctest -L localisation`.
+        # When #302 lands synthetic game data, the same tests move into CI as they
+        # are; until then the release checklist is their home (docs/ui/review-checklist.md).
+        set(LOCALISATION_LANGS "GERMAN:ger" "POLISH:pol" "RUSSIAN:rus")
+        foreach(entry IN LISTS LOCALISATION_LANGS)
+            string(REPLACE ":" ";" pair "${entry}")
+            list(GET pair 0 lang)
+            list(GET pair 1 suffix)
+            foreach(tour laptop_tour laptop_parity)
+                add_test(
+                    NAME localisation_${tour}_${suffix}
+                    COMMAND "${Python3_EXECUTABLE}" "${JA2CTL}" run "${CMAKE_CURRENT_SOURCE_DIR}/tests/e2e/${tour}.lua" --isolated
+                        --res 1920x1080 --timeout 900
+                        --out "${CMAKE_CURRENT_BINARY_DIR}/e2e-out/localisation/${tour}_${suffix}"
+                        -- -resversion ${lang}
+                )
+                set_tests_properties(localisation_${tour}_${suffix} PROPERTIES
+                    LABELS localisation
+                    ENVIRONMENT "JA2_BIN=$<TARGET_FILE:${JA2_BINARY}>")
+            endforeach()
+        endforeach()
     else()
         message(STATUS "Python 3 not found: e2e tests are not registered")
     endif()

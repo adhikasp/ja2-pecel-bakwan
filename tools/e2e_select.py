@@ -51,11 +51,14 @@ AREAS = (
 # smoke pass must carry exactly these; the drift guard checks that.
 SMOKE = ("main_menu", "mainmenu_parity", "new_game_to_tactical", "native_ui")
 
-# Labels that are not areas: the tier (`e2e`, `smoke`) and — issue #302 — which
-# data a run booted from. The behavioural suite has two sides and CI selects on
-# the second one (`ctest -L '^e2e-synthetic$'`), so a synthetic run is never read
-# as a real one; `--changed` keeps selecting the real runs by area.
-TIER_LABELS = ("e2e", "smoke", "e2e-real", "e2e-synthetic")
+# Labels that are not areas: the tier (`e2e`, `smoke`, `localisation`) and — issue
+# #302 — which data a run booted from. The behavioural suite has two sides and CI
+# selects on the second one (`ctest -L '^e2e-synthetic$'`), so a synthetic run is
+# never read as a real one; `--changed` keeps selecting the real runs by area.
+# `localisation` (#175) is the DE/RU/PL laptop layout audit: its runs are their own
+# tier, deliberately outside `e2e`/`resolution` and outside the area vocabulary, so
+# neither existing sweep nor `--changed` grows by them. A drift guard keeps it so.
+TIER_LABELS = ("e2e", "smoke", "e2e-real", "e2e-synthetic", "localisation")
 REAL_LABEL = "e2e-real"
 SYNTHETIC_LABEL = "e2e-synthetic"
 
