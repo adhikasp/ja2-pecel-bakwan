@@ -1933,6 +1933,37 @@ namespace
 			return t;
 		});
 
+		// ja2.uiFrameTiming([true | "stop"]): the native UI layer's own per-frame host time since the last reset
+		// {recording, path, frames, samples, mean, p50, p95, max}. true starts a measurement (samples == 0) and turns
+		// recording on, "stop" turns it off after reading, no argument reads what is there. It is the RmlUi update,
+		// record and upload plus the draw submission -- CPU time, no GPU wait and no present, so it is not the
+		// VSYNC-quantised ja2.frameTiming(). `path` says which layer produced it: a headless run is "software" and
+		// its number must not be quoted as the 4K GPU budget (docs/plan/native-modern-game-decisions.md, Performance).
+		ja2.set_function("uiFrameTiming",
+						 [](sol::optional<sol::object> arg)
+						 {
+							 bool start = false, stop = false;
+							 if (arg && arg->valid() && arg->get_type() != sol::type::nil)
+							 {
+								 if (arg->is<bool>())
+									 start = arg->as<bool>();
+								 else if (arg->is<std::string>())
+									 stop = arg->as<std::string>() == "stop";
+							 }
+							 NativeUI::FrameTiming const f = NativeUI::UiFrameTiming(start);
+							 if (stop) NativeUI::SetFrameTimingRecording(false);
+							 sol::table t = g_lua.create_table();
+							 t["recording"] = f.recording;
+							 t["path"] = f.gpu ? "gpu" : "software";
+							 t["frames"] = double(f.frames);
+							 t["samples"] = f.samples;
+							 t["mean"] = f.meanMs;
+							 t["p50"] = f.p50Ms;
+							 t["p95"] = f.p95Ms;
+							 t["max"] = f.maxMs;
+							 return t;
+						 });
+
 		// ja2.videoStats([reset]): what the SDL_GPU compositor has uploaded per layer since the last reset,
 		// {frames, uiBytes, worldBytes}. Only a real window uploads through it; divide by frames for the mean.
 		ja2.set_function("videoStats",

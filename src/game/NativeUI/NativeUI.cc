@@ -9,6 +9,7 @@
 #include "Automation.h"
 #include "Cursor_Control.h"
 #include "Cursors.h"
+#include "FrameTiming.h"
 #include "GameRes.h"
 #include "Headless.h"
 #include "Input.h"
@@ -36,6 +37,7 @@
 #include "stb_image_write.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
@@ -152,6 +154,33 @@ namespace
 	Runtime g_rt;
 	std::string g_loadingDayLabel, g_loadingTimeLabel;
 	void CloseLoadingScreen();
+
+	// The UI layer's own time (FrameTiming(), ja2.uiFrameTiming). A frame adds up its segments (prepare/update and
+	// the draw submission) and lands one sample. Recording is off until a measurement starts, so an ordinary frame
+	// pays one branch and no clock read; that is the point of a timing that must not perturb what it measures.
+	using ui_clock = std::chrono::steady_clock;
+	sgp::FrameTiming g_uiTiming;
+	bool g_uiTimingOn = false;
+	double g_uiPendingMs = 0; // the segments of the frame being timed, until its last one closes it
+
+	double UiMsSince(ui_clock::time_point const& since)
+	{
+		return std::chrono::duration<double, std::milli>(ui_clock::now() - since).count();
+	}
+
+	struct UiScope
+	{
+		UiScope(bool const on, double& sink)
+			: sink_(on ? &sink : nullptr), start_(on ? ui_clock::now() : ui_clock::time_point{})
+		{
+		}
+		~UiScope()
+		{
+			if (sink_) *sink_ += UiMsSince(start_);
+		}
+		double* sink_;
+		ui_clock::time_point start_;
+	};
 
 	bool WantsGpu()
 	{
@@ -666,6 +695,7 @@ void Runtime::SoftwareTick()
 SDL_Rect Runtime::SoftwarePrepare()
 {
 	if (!running || gpu) return { 0, 0, 0, 0 };
+	UiScope scope(g_uiTimingOn, g_uiPendingMs);
 	SoftwareTick();
 	if (!AnythingShown())
 	{
@@ -686,29 +716,40 @@ SDL_Rect Runtime::SoftwarePrepare()
 void Runtime::SoftwareCompose(SDL_Surface* const dst, SDL_Rect const& a)
 {
 	if (!layer || dst->format != SDL_PIXELFORMAT_RGB565) return;
-	int const x0 = std::max(0, a.x), y0 = std::max(0, a.y);
-	int const x1 = std::min({ a.x + a.w, dst->w, layer->w }), y1 = std::min({ a.y + a.h, dst->h, layer->h });
-	for (int y = y0; y < y1; ++y)
 	{
-		auto const* src = reinterpret_cast<Uint32 const*>(static_cast<Uint8 const*>(layer->pixels) + size_t(y) * layer->pitch);
-		auto* d = reinterpret_cast<Uint16*>(static_cast<Uint8*>(dst->pixels) + size_t(y) * dst->pitch);
-		for (int x = x0; x < x1; ++x)
+		UiScope scope(g_uiTimingOn, g_uiPendingMs);
+		int const x0 = std::max(0, a.x), y0 = std::max(0, a.y);
+		int const x1 = std::min({ a.x + a.w, dst->w, layer->w }), y1 = std::min({ a.y + a.h, dst->h, layer->h });
+		for (int y = y0; y < y1; ++y)
 		{
-			Uint32 const p = src[x];
-			Uint32 const alpha = p >> 24;
-			if (alpha == 0) continue;
-			Uint32 r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
-			if (alpha < 255)
+			auto const* src =
+				reinterpret_cast<Uint32 const*>(static_cast<Uint8 const*>(layer->pixels) + size_t(y) * layer->pitch);
+			auto* d = reinterpret_cast<Uint16*>(static_cast<Uint8*>(dst->pixels) + size_t(y) * dst->pitch);
+			for (int x = x0; x < x1; ++x)
 			{
-				Uint16 const q = d[x];
-				Uint32 const dr = ((q >> 11) & 0x1F) * 255 / 31, dg = ((q >> 5) & 0x3F) * 255 / 63, db = (q & 0x1F) * 255 / 31;
-				Uint32 const k = 255 - alpha;
-				r = std::min<Uint32>(255, r + dr * k / 255);
-				g = std::min<Uint32>(255, g + dg * k / 255);
-				b = std::min<Uint32>(255, b + db * k / 255);
+				Uint32 const p = src[x];
+				Uint32 const alpha = p >> 24;
+				if (alpha == 0) continue;
+				Uint32 r = (p >> 16) & 0xFF, g = (p >> 8) & 0xFF, b = p & 0xFF;
+				if (alpha < 255)
+				{
+					Uint16 const q = d[x];
+					Uint32 const dr = ((q >> 11) & 0x1F) * 255 / 31, dg = ((q >> 5) & 0x3F) * 255 / 63,
+								 db = (q & 0x1F) * 255 / 31;
+					Uint32 const k = 255 - alpha;
+					r = std::min<Uint32>(255, r + dr * k / 255);
+					g = std::min<Uint32>(255, g + dg * k / 255);
+					b = std::min<Uint32>(255, b + db * k / 255);
+				}
+				d[x] = Uint16(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
 			}
-			d[x] = Uint16(((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3));
 		}
+	}
+	// the blend was the software path's last UI segment: the frame is over, so it lands one sample
+	if (g_uiTimingOn)
+	{
+		g_uiTiming.Add(g_uiPendingMs);
+		g_uiPendingMs = 0;
 	}
 }
 
@@ -729,6 +770,7 @@ void Runtime::GpuRender(SDL_Renderer*)
 void Runtime::GpuFramePrepare(SDL_GPUCommandBuffer* cmd)
 {
 	if (!running || !gpuRi || !cmd) return;
+	UiScope scope(g_uiTimingOn, g_uiPendingMs);
 	nui::RmlClock().now = GetClock() / 1000.0;
 	gpuRi->Prepare(w, h);
 	if (AnythingShown())
@@ -742,7 +784,19 @@ void Runtime::GpuFramePrepare(SDL_GPUCommandBuffer* cmd)
 void Runtime::GpuFrameRender(SDL_GPURenderPass* pass, int, int)
 {
 	if (!running || !gpuRi) return;
-	gpuRi->Draw(pass);
+	if (!g_uiTimingOn)
+	{
+		gpuRi->Draw(pass);
+		return;
+	}
+	{
+		UiScope scope(true, g_uiPendingMs);
+		gpuRi->Draw(pass);
+	}
+	// prepare (update, record, upload) plus the draw submission: one frame of the UI layer, no compositor work
+	// in between and no present
+	g_uiTiming.Add(g_uiPendingMs);
+	g_uiPendingMs = 0;
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -1408,6 +1462,38 @@ Info GetInfo()
 	for (auto* d : Documents()) i.documents.push_back(d->GetSourceURL());
 	i.warnings = nui::RmlWarnings();
 	return i;
+}
+
+void SetFrameTimingRecording(bool const on)
+{
+	g_uiTimingOn = on;
+	if (on)
+	{
+		g_uiTiming.Reset();
+		g_uiPendingMs = 0;
+	}
+}
+
+FrameTiming UiFrameTiming(bool const reset)
+{
+	if (reset)
+	{
+		// a reset starts a new measurement: it returns an empty distribution, not the previous screen's
+		g_uiTimingOn = true;
+		g_uiPendingMs = 0;
+		g_uiTiming.Reset();
+	}
+	sgp::FrameTiming::Stats const s = g_uiTiming.Take(false);
+	FrameTiming t;
+	t.frames = s.frames;
+	t.samples = s.samples;
+	t.meanMs = s.meanMs;
+	t.p50Ms = s.p50Ms;
+	t.p95Ms = s.p95Ms;
+	t.maxMs = s.maxMs;
+	t.gpu = g_rt.gpu;
+	t.recording = g_uiTimingOn;
+	return t;
 }
 
 std::vector<ElementInfo> Elements()

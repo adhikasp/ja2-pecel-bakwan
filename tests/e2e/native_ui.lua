@@ -78,6 +78,21 @@ shots.take("toast.png")
 ja2.wait(6000)
 ja2.expect(not ja2.exists("Toast from a screen message"), "the toast expired")
 
+-- the UI layer's own timing (issue #46): off until asked for, a new measurement is empty, frames land samples. The
+-- number is not asserted here -- the perf script takes it -- only that the surface counts and resets.
+ja2.expect(ja2.uiFrameTiming().recording == false, "the UI timing is off until a measurement starts")
+local started = ja2.uiFrameTiming(true)
+ja2.expect(started.samples == 0, "a new measurement starts empty")
+ja2.step(1) -- advance a frame so there is one to compose
+ja2.texts() -- reading the frame composes it, which is where the software layer lands its sample
+local uiTiming = ja2.uiFrameTiming("stop")
+ja2.expect(uiTiming.samples > 0, "composed frames produce samples (" .. uiTiming.samples .. ")")
+ja2.expect(uiTiming.mean > 0, "the mean is above zero (" .. uiTiming.mean .. ")")
+ja2.expect(uiTiming.p95 >= uiTiming.mean and uiTiming.max >= uiTiming.p95, "the distribution is ordered")
+ja2.expect(uiTiming.path == "software", "a headless run measures the software layer (" .. uiTiming.path .. ")")
+ja2.expect(ja2.uiFrameTiming().recording == false, "stop turned recording off")
+ja2.expect(ja2.uiFrameTiming().samples == uiTiming.samples, "the samples survive the stop")
+
 -- a view model follows live state: the game status over a real campaign
 campaign.newGame()
 local vm = ja2.viewModel("status")

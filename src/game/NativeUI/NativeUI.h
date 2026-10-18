@@ -82,6 +82,24 @@ namespace NativeUI
 	};
 	Info GetInfo();
 
+	// ---- performance (docs/plan/native-modern-game-decisions.md, "Performance") --------------------------------
+	/** The native UI layer's own per-frame host time: RmlUi's update, layout, record and geometry upload, plus the
+	 * UI draw submission. CPU steady_clock, no GPU wait and no present, so it is the successor to the Phase 0
+	 * number rather than a whole-frame reading (which VSYNC quantises). @a gpu says which layer was measured: a
+	 * headless run is always the software path and must not be quoted as the budget number. */
+	struct FrameTiming
+	{
+		unsigned long long frames = 0; // every timed frame since the last reset
+		int samples = 0;
+		double meanMs = 0, p50Ms = 0, p95Ms = 0, maxMs = 0;
+		bool gpu = false;
+		bool recording = false;
+	};
+	/** Start or stop recording the UI layer timing. Off by default: when nobody measures, a frame pays one branch. */
+	void SetFrameTimingRecording(bool);
+	/** The distribution since the last reset; @a reset starts a new measurement (and turns recording on). */
+	FrameTiming UiFrameTiming(bool reset);
+
 	/** Once per game loop, before input: keeps the size, scale and clock up to date. */
 	void BeginFrame();
 	/** What BeginFrame does without the game loop: the view models are refreshed and what they changed is laid out
