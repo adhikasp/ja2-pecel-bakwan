@@ -20,16 +20,16 @@ class ScrollMotion
 {
   public:
 	/** Frames of continuous scroll a wait will sit through before giving up.
-		 *
-		 *  Measured at 1280x720 on the native options screen (the tallest native document): a scrollbar page
-		 *  up/down settles in ~12 frames, a thumb drag and Tab's ScrollIntoView scroll instantly, and a wheel always
-		 *  settles inside ja2.wheel itself. The only scroll that outlasts this bound is a held one - the
-		 *  middle-button autoscroll covers that page in ~320 frames - so 120 is an order of magnitude above any
-		 *  one-shot scroll and is reached only by a scroll that is not going to stop. */
+	 *
+	 *  Measured at 1280x720 on the native options screen (the tallest native document): a scrollbar page
+	 *  up/down settles in ~12 frames, a thumb drag and Tab's ScrollIntoView scroll instantly, and a wheel always
+	 *  settles inside ja2.wheel itself. The only scroll that outlasts this bound is a held one - the
+	 *  middle-button autoscroll covers that page in ~320 frames - so 120 is an order of magnitude above any
+	 *  one-shot scroll and is reached only by a scroll that is not going to stop. */
 	static constexpr unsigned MAX_FRAMES = 120;
 
 	/** Feed this frame's scroll signature (@a signature is 0 when the native UI is not running); returns true
-		 *  while a scroll is still in flight. */
+	 *  while a scroll is still in flight. */
 	bool Sample(uint64_t signature);
 
   private:
