@@ -45,10 +45,6 @@ uint64_t ScrollSignature()
 {
 	return 0;
 }
-bool WantsNextFrame()
-{
-	return false;
-}
 std::vector<std::string> LayoutAudit() { return {}; }
 void OpenMock(std::string const&) { throw std::runtime_error("built without the native UI"); }
 bool RunSetup(void*) { return false; }

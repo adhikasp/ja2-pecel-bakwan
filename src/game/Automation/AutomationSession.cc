@@ -237,11 +237,7 @@ namespace
 		uint64_t const frame = sgp::Clock::FrameCount();
 		if (frame == g_scrollSampledFrame) return;
 		g_scrollSampledFrame = frame;
-		// Only a scroll RmlUi is animating is in flight: it asks for the next frame on every frame it moves the
-		// page. An instant scroll (a thumb drag, Tab's ScrollIntoView) changes the offsets without asking for one
-		// and the page is already where it will be.
-		bool const animating = NativeUI::WantsNextFrame();
-		g_nativeScrolling = g_scrollMotion.Sample(animating, NativeUI::ScrollSignature());
+		g_nativeScrolling = g_scrollMotion.Sample(NativeUI::ScrollSignature());
 	}
 
 	// Structural "nothing is in flight" test; see Session::IsIdle().

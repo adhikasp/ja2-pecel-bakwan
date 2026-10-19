@@ -1590,11 +1590,6 @@ uint64_t ScrollSignature()
 	return h;
 }
 
-bool WantsNextFrame()
-{
-	return g_rt.running && g_rt.ctx && g_rt.ctx->GetNextUpdateDelay() <= 0.0;
-}
-
 std::vector<std::string> LayoutAudit()
 {
 	std::vector<std::string> out;
