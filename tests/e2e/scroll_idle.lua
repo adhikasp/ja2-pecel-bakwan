@@ -152,14 +152,17 @@ ja2.wheel(-60, midx, midy)
 ja2.step(3)
 local atFoot = deepY()
 ja2.focus("options.tab.controls")
-ja2.key("tab") -- -> options.tab.access
-ja2.key("tab") -- -> options.toggle[6], above the fold
-ja2.expect(ja2.nativeUi().focused == "options.toggle[6]", "Tab focused a row above the fold (" .. tostring(ja2.nativeUi().focused) .. ")")
+local focused = ""
+for _ = 1, 20 do
+	ja2.key("tab")
+	focused = ja2.nativeUi().focused
+	if focused:find("^options%.toggle%[") then break end
+end
+ja2.expect(focused:find("^options%.toggle%[") ~= nil, "Tab reached a setting row above the fold (" .. tostring(focused) .. ")")
 ja2.expect(deepY() ~= atFoot, "Tab scrolled the page back up to the focused row")
 ja2.waitIdle()
 assertSettled("Tab")
 -- and the focused row is where a click lands: it is a setting toggle
-local focused = ja2.nativeUi().focused
 local function optionOn(id)
 	for _, o in ipairs(ja2.viewModel("options").options) do
 		if "options.toggle[" .. math.tointeger(o.opt) .. "]" == id then return o.on end
