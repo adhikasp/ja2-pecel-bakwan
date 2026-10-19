@@ -237,7 +237,8 @@ namespace
 		uint64_t const frame = sgp::Clock::FrameCount();
 		if (frame == g_scrollSampledFrame) return;
 		g_scrollSampledFrame = frame;
-		g_nativeScrolling = g_scrollMotion.Sample(NativeUI::ScrollSignature());
+		bool const animating = NativeUI::WantsNextFrame();
+		g_nativeScrolling = g_scrollMotion.Sample(animating, NativeUI::ScrollSignature());
 	}
 
 	// Structural "nothing is in flight" test; see Session::IsIdle().

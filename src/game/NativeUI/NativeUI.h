@@ -218,6 +218,10 @@ namespace NativeUI
 	 * frame to know whether a native-UI scroll is still in flight (AutomationSession.cc). 0 when the runtime is
 	 * not running. */
 	uint64_t ScrollSignature();
+	/** RmlUi asked for the next frame during the last update (Context::GetNextUpdateDelay() == 0): its
+	 * smooth-scroll controller asks for one on every frame it moves the page. An element animation asks for one
+	 * too, so a caller that wants a scroll specifically combines this with ScrollSignature(). */
+	bool WantsNextFrame();
 	/** Layout problems of the native documents now: off screen, clipped, overlapping, truncated text. */
 	std::vector<std::string> LayoutAudit();
 	/** Focus an element by id (keyboard focus, visible ring). */
