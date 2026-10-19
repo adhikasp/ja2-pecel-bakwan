@@ -57,9 +57,11 @@ The design rationale is in [plan/headless-automation.md](plan/headless-automatio
   pending, no laptop page "loading", no window animating, nobody talking,
   no helicopter drop, nobody walking, no enemy turn in progress, and no
   native-UI scroll still moving, for a few frames in a row. `waitIdle()`
-  replaces fixed sleeps. A native-UI scroll (RmlUi's smooth-scroll
+  replaces fixed sleeps. A native-UI *animated* scroll (RmlUi's smooth-scroll
   controller) counts as in flight while the page keeps moving, and the wait
-  for it is bounded, so a scroll that never settles cannot hold it open.
+  for it is bounded, so a scroll that never settles cannot hold it open; an
+  instant scroll (a scrollbar thumb drag, Tab's `ScrollIntoView`) is already
+  where the gesture left it and is not waited for.
 
 ## Command line
 
