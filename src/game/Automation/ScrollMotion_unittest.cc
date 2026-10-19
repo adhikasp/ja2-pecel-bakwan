@@ -4,8 +4,11 @@
 
 namespace
 {
-	// A signature that changes on every frame, as a scroll in flight produces.
-	uint64_t Moving(unsigned const frame) { return 1000 + frame; }
+// A signature that changes on every frame, as a scroll in flight produces.
+uint64_t Moving(unsigned const frame)
+{
+	return 1000 + frame;
+}
 }
 
 TEST(ScrollMotion, nothingIsInFlightBeforeAScroll)

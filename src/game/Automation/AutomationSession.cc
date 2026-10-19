@@ -227,7 +227,7 @@ namespace
 	// The native UI's scroll, sampled once a frame by TrackIdle and read by NothingInFlight. See ScrollMotion.h for
 	// why the offsets are the honest predicate and how the wait is bounded.
 	ScrollMotion g_scrollMotion;
-	bool     g_nativeScrolling = false;
+	bool g_nativeScrolling = false;
 	uint64_t g_scrollSampledFrame = ~0ull;
 
 	// Sample at most once a frame: WaitIdle() calls TrackIdle() before its loop, so two samples of one frame's

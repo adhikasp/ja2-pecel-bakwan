@@ -912,15 +912,14 @@ namespace
 		ja2.set_function("mouse", [] { auto const p = Session::MousePos(); return std::make_tuple(p.x, p.y); });
 		// ja2.mousedown(["left"|"right"|"middle"]) / ja2.mouseup(...): hold a button across frames, which a click
 		// cannot (a scrollbar drag, RmlUi's middle-button autoscroll).
-		auto mouseButton = [](sol::optional<std::string> const& b) {
+		auto mouseButton = [](sol::optional<std::string> const& b)
+		{
 			return b.value_or("left") == "right" ? 2 : b.value_or("left") == "middle" ? 3 : 1;
 		};
-		ja2.set_function("mousedown", [mouseButton](sol::optional<std::string> b) {
-			Guarded([&] { Session::MouseButton(mouseButton(b), true); });
-		});
-		ja2.set_function("mouseup", [mouseButton](sol::optional<std::string> b) {
-			Guarded([&] { Session::MouseButton(mouseButton(b), false); });
-		});
+		ja2.set_function("mousedown", [mouseButton](sol::optional<std::string> b)
+						 { Guarded([&] { Session::MouseButton(mouseButton(b), true); }); });
+		ja2.set_function("mouseup", [mouseButton](sol::optional<std::string> b)
+						 { Guarded([&] { Session::MouseButton(mouseButton(b), false); }); });
 		ja2.set_function("drag", [](int x0, int y0, int x1, int y1) { Guarded([&] { Session::Drag(x0, y0, x1, y1); }); });
 		ja2.set_function("wheel", [](int dy, sol::optional<int> x, sol::optional<int> y) {
 			Guarded([&] {
