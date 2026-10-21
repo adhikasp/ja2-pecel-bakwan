@@ -24,6 +24,7 @@ if (WITH_UNITTESTS)
         ${LOCAL_JA2_SOURCES}
         ${CMAKE_CURRENT_SOURCE_DIR}/Automation_unittest.cc
         ${CMAKE_CURRENT_SOURCE_DIR}/CampaignScenario_unittest.cc
+        ${CMAKE_CURRENT_SOURCE_DIR}/ScrollMotion_unittest.cc
     )
 endif()
 

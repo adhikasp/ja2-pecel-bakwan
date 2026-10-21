@@ -107,7 +107,7 @@
 				</div>
 			</div>
 			<!-- controls -->
-			<div class="op-cols" data-if="tab == 'controls'">
+			<div class="op-cols" id="options.cols" data-if="tab == 'controls'">
 				<div class="op-col">
 					<div class="op-group"><span class="section">{{l_mouse}}</span>
 						<div class="op-row op-toggle" data-for="o : options" data-class-gone="o.group != 'mouse'" data-attr-id="'options.toggle[' + o.opt + ']'" data-event-click="toggle(o.opt)" data-event-mouseover="help(o.opt)" data-event-focus="help(o.opt)"><span class="name">{{o.name}}</span><div class="toggle" data-class-on="o.on"><span class="switch"><span class="knob"></span></span></div></div>

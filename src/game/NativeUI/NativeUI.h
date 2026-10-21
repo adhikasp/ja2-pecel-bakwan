@@ -213,6 +213,15 @@ namespace NativeUI
 	std::vector<ElementInfo> Elements();
 	struct TextInfo { std::string text; int x, y, w, h; };
 	std::vector<TextInfo> Texts();
+	/** A signature of every visible native element's scroll offset: it changes while a scroll animates (RmlUi's
+	 * smooth-scroll controller) and is stable once the page has settled. The automation session samples it once a
+	 * frame to know whether a native-UI scroll is still in flight (AutomationSession.cc). 0 when the runtime is
+	 * not running. */
+	uint64_t ScrollSignature();
+	/** RmlUi asked for the next frame during the last update (Context::GetNextUpdateDelay() == 0): its
+	 * smooth-scroll controller asks for one on every frame it moves the page. An element animation asks for one
+	 * too, so a caller that wants a scroll specifically combines this with ScrollSignature(). */
+	bool WantsNextFrame();
 	/** Layout problems of the native documents now: off screen, clipped, overlapping, truncated text. */
 	std::vector<std::string> LayoutAudit();
 	/** Focus an element by id (keyboard focus, visible ring). */

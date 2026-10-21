@@ -1557,6 +1557,44 @@ std::vector<TextInfo> Texts()
 	return out;
 }
 
+uint64_t ScrollSignature()
+{
+	// A scroll moves the offset of the element RmlUi's smooth-scroll controller targets, and nothing else in the
+	// native UI moves it. Hashing those offsets is the honest "is a scroll in flight" the session can ask for:
+	// it changes exactly on the frames the controller is animating and stops the frame the page settles.
+	if (!g_rt.running) return 0;
+	uint64_t h = 1469598103934665603ull; // FNV-1a
+	auto mix = [&h](float const v)
+	{
+		// 1/64 px: RmlUi moves a scroll in whole pixels, so the quantisation cannot hide a step.
+		uint32_t const bits = static_cast<uint32_t>(static_cast<int32_t>(std::lround(v * 64.f)));
+		for (int i = 0; i < 4; ++i)
+		{
+			h ^= (bits >> (8 * i)) & 0xffu;
+			h *= 1099511628211ull;
+		}
+	};
+	for (Rml::ElementDocument* d : Documents())
+	{
+		ForEachVisible(d,
+					   [&](Rml::Element* e)
+					   {
+						   auto const& cv = e->GetComputedValues();
+						   if (cv.overflow_x() == Rml::Style::Overflow::Visible &&
+							   cv.overflow_y() == Rml::Style::Overflow::Visible)
+							   return; // not a scroll container: its offsets are always 0
+						   mix(e->GetScrollLeft());
+						   mix(e->GetScrollTop());
+					   });
+	}
+	return h;
+}
+
+bool WantsNextFrame()
+{
+	return g_rt.running && g_rt.ctx && g_rt.ctx->GetNextUpdateDelay() <= 0.0;
+}
+
 std::vector<std::string> LayoutAudit()
 {
 	std::vector<std::string> out;
