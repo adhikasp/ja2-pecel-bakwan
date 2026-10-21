@@ -518,9 +518,9 @@ the present scale with at most one band of raster behind instead of rebuilding t
 of its own. `VideoLayout::ComputeLayerLayout` makes a single layer whenever the world zoom equals the UI scale,
 and the smallest world zoom is 1. At 1280x720 the UI scale is 1 (auto, and the only scale that leaves a
 1280x720 logical canvas), so a session with the default world zoom asks for `Zw == Su == 1` and there is no
-layer. It is not a size threshold: the same is true at 1920x1080 at UI scale 1, which is why the documented 4K
-command passes `--uiscale 2 --worldzoom 1` - it separates the two scales and thereby gets a layer. That was the
-whole difference.
+layer. It is not a size threshold: at 1920x1080 with UI scale 1 the default world zoom is also a single layer. The
+documented 4K command passes `--uiscale 2 --worldzoom 1` - at that window the UI scale is 2 against a world zoom of
+1, so the two scales differ and there is a layer. That was the whole difference.
 
 In a player's window the world is a layer anyway: start-up calls `VideoSetForceLayered(true)` whenever the
 configured world renderer is not software, and in a window it defaults to gpu. A driven session defaults it to
@@ -529,6 +529,52 @@ called `setWorldRenderer("gpu")` on a layout that never had a layer and aborted 
 "the world is not a layer of its own". **So the world can be a layer at 1280x720** - it is one in the player's
 window, with a 1280x720 world buffer at 1x - and the harness measures it by starting the session with
 `JA2_WORLD_RENDERER=gpu`, exactly as `tests/perf/world_renderer_shots.lua` already documents.
+
+**The harness now says what it measured, and refuses to guess.** Every run starts with a line that names the
+layout and the world layer's size:
+
+    perf session: UI canvas 1280x720, UI scale 1, world zoom 1, world layer 1280x720, layered, renderer gpu
+
+If the world is not a layer, it fails with the canvas size, both scales and the two ways to get a layer (the above),
+instead of the renderer's internal message; and a case that collects no frame samples fails too, which is what a
+headless run does (the interval is the present-to-present interval, so there are no presents). The recipe for the
+sizes it is run at (the save step and `--load perf` are in the script's header):
+
+| Size | Session | World layer |
+|---|---|---|
+| 1280x720 | `JA2_WORLD_RENDERER=gpu`, `--show --res 1280x720` | 1280x720 at 1x (canvas 1280x720) |
+| 1920x1080 | `JA2_WORLD_RENDERER=gpu`, `--show --res 1920x1080` | 1920x1080 at 1x (canvas 1920x1080) |
+| 3840x2160 | `--show --res 3840x2160 --uiscale 2 --worldzoom 1` | 3840x2160 at 1x (canvas 1920x1080 at 2x) |
+
+All three give the world layer the window's size, one world pixel per physical pixel, so they are comparable: the
+pixel count changes (and with it instances and record ms), not the meaning of a case. The first two need the GPU
+renderer because at UI scale 1 there is no world zoom other than 1 to separate the layers; the 4K session separates
+them with `--uiscale 2` and needs no environment. **Sizes not covered for perf:** the widescreen matrix sizes
+(2560x1080, 3440x1440) are checked for layout by the resolution suite, but `tests/perf/` has not been run there;
+nothing here claims a frame cost at them.
+
+**Measured (2026-10-22, Ryzen 5 5560U, Radeon Vega 7 iGPU, Windows 11, D3D12 through SDL_GPU 3.4, RelWithDebInfo,
+60 Hz desktop at 1280x720 - the 1920x1080 window extends beyond it, as does the 4K run's - 5 s per case, three runs
+each; mean / median / p95 ms):**
+
+| Case | 1280x720 | 1920x1080 |
+|---|---|---|
+| gpu cached still | 35.8-37.4 / 16.9-17.0 / 82.8-83.9 | 48.6-50.6 / 17.2-17.4 / 93.0-96.6 |
+| gpu uncached still | 56.8-58.3 / 81.5-81.7 / 82.9-83.4 | 83.5-87.4 / 92.1-93.7 / 93.2-105.4 |
+| gpu cached scrolling | 36.0-36.5 / 16.8-16.9 / 82.5-83.6 | 42.4-44.8 / 16.9-17.2 / 92.7-96.9 |
+| gpu uncached scrolling | 38.3-83.2 / 17.0-83.0 / 82.2-84.6 | 94.4-97.8 / 93.9-94.9 / 96.3-116.0 |
+| record ms, cached / uncached, still | 1.3-1.5 / 2.5-2.6 | 2.0-2.3 / 4.5-4.8 |
+| instances | 5,567 | 12,537-12,657 |
+
+The cached cases and the uncached still case are stable to a couple of ms across the three runs. The uncached
+scrolling case is the one that reaches the present floor: at 1080p every run sat on it (median ~94 ms), while one
+720p run avoided it entirely (median 17.0, mean 38.3) and the other two sat on it (median ~83 ms). That bimodality
+is the present-path floor #393 describes, not the world renderer: some frames take the 16.9 ms vsync, the rest the
+floor. **`recordMs` does what the pixel count says it should:** roughly half at 1280x720 what it is at 1920x1080 in
+the uncached cases (2.5 against 4.7 ms) and about two thirds with the cache (1.4 against 2.1 ms), and the instance
+count is 5,567 against about 12,600. A world-renderer regression at 1280x720 therefore shows in `recordMs`, the
+instances and the uncached frame counts; the mean frame interval at these sizes measures the present path on this
+machine and is not a resolution-versus-resolution comparison of the renderer.
 
 ## Gaps
 
