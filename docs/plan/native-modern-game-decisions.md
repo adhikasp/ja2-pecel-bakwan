@@ -512,6 +512,24 @@ the present scale with at most one band of raster behind instead of rebuilding t
 `m_worldRasterQ` / `PresentScale` - is the one part of A2/B2/C2 this change does not land. Slice 4 (this page and
 `docs/ui/tactical.md`) and the 3840x2160 re-run above are done.
 
+### Why the harness had no world layer at 1280x720 (#364)
+
+`WorldRecordingPossible()` is `VideoIsLayered() && !editor`: every world renderer needs the world to be a layer
+of its own. `VideoLayout::ComputeLayerLayout` makes a single layer whenever the world zoom equals the UI scale,
+and the smallest world zoom is 1. At 1280x720 the UI scale is 1 (auto, and the only scale that leaves a
+1280x720 logical canvas), so a session with the default world zoom asks for `Zw == Su == 1` and there is no
+layer. It is not a size threshold: the same is true at 1920x1080 at UI scale 1, which is why the documented 4K
+command passes `--uiscale 2 --worldzoom 1` - it separates the two scales and thereby gets a layer. That was the
+whole difference.
+
+In a player's window the world is a layer anyway: start-up calls `VideoSetForceLayered(true)` whenever the
+configured world renderer is not software, and in a window it defaults to gpu. A driven session defaults it to
+software (its screenshots are the reference images), so nothing asks for the forced layer; the perf harness then
+called `setWorldRenderer("gpu")` on a layout that never had a layer and aborted with the internal
+"the world is not a layer of its own". **So the world can be a layer at 1280x720** - it is one in the player's
+window, with a 1280x720 world buffer at 1x - and the harness measures it by starting the session with
+`JA2_WORLD_RENDERER=gpu`, exactly as `tests/perf/world_renderer_shots.lua` already documents.
+
 ## Gaps
 
 - The static cache keeps its strips across camera moves (#37) and the GPU dispatches only the region that
