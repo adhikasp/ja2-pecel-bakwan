@@ -1,6 +1,7 @@
 #include "Directories.h"
 #include "Font.h"
 #include "Laptop.h"
+#include "LaptopNative.h"
 #include "Merc_Hiring.h"
 #include "Mercs_Account.h"
 #include "Mercs.h"
@@ -321,9 +322,18 @@ static void SettleMercAccounts(void)
 		LaptopSaveInfo.uiSpeckQuoteFlags &= ~SPECK_QUOTE__SENT_EMAIL_ABOUT_LACK_OF_PAYMENT;
 	}
 
-	//Go to the merc homepage to say the quote
-	guiCurrentLaptopMode = LAPTOP_MODE_MERC;
-	gubArrivedFromMercSubSite = MERC_CAME_FROM_ACCOUNTS_PAGE;
+	// Go to the merc homepage to say the quote. That is the legacy page's navigation: it must not run
+	// for the native laptop, which keeps its own page (the account page it was on). Writing the mode
+	// here without the matching LaptopNative::SetMode leaves guiCurrentLaptopMode != guiPreviousLaptopMode,
+	// which LaptopIsBusy() reads as "a page is still loading" for ever - and NothingInFlight() then never
+	// settles, so a scripted tour could not get past Authorize payment (#379). The quote itself stays
+	// queued in gusMercVideoSpeckSpeech, and SpeckSays() says it (and plays it) on the site's next page
+	// entry, the same way it collects every other M.E.R.C. quote for the native laptop.
+	if (!LaptopNative::Active())
+	{
+		guiCurrentLaptopMode = LAPTOP_MODE_MERC;
+		gubArrivedFromMercSubSite = MERC_CAME_FROM_ACCOUNTS_PAGE;
+	}
 
 
 	/*
@@ -434,7 +444,6 @@ UINT32	CalculateHowMuchPlayerOwesSpeck()
 
 
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
-#include "LaptopNative.h"
 
 namespace LaptopNative
 {
