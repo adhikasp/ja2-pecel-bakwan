@@ -548,10 +548,10 @@ sizes it is run at (the save step and `--load perf` are in the script's header):
 
 All three give the world layer the window's size, one world pixel per physical pixel, so they are comparable: the
 pixel count changes (and with it instances and record ms), not the meaning of a case. The first two need the GPU
-renderer because at UI scale 1 there is no world zoom other than 1 to separate the layers; the 4K session separates
-them with `--uiscale 2` and needs no environment. **Sizes not covered for perf:** the widescreen matrix sizes
-(2560x1080, 3440x1440) are checked for layout by the resolution suite, but `tests/perf/` has not been run there;
-nothing here claims a frame cost at them.
+renderer so the layer is forced at the UI scale: at UI scale 1 the only zoom that gives an output-sized world is 1,
+which is also the UI scale. The 4K session separates them with `--uiscale 2` and needs no environment. **Sizes not
+covered for perf:** the widescreen matrix sizes (2560x1080, 3440x1440) are checked for layout by the resolution
+suite, but `tests/perf/` has not been run there; nothing here claims a frame cost at them.
 
 **Measured (2026-10-22, Ryzen 5 5560U, Radeon Vega 7 iGPU, Windows 11, D3D12 through SDL_GPU 3.4, RelWithDebInfo,
 60 Hz desktop at 1280x720 - the 1920x1080 window extends beyond it, as does the 4K run's - 5 s per case, three runs
