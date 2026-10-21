@@ -335,7 +335,6 @@ static void SettleMercAccounts(void)
 		gubArrivedFromMercSubSite = MERC_CAME_FROM_ACCOUNTS_PAGE;
 	}
 
-
 	/*
 	//if the player doesnt have enough money to fully pay for the all the mercs contract
 	if( LaptopSaveInfo.iCurrentBalance < giMercTotalContractCharge )
@@ -441,7 +440,6 @@ UINT32	CalculateHowMuchPlayerOwesSpeck()
 
 	return( uiContractCharge );
 }
-
 
 // ---- the native laptop (Phase 6, LaptopNative.h) ---------------------------------------------------------------
 
