@@ -182,3 +182,7 @@ command -v sccache &&
   echo "sccache not installed"
 
 echo "## done ##"
+
+# Measurement-only line added by PR #423: nothing in the tree changes, so the
+# next CI run restores the capped compiler cache and every object in it has to
+# hit. Intentionally inert; the branch is closed as soon as it is measured.
