@@ -68,6 +68,18 @@ SCCACHE_CACHE_SIZE = "50G"
 # why the server is checked rather than assumed in sync_sccache_server().
 SCCACHE_BASEDIRS = "SCCACHE_BASEDIRS"
 
+# Cargo's target dir defaults to one inside each build directory, so a new
+# worktree compiles the whole Rust workspace again - 53 crates, ~46 s on a
+# 12-thread machine, and the compiler cache cannot help: sccache only caches
+# `rlib` crates, and 45 of these build as a staticlib or binaries, which it
+# rejects with the reason `crate-type`. One target dir for the machine lets
+# cargo reuse the artifacts instead: a second worktree compiles only the three
+# workspace crates, whose units cargo keys by checkout path, and the artifacts
+# for two paths coexist, so alternating between worktrees costs nothing.
+# `dependencies/lib-pecel-bakwan/CMakeLists.txt` reads this variable when it is
+# configured. Set it empty to keep one target dir per build directory.
+CARGO_TARGET_DIR_ENV = "JA2_CARGO_TARGET_DIR"
+
 
 # --- small helpers ----------------------------------------------------------
 
@@ -133,7 +145,34 @@ def tool_env() -> dict:
     # same key. Without it each worktree is its own cache island and the second
     # worktree on a branch recompiles the world.
     env[SCCACHE_BASEDIRS] = sccache_basedirs()
+    # The same idea for the Rust workspace, which sccache cannot cover: cargo
+    # reuses its build artifacts across checkouts when they share one target
+    # dir. cmake reads this when it configures, so a build directory configured
+    # before the value changed is reconfigured (see stamp_stale).
+    target = cargo_target_dir()
+    if target:
+        env[CARGO_TARGET_DIR_ENV] = target
+    else:
+        env.pop(CARGO_TARGET_DIR_ENV, None)
     return env
+
+
+def cargo_target_dir():
+    """The shared cargo target dir for every checkout, or None for one per build dir.
+
+    Defaults to a machine-wide cache directory rather than a path inside the
+    repo, because worktrees sit at different paths by design and the point is
+    that they share. `JA2_CARGO_TARGET_DIR` in the environment overrides it; an
+    empty value disables sharing, which is what a build that must not see
+    another checkout's artifacts wants.
+    """
+    if CARGO_TARGET_DIR_ENV in os.environ:
+        return os.environ[CARGO_TARGET_DIR_ENV].strip() or None
+    if IS_WINDOWS:
+        base = Path(os.environ.get("LOCALAPPDATA") or (user_home() / "AppData" / "Local"))
+        return str(base / "ja2-dev" / "cargo-target")
+    base = Path(os.environ.get("XDG_CACHE_HOME") or (user_home() / ".cache"))
+    return str(base / "ja2" / "cargo-target")
 
 
 def tool_run(cmd: str, cwd: Path, capture: bool = False):
@@ -544,16 +583,25 @@ def configure(root: Path, build_dir: Path, quiet: bool = False):
         stamp = build_dir / ".dev-setup.json"
         stamp.write_text(json.dumps({"generator": "Ninja" if ninja else "default",
                                      "venv": venv_python() is not None,
+                                     "cargo_target": cargo_target_dir(),
                                      "root": str(root), "time": time.time()}), encoding="utf-8")
 
 
 def stamp_stale(build_dir: Path) -> bool:
-    """Reconfigure when the venv appeared after the last configure (ctest finds it)."""
+    """Reconfigure when the venv appeared or the cargo target dir moved.
+
+    cmake bakes both into the build directory: it finds the venv's Python and
+    reads JA2_CARGO_TARGET_DIR at configure time. A build directory that was
+    configured with a different - or with no - shared cargo target dir would
+    otherwise keep writing its Rust artifacts somewhere the other checkouts
+    cannot see, which is exactly the cost this is here to avoid.
+    """
     try:
         stamp = json.loads((build_dir / ".dev-setup.json").read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return True
-    return bool(stamp.get("venv")) != (venv_python() is not None)
+    return (bool(stamp.get("venv")) != (venv_python() is not None)
+            or stamp.get("cargo_target") != cargo_target_dir())
 
 
 def configured_root(build_dir: Path):
@@ -926,6 +974,9 @@ def cmd_status(args):
     print(f"{'active:':<12}{len(active)} build/test process(es) on this machine")
     print(f"{'cache:':<12}{SCCACHE_BASEDIRS}={REPO}"
           f" (+ {len(worktree_roots()) - 1} other checkout(s), one shared cache)")
+    target = cargo_target_dir()
+    print(f"{'rust target:':<13}{target or 'one per build directory (sharing disabled)'}"
+          + ("  (shared by every checkout)" if target else ""))
 
 
 # --- worktrees and PR screenshots --------------------------------------------

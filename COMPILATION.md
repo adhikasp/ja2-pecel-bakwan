@@ -156,6 +156,22 @@ Nothing below is required — each one is picked up automatically when the machi
   spent **215 s** waiting for the lock. If you build outside `tools/dev.py`, set
   `SCCACHE_BASEDIRS` to your checkout roots (or a common ancestor of them) or you get a private
   cache island.
+- **A shared cargo target dir** — the Rust workspace builds into a `target/` inside each build
+  directory by default, so every worktree compiles all 53 crates again. The compiler cache does
+  not cover that: sccache only caches `rlib` crates, and 45 of these build as a staticlib or
+  binaries, which it rejects with the reason `crate-type`. `tools/dev.py` therefore points every
+  checkout at one machine-wide target dir (`~/.cache/ja2/cargo-target`, `%LOCALAPPDATA%\ja2-dev\cargo-target`
+  on Windows; `JA2_CARGO_TARGET_DIR` overrides it, an empty value opts out and keeps one per build
+  directory), and cargo reuses the
+  artifacts: a second worktree compiles only the three workspace crates, whose units cargo keys
+  by checkout path, and the artifacts for two paths coexist, so alternating between worktrees is
+  free. Measured here, same commit, warm compiler cache: a fresh worktree's build went from
+  **49.4 s to 11.4 s**, of which 8 s is those three crates plus ~3 s of sccache hits and the
+  link; switching back to a worktree built earlier is **0.19 s**.
+  `dependencies/lib-pecel-bakwan/CMakeLists.txt` reads the variable when it configures, so a
+  build directory carries the value it was configured with — `tools/dev.py` reconfigures when it
+  changes, and `dev.py status` prints it. Nothing is shared on CI, where no build directory
+  outlives its job.
 - **lld** — `-DUSE_LLD=ON` (the default) links with `ld.lld` when the toolchain provides it, which
   cuts the link of the monolithic `ja2` binary to a fraction of GNU ld's time. MSYS2:
   `pacman -S mingw-w64-x86_64-lld`. Where `ld.lld` is absent the option is skipped silently.
