@@ -140,8 +140,10 @@ if [[ "$RUN_TESTS" == "true" ]]; then
   #    time is tours running one after another, not one slow tour.
   #  - One invocation lets the scheduler fill a core that frees up with the next
   #    test, rather than draining the spike suite before e2e starts. Measured on
-  #    four pinned cores here: e2e-synthetic 50.9 s -> 21.0 s (2.4x, 3.8 of the
-  #    4 cores busy).
+  #    four pinned cores here: 77.9 s -> 27.4 s for the same 14 tests (3.7 of
+  #    the 4 cores busy); on CI, 455 s -> 257 s, which is this runner's floor -
+  #    the suite needs ~455 core-seconds of work and four vCPUs deliver about
+  #    1.8 of them at a time.
   #  - CTEST_PARALLEL_LEVEL is ctest's own knob, so an environment override wins
   #    and nothing here has to know the runner's core count.
   export CTEST_PARALLEL_LEVEL="${CTEST_PARALLEL_LEVEL:-$(nproc)}"

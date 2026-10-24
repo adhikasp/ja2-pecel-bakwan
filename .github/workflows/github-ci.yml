@@ -120,6 +120,19 @@ jobs:
 
     name: ${{ matrix.cfg.name }}
     runs-on: ${{ matrix.cfg.os }}
+    # sccache's on-disk cache is what the cache entry below holds, and its 10 GiB
+    # default only ever grows: a default-branch build is incremental against the
+    # restored cache, so each merge writes the objects for the files it changed,
+    # and the entry ends up holding every version of every translation unit ever
+    # built there. Measured in #422: the entry was 4.75 GB compressed (~10 GiB on
+    # disk) and cost 3.1 min to restore, while one configuration's objects are
+    # ~1.4 GB - a Debug + sanitizer build of the tree counts 1436 objects, 1.36 GB
+    # in total. 4G keeps the whole working set plus several generations of changed
+    # files, and it leaves the repository's 10 GB cache budget room for the small
+    # setup-sdl entry, which the oversized entries were evicting (that cost a
+    # rebuild of SDL from source, ~1 min, on one run out of two).
+    env:
+      SCCACHE_CACHE_SIZE: 4G
     steps:
     # No "Free Disk Space" step — it was only ever needed by the Android build
     # this fork dropped in #26, and it was not free: ~100 s of every job, a
