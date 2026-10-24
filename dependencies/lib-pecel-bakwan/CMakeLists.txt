@@ -21,7 +21,19 @@ endif()
 set(RUSTC_BIN_SUFFIX "${CMAKE_EXECUTABLE_SUFFIX}")
 
 # setup cargo env
+# Where cargo builds the workspace. The default is this build directory, which
+# means every worktree compiles all 53 crates again and sccache cannot help: it
+# only caches `rlib` crates, and 45 of these build as a staticlib or binaries,
+# which it rejects with the reason `crate-type`. One target dir for the machine
+# instead lets cargo reuse the artifacts across checkouts - a second worktree
+# compiles only the workspace crates, whose units cargo keys by checkout path.
+# tools/dev.py sets JA2_CARGO_TARGET_DIR for exactly that, and owns the value
+# (including "none", its opt-out), so this is deliberately not a cache variable:
+# a cached one would keep an older path after the environment changed.
 set(CARGO_BUILD_TARGET_DIR "${CMAKE_CURRENT_BINARY_DIR}/target")
+if (DEFINED ENV{JA2_CARGO_TARGET_DIR} AND NOT "$ENV{JA2_CARGO_TARGET_DIR}" STREQUAL "")
+    set(CARGO_BUILD_TARGET_DIR "$ENV{JA2_CARGO_TARGET_DIR}")
+endif()
 set(CARGO_BUILD_TARGET "${RUSTC_HOST}" CACHE STRING "The target platform triple for rustc.")
 if (ANDROID)
     if (ANDROID_ABI STREQUAL "armeabi-v7a")
