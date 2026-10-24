@@ -120,6 +120,24 @@ jobs:
 
     name: ${{ matrix.cfg.name }}
     runs-on: ${{ matrix.cfg.os }}
+    # actions/checkout needs the tree; the prune step below is the only thing
+    # that writes to the repository's caches through the API.
+    permissions:
+      contents: read
+      actions: write
+    # sccache's on-disk cache is what the cache entry below holds, and its 10 GiB
+    # default only ever grows: a default-branch build is incremental against the
+    # restored cache, so each merge writes the objects for the files it changed,
+    # and the entry ends up holding every version of every translation unit ever
+    # built there. Measured in #422: the entry was 4.75 GB compressed (~10 GiB on
+    # disk) and cost 3.1 min to restore, while one configuration's objects are
+    # ~1.4 GB - a Debug + sanitizer build of the tree counts 1436 objects, 1.36 GB
+    # in total. 4G keeps the whole working set plus several generations of changed
+    # files, and it leaves the repository's 10 GB cache budget room for the small
+    # setup-sdl entry, which the oversized entries were evicting (that cost a
+    # rebuild of SDL from source, ~1 min, on one run out of two).
+    env:
+      SCCACHE_CACHE_SIZE: 4G
     steps:
     # No "Free Disk Space" step — it was only ever needed by the Android build
     # this fork dropped in #26, and it was not free: ~100 s of every job, a
@@ -241,6 +259,32 @@ jobs:
           ~/.cargo/git/db
           ~/.rustup
         key: ${{ steps.rust.outputs.cache-primary-key }}
+
+    # Every default-branch build saves a fresh compiler cache under a key with the
+    # commit in it, and no later run can read the older ones again. The 10 GB
+    # budget fills up with them and GitHub then evicts whatever it likes: on
+    # 2026-10-24 two linux entries (4.75 GB each) had pushed the repository to
+    # 10.48 GB, the mingw64 compiler cache had been thrown out, and its next job
+    # recompiled all 840 objects in 8.6 min - and the setup-sdl entry was being
+    # rebuilt from source on one run in two. Keep the newest entry per target, so
+    # the budget carries the current caches instead of their history.
+    - name: Drop superseded compiler-cache entries
+      if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+      continue-on-error: true
+      shell: bash
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        for prefix in linux-sccache-v2 linux-mingw64-sccache-v2; do
+          gh api "repos/$REPO/actions/caches?per_page=100" \
+            -q "[.actions_caches[] | select(.key | startswith(\"$prefix-\"))] | sort_by(.created_at) | reverse | .[1:] | .[].id" |
+          while read -r id; do
+            echo "deleting superseded $prefix entry $id"
+            gh api -X DELETE "repos/$REPO/actions/caches/$id"
+          done
+        done
 
     - name: Publish packages
       shell: bash

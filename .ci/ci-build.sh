@@ -116,17 +116,38 @@ if [[ "$RUN_TESTS" == "true" ]]; then
   else
     ./ja2 -unittests
   fi
-  # Phase 0 spikes that need no game data (UI toolkits headless, render path, world raster rules, asset tools)
-  ctest -L '^spike$' --output-on-failure
-  # The developer tooling tests (dev.py worktrees / shots): Python and git only,
-  # no build and no game data, and they touch nothing in this checkout.
-  ctest -L '^tooling$' --output-on-failure
-  # The behavioural e2e suite on the synthetic Data/ tree cmake generated (#302):
-  # boot, the main menu, the native UI, the laptop, the campaign state and the
-  # front-end parity tours, with no game install. The label is explicit: bare
-  # `-L e2e` would also pull in the runs that need a real install (e2e-real), and
-  # those are not this job's to pretend passed.
-  ctest -L '^e2e-synthetic$' --output-on-failure
+  # One ctest run for the three suites this job owns, in parallel. They are:
+  #
+  #  - the Phase 0 spikes that need no game data (UI toolkits headless, render
+  #    path, world raster rules, asset tools),
+  #  - the developer tooling tests (dev.py worktrees / shots): Python and git
+  #    only, no build and no game data, and they touch nothing in this checkout,
+  #  - the behavioural e2e suite on the synthetic Data/ tree cmake generated
+  #    (#302): boot, the main menu, the native UI, the laptop, the campaign
+  #    state and the front-end parity tours, with no game install. The label is
+  #    explicit: bare `-L e2e` would also pull in the runs that need a real
+  #    install (e2e-real), and those are not this job's to pretend passed.
+  #
+  # Why parallel, in one invocation:
+  #
+  #  - They are independent. Every test drives its own headless game with a
+  #    fresh temporary home, its own log and its own output directory
+  #    (`ja2ctl.py run --isolated`), so the only thing they share is the
+  #    read-only synthetic tree.
+  #  - Serially this block is the wall of the job, not the build: the build is
+  #    ~50 s against a warm sccache, while the suites take ~455 s on the runner
+  #    (346 s of it e2e-synthetic) and no single test is longer than 84 s. The
+  #    time is tours running one after another, not one slow tour.
+  #  - One invocation lets the scheduler fill a core that frees up with the next
+  #    test, rather than draining the spike suite before e2e starts. Measured on
+  #    four pinned cores here: 77.9 s -> 27.4 s for the same 14 tests (3.7 of
+  #    the 4 cores busy); on CI, 455 s -> 257 s, which is this runner's floor -
+  #    the suite needs ~455 core-seconds of work and four vCPUs deliver about
+  #    1.8 of them at a time.
+  #  - CTEST_PARALLEL_LEVEL is ctest's own knob, so an environment override wins
+  #    and nothing here has to know the runner's core count.
+  export CTEST_PARALLEL_LEVEL="${CTEST_PARALLEL_LEVEL:-$(nproc)}"
+  ctest -L '^(spike|tooling|e2e-synthetic)$' --output-on-failure
   # Diff-scoped C++ lint: clang-format on the changed lines, clang-tidy on the
   # changed translation units. Never whole-tree — see .ci/ci-lint-cpp.sh for
   # the measured reason. Runs where the tools are present and the change has a
