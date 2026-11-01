@@ -42,6 +42,8 @@ jobs:
       run: python tools/roadmap.py generate
 
     - name: Publish to docs-site
+      env:
+        PUSH_TOKEN: ${{ github.token }}
       run: |
         set -eu
         SITE=.docs-site
@@ -67,5 +69,10 @@ jobs:
           echo "page is unchanged; nothing to publish"
         else
           git commit -m "Roadmap page from master $(git -C "$GITHUB_WORKSPACE" rev-parse --short HEAD)"
-          git push origin HEAD:docs-site
+          # persist-credentials is off on checkout, so authenticate the push
+          # explicitly with the workflow token (contents: write). Force: each
+          # publish is a fresh orphan root, never a descendant of the last one.
+          git push --force \
+            "https://x-access-token:${PUSH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
+            HEAD:docs-site
         fi
