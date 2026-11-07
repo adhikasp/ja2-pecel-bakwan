@@ -212,6 +212,19 @@ v = vm()
 ja2.expect(v.page == "account" and #v.merc_account_rows == 1 and v.merc_account_rows[1].sub == "1", "the account page bills one day")
 ja2.expect(num(v.merc_owed) == num(merc.meta), "the account owes the merc's daily fee: " .. v.merc_owed)
 shots.take("laptop_merc_account.png")
+-- Authorize payment (#379). The legacy page sends the player to the site's home page to hear Speck's
+-- thanks, but the native laptop stays on the page it is showing; the payment must settle the session
+-- instead of leaving the laptop "loading" for ever. The bound is what matters: a regression to the
+-- old non-settling state fails here in five seconds, not after the default wait's two minutes.
+local owed, balance = num(v.merc_owed), ja2.state().money
+click("merc.pay")
+ja2.waitScreen("MSG_BOX_SCREEN"); ja2.click{id = "msgbox.yes"}
+ja2.waitIdle(5000)
+v = vm()
+ja2.expect(ja2.state().money == balance - owed, "Authorize pays the account (" .. owed .. ")")
+ja2.expect(num(v.merc_owed) == 0, "the account is settled: Owed is $0")
+ja2.expect(v.page == "account", "the native laptop stays on the account page it was showing")
+shots.take("laptop_merc_paid.png")
 click("laptop.app.personnel")
 local sel
 for _, r in ipairs(vm().roster) do if r.title == merc.title then sel = r.index end end
